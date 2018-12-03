@@ -19,6 +19,7 @@ import stasis.test.specs.unit.security.MockNodeAuthenticator
 import scala.concurrent.duration._
 
 class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
+
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
   case class FixtureParam()

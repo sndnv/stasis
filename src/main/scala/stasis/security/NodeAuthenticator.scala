@@ -5,4 +5,5 @@ import stasis.routing.Node
 
 trait NodeAuthenticator {
   def authenticate(credentials: HttpCredentials): Option[Node]
+  def provide(): HttpCredentials
 }

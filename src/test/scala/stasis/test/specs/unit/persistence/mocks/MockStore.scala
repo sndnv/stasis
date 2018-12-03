@@ -23,7 +23,7 @@ class MockStore(implicit system: ActorSystem, timeout: Timeout) extends Store {
     content: Source[ByteString, NotUsed]
   ): Future[Done] =
     Future {
-      val r = content.runWith(
+      val _ = content.runWith(
         Sink.actorRefWithAck(
           store,
           onInitMessage = StoreActor.InitStreaming(manifest),
@@ -32,6 +32,7 @@ class MockStore(implicit system: ActorSystem, timeout: Timeout) extends Store {
           onFailureMessage = e => StoreActor.StreamFailed(e)
         )
       )
+
       Done
     }
 

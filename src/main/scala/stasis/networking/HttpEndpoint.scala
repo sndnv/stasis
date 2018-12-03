@@ -1,11 +1,9 @@
 package stasis.networking
 
-import scala.concurrent.ExecutionContextExecutor
-import scala.concurrent.duration._
-
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.event.Logging
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
@@ -14,7 +12,11 @@ import stasis.packaging.{Crate, Manifest}
 import stasis.routing.Router
 import stasis.security.NodeAuthenticator
 
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContextExecutor, Future}
+
 trait HttpEndpoint extends Endpoint {
+
   import HttpEndpoint._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
@@ -28,6 +30,9 @@ trait HttpEndpoint extends Endpoint {
   private implicit lazy val ec: ExecutionContextExecutor = system.dispatcher
 
   private lazy val log = Logging(system, this.getClass.getName)
+
+  def start(hostname: String, port: Int): Future[Http.ServerBinding] =
+    Http().bindAndHandle(routes, hostname, port)
 
   val routes: Route =
     (extractMethod & extractUri & extractClientIP) { (method, uri, remoteAddress) =>
@@ -116,6 +121,7 @@ trait HttpEndpoint extends Endpoint {
 }
 
 object HttpEndpoint {
+
   import play.api.libs.json.{Format, Json}
 
   case class CrateCreated(

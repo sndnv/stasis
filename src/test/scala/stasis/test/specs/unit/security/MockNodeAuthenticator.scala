@@ -13,4 +13,7 @@ class MockNodeAuthenticator(expectedUser: String, expectedPassword: String) exte
       case _ =>
         None
     }
+
+  override def provide(): HttpCredentials =
+    BasicHttpCredentials(username = expectedUser, password = expectedPassword)
 }
