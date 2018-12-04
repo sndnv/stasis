@@ -16,7 +16,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait HttpEndpointClient extends EndpointClient {
 
-  import HttpEndpoint._
+  import Endpoint._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
   protected val endpointUri: String
@@ -29,7 +29,7 @@ trait HttpEndpointClient extends EndpointClient {
 
   private lazy val log = Logging(system, this.getClass.getName)
 
-  def push(
+  override def push(
     manifest: Manifest,
     content: Source[ByteString, NotUsed]
   ): Future[CrateCreated] = {
@@ -62,7 +62,7 @@ trait HttpEndpointClient extends EndpointClient {
       }
   }
 
-  def pull(
+  override def pull(
     crate: Crate.Id
   ): Future[Option[Source[ByteString, NotUsed]]] = {
     log.debug("Pulling from endpoint [{}] crate with ID [{}]", endpointUri, crate)

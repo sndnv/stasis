@@ -17,7 +17,7 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 
 trait HttpEndpoint extends Endpoint {
 
-  import HttpEndpoint._
+  import Endpoint._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
   protected implicit val system: ActorSystem
@@ -118,24 +118,4 @@ trait HttpEndpoint extends Endpoint {
           complete(StatusCodes.Unauthorized)
       }
     }
-}
-
-object HttpEndpoint {
-
-  import play.api.libs.json.{Format, Json}
-
-  case class CrateCreated(
-    crateId: Crate.Id,
-    copies: Int,
-    retention: Long
-  )
-
-  object CrateCreated {
-    def apply(manifest: Manifest): CrateCreated =
-      CrateCreated(manifest.crate, manifest.copies, manifest.retention.toSeconds)
-  }
-
-  implicit val crateCreatedFormat: Format[CrateCreated] = Json.format[CrateCreated]
-
-  implicit val manifestErrorSeqFormat: Format[Manifest.FieldError] = Json.format[Manifest.FieldError]
 }

@@ -7,7 +7,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.util.{ByteString, Timeout}
 import org.scalatest.FutureOutcome
 import stasis.networking.HttpEndpoint
-import stasis.networking.HttpEndpoint._
+import stasis.networking.Endpoint._
 import stasis.packaging.{Crate, Manifest}
 import stasis.routing.Router
 import stasis.security.NodeAuthenticator
