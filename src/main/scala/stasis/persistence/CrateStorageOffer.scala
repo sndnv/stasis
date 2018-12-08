@@ -4,14 +4,14 @@ import java.util.UUID
 
 import scala.concurrent.duration.FiniteDuration
 
-case class StorageOffer(
-  id: StorageOffer.Id,
+final case class CrateStorageOffer(
+  id: CrateStorageOffer.Id,
   size: Long,
   copies: Int,
   retention: FiniteDuration
 )
 
-object StorageOffer {
+object CrateStorageOffer {
   type Id = UUID
 
   def generateId(): Id = java.util.UUID.randomUUID()

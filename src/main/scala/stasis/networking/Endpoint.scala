@@ -1,13 +1,16 @@
 package stasis.networking
 
 import stasis.packaging.{Crate, Manifest}
+import stasis.security.NodeAuthenticator
 
-trait Endpoint
+trait Endpoint[C] {
+  protected val authenticator: NodeAuthenticator[C]
+}
 
 object Endpoint {
   import play.api.libs.json.{Format, Json}
 
-  case class CrateCreated(
+  final case class CrateCreated(
     crateId: Crate.Id,
     copies: Int,
     retention: Long

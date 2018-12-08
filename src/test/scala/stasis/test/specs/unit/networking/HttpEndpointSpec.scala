@@ -2,7 +2,7 @@ package stasis.test.specs.unit.networking
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.headers.BasicHttpCredentials
+import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.util.{ByteString, Timeout}
 import org.scalatest.FutureOutcome
@@ -12,7 +12,7 @@ import stasis.packaging.{Crate, Manifest}
 import stasis.routing.Router
 import stasis.security.NodeAuthenticator
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.persistence.mocks.MockStore
+import stasis.test.specs.unit.persistence.mocks.MockCrateStore
 import stasis.test.specs.unit.routing.mocks.LocalMockRouter
 import stasis.test.specs.unit.security.MockNodeAuthenticator
 
@@ -46,8 +46,9 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
   private val endpoint = new HttpEndpoint {
     override protected implicit val system: ActorSystem = testSystem
-    override protected val router: Router = new LocalMockRouter(new MockStore)
-    override protected val authenticator: NodeAuthenticator = new MockNodeAuthenticator(testUser, testPassword)
+    override protected val router: Router = new LocalMockRouter(new MockCrateStore)
+    override protected val authenticator: NodeAuthenticator[HttpCredentials] =
+      new MockNodeAuthenticator(testUser, testPassword)
     override protected val manifestConfig: Manifest.Config = testManifestConfig
   }
 
@@ -125,8 +126,9 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     val validatingEndpoint = new HttpEndpoint {
       override protected implicit val system: ActorSystem = testSystem
-      override protected val router: Router = new LocalMockRouter(new MockStore)
-      override protected val authenticator: NodeAuthenticator = new MockNodeAuthenticator(testUser, testPassword)
+      override protected val router: Router = new LocalMockRouter(new MockCrateStore)
+      override protected val authenticator: NodeAuthenticator[HttpCredentials] =
+        new MockNodeAuthenticator(testUser, testPassword)
       override protected val manifestConfig: Manifest.Config = testManifestConfig.copy(
         getManifestErrors = _ => Seq(expectedFieldError)
       )

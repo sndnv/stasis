@@ -4,25 +4,24 @@ import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import stasis.packaging.{Crate, Manifest}
 import stasis.routing.Router
-import stasis.security.NodeAuthenticator
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
-trait HttpEndpoint extends Endpoint {
+trait HttpEndpoint extends Endpoint[HttpCredentials] {
 
   import Endpoint._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
   protected implicit val system: ActorSystem
   protected val router: Router
-  protected val authenticator: NodeAuthenticator
 
   protected val manifestConfig: Manifest.Config
 

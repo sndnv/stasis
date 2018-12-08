@@ -9,7 +9,7 @@ import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import stasis.packaging.{Crate, Manifest}
 import stasis.routing.{LocalRouter, Node}
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.persistence.mocks.MockStore
+import stasis.test.specs.unit.persistence.mocks.MockCrateStore
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -28,7 +28,7 @@ class LocalRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(3.second, 250.milliseconds)
 
-  private val store = new MockStore
+  private val store = new MockCrateStore
   private val router = new LocalRouter(store)
 
   "A LocalRouter" should "push data to a local store" in { _ =>
@@ -41,7 +41,7 @@ class LocalRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
 
     val content = ByteString("some value")
 
-    router.push(manifest, Source.single(content))
+    router.push(manifest, Source.single(content)).await
 
     eventually {
       val result = store
@@ -63,7 +63,7 @@ class LocalRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
 
     val content = ByteString("some other value")
 
-    store.persist(manifest, Source.single(content))
+    store.persist(manifest, Source.single(content)).await
 
     eventually {
       val result = router

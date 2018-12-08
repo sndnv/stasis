@@ -2,7 +2,7 @@ package stasis.routing
 
 import java.util.UUID
 
-case class Node(
+final case class Node(
   id: Node.Id
 )
 

@@ -13,6 +13,7 @@ lazy val commonSettings = Seq(
   crossScalaVersions := Seq("2.12.7"),
   libraryDependencies ++= Seq(
     "com.typesafe.akka" %% "akka-actor"           % akkaVersion,
+    "com.typesafe.akka" %% "akka-actor-typed"     % akkaVersion,
     "com.typesafe.akka" %% "akka-stream"          % akkaVersion,
     "com.typesafe.akka" %% "akka-http"            % akkaHttpVersion,
     "com.typesafe.play" %% "play-json"            % "2.6.10",

@@ -4,19 +4,20 @@ import stasis.routing.Node
 
 import scala.concurrent.duration.FiniteDuration
 
-case class Manifest(
+final case class Manifest(
   crate: Crate.Id,
   copies: Int,
   retention: FiniteDuration,
-  source: Node
+  source: Node,
+  destinations: Seq[Node] = Seq.empty
 )
 
 object Manifest {
-  case class Config(
+  final case class Config(
     defaultCopies: Int,
     defaultRetention: FiniteDuration,
     getManifestErrors: Manifest => Seq[Manifest.FieldError]
   )
 
-  case class FieldError(field: String, error: String)
+  final case class FieldError(field: String, error: String)
 }

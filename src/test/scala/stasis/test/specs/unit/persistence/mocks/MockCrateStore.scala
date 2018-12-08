@@ -8,15 +8,18 @@ import akka.util.{ByteString, Timeout}
 import akka.{Done, NotUsed}
 import stasis.packaging
 import stasis.packaging.{Crate, Manifest}
-import stasis.persistence.Store
+import stasis.persistence.CrateStore
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class MockStore(implicit system: ActorSystem, timeout: Timeout) extends Store {
+class MockCrateStore(implicit system: ActorSystem, timeout: Timeout) extends CrateStore {
   private implicit val ec: ExecutionContext = system.dispatcher
   private implicit val mat: ActorMaterializer = ActorMaterializer()
 
-  private val store: ActorRef = system.actorOf(StoreActor.props())
+  private val store: ActorRef = system.actorOf(
+    CrateSinkActor.props(),
+    s"mock-crate-store-${java.util.UUID.randomUUID()}"
+  )
 
   override def persist(
     manifest: packaging.Manifest,
@@ -26,10 +29,10 @@ class MockStore(implicit system: ActorSystem, timeout: Timeout) extends Store {
       val _ = content.runWith(
         Sink.actorRefWithAck(
           store,
-          onInitMessage = StoreActor.InitStreaming(manifest),
-          ackMessage = StoreActor.CanStream,
-          onCompleteMessage = StoreActor.StreamComplete,
-          onFailureMessage = e => StoreActor.StreamFailed(e)
+          onInitMessage = CrateSinkActor.InitStreaming(manifest),
+          ackMessage = CrateSinkActor.CanStream,
+          onCompleteMessage = CrateSinkActor.StreamComplete,
+          onFailureMessage = e => CrateSinkActor.StreamFailed(e)
         )
       )
 
@@ -39,7 +42,7 @@ class MockStore(implicit system: ActorSystem, timeout: Timeout) extends Store {
   override def retrieve(
     crate: Crate.Id
   ): Future[Option[Source[ByteString, NotUsed]]] =
-    (store ? StoreActor.GetData(crate))
+    (store ? CrateSinkActor.GetData(crate))
       .mapTo[Option[(Manifest, ByteString)]]
       .map(_.map { case (_, data) => Source.single(data) })
 }

@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.routing.mocks
 
-import stasis.persistence.Store
+import stasis.persistence.CrateStore
 import stasis.routing.LocalRouter
 
-class LocalMockRouter(store: Store) extends LocalRouter(store) {}
+class LocalMockRouter(store: CrateStore) extends LocalRouter(store) {}

@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials}
 import stasis.routing.Node
 import stasis.security.NodeAuthenticator
 
-class MockNodeAuthenticator(expectedUser: String, expectedPassword: String) extends NodeAuthenticator {
+class MockNodeAuthenticator(expectedUser: String, expectedPassword: String) extends NodeAuthenticator[HttpCredentials] {
   override def authenticate(credentials: HttpCredentials): Option[Node] =
     credentials match {
       case BasicHttpCredentials(`expectedUser`, `expectedPassword`) =>
@@ -13,7 +13,4 @@ class MockNodeAuthenticator(expectedUser: String, expectedPassword: String) exte
       case _ =>
         None
     }
-
-  override def provide(): HttpCredentials =
-    BasicHttpCredentials(username = expectedUser, password = expectedPassword)
 }
