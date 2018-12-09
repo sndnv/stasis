@@ -43,7 +43,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
     crate = Crate.generateId(),
     copies = 7,
     retention = 42.seconds,
-    source = Node(id = Node.generateId())
+    source = Node.generateId()
   )
 
   private val testUser = "test-user"

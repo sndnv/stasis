@@ -36,7 +36,7 @@ class LocalRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
       crate = Crate.generateId(),
       copies = 1,
       retention = 60.seconds,
-      source = Node(id = Node.generateId())
+      source = Node.generateId()
     )
 
     val content = ByteString("some value")
@@ -58,7 +58,7 @@ class LocalRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
       crate = Crate.generateId(),
       copies = 1,
       retention = 60.seconds,
-      source = Node(id = Node.generateId())
+      source = Node.generateId()
     )
 
     val content = ByteString("some other value")

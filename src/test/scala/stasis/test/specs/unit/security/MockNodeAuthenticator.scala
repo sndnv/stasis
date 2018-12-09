@@ -5,10 +5,10 @@ import stasis.routing.Node
 import stasis.security.NodeAuthenticator
 
 class MockNodeAuthenticator(expectedUser: String, expectedPassword: String) extends NodeAuthenticator[HttpCredentials] {
-  override def authenticate(credentials: HttpCredentials): Option[Node] =
+  override def authenticate(credentials: HttpCredentials): Option[Node.Id] =
     credentials match {
       case BasicHttpCredentials(`expectedUser`, `expectedPassword`) =>
-        Some(Node(id = Node.generateId()))
+        Some(Node.generateId())
 
       case _ =>
         None

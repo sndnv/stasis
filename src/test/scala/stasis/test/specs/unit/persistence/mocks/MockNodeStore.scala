@@ -12,9 +12,9 @@ import stasis.test.specs.unit.networking.mocks.MockEndpointAddress
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-class MockNodeStore(addressFailureNodes: Seq[Node] = Seq.empty)(implicit system: ActorSystem[SpawnProtocol])
+class MockNodeStore(addressFailureNodes: Seq[Node.Id] = Seq.empty)(implicit system: ActorSystem[SpawnProtocol])
     extends NodeStore[MockEndpointAddress] {
-  private type StoreKey = Node
+  private type StoreKey = Node.Id
   private type StoreValue = MockEndpointAddress
 
   private implicit val timeout: Timeout = 3.seconds
@@ -27,13 +27,13 @@ class MockNodeStore(addressFailureNodes: Seq[Node] = Seq.empty)(implicit system:
       s"mock-node-store-${java.util.UUID.randomUUID()}"
     )
 
-  override def put(node: Node, address: MockEndpointAddress): Future[Done] =
+  override def put(node: Node.Id, address: MockEndpointAddress): Future[Done] =
     storeRef.flatMap(_ ? (ref => MapStoreActor.Put(node, address, ref)))
 
-  override def list: Future[Seq[Node]] =
+  override def list: Future[Seq[Node.Id]] =
     storeData.map(_.keys.toSeq)
 
-  override def addressOf(node: Node): Future[Option[MockEndpointAddress]] =
+  override def addressOf(node: Node.Id): Future[Option[MockEndpointAddress]] =
     if (!addressFailureNodes.contains(node)) {
       storeData.map(_.get(node))
     } else {

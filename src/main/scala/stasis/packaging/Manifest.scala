@@ -8,8 +8,8 @@ final case class Manifest(
   crate: Crate.Id,
   copies: Int,
   retention: FiniteDuration,
-  source: Node,
-  destinations: Seq[Node] = Seq.empty
+  source: Node.Id,
+  destinations: Seq[Node.Id] = Seq.empty
 )
 
 object Manifest {

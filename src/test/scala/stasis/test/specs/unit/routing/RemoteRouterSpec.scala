@@ -45,16 +45,16 @@ class RemoteRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
   ) extends RemoteRouter(testClient, testManifestStore, testNodeStore)(system.toUntyped)
 
   private val testNodes = Seq(
-    Node(id = Node.generateId()),
-    Node(id = Node.generateId()),
-    Node(id = Node.generateId())
+    Node.generateId(),
+    Node.generateId(),
+    Node.generateId()
   )
 
   private val testManifest = Manifest(
     crate = Crate.generateId(),
     copies = 4,
     retention = 60.seconds,
-    source = Node(id = Node.generateId())
+    source = Node.generateId()
   )
 
   private val testContent = ByteString("some value")

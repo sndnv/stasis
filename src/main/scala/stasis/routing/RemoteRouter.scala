@@ -103,7 +103,7 @@ class RemoteRouter[A <: EndpointAddress, C](
   override def pull(
     crate: Id
   ): Future[Option[Source[ByteString, NotUsed]]] = {
-    def pullFromNodes(nodes: Seq[Node]): Future[Option[Source[ByteString, NotUsed]]] =
+    def pullFromNodes(nodes: Seq[Node.Id]): Future[Option[Source[ByteString, NotUsed]]] =
       nodes match {
         case node :: remainingNodes =>
           nodeStore.addressOf(node).flatMap {
@@ -189,12 +189,12 @@ class RemoteRouter[A <: EndpointAddress, C](
 }
 
 object RemoteRouter {
-  def distributeCopies(nodes: Seq[Node], copies: Int): Map[Node, Int] =
+  def distributeCopies(nodes: Seq[Node.Id], copies: Int): Map[Node.Id, Int] =
     if (nodes.nonEmpty && copies > 0) {
       val nodesStream = Stream.continually(nodes).flatten
       val copyIndexes = (0 until copies).seq
 
-      val distribution = nodesStream.zip(copyIndexes).foldLeft(Map.empty[Node, Int]) {
+      val distribution = nodesStream.zip(copyIndexes).foldLeft(Map.empty[Node.Id, Int]) {
         case (reduced, (node, _)) =>
           reduced + (node -> (reduced.getOrElse(node, 0) + 1))
       }
