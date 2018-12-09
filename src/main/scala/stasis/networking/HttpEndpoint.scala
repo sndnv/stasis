@@ -57,13 +57,11 @@ trait HttpEndpoint extends Endpoint[HttpCredentials] {
                         manifestConfig.getManifestErrors(manifest) match {
                           case Nil =>
                             extractDataBytes { stream =>
-                              complete {
-                                router
-                                  .push(manifest, stream.mapMaterializedValue(_ => NotUsed))
-                                  .map { _ =>
-                                    log.info("Crate created with manifest: [{}]", manifest)
-                                    CrateCreated(manifest)
-                                  }
+                              onSuccess(router.push(manifest, stream.mapMaterializedValue(_ => NotUsed))) { _ =>
+                                complete {
+                                  log.info("Crate created with manifest: [{}]", manifest)
+                                  CrateCreated(manifest)
+                                }
                               }
                             }
 
