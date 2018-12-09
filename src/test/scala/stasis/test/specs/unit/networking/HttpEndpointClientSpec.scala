@@ -6,9 +6,9 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.{ByteString, Timeout}
 import org.scalatest.FutureOutcome
-import stasis.networking.{EndpointCredentials, HttpEndpoint, HttpEndpointAddress, HttpEndpointClient}
+import stasis.networking.{HttpEndpoint, HttpEndpointAddress, HttpEndpointClient}
 import stasis.packaging.{Crate, Manifest}
-import stasis.routing.{Node, Router}
+import stasis.routing.Node
 import stasis.security.NodeAuthenticator
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.networking.mocks.MockEndpointCredentials
@@ -26,7 +26,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
   def withFixture(test: OneArgAsyncTest): FutureOutcome =
     withFixture(test.toNoArgAsyncTest(FixtureParam()))
 
-  private val testSystem: ActorSystem = ActorSystem(name = "HttpEndpointClientSpec")
+  private implicit val testSystem: ActorSystem = ActorSystem(name = "HttpEndpointClientSpec")
   private implicit val mat: ActorMaterializer = ActorMaterializer()(testSystem)
 
   override implicit val timeout: Timeout = 3.seconds
@@ -52,18 +52,12 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
   private class TestHttpEndpoint(
     override protected val authenticator: NodeAuthenticator[HttpCredentials],
     port: Int
-  ) extends HttpEndpoint {
-    override protected implicit val system: ActorSystem = testSystem
-    override protected val router: Router = new LocalMockRouter(new MockCrateStore)
-    override protected val manifestConfig: Manifest.Config = testManifestConfig
-
+  ) extends HttpEndpoint(
+        router = new LocalMockRouter(new MockCrateStore),
+        manifestConfig = testManifestConfig,
+        authenticator = authenticator
+      ) {
     private val _ = start(hostname = "localhost", port = port)
-  }
-
-  private class TestHttpEndpointClient(
-    override protected val credentials: EndpointCredentials[HttpEndpointAddress, HttpCredentials]
-  ) extends HttpEndpointClient {
-    override protected implicit val system: ActorSystem = testSystem
   }
 
   "An HTTP Endpoint Client" should "successfully push crate data" in { _ =>
@@ -75,7 +69,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
       port = endpointPort
     )
 
-    val client = new TestHttpEndpointClient(
+    val client = new HttpEndpointClient(
       credentials = new MockEndpointCredentials(endpointAddress, testUser, testPassword)
     )
 
@@ -94,7 +88,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
       port = endpointPort
     )
 
-    val client = new TestHttpEndpointClient(
+    val client = new HttpEndpointClient(
       credentials = new MockEndpointCredentials(endpointAddress, "invalid-user", testPassword)
     )
 
@@ -120,7 +114,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
       port = endpointPort
     )
 
-    val client = new TestHttpEndpointClient(
+    val client = new HttpEndpointClient(
       credentials = new MockEndpointCredentials(endpointAddress, testUser, testPassword)
     )
 
@@ -151,7 +145,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
       port = endpointPort
     )
 
-    val client = new TestHttpEndpointClient(
+    val client = new HttpEndpointClient(
       credentials = new MockEndpointCredentials(endpointAddress, testUser, testPassword)
     )
 
@@ -169,7 +163,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
       port = endpointPort
     )
 
-    val client = new TestHttpEndpointClient(
+    val client = new HttpEndpointClient(
       credentials = new MockEndpointCredentials(endpointAddress, "invalid-user", testPassword)
     )
 
@@ -207,7 +201,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
       port = secondaryEndpointPort
     )
 
-    val client = new TestHttpEndpointClient(
+    val client = new HttpEndpointClient(
       credentials = new MockEndpointCredentials(
         Map(
           primaryEndpointAddress -> (primaryEndpointUser, primaryEndpointPassword),
@@ -240,7 +234,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
       port = endpointPort
     )
 
-    val client = new TestHttpEndpointClient(
+    val client = new HttpEndpointClient(
       credentials = new MockEndpointCredentials(Map.empty)
     )
 
@@ -266,7 +260,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
       port = endpointPort
     )
 
-    val client = new TestHttpEndpointClient(
+    val client = new HttpEndpointClient(
       credentials = new MockEndpointCredentials(Map.empty)
     )
 

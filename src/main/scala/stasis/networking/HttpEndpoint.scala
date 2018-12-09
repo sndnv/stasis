@@ -11,19 +11,20 @@ import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import stasis.packaging.{Crate, Manifest}
 import stasis.routing.Router
+import stasis.security.NodeAuthenticator
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
-trait HttpEndpoint extends Endpoint[HttpCredentials] {
+class HttpEndpoint(
+  router: Router,
+  manifestConfig: Manifest.Config,
+  override protected val authenticator: NodeAuthenticator[HttpCredentials]
+)(implicit val system: ActorSystem)
+    extends Endpoint[HttpCredentials] {
 
   import Endpoint._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
-
-  protected implicit val system: ActorSystem
-  protected val router: Router
-
-  protected val manifestConfig: Manifest.Config
 
   private implicit lazy val mat: ActorMaterializer = ActorMaterializer()
   private implicit lazy val ec: ExecutionContextExecutor = system.dispatcher

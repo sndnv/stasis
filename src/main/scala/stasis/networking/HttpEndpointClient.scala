@@ -15,12 +15,13 @@ import stasis.packaging.{Crate, Manifest}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait HttpEndpointClient extends EndpointClient[HttpEndpointAddress, HttpCredentials] {
+class HttpEndpointClient(
+  override protected val credentials: EndpointCredentials[HttpEndpointAddress, HttpCredentials]
+)(implicit val system: ActorSystem)
+    extends EndpointClient[HttpEndpointAddress, HttpCredentials] {
 
   import Endpoint._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
-
-  protected implicit val system: ActorSystem
 
   private implicit lazy val mat: ActorMaterializer = ActorMaterializer()
   private implicit lazy val ec: ExecutionContext = system.dispatcher

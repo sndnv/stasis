@@ -1,16 +1,13 @@
 package stasis.test.specs.unit.networking
 
-import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials}
+import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.util.{ByteString, Timeout}
 import org.scalatest.FutureOutcome
-import stasis.networking.HttpEndpoint
 import stasis.networking.Endpoint._
+import stasis.networking.HttpEndpoint
 import stasis.packaging.{Crate, Manifest}
-import stasis.routing.Router
-import stasis.security.NodeAuthenticator
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.persistence.mocks.MockCrateStore
 import stasis.test.specs.unit.routing.mocks.LocalMockRouter
@@ -44,13 +41,11 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
   private val testCredentials = BasicHttpCredentials(username = testUser, password = testPassword)
 
-  private val endpoint = new HttpEndpoint {
-    override protected implicit val system: ActorSystem = testSystem
-    override protected val router: Router = new LocalMockRouter(new MockCrateStore)
-    override protected val authenticator: NodeAuthenticator[HttpCredentials] =
-      new MockNodeAuthenticator(testUser, testPassword)
-    override protected val manifestConfig: Manifest.Config = testManifestConfig
-  }
+  private val endpoint = new HttpEndpoint(
+    router = new LocalMockRouter(new MockCrateStore),
+    manifestConfig = testManifestConfig,
+    authenticator = new MockNodeAuthenticator(testUser, testPassword)
+  )
 
   "An HTTP Endpoint" should "successfully authenticate a client" in { _ =>
     val expectedResponse = CrateCreated(
@@ -124,15 +119,11 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   it should "fail to store crate data with invalid parameters" in { _ =>
     val expectedFieldError = Manifest.FieldError(field = "some-field", error = "invalid field value")
 
-    val validatingEndpoint = new HttpEndpoint {
-      override protected implicit val system: ActorSystem = testSystem
-      override protected val router: Router = new LocalMockRouter(new MockCrateStore)
-      override protected val authenticator: NodeAuthenticator[HttpCredentials] =
-        new MockNodeAuthenticator(testUser, testPassword)
-      override protected val manifestConfig: Manifest.Config = testManifestConfig.copy(
-        getManifestErrors = _ => Seq(expectedFieldError)
-      )
-    }
+    val validatingEndpoint = new HttpEndpoint(
+      router = new LocalMockRouter(new MockCrateStore),
+      manifestConfig = testManifestConfig.copy(getManifestErrors = _ => Seq(expectedFieldError)),
+      authenticator = new MockNodeAuthenticator(testUser, testPassword)
+    )
 
     val expectedResponse = CrateCreated(
       crateId = Crate.generateId(),
