@@ -1,7 +1,5 @@
 package stasis.test.specs.unit.routing
 
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
@@ -17,6 +15,9 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.networking.mocks.MockEndpointClient.Statistic
 import stasis.test.specs.unit.networking.mocks.{MockEndpointAddress, MockEndpointClient}
 import stasis.test.specs.unit.persistence.mocks.{MockManifestStore, MockNodeStore}
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
 class RemoteRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
 
@@ -42,12 +43,13 @@ class RemoteRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
     val testClient: MockEndpointClient = new MockEndpointClient,
     val testManifestStore: MockManifestStore = new MockManifestStore,
     val testNodeStore: MockNodeStore = new MockNodeStore
-  ) extends RemoteRouter(testClient, testManifestStore, testNodeStore)(system.toUntyped)
+  )(implicit untypedSystem: akka.actor.ActorSystem = system.toUntyped)
+      extends RemoteRouter(testClient, testManifestStore, testNodeStore)
 
   private val testNodes = Seq(
-    Node.generateId(),
-    Node.generateId(),
-    Node.generateId()
+    Node.Remote(Node.generateId(), address = MockEndpointAddress()),
+    Node.Remote(Node.generateId(), address = MockEndpointAddress()),
+    Node.Remote(Node.generateId(), address = MockEndpointAddress())
   )
 
   private val testManifest = Manifest(
@@ -78,7 +80,7 @@ class RemoteRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
 
   it should "push data to remote nodes" in { _ =>
     val router = new TestRemoteRouter()
-    testNodes.foreach(node => router.testNodeStore.put(node, MockEndpointAddress()).await)
+    testNodes.foreach(node => router.testNodeStore.put(node).await)
 
     router.push(testManifest, Source.single(testContent)).await
 
@@ -108,7 +110,7 @@ class RemoteRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
 
   it should "fail to push data when no copies are requested" in { _ =>
     val router = new TestRemoteRouter()
-    testNodes.foreach(node => router.testNodeStore.put(node, MockEndpointAddress()).await)
+    testNodes.foreach(node => router.testNodeStore.put(node).await)
 
     router
       .push(testManifest.copy(copies = 0), Source.single(testContent))
@@ -125,12 +127,12 @@ class RemoteRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
 
   it should "recover from node failure on push" in { _ =>
     val testNodeStore = new MockNodeStore()
-    testNodes.foreach(node => testNodeStore.put(node, MockEndpointAddress()).await)
+    testNodes.foreach(node => testNodeStore.put(node).await)
 
     val router = new TestRemoteRouter(
       testClient = new MockEndpointClient(
         pushFailureAddresses = Map(
-          testNodeStore.addressOf(testNodes.last).await.get -> new RuntimeException("test failure")
+          testNodes.last.address -> new RuntimeException("test failure")
         )
       ),
       testNodeStore = testNodeStore
@@ -146,11 +148,13 @@ class RemoteRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
     }
   }
 
-  it should "recover from node address retrieval failure on push" in { _ =>
+  it should "recover from encountering unexpected node type on push" in { _ =>
+    val unexpectedNode = Node.Local(id = testNodes.last.id, crateStore = null)
+
     val router = new TestRemoteRouter(
-      testNodeStore = new MockNodeStore(addressFailureNodes = Seq(testNodes.last))
+      testNodeStore = new MockNodeStore(replacementNodes = Map(unexpectedNode.id -> Some(unexpectedNode)))
     )
-    testNodes.foreach(node => router.testNodeStore.put(node, MockEndpointAddress()).await)
+    testNodes.foreach(node => router.testNodeStore.put(node).await)
 
     router.push(testManifest, Source.single(testContent)).await
 
@@ -164,7 +168,7 @@ class RemoteRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
 
   it should "pull data from remote nodes" in { _ =>
     val router = new TestRemoteRouter()
-    testNodes.foreach(node => router.testNodeStore.put(node, MockEndpointAddress()).await)
+    testNodes.foreach(node => router.testNodeStore.put(node).await)
     router.push(testManifest, Source.single(testContent)).await
 
     eventually {
@@ -182,7 +186,7 @@ class RemoteRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
 
   it should "fail to pull data when crate manifest is missing" in { _ =>
     val router = new TestRemoteRouter()
-    testNodes.foreach(node => router.testNodeStore.put(node, MockEndpointAddress()).await)
+    testNodes.foreach(node => router.testNodeStore.put(node).await)
 
     val missingCrateId = Crate.generateId()
 
@@ -204,7 +208,7 @@ class RemoteRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
 
   it should "fail to pull data if crate manifest has no destinations" in { _ =>
     val router = new TestRemoteRouter()
-    testNodes.foreach(node => router.testNodeStore.put(node, MockEndpointAddress()).await)
+    testNodes.foreach(node => router.testNodeStore.put(node).await)
 
     router.testManifestStore.put(testManifest).await
 
@@ -224,13 +228,16 @@ class RemoteRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
     }
   }
 
-  it should "recover from node address retrieval failure on pull" in { _ =>
+  it should "recover from encountering unexpected node type on pull" in { _ =>
+    val unexpectedNode = Node.Local(id = testNodes.last.id, crateStore = null)
+
     val router = new TestRemoteRouter(
-      testNodeStore = new MockNodeStore(addressFailureNodes = Seq(testNodes.last))
+      testNodeStore = new MockNodeStore(replacementNodes = Map(unexpectedNode.id -> Some(unexpectedNode)))
     )
-    testNodes.foreach(node => router.testNodeStore.put(node, MockEndpointAddress()).await)
+
+    testNodes.foreach(node => router.testNodeStore.put(node).await)
     router.push(testManifest, Source.single(testContent)).await
-    router.testManifestStore.put(testManifest.copy(destinations = Seq(testNodes.last, testNodes.head)))
+    router.testManifestStore.put(testManifest.copy(destinations = Seq(testNodes.last.id, testNodes.head.id)))
 
     eventually {
       val result = router
@@ -239,6 +246,34 @@ class RemoteRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
         .await
 
       result should be(testContent)
+      router.testClient.statistics(Statistic.PushCompleted) should be(testNodes.size - 1)
+      router.testClient.statistics(Statistic.PushFailed) should be(0)
+      router.testClient.statistics(Statistic.PullCompletedWithData) should be(1)
+      router.testClient.statistics(Statistic.PullCompletedEmpty) should be(0)
+      router.testClient.statistics(Statistic.PullFailed) should be(0)
+    }
+  }
+
+  it should "recover from missing node on pull" in { _ =>
+    val unexpectedNode = Node.Local(id = testNodes.last.id, crateStore = null)
+
+    val router = new TestRemoteRouter(
+      testNodeStore = new MockNodeStore(replacementNodes = Map(unexpectedNode.id -> None))
+    )
+
+    testNodes.foreach(node => router.testNodeStore.put(node).await)
+    router.push(testManifest, Source.single(testContent)).await
+    router.testManifestStore.put(testManifest.copy(destinations = Seq(testNodes.last.id, testNodes.head.id)))
+
+    eventually {
+      val result = router
+        .pull(testManifest.crate)
+        .flatMap(_.getOrElse(Source.empty).runFold(ByteString.empty)(_ ++ _))
+        .await
+
+      result should be(testContent)
+      router.testClient.statistics(Statistic.PushCompleted) should be(testNodes.size - 1)
+      router.testClient.statistics(Statistic.PushFailed) should be(0)
       router.testClient.statistics(Statistic.PullCompletedWithData) should be(1)
       router.testClient.statistics(Statistic.PullCompletedEmpty) should be(0)
       router.testClient.statistics(Statistic.PullFailed) should be(0)
@@ -247,11 +282,11 @@ class RemoteRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
 
   it should "recover from content not returned by individual nodes" in { _ =>
     val testNodeStore = new MockNodeStore()
-    testNodes.foreach(node => testNodeStore.put(node, MockEndpointAddress()).await)
+    testNodes.foreach(node => testNodeStore.put(node).await)
 
     val router = new TestRemoteRouter(
       testClient = new MockEndpointClient(
-        pullEmptyAddresses = Seq(testNodeStore.addressOf(testNodes.head).await.get)
+        pullEmptyAddresses = Seq(testNodes.head.address)
       ),
       testNodeStore = testNodeStore
     )
@@ -273,12 +308,12 @@ class RemoteRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
 
   it should "recover from node failure on pull" in { _ =>
     val testNodeStore = new MockNodeStore()
-    testNodes.foreach(node => testNodeStore.put(node, MockEndpointAddress()).await)
+    testNodes.foreach(node => testNodeStore.put(node).await)
 
     val router = new TestRemoteRouter(
       testClient = new MockEndpointClient(
         pullFailureAddresses = Map(
-          testNodeStore.addressOf(testNodes.head).await.get -> new RuntimeException("test failure")
+          testNodes.head.address -> new RuntimeException("test failure")
         )
       ),
       testNodeStore = testNodeStore
@@ -301,11 +336,11 @@ class RemoteRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
 
   it should "fail to pull missing data from remote nodes" in { _ =>
     val testNodeStore = new MockNodeStore()
-    testNodes.foreach(node => testNodeStore.put(node, MockEndpointAddress()).await)
+    testNodes.foreach(node => testNodeStore.put(node).await)
 
     val router = new TestRemoteRouter(
       testClient = new MockEndpointClient(
-        pullEmptyAddresses = Future.sequence(testNodes.map(testNodeStore.addressOf)).await.flatten
+        pullEmptyAddresses = testNodes.map(_.address)
       ),
       testNodeStore = testNodeStore
     )

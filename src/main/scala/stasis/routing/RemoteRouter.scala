@@ -12,12 +12,13 @@ import stasis.persistence.{ManifestStore, NodeStore}
 import stasis.routing.exceptions.{PullFailure, PushFailure}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
-class RemoteRouter[A <: EndpointAddress, C](
+class RemoteRouter[A <: EndpointAddress: ClassTag, C](
   client: EndpointClient[A, C],
   manifestStore: ManifestStore,
-  nodeStore: NodeStore[A]
+  nodeStore: NodeStore
 )(implicit system: ActorSystem)
     extends Router {
 
@@ -29,7 +30,7 @@ class RemoteRouter[A <: EndpointAddress, C](
     manifest: Manifest,
     content: Source[ByteString, NotUsed]
   ): Future[Done] =
-    nodeStore.list.flatMap {
+    nodeStore.nodes.flatMap {
       case availableNodes if availableNodes.nonEmpty =>
         Future
           .sequence(
@@ -39,42 +40,42 @@ class RemoteRouter[A <: EndpointAddress, C](
                   "Distributing [{}] copies of crate [{}] on node [{}]",
                   copies,
                   manifest.crate,
-                  node
+                  node.id
                 )
 
-                nodeStore.addressOf(node).flatMap {
-                  case Some(nodeAddress) =>
+                node match {
+                  case Node.Remote(id, address: A) =>
                     client
-                      .push(nodeAddress, manifest.copy(copies = copies), content)
+                      .push(address, manifest.copy(copies = copies), content)
                       .map { result =>
                         log.debug(
                           "Push of crate [{}] to node [{}] with address [{}] completed: [{}]",
                           manifest.crate,
-                          node,
-                          nodeAddress,
+                          node.id,
+                          address,
                           result
                         )
 
-                        Some(node)
+                        Some(id)
                       }
                       .recover {
                         case NonFatal(e) =>
                           log.error(
                             "Push of crate [{}] to node [{}] with address [{}] failed: [{}]",
                             manifest.crate,
-                            node,
-                            nodeAddress,
+                            node.id,
+                            address,
                             e
                           )
 
                           None
                       }
 
-                  case None =>
+                  case _ =>
                     log.error(
-                      "Push of crate [{}] to node [{}] failed; unable to retrieve node address",
+                      "Push of crate [{}] to node [{}] failed; unexpected node type found",
                       manifest.crate,
-                      node
+                      node.id
                     )
 
                     Future.successful(None)
@@ -106,17 +107,17 @@ class RemoteRouter[A <: EndpointAddress, C](
     def pullFromNodes(nodes: Seq[Node.Id]): Future[Option[Source[ByteString, NotUsed]]] =
       nodes match {
         case node :: remainingNodes =>
-          nodeStore.addressOf(node).flatMap {
-            case Some(nodeAddress) =>
+          nodeStore.get(node).flatMap {
+            case Some(Node.Remote(_, address: A)) =>
               client
-                .pull(nodeAddress, crate)
+                .pull(address, crate)
                 .flatMap {
                   case Some(content) =>
                     log.debug(
                       "Pull of crate [{}] from node [{}] with address [{}] completed",
                       crate,
                       node,
-                      nodeAddress
+                      address
                     )
 
                     Future.successful(Some(content))
@@ -126,7 +127,7 @@ class RemoteRouter[A <: EndpointAddress, C](
                       "Pull of crate [{}] from node [{}] with address [{}] completed with no content",
                       crate,
                       node,
-                      nodeAddress
+                      address
                     )
 
                     pullFromNodes(remainingNodes)
@@ -137,21 +138,31 @@ class RemoteRouter[A <: EndpointAddress, C](
                       "Pull of crate [{}] from node [{}] with address [{}] failed: [{}]",
                       crate,
                       node,
-                      nodeAddress,
+                      address,
                       e
                     )
 
                     pullFromNodes(remainingNodes)
                 }
 
+            case Some(unexpectedNode) =>
+              log.error(
+                "Pull of crate [{}] from node [{}] failed; unexpected node type found",
+                crate,
+                unexpectedNode
+              )
+
+              pullFromNodes(remainingNodes)
+
             case None =>
               log.error(
-                "Pull of crate [{}] from node [{}] failed; unable to retrieve node address",
+                "Pull of crate [{}] from node [{}] failed; node not found",
                 crate,
                 node
               )
 
               pullFromNodes(remainingNodes)
+
           }
 
         case Nil =>
@@ -189,12 +200,12 @@ class RemoteRouter[A <: EndpointAddress, C](
 }
 
 object RemoteRouter {
-  def distributeCopies(nodes: Seq[Node.Id], copies: Int): Map[Node.Id, Int] =
+  def distributeCopies(nodes: Seq[Node], copies: Int): Map[Node, Int] =
     if (nodes.nonEmpty && copies > 0) {
       val nodesStream = Stream.continually(nodes).flatten
       val copyIndexes = (0 until copies).seq
 
-      val distribution = nodesStream.zip(copyIndexes).foldLeft(Map.empty[Node.Id, Int]) {
+      val distribution = nodesStream.zip(copyIndexes).foldLeft(Map.empty[Node, Int]) {
         case (reduced, (node, _)) =>
           reduced + (node -> (reduced.getOrElse(node, 0) + 1))
       }

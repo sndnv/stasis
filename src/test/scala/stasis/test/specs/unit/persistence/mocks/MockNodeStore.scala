@@ -7,15 +7,16 @@ import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.util.Timeout
 import stasis.persistence.NodeStore
 import stasis.routing.Node
-import stasis.test.specs.unit.networking.mocks.MockEndpointAddress
+import stasis.routing.Node.Id
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-class MockNodeStore(addressFailureNodes: Seq[Node.Id] = Seq.empty)(implicit system: ActorSystem[SpawnProtocol])
-    extends NodeStore[MockEndpointAddress] {
+class MockNodeStore(replacementNodes: Map[Node.Id, Option[Node]] = Map.empty)(
+  implicit system: ActorSystem[SpawnProtocol])
+    extends NodeStore {
   private type StoreKey = Node.Id
-  private type StoreValue = MockEndpointAddress
+  private type StoreValue = Node
 
   private implicit val timeout: Timeout = 3.seconds
   private implicit val scheduler: Scheduler = system.scheduler
@@ -27,17 +28,21 @@ class MockNodeStore(addressFailureNodes: Seq[Node.Id] = Seq.empty)(implicit syst
       s"mock-node-store-${java.util.UUID.randomUUID()}"
     )
 
-  override def put(node: Node.Id, address: MockEndpointAddress): Future[Done] =
-    storeRef.flatMap(_ ? (ref => MapStoreActor.Put(node, address, ref)))
+  override def put(node: Node): Future[Done] =
+    storeRef.flatMap(_ ? (ref => MapStoreActor.Put(node.id, node, ref)))
 
-  override def list: Future[Seq[Node.Id]] =
-    storeData.map(_.keys.toSeq)
+  override def get(node: Id): Future[Option[Node]] =
+    replacementNodes.get(node) match {
+      case Some(replacement) =>
+        Future.successful(replacement)
 
-  override def addressOf(node: Node.Id): Future[Option[MockEndpointAddress]] =
-    if (!addressFailureNodes.contains(node)) {
-      storeData.map(_.get(node))
-    } else {
-      Future.successful(None)
+      case None =>
+        storeRef.flatMap(_ ? (ref => MapStoreActor.Get(node, ref)))
+    }
+
+  override def nodes: Future[Seq[Node]] =
+    storeData.map { result =>
+      (result.mapValues(value => Some(value)) ++ replacementNodes).values.flatten.toSeq
     }
 
   private def storeData: Future[Map[StoreKey, StoreValue]] =
