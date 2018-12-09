@@ -34,7 +34,7 @@ trait HttpEndpoint extends Endpoint[HttpCredentials] {
     Http().bindAndHandle(routes, hostname, port)
 
   val routes: Route =
-    (extractMethod & extractUri & extractClientIP) { (method, uri, remoteAddress) =>
+    (extractMethod & extractUri & extractClientIP & extractRequest) { (method, uri, remoteAddress, request) =>
       extractCredentials {
         case Some(credentials) =>
           authenticator.authenticate(credentials) match {
@@ -66,6 +66,7 @@ trait HttpEndpoint extends Endpoint[HttpCredentials] {
                             }
 
                           case errors =>
+                            val _ = request.discardEntityBytes()
                             log.warning(
                               "Rejecting [{}] request for [{}] from [{}] with invalid parameters: [{}]",
                               method.value,
@@ -93,6 +94,7 @@ trait HttpEndpoint extends Endpoint[HttpCredentials] {
               }
 
             case None =>
+              val _ = request.discardEntityBytes()
               log.warning(
                 "Rejecting [{}] request for [{}] with invalid credentials from [{}]",
                 method.value,
@@ -105,6 +107,7 @@ trait HttpEndpoint extends Endpoint[HttpCredentials] {
           }
 
         case None =>
+          val _ = request.discardEntityBytes()
           log.warning(
             "Rejecting [{}] request for [{}] with no credentials from [{}]",
             method.value,

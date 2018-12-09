@@ -25,19 +25,14 @@ class MockCrateStore(implicit system: ActorSystem, timeout: Timeout) extends Cra
     manifest: packaging.Manifest,
     content: Source[ByteString, NotUsed]
   ): Future[Done] =
-    Future {
-      val _ = content.runWith(
-        Sink.actorRefWithAck(
-          store,
-          onInitMessage = CrateSinkActor.InitStreaming(manifest),
-          ackMessage = CrateSinkActor.CanStream,
-          onCompleteMessage = CrateSinkActor.StreamComplete,
-          onFailureMessage = e => CrateSinkActor.StreamFailed(e)
-        )
-      )
-
-      Done
-    }
+    content
+      .runFold(ByteString.empty) {
+        case (folded, chunk) =>
+          folded.concat(chunk)
+      }
+      .flatMap { data =>
+        (store ? CrateSinkActor.PutData(manifest, data)).mapTo[Done]
+      }
 
   override def retrieve(
     crate: Crate.Id
