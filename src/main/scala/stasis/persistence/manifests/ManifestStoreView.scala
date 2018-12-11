@@ -1,11 +1,9 @@
-package stasis.persistence
+package stasis.persistence.manifests
 
-import akka.Done
 import stasis.packaging.{Crate, Manifest}
 
 import scala.concurrent.Future
 
-trait ManifestStore {
-  def put(manifest: Manifest): Future[Done]
+trait ManifestStoreView {
   def get(crate: Crate.Id): Future[Option[Manifest]]
 }

@@ -8,6 +8,7 @@ import akka.{Done, NotUsed}
 import stasis.networking.{EndpointAddress, EndpointClient}
 import stasis.packaging.{Crate, Manifest}
 import stasis.persistence._
+import stasis.persistence.manifests.ManifestStore
 import stasis.routing.exceptions.{PullFailure, PushFailure}
 
 import scala.concurrent.{ExecutionContext, Future}

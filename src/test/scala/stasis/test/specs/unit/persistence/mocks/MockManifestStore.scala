@@ -6,7 +6,7 @@ import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.util.Timeout
 import stasis.packaging.{Crate, Manifest}
-import stasis.persistence.ManifestStore
+import stasis.persistence.manifests.ManifestStore
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
