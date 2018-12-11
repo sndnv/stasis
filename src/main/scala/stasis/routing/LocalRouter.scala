@@ -4,7 +4,8 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import stasis.packaging.{Crate, Manifest}
-import stasis.persistence.{CrateStorageRequest, CrateStorageReservation, CrateStore}
+import stasis.persistence.crates.CrateStore
+import stasis.persistence.{CrateStorageRequest, CrateStorageReservation}
 
 import scala.concurrent.{ExecutionContext, Future}
 

@@ -9,9 +9,10 @@ import akka.stream.scaladsl.Source
 import akka.util.{ByteString, Timeout}
 import akka.{Done, NotUsed}
 import stasis.packaging.{Crate, Manifest}
+import stasis.persistence.crates.CrateStore
 import stasis.persistence.exceptions.PersistenceFailure
 import stasis.persistence.reservations.ReservationStore
-import stasis.persistence.{CrateStorageRequest, CrateStorageReservation, CrateStore}
+import stasis.persistence.{CrateStorageRequest, CrateStorageReservation}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}

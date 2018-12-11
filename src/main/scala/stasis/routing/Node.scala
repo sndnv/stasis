@@ -3,7 +3,7 @@ package stasis.routing
 import java.util.UUID
 
 import stasis.networking.EndpointAddress
-import stasis.persistence.CrateStore
+import stasis.persistence.crates.CrateStore
 
 import scala.reflect.ClassTag
 
