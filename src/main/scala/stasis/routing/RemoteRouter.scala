@@ -9,6 +9,7 @@ import stasis.networking.{EndpointAddress, EndpointClient}
 import stasis.packaging.{Crate, Manifest}
 import stasis.persistence._
 import stasis.persistence.manifests.ManifestStore
+import stasis.persistence.nodes.NodeStoreView
 import stasis.routing.exceptions.{PullFailure, PushFailure}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -18,7 +19,7 @@ import scala.util.control.NonFatal
 class RemoteRouter[A <: EndpointAddress: ClassTag, C](
   client: EndpointClient[A, C],
   manifestStore: ManifestStore,
-  nodeStore: NodeStore
+  nodeStore: NodeStoreView
 )(implicit system: ActorSystem)
     extends Router {
 

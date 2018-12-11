@@ -5,7 +5,7 @@ import akka.actor.Scheduler
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.util.Timeout
-import stasis.persistence.NodeStore
+import stasis.persistence.nodes.NodeStore
 import stasis.routing.Node
 import stasis.routing.Node.Id
 

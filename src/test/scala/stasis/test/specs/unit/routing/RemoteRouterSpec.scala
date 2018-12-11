@@ -45,7 +45,7 @@ class RemoteRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
     val testManifestStore: MockManifestStore = new MockManifestStore,
     val testNodeStore: MockNodeStore = new MockNodeStore
   )(implicit untypedSystem: akka.actor.ActorSystem = system.toUntyped)
-      extends RemoteRouter(testClient, testManifestStore, testNodeStore)
+      extends RemoteRouter(testClient, testManifestStore, testNodeStore.view)
 
   private val testNodes = Seq(
     Node.Remote(Node.generateId(), address = MockEndpointAddress()),
