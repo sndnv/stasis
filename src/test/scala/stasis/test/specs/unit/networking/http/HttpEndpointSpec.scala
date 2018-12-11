@@ -1,4 +1,4 @@
-package stasis.test.specs.unit.networking
+package stasis.test.specs.unit.networking.http
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{Behavior, SpawnProtocol}
@@ -10,8 +10,8 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.util.{ByteString, Timeout}
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 import org.scalatest.FutureOutcome
-import stasis.networking.HttpEndpoint
-import stasis.networking.HttpEndpoint._
+import stasis.networking.http.HttpEndpoint
+import stasis.networking.http.HttpEndpoint._
 import stasis.packaging.Crate
 import stasis.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.routing.LocalRouter
@@ -54,7 +54,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
   private val testReservation = CrateStorageReservation(
     id = CrateStorageReservation.generateId(),
-    size = crateContent.size,
+    size = crateContent.length,
     copies = 3,
     retention = 3.seconds,
     expiration = 1.second

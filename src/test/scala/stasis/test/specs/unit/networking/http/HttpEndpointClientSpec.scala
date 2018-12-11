@@ -1,4 +1,4 @@
-package stasis.test.specs.unit.networking
+package stasis.test.specs.unit.networking.http
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
@@ -7,7 +7,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.{ByteString, Timeout}
 import org.scalatest.FutureOutcome
-import stasis.networking.{HttpEndpoint, HttpEndpointAddress, HttpEndpointClient}
+import stasis.networking.http.{HttpEndpoint, HttpEndpointAddress, HttpEndpointClient}
 import stasis.packaging.{Crate, Manifest}
 import stasis.routing.{LocalRouter, Node}
 import stasis.security.NodeAuthenticator

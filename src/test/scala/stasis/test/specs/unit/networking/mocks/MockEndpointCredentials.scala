@@ -1,7 +1,8 @@
 package stasis.test.specs.unit.networking.mocks
 
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials}
-import stasis.networking.{EndpointCredentials, HttpEndpointAddress}
+import stasis.networking.EndpointCredentials
+import stasis.networking.http.HttpEndpointAddress
 
 class MockEndpointCredentials(
   private val credentials: Map[HttpEndpointAddress, (String, String)]

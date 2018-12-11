@@ -1,4 +1,4 @@
-package stasis.networking
+package stasis.networking.http
 
 import akka.NotUsed
 import akka.actor.ActorSystem
@@ -10,6 +10,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.stream.ActorMaterializer
+import stasis.networking.Endpoint
 import stasis.packaging.{Crate, Manifest}
 import stasis.persistence.reservations.ReservationStoreView
 import stasis.persistence.{CrateStorageRequest, CrateStorageReservation}

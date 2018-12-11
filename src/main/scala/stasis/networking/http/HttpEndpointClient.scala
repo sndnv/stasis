@@ -1,4 +1,4 @@
-package stasis.networking
+package stasis.networking.http
 
 import akka.actor.ActorSystem
 import akka.event.Logging
@@ -12,6 +12,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import stasis.networking.exceptions.{CredentialsFailure, EndpointFailure, ReservationFailure}
+import stasis.networking.{EndpointClient, EndpointCredentials}
 import stasis.packaging.{Crate, Manifest}
 import stasis.persistence.{CrateStorageRequest, CrateStorageReservation}
 
