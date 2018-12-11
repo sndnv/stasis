@@ -10,4 +10,5 @@ import scala.concurrent.Future
 trait CrateStore {
   def persist(manifest: Manifest, content: Source[ByteString, NotUsed]): Future[Done]
   def retrieve(crate: Crate.Id): Future[Option[Source[ByteString, NotUsed]]]
+  def reserve(request: CrateStorageRequest): Future[Option[CrateStorageReservation]]
 }

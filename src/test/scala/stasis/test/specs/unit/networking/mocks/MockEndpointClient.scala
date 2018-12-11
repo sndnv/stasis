@@ -8,11 +8,8 @@ import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.stream.scaladsl.Source
 import akka.util.{ByteString, Timeout}
 import akka.{Done, NotUsed}
-import stasis.networking.Endpoint.CrateCreated
-import stasis.networking.{Endpoint, EndpointClient, EndpointCredentials}
-import stasis.packaging
-import stasis.packaging.Crate
-import stasis.packaging.Crate.Id
+import stasis.networking.{EndpointClient, EndpointCredentials}
+import stasis.packaging.{Crate, Manifest}
 import stasis.test.specs.unit.persistence.mocks.MapStoreActor
 
 import scala.concurrent.duration._
@@ -24,6 +21,7 @@ class MockEndpointClient(
   pullEmptyAddresses: Seq[MockEndpointAddress] = Seq.empty
 )(implicit system: ActorSystem[SpawnProtocol])
     extends EndpointClient[MockEndpointAddress, String] {
+
   import MockEndpointClient._
 
   private implicit val timeout: Timeout = 3.seconds
@@ -51,9 +49,9 @@ class MockEndpointClient(
 
   override def push(
     address: MockEndpointAddress,
-    manifest: packaging.Manifest,
+    manifest: Manifest,
     content: Source[ByteString, NotUsed]
-  ): Future[Endpoint.CrateCreated] =
+  ): Future[Done] =
     pushFailureAddresses.get(address) match {
       case Some(pushFailure) =>
         stats(Statistic.PushFailed).incrementAndGet()
@@ -61,15 +59,12 @@ class MockEndpointClient(
 
       case None =>
         stats(Statistic.PushCompleted).incrementAndGet()
-        val storeResult: Future[Done] =
-          storeRef.flatMap(_ ? (ref => MapStoreActor.Put((address, manifest.crate), (content, manifest.copies), ref)))
-
-        storeResult.map(_ => CrateCreated(manifest))
+        storeRef.flatMap(_ ? (ref => MapStoreActor.Put((address, manifest.crate), (content, manifest.copies), ref)))
     }
 
   override def pull(
     address: MockEndpointAddress,
-    crate: Id
+    crate: Crate.Id
   ): Future[Option[Source[ByteString, NotUsed]]] =
     pullFailureAddresses.get(address) match {
       case Some(pullFailure) =>

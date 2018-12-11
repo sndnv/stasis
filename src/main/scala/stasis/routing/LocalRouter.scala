@@ -1,20 +1,23 @@
 package stasis.routing
+
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import akka.{Done, NotUsed}
-import stasis.packaging
-import stasis.packaging.Crate.Id
-import stasis.persistence.CrateStore
+import stasis.packaging.{Crate, Manifest}
+import stasis.persistence.{CrateStorageRequest, CrateStorageReservation, CrateStore}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class LocalRouter(store: CrateStore) extends Router {
+class LocalRouter(store: CrateStore)(implicit ec: ExecutionContext) extends Router {
   override def push(
-    manifest: packaging.Manifest,
+    manifest: Manifest,
     content: Source[ByteString, NotUsed]
   ): Future[Done] = store.persist(manifest, content)
 
   override def pull(
-    crate: Id
+    crate: Crate.Id
   ): Future[Option[Source[ByteString, NotUsed]]] = store.retrieve(crate)
+
+  override def reserve(request: CrateStorageRequest): Future[Option[CrateStorageReservation]] =
+    store.reserve(request)
 }

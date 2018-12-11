@@ -6,9 +6,8 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import stasis.networking.{EndpointAddress, EndpointClient}
-import stasis.packaging.Crate.Id
-import stasis.packaging.Manifest
-import stasis.persistence.{ManifestStore, NodeStore}
+import stasis.packaging.{Crate, Manifest}
+import stasis.persistence._
 import stasis.routing.exceptions.{PullFailure, PushFailure}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -102,7 +101,7 @@ class RemoteRouter[A <: EndpointAddress: ClassTag, C](
     }
 
   override def pull(
-    crate: Id
+    crate: Crate.Id
   ): Future[Option[Source[ByteString, NotUsed]]] = {
     def pullFromNodes(nodes: Seq[Node.Id]): Future[Option[Source[ByteString, NotUsed]]] =
       nodes match {
@@ -197,6 +196,9 @@ class RemoteRouter[A <: EndpointAddress: ClassTag, C](
         Future.failed(PullFailure(message))
     }
   }
+
+  override def reserve(request: CrateStorageRequest): Future[Option[CrateStorageReservation]] =
+    Future.successful(None)
 }
 
 object RemoteRouter {

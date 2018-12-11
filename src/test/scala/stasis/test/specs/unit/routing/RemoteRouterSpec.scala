@@ -9,6 +9,7 @@ import akka.util.{ByteString, Timeout}
 import org.scalatest.FutureOutcome
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import stasis.packaging.{Crate, Manifest}
+import stasis.persistence.CrateStorageRequest
 import stasis.routing.exceptions.{PullFailure, PushFailure}
 import stasis.routing.{Node, RemoteRouter}
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -52,14 +53,15 @@ class RemoteRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
     Node.Remote(Node.generateId(), address = MockEndpointAddress())
   )
 
+  private val testContent = ByteString("some value")
+
   private val testManifest = Manifest(
     crate = Crate.generateId(),
+    size = testContent.size,
     copies = 4,
     retention = 60.seconds,
     source = Node.generateId()
   )
-
-  private val testContent = ByteString("some value")
 
   "A RemoteRouter" should "calculate crate copies distribution" in { _ =>
     val (node1, node2, node3) = testNodes match {
@@ -353,5 +355,18 @@ class RemoteRouterSpec extends AsyncUnitSpec with Eventually with ScalaFutures {
       router.testClient.statistics(Statistic.PullCompletedEmpty) should be(testNodes.size)
       router.testClient.statistics(Statistic.PullFailed) should be(0)
     }
+  }
+
+  it should "not process reservation requests" in { _ =>
+    val router = new TestRemoteRouter()
+
+    val request = CrateStorageRequest(
+      id = CrateStorageRequest.generateId(),
+      size = 1,
+      copies = 1,
+      retention = 1.second
+    )
+
+    router.reserve(request).map(_ should be(None))
   }
 }

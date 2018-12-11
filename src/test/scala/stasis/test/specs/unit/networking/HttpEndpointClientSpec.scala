@@ -1,6 +1,7 @@
 package stasis.test.specs.unit.networking
 
-import akka.actor.ActorSystem
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
@@ -8,14 +9,14 @@ import akka.util.{ByteString, Timeout}
 import org.scalatest.FutureOutcome
 import stasis.networking.{HttpEndpoint, HttpEndpointAddress, HttpEndpointClient}
 import stasis.packaging.{Crate, Manifest}
-import stasis.routing.Node
+import stasis.routing.{LocalRouter, Node}
 import stasis.security.NodeAuthenticator
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.networking.mocks.MockEndpointCredentials
-import stasis.test.specs.unit.persistence.mocks.MockCrateStore
-import stasis.test.specs.unit.routing.mocks.LocalMockRouter
+import stasis.test.specs.unit.persistence.mocks.{MockCrateStore, MockReservationStore}
 import stasis.test.specs.unit.security.MockNodeAuthenticator
 
+import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
@@ -26,21 +27,23 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
   def withFixture(test: OneArgAsyncTest): FutureOutcome =
     withFixture(test.toNoArgAsyncTest(FixtureParam()))
 
-  private implicit val testSystem: ActorSystem = ActorSystem(name = "HttpEndpointClientSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()(testSystem)
+  private implicit val untypedSystem: akka.actor.ActorSystem =
+    akka.actor.ActorSystem(name = "HttpEndpointClientSpec_Typed")
+
+  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+    "HttpEndpointClientSpec_Untyped"
+  )
+
+  private implicit val mat: ActorMaterializer = ActorMaterializer()
 
   override implicit val timeout: Timeout = 3.seconds
 
   private val crateContent = "some value"
 
-  private val testManifestConfig = Manifest.Config(
-    defaultCopies = 5,
-    defaultRetention = 120.seconds,
-    getManifestErrors = _ => Seq.empty
-  )
-
   private val testManifest = Manifest(
     crate = Crate.generateId(),
+    size = 1,
     copies = 7,
     retention = 42.seconds,
     source = Node.generateId()
@@ -51,17 +54,22 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
 
   private class TestHttpEndpoint(
     override protected val authenticator: NodeAuthenticator[HttpCredentials],
-    port: Int
+    val testReservationStore: MockReservationStore = new MockReservationStore(),
+    port: Int,
+    persistDisabled: Boolean = false
   ) extends HttpEndpoint(
-        router = new LocalMockRouter(new MockCrateStore),
-        manifestConfig = testManifestConfig,
-        authenticator = authenticator
+        router =
+          new LocalRouter(new MockCrateStore(testReservationStore, maxReservationSize = Some(99), persistDisabled)),
+        authenticator = authenticator,
+        reservationStore = testReservationStore.view
       ) {
     private val _ = start(hostname = "localhost", port = port)
   }
 
+  private val ports: mutable.Queue[Int] = (9000 to 9999).to[mutable.Queue]
+
   "An HTTP Endpoint Client" should "successfully push crate data" in { _ =>
-    val endpointPort = 9990
+    val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
     val _ = new TestHttpEndpoint(
@@ -73,14 +81,13 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
       credentials = new MockEndpointCredentials(endpointAddress, testUser, testPassword)
     )
 
-    client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).map { response =>
-      response.copies should be(testManifest.copies)
-      response.retention should be(testManifest.retention.toSeconds)
+    client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).map { _ =>
+      succeed
     }
   }
 
-  it should "handle push failures" in { _ =>
-    val endpointPort = 9991
+  it should "handle reservation rejections" in { _ =>
+    val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
     val _ = new TestHttpEndpoint(
@@ -89,7 +96,33 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
     )
 
     val client = new HttpEndpointClient(
-      credentials = new MockEndpointCredentials(endpointAddress, "invalid-user", testPassword)
+      credentials = new MockEndpointCredentials(endpointAddress, testUser, testPassword)
+    )
+
+    client
+      .push(endpointAddress, testManifest.copy(size = 100), Source.single(ByteString(crateContent)))
+      .map { response =>
+        fail(s"Received unexpected response from endpoint: [$response]")
+      }
+      .recover {
+        case NonFatal(e) =>
+          e.getMessage should startWith(
+            s"Endpoint [http://localhost:$endpointPort] was unable to reserve enough storage for request"
+          )
+      }
+  }
+
+  it should "handle reservation failures" in { _ =>
+    val endpointPort = ports.dequeue()
+    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort/invalid")
+
+    val _ = new TestHttpEndpoint(
+      authenticator = new MockNodeAuthenticator(testUser, testPassword),
+      port = endpointPort
+    )
+
+    val client = new HttpEndpointClient(
+      credentials = new MockEndpointCredentials(endpointAddress, testUser, testPassword)
     )
 
     client
@@ -100,13 +133,40 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Endpoint [http://localhost:$endpointPort] responded to push with unexpected status: [401 Unauthorized]"
+            s"Endpoint [http://localhost:$endpointPort/invalid] responded to storage request with unexpected status: [404 Not Found]"
+          )
+      }
+  }
+
+  it should "handle push failures" in { _ =>
+    val endpointPort = ports.dequeue()
+    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+
+    val _ = new TestHttpEndpoint(
+      authenticator = new MockNodeAuthenticator(testUser, testPassword),
+      port = endpointPort,
+      persistDisabled = true
+    )
+
+    val client = new HttpEndpointClient(
+      credentials = new MockEndpointCredentials(endpointAddress, testUser, testPassword)
+    )
+
+    client
+      .push(endpointAddress, testManifest, Source.single(ByteString(crateContent)))
+      .map { response =>
+        fail(s"Received unexpected response from endpoint: [$response]")
+      }
+      .recover {
+        case NonFatal(e) =>
+          e.getMessage should be(
+            s"Endpoint [http://localhost:$endpointPort] responded to push with unexpected status: [500 Internal Server Error]"
           )
       }
   }
 
   it should "successfully pull crate data" in { _ =>
-    val endpointPort = 9992
+    val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
     val _ = new TestHttpEndpoint(
@@ -118,8 +178,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
       credentials = new MockEndpointCredentials(endpointAddress, testUser, testPassword)
     )
 
-    client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).flatMap { response =>
-      client.pull(endpointAddress, response.crateId).flatMap {
+    client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).flatMap { _ =>
+      client.pull(endpointAddress, testManifest.crate).flatMap {
         case Some(source) =>
           source
             .runFold(ByteString.empty) {
@@ -137,7 +197,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
   }
 
   it should "handle trying to pull missing data" in { _ =>
-    val endpointPort = 9993
+    val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
     val _ = new TestHttpEndpoint(
@@ -155,7 +215,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
   }
 
   it should "handle pull failures" in { _ =>
-    val endpointPort = 9994
+    val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
     val _ = new TestHttpEndpoint(
@@ -181,9 +241,9 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
   }
 
   it should "be able to authenticate against multiple endpoints" in { _ =>
-    val primaryEndpointPort = 9995
+    val primaryEndpointPort = ports.dequeue()
     val primaryEndpointAddress = HttpEndpointAddress(s"http://localhost:$primaryEndpointPort")
-    val secondaryEndpointPort = 9996
+    val secondaryEndpointPort = ports.dequeue()
     val secondaryEndpointAddress = HttpEndpointAddress(s"http://localhost:$secondaryEndpointPort")
 
     val primaryEndpointUser = "primary-endpoint-user"
@@ -211,22 +271,15 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
     )
 
     for {
-      primaryEndpointResponse <- client.push(primaryEndpointAddress,
-                                             testManifest,
-                                             Source.single(ByteString(crateContent)))
-      secondaryEndpointResponse <- client.push(secondaryEndpointAddress,
-                                               testManifest,
-                                               Source.single(ByteString(crateContent)))
+      _ <- client.push(primaryEndpointAddress, testManifest, Source.single(ByteString(crateContent)))
+      _ <- client.push(secondaryEndpointAddress, testManifest, Source.single(ByteString(crateContent)))
     } yield {
-      primaryEndpointResponse.copies should be(testManifest.copies)
-      primaryEndpointResponse.retention should be(testManifest.retention.toSeconds)
-      secondaryEndpointResponse.copies should be(testManifest.copies)
-      secondaryEndpointResponse.retention should be(testManifest.retention.toSeconds)
+      succeed
     }
   }
 
   it should "fail to push data if no credentials are available" in { _ =>
-    val endpointPort = 9997
+    val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
     val _ = new TestHttpEndpoint(
@@ -252,7 +305,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
   }
 
   it should "fail to pull data if no credentials are available" in { _ =>
-    val endpointPort = 9998
+    val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
     val _ = new TestHttpEndpoint(

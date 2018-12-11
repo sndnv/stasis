@@ -1,9 +1,8 @@
 package stasis.networking
 
-import akka.NotUsed
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import stasis.networking.Endpoint.CrateCreated
+import akka.{Done, NotUsed}
 import stasis.packaging.{Crate, Manifest}
 
 import scala.concurrent.Future
@@ -16,7 +15,7 @@ trait EndpointClient[A <: EndpointAddress, C] {
     address: A,
     manifest: Manifest,
     content: Source[ByteString, NotUsed]
-  ): Future[CrateCreated]
+  ): Future[Done]
 
   def pull(
     address: A,
