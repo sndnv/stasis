@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.persistence.mocks
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import akka.actor.Scheduler
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.adapter._
@@ -20,9 +22,15 @@ import scala.concurrent.{ExecutionContext, Future}
 class MockCrateStore(
   reservationStore: ReservationStore,
   maxReservationSize: Option[Long] = None,
-  persistDisabled: Boolean = false
+  persistDisabled: Boolean = false,
+  retrieveDisabled: Boolean = false,
+  retrieveEmpty: Boolean = false,
+  reservationDisabled: Boolean = false
 )(implicit system: ActorSystem[SpawnProtocol])
     extends CrateStore {
+
+  import MockCrateStore._
+
   private type StoreKey = Crate.Id
   private type StoreValue = ByteString
 
@@ -37,11 +45,23 @@ class MockCrateStore(
       s"mock-crate-store-${java.util.UUID.randomUUID()}"
     )
 
+  private val stats: Map[Statistic, AtomicInteger] = Map(
+    Statistic.PersistCompleted -> new AtomicInteger(0),
+    Statistic.PersistFailed -> new AtomicInteger(0),
+    Statistic.RetrieveCompleted -> new AtomicInteger(0),
+    Statistic.RetrieveEmpty -> new AtomicInteger(0),
+    Statistic.RetrieveFailed -> new AtomicInteger(0),
+    Statistic.ReserveCompleted -> new AtomicInteger(0),
+    Statistic.ReserveLimited -> new AtomicInteger(0),
+    Statistic.ReserveFailed -> new AtomicInteger(0)
+  )
+
   override def persist(
     manifest: Manifest,
     content: Source[ByteString, NotUsed]
   ): Future[Done] =
     if (!persistDisabled) {
+      stats(Statistic.PersistCompleted).incrementAndGet()
       content
         .runFold(ByteString.empty) {
           case (folded, chunk) =>
@@ -51,32 +71,66 @@ class MockCrateStore(
           storeRef.flatMap(_ ? (ref => MapStoreActor.Put(manifest.crate, data, ref)))
         }
     } else {
+      stats(Statistic.PersistFailed).incrementAndGet()
       Future.failed(new PersistenceFailure("[persistDisabled] is set to [true]"))
     }
 
   override def retrieve(
     crate: Crate.Id
-  ): Future[Option[Source[ByteString, NotUsed]]] = {
-    val result: Future[Option[ByteString]] = storeRef.flatMap(_ ? (ref => MapStoreActor.Get(crate, ref)))
-    result.map(_.map(Source.single))
-  }
+  ): Future[Option[Source[ByteString, NotUsed]]] =
+    if (!retrieveDisabled) {
+      if (!retrieveEmpty) {
+        stats(Statistic.RetrieveCompleted).incrementAndGet()
+        val result: Future[Option[ByteString]] = storeRef.flatMap(_ ? (ref => MapStoreActor.Get(crate, ref)))
+        result.map(_.map(Source.single))
+      } else {
+        stats(Statistic.RetrieveEmpty).incrementAndGet()
+        Future.successful(None)
+      }
+    } else {
+      stats(Statistic.RetrieveFailed).incrementAndGet()
+      Future.failed(new PersistenceFailure("[retrieveDisabled] is set to [true]"))
+    }
 
   override def reserve(request: CrateStorageRequest): Future[Option[CrateStorageReservation]] =
-    maxReservationSize match {
-      case Some(size) if request.size > size =>
-        Future.successful(None)
+    if (!reservationDisabled) {
+      maxReservationSize match {
+        case Some(size) if request.size > size =>
+          stats(Statistic.ReserveLimited).incrementAndGet()
+          Future.successful(None)
 
-      case _ =>
-        val reservation = CrateStorageReservation(
-          id = CrateStorageReservation.generateId(),
-          size = request.size,
-          copies = request.copies,
-          retention = request.retention,
-          expiration = 1.day
-        )
+        case _ =>
+          val reservation = CrateStorageReservation(
+            id = CrateStorageReservation.generateId(),
+            size = request.size,
+            copies = request.copies,
+            retention = request.retention,
+            expiration = 1.day
+          )
 
-        reservationStore.put(reservation).map { _ =>
-          Some(reservation)
-        }
+          stats(Statistic.ReserveCompleted).incrementAndGet()
+          reservationStore.put(reservation).map { _ =>
+            Some(reservation)
+          }
+      }
+    } else {
+      stats(Statistic.ReserveFailed).incrementAndGet()
+      Future.failed(new PersistenceFailure("[reservationDisabled] is set to [true]"))
     }
+
+  def statistics: Map[Statistic, Int] = stats.mapValues(_.get())
+}
+
+object MockCrateStore {
+  sealed trait Statistic
+  object Statistic {
+    case object ReserveCompleted extends Statistic
+    case object ReserveLimited extends Statistic
+    case object ReserveFailed extends Statistic
+    case object RetrieveCompleted extends Statistic
+    case object RetrieveEmpty extends Statistic
+    case object RetrieveFailed extends Statistic
+    case object PersistCompleted extends Statistic
+    case object PersistFailed extends Statistic
+  }
 }

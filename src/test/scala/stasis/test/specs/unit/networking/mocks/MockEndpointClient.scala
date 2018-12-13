@@ -4,11 +4,13 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.Scheduler
 import akka.actor.typed.scaladsl.AskPattern._
+import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
+import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.{ByteString, Timeout}
 import akka.{Done, NotUsed}
-import stasis.networking.{EndpointClient, EndpointCredentials}
+import stasis.networking.http.{HttpEndpointAddress, HttpEndpointClient}
 import stasis.packaging.{Crate, Manifest}
 import stasis.test.specs.unit.persistence.mocks.MapStoreActor
 
@@ -16,16 +18,17 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class MockEndpointClient(
-  pushFailureAddresses: Map[MockEndpointAddress, Exception] = Map.empty,
-  pullFailureAddresses: Map[MockEndpointAddress, Exception] = Map.empty,
-  pullEmptyAddresses: Seq[MockEndpointAddress] = Seq.empty
+  pushFailureAddresses: Map[HttpEndpointAddress, Exception] = Map.empty,
+  pullFailureAddresses: Map[HttpEndpointAddress, Exception] = Map.empty,
+  pullEmptyAddresses: Seq[HttpEndpointAddress] = Seq.empty
 )(implicit system: ActorSystem[SpawnProtocol])
-    extends EndpointClient[MockEndpointAddress, String] {
+    extends HttpEndpointClient((_: HttpEndpointAddress) => None)(system.toUntyped) {
 
   import MockEndpointClient._
 
   private implicit val timeout: Timeout = 3.seconds
   private implicit val scheduler: Scheduler = system.scheduler
+  private implicit val mat: ActorMaterializer = ActorMaterializer()(system.toUntyped)
   private implicit val ec: ExecutionContext = system.executionContext
 
   private val clientId = java.util.UUID.randomUUID()
@@ -44,11 +47,8 @@ class MockEndpointClient(
     Statistic.PullFailed -> new AtomicInteger(0)
   )
 
-  override protected val credentials: EndpointCredentials[MockEndpointAddress, String] =
-    (address: MockEndpointAddress) => Some(address.toString)
-
   override def push(
-    address: MockEndpointAddress,
+    address: HttpEndpointAddress,
     manifest: Manifest,
     content: Source[ByteString, NotUsed]
   ): Future[Done] =
@@ -59,11 +59,18 @@ class MockEndpointClient(
 
       case None =>
         stats(Statistic.PushCompleted).incrementAndGet()
-        storeRef.flatMap(_ ? (ref => MapStoreActor.Put((address, manifest.crate), (content, manifest.copies), ref)))
+        content
+          .runFold(ByteString.empty) {
+            case (folded, chunk) =>
+              folded.concat(chunk)
+          }
+          .flatMap { data =>
+            storeRef.flatMap(_ ? (ref => MapStoreActor.Put((address, manifest.crate), (data, manifest.copies), ref)))
+          }
     }
 
   override def pull(
-    address: MockEndpointAddress,
+    address: HttpEndpointAddress,
     crate: Crate.Id
   ): Future[Option[Source[ByteString, NotUsed]]] =
     pullFailureAddresses.get(address) match {
@@ -74,10 +81,10 @@ class MockEndpointClient(
       case None =>
         if (!pullEmptyAddresses.contains(address)) {
           stats(Statistic.PullCompletedWithData).incrementAndGet()
-          val storeResult: Future[Option[(Source[ByteString, NotUsed], Int)]] =
+          val storeResult: Future[Option[(ByteString, Int)]] =
             storeRef.flatMap(_ ? (ref => MapStoreActor.Get((address, crate), ref)))
 
-          storeResult.map(_.map(_._1))
+          storeResult.map(_.map(result => Source.single(result._1)))
         } else {
           stats(Statistic.PullCompletedEmpty).incrementAndGet()
           Future.successful(None)
@@ -111,8 +118,8 @@ class MockEndpointClient(
 }
 
 object MockEndpointClient {
-  private type StoreKey = (MockEndpointAddress, Crate.Id)
-  private type StoreValue = (Source[ByteString, NotUsed], Int)
+  private type StoreKey = (HttpEndpointAddress, Crate.Id)
+  private type StoreValue = (ByteString, Int)
 
   sealed trait Statistic
   object Statistic {

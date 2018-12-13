@@ -40,9 +40,12 @@ class MockNodeStore(replacementNodes: Map[Node.Id, Option[Node]] = Map.empty)(
         storeRef.flatMap(_ ? (ref => MapStoreActor.Get(node, ref)))
     }
 
-  override def nodes: Future[Seq[Node]] =
+  override def nodes: Future[Map[Node.Id, Node]] =
     storeData.map { result =>
-      (result.mapValues(value => Some(value)) ++ replacementNodes).values.flatten.toSeq
+      (result.mapValues(value => Some(value)) ++ replacementNodes).flatMap {
+        case (k, optV) =>
+          optV.map(v => k -> v)
+      }
     }
 
   private def storeData: Future[Map[StoreKey, StoreValue]] =

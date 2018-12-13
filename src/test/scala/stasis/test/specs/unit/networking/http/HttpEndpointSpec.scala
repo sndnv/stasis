@@ -9,24 +9,18 @@ import akka.http.scaladsl.server.MissingQueryParamRejection
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.util.{ByteString, Timeout}
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
-import org.scalatest.FutureOutcome
 import stasis.networking.http.HttpEndpoint
 import stasis.networking.http.HttpEndpoint._
 import stasis.packaging.Crate
 import stasis.persistence.{CrateStorageRequest, CrateStorageReservation}
-import stasis.routing.LocalRouter
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.persistence.mocks.{MockCrateStore, MockReservationStore}
+import stasis.test.specs.unit.routing.mocks.MockRouter
 import stasis.test.specs.unit.security.MockNodeAuthenticator
 
 import scala.concurrent.duration._
 
 class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
-
-  case class FixtureParam()
-
-  def withFixture(test: OneArgAsyncTest): FutureOutcome =
-    withFixture(test.toNoArgAsyncTest(FixtureParam()))
 
   override implicit val timeout: Timeout = 3.seconds
 
@@ -40,7 +34,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val testReservationStore: MockReservationStore = new MockReservationStore(),
     val testAuthenticator: MockNodeAuthenticator = new MockNodeAuthenticator(testUser, testPassword)
   ) extends HttpEndpoint(
-        new LocalRouter(testCrateStore.getOrElse(new MockCrateStore(testReservationStore))),
+        new MockRouter(testCrateStore.getOrElse(new MockCrateStore(testReservationStore))),
         testReservationStore.view,
         testAuthenticator
       )
@@ -60,7 +54,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     expiration = 1.second
   )
 
-  "An HTTP Endpoint" should "successfully authenticate a client" in { _ =>
+  "An HTTP Endpoint" should "successfully authenticate a client" in {
     val endpoint = new TestHttpEndpoint()
     endpoint.testReservationStore.put(testReservation).await
 
@@ -71,7 +65,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "fail to authenticate if no reservation ID is provided" in { _ =>
+  it should "fail to authenticate if no reservation ID is provided" in {
     val endpoint = new TestHttpEndpoint()
 
     Put(s"/crate/${Crate.generateId()}")
@@ -81,7 +75,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "fail to authenticate a client with no credentials" in { _ =>
+  it should "fail to authenticate a client with no credentials" in {
     val endpoint = new TestHttpEndpoint()
 
     Put(s"/crate/some-crate-id?reservation=${testReservation.id}")
@@ -90,7 +84,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "fail to authenticate a client with invalid credentials" in { _ =>
+  it should "fail to authenticate a client with invalid credentials" in {
     val endpoint = new TestHttpEndpoint()
 
     Put(s"/crate/some-crate-id?reservation=${testReservation.id}")
@@ -106,7 +100,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "successfully process reservation requests" in { _ =>
+  it should "successfully process reservation requests" in {
     val endpoint = new TestHttpEndpoint()
 
     val storageRequest = CrateStorageRequest(
@@ -136,7 +130,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "reject reservation requests that cannot be fulfilled" in { _ =>
+  it should "reject reservation requests that cannot be fulfilled" in {
     val reservationStore = new MockReservationStore()
     val endpoint = new TestHttpEndpoint(
       testCrateStore = Some(new MockCrateStore(reservationStore, maxReservationSize = Some(99)))
@@ -156,7 +150,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "successfully store crate data" in { _ =>
+  it should "successfully store crate data" in {
     val endpoint = new TestHttpEndpoint()
     endpoint.testReservationStore.put(testReservation).await
 
@@ -167,7 +161,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "fail to store crate data when reservation is missing" in { _ =>
+  it should "fail to store crate data when reservation is missing" in {
     val endpoint = new TestHttpEndpoint()
 
     val crateId = Crate.generateId()
@@ -179,7 +173,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "successfully retrieve crate data" in { _ =>
+  it should "successfully retrieve crate data" in {
     val endpoint = new TestHttpEndpoint()
     endpoint.testReservationStore.put(testReservation).await
 
@@ -198,7 +192,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "fail to retrieve missing crate data" in { _ =>
+  it should "fail to retrieve missing crate data" in {
     val endpoint = new TestHttpEndpoint()
 
     Get(s"/crate/${Crate.generateId()}?reservation=${testReservation.id}")

@@ -1,11 +1,11 @@
 package stasis.test.specs.unit
 
 import akka.util.Timeout
-import org.scalatest.{fixture, Matchers}
+import org.scalatest.{AsyncFlatSpec, Matchers}
 
 import scala.concurrent.{Await, Future}
 
-trait AsyncUnitSpec extends fixture.AsyncFlatSpec with Matchers {
+trait AsyncUnitSpec extends AsyncFlatSpec with Matchers {
   implicit val timeout: Timeout
 
   implicit class AwaitableFuture[T](val future: Future[T]) {
