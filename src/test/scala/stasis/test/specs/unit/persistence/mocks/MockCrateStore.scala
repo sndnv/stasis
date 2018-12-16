@@ -7,7 +7,7 @@ import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.util.{ByteString, Timeout}
 import akka.{Done, NotUsed}
 import stasis.packaging.{Crate, Manifest}
@@ -74,6 +74,21 @@ class MockCrateStore(
       stats(Statistic.PersistFailed).incrementAndGet()
       Future.failed(new PersistenceFailure("[persistDisabled] is set to [true]"))
     }
+
+  override def sink(manifest: Manifest): Future[Sink[ByteString, Future[Done]]] =
+    Future.successful(
+      Flow[ByteString]
+        .fold(ByteString.empty) {
+          case (folded, chunk) =>
+            folded.concat(chunk)
+        }
+        .mapAsyncUnordered(parallelism = 1) { data =>
+          stats(Statistic.PersistCompleted).incrementAndGet()
+          val result: Future[Done] = storeRef.flatMap(_ ? (ref => MapStoreActor.Put(manifest.crate, data, ref)))
+          result
+        }
+        .toMat(Sink.ignore)(Keep.right)
+    )
 
   override def retrieve(
     crate: Crate.Id

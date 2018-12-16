@@ -7,7 +7,7 @@ import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.util.{ByteString, Timeout}
 import akka.{Done, NotUsed}
 import stasis.networking.http.{HttpEndpointAddress, HttpEndpointClient}
@@ -67,6 +67,31 @@ class MockEndpointClient(
           .flatMap { data =>
             storeRef.flatMap(_ ? (ref => MapStoreActor.Put((address, manifest.crate), (data, manifest.copies), ref)))
           }
+    }
+
+  override def sink(address: HttpEndpointAddress, manifest: Manifest): Future[Sink[ByteString, Future[Done]]] =
+    pushFailureAddresses.get(address) match {
+      case Some(pushFailure) =>
+        stats(Statistic.PushFailed).incrementAndGet()
+        Future.failed(pushFailure)
+
+      case None =>
+        Future.successful(
+          Flow[ByteString]
+            .fold(ByteString.empty) {
+              case (folded, chunk) =>
+                folded.concat(chunk)
+            }
+            .mapAsyncUnordered(parallelism = 1) { data =>
+              stats(Statistic.PushCompleted).incrementAndGet()
+              val result: Future[Done] =
+                storeRef.flatMap(
+                  _ ? (ref => MapStoreActor.Put((address, manifest.crate), (data, manifest.copies), ref))
+                )
+              result
+            }
+            .toMat(Sink.ignore)(Keep.right)
+        )
     }
 
   override def pull(

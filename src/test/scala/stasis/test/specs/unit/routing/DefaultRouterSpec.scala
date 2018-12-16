@@ -6,9 +6,10 @@ import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.{ByteString, Timeout}
-import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.concurrent.Eventually
 import stasis.networking.http.HttpEndpointAddress
 import stasis.packaging.{Crate, Manifest}
+import stasis.persistence.staging.StagingStore
 import stasis.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.routing.exceptions.{DistributionFailure, PullFailure, PushFailure}
 import stasis.routing.{DefaultRouter, Node}
@@ -20,13 +21,13 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class DefaultRouterSpec extends AsyncUnitSpec with ScalaFutures {
+class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
   override implicit val timeout: Timeout = 500.milliseconds
 
   private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
-    "RouterSpec"
+    "DefaultRouterSpec"
   )
 
   private implicit val mat: ActorMaterializer = ActorMaterializer()(system.toUntyped)
@@ -41,8 +42,9 @@ class DefaultRouterSpec extends AsyncUnitSpec with ScalaFutures {
     lazy val manifestStore: MockManifestStore = new MockManifestStore
     lazy val nodeStore: MockNodeStore = new MockNodeStore
     lazy val localNode: Node.Local = Node.Local(Node.generateId(), crateStore = crateStore)
+    lazy val stagingStore: Option[StagingStore] = None
     lazy val remoteNodes: Seq[Node.Remote.Http] = Seq(
-      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost8000")),
+      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:8000")),
       Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:9000"))
     )
 
@@ -61,8 +63,9 @@ class DefaultRouterSpec extends AsyncUnitSpec with ScalaFutures {
   )(implicit untypedSystem: akka.actor.ActorSystem = system.toUntyped)
       extends DefaultRouter(
         httpClient = testClient,
-        fixtures.manifestStore,
-        fixtures.nodeStore.view
+        manifestStore = fixtures.manifestStore,
+        nodeStore = fixtures.nodeStore.view,
+        stagingStore = fixtures.stagingStore
       )
 
   private val testContent = ByteString("some value")
@@ -76,7 +79,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with ScalaFutures {
   )
 
   "A Router" should "calculate crate copies distribution" in {
-    val node1 = Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost8000"))
+    val node1 = Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:8000"))
     val node2 = Node.Local(Node.generateId(), crateStore = null)
     val node3 = Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:9000"))
 
@@ -124,12 +127,50 @@ class DefaultRouterSpec extends AsyncUnitSpec with ScalaFutures {
 
     router.push(testManifest, Source.single(testContent)).await
 
-    router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-    router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-    router.testClient.crateCopies(testManifest.crate).await should be(router.fixtures.remoteNodes.size)
-    router.testClient.crateNodes(testManifest.crate).await should be(router.fixtures.remoteNodes.size)
-    router.testClient.statistics(MockEndpointClient.Statistic.PushCompleted) should be(router.fixtures.remoteNodes.size)
-    router.testClient.statistics(MockEndpointClient.Statistic.PushFailed) should be(0)
+    eventually {
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+      router.testClient.crateCopies(testManifest.crate).await should be(router.fixtures.remoteNodes.size)
+      router.testClient.crateNodes(testManifest.crate).await should be(router.fixtures.remoteNodes.size)
+      router.testClient.statistics(MockEndpointClient.Statistic.PushCompleted) should be(
+        router.fixtures.remoteNodes.size)
+      router.testClient.statistics(MockEndpointClient.Statistic.PushFailed) should be(0)
+    }
+  }
+
+  it should "push data to nodes using staging" in {
+    val stagingCrateStore = new MockCrateStore(new MockReservationStore())
+    val testClient = new MockEndpointClient()
+
+    val fixtures = new TestFixtures {
+      override lazy val stagingStore: Option[StagingStore] =
+        Some(
+          new StagingStore(
+            crateStore = stagingCrateStore,
+            httpClient = testClient,
+            destagingDelay = 100.milliseconds
+          )(system.toUntyped)
+        )
+    }
+
+    val router = new TestRouter(fixtures, testClient)
+
+    router.push(testManifest, Source.single(testContent)).await
+
+    stagingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+    stagingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+    stagingCrateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(1)
+    stagingCrateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
+    stagingCrateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
+
+    eventually {
+      fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+      fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+      testClient.crateCopies(testManifest.crate).await should be(fixtures.remoteNodes.size)
+      testClient.crateNodes(testManifest.crate).await should be(fixtures.remoteNodes.size)
+      testClient.statistics(MockEndpointClient.Statistic.PushCompleted) should be(fixtures.remoteNodes.size)
+      testClient.statistics(MockEndpointClient.Statistic.PushFailed) should be(0)
+    }
   }
 
   it should "fail to push data when no nodes are available" in {
@@ -192,18 +233,20 @@ class DefaultRouterSpec extends AsyncUnitSpec with ScalaFutures {
 
     val failedNodesCount = 1
 
-    router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-    router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-    router.testClient.crateCopies(testManifest.crate).await should be(
-      router.fixtures.remoteNodes.size - failedNodesCount
-    )
-    router.testClient.crateNodes(testManifest.crate).await should be(
-      router.fixtures.remoteNodes.size - failedNodesCount
-    )
-    router.testClient.statistics(MockEndpointClient.Statistic.PushCompleted) should be(
-      router.fixtures.remoteNodes.size - failedNodesCount
-    )
-    router.testClient.statistics(MockEndpointClient.Statistic.PushFailed) should be(failedNodesCount)
+    eventually {
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+      router.testClient.crateCopies(testManifest.crate).await should be(
+        router.fixtures.remoteNodes.size - failedNodesCount
+      )
+      router.testClient.crateNodes(testManifest.crate).await should be(
+        router.fixtures.remoteNodes.size - failedNodesCount
+      )
+      router.testClient.statistics(MockEndpointClient.Statistic.PushCompleted) should be(
+        router.fixtures.remoteNodes.size - failedNodesCount
+      )
+      router.testClient.statistics(MockEndpointClient.Statistic.PushFailed) should be(failedNodesCount)
+    }
   }
 
   it should "fail to push data when all nodes fail" in {
@@ -229,7 +272,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with ScalaFutures {
       .recover {
         case PushFailure(message) =>
           message should be(
-            s"Crate [${testManifest.crate}] was not pushed; failed to push to any node"
+            s"Crate [${testManifest.crate}] was not pushed; no content sinks retrieved"
           )
 
           router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
@@ -249,6 +292,13 @@ class DefaultRouterSpec extends AsyncUnitSpec with ScalaFutures {
     )
 
     router.push(testManifest, Source.single(testContent)).await
+
+    eventually {
+      router.testClient.statistics(MockEndpointClient.Statistic.PushCompleted) should be(
+        router.fixtures.remoteNodes.size
+      )
+      router.testClient.statistics(MockEndpointClient.Statistic.PushFailed) should be(0)
+    }
 
     val result = router
       .pull(testManifest.crate)
@@ -275,14 +325,17 @@ class DefaultRouterSpec extends AsyncUnitSpec with ScalaFutures {
 
     router.push(testManifest, Source.single(testContent)).await
 
+    eventually {
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+    }
+
     val result = router
       .pull(testManifest.crate)
       .flatMap(_.getOrElse(Source.empty).runFold(ByteString.empty)(_ ++ _))
       .await
 
     result should be(testContent)
-    router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-    router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
     router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(1)
     router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(0)
     router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
@@ -340,6 +393,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with ScalaFutures {
 
     router.push(testManifest, Source.single(testContent)).await
 
+    eventually {
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+      router.testClient.statistics(MockEndpointClient.Statistic.PushCompleted) should be(
+        router.fixtures.remoteNodes.size
+      )
+      router.testClient.statistics(MockEndpointClient.Statistic.PushFailed) should be(0)
+    }
+
     router.fixtures.manifestStore
       .put(testManifest.copy(destinations = Seq(Node.generateId(), router.fixtures.testNodes.head.id)))
       .await
@@ -351,13 +413,9 @@ class DefaultRouterSpec extends AsyncUnitSpec with ScalaFutures {
 
     result should be(testContent)
 
-    router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-    router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
     router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(0)
     router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(0)
     router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
-    router.testClient.statistics(MockEndpointClient.Statistic.PushCompleted) should be(router.fixtures.remoteNodes.size)
-    router.testClient.statistics(MockEndpointClient.Statistic.PushFailed) should be(0)
     router.testClient.statistics(MockEndpointClient.Statistic.PullCompletedWithData) should be(1)
     router.testClient.statistics(MockEndpointClient.Statistic.PullCompletedEmpty) should be(0)
     router.testClient.statistics(MockEndpointClient.Statistic.PullFailed) should be(0)
@@ -373,14 +431,21 @@ class DefaultRouterSpec extends AsyncUnitSpec with ScalaFutures {
 
     router.push(testManifest, Source.single(testContent)).await
 
+    eventually {
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+      router.testClient.statistics(MockEndpointClient.Statistic.PushCompleted) should be(
+        router.fixtures.remoteNodes.size
+      )
+      router.testClient.statistics(MockEndpointClient.Statistic.PushFailed) should be(0)
+    }
+
     val result = router
       .pull(testManifest.crate)
       .flatMap(_.getOrElse(Source.empty).runFold(ByteString.empty)(_ ++ _))
       .await
 
     result should be(testContent)
-    router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-    router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
     router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(0)
     router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(1)
     router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
@@ -399,14 +464,21 @@ class DefaultRouterSpec extends AsyncUnitSpec with ScalaFutures {
 
     router.push(testManifest, Source.single(testContent)).await
 
+    eventually {
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+      router.testClient.statistics(MockEndpointClient.Statistic.PushCompleted) should be(
+        router.fixtures.remoteNodes.size
+      )
+      router.testClient.statistics(MockEndpointClient.Statistic.PushFailed) should be(0)
+    }
+
     val result = router
       .pull(testManifest.crate)
       .flatMap(_.getOrElse(Source.empty).runFold(ByteString.empty)(_ ++ _))
       .await
 
     result should be(testContent)
-    router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-    router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
     router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(0)
     router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(0)
     router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(1)
@@ -449,7 +521,6 @@ class DefaultRouterSpec extends AsyncUnitSpec with ScalaFutures {
     )
 
     val request = CrateStorageRequest(
-      id = CrateStorageRequest.generateId(),
       size = 1,
       copies = 1,
       retention = 1.second
@@ -484,7 +555,6 @@ class DefaultRouterSpec extends AsyncUnitSpec with ScalaFutures {
     )
 
     val request = CrateStorageRequest(
-      id = CrateStorageRequest.generateId(),
       size = 1,
       copies = 1,
       retention = 1.second
@@ -501,7 +571,6 @@ class DefaultRouterSpec extends AsyncUnitSpec with ScalaFutures {
     )
 
     val request = CrateStorageRequest(
-      id = CrateStorageRequest.generateId(),
       size = 1,
       copies = 1,
       retention = 1.second
@@ -519,7 +588,6 @@ class DefaultRouterSpec extends AsyncUnitSpec with ScalaFutures {
     )
 
     val request = CrateStorageRequest(
-      id = CrateStorageRequest.generateId(),
       size = 1,
       copies = 1,
       retention = 1.second

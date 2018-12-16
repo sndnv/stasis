@@ -8,7 +8,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import stasis.networking.exceptions.{CredentialsFailure, EndpointFailure, ReservationFailure}
@@ -49,6 +49,32 @@ class HttpEndpointClient(
 
       case None =>
         val message = s"Push to endpoint ${address.uri} failed; unable to retrieve credentials"
+        log.error(message)
+        Future.failed(CredentialsFailure(message))
+    }
+  }
+
+  override def sink(address: HttpEndpointAddress, manifest: Manifest): Future[Sink[ByteString, Future[Done]]] = {
+    log.debug("Building content sink for endpoint [{}] with manifest [{}]", address.uri, manifest)
+
+    val (sink, content) = Source
+      .asSubscriber[ByteString]
+      .toMat(Sink.asPublisher[ByteString](fanout = false))(Keep.both)
+      .mapMaterializedValue {
+        case (subscriber, publisher) =>
+          (Sink.fromSubscriber(subscriber), Source.fromPublisher(publisher))
+      }
+      .run()
+
+    credentials.provide(address) match {
+      case Some(endpointCredentials) =>
+        reserveStorage(address, manifest, endpointCredentials).map { reservation =>
+          val _ = pushCrate(address, manifest, content, reservation, endpointCredentials)
+          sink.mapMaterializedValue(_ => Future.successful(Done))
+        }
+
+      case None =>
+        val message = s"Push to endpoint ${address.uri} via sink failed; unable to retrieve credentials"
         log.error(message)
         Future.failed(CredentialsFailure(message))
     }

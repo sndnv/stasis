@@ -3,13 +3,14 @@ package stasis.routing
 import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Broadcast, Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import stasis.networking.http.{HttpEndpointAddress, HttpEndpointClient}
 import stasis.packaging.{Crate, Manifest}
 import stasis.persistence.manifests.ManifestStore
 import stasis.persistence.nodes.NodeStoreView
+import stasis.persistence.staging.StagingStore
 import stasis.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.routing.exceptions.{DistributionFailure, PullFailure, PushFailure}
 
@@ -21,7 +22,8 @@ import scala.util.{Failure, Success, Try}
 class DefaultRouter(
   httpClient: HttpEndpointClient,
   manifestStore: ManifestStore,
-  nodeStore: NodeStoreView
+  nodeStore: NodeStoreView,
+  stagingStore: Option[StagingStore]
 )(implicit system: ActorSystem)
     extends Router {
 
@@ -37,52 +39,74 @@ class DefaultRouter(
     nodeStore.nodes.flatMap { availableNodes =>
       DefaultRouter.distributeCopies(availableNodes.values.toSeq, manifest.copies) match {
         case Success(distribution) =>
-          Future
-            .sequence(
-              distribution.map {
-                case (node, copies) =>
-                  log.debug(
-                    "Distributing [{}] copies of crate [{}] on node [{}]",
-                    copies,
-                    manifest.crate,
-                    node.id
-                  )
+          stagingStore match {
+            case Some(store) =>
+              for {
+                _ <- store.stage(manifest, destinations = distribution, content)
+                _ <- manifestStore.put(manifest.copy(destinations = distribution.keys.map(_.id).toSeq))
+              } yield {
+                log.debug("Initiated staging for crate [{}]", manifest.crate)
+                Done
+              }
 
-                  pushToNode(node, manifest.copy(copies = copies), content)
-                    .map { _ =>
+            case None =>
+              Future
+                .sequence(
+                  distribution.map {
+                    case (node, copies) =>
                       log.debug(
-                        "Push of crate [{}] to node [{}] completed",
+                        "Distributing [{}] copies of crate [{}] on node [{}]",
+                        copies,
                         manifest.crate,
-                        node
+                        node.id
                       )
 
-                      Some(node.id)
-                    }
-                    .recover {
-                      case NonFatal(e) =>
-                        log.error(
-                          "Push of crate [{}] to node [{}] failed: [{}]",
-                          manifest.crate,
-                          node,
-                          e
-                        )
+                      nodeSink(node, manifest.copy(copies = copies))
+                        .map { sink =>
+                          log.debug(
+                            "Content sink retrieved for node [{}] while pushing crate [{}]",
+                            node,
+                            manifest.crate
+                          )
 
-                        None
-                    }
-              }
-            )
-            .flatMap { results =>
-              val destinations = results.flatten.toSeq
+                          Some((sink, node))
+                        }
+                        .recover {
+                          case NonFatal(e) =>
+                            log.error(
+                              "Failed to retrieve content sink for node [{}] while pushing crate [{}]: [{}]",
+                              node,
+                              manifest.crate,
+                              e
+                            )
 
-              if (destinations.nonEmpty) {
-                log.debug("Crate [{}] pushed to [{}] nodes: [{}]", manifest.crate, destinations.size, destinations)
-                manifestStore.put(manifest.copy(destinations = destinations))
-              } else {
-                val message = s"Crate [${manifest.crate}] was not pushed; failed to push to any node"
-                log.error(message)
-                Future.failed(PushFailure(message))
-              }
-            }
+                            None
+                        }
+                  }
+                )
+                .flatMap { results =>
+                  val (sinks, destinations) = results.flatten.unzip
+
+                  val result = sinks match {
+                    case first :: second :: remaining =>
+                      val _ = content.runWith(Sink.combine(first, second, remaining: _*)(Broadcast[ByteString](_)))
+                      Future.successful(Done)
+
+                    case single :: Nil =>
+                      content.runWith(single)
+
+                    case Nil =>
+                      val message = s"Crate [${manifest.crate}] was not pushed; no content sinks retrieved"
+                      log.error(message)
+                      Future.failed(PushFailure(message))
+                  }
+
+                  result.flatMap { _ =>
+                    log.debug("Crate [{}] pushed to [{}] nodes: [{}]", manifest.crate, destinations.size, destinations)
+                    manifestStore.put(manifest.copy(destinations = destinations.map(_.id).toSeq))
+                  }
+                }
+          }
 
         case Failure(e) =>
           val message = s"Push of crate [${manifest.crate}] failed: [$e]"
@@ -238,17 +262,13 @@ class DefaultRouter(
       }
     }
 
-  private def pushToNode(
-    node: Node,
-    manifest: Manifest,
-    content: Source[ByteString, NotUsed]
-  ): Future[Done] =
+  private def nodeSink(node: Node, manifest: Manifest): Future[Sink[ByteString, Future[Done]]] =
     node match {
-      case Node.Local(_, crateStore) =>
-        crateStore.persist(manifest, content)
+      case Node.Local(_, store) =>
+        store.sink(manifest)
 
-      case Node.Remote.Http(_, address: HttpEndpointAddress) =>
-        httpClient.push(address, manifest, content)
+      case Node.Remote.Http(_, address) =>
+        httpClient.sink(address, manifest)
     }
 
   private def pullFromNode(node: Node, crate: Crate.Id): Future[Option[Source[ByteString, NotUsed]]] =

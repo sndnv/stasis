@@ -104,7 +104,6 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val endpoint = new TestHttpEndpoint()
 
     val storageRequest = CrateStorageRequest(
-      id = CrateStorageRequest.generateId(),
       size = 42,
       copies = 3,
       retention = 15.seconds
@@ -137,7 +136,6 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     )
 
     val storageRequest = CrateStorageRequest(
-      id = CrateStorageRequest.generateId(),
       size = 100,
       copies = 3,
       retention = 15.seconds

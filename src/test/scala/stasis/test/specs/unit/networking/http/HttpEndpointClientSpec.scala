@@ -6,6 +6,7 @@ import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.{ByteString, Timeout}
+import org.scalatest.concurrent.Eventually
 import stasis.networking.http.{HttpEndpoint, HttpEndpointAddress, HttpEndpointClient}
 import stasis.packaging.{Crate, Manifest}
 import stasis.routing.Node
@@ -20,7 +21,7 @@ import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
-class HttpEndpointClientSpec extends AsyncUnitSpec {
+class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
   private implicit val untypedSystem: akka.actor.ActorSystem =
     akka.actor.ActorSystem(name = "HttpEndpointClientSpec_Typed")
@@ -47,17 +48,20 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
   private val testUser = "test-user"
   private val testPassword = "test-password"
 
+  private trait TestFixtures {
+    lazy val reservationStore: MockReservationStore = new MockReservationStore()
+    lazy val crateStore: MockCrateStore = new MockCrateStore(reservationStore, maxReservationSize = Some(99))
+    lazy val router: MockRouter = new MockRouter(crateStore)
+  }
+
   private class TestHttpEndpoint(
     override protected val authenticator: NodeAuthenticator[HttpCredentials],
-    val testReservationStore: MockReservationStore = new MockReservationStore(),
-    port: Int,
-    persistDisabled: Boolean = false
+    val fixtures: TestFixtures = new TestFixtures {},
+    port: Int
   ) extends HttpEndpoint(
-        router = new MockRouter(
-          new MockCrateStore(testReservationStore, maxReservationSize = Some(99), persistDisabled)
-        ),
+        router = fixtures.router,
         authenticator = authenticator,
-        reservationStore = testReservationStore.view
+        reservationStore = fixtures.reservationStore.view
       ) {
     private val _ = start(hostname = "localhost", port = port)
   }
@@ -68,7 +72,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
-    val _ = new TestHttpEndpoint(
+    val endpoint = new TestHttpEndpoint(
       authenticator = new MockNodeAuthenticator(testUser, testPassword),
       port = endpointPort
     )
@@ -78,7 +82,11 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
     )
 
     client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).map { _ =>
-      succeed
+      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(1)
+      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
+      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
     }
   }
 
@@ -86,7 +94,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
-    val _ = new TestHttpEndpoint(
+    val endpoint = new TestHttpEndpoint(
       authenticator = new MockNodeAuthenticator(testUser, testPassword),
       port = endpointPort
     )
@@ -105,6 +113,11 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
           e.getMessage should startWith(
             s"Endpoint [http://localhost:$endpointPort] was unable to reserve enough storage for request"
           )
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(0)
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(1)
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
       }
   }
 
@@ -112,7 +125,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort/invalid")
 
-    val _ = new TestHttpEndpoint(
+    val endpoint = new TestHttpEndpoint(
       authenticator = new MockNodeAuthenticator(testUser, testPassword),
       port = endpointPort
     )
@@ -131,6 +144,11 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
           e.getMessage should be(
             s"Endpoint [http://localhost:$endpointPort/invalid] responded to storage request with unexpected status: [404 Not Found]"
           )
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(0)
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
       }
   }
 
@@ -138,10 +156,15 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
-    val _ = new TestHttpEndpoint(
+    val endpoint = new TestHttpEndpoint(
       authenticator = new MockNodeAuthenticator(testUser, testPassword),
       port = endpointPort,
-      persistDisabled = true
+      fixtures = new TestFixtures {
+        override lazy val crateStore: MockCrateStore = new MockCrateStore(
+          reservationStore,
+          persistDisabled = true
+        )
+      }
     )
 
     val client = new HttpEndpointClient(
@@ -158,14 +181,48 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
           e.getMessage should be(
             s"Endpoint [http://localhost:$endpointPort] responded to push with unexpected status: [500 Internal Server Error]"
           )
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(1)
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(1)
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
       }
+  }
+
+  it should "successfully push data via a stream sink" in {
+    val endpointPort = ports.dequeue()
+    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+
+    val endpoint = new TestHttpEndpoint(
+      authenticator = new MockNodeAuthenticator(testUser, testPassword),
+      port = endpointPort
+    )
+
+    val client = new HttpEndpointClient(
+      credentials = new MockEndpointCredentials(endpointAddress, testUser, testPassword)
+    )
+
+    client.sink(endpointAddress, testManifest).flatMap { sink =>
+      Source
+        .single(ByteString(crateContent))
+        .runWith(sink)
+        .map { _ =>
+          eventually {
+            endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+            endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+            endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(1)
+            endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
+            endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
+          }
+        }
+    }
   }
 
   it should "successfully pull crate data" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
-    val _ = new TestHttpEndpoint(
+    val endpoint = new TestHttpEndpoint(
       authenticator = new MockNodeAuthenticator(testUser, testPassword),
       port = endpointPort
     )
@@ -184,6 +241,14 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
             }
             .map { result =>
               result.utf8String should be(crateContent)
+              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(1)
+              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
+              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
+              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(1)
+              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(0)
+              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
             }
 
         case None =>
@@ -296,6 +361,32 @@ class HttpEndpointClientSpec extends AsyncUnitSpec {
         case NonFatal(e) =>
           e.getMessage should be(
             s"Push to endpoint ${endpointAddress.uri} failed; unable to retrieve credentials"
+          )
+      }
+  }
+
+  it should "fail to push data via sink if no credentials are available" in {
+    val endpointPort = ports.dequeue()
+    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+
+    val _ = new TestHttpEndpoint(
+      authenticator = new MockNodeAuthenticator(testUser, testPassword),
+      port = endpointPort
+    )
+
+    val client = new HttpEndpointClient(
+      credentials = new MockEndpointCredentials(Map.empty)
+    )
+
+    client
+      .sink(endpointAddress, testManifest)
+      .map { response =>
+        fail(s"Received unexpected response from endpoint: [$response]")
+      }
+      .recover {
+        case NonFatal(e) =>
+          e.getMessage should be(
+            s"Push to endpoint ${endpointAddress.uri} via sink failed; unable to retrieve credentials"
           )
       }
   }
