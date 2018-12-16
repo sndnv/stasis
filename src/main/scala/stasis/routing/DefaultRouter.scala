@@ -37,7 +37,11 @@ class DefaultRouter(
     content: Source[ByteString, NotUsed]
   ): Future[Done] =
     nodeStore.nodes.flatMap { availableNodes =>
-      DefaultRouter.distributeCopies(availableNodes.values.toSeq, manifest.copies) match {
+      DefaultRouter.distributeCopies(
+        availableNodes = availableNodes.values.toSeq,
+        sourceNodes = Seq(manifest.source, manifest.origin),
+        copies = manifest.copies
+      ) match {
         case Success(distribution) =>
           stagingStore match {
             case Some(store) =>
@@ -219,7 +223,11 @@ class DefaultRouter(
   override def reserve(request: CrateStorageRequest): Future[Option[CrateStorageReservation]] =
     nodeStore.nodes.flatMap { availableNodes =>
       val distributionResult =
-        DefaultRouter.distributeCopies(availableNodes.values.toSeq, request.copies) match {
+        DefaultRouter.distributeCopies(
+          availableNodes = availableNodes.values.toSeq,
+          sourceNodes = Seq(request.source, request.origin),
+          copies = request.copies
+        ) match {
           case Success(distribution) =>
             Future
               .sequence(
@@ -242,7 +250,8 @@ class DefaultRouter(
                       size = request.size,
                       copies = math.min(request.copies, reservedCopies),
                       retention = math.min(request.retention.toSeconds, minRetention).seconds,
-                      expiration = minExpiration.seconds
+                      expiration = minExpiration.seconds,
+                      origin = request.origin
                     )
                   )
                 } else {
@@ -292,12 +301,18 @@ class DefaultRouter(
 }
 
 object DefaultRouter {
-  def distributeCopies(nodes: Seq[Node], copies: Int): Try[Map[Node, Int]] =
+  def distributeCopies(
+    availableNodes: Seq[Node],
+    sourceNodes: Seq[Node.Id],
+    copies: Int
+  ): Try[Map[Node, Int]] =
     if (copies > 0) {
-      val (localNodes, remoteNodes) = nodes.partition {
-        case _: Node.Local => true
-        case _             => false
-      }
+      val (localNodes, remoteNodes) = availableNodes
+        .filter(node => !sourceNodes.contains(node.id))
+        .partition {
+          case _: Node.Local => true
+          case _             => false
+        }
 
       if (localNodes.nonEmpty) {
         val localNodesDistribution = distributeCopiesOverNodes(localNodes, copies)

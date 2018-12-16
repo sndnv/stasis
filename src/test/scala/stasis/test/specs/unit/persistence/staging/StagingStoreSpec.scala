@@ -56,7 +56,8 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually {
     size = testContent.size,
     copies = 4,
     retention = 60.seconds,
-    source = Node.generateId()
+    source = Node.generateId(),
+    origin = Node.generateId()
   )
 
   "A StagingStore" should "stage data to temporary storage" in {

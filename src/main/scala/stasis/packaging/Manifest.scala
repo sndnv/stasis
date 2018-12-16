@@ -10,6 +10,7 @@ final case class Manifest(
   size: Long,
   copies: Int,
   retention: FiniteDuration,
+  origin: Node.Id,
   source: Node.Id,
   destinations: Seq[Node.Id]
 )
@@ -18,25 +19,28 @@ object Manifest {
   def apply(crate: Crate.Id, source: Node.Id, reservation: CrateStorageReservation): Manifest =
     Manifest(
       crate = crate,
-      source = source,
-      copies = reservation.copies,
       size = reservation.size,
+      copies = reservation.copies,
       retention = reservation.retention,
+      origin = reservation.origin,
+      source = source,
       destinations = Seq.empty
     )
 
   def apply(
     crate: Crate.Id,
+    origin: Node.Id,
     source: Node.Id,
     size: Long,
     copies: Int,
     retention: FiniteDuration
   ): Manifest = Manifest(
-    crate,
-    size,
-    copies,
-    retention,
-    source,
+    crate = crate,
+    size = size,
+    copies = copies,
+    retention = retention,
+    origin = origin,
+    source = source,
     destinations = Seq.empty
   )
 }

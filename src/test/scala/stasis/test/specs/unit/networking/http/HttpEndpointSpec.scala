@@ -13,6 +13,7 @@ import stasis.networking.http.HttpEndpoint
 import stasis.networking.http.HttpEndpoint._
 import stasis.packaging.Crate
 import stasis.persistence.{CrateStorageRequest, CrateStorageReservation}
+import stasis.routing.Node
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.persistence.mocks.{MockCrateStore, MockReservationStore}
 import stasis.test.specs.unit.routing.mocks.MockRouter
@@ -51,7 +52,8 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     size = crateContent.length,
     copies = 3,
     retention = 3.seconds,
-    expiration = 1.second
+    expiration = 1.second,
+    origin = Node.generateId()
   )
 
   "An HTTP Endpoint" should "successfully authenticate a client" in {
@@ -106,7 +108,9 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val storageRequest = CrateStorageRequest(
       size = 42,
       copies = 3,
-      retention = 15.seconds
+      retention = 15.seconds,
+      origin = Node.generateId(),
+      source = Node.generateId()
     )
 
     val expectedReservation = CrateStorageReservation(
@@ -114,7 +118,8 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       size = storageRequest.size,
       copies = storageRequest.copies,
       retention = storageRequest.retention,
-      expiration = 1.day
+      expiration = 1.day,
+      origin = Node.generateId()
     )
 
     Put(s"/reserve")
@@ -138,7 +143,9 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val storageRequest = CrateStorageRequest(
       size = 100,
       copies = 3,
-      retention = 15.seconds
+      retention = 15.seconds,
+      origin = Node.generateId(),
+      source = Node.generateId()
     )
 
     Put(s"/reserve")

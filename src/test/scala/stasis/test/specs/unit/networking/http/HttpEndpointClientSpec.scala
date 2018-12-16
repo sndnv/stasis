@@ -42,7 +42,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     size = 1,
     copies = 7,
     retention = 42.seconds,
-    source = Node.generateId()
+    source = Node.generateId(),
+    origin = Node.generateId()
   )
 
   private val testUser = "test-user"

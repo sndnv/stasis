@@ -15,6 +15,7 @@ import stasis.persistence.crates.CrateStore
 import stasis.persistence.exceptions.PersistenceFailure
 import stasis.persistence.reservations.ReservationStore
 import stasis.persistence.{CrateStorageRequest, CrateStorageReservation}
+import stasis.routing.Node
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -120,7 +121,8 @@ class MockCrateStore(
             size = request.size,
             copies = request.copies,
             retention = request.retention,
-            expiration = 1.day
+            expiration = 1.day,
+            origin = Node.generateId()
           )
 
           stats(Statistic.ReserveCompleted).incrementAndGet()

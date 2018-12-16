@@ -106,7 +106,9 @@ class HttpEndpointClient(
       id = manifest.crate,
       size = manifest.size,
       copies = manifest.copies,
-      retention = manifest.retention
+      retention = manifest.retention,
+      origin = manifest.origin,
+      source = manifest.source
     )
 
     Marshal(storageRequest).to[RequestEntity].flatMap { requestEntity =>

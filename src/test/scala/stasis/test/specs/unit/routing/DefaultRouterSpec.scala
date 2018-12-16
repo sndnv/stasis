@@ -75,51 +75,80 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     size = testContent.size,
     copies = 4,
     retention = 60.seconds,
-    source = Node.generateId()
+    source = Node.generateId(),
+    origin = Node.generateId()
   )
 
-  "A Router" should "calculate crate copies distribution" in {
+  "A DefaultRouter" should "calculate crate copies distribution" in {
     val node1 = Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:8000"))
     val node2 = Node.Local(Node.generateId(), crateStore = null)
     val node3 = Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:9000"))
 
     DefaultRouter.distributeCopies(
-      nodes = Seq(node1),
+      availableNodes = Seq(node1),
+      sourceNodes = Seq.empty,
       copies = 3
     ) should be(Success(Map(node1 -> 3)))
 
     DefaultRouter.distributeCopies(
-      nodes = Seq(node1, node2),
+      availableNodes = Seq(node1, node2),
+      sourceNodes = Seq.empty,
       copies = 3
     ) should be(Success(Map(node1 -> 1, node2 -> 3)))
 
     DefaultRouter
       .distributeCopies(
-        nodes = Seq(node1, node2, node3),
+        availableNodes = Seq(node1, node2, node3),
+        sourceNodes = Seq.empty,
         copies = 1
       ) should be(Success(Map(node1 -> 1, node2 -> 1, node3 -> 1)))
 
     DefaultRouter
       .distributeCopies(
-        nodes = Seq(node1, node2, node3),
+        availableNodes = Seq(node1, node2, node3),
+        sourceNodes = Seq.empty,
         copies = 5
       ) should be(Success(Map(node1 -> 1, node2 -> 5, node3 -> 1)))
 
     DefaultRouter
       .distributeCopies(
-        nodes = Seq(node1, node3),
+        availableNodes = Seq(node1, node3),
+        sourceNodes = Seq.empty,
         copies = 5
       ) should be(Success(Map(node1 -> 3, node3 -> 2)))
 
     DefaultRouter.distributeCopies(
-      nodes = Seq.empty,
+      availableNodes = Seq.empty,
+      sourceNodes = Seq.empty,
       copies = 2
     ) should be(Failure(DistributionFailure("No nodes provided")))
 
     DefaultRouter.distributeCopies(
-      nodes = Seq(node1, node2),
+      availableNodes = Seq(node1, node2),
+      sourceNodes = Seq.empty,
       copies = 0
     ) should be(Failure(DistributionFailure("No copies requested")))
+
+    DefaultRouter
+      .distributeCopies(
+        availableNodes = Seq(node1, node2, node3),
+        sourceNodes = Seq(node2.id),
+        copies = 3
+      ) should be(Success(Map(node1 -> 2, node3 -> 1)))
+
+    DefaultRouter
+      .distributeCopies(
+        availableNodes = Seq(node1, node2, node3),
+        sourceNodes = Seq(node2.id),
+        copies = 1
+      ) should be(Success(Map(node1 -> 1)))
+
+    DefaultRouter
+      .distributeCopies(
+        availableNodes = Seq(node1, node2, node3),
+        sourceNodes = Seq(node1.id, node2.id, node3.id),
+        copies = 1
+      ) should be(Failure(DistributionFailure("No nodes provided")))
   }
 
   it should "push data to nodes" in {
@@ -523,7 +552,9 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     val request = CrateStorageRequest(
       size = 1,
       copies = 1,
-      retention = 1.second
+      retention = 1.second,
+      origin = Node.generateId(),
+      source = Node.generateId()
     )
 
     val expectedReservation = CrateStorageReservation(
@@ -531,7 +562,8 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       size = request.size,
       copies = request.copies,
       retention = request.retention,
-      expiration = 1.day
+      expiration = 1.day,
+      origin = Node.generateId()
     )
 
     for {
@@ -557,7 +589,9 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     val request = CrateStorageRequest(
       size = 1,
       copies = 1,
-      retention = 1.second
+      retention = 1.second,
+      origin = Node.generateId(),
+      source = Node.generateId()
     )
 
     router.reserve(request).map(_ should be(None))
@@ -573,7 +607,9 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     val request = CrateStorageRequest(
       size = 1,
       copies = 1,
-      retention = 1.second
+      retention = 1.second,
+      origin = Node.generateId(),
+      source = Node.generateId()
     )
 
     router.reserve(request).map(_ should be(None))
@@ -590,7 +626,9 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     val request = CrateStorageRequest(
       size = 1,
       copies = 1,
-      retention = 1.second
+      retention = 1.second,
+      origin = Node.generateId(),
+      source = Node.generateId()
     )
 
     router.reserve(request).map(_ should be(None))

@@ -1,5 +1,7 @@
 package stasis.persistence
 
+import stasis.routing.Node
+
 import scala.concurrent.duration.FiniteDuration
 
 final case class CrateStorageReservation(
@@ -7,6 +9,7 @@ final case class CrateStorageReservation(
   size: Long,
   copies: Int,
   retention: FiniteDuration,
+  origin: Node.Id,
   expiration: FiniteDuration
 )
 
