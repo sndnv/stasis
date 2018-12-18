@@ -5,7 +5,7 @@ import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
-import akka.util.{ByteString, Timeout}
+import akka.util.ByteString
 import org.scalatest.concurrent.Eventually
 import stasis.networking.http.{HttpEndpoint, HttpEndpointAddress, HttpEndpointClient}
 import stasis.packaging.{Crate, Manifest}
@@ -32,8 +32,6 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
   )
 
   private implicit val mat: ActorMaterializer = ActorMaterializer()
-
-  override implicit val timeout: Timeout = 3.seconds
 
   private val crateContent = "some value"
 

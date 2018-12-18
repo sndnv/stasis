@@ -102,14 +102,7 @@ class HttpEndpointClient(
     manifest: Manifest,
     endpointCredentials: HttpCredentials
   ): Future[CrateStorageReservation] = {
-    val storageRequest = CrateStorageRequest(
-      id = manifest.crate,
-      size = manifest.size,
-      copies = manifest.copies,
-      retention = manifest.retention,
-      origin = manifest.origin,
-      source = manifest.source
-    )
+    val storageRequest = CrateStorageRequest(manifest)
 
     Marshal(storageRequest).to[RequestEntity].flatMap { requestEntity =>
       Http()

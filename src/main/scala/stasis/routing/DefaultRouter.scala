@@ -10,6 +10,7 @@ import stasis.networking.http.{HttpEndpointAddress, HttpEndpointClient}
 import stasis.packaging.{Crate, Manifest}
 import stasis.persistence.manifests.ManifestStore
 import stasis.persistence.nodes.NodeStoreView
+import stasis.persistence.reservations.ReservationStore
 import stasis.persistence.staging.StagingStore
 import stasis.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.routing.exceptions.{DistributionFailure, PullFailure, PushFailure}
@@ -23,12 +24,13 @@ class DefaultRouter(
   httpClient: HttpEndpointClient,
   manifestStore: ManifestStore,
   nodeStore: NodeStoreView,
+  reservationStore: ReservationStore,
   stagingStore: Option[StagingStore]
 )(implicit system: ActorSystem)
     extends Router {
 
-  implicit val ec: ExecutionContext = system.dispatcher
-  implicit val mat: ActorMaterializer = ActorMaterializer()
+  private implicit val ec: ExecutionContext = system.dispatcher
+  private implicit val mat: ActorMaterializer = ActorMaterializer()
 
   private val log = Logging(system, this.getClass.getName)
 
@@ -37,79 +39,88 @@ class DefaultRouter(
     content: Source[ByteString, NotUsed]
   ): Future[Done] =
     nodeStore.nodes.flatMap { availableNodes =>
-      DefaultRouter.distributeCopies(
-        availableNodes = availableNodes.values.toSeq,
-        sourceNodes = Seq(manifest.source, manifest.origin),
-        copies = manifest.copies
-      ) match {
+      DefaultRouter.distributeCopies(availableNodes.values.toSeq, manifest) match {
         case Success(distribution) =>
-          stagingStore match {
-            case Some(store) =>
-              for {
-                _ <- store.stage(manifest, destinations = distribution, content)
-                _ <- manifestStore.put(manifest.copy(destinations = distribution.keys.map(_.id).toSeq))
-              } yield {
-                log.debug("Initiated staging for crate [{}]", manifest.crate)
-                Done
-              }
+          reservationStore.discard(manifest.crate).flatMap { reservationDiscarded =>
+            if (reservationDiscarded) {
+              log.debug("Reservation for crate [{}] discarded", manifest.crate)
 
-            case None =>
-              Future
-                .sequence(
-                  distribution.map {
-                    case (node, copies) =>
-                      log.debug(
-                        "Distributing [{}] copies of crate [{}] on node [{}]",
-                        copies,
-                        manifest.crate,
-                        node.id
-                      )
+              stagingStore match {
+                case Some(store) =>
+                  for {
+                    _ <- store.stage(manifest, destinations = distribution, content)
+                    _ <- manifestStore.put(manifest.copy(destinations = distribution.keys.map(_.id).toSeq))
+                  } yield {
+                    log.debug("Initiated staging for crate [{}]", manifest.crate)
+                    Done
+                  }
 
-                      nodeSink(node, manifest.copy(copies = copies))
-                        .map { sink =>
+                case None =>
+                  Future
+                    .sequence(
+                      distribution.map {
+                        case (node, copies) =>
                           log.debug(
-                            "Content sink retrieved for node [{}] while pushing crate [{}]",
-                            node,
-                            manifest.crate
+                            "Distributing [{}] copies of crate [{}] on node [{}]",
+                            copies,
+                            manifest.crate,
+                            node.id
                           )
 
-                          Some((sink, node))
-                        }
-                        .recover {
-                          case NonFatal(e) =>
-                            log.error(
-                              "Failed to retrieve content sink for node [{}] while pushing crate [{}]: [{}]",
-                              node,
-                              manifest.crate,
-                              e
-                            )
+                          nodeSink(node, manifest.copy(copies = copies))
+                            .map { sink =>
+                              log.debug(
+                                "Content sink retrieved for node [{}] while pushing crate [{}]",
+                                node,
+                                manifest.crate
+                              )
 
-                            None
-                        }
-                  }
-                )
-                .flatMap { results =>
-                  val (sinks, destinations) = results.flatten.unzip
+                              Some((sink, node))
+                            }
+                            .recover {
+                              case NonFatal(e) =>
+                                log.error(
+                                  "Failed to retrieve content sink for node [{}] while pushing crate [{}]: [{}]",
+                                  node,
+                                  manifest.crate,
+                                  e
+                                )
 
-                  val result = sinks match {
-                    case first :: second :: remaining =>
-                      val _ = content.runWith(Sink.combine(first, second, remaining: _*)(Broadcast[ByteString](_)))
-                      Future.successful(Done)
+                                None
+                            }
+                      }
+                    )
+                    .flatMap { results =>
+                      val (sinks, destinations) = results.flatten.unzip
 
-                    case single :: Nil =>
-                      content.runWith(single)
+                      val result = sinks match {
+                        case first :: second :: remaining =>
+                          val _ = content.runWith(Sink.combine(first, second, remaining: _*)(Broadcast[ByteString](_)))
+                          Future.successful(Done)
 
-                    case Nil =>
-                      val message = s"Crate [${manifest.crate}] was not pushed; no content sinks retrieved"
-                      log.error(message)
-                      Future.failed(PushFailure(message))
-                  }
+                        case single :: Nil =>
+                          content.runWith(single)
 
-                  result.flatMap { _ =>
-                    log.debug("Crate [{}] pushed to [{}] nodes: [{}]", manifest.crate, destinations.size, destinations)
-                    manifestStore.put(manifest.copy(destinations = destinations.map(_.id).toSeq))
-                  }
-                }
+                        case Nil =>
+                          val message = s"Crate [${manifest.crate}] was not pushed; no content sinks retrieved"
+                          log.error(message)
+                          Future.failed(PushFailure(message))
+                      }
+
+                      result.flatMap { _ =>
+                        log.debug("Crate [{}] pushed to [{}] nodes: [{}]",
+                                  manifest.crate,
+                                  destinations.size,
+                                  destinations)
+                        manifestStore.put(manifest.copy(destinations = destinations.map(_.id).toSeq))
+                      }
+                    }
+              }
+            } else {
+              val message = s"Push of crate [${manifest.crate}] failed; unable to discard reservation for crate"
+              log.error(message)
+              Future.failed(PushFailure(message))
+            }
           }
 
         case Failure(e) =>
@@ -223,11 +234,7 @@ class DefaultRouter(
   override def reserve(request: CrateStorageRequest): Future[Option[CrateStorageReservation]] =
     nodeStore.nodes.flatMap { availableNodes =>
       val distributionResult =
-        DefaultRouter.distributeCopies(
-          availableNodes = availableNodes.values.toSeq,
-          sourceNodes = Seq(request.source, request.origin),
-          copies = request.copies
-        ) match {
+        DefaultRouter.distributeCopies(availableNodes.values.toSeq, request) match {
           case Success(distribution) =>
             Future
               .sequence(
@@ -236,7 +243,7 @@ class DefaultRouter(
                     reserveOnNode(node, request.copy(copies = copies))
                 }
               )
-              .map { responses =>
+              .flatMap { responses =>
                 val reservations = responses.flatten
 
                 if (reservations.nonEmpty) {
@@ -244,19 +251,22 @@ class DefaultRouter(
                   val minRetention = reservations.map(_.retention.toSeconds).foldLeft(Long.MaxValue)(math.min)
                   val minExpiration = reservations.map(_.expiration.toSeconds).foldLeft(Long.MaxValue)(math.min)
 
-                  Some(
-                    CrateStorageReservation(
-                      id = CrateStorageReservation.generateId(),
-                      size = request.size,
-                      copies = math.min(request.copies, reservedCopies),
-                      retention = math.min(request.retention.toSeconds, minRetention).seconds,
-                      expiration = minExpiration.seconds,
-                      origin = request.origin
-                    )
+                  val reservation = CrateStorageReservation(
+                    id = CrateStorageReservation.generateId(),
+                    crate = request.crate,
+                    size = request.size,
+                    copies = math.min(request.copies, reservedCopies),
+                    retention = math.min(request.retention.toSeconds, minRetention).seconds,
+                    expiration = minExpiration.seconds,
+                    origin = request.origin
                   )
+
+                  reservationStore.put(reservation).map { _ =>
+                    Some(reservation)
+                  }
                 } else {
                   log.error("Storage reservation failed for request [{}]; request rejected by all nodes", request.id)
-                  None
+                  Future.successful(None)
                 }
               }
 
@@ -301,6 +311,24 @@ class DefaultRouter(
 }
 
 object DefaultRouter {
+  def distributeCopies(
+    availableNodes: Seq[Node],
+    request: CrateStorageRequest
+  ): Try[Map[Node, Int]] = distributeCopies(
+    availableNodes = availableNodes,
+    sourceNodes = Seq(request.source, request.origin),
+    copies = request.copies
+  )
+
+  def distributeCopies(
+    availableNodes: Seq[Node],
+    manifest: Manifest
+  ): Try[Map[Node, Int]] = distributeCopies(
+    availableNodes = availableNodes,
+    sourceNodes = Seq(manifest.source, manifest.origin),
+    copies = manifest.copies
+  )
+
   def distributeCopies(
     availableNodes: Seq[Node],
     sourceNodes: Seq[Node.Id],

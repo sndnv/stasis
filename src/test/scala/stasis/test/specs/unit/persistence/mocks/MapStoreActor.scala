@@ -7,6 +7,7 @@ import akka.actor.typed.{ActorRef, Behavior}
 object MapStoreActor {
   sealed trait Message[K, V]
   final case class Put[K, V](key: K, value: V, replyTo: ActorRef[Done]) extends Message[K, V]
+  final case class Remove[K, V](key: K, replyTo: ActorRef[Done]) extends Message[K, V]
   final case class Get[K, V](key: K, replyTo: ActorRef[Option[V]]) extends Message[K, V]
   final case class GetAll[K, V](replyTo: ActorRef[Map[K, V]]) extends Message[K, V]
 
@@ -15,6 +16,10 @@ object MapStoreActor {
       case Put(key, value, replyTo) =>
         replyTo ! Done
         store(map = map + (key -> value))
+
+      case Remove(key, replyTo) =>
+        replyTo ! Done
+        store(map = map - key)
 
       case Get(key, replyTo) =>
         replyTo ! map.get(key)

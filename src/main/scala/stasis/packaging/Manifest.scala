@@ -16,9 +16,9 @@ final case class Manifest(
 )
 
 object Manifest {
-  def apply(crate: Crate.Id, source: Node.Id, reservation: CrateStorageReservation): Manifest =
+  def apply(source: Node.Id, reservation: CrateStorageReservation): Manifest =
     Manifest(
-      crate = crate,
+      crate = reservation.crate,
       size = reservation.size,
       copies = reservation.copies,
       retention = reservation.retention,

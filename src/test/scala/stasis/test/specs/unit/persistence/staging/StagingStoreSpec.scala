@@ -4,7 +4,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.scaladsl.Source
-import akka.util.{ByteString, Timeout}
+import akka.util.ByteString
 import org.scalatest.concurrent.Eventually
 import stasis.networking.http.HttpEndpointAddress
 import stasis.packaging.{Crate, Manifest}
@@ -18,8 +18,6 @@ import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
 class StagingStoreSpec extends AsyncUnitSpec with Eventually {
-
-  override implicit val timeout: Timeout = 500.milliseconds
 
   private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],

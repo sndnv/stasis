@@ -5,7 +5,7 @@ import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
-import akka.util.{ByteString, Timeout}
+import akka.util.ByteString
 import org.scalatest.concurrent.Eventually
 import stasis.networking.http.HttpEndpointAddress
 import stasis.packaging.{Crate, Manifest}
@@ -22,8 +22,6 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
-
-  override implicit val timeout: Timeout = 500.milliseconds
 
   private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
@@ -65,6 +63,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         httpClient = testClient,
         manifestStore = fixtures.manifestStore,
         nodeStore = fixtures.nodeStore.view,
+        reservationStore = fixtures.reservationStore,
         stagingStore = fixtures.stagingStore
       )
 
@@ -200,6 +199,63 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       testClient.statistics(MockEndpointClient.Statistic.PushCompleted) should be(fixtures.remoteNodes.size)
       testClient.statistics(MockEndpointClient.Statistic.PushFailed) should be(0)
     }
+  }
+
+  it should "expire reservations on successful push" in {
+    val testReservationStore = new MockReservationStore(ignoreMissingReservations = false)
+    val router = new TestRouter(
+      fixtures = new TestFixtures {
+        override lazy val reservationStore: MockReservationStore = testReservationStore
+
+        override def testNodes: Seq[Node] = Seq(localNode)
+      }
+    )
+
+    testReservationStore.reservations().await.size should be(0)
+
+    router.reserve(request = CrateStorageRequest(testManifest)).await
+
+    testReservationStore.reservations().await match {
+      case reservation :: _ => reservation.crate should be(testManifest.crate)
+      case Nil              => fail("Unexpected empty reservations list returned")
+    }
+
+    router.push(testManifest, Source.single(testContent)).await
+
+    testReservationStore.reservations().await.size should be(0)
+
+    eventually {
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(1)
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
+    }
+  }
+
+  it should "fail to push data if no reservation is available" in {
+    val testReservationStore = new MockReservationStore(ignoreMissingReservations = false)
+    val router = new TestRouter(
+      fixtures = new TestFixtures {
+        override lazy val reservationStore: MockReservationStore = testReservationStore
+
+        override def testNodes: Seq[Node] = Seq(localNode)
+      }
+    )
+
+    testReservationStore.reservations().await.size should be(0)
+
+    router
+      .push(testManifest, Source.single(testContent))
+      .map { response =>
+        fail(s"Received unexpected push response from router: [$response]")
+      }
+      .recover {
+        case PushFailure(message) =>
+          message should be(s"Push of crate [${testManifest.crate}] failed; unable to discard reservation for crate")
+          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
+          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+      }
   }
 
   it should "fail to push data when no nodes are available" in {
@@ -550,6 +606,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     )
 
     val request = CrateStorageRequest(
+      crate = Crate.generateId(),
       size = 1,
       copies = 1,
       retention = 1.second,
@@ -558,12 +615,8 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     )
 
     val expectedReservation = CrateStorageReservation(
-      id = CrateStorageReservation.generateId(),
-      size = request.size,
-      copies = request.copies,
-      retention = request.retention,
-      expiration = 1.day,
-      origin = Node.generateId()
+      request = request,
+      expiration = 1.day
     )
 
     for {
@@ -587,6 +640,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     )
 
     val request = CrateStorageRequest(
+      crate = Crate.generateId(),
       size = 1,
       copies = 1,
       retention = 1.second,
@@ -605,6 +659,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     )
 
     val request = CrateStorageRequest(
+      crate = Crate.generateId(),
       size = 1,
       copies = 1,
       retention = 1.second,
@@ -624,6 +679,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     )
 
     val request = CrateStorageRequest(
+      crate = Crate.generateId(),
       size = 1,
       copies = 1,
       retention = 1.second,

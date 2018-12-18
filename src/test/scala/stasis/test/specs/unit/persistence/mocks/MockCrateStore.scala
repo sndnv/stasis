@@ -10,12 +10,12 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.util.{ByteString, Timeout}
 import akka.{Done, NotUsed}
+import stasis.packaging.Crate.Id
 import stasis.packaging.{Crate, Manifest}
 import stasis.persistence.crates.CrateStore
 import stasis.persistence.exceptions.PersistenceFailure
 import stasis.persistence.reservations.ReservationStore
 import stasis.persistence.{CrateStorageRequest, CrateStorageReservation}
-import stasis.routing.Node
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -26,9 +26,10 @@ class MockCrateStore(
   persistDisabled: Boolean = false,
   retrieveDisabled: Boolean = false,
   retrieveEmpty: Boolean = false,
-  reservationDisabled: Boolean = false
+  reservationDisabled: Boolean = false,
+  reservationExpiration: FiniteDuration = 1.day
 )(implicit system: ActorSystem[SpawnProtocol])
-    extends CrateStore {
+    extends CrateStore(reservationStore, reservationExpiration)(system.toUntyped) {
 
   import MockCrateStore._
 
@@ -62,21 +63,31 @@ class MockCrateStore(
     content: Source[ByteString, NotUsed]
   ): Future[Done] =
     if (!persistDisabled) {
-      stats(Statistic.PersistCompleted).incrementAndGet()
-      content
-        .runFold(ByteString.empty) {
-          case (folded, chunk) =>
-            folded.concat(chunk)
-        }
-        .flatMap { data =>
-          storeRef.flatMap(_ ? (ref => MapStoreActor.Put(manifest.crate, data, ref)))
-        }
+      super.persist(manifest, content)
     } else {
       stats(Statistic.PersistFailed).incrementAndGet()
       Future.failed(new PersistenceFailure("[persistDisabled] is set to [true]"))
     }
 
-  override def sink(manifest: Manifest): Future[Sink[ByteString, Future[Done]]] =
+  override def reserve(request: CrateStorageRequest): Future[Option[CrateStorageReservation]] =
+    if (!reservationDisabled) {
+      maxReservationSize match {
+        case Some(size) if request.size > size =>
+          stats(Statistic.ReserveLimited).incrementAndGet()
+          Future.successful(None)
+
+        case _ =>
+          stats(Statistic.ReserveCompleted).incrementAndGet()
+          super.reserve(request)
+      }
+    } else {
+      stats(Statistic.ReserveFailed).incrementAndGet()
+      Future.failed(new PersistenceFailure("[reservationDisabled] is set to [true]"))
+    }
+
+  def statistics: Map[Statistic, Int] = stats.mapValues(_.get())
+
+  override protected def directSink(manifest: Manifest): Future[Sink[StoreValue, Future[Done]]] =
     Future.successful(
       Flow[ByteString]
         .fold(ByteString.empty) {
@@ -91,9 +102,7 @@ class MockCrateStore(
         .toMat(Sink.ignore)(Keep.right)
     )
 
-  override def retrieve(
-    crate: Crate.Id
-  ): Future[Option[Source[ByteString, NotUsed]]] =
+  override protected def directSource(crate: Id): Future[Option[Source[StoreValue, NotUsed]]] =
     if (!retrieveDisabled) {
       if (!retrieveEmpty) {
         stats(Statistic.RetrieveCompleted).incrementAndGet()
@@ -108,34 +117,8 @@ class MockCrateStore(
       Future.failed(new PersistenceFailure("[retrieveDisabled] is set to [true]"))
     }
 
-  override def reserve(request: CrateStorageRequest): Future[Option[CrateStorageReservation]] =
-    if (!reservationDisabled) {
-      maxReservationSize match {
-        case Some(size) if request.size > size =>
-          stats(Statistic.ReserveLimited).incrementAndGet()
-          Future.successful(None)
-
-        case _ =>
-          val reservation = CrateStorageReservation(
-            id = CrateStorageReservation.generateId(),
-            size = request.size,
-            copies = request.copies,
-            retention = request.retention,
-            expiration = 1.day,
-            origin = Node.generateId()
-          )
-
-          stats(Statistic.ReserveCompleted).incrementAndGet()
-          reservationStore.put(reservation).map { _ =>
-            Some(reservation)
-          }
-      }
-    } else {
-      stats(Statistic.ReserveFailed).incrementAndGet()
-      Future.failed(new PersistenceFailure("[reservationDisabled] is set to [true]"))
-    }
-
-  def statistics: Map[Statistic, Int] = stats.mapValues(_.get())
+  override protected def isStorageAvailable(request: CrateStorageRequest): Future[Boolean] =
+    Future.successful(true)
 }
 
 object MockCrateStore {

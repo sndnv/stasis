@@ -65,12 +65,11 @@ class HttpEndpoint(
                       parameters("reservation".as[java.util.UUID]) {
                         reservationId =>
                           onSuccess(reservationStore.get(reservationId)) {
-                            case Some(reservation) =>
+                            case Some(reservation) if reservation.crate == crateId =>
                               extractDataBytes { stream =>
                                 onSuccess(
                                   router.push(
                                     Manifest(
-                                      crate = crateId,
                                       source = node,
                                       reservation = reservation
                                     ),
@@ -82,10 +81,23 @@ class HttpEndpoint(
                                 }
                               }
 
+                            case Some(reservation) =>
+                              val _ = request.discardEntityBytes()
+
+                              log.error(
+                                "Node [{}] failed to push crate with ID [{}]; reservation [{}] is for crate [{}]",
+                                node,
+                                crateId,
+                                reservationId,
+                                reservation.crate
+                              )
+
+                              complete(StatusCodes.BadRequest)
+
                             case None =>
                               val _ = request.discardEntityBytes()
 
-                              log.warning(
+                              log.error(
                                 "Node [{}] failed to push crate with ID [{}]; reservation [{}] not found",
                                 node,
                                 crateId,

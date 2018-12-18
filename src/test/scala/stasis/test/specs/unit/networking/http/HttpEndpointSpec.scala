@@ -23,8 +23,6 @@ import scala.concurrent.duration._
 
 class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
-  override implicit val timeout: Timeout = 3.seconds
-
   private implicit val typedSystem: akka.actor.typed.ActorSystem[SpawnProtocol] = akka.actor.typed.ActorSystem(
     Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
     "HttpEndpointSpec_Untyped"
@@ -49,6 +47,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
   private val testReservation = CrateStorageReservation(
     id = CrateStorageReservation.generateId(),
+    crate = Crate.generateId(),
     size = crateContent.length,
     copies = 3,
     retention = 3.seconds,
@@ -60,7 +59,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val endpoint = new TestHttpEndpoint()
     endpoint.testReservationStore.put(testReservation).await
 
-    Put(s"/crate/${Crate.generateId()}?reservation=${testReservation.id}")
+    Put(s"/crate/${testReservation.crate}?reservation=${testReservation.id}")
       .addCredentials(testCredentials)
       .withEntity(crateContent) ~> endpoint.routes ~> check {
       status should be(StatusCodes.OK)
@@ -106,6 +105,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val endpoint = new TestHttpEndpoint()
 
     val storageRequest = CrateStorageRequest(
+      crate = Crate.generateId(),
       size = 42,
       copies = 3,
       retention = 15.seconds,
@@ -115,6 +115,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     val expectedReservation = CrateStorageReservation(
       id = CrateStorageReservation.generateId(),
+      crate = Crate.generateId(),
       size = storageRequest.size,
       copies = storageRequest.copies,
       retention = storageRequest.retention,
@@ -141,6 +142,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     )
 
     val storageRequest = CrateStorageRequest(
+      crate = Crate.generateId(),
       size = 100,
       copies = 3,
       retention = 15.seconds,
@@ -159,7 +161,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val endpoint = new TestHttpEndpoint()
     endpoint.testReservationStore.put(testReservation).await
 
-    Put(s"/crate/${Crate.generateId()}?reservation=${testReservation.id}")
+    Put(s"/crate/${testReservation.crate}?reservation=${testReservation.id}")
       .addCredentials(testCredentials)
       .withEntity(crateContent) ~> endpoint.routes ~> check {
       status should be(StatusCodes.OK)
@@ -178,18 +180,27 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
+  it should "fail to store crate data when reservation is for a different crate" in {
+    val endpoint = new TestHttpEndpoint()
+    endpoint.testReservationStore.put(testReservation).await
+
+    Put(s"/crate/${Crate.generateId()}?reservation=${testReservation.id}")
+      .addCredentials(testCredentials)
+      .withEntity(crateContent) ~> endpoint.routes ~> check {
+      status should be(StatusCodes.BadRequest)
+    }
+  }
+
   it should "successfully retrieve crate data" in {
     val endpoint = new TestHttpEndpoint()
     endpoint.testReservationStore.put(testReservation).await
 
-    val crateId = Crate.generateId()
-
-    Put(s"/crate/$crateId?reservation=${testReservation.id}")
+    Put(s"/crate/${testReservation.crate}?reservation=${testReservation.id}")
       .addCredentials(testCredentials)
       .withEntity(crateContent) ~> endpoint.routes ~> check {
       status should be(StatusCodes.OK)
 
-      Get(s"/crate/$crateId")
+      Get(s"/crate/${testReservation.crate}")
         .addCredentials(testCredentials) ~> endpoint.routes ~> check {
         status should be(StatusCodes.OK)
         responseAs[ByteString] should be(crateContent.getBytes)

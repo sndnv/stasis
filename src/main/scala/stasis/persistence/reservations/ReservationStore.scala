@@ -1,18 +1,23 @@
 package stasis.persistence.reservations
 
 import akka.Done
+import stasis.packaging.Crate
 import stasis.persistence.CrateStorageReservation
-import stasis.persistence.CrateStorageReservation.Id
 
 import scala.concurrent.Future
 
 trait ReservationStore { store =>
   def put(reservation: CrateStorageReservation): Future[Done]
+  def discard(crate: Crate.Id): Future[Boolean]
   def get(reservation: CrateStorageReservation.Id): Future[Option[CrateStorageReservation]]
+  def existsFor(crate: Crate.Id): Future[Boolean]
   def reservations(): Future[Seq[CrateStorageReservation]]
 
   def view: ReservationStoreView = new ReservationStoreView {
-    override def get(reservation: Id): Future[Option[CrateStorageReservation]] = store.get(reservation)
-    override def reservations(): Future[Seq[CrateStorageReservation]] = store.reservations()
+    override def get(reservation: CrateStorageReservation.Id): Future[Option[CrateStorageReservation]] =
+      store.get(reservation)
+
+    override def reservations(): Future[Seq[CrateStorageReservation]] =
+      store.reservations()
   }
 }
