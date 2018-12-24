@@ -5,9 +5,9 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.HttpCredentials
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.{ExceptionHandler, Route}
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.stream.ActorMaterializer
 import stasis.networking.Endpoint
@@ -18,6 +18,7 @@ import stasis.routing.Router
 import stasis.security.NodeAuthenticator
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.util.control.NonFatal
 
 class HttpEndpoint(
   router: Router,
@@ -36,6 +37,29 @@ class HttpEndpoint(
 
   def start(hostname: String, port: Int): Future[Http.ServerBinding] =
     Http().bindAndHandle(routes, hostname, port)
+
+  private implicit def sanitizingExceptionHandler: ExceptionHandler =
+    ExceptionHandler {
+      case NonFatal(e) =>
+        extractRequestEntity { entity =>
+          val _ = entity.discardBytes()
+          val failureReference = java.util.UUID.randomUUID()
+
+          log.error(
+            e,
+            "Unhandled exception encountered: [{}]; failure reference is [{}]",
+            e.getMessage,
+            failureReference
+          )
+
+          complete(
+            HttpResponse(
+              status = StatusCodes.InternalServerError,
+              entity = s"Failed to process request; failure reference is [$failureReference]"
+            )
+          )
+        }
+    }
 
   val routes: Route =
     (extractMethod & extractUri & extractClientIP & extractRequest) { (method, uri, remoteAddress, request) =>

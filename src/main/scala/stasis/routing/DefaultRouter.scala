@@ -417,7 +417,9 @@ class DefaultRouter(
         if (successful.lengthCompare(destinationsCount) == 0) {
           Future.successful(Done)
         } else {
-          manifestStore.put(manifest.copy(destinations = manifest.destinations.filterNot(successful.contains)))
+          manifestStore.put(
+            manifest.copy(destinations = manifest.destinations.filterNot(successful.contains(_)))
+          )
         }
       }
     } else {
