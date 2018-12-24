@@ -1,16 +1,18 @@
 package stasis.persistence.staging
 
-import akka.actor.ActorSystem
+import akka.actor.Cancellable
+import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.event.Logging
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Broadcast, Sink, Source}
-import akka.util.ByteString
+import akka.util.{ByteString, Timeout}
 import akka.{Done, NotUsed}
 import stasis.networking.http.HttpEndpointClient
-import stasis.packaging.Manifest
-import stasis.persistence.CrateStorageRequest
+import stasis.packaging.{Crate, Manifest}
 import stasis.persistence.crates.CrateStore
 import stasis.persistence.exceptions.StagingFailure
+import stasis.persistence.{CrateStorageRequest, MapStore}
 import stasis.routing.Node
 
 import scala.concurrent.duration.FiniteDuration
@@ -21,12 +23,15 @@ class StagingStore(
   crateStore: CrateStore,
   httpClient: HttpEndpointClient,
   destagingDelay: FiniteDuration
-)(implicit val system: ActorSystem) {
+)(implicit val system: ActorSystem[SpawnProtocol], timeout: Timeout) {
 
-  private implicit val ec: ExecutionContext = system.dispatcher
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
+  private implicit val ec: ExecutionContext = system.executionContext
+  private implicit val mat: ActorMaterializer = ActorMaterializer()(system.toUntyped)
 
-  private val log = Logging(system, this.getClass.getName)
+  private val scheduleStore: MapStore[Crate.Id, Cancellable] =
+    MapStore[Crate.Id, Cancellable](name = "schedule-store")
+
+  private val log = Logging(system.toUntyped, this.getClass.getName)
 
   def stage(
     manifest: Manifest,
@@ -40,7 +45,7 @@ class StagingStore(
         case Some(reservation) =>
           log.debug("Staging storage reservation for crate [{}] completed: [{}]", manifest.crate, reservation)
 
-          crateStore.persist(manifest, content).map { result =>
+          crateStore.persist(manifest, content).flatMap { _ =>
             log.debug(
               "Scheduling destaging of crate [{}] in [{}] second(s) to [{}] destination(s): [{}]",
               manifest.crate,
@@ -49,8 +54,11 @@ class StagingStore(
               destinations
             )
 
-            schedule(destagingDelay, () => destage(manifest, destinations))
-            result
+            schedule(
+              destagingDelay,
+              manifest.crate,
+              () => destage(manifest, destinations)
+            )
           }
 
         case None =>
@@ -64,11 +72,32 @@ class StagingStore(
       Future.failed(StagingFailure(message))
     }
 
+  def drop(crate: Crate.Id): Future[Boolean] =
+    for {
+      cancellableOpt <- scheduleStore.get(crate)
+      result <- scheduleStore.delete(crate)
+    } yield {
+      cancellableOpt match {
+        case Some(cancellable) =>
+          val cancelResult = cancellable.cancel()
+          log.debug(
+            "Cancelling destaging completed; schedule already cancelled: [{}]",
+            !cancelResult
+          )
+
+        case None =>
+          log.warning("No destaging schedule found for crate [{}]", crate)
+      }
+
+      result
+    }
+
   private def schedule(
     delay: FiniteDuration,
+    crate: Crate.Id,
     action: () => Future[Done]
-  ): Unit = {
-    val _ = system.scheduler.scheduleOnce(delay) {
+  ): Future[Done] = {
+    val cancellable = system.scheduler.scheduleOnce(delay) {
       val _ = action()
         .recover {
           case NonFatal(e) =>
@@ -76,6 +105,8 @@ class StagingStore(
             Done
         }
     }
+
+    scheduleStore.put(crate, cancellable)
   }
 
   private def destage(
@@ -89,52 +120,54 @@ class StagingStore(
       destinations
     )
 
-    crateStore
-      .retrieve(manifest.crate)
-      .flatMap {
-        case Some(content) =>
-          val destinationSinks =
-            Future.sequence(
-              destinations.map {
-                case (node, copies) =>
-                  node match {
-                    case Node.Local(_, store) =>
-                      store.sink(manifest.copy(copies = copies))
+    scheduleStore.delete(manifest.crate).flatMap { _ =>
+      crateStore
+        .retrieve(manifest.crate)
+        .flatMap {
+          case Some(content) =>
+            val destinationSinks =
+              Future.sequence(
+                destinations.map {
+                  case (node, copies) =>
+                    node match {
+                      case Node.Local(_, store) =>
+                        store.sink(manifest.copy(copies = copies))
 
-                    case Node.Remote.Http(_, address) =>
-                      httpClient.sink(address, manifest.copy(copies = copies))
-                  }
+                      case Node.Remote.Http(_, address) =>
+                        httpClient.sink(address, manifest.copy(copies = copies))
+                    }
+                }
+              )
+
+            destinationSinks.map { sinks =>
+              val broadcastSink = sinks match {
+                case first :: second :: remaining =>
+                  Sink.combine(
+                    first,
+                    second,
+                    remaining: _*
+                  )(Broadcast[ByteString](_))
+
+                case single :: Nil =>
+                  single.mapMaterializedValue(_ => NotUsed)
               }
-            )
 
-          destinationSinks.map { sinks =>
-            val broadcastSink = sinks match {
-              case first :: second :: remaining =>
-                Sink.combine(
-                  first,
-                  second,
-                  remaining: _*
-                )(Broadcast[ByteString](_))
+              val _ = content.runWith(broadcastSink)
 
-              case single :: Nil =>
-                single.mapMaterializedValue(_ => NotUsed)
+              log.info(
+                "Destaging crate [{}] to [{}] destinations complete",
+                manifest.crate,
+                destinations.size
+              )
+
+              Done
             }
 
-            val _ = content.runWith(broadcastSink)
-
-            log.info(
-              "Destaging crate [{}] to [{}] destinations complete",
-              manifest.crate,
-              destinations.size
-            )
-
-            Done
-          }
-
-        case None =>
-          val message = s"Destaging crate [${manifest.crate}] failed: crate content not found"
-          log.error(message)
-          Future.failed(StagingFailure(message))
-      }
+          case None =>
+            val message = s"Destaging crate [${manifest.crate}] failed: crate content not found"
+            log.error(message)
+            Future.failed(StagingFailure(message))
+        }
+    }
   }
 }

@@ -8,6 +8,7 @@ import scala.concurrent.Future
 
 trait NodeStore { store =>
   def put(node: Node): Future[Done]
+  def delete(node: Node.Id): Future[Boolean]
   def get(node: Node.Id): Future[Option[Node]]
   def nodes: Future[Map[Node.Id, Node]]
 

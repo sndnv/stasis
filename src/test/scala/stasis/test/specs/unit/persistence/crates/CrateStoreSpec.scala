@@ -7,7 +7,6 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
-import org.scalatest.concurrent.Eventually
 import stasis.packaging
 import stasis.packaging.{Crate, Manifest}
 import stasis.packaging.Crate.Id
@@ -22,7 +21,7 @@ import stasis.test.specs.unit.persistence.mocks.{MockCrateStore, MockReservation
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class CrateStoreSpec extends AsyncUnitSpec with Eventually {
+class CrateStoreSpec extends AsyncUnitSpec {
 
   private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
@@ -43,6 +42,9 @@ class CrateStoreSpec extends AsyncUnitSpec with Eventually {
 
     override protected def directSource(crate: Id): Future[Option[Source[ByteString, NotUsed]]] =
       backingCrateStore.retrieve(crate)
+
+    override protected def dropContent(crate: Id): Future[Boolean] =
+      backingCrateStore.discard(crate)
 
     override protected def isStorageAvailable(request: CrateStorageRequest): Future[Boolean] =
       Future.successful(isStorageAvailable)
@@ -131,7 +133,7 @@ class CrateStoreSpec extends AsyncUnitSpec with Eventually {
       }
       .recover {
         case ReservationFailure(message) =>
-          message should be(s"Failed to discard reservation for crate [${testManifest.crate}]")
+          message should be(s"Failed to remove reservation for crate [${testManifest.crate}]")
           store.backingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
           store.backingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
       }
@@ -166,7 +168,7 @@ class CrateStoreSpec extends AsyncUnitSpec with Eventually {
       }
       .recover {
         case ReservationFailure(message) =>
-          message should be(s"Failed to discard reservation for crate [${testManifest.crate}]")
+          message should be(s"Failed to remove reservation for crate [${testManifest.crate}]")
           store.backingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
           store.backingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
       }
@@ -177,10 +179,8 @@ class CrateStoreSpec extends AsyncUnitSpec with Eventually {
 
     store.backingCrateStore.persist(testManifest, Source.single(testContent)).await
 
-    eventually {
-      store.backingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-      store.backingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-    }
+    store.backingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+    store.backingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
 
     val actualSource = store.retrieve(testManifest.crate).await match {
       case Some(source) => source
@@ -197,16 +197,35 @@ class CrateStoreSpec extends AsyncUnitSpec with Eventually {
     store.backingCrateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
   }
 
+  it should "successfully discard existing crates" in {
+    val store = new TestCrateStore()
+
+    store.backingCrateStore.persist(testManifest, Source.single(testContent)).await
+
+    store.backingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+    store.backingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+
+    store.discard(testManifest.crate).await should be(true)
+    store.backingCrateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(1)
+    store.backingCrateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(0)
+  }
+
+  it should "fail to discard crates that do not exist" in {
+    val store = new TestCrateStore()
+
+    store.discard(testManifest.crate).await should be(false)
+    store.backingCrateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(0)
+    store.backingCrateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(1)
+  }
+
   it should "provide a read-only view" in {
     val store = new TestCrateStore()
     val storeView = store.view
 
     store.backingCrateStore.persist(testManifest, Source.single(testContent)).await
 
-    eventually {
-      store.backingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-      store.backingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-    }
+    store.backingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+    store.backingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
 
     val actualSource = storeView.retrieve(testManifest.crate).await match {
       case Some(source) => source

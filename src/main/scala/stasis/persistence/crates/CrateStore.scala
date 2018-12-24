@@ -39,15 +39,15 @@ abstract class CrateStore(
   def sink(manifest: Manifest): Future[Sink[ByteString, Future[Done]]] = {
     log.debug("Retrieving content sink for crate [{}] with manifest [{}]", manifest.crate, manifest)
 
-    reservationStore.discard(manifest.crate).flatMap { reservationDiscarded =>
-      if (reservationDiscarded) {
-        log.debug("Reservation for crate [{}] discarded", manifest.crate)
+    reservationStore.delete(manifest.crate).flatMap { reservationRemoved =>
+      if (reservationRemoved) {
+        log.debug("Reservation for crate [{}] removed", manifest.crate)
         directSink(manifest).map { sink =>
-          log.debug("Content sink for crate [{}] retrieved", manifest.crate)
+          log.debug("Content sink for crate [{}] removed", manifest.crate)
           sink
         }
       } else {
-        val message = s"Failed to discard reservation for crate [${manifest.crate}]"
+        val message = s"Failed to remove reservation for crate [${manifest.crate}]"
         log.error(message)
         Future.failed(ReservationFailure(message))
       }
@@ -59,8 +59,21 @@ abstract class CrateStore(
     directSource(crate)
   }
 
+  def discard(crate: Crate.Id): Future[Boolean] = {
+    log.debug("Discarding crate [{}]", crate)
+    dropContent(crate).map { result =>
+      if (result) {
+        log.debug("Discarded crate [{}]", crate)
+      } else {
+        log.warning("Failed to discard crate [{}]; crate not found", crate)
+      }
+
+      result
+    }
+  }
+
   def reserve(request: CrateStorageRequest): Future[Option[CrateStorageReservation]] = {
-    log.debug("Processing reservation request [{}] for crate", request, request.crate)
+    log.debug("Processing reservation request [{}] for crate [{}]", request, request.crate)
 
     reservationStore.existsFor(request.crate).flatMap { exists =>
       if (!exists) {
@@ -94,5 +107,6 @@ abstract class CrateStore(
 
   protected def directSink(manifest: Manifest): Future[Sink[ByteString, Future[Done]]]
   protected def directSource(crate: Crate.Id): Future[Option[Source[ByteString, NotUsed]]]
+  protected def dropContent(crate: Crate.Id): Future[Boolean]
   protected def isStorageAvailable(request: CrateStorageRequest): Future[Boolean]
 }

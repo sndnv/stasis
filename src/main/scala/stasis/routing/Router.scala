@@ -18,6 +18,10 @@ trait Router {
     crate: Crate.Id
   ): Future[Option[Source[ByteString, NotUsed]]]
 
+  def discard(
+    crate: Crate.Id
+  ): Future[Done]
+
   def reserve(
     request: CrateStorageRequest
   ): Future[Option[CrateStorageReservation]]

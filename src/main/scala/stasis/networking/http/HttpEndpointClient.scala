@@ -15,8 +15,9 @@ import stasis.networking.exceptions.{CredentialsFailure, EndpointFailure, Reserv
 import stasis.networking.{EndpointClient, EndpointCredentials}
 import stasis.packaging.{Crate, Manifest}
 import stasis.persistence.{CrateStorageRequest, CrateStorageReservation}
-
 import scala.concurrent.{ExecutionContext, Future}
+
+import stasis.packaging.Crate.Id
 
 class HttpEndpointClient(
   override protected val credentials: EndpointCredentials[HttpEndpointAddress, HttpCredentials]
@@ -26,10 +27,10 @@ class HttpEndpointClient(
   import HttpEndpoint._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  private implicit lazy val mat: ActorMaterializer = ActorMaterializer()
-  private implicit lazy val ec: ExecutionContext = system.dispatcher
+  private implicit val mat: ActorMaterializer = ActorMaterializer()
+  private implicit val ec: ExecutionContext = system.dispatcher
 
-  private lazy val log = Logging(system, this.getClass.getName)
+  private val log = Logging(system, this.getClass.getName)
 
   override def push(
     address: HttpEndpointAddress,
@@ -48,7 +49,7 @@ class HttpEndpointClient(
         }
 
       case None =>
-        val message = s"Push to endpoint ${address.uri} failed; unable to retrieve credentials"
+        val message = s"Push to endpoint [${address.uri}] failed; unable to retrieve credentials"
         log.error(message)
         Future.failed(CredentialsFailure(message))
     }
@@ -74,7 +75,7 @@ class HttpEndpointClient(
         }
 
       case None =>
-        val message = s"Push to endpoint ${address.uri} via sink failed; unable to retrieve credentials"
+        val message = s"Push to endpoint [${address.uri}] via sink failed; unable to retrieve credentials"
         log.error(message)
         Future.failed(CredentialsFailure(message))
     }
@@ -91,7 +92,21 @@ class HttpEndpointClient(
         pullCrate(address, crate, endpointCredentials)
 
       case None =>
-        val message = s"Pull from endpoint ${address.uri} failed; unable to retrieve credentials"
+        val message = s"Pull from endpoint [${address.uri}] failed; unable to retrieve credentials"
+        log.error(message)
+        Future.failed(CredentialsFailure(message))
+    }
+  }
+
+  override def discard(address: HttpEndpointAddress, crate: Id): Future[Boolean] = {
+    log.debug("Discarding from endpoint [{}] crate with ID [{}]", address.uri, crate)
+
+    credentials.provide(address) match {
+      case Some(endpointCredentials) =>
+        discardCrate(address, crate, endpointCredentials)
+
+      case None =>
+        val message = s"Discard from endpoint [${address.uri}] failed; unable to retrieve credentials"
         log.error(message)
         Future.failed(CredentialsFailure(message))
     }
@@ -200,6 +215,37 @@ class HttpEndpointClient(
             case _ =>
               val _ = entity.discardBytes()
               val message = s"Endpoint [${address.uri}] responded to pull with unexpected status: [${status.value}]"
+              log.warning(message)
+              Future.failed(EndpointFailure(message))
+          }
+      }
+
+  private def discardCrate(
+    address: HttpEndpointAddress,
+    crate: Crate.Id,
+    endpointCredentials: HttpCredentials
+  ): Future[Boolean] =
+    Http()
+      .singleRequest(
+        request = HttpRequest(
+          method = HttpMethods.DELETE,
+          uri = s"${address.uri}/crate/$crate"
+        ).addCredentials(endpointCredentials)
+      )
+      .flatMap {
+        case HttpResponse(status, _, entity, _) =>
+          val _ = entity.discardBytes()
+          status match {
+            case StatusCodes.OK =>
+              log.info("Endpoint [{}] responded to discard with OK", address.uri)
+              Future.successful(true)
+
+            case StatusCodes.InternalServerError =>
+              log.error("Endpoint [{}] failed to discard crate [{}]", address.uri, crate)
+              Future.successful(false)
+
+            case _ =>
+              val message = s"Endpoint [${address.uri}] responded to discard with unexpected status: [${status.value}]"
               log.warning(message)
               Future.failed(EndpointFailure(message))
           }

@@ -11,7 +11,7 @@ import stasis.networking.http.HttpEndpointAddress
 import stasis.packaging.{Crate, Manifest}
 import stasis.persistence.staging.StagingStore
 import stasis.persistence.{CrateStorageRequest, CrateStorageReservation}
-import stasis.routing.exceptions.{DistributionFailure, PullFailure, PushFailure}
+import stasis.routing.exceptions.{DiscardFailure, DistributionFailure, PullFailure, PushFailure}
 import stasis.routing.{DefaultRouter, Node}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.networking.mocks.MockEndpointClient
@@ -150,7 +150,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       ) should be(Failure(DistributionFailure("No nodes provided")))
   }
 
-  it should "push data to nodes" in {
+  it should "push crates to nodes" in {
     val router = new TestRouter()
 
     router.push(testManifest, Source.single(testContent)).await
@@ -166,7 +166,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     }
   }
 
-  it should "push data to nodes using staging" in {
+  it should "push crates to nodes using staging" in {
     val stagingCrateStore = new MockCrateStore(new MockReservationStore())
     val testClient = new MockEndpointClient()
 
@@ -177,7 +177,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
             crateStore = stagingCrateStore,
             httpClient = testClient,
             destagingDelay = 100.milliseconds
-          )(system.toUntyped)
+          )
         )
     }
 
@@ -233,7 +233,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     }
   }
 
-  it should "fail to push data if no reservation is available" in {
+  it should "fail to push crates if no reservation is available" in {
     val testReservationStore = new MockReservationStore(ignoreMissingReservations = false)
     val router = new TestRouter(
       fixtures = new TestFixtures {
@@ -252,13 +252,13 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       }
       .recover {
         case PushFailure(message) =>
-          message should be(s"Push of crate [${testManifest.crate}] failed; unable to discard reservation for crate")
+          message should be(s"Push of crate [${testManifest.crate}] failed; unable to remove reservation for crate")
           router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
           router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
       }
   }
 
-  it should "fail to push data when no nodes are available" in {
+  it should "fail to push crates when no nodes are available" in {
     val router = new TestRouter(
       fixtures = new TestFixtures {
         override def testNodes: Seq[Node] = Seq.empty
@@ -282,7 +282,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
-  it should "fail to push data when no copies are requested" in {
+  it should "fail to push crates when no copies are requested" in {
     val router = new TestRouter()
 
     router
@@ -334,7 +334,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     }
   }
 
-  it should "fail to push data when all nodes fail" in {
+  it should "fail to push crates when all nodes fail" in {
     val fixtures = new TestFixtures {
       override def testNodes: Seq[Node] = remoteNodes
     }
@@ -369,7 +369,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
-  it should "pull data from remote nodes" in {
+  it should "pull crates from remote nodes" in {
     val router = new TestRouter(
       fixtures = new TestFixtures {
         override def testNodes: Seq[Node] = remoteNodes
@@ -401,7 +401,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.testClient.statistics(MockEndpointClient.Statistic.PullFailed) should be(0)
   }
 
-  it should "pull data from local nodes" in {
+  it should "pull crates from local nodes" in {
     val router = new TestRouter(
       fixtures = new TestFixtures {
         override def testNodes: Seq[Node] = Seq(localNode)
@@ -429,7 +429,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.testClient.statistics(MockEndpointClient.Statistic.PullFailed) should be(0)
   }
 
-  it should "fail to pull data when crate manifest is missing" in {
+  it should "fail to pull crates when crate manifest is missing" in {
     val router = new TestRouter()
 
     val missingCrateId = Crate.generateId()
@@ -451,7 +451,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
-  it should "fail to pull data if crate manifest has no destinations" in {
+  it should "fail to pull crates if crate manifest has no destinations" in {
     val router = new TestRouter()
 
     router.fixtures.manifestStore.put(testManifest).await
@@ -572,7 +572,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.testClient.statistics(MockEndpointClient.Statistic.PullFailed) should be(0)
   }
 
-  it should "fail to pull missing data" in {
+  it should "fail to pull missing crates" in {
     val fixtures = new TestFixtures {
       override def testNodes: Seq[Node] = remoteNodes
     }
@@ -596,6 +596,235 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.testClient.statistics(MockEndpointClient.Statistic.PullCompletedWithData) should be(0)
     router.testClient.statistics(MockEndpointClient.Statistic.PullCompletedEmpty) should be(fixtures.testNodes.size)
     router.testClient.statistics(MockEndpointClient.Statistic.PullFailed) should be(0)
+  }
+
+  it should "successfully discard existing crates" in {
+    val router = new TestRouter()
+
+    router.push(testManifest, Source.single(testContent)).await
+
+    eventually {
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+    }
+
+    router.discard(testManifest.crate).await
+
+    router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(1)
+    router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(0)
+    router.testClient.statistics(MockEndpointClient.Statistic.PushCompleted) should be(2)
+    router.testClient.statistics(MockEndpointClient.Statistic.PushFailed) should be(0)
+    router.testClient.statistics(MockEndpointClient.Statistic.DiscardCompleted) should be(2)
+    router.testClient.statistics(MockEndpointClient.Statistic.DiscardFailed) should be(0)
+  }
+
+  it should "successfully discard staged crates" in {
+    val stagingCrateStore = new MockCrateStore(new MockReservationStore())
+    val testClient = new MockEndpointClient()
+
+    val fixtures = new TestFixtures {
+      override lazy val stagingStore: Option[StagingStore] =
+        Some(
+          new StagingStore(
+            crateStore = stagingCrateStore,
+            httpClient = testClient,
+            destagingDelay = 10.seconds
+          )
+        )
+    }
+
+    val router = new TestRouter(fixtures, testClient)
+
+    router.push(testManifest, Source.single(testContent)).await
+
+    eventually {
+      stagingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+      stagingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+    }
+
+    router.discard(testManifest.crate).await
+
+    router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
+    router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+    router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(0)
+    router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(0)
+    router.testClient.statistics(MockEndpointClient.Statistic.PushCompleted) should be(0)
+    router.testClient.statistics(MockEndpointClient.Statistic.PushFailed) should be(0)
+    router.testClient.statistics(MockEndpointClient.Statistic.DiscardCompleted) should be(0)
+    router.testClient.statistics(MockEndpointClient.Statistic.DiscardFailed) should be(0)
+  }
+
+  it should "fail to discard crates with no manifest" in {
+    val router = new TestRouter()
+
+    router
+      .discard(testManifest.crate)
+      .map { response =>
+        fail(s"Received unexpected response from router: [$response]")
+      }
+      .recover {
+        case DiscardFailure(message) =>
+          message should be(s"Crate [${testManifest.crate}] was not discarded; failed to retrieve manifest")
+
+          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
+          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(0)
+          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(0)
+          router.testClient.statistics(MockEndpointClient.Statistic.PushCompleted) should be(0)
+          router.testClient.statistics(MockEndpointClient.Statistic.PushFailed) should be(0)
+          router.testClient.statistics(MockEndpointClient.Statistic.DiscardCompleted) should be(0)
+          router.testClient.statistics(MockEndpointClient.Statistic.DiscardFailed) should be(0)
+      }
+  }
+
+  it should "fail to discard crates with no destinations" in {
+    val router = new TestRouter()
+
+    router.fixtures.manifestStore.put(testManifest).await
+
+    router
+      .discard(testManifest.crate)
+      .map { response =>
+        fail(s"Received unexpected pull response from router: [$response]")
+      }
+      .recover {
+        case DiscardFailure(message) =>
+          message should be(s"Crate [${testManifest.crate}] was not discarded; no destinations found")
+
+          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
+          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(0)
+          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(0)
+          router.testClient.statistics(MockEndpointClient.Statistic.PushCompleted) should be(0)
+          router.testClient.statistics(MockEndpointClient.Statistic.PushFailed) should be(0)
+          router.testClient.statistics(MockEndpointClient.Statistic.DiscardCompleted) should be(0)
+          router.testClient.statistics(MockEndpointClient.Statistic.DiscardFailed) should be(0)
+      }
+  }
+
+  it should "fail to discard crates with some missing nodes" in {
+    val router = new TestRouter()
+
+    router.push(testManifest, Source.single(testContent)).await
+
+    eventually {
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+      router.testClient.statistics(MockEndpointClient.Statistic.PushCompleted) should be(
+        router.fixtures.remoteNodes.size
+      )
+      router.testClient.statistics(MockEndpointClient.Statistic.PushFailed) should be(0)
+    }
+
+    val missingNodeId = Node.generateId()
+
+    router.fixtures.manifestStore
+      .put(testManifest.copy(destinations = router.fixtures.testNodes.map(_.id) :+ missingNodeId))
+      .await
+
+    router
+      .discard(testManifest.crate)
+      .map { response =>
+        fail(s"Received unexpected pull response from router: [$response]")
+      }
+      .recover {
+        case DiscardFailure(message) =>
+          message should be(
+            s"Crate [${testManifest.crate}] was not discarded; crate or nodes missing"
+          )
+
+          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(1)
+          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(0)
+          router.testClient.statistics(MockEndpointClient.Statistic.PushCompleted) should be(2)
+          router.testClient.statistics(MockEndpointClient.Statistic.PushFailed) should be(0)
+          router.testClient.statistics(MockEndpointClient.Statistic.DiscardCompleted) should be(2)
+          router.testClient.statistics(MockEndpointClient.Statistic.DiscardFailed) should be(0)
+      }
+  }
+
+  it should "fail to discard crates with all nodes missing" in {
+    val router = new TestRouter()
+
+    router.push(testManifest, Source.single(testContent)).await
+
+    eventually {
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+      router.testClient.statistics(MockEndpointClient.Statistic.PushCompleted) should be(2)
+      router.testClient.statistics(MockEndpointClient.Statistic.PushFailed) should be(0)
+    }
+
+    val missingNodeId = Node.generateId()
+
+    router.fixtures.manifestStore
+      .put(testManifest.copy(destinations = Seq(missingNodeId)))
+      .await
+
+    router
+      .discard(testManifest.crate)
+      .map { response =>
+        fail(s"Received unexpected pull response from router: [$response]")
+      }
+      .recover {
+        case DiscardFailure(message) =>
+          message should be(
+            s"Crate [${testManifest.crate}] was not discarded; crate or nodes missing"
+          )
+
+          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(0)
+          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(0)
+          router.testClient.statistics(MockEndpointClient.Statistic.PushCompleted) should be(2)
+          router.testClient.statistics(MockEndpointClient.Statistic.PushFailed) should be(0)
+          router.testClient.statistics(MockEndpointClient.Statistic.DiscardCompleted) should be(0)
+          router.testClient.statistics(MockEndpointClient.Statistic.DiscardFailed) should be(0)
+      }
+  }
+
+  it should "handle partial discards" in {
+    val router = new TestRouter(
+      fixtures = new TestFixtures {
+        override lazy val crateStore: MockCrateStore =
+          new MockCrateStore(new MockReservationStore(), discardDisabled = true)
+      }
+    )
+
+    router.push(testManifest, Source.single(testContent)).await
+
+    eventually {
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+    }
+
+    router
+      .discard(testManifest.crate)
+      .map { response =>
+        fail(s"Received unexpected pull response from router: [$response]")
+      }
+      .recover {
+        case DiscardFailure(message) =>
+          message should be(
+            s"Crate [${testManifest.crate}] was not discarded; crate or nodes missing"
+          )
+
+          router.fixtures.manifestStore.get(testManifest.crate).await match {
+            case Some(manifest) =>
+              manifest.destinations should be(Seq(router.fixtures.localNode.id))
+
+            case None =>
+              fail(s"Expected manifest for crate [${testManifest.crate}] from store but none was found")
+          }
+
+          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(0)
+          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(1)
+          router.testClient.statistics(MockEndpointClient.Statistic.PushCompleted) should be(2)
+          router.testClient.statistics(MockEndpointClient.Statistic.PushFailed) should be(0)
+          router.testClient.statistics(MockEndpointClient.Statistic.DiscardCompleted) should be(2)
+          router.testClient.statistics(MockEndpointClient.Statistic.DiscardFailed) should be(0)
+      }
   }
 
   it should "process reservation requests for local nodes" in {

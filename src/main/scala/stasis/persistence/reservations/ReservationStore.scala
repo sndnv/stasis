@@ -8,7 +8,7 @@ import scala.concurrent.Future
 
 trait ReservationStore { store =>
   def put(reservation: CrateStorageReservation): Future[Done]
-  def discard(crate: Crate.Id): Future[Boolean]
+  def delete(crate: Crate.Id): Future[Boolean]
   def get(reservation: CrateStorageReservation.Id): Future[Option[CrateStorageReservation]]
   def existsFor(crate: Crate.Id): Future[Boolean]
   def reservations(): Future[Seq[CrateStorageReservation]]

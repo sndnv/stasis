@@ -13,12 +13,13 @@ import stasis.persistence.nodes.NodeStoreView
 import stasis.persistence.reservations.ReservationStore
 import stasis.persistence.staging.StagingStore
 import stasis.persistence.{CrateStorageRequest, CrateStorageReservation}
-import stasis.routing.exceptions.{DistributionFailure, PullFailure, PushFailure}
-
+import stasis.routing.exceptions.{DiscardFailure, DistributionFailure, PullFailure, PushFailure}
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
+
+import stasis.packaging.Crate.Id
 
 class DefaultRouter(
   httpClient: HttpEndpointClient,
@@ -41,9 +42,9 @@ class DefaultRouter(
     nodeStore.nodes.flatMap { availableNodes =>
       DefaultRouter.distributeCopies(availableNodes.values.toSeq, manifest) match {
         case Success(distribution) =>
-          reservationStore.discard(manifest.crate).flatMap { reservationDiscarded =>
-            if (reservationDiscarded) {
-              log.debug("Reservation for crate [{}] discarded", manifest.crate)
+          reservationStore.delete(manifest.crate).flatMap { reservationRemoved =>
+            if (reservationRemoved) {
+              log.debug("Reservation for crate [{}] removed", manifest.crate)
 
               stagingStore match {
                 case Some(store) =>
@@ -117,7 +118,7 @@ class DefaultRouter(
                     }
               }
             } else {
-              val message = s"Push of crate [${manifest.crate}] failed; unable to discard reservation for crate"
+              val message = s"Push of crate [${manifest.crate}] failed; unable to remove reservation for crate"
               log.error(message)
               Future.failed(PushFailure(message))
             }
@@ -231,6 +232,52 @@ class DefaultRouter(
     }
   }
 
+  override def discard(crate: Id): Future[Done] =
+    manifestStore.get(crate).flatMap {
+      case Some(manifest) =>
+        stagingStore
+          .map(_.drop(crate))
+          .getOrElse(Future.successful(false))
+          .flatMap { droppedFromStaging =>
+            if (droppedFromStaging) {
+              log.debug(
+                "Dropped staged crate [{}] with [{}] nodes: [{}]",
+                crate,
+                manifest.destinations.size,
+                manifest.destinations
+              )
+
+              Future.successful(Done)
+            } else {
+              if (manifest.destinations.nonEmpty) {
+                log.debug(
+                  "Discarding crate [{}] from [{}] nodes: [{}]",
+                  crate,
+                  manifest.destinations.size,
+                  manifest.destinations
+                )
+
+                for {
+                  availableNodes <- nodeStore.nodes
+                  results <- discardFromNodes(manifest, availableNodes)
+                  _ <- processDiscardResults(manifest, results)
+                } yield {
+                  Done
+                }
+              } else {
+                val message = s"Crate [$crate] was not discarded; no destinations found"
+                log.error(message)
+                Future.failed(DiscardFailure(message))
+              }
+            }
+          }
+
+      case None =>
+        val message = s"Crate [$crate] was not discarded; failed to retrieve manifest"
+        log.error(message)
+        Future.failed(DiscardFailure(message))
+    }
+
   override def reserve(request: CrateStorageRequest): Future[Option[CrateStorageReservation]] =
     nodeStore.nodes.flatMap { availableNodes =>
       val distributionResult =
@@ -307,6 +354,74 @@ class DefaultRouter(
       case _: Node.Remote.Http =>
         log.info("Skipping reservation on node [{}]; reserving on remote nodes is not supported", node)
         Future.successful(None)
+    }
+
+  private def discardFromNodes(
+    manifest: Manifest,
+    availableNodes: Map[Node.Id, Node]
+  ): Future[Seq[(Node.Id, Boolean)]] =
+    Future.sequence(
+      manifest.destinations.map { destination =>
+        availableNodes.get(destination) match {
+          case Some(Node.Local(_, crateStore)) =>
+            crateStore.discard(manifest.crate).map(destination -> _)
+
+          case Some(Node.Remote.Http(_, address)) =>
+            httpClient.discard(address, manifest.crate).map(destination -> _)
+
+          case None =>
+            log.error(s"Crate [${manifest.crate}] was not discarded from node [$destination]; node not found")
+            Future.successful(destination -> false)
+        }
+      }
+    )
+
+  private def processDiscardResults(
+    manifest: Manifest,
+    results: Seq[(Node.Id, Boolean)]
+  ): Future[Done] = {
+    val (successful, failed) = results.partition(_._2)
+    val successfulDiscards = successful.map(_._1)
+
+    failed.foreach { node =>
+      log.error("Failed to discard crate [{}] from node [{}]; crate not found", manifest.crate, node._1)
+    }
+
+    val destinationsCount = manifest.destinations.size
+
+    dropManifestNodes(manifest, successfulDiscards, destinationsCount).flatMap { _ =>
+      if (successful.lengthCompare(destinationsCount) == 0) {
+        log.debug(
+          "Discarded crate [{}] from [{}] nodes: [{}]",
+          manifest.crate,
+          manifest.destinations.size,
+          manifest.destinations
+        )
+
+        Future.successful(Done)
+      } else {
+        val message = s"Crate [${manifest.crate}] was not discarded; crate or nodes missing"
+        log.error(message)
+        Future.failed(DiscardFailure(message))
+      }
+    }
+  }
+
+  private def dropManifestNodes(
+    manifest: Manifest,
+    successful: Seq[Node.Id],
+    destinationsCount: Int
+  ): Future[Done] =
+    if (successful.nonEmpty) {
+      manifestStore.delete(manifest.crate).flatMap { _ =>
+        if (successful.lengthCompare(destinationsCount) == 0) {
+          Future.successful(Done)
+        } else {
+          manifestStore.put(manifest.copy(destinations = manifest.destinations.filterNot(successful.contains)))
+        }
+      }
+    } else {
+      Future.successful(Done)
     }
 }
 

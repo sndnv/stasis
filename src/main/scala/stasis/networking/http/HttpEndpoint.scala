@@ -29,10 +29,10 @@ class HttpEndpoint(
   import HttpEndpoint._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  private implicit lazy val mat: ActorMaterializer = ActorMaterializer()
-  private implicit lazy val ec: ExecutionContextExecutor = system.dispatcher
+  private implicit val mat: ActorMaterializer = ActorMaterializer()
+  private implicit val ec: ExecutionContextExecutor = system.dispatcher
 
-  private lazy val log = Logging(system, this.getClass.getName)
+  private val log = Logging(system, this.getClass.getName)
 
   def start(hostname: String, port: Int): Future[Http.ServerBinding] =
     Http().bindAndHandle(routes, hostname, port)
@@ -117,6 +117,12 @@ class HttpEndpoint(
                         case None =>
                           log.warning("Node [{}] failed to pull crate [{}]", node, crateId)
                           complete(StatusCodes.NotFound)
+                      }
+                    },
+                    delete {
+                      onSuccess(router.discard(crateId)) { _ =>
+                        log.info("Node [{}] discarded crate [{}]", node, crateId)
+                        complete(StatusCodes.OK)
                       }
                     }
                   )

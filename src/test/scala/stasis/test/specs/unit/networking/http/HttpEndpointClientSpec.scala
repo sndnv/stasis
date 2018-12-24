@@ -67,7 +67,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
   private val ports: mutable.Queue[Int] = (9000 to 9999).to[mutable.Queue]
 
-  "An HTTP Endpoint Client" should "successfully push crate data" in {
+  "An HTTP Endpoint Client" should "successfully push crates" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
@@ -188,7 +188,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
-  it should "successfully push data via a stream sink" in {
+  it should "successfully push crates via a stream sink" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
@@ -217,7 +217,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     }
   }
 
-  it should "successfully pull crate data" in {
+  it should "successfully pull crates" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
@@ -256,7 +256,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     }
   }
 
-  it should "handle trying to pull missing data" in {
+  it should "handle trying to pull missing crates" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
@@ -338,7 +338,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     }
   }
 
-  it should "fail to push data if no credentials are available" in {
+  it should "fail to push crates if no credentials are available" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
@@ -359,12 +359,12 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Push to endpoint ${endpointAddress.uri} failed; unable to retrieve credentials"
+            s"Push to endpoint [${endpointAddress.uri}] failed; unable to retrieve credentials"
           )
       }
   }
 
-  it should "fail to push data via sink if no credentials are available" in {
+  it should "fail to push crates via sink if no credentials are available" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
@@ -385,12 +385,12 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Push to endpoint ${endpointAddress.uri} via sink failed; unable to retrieve credentials"
+            s"Push to endpoint [${endpointAddress.uri}] via sink failed; unable to retrieve credentials"
           )
       }
   }
 
-  it should "fail to pull data if no credentials are available" in {
+  it should "fail to pull crates if no credentials are available" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
@@ -411,7 +411,101 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Pull from endpoint ${endpointAddress.uri} failed; unable to retrieve credentials"
+            s"Pull from endpoint [${endpointAddress.uri}] failed; unable to retrieve credentials"
+          )
+      }
+  }
+
+  it should "successfully discard existing crates" in {
+    val endpointPort = ports.dequeue()
+    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+
+    val endpoint = new TestHttpEndpoint(
+      authenticator = new MockNodeAuthenticator(testUser, testPassword),
+      port = endpointPort
+    )
+
+    val client = new HttpEndpointClient(
+      credentials = new MockEndpointCredentials(endpointAddress, testUser, testPassword)
+    )
+
+    client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).flatMap { _ =>
+      client.discard(endpointAddress, testManifest.crate).flatMap { result =>
+        result should be(true)
+        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(1)
+        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(0)
+      }
+    }
+  }
+
+  it should "fail to discard crates if no credentials are available" in {
+    val endpointPort = ports.dequeue()
+    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+
+    val _ = new TestHttpEndpoint(
+      authenticator = new MockNodeAuthenticator(testUser, testPassword),
+      port = endpointPort
+    )
+
+    val client = new HttpEndpointClient(
+      credentials = new MockEndpointCredentials(Map.empty)
+    )
+
+    client
+      .discard(endpointAddress, Crate.generateId())
+      .map { response =>
+        fail(s"Received unexpected response from endpoint: [$response]")
+      }
+      .recover {
+        case NonFatal(e) =>
+          e.getMessage should be(
+            s"Discard from endpoint [${endpointAddress.uri}] failed; unable to retrieve credentials"
+          )
+      }
+  }
+
+  it should "fail to discard missing crates" in {
+    val endpointPort = ports.dequeue()
+    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+
+    val _ = new TestHttpEndpoint(
+      authenticator = new MockNodeAuthenticator(testUser, testPassword),
+      port = endpointPort
+    )
+
+    val client = new HttpEndpointClient(
+      credentials = new MockEndpointCredentials(endpointAddress, testUser, testPassword)
+    )
+
+    client.discard(endpointAddress, Crate.generateId()).map { result =>
+      result should be(false)
+    }
+  }
+
+  it should "handle discard failures" in {
+    val endpointPort = ports.dequeue()
+    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+
+    val _ = new TestHttpEndpoint(
+      authenticator = new MockNodeAuthenticator(testUser, testPassword),
+      port = endpointPort
+    )
+
+    val client = new HttpEndpointClient(
+      credentials = new MockEndpointCredentials(endpointAddress, "invalid-user", testPassword)
+    )
+
+    client
+      .discard(endpointAddress, Crate.generateId())
+      .map { response =>
+        fail(s"Received unexpected response from endpoint: [$response]")
+      }
+      .recover {
+        case NonFatal(e) =>
+          e.getMessage should be(
+            s"Endpoint [${endpointAddress.uri}] responded to discard with unexpected status: [401 Unauthorized]"
           )
       }
   }

@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.persistence.staging
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -45,7 +44,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually {
         fixtures.stagingCrateStore,
         fixtures.testClient,
         destagingDelay = 50.milliseconds
-      )(system.toUntyped)
+      )
 
   private val testContent = ByteString("some value")
 
@@ -58,7 +57,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually {
     origin = Node.generateId()
   )
 
-  "A StagingStore" should "stage data to temporary storage" in {
+  "A StagingStore" should "stage crates to temporary storage" in {
     val fixtures = new TestFixtures {}
     val store = new TestStagingStore(fixtures)
     val destinations: Map[Node, Int] = fixtures.remoteNodes ++ fixtures.localNodes
@@ -72,7 +71,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually {
     }
   }
 
-  it should "destage data from temporary storage to multiple crate destinations" in {
+  it should "destage crates from temporary storage to multiple crate destinations" in {
     val fixtures = new TestFixtures {}
     val store = new TestStagingStore(fixtures)
     val destinations: Map[Node, Int] = fixtures.remoteNodes ++ fixtures.localNodes
@@ -94,7 +93,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually {
     }
   }
 
-  it should "destage data from temporary storage to a single crate destination" in {
+  it should "destage crates from temporary storage to a single crate destination" in {
     val fixtures = new TestFixtures {}
     val store = new TestStagingStore(fixtures)
     val destinations: Map[Node, Int] = fixtures.localNodes.map { case (k, v) => (k: Node, v) }
@@ -111,7 +110,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually {
     }
   }
 
-  it should "fail to stage data if no destinations are set" in {
+  it should "fail to stage crates if no destinations are set" in {
     val fixtures = new TestFixtures {}
     val store = new TestStagingStore(fixtures)
     val destinations: Map[Node, Int] = Map.empty
@@ -129,7 +128,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
-  it should "fail to stage data if storage cannot be reserved staging crate store" in {
+  it should "fail to stage crates if storage cannot be reserved staging crate store" in {
     val fixtures = new TestFixtures {
       override lazy val stagingCrateStore: MockCrateStore = new MockCrateStore(
         reservationStore = new MockReservationStore(),
@@ -152,7 +151,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
-  it should "fail to stage data if crate content is missing" in {
+  it should "fail to stage crates if crate content is missing" in {
     {
       val fixtures = new TestFixtures {
         override lazy val stagingCrateStore: MockCrateStore =
@@ -171,6 +170,42 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually {
           fixtures.nodeCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
         }
       }
+    }
+  }
+
+  it should "successfully drop scheduled crate destage operations" in {
+    val fixtures = new TestFixtures {}
+    val store = new TestStagingStore(fixtures)
+    val destinations: Map[Node, Int] = fixtures.remoteNodes ++ fixtures.localNodes
+
+    for {
+      _ <- store.stage(testManifest, destinations = destinations, content = Source.single(testContent))
+      result <- store.drop(testManifest.crate)
+    } yield {
+      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(1)
+      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
+      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
+
+      result should be(true)
+    }
+  }
+
+  it should "fail to drop missing crate destage operations" in {
+    val fixtures = new TestFixtures {}
+    val store = new TestStagingStore(fixtures)
+
+    for {
+      result <- store.drop(testManifest.crate)
+    } yield {
+      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
+      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(0)
+      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
+      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
+
+      result should be(false)
     }
   }
 }
