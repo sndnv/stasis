@@ -9,10 +9,11 @@ import akka.util.{ByteString, Timeout}
 import akka.{Done, NotUsed}
 import stasis.packaging.Crate.Id
 import stasis.packaging.{Crate, Manifest}
+import stasis.persistence.backends.memory.MemoryBackend
 import stasis.persistence.crates.CrateStore
 import stasis.persistence.exceptions.PersistenceFailure
 import stasis.persistence.reservations.ReservationStore
-import stasis.persistence.{CrateStorageRequest, CrateStorageReservation, MapStore}
+import stasis.persistence.{CrateStorageRequest, CrateStorageReservation}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,7 +38,8 @@ class MockCrateStore(
   private implicit val timeout: Timeout = 3.seconds
   private implicit val ec: ExecutionContext = system.executionContext
 
-  private val store = MapStore.typed[StoreKey, StoreValue](name = s"mock-crate-store-${java.util.UUID.randomUUID()}")
+  private val store =
+    MemoryBackend.typed[StoreKey, StoreValue](name = s"mock-crate-store-${java.util.UUID.randomUUID()}")
 
   private val stats: Map[Statistic, AtomicInteger] = Map(
     Statistic.PersistCompleted -> new AtomicInteger(0),

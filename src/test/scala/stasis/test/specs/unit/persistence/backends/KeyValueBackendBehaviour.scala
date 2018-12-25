@@ -1,63 +1,55 @@
-package stasis.test.specs.unit.persistence
+package stasis.test.specs.unit.persistence.backends
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import stasis.persistence.MapStore
+import akka.Done
+import stasis.persistence.backends.KeyValueBackend
 import stasis.test.specs.unit.AsyncUnitSpec
 
-class MapStoreSpec extends AsyncUnitSpec {
+import scala.concurrent.Future
 
-  "A MapStore" should behave like mapStore(
-    systemType = "typed",
-    createStore = () =>
-      MapStore.typed(name = "map-store")(
-        s = ActorSystem(Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol], "MapStoreSpec-Typed"),
-        t = timeout
-    )
-  )
-
-  it should behave like mapStore(
-    systemType = "untyped",
-    createStore = () =>
-      MapStore.untyped(name = "map-store")(
-        s = akka.actor.ActorSystem("MapStoreSpec-Untyped"),
-        t = timeout
-    )
-  )
-
-  private def mapStore(systemType: String, createStore: () => MapStore[String, Int]): Unit = {
+trait KeyValueBackendBehaviour { _: AsyncUnitSpec =>
+  def keyValueBackend[B <: KeyValueBackend[String, Int]](
+    createBackend: () => B,
+    before: B => Future[Done] = (backend: B) => backend.init(),
+    after: B => Future[Done] = (backend: B) => backend.drop()
+  ): Unit = {
     val testKey = "test-key"
     val testValue = 42
 
-    it should s"store and retrieve values [$systemType actor system]" in {
-      val store = createStore()
+    it should "store and retrieve values" in {
+      val store = createBackend()
 
       for {
+        _ <- before(store)
         _ <- store.put(key = testKey, value = testValue)
         existing <- store.get(key = testKey)
+        _ <- after(store)
       } yield {
         existing should be(Some(testValue))
       }
     }
 
-    it should s"fail to retrieve missing values [$systemType actor system]" in {
-      val store = createStore()
+    it should "fail to retrieve missing values" in {
+      val store = createBackend()
 
       for {
+        _ <- before(store)
         missing <- store.get(key = "missing-key")
+        _ <- after(store)
       } yield {
         missing should be(None)
       }
     }
 
-    it should s"retrieve all values [$systemType actor system]" in {
-      val store = createStore()
+    it should "retrieve all values" in {
+      val store = createBackend()
 
       for {
+        _ <- before(store)
         _ <- store.put(key = s"$testKey-0", value = testValue)
         _ <- store.put(key = s"$testKey-1", value = testValue + 1)
         _ <- store.put(key = s"$testKey-2", value = testValue + 2)
         existing <- store.map
+        _ <- after(store)
       } yield {
         existing should be(
           Map(
@@ -69,30 +61,34 @@ class MapStoreSpec extends AsyncUnitSpec {
       }
     }
 
-    it should s"delete values [$systemType actor system]" in {
-      val store = createStore()
+    it should "delete values" in {
+      val store = createBackend()
 
       for {
+        _ <- before(store)
         _ <- store.put(key = testKey, value = testValue)
         existing <- store.get(key = testKey)
         _ <- store.delete(key = testKey)
         missing <- store.get(key = testKey)
+        _ <- after(store)
       } yield {
         existing should be(Some(testValue))
         missing should be(None)
       }
     }
 
-    it should s"reset itself [$systemType actor system]" in {
-      val store = createStore()
+    it should "reset itself" in {
+      val store = createBackend()
 
       for {
+        _ <- before(store)
         _ <- store.put(key = s"$testKey-0", value = testValue)
         _ <- store.put(key = s"$testKey-1", value = testValue + 1)
         _ <- store.put(key = s"$testKey-2", value = testValue + 2)
         existing <- store.map
-        _ <- store.reset()
+        _ <- store.drop()
         missing <- store.map
+        _ <- after(store)
       } yield {
         existing should be(
           Map(

@@ -6,5 +6,4 @@ import scala.concurrent.Future
 
 trait ReservationStoreView {
   def get(reservation: CrateStorageReservation.Id): Future[Option[CrateStorageReservation]]
-  def reservations(): Future[Seq[CrateStorageReservation]]
 }

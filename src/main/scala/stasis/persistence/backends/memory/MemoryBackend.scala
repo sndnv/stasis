@@ -1,4 +1,4 @@
-package stasis.persistence
+package stasis.persistence.backends.memory
 
 import akka.Done
 import akka.actor.Scheduler
@@ -7,39 +7,43 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior, SpawnProtocol}
 import akka.util.Timeout
+import stasis.persistence.backends.KeyValueBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class MapStore[K, V] private (
-  private val storeRef: Future[ActorRef[MapStore.Message[K, V]]]
-)(implicit scheduler: Scheduler, ec: ExecutionContext, timeout: Timeout) {
-  import MapStore._
+class MemoryBackend[K, V] private (
+  private val storeRef: Future[ActorRef[MemoryBackend.Message[K, V]]]
+)(implicit scheduler: Scheduler, ec: ExecutionContext, timeout: Timeout)
+    extends KeyValueBackend[K, V] {
+  import MemoryBackend._
 
-  def put(key: K, value: V): Future[Done] = storeRef.flatMap(_ ? (ref => Put(key, value, ref)))
+  override def init(): Future[Done] = Future.successful(Done)
 
-  def delete(key: K): Future[Boolean] = storeRef.flatMap(_ ? (ref => Remove(key, ref)))
+  override def drop(): Future[Done] = storeRef.flatMap(_ ? (ref => Reset(ref)))
 
-  def get(key: K): Future[Option[V]] = storeRef.flatMap(_ ? (ref => Get(key, ref)))
+  override def put(key: K, value: V): Future[Done] = storeRef.flatMap(_ ? (ref => Put(key, value, ref)))
 
-  def map: Future[Map[K, V]] = storeRef.flatMap(_ ? (ref => GetAll(ref)))
+  override def delete(key: K): Future[Boolean] = storeRef.flatMap(_ ? (ref => Remove(key, ref)))
 
-  def reset(): Future[Done] = storeRef.flatMap(_ ? (ref => Reset(ref)))
+  override def get(key: K): Future[Option[V]] = storeRef.flatMap(_ ? (ref => Get(key, ref)))
+
+  override def map: Future[Map[K, V]] = storeRef.flatMap(_ ? (ref => GetAll(ref)))
 }
 
-object MapStore {
-  def apply[K, V](name: String)(implicit s: ActorSystem[SpawnProtocol], t: Timeout): MapStore[K, V] =
+object MemoryBackend {
+  def apply[K, V](name: String)(implicit s: ActorSystem[SpawnProtocol], t: Timeout): MemoryBackend[K, V] =
     typed(name)
 
-  def typed[K, V](name: String)(implicit s: ActorSystem[SpawnProtocol], t: Timeout): MapStore[K, V] = {
+  def typed[K, V](name: String)(implicit s: ActorSystem[SpawnProtocol], t: Timeout): MemoryBackend[K, V] = {
     implicit val scheduler: Scheduler = s.scheduler
     implicit val ec: ExecutionContext = s.executionContext
-    new MapStore[K, V](storeRef = s ? SpawnProtocol.Spawn(store(Map.empty[K, V]), name))
+    new MemoryBackend[K, V](storeRef = s ? SpawnProtocol.Spawn(store(Map.empty[K, V]), name))
   }
 
-  def untyped[K, V](name: String)(implicit s: akka.actor.ActorSystem, t: Timeout): MapStore[K, V] = {
+  def untyped[K, V](name: String)(implicit s: akka.actor.ActorSystem, t: Timeout): MemoryBackend[K, V] = {
     implicit val scheduler: Scheduler = s.scheduler
     implicit val ec: ExecutionContext = s.dispatcher
-    new MapStore[K, V](storeRef = Future.successful(s.spawn(store(Map.empty[K, V]), name)))
+    new MemoryBackend[K, V](storeRef = Future.successful(s.spawn(store(Map.empty[K, V]), name)))
   }
 
   private sealed trait Message[K, V]

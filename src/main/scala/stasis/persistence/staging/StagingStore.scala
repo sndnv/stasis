@@ -12,7 +12,8 @@ import stasis.networking.http.HttpEndpointClient
 import stasis.packaging.{Crate, Manifest}
 import stasis.persistence.crates.CrateStore
 import stasis.persistence.exceptions.StagingFailure
-import stasis.persistence.{CrateStorageRequest, MapStore}
+import stasis.persistence.CrateStorageRequest
+import stasis.persistence.backends.memory.MemoryBackend
 import stasis.routing.Node
 
 import scala.concurrent.duration.FiniteDuration
@@ -28,8 +29,8 @@ class StagingStore(
   private implicit val ec: ExecutionContext = system.executionContext
   private implicit val mat: ActorMaterializer = ActorMaterializer()(system.toUntyped)
 
-  private val scheduleStore: MapStore[Crate.Id, Cancellable] =
-    MapStore[Crate.Id, Cancellable](name = "schedule-store")
+  private val scheduleStore: MemoryBackend[Crate.Id, Cancellable] =
+    MemoryBackend[Crate.Id, Cancellable](name = "schedule-store")
 
   private val log = Logging(system.toUntyped, this.getClass.getName)
 

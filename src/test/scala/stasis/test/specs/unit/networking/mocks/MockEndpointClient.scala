@@ -11,7 +11,7 @@ import akka.{Done, NotUsed}
 import stasis.networking.http.{HttpEndpointAddress, HttpEndpointClient}
 import stasis.packaging.Crate.Id
 import stasis.packaging.{Crate, Manifest}
-import stasis.persistence.MapStore
+import stasis.persistence.backends.memory.MemoryBackend
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -30,7 +30,7 @@ class MockEndpointClient(
   private implicit val mat: ActorMaterializer = ActorMaterializer()(system.toUntyped)
   private implicit val ec: ExecutionContext = system.executionContext
 
-  private val store = MapStore.typed[StoreKey, StoreValue](
+  private val store = MemoryBackend.typed[StoreKey, StoreValue](
     name = s"mock-endpoint-store-${java.util.UUID.randomUUID()}"
   )
 

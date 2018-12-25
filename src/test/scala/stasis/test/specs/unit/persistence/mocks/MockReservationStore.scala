@@ -5,7 +5,8 @@ import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.util.Timeout
 import stasis.persistence.CrateStorageReservation.Id
 import stasis.persistence.reservations.ReservationStore
-import stasis.persistence.{CrateStorageReservation, MapStore}
+import stasis.persistence.CrateStorageReservation
+import stasis.persistence.backends.memory.MemoryBackend
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -21,7 +22,7 @@ class MockReservationStore(
   private implicit val timeout: Timeout = 3.seconds
   private implicit val ec: ExecutionContext = system.executionContext
 
-  private val store = MapStore.typed[StoreKey, StoreValue](
+  private val store = MemoryBackend.typed[StoreKey, StoreValue](
     name = s"mock-reservation-store-${java.util.UUID.randomUUID()}"
   )
 
@@ -56,7 +57,7 @@ class MockReservationStore(
       reservations().map(_.exists(_.crate == crate))
     }
 
-  override def reservations(): Future[Seq[StoreValue]] =
+  def reservations(): Future[Seq[StoreValue]] =
     storeData.map { result =>
       (result.mapValues(value => Some(value)) ++ missingReservations.map(_.id -> None)).values.flatten.toSeq
     }

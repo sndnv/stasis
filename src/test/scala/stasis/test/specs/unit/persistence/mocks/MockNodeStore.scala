@@ -3,7 +3,7 @@ package stasis.test.specs.unit.persistence.mocks
 import akka.Done
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.util.Timeout
-import stasis.persistence.MapStore
+import stasis.persistence.backends.memory.MemoryBackend
 import stasis.persistence.nodes.NodeStore
 import stasis.routing.Node
 import stasis.routing.Node.Id
@@ -21,7 +21,8 @@ class MockNodeStore(
   private implicit val timeout: Timeout = 3.seconds
   private implicit val ec: ExecutionContext = system.executionContext
 
-  private val store = MapStore.typed[StoreKey, StoreValue](name = s"mock-node-store-${java.util.UUID.randomUUID()}")
+  private val store =
+    MemoryBackend.typed[StoreKey, StoreValue](name = s"mock-node-store-${java.util.UUID.randomUUID()}")
 
   override def put(node: Node): Future[Done] = store.put(node.id, node)
 
