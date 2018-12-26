@@ -1,6 +1,7 @@
 package stasis.persistence.backends.slick
 
 import akka.Done
+import akka.util.ByteString
 import slick.jdbc.JdbcProfile
 import slick.lifted.ProvenShape
 import stasis.persistence.backends.KeyValueBackend
@@ -33,7 +34,7 @@ class SlickBackend[K, V](
 
   override def put(key: K, value: V): Future[Done] = {
     val action = store
-      .+=((key, value))
+      .+=((key: String) -> (value: ByteString).toArray)
       .map(_ => Done)
 
     database.run(action)
@@ -54,14 +55,14 @@ class SlickBackend[K, V](
       .map(_.value)
       .result
       .headOption
-      .map(_.map(value => value: V))
+      .map(_.map(value => ByteString(value): V))
 
     database.run(action)
   }
 
   override def map: Future[Map[K, V]] = {
     val action = store.result
-      .map(_.map(entry => (entry._1: K) -> (entry._2: V)).toMap)
+      .map(_.map(entry => (entry._1: K) -> (ByteString(entry._2): V)).toMap)
 
     database.run(action)
   }

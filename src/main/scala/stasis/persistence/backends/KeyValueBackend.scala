@@ -1,6 +1,7 @@
 package stasis.persistence.backends
 
 import akka.Done
+import akka.util.ByteString
 
 import scala.concurrent.Future
 
@@ -17,7 +18,7 @@ object KeyValueBackend {
   trait Serdes[K, V] {
     implicit def serializeKey: K => String
     implicit def deserializeKey: String => K
-    implicit def serializeValue: V => Array[Byte]
-    implicit def deserializeValue: Array[Byte] => V
+    implicit def serializeValue: V => ByteString
+    implicit def deserializeValue: ByteString => V
   }
 }

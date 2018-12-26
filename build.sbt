@@ -18,6 +18,7 @@ lazy val commonSettings = Seq(
     "com.typesafe.akka"   %% "akka-http"            % akkaHttpVersion,
     "com.typesafe.play"   %% "play-json"            % "2.6.10",
     "de.heikoseeberger"   %% "akka-http-play-json"  % "1.22.0",
+    "org.apache.geode"    %  "geode-core"           % "1.7.0"           % Provided,
     "com.typesafe.slick"  %% "slick"                % "3.2.3"           % Provided,
     "com.h2database"      %  "h2"                   % "1.4.197"         % Test,
     "org.scalacheck"      %% "scalacheck"           % "1.14.0"          % Test,

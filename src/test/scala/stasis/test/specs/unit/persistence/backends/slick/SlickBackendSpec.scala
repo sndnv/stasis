@@ -2,6 +2,7 @@ package stasis.test.specs.unit.persistence.backends.slick
 
 import akka.Done
 import akka.actor.ActorSystem
+import akka.util.ByteString
 import slick.jdbc.H2Profile
 import stasis.persistence.backends.KeyValueBackend
 import stasis.persistence.backends.slick.SlickBackend
@@ -23,8 +24,8 @@ class SlickBackendSpec extends AsyncUnitSpec with KeyValueBackendBehaviour {
       serdes = new KeyValueBackend.Serdes[String, Int] {
         override implicit def serializeKey: String => String = identity
         override implicit def deserializeKey: String => String = identity
-        override implicit def serializeValue: Int => Array[Byte] = v => BigInt(v).toByteArray
-        override implicit def deserializeValue: Array[Byte] => Int = v => BigInt(v).toInt
+        override implicit def serializeValue: Int => ByteString = v => ByteString(BigInt(v).toByteArray)
+        override implicit def deserializeValue: ByteString => Int = v => BigInt(v.toArray).toInt
       }
     )
 
