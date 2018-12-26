@@ -7,6 +7,10 @@ import akka.{Done, NotUsed}
 import scala.concurrent.Future
 
 trait StreamingBackend[K] {
+  def init(): Future[Done]
+  def drop(): Future[Done]
   def sink(key: K): Future[Sink[ByteString, Future[Done]]]
   def source(key: K): Future[Option[Source[ByteString, NotUsed]]]
+  def delete(key: K): Future[Boolean]
+  def exists(key: K): Future[Boolean]
 }

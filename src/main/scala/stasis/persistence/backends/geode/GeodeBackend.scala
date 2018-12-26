@@ -23,19 +23,22 @@ class GeodeBackend[K, V](
   }
 
   override def put(key: K, value: V): Future[Done] = Future {
-    region.create(key, value.asGeodeValue)
+    region.create(key.asGeodeKey, value.asGeodeValue)
     Done
   }
 
   override def delete(key: K): Future[Boolean] = Future {
-    Option(region.remove(key)).isDefined
+    Option(region.remove(key.asGeodeKey)).isDefined
   }
 
   override def get(key: K): Future[Option[V]] = Future {
-    Option(region.get(key)).map { result =>
+    Option(region.get(key.asGeodeKey)).map { result =>
       ByteString.fromArray(result): V
     }
   }
+
+  override def exists(key: K): Future[Boolean] =
+    Future.successful(region.containsKey(key.asGeodeKey))
 
   override def map: Future[Map[K, V]] = Future {
     region
@@ -46,6 +49,10 @@ class GeodeBackend[K, V](
         case (k, v) =>
           (k: K) -> (ByteString.fromArray(v): V)
       }
+  }
+
+  private implicit class GeodeKey(key: K) {
+    def asGeodeKey: String = key: String
   }
 
   private implicit class GeodeValue(value: V) {

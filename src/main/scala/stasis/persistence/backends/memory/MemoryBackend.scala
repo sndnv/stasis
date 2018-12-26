@@ -27,6 +27,11 @@ class MemoryBackend[K, V] private (
 
   override def get(key: K): Future[Option[V]] = storeRef.flatMap(_ ? (ref => Get(key, ref)))
 
+  override def exists(key: K): Future[Boolean] = {
+    val result: Future[Option[V]] = storeRef.flatMap(_ ? (ref => Get(key, ref)))
+    result.map(_.isDefined)
+  }
+
   override def map: Future[Map[K, V]] = storeRef.flatMap(_ ? (ref => GetAll(ref)))
 }
 

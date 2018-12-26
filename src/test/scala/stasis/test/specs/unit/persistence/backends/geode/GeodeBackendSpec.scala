@@ -59,6 +59,8 @@ class GeodeBackendSpec extends AsyncUnitSpec with KeyValueBackendBehaviour {
 
     override def get(key: String): Future[Option[Int]] = geodeBackend.get(key)
 
+    override def exists(key: String): Future[Boolean] = geodeBackend.exists(key)
+
     override def map: Future[Map[String, Int]] = geodeBackend.map
 
     def close(): Future[Done] = {

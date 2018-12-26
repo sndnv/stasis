@@ -68,12 +68,29 @@ trait KeyValueBackendBehaviour { _: AsyncUnitSpec =>
         _ <- before(store)
         _ <- store.put(key = testKey, value = testValue)
         existing <- store.get(key = testKey)
-        _ <- store.delete(key = testKey)
+        deleteResult <- store.delete(key = testKey)
         missing <- store.get(key = testKey)
         _ <- after(store)
       } yield {
         existing should be(Some(testValue))
+        deleteResult should be(true)
         missing should be(None)
+      }
+    }
+
+    it should "check if values exist" in {
+      val store = createBackend()
+
+      for {
+        _ <- before(store)
+        _ <- store.put(key = testKey, value = testValue)
+        existing <- store.exists(key = testKey)
+        _ <- store.delete(key = testKey)
+        missing <- store.exists(key = testKey)
+        _ <- after(store)
+      } yield {
+        existing should be(true)
+        missing should be(false)
       }
     }
 

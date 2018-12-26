@@ -39,6 +39,8 @@ class SlickBackendSpec extends AsyncUnitSpec with KeyValueBackendBehaviour {
 
     override def get(key: String): Future[Option[Int]] = slickBackend.get(key)
 
+    override def exists(key: String): Future[Boolean] = slickBackend.exists(key)
+
     override def map: Future[Map[String, Int]] = slickBackend.map
 
     def close(): Future[Done] = {

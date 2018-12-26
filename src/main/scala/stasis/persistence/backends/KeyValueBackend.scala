@@ -9,8 +9,9 @@ trait KeyValueBackend[K, V] {
   def init(): Future[Done]
   def drop(): Future[Done]
   def put(key: K, value: V): Future[Done]
-  def delete(key: K): Future[Boolean]
   def get(key: K): Future[Option[V]]
+  def delete(key: K): Future[Boolean]
+  def exists(key: K): Future[Boolean]
   def map: Future[Map[K, V]]
 }
 
