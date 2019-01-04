@@ -20,6 +20,7 @@ import stasis.security.NodeAuthenticator
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.control.NonFatal
 
+@SuppressWarnings(Array("org.wartremover.warts.Any"))
 class HttpEndpoint(
   router: Router,
   reservationStore: ReservationStoreView,

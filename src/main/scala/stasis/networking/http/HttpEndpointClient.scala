@@ -19,6 +19,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import stasis.packaging.Crate.Id
 
+@SuppressWarnings(Array("org.wartremover.warts.Any"))
 class HttpEndpointClient(
   override protected val credentials: EndpointCredentials[HttpEndpointAddress, HttpCredentials]
 )(implicit val system: ActorSystem)

@@ -1,5 +1,5 @@
 package stasis.test.specs.unit
 
-import org.scalatest.{fixture, Matchers}
+import org.scalatest.{FlatSpec, Matchers}
 
-trait UnitSpec extends fixture.FlatSpec with Matchers
+trait UnitSpec extends FlatSpec with Matchers

@@ -78,17 +78,29 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
 
       for {
         _ <- before(store)
-        existsBeforePush <- store.exists(key = testKey)
+        existsBeforePush <- store.contains(key = testKey)
         sink <- store.sink(key = testKey)
         _ <- Source.single(testContent).runWith(sink)
-        existsAfterPush <- store.exists(key = testKey)
+        existsAfterPush <- store.contains(key = testKey)
         _ <- store.delete(key = testKey)
-        existsAfterDelete <- store.exists(key = testKey)
+        existsAfterDelete <- store.contains(key = testKey)
         _ <- after(store)
       } yield {
         existsBeforePush should be(false)
         existsAfterPush should be(true)
         existsAfterDelete should be(false)
+      }
+    }
+
+    it should "check if data can be stored" in {
+      val store = createBackend()
+
+      for {
+        _ <- before(store)
+        canStore <- store.canStore(bytes = 100)
+        _ <- after(store)
+      } yield {
+        canStore should be(true)
       }
     }
 
@@ -99,9 +111,9 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
         _ <- before(store)
         sink <- store.sink(key = testKey)
         _ <- Source.single(testContent).runWith(sink)
-        existsBeforeReset <- store.exists(key = testKey)
+        existsBeforeReset <- store.contains(key = testKey)
         _ <- store.drop()
-        existsAfterReset <- store.exists(key = testKey)
+        existsAfterReset <- store.contains(key = testKey)
         _ <- after(store)
       } yield {
         existsBeforeReset should be(true)

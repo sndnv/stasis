@@ -12,5 +12,6 @@ trait StreamingBackend[K] {
   def sink(key: K): Future[Sink[ByteString, Future[Done]]]
   def source(key: K): Future[Option[Source[ByteString, NotUsed]]]
   def delete(key: K): Future[Boolean]
-  def exists(key: K): Future[Boolean]
+  def contains(key: K): Future[Boolean]
+  def canStore(bytes: Long): Future[Boolean]
 }

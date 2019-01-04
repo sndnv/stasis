@@ -84,9 +84,9 @@ trait KeyValueBackendBehaviour { _: AsyncUnitSpec =>
       for {
         _ <- before(store)
         _ <- store.put(key = testKey, value = testValue)
-        existing <- store.exists(key = testKey)
+        existing <- store.contains(key = testKey)
         _ <- store.delete(key = testKey)
-        missing <- store.exists(key = testKey)
+        missing <- store.contains(key = testKey)
         _ <- after(store)
       } yield {
         existing should be(true)

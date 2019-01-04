@@ -37,7 +37,7 @@ class GeodeBackend[K, V](
     }
   }
 
-  override def exists(key: K): Future[Boolean] =
+  override def contains(key: K): Future[Boolean] =
     Future.successful(region.containsKey(key.asGeodeKey))
 
   override def map: Future[Map[K, V]] = Future {

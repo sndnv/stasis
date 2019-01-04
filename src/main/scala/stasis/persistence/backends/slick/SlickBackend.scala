@@ -60,7 +60,7 @@ class SlickBackend[K, V](
     database.run(action)
   }
 
-  override def exists(key: K): Future[Boolean] = {
+  override def contains(key: K): Future[Boolean] = {
     val action = store.filter(_.key === (key: String)).exists.result
     database.run(action)
   }
