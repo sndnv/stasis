@@ -3,7 +3,6 @@ package stasis.test.specs.unit.persistence.mocks
 import akka.Done
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.util.Timeout
-import stasis.packaging.Crate.Id
 import stasis.packaging.{Crate, Manifest}
 import stasis.persistence.backends.memory.MemoryBackend
 import stasis.persistence.manifests.ManifestStore
@@ -21,6 +20,6 @@ class MockManifestStore(implicit system: ActorSystem[SpawnProtocol]) extends Man
     MemoryBackend.typed[StoreKey, StoreValue](name = s"mock-manifest-store-${java.util.UUID.randomUUID()}")
 
   override def put(manifest: Manifest): Future[Done] = store.put(manifest.crate, manifest)
-  override def delete(crate: Id): Future[Boolean] = store.delete(crate)
+  override def delete(crate: Crate.Id): Future[Boolean] = store.delete(crate)
   override def get(crate: Crate.Id): Future[Option[Manifest]] = store.get(crate)
 }

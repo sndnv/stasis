@@ -52,7 +52,8 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     copies = 3,
     retention = 3.seconds,
     expiration = 1.second,
-    origin = Node.generateId()
+    origin = Node.generateId(),
+    target = Node.generateId()
   )
 
   "An HTTP Endpoint" should "successfully authenticate a client" in {
@@ -120,7 +121,8 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       copies = storageRequest.copies,
       retention = storageRequest.retention,
       expiration = 1.day,
-      origin = Node.generateId()
+      origin = Node.generateId(),
+      target = Node.generateId()
     )
 
     Put(s"/reserve")

@@ -61,7 +61,7 @@ class GeodeBackendSpec extends AsyncUnitSpec with KeyValueBackendBehaviour {
 
     override def contains(key: String): Future[Boolean] = geodeBackend.contains(key)
 
-    override def map: Future[Map[String, Int]] = geodeBackend.map
+    override def entries: Future[Map[String, Int]] = geodeBackend.entries
 
     def close(): Future[Done] = {
       cache.close()

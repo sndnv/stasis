@@ -1,15 +1,15 @@
 package stasis.test.specs.unit.persistence.mocks
 
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
+
 import akka.Done
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.util.Timeout
-import stasis.persistence.CrateStorageReservation.Id
-import stasis.persistence.reservations.ReservationStore
 import stasis.persistence.CrateStorageReservation
 import stasis.persistence.backends.memory.MemoryBackend
-
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import stasis.persistence.reservations.ReservationStore
+import stasis.routing.Node
 
 class MockReservationStore(
   missingReservations: Seq[CrateStorageReservation] = Seq.empty,
@@ -28,9 +28,9 @@ class MockReservationStore(
 
   override def put(reservation: StoreValue): Future[Done] = store.put(reservation.id, reservation)
 
-  override def delete(crate: Id): Future[Boolean] =
+  override def delete(crate: CrateStorageReservation.Id, node: Node.Id): Future[Boolean] =
     reservations().flatMap { reservations =>
-      reservations.find(_.crate == crate) match {
+      reservations.find(r => r.crate == crate && r.target == node) match {
         case Some(reservation) =>
           store.delete(reservation.id)
 
@@ -43,18 +43,18 @@ class MockReservationStore(
       }
     }
 
-  override def get(reservation: Id): Future[Option[StoreValue]] =
+  override def get(reservation: CrateStorageReservation.Id): Future[Option[StoreValue]] =
     if (missingReservations.map(_.id).contains(reservation)) {
       Future.successful(None)
     } else {
       store.get(reservation)
     }
 
-  override def existsFor(crate: Id): Future[Boolean] =
+  override def existsFor(crate: CrateStorageReservation.Id, node: Node.Id): Future[Boolean] =
     if (missingReservations.map(_.crate).contains(crate)) {
       Future.successful(false)
     } else {
-      reservations().map(_.exists(_.crate == crate))
+      reservations().map(_.exists(r => r.crate == crate && r.target == node))
     }
 
   def reservations(): Future[Seq[StoreValue]] =
@@ -62,5 +62,5 @@ class MockReservationStore(
       (result.mapValues(value => Some(value)) ++ missingReservations.map(_.id -> None)).values.flatten.toSeq
     }
 
-  private def storeData: Future[Map[StoreKey, StoreValue]] = store.map
+  private def storeData: Future[Map[StoreKey, StoreValue]] = store.entries
 }

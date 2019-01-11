@@ -12,7 +12,7 @@ trait KeyValueBackend[K, V] {
   def get(key: K): Future[Option[V]]
   def delete(key: K): Future[Boolean]
   def contains(key: K): Future[Boolean]
-  def map: Future[Map[K, V]]
+  def entries: Future[Map[K, V]]
 }
 
 object KeyValueBackend {

@@ -97,10 +97,14 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
 
       for {
         _ <- before(store)
+        sink <- store.sink(key = testKey)
+        _ <- Source.single(testContent).runWith(sink)
         canStore <- store.canStore(bytes = 100)
+        cantStore <- store.canStore(bytes = Long.MaxValue)
         _ <- after(store)
       } yield {
         canStore should be(true)
+        cantStore should be(false)
       }
     }
 

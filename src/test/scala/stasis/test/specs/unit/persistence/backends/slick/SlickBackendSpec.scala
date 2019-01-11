@@ -41,7 +41,7 @@ class SlickBackendSpec extends AsyncUnitSpec with KeyValueBackendBehaviour {
 
     override def contains(key: String): Future[Boolean] = slickBackend.contains(key)
 
-    override def map: Future[Map[String, Int]] = slickBackend.map
+    override def entries: Future[Map[String, Int]] = slickBackend.entries
 
     def close(): Future[Done] = {
       h2db.close()

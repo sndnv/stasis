@@ -48,7 +48,7 @@ trait KeyValueBackendBehaviour { _: AsyncUnitSpec =>
         _ <- store.put(key = s"$testKey-0", value = testValue)
         _ <- store.put(key = s"$testKey-1", value = testValue + 1)
         _ <- store.put(key = s"$testKey-2", value = testValue + 2)
-        existing <- store.map
+        existing <- store.entries
         _ <- after(store)
       } yield {
         existing should be(
@@ -102,9 +102,9 @@ trait KeyValueBackendBehaviour { _: AsyncUnitSpec =>
         _ <- store.put(key = s"$testKey-0", value = testValue)
         _ <- store.put(key = s"$testKey-1", value = testValue + 1)
         _ <- store.put(key = s"$testKey-2", value = testValue + 2)
-        existing <- store.map
+        existing <- store.entries
         _ <- store.drop()
-        missing <- store.map
+        missing <- store.entries
         _ <- after(store)
       } yield {
         existing should be(

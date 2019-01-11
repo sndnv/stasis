@@ -1,5 +1,7 @@
 package stasis.persistence.backends.memory
 
+import scala.concurrent.{ExecutionContext, Future}
+
 import akka.Done
 import akka.actor.Scheduler
 import akka.actor.typed.scaladsl.AskPattern._
@@ -9,10 +11,8 @@ import akka.actor.typed.{ActorRef, ActorSystem, Behavior, SpawnProtocol}
 import akka.util.Timeout
 import stasis.persistence.backends.KeyValueBackend
 
-import scala.concurrent.{ExecutionContext, Future}
-
 class MemoryBackend[K, V] private (
-  private val storeRef: Future[ActorRef[MemoryBackend.Message[K, V]]]
+  storeRef: Future[ActorRef[MemoryBackend.Message[K, V]]]
 )(implicit scheduler: Scheduler, ec: ExecutionContext, timeout: Timeout)
     extends KeyValueBackend[K, V] {
   import MemoryBackend._
@@ -32,7 +32,7 @@ class MemoryBackend[K, V] private (
     result.map(_.isDefined)
   }
 
-  override def map: Future[Map[K, V]] = storeRef.flatMap(_ ? (ref => GetAll(ref)))
+  override def entries: Future[Map[K, V]] = storeRef.flatMap(_ ? (ref => GetAll(ref))) // TODO  - rename (to `entries`?)
 }
 
 object MemoryBackend {

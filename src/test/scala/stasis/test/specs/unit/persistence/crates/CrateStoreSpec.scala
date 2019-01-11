@@ -1,5 +1,8 @@
 package stasis.test.specs.unit.persistence.crates
 
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
@@ -8,18 +11,16 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import stasis.packaging
-import stasis.packaging.{Crate, Manifest}
 import stasis.packaging.Crate.Id
-import stasis.persistence.{CrateStorageRequest, CrateStorageReservation}
+import stasis.packaging.{Crate, Manifest}
+import stasis.persistence.backends.memory.StreamingMemoryBackend
 import stasis.persistence.crates.CrateStore
 import stasis.persistence.exceptions.ReservationFailure
 import stasis.persistence.reservations.ReservationStore
+import stasis.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.routing.Node
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.persistence.mocks.{MockCrateStore, MockReservationStore}
-
-import scala.concurrent.Future
-import scala.concurrent.duration._
 
 class CrateStoreSpec extends AsyncUnitSpec {
 
@@ -36,7 +37,7 @@ class CrateStoreSpec extends AsyncUnitSpec {
     val isStorageAvailable: Boolean = true,
     val backingCrateStore: MockCrateStore = new MockCrateStore(new MockReservationStore())
   )(implicit val typedSystem: ActorSystem[SpawnProtocol])
-      extends CrateStore(reservationStore, reservationExpiration)(typedSystem.toUntyped) {
+      extends CrateStore(reservationStore, reservationExpiration, storeId = Node.generateId())(typedSystem.toUntyped) {
     override protected def directSink(manifest: packaging.Manifest): Future[Sink[ByteString, Future[Done]]] =
       backingCrateStore.sink(manifest)
 
@@ -65,7 +66,12 @@ class CrateStoreSpec extends AsyncUnitSpec {
     val store = new TestCrateStore()
 
     val reservationRequest = CrateStorageRequest(testManifest)
-    val expectedReservation = CrateStorageReservation(reservationRequest, expiration = 1.second)
+    val expectedReservation = CrateStorageReservation(
+      reservationRequest,
+      target = store.storeId,
+      expiration = 1.second
+    )
+
     val actualReservation = store.reserve(reservationRequest).await match {
       case Some(reservation) => reservation
       case None              => fail("Unexpected reservation response returned")
@@ -78,7 +84,12 @@ class CrateStoreSpec extends AsyncUnitSpec {
     val store = new TestCrateStore()
 
     val reservationRequest = CrateStorageRequest(testManifest)
-    val expectedReservation = CrateStorageReservation(reservationRequest, expiration = 1.second)
+    val expectedReservation = CrateStorageReservation(
+      reservationRequest,
+      target = store.storeId,
+      expiration = 1.second
+    )
+
     val actualReservation = store.reserve(reservationRequest).await match {
       case Some(reservation) => reservation
       case None              => fail("Unexpected reservation response returned")
@@ -109,7 +120,12 @@ class CrateStoreSpec extends AsyncUnitSpec {
     val store = new TestCrateStore()
 
     val reservationRequest = CrateStorageRequest(testManifest)
-    val expectedReservation = CrateStorageReservation(reservationRequest, expiration = 1.second)
+    val expectedReservation = CrateStorageReservation(
+      reservationRequest,
+      target = store.storeId,
+      expiration = 1.second
+    )
+
     val actualReservation = store.reserve(reservationRequest).await match {
       case Some(reservation) => reservation
       case None              => fail("Unexpected reservation response returned")
@@ -143,7 +159,12 @@ class CrateStoreSpec extends AsyncUnitSpec {
     val store = new TestCrateStore()
 
     val reservationRequest = CrateStorageRequest(testManifest)
-    val expectedReservation = CrateStorageReservation(reservationRequest, expiration = 1.second)
+    val expectedReservation = CrateStorageReservation(
+      reservationRequest,
+      target = store.storeId,
+      expiration = 1.second
+    )
+
     val actualReservation = store.reserve(reservationRequest).await match {
       case Some(reservation) => reservation
       case None              => fail("Unexpected reservation response returned")
@@ -243,6 +264,36 @@ class CrateStoreSpec extends AsyncUnitSpec {
 
     a[ClassCastException] should be thrownBy {
       storeView.asInstanceOf[CrateStore]
+    }
+  }
+
+  it should "create crate stores" in {
+    val store = CrateStore(
+      backend = StreamingMemoryBackend(maxSize = 1000, name = "streaming-map-store"),
+      reservationStore = new MockReservationStore(),
+      reservationExpiration = 3.seconds,
+      storeId = Node.generateId()
+    )(system.toUntyped)
+
+    val request = CrateStorageRequest(
+      crate = Crate.generateId(),
+      size = Long.MaxValue,
+      copies = 1,
+      retention = 1.second,
+      origin = Node.generateId(),
+      source = Node.generateId()
+    )
+
+    for {
+      sink <- store.sink(testManifest)
+      source <- store.retrieve(testManifest.crate)
+      discarded <- store.discard(testManifest.crate)
+      reservation <- store.reserve(request)
+    } yield {
+      sink shouldBe a[Sink[_, _]]
+      source should be(None)
+      discarded should be(false)
+      reservation should be(None)
     }
   }
 }

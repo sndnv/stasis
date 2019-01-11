@@ -139,7 +139,7 @@ class MockEndpointClient(
 
   def statistics: Map[Statistic, Int] = stats.mapValues(_.get())
 
-  private def storeData: Future[Map[StoreKey, StoreValue]] = store.map
+  private def storeData: Future[Map[StoreKey, StoreValue]] = store.entries
 }
 
 object MockEndpointClient {

@@ -26,7 +26,8 @@ class DefaultRouter(
   manifestStore: ManifestStore,
   nodeStore: NodeStoreView,
   reservationStore: ReservationStore,
-  stagingStore: Option[StagingStore]
+  stagingStore: Option[StagingStore],
+  val routerId: Node.Id
 )(implicit system: ActorSystem)
     extends Router {
 
@@ -42,7 +43,7 @@ class DefaultRouter(
     nodeStore.nodes.flatMap { availableNodes =>
       DefaultRouter.distributeCopies(availableNodes.values.toSeq, manifest) match {
         case Success(distribution) =>
-          reservationStore.delete(manifest.crate).flatMap { reservationRemoved =>
+          reservationStore.delete(manifest.crate, routerId).flatMap { reservationRemoved =>
             if (reservationRemoved) {
               log.debug("Reservation for crate [{}] removed", manifest.crate)
 
@@ -236,8 +237,7 @@ class DefaultRouter(
     manifestStore.get(crate).flatMap {
       case Some(manifest) =>
         stagingStore
-          .map(_.drop(crate))
-          .getOrElse(Future.successful(false))
+          .fold(Future.successful(false))(_.drop(crate))
           .flatMap { droppedFromStaging =>
             if (droppedFromStaging) {
               log.debug(
@@ -305,7 +305,8 @@ class DefaultRouter(
                     copies = math.min(request.copies, reservedCopies),
                     retention = math.min(request.retention.toSeconds, minRetention).seconds,
                     expiration = minExpiration.seconds,
-                    origin = request.origin
+                    origin = request.origin,
+                    target = routerId
                   )
 
                   reservationStore.put(reservation).map { _ =>

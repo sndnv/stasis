@@ -6,7 +6,6 @@ import akka.util.Timeout
 import stasis.persistence.backends.memory.MemoryBackend
 import stasis.persistence.nodes.NodeStore
 import stasis.routing.Node
-import stasis.routing.Node.Id
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -26,9 +25,9 @@ class MockNodeStore(
 
   override def put(node: Node): Future[Done] = store.put(node.id, node)
 
-  override def delete(node: Id): Future[Boolean] = store.delete(node)
+  override def delete(node: Node.Id): Future[Boolean] = store.delete(node)
 
-  override def get(node: Id): Future[Option[Node]] =
+  override def get(node: Node.Id): Future[Option[Node]] =
     replacementNodes.get(node) match {
       case Some(replacement) =>
         Future.successful(replacement)
@@ -45,5 +44,5 @@ class MockNodeStore(
       }
     }
 
-  private def storeData: Future[Map[StoreKey, StoreValue]] = store.map
+  private def storeData: Future[Map[StoreKey, StoreValue]] = store.entries
 }

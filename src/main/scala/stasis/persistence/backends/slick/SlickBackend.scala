@@ -65,7 +65,7 @@ class SlickBackend[K, V](
     database.run(action)
   }
 
-  override def map: Future[Map[K, V]] = {
+  override def entries: Future[Map[K, V]] = {
     val action = store.result
       .map(_.map(entry => (entry._1: K) -> (ByteString(entry._2): V)).toMap)
 

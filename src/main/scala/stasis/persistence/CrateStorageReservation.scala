@@ -12,12 +12,14 @@ final case class CrateStorageReservation(
   copies: Int,
   retention: FiniteDuration,
   origin: Node.Id,
+  target: Node.Id,
   expiration: FiniteDuration
 )
 
 object CrateStorageReservation {
   def apply(
     request: CrateStorageRequest,
+    target: Node.Id,
     expiration: FiniteDuration
   ): CrateStorageReservation = new CrateStorageReservation(
     id = generateId(),
@@ -26,6 +28,7 @@ object CrateStorageReservation {
     copies = request.copies,
     retention = request.retention,
     origin = request.origin,
+    target = target,
     expiration = expiration
   )
 

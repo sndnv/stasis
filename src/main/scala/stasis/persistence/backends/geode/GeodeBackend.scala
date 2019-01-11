@@ -40,7 +40,7 @@ class GeodeBackend[K, V](
   override def contains(key: K): Future[Boolean] =
     Future.successful(region.containsKey(key.asGeodeKey))
 
-  override def map: Future[Map[K, V]] = Future {
+  override def entries: Future[Map[K, V]] = Future {
     region
       .getAll(region.keySet())
       .asScala

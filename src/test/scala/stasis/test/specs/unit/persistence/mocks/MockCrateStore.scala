@@ -14,9 +14,10 @@ import stasis.persistence.crates.CrateStore
 import stasis.persistence.exceptions.PersistenceFailure
 import stasis.persistence.reservations.ReservationStore
 import stasis.persistence.{CrateStorageRequest, CrateStorageReservation}
-
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+
+import stasis.routing.Node
 
 class MockCrateStore(
   reservationStore: ReservationStore,
@@ -28,7 +29,7 @@ class MockCrateStore(
   reservationExpiration: FiniteDuration = 1.day,
   discardDisabled: Boolean = false
 )(implicit system: ActorSystem[SpawnProtocol])
-    extends CrateStore(reservationStore, reservationExpiration)(system.toUntyped) {
+    extends CrateStore(reservationStore, reservationExpiration, storeId = Node.generateId())(system.toUntyped) {
 
   import MockCrateStore._
 

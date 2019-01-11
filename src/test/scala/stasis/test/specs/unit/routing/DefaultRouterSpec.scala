@@ -64,7 +64,8 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         manifestStore = fixtures.manifestStore,
         nodeStore = fixtures.nodeStore.view,
         reservationStore = fixtures.reservationStore,
-        stagingStore = fixtures.stagingStore
+        stagingStore = fixtures.stagingStore,
+        routerId = Node.generateId()
       )
 
   private val testContent = ByteString("some value")
@@ -845,6 +846,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     val expectedReservation = CrateStorageReservation(
       request = request,
+      target = Node.generateId(),
       expiration = 1.day
     )
 
