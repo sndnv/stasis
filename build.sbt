@@ -4,22 +4,22 @@ name in ThisBuild := "stasis"
 licenses in ThisBuild := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
 homepage in ThisBuild := Some(url("https://github.com/sndnv/stasis"))
 
-scalaVersion in ThisBuild := "2.12.7"
+scalaVersion in ThisBuild := "2.12.8"
 
-lazy val akkaVersion = "2.5.17"
-lazy val akkaHttpVersion = "10.1.5"
+lazy val akkaVersion = "2.5.19"
+lazy val akkaHttpVersion = "10.1.7"
 
 lazy val commonSettings = Seq(
-  crossScalaVersions := Seq("2.12.7"),
+  crossScalaVersions := Seq("2.12.8"),
   libraryDependencies ++= Seq(
     "com.typesafe.akka"       %%  "akka-actor"            % akkaVersion,
     "com.typesafe.akka"       %%  "akka-actor-typed"      % akkaVersion,
     "com.typesafe.akka"       %%  "akka-stream"           % akkaVersion,
     "com.typesafe.akka"       %%  "akka-http"             % akkaHttpVersion,
-    "com.typesafe.play"       %%  "play-json"             % "2.6.10",
-    "de.heikoseeberger"       %%  "akka-http-play-json"   % "1.22.0",
+    "com.typesafe.play"       %%  "play-json"             % "2.7.0",
+    "de.heikoseeberger"       %%  "akka-http-play-json"   % "1.23.0",
     "org.bitbucket.b_c"       %   "jose4j"                % "0.6.4",
-    "org.apache.geode"        %   "geode-core"            % "1.7.0"           % Provided,
+    "org.apache.geode"        %   "geode-core"            % "1.8.0"           % Provided,
     "com.typesafe.slick"      %%  "slick"                 % "3.2.3"           % Provided,
     "com.h2database"          %   "h2"                    % "1.4.197"         % Test,
     "org.scalacheck"          %%  "scalacheck"            % "1.14.0"          % Test,
