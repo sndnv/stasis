@@ -32,7 +32,7 @@ class MemoryBackend[K, V] private (
     result.map(_.isDefined)
   }
 
-  override def entries: Future[Map[K, V]] = storeRef.flatMap(_ ? (ref => GetAll(ref))) // TODO  - rename (to `entries`?)
+  override def entries: Future[Map[K, V]] = storeRef.flatMap(_ ? (ref => GetAll(ref)))
 }
 
 object MemoryBackend {

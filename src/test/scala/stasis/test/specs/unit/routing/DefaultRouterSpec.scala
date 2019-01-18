@@ -32,7 +32,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
   private implicit val ec: ExecutionContext = system.executionContext
 
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(3.second, 250.milliseconds)
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(3.seconds, 250.milliseconds)
 
   private trait TestFixtures {
     lazy val reservationStore: MockReservationStore = new MockReservationStore()

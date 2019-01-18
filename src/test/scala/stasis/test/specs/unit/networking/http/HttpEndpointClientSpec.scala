@@ -15,7 +15,7 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.networking.mocks.MockEndpointCredentials
 import stasis.test.specs.unit.persistence.mocks.{MockCrateStore, MockReservationStore}
 import stasis.test.specs.unit.routing.mocks.MockRouter
-import stasis.test.specs.unit.security.MockNodeAuthenticator
+import stasis.test.specs.unit.security.mocks.MockNodeAuthenticator
 
 import scala.collection.mutable
 import scala.concurrent.duration._

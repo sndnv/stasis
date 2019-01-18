@@ -18,6 +18,7 @@ import stasis.routing.Router
 import stasis.security.NodeAuthenticator
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
 
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
@@ -66,8 +67,8 @@ class HttpEndpoint(
     (extractMethod & extractUri & extractClientIP & extractRequest) { (method, uri, remoteAddress, request) =>
       extractCredentials {
         case Some(credentials) =>
-          authenticator.authenticate(credentials) match {
-            case Some(node) =>
+          onComplete(authenticator.authenticate(credentials)) {
+            case Success(node) =>
               concat(
                 path("reserve") {
                   put {
@@ -154,14 +155,15 @@ class HttpEndpoint(
                 }
               )
 
-            case None =>
+            case Failure(e) =>
               val _ = request.discardEntityBytes()
 
               log.warning(
-                "Rejecting [{}] request for [{}] with invalid credentials from [{}]",
+                "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{}]",
                 method.value,
                 uri,
-                remoteAddress
+                remoteAddress,
+                e
               )
 
               complete(StatusCodes.Unauthorized)

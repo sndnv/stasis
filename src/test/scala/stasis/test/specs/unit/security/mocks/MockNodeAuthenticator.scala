@@ -1,16 +1,18 @@
-package stasis.test.specs.unit.security
+package stasis.test.specs.unit.security.mocks
 
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials}
 import stasis.routing.Node
 import stasis.security.NodeAuthenticator
 
+import scala.concurrent.Future
+
 class MockNodeAuthenticator(expectedUser: String, expectedPassword: String) extends NodeAuthenticator[HttpCredentials] {
-  override def authenticate(credentials: HttpCredentials): Option[Node.Id] =
+  override def authenticate(credentials: HttpCredentials): Future[Node.Id] =
     credentials match {
       case BasicHttpCredentials(`expectedUser`, `expectedPassword`) =>
-        Some(Node.generateId())
+        Future.successful(Node.generateId())
 
       case _ =>
-        None
+        Future.failed(new IllegalArgumentException("Invalid credentials supplied"))
     }
 }

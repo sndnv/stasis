@@ -23,7 +23,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually {
     "StagingStoreSpec"
   )
 
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(3.second, 250.milliseconds)
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(3.seconds, 250.milliseconds)
 
   private trait TestFixtures {
     lazy val stagingCrateStore: MockCrateStore = new MockCrateStore(new MockReservationStore())

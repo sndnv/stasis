@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.networking.http
 
 import scala.concurrent.duration._
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{Behavior, SpawnProtocol}
 import akka.http.scaladsl.marshalling.Marshal
@@ -19,7 +18,7 @@ import stasis.routing.Node
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.persistence.mocks.{MockCrateStore, MockReservationStore}
 import stasis.test.specs.unit.routing.mocks.MockRouter
-import stasis.test.specs.unit.security.MockNodeAuthenticator
+import stasis.test.specs.unit.security.mocks.MockNodeAuthenticator
 
 class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
