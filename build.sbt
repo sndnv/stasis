@@ -12,7 +12,7 @@ lazy val crossVersions = Seq(defaultScalaVersion)
 
 scalaVersion in ThisBuild := defaultScalaVersion
 
-lazy val stasis = (project in file("."))
+lazy val core = (project in file("./core"))
   .settings(
     crossScalaVersions := crossVersions,
     libraryDependencies ++= Seq(
@@ -50,8 +50,9 @@ lazy val proto = (project in file("./proto"))
       "com.typesafe.akka"       %% "akka-http"             % akkaHttpVersion,
       "com.typesafe.akka"       %% "akka-http-core"        % akkaHttpVersion,
       "com.typesafe.akka"       %% "akka-http2-support"    % akkaHttpVersion
-    )
+    ),
+    coverageEnabled := false
   )
  .enablePlugins(AkkaGrpcPlugin)
 
-addCommandAlias("qa", "; clean; compile; coverage; test; coverageReport")
+addCommandAlias("qa", "; clean; compile; coverage; test; coverageReport; coverageAggregate")
