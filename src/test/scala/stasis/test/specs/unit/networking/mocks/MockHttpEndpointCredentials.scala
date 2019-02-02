@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials}
 import stasis.networking.EndpointCredentials
 import stasis.networking.http.HttpEndpointAddress
 
-class MockEndpointCredentials(
+class MockHttpEndpointCredentials(
   private val credentials: Map[HttpEndpointAddress, (String, String)]
 ) extends EndpointCredentials[HttpEndpointAddress, HttpCredentials] {
   def this(address: HttpEndpointAddress, expectedUser: String, expectedPassword: String) =

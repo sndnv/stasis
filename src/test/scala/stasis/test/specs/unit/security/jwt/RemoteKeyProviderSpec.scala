@@ -4,6 +4,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.ActorMaterializer
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
 import stasis.security.jwt.RemoteKeyProvider
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -14,7 +15,7 @@ import scala.concurrent.duration._
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
-class RemoteKeyProviderSpec extends AsyncUnitSpec with Eventually {
+class RemoteKeyProviderSpec extends AsyncUnitSpec with Eventually with BeforeAndAfterAll {
 
   private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
@@ -26,7 +27,10 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with Eventually {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(3.seconds, 250.milliseconds)
 
-  private val ports: mutable.Queue[Int] = (8000 to 8100).to[mutable.Queue]
+  private val ports: mutable.Queue[Int] = (18000 to 18100).to[mutable.Queue]
+
+  override protected def afterAll(): Unit =
+    system.terminate().await
 
   "An RemoteKeyProvider" should "provide keys from a JWKS endpoint" in {
     val endpoint = new MockJwksEndpoint(port = ports.dequeue())

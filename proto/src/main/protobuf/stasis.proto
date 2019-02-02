@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "stasis.networking.grpc.proto";
+
+package stasis;
+
+service StasisEndpoint {
+    rpc Reserve (ReserveRequest) returns (ReserveResponse) {}
+    rpc Push (stream PushChunk) returns (PushResponse) {}
+    rpc Pull (PullRequest) returns (stream PullChunk) {}
+    rpc Discard (DiscardRequest) returns (DiscardResponse) {}
+}
+
+message ReserveRequest {
+    Uuid id = 1;
+    Uuid crate = 2;
+    int64 size = 3;
+    int32 copies = 4;
+    int64 retention = 5;
+    Uuid origin = 6;
+    Uuid source = 7;
+}
+
+message ReserveResponse {
+    oneof result {
+        Failure failure = 1;
+        Uuid reservation = 2;
+    }
+}
+
+message PushChunk {
+    Uuid reservation = 1;
+    bytes content = 2;
+}
+
+message PushResponse {
+    oneof result {
+        Failure failure = 1;
+        Complete complete = 2;
+    }
+}
+
+message PullRequest {
+    Uuid crate = 1;
+}
+
+message PullChunk {
+    Uuid crate = 1;
+    bytes content = 2;
+}
+
+message DiscardRequest {
+    Uuid crate = 1;
+}
+
+message DiscardResponse {
+    oneof result {
+        Failure failure = 1;
+        Complete complete = 2;
+    }
+}
+
+message Uuid {
+    int64 mostSignificantBits = 1;
+    int64 leastSignificantBits = 2;
+}
+
+message Failure {
+    string message = 1;
+}
+
+message Complete {}

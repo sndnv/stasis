@@ -16,7 +16,7 @@ import stasis.persistence.backends.memory.MemoryBackend
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-class MockEndpointClient(
+class MockHttpEndpointClient(
   pushFailureAddresses: Map[HttpEndpointAddress, Exception] = Map.empty,
   pullFailureAddresses: Map[HttpEndpointAddress, Exception] = Map.empty,
   discardFailureAddresses: Map[HttpEndpointAddress, Exception] = Map.empty,
@@ -24,7 +24,7 @@ class MockEndpointClient(
 )(implicit system: ActorSystem[SpawnProtocol])
     extends HttpEndpointClient((_: HttpEndpointAddress) => None)(system.toUntyped) {
 
-  import MockEndpointClient._
+  import MockHttpEndpointClient._
 
   private implicit val timeout: Timeout = 3.seconds
   private implicit val mat: ActorMaterializer = ActorMaterializer()(system.toUntyped)
@@ -142,7 +142,7 @@ class MockEndpointClient(
   private def storeData: Future[Map[StoreKey, StoreValue]] = store.entries
 }
 
-object MockEndpointClient {
+object MockHttpEndpointClient {
   private type StoreKey = (HttpEndpointAddress, Crate.Id)
   private type StoreValue = (ByteString, Int)
 

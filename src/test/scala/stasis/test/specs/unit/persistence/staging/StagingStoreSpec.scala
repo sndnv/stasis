@@ -4,19 +4,20 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
 import stasis.networking.http.HttpEndpointAddress
 import stasis.packaging.{Crate, Manifest}
 import stasis.persistence.staging.StagingStore
 import stasis.routing.Node
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.networking.mocks.MockEndpointClient
+import stasis.test.specs.unit.networking.mocks.MockHttpEndpointClient
 import stasis.test.specs.unit.persistence.mocks.{MockCrateStore, MockReservationStore}
 
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
-class StagingStoreSpec extends AsyncUnitSpec with Eventually {
+class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfterAll {
 
   private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
@@ -28,7 +29,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually {
   private trait TestFixtures {
     lazy val stagingCrateStore: MockCrateStore = new MockCrateStore(new MockReservationStore())
     lazy val nodeCrateStore: MockCrateStore = new MockCrateStore(new MockReservationStore())
-    lazy val testClient: MockEndpointClient = new MockEndpointClient()
+    lazy val testClient: MockHttpEndpointClient = new MockHttpEndpointClient()
     lazy val localNodes: Map[Node.Local, Int] = Map(
       Node.Local(Node.generateId(), crateStore = nodeCrateStore) -> 1
     )
@@ -56,6 +57,9 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually {
     source = Node.generateId(),
     origin = Node.generateId()
   )
+
+  override protected def afterAll(): Unit =
+    system.terminate().await
 
   "A StagingStore" should "stage crates to temporary storage" in {
     val fixtures = new TestFixtures {}
@@ -87,8 +91,9 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually {
 
         fixtures.testClient.crateCopies(testManifest.crate).await should be(fixtures.remoteNodes.size)
         fixtures.testClient.crateNodes(testManifest.crate).await should be(fixtures.remoteNodes.size)
-        fixtures.testClient.statistics(MockEndpointClient.Statistic.PushCompleted) should be(fixtures.remoteNodes.size)
-        fixtures.testClient.statistics(MockEndpointClient.Statistic.PushFailed) should be(0)
+        fixtures.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(
+          fixtures.remoteNodes.size)
+        fixtures.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
       }
     }
   }

@@ -50,7 +50,8 @@ class HttpEndpointClient(
         }
 
       case None =>
-        val message = s"Push to endpoint [${address.uri}] failed; unable to retrieve credentials"
+        val message =
+          s"Push to endpoint [${address.uri}] failed for crate [${manifest.crate}]; unable to retrieve credentials"
         log.error(message)
         Future.failed(CredentialsFailure(message))
     }
@@ -76,7 +77,8 @@ class HttpEndpointClient(
         }
 
       case None =>
-        val message = s"Push to endpoint [${address.uri}] via sink failed; unable to retrieve credentials"
+        val message =
+          s"Push to endpoint [${address.uri}] via sink failed for crate [${manifest.crate}]; unable to retrieve credentials"
         log.error(message)
         Future.failed(CredentialsFailure(message))
     }
@@ -93,7 +95,7 @@ class HttpEndpointClient(
         pullCrate(address, crate, endpointCredentials)
 
       case None =>
-        val message = s"Pull from endpoint [${address.uri}] failed; unable to retrieve credentials"
+        val message = s"Pull from endpoint [${address.uri}] failed for crate [$crate]; unable to retrieve credentials"
         log.error(message)
         Future.failed(CredentialsFailure(message))
     }
@@ -107,7 +109,8 @@ class HttpEndpointClient(
         discardCrate(address, crate, endpointCredentials)
 
       case None =>
-        val message = s"Discard from endpoint [${address.uri}] failed; unable to retrieve credentials"
+        val message =
+          s"Discard from endpoint [${address.uri}] failed for crate [$crate]; unable to retrieve credentials"
         log.error(message)
         Future.failed(CredentialsFailure(message))
     }

@@ -18,7 +18,7 @@ import stasis.routing.Node
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.persistence.mocks.{MockCrateStore, MockReservationStore}
 import stasis.test.specs.unit.routing.mocks.MockRouter
-import stasis.test.specs.unit.security.mocks.MockNodeAuthenticator
+import stasis.test.specs.unit.security.mocks.MockHttpAuthenticator
 
 class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
@@ -30,7 +30,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   private class TestHttpEndpoint(
     val testCrateStore: Option[MockCrateStore] = None,
     val testReservationStore: MockReservationStore = new MockReservationStore(),
-    val testAuthenticator: MockNodeAuthenticator = new MockNodeAuthenticator(testUser, testPassword)
+    val testAuthenticator: MockHttpAuthenticator = new MockHttpAuthenticator(testUser, testPassword)
   ) extends HttpEndpoint(
         new MockRouter(testCrateStore.getOrElse(new MockCrateStore(testReservationStore))),
         testReservationStore.view,

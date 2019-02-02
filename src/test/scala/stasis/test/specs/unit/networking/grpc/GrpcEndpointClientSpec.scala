@@ -1,34 +1,34 @@
-package stasis.test.specs.unit.networking.http
+package stasis.test.specs.unit.networking.grpc
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.model.headers.HttpCredentials
+import akka.http.scaladsl.HttpConnectionContext
+import akka.http.scaladsl.UseHttp2.Always
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.scalatest.concurrent.Eventually
-import stasis.networking.http.{HttpEndpoint, HttpEndpointAddress, HttpEndpointClient}
+import stasis.networking.grpc.{GrpcEndpoint, GrpcEndpointAddress, GrpcEndpointClient}
 import stasis.packaging.{Crate, Manifest}
 import stasis.routing.Node
-import stasis.security.NodeAuthenticator
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.networking.mocks.MockHttpEndpointCredentials
+import stasis.test.specs.unit.networking.mocks.MockGrpcEndpointCredentials
 import stasis.test.specs.unit.persistence.mocks.{MockCrateStore, MockReservationStore}
 import stasis.test.specs.unit.routing.mocks.MockRouter
-import stasis.test.specs.unit.security.mocks.MockHttpAuthenticator
+import stasis.test.specs.unit.security.mocks.MockGrpcAuthenticator
 
 import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
-class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
+class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
   private implicit val untypedSystem: akka.actor.ActorSystem =
-    akka.actor.ActorSystem(name = "HttpEndpointClientSpec_Untyped")
+    akka.actor.ActorSystem(name = "GrpcEndpointClientSpec_Untyped")
 
   private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
-    "HttpEndpointClientSpec_Typed"
+    "GrpcEndpointClientSpec_Typed"
   )
 
   private implicit val mat: ActorMaterializer = ActorMaterializer()
@@ -44,8 +44,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     origin = Node.generateId()
   )
 
-  private val testUser = "test-user"
-  private val testPassword = "test-password"
+  private val testNode = Node.generateId()
+  private val testSecret = "test-secret"
 
   private trait TestFixtures {
     lazy val reservationStore: MockReservationStore = new MockReservationStore()
@@ -53,28 +53,24 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     lazy val router: MockRouter = new MockRouter(crateStore)
   }
 
-  private class TestHttpEndpoint(
-    val testAuthenticator: NodeAuthenticator[HttpCredentials] = new MockHttpAuthenticator(testUser, testPassword),
+  private class TestGrpcEndpoint(
+    val testAuthenticator: MockGrpcAuthenticator = new MockGrpcAuthenticator(testNode, testSecret),
     val fixtures: TestFixtures = new TestFixtures {},
     port: Int
-  ) extends HttpEndpoint(
-        router = fixtures.router,
-        authenticator = testAuthenticator,
-        reservationStore = fixtures.reservationStore.view
-      ) {
-    private val _ = start(hostname = "localhost", port = port)
+  ) extends GrpcEndpoint(fixtures.router, fixtures.reservationStore.view, testAuthenticator) {
+    private val _ = start("localhost", port, HttpConnectionContext(http2 = Always))
   }
 
-  private val ports: mutable.Queue[Int] = (19000 to 19100).to[mutable.Queue]
+  private val ports: mutable.Queue[Int] = (20000 to 20100).to[mutable.Queue]
 
-  "An HTTP Endpoint Client" should "successfully push crates" in {
+  "An GRPC Endpoint Client" should "successfully push crates" in {
     val endpointPort = ports.dequeue()
-    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+    val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val endpoint = new TestHttpEndpoint(port = endpointPort)
+    val endpoint = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
-      credentials = new MockHttpEndpointCredentials(endpointAddress, testUser, testPassword)
+    val client = new GrpcEndpointClient(
+      credentials = new MockGrpcEndpointCredentials(endpointAddress, testNode, testSecret)
     )
 
     client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).map { _ =>
@@ -88,12 +84,12 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
   it should "handle reservation rejections" in {
     val endpointPort = ports.dequeue()
-    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+    val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val endpoint = new TestHttpEndpoint(port = endpointPort)
+    val endpoint = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
-      credentials = new MockHttpEndpointCredentials(endpointAddress, testUser, testPassword)
+    val client = new GrpcEndpointClient(
+      credentials = new MockGrpcEndpointCredentials(endpointAddress, testNode, testSecret)
     )
 
     client
@@ -103,8 +99,9 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
       .recover {
         case NonFatal(e) =>
-          e.getMessage should startWith(
-            s"Endpoint [http://localhost:$endpointPort] was unable to reserve enough storage for request"
+          e.getMessage should be(
+            s"Reservation on endpoint [${endpointAddress.host}] failed for crate [${testManifest.crate}]: " +
+              s"[Reservation rejected for node [$testNode]]"
           )
           endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
           endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
@@ -114,39 +111,11 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
-  it should "handle reservation failures" in {
-    val endpointPort = ports.dequeue()
-    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort/invalid")
-
-    val endpoint = new TestHttpEndpoint(port = endpointPort)
-
-    val client = new HttpEndpointClient(
-      credentials = new MockHttpEndpointCredentials(endpointAddress, testUser, testPassword)
-    )
-
-    client
-      .push(endpointAddress, testManifest, Source.single(ByteString(crateContent)))
-      .map { response =>
-        fail(s"Received unexpected response from endpoint: [$response]")
-      }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Endpoint [http://localhost:$endpointPort/invalid] responded to storage request with unexpected status: [404 Not Found]"
-          )
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(0)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
-      }
-  }
-
   it should "handle push failures" in {
     val endpointPort = ports.dequeue()
-    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+    val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val endpoint = new TestHttpEndpoint(
+    val endpoint = new TestGrpcEndpoint(
       port = endpointPort,
       fixtures = new TestFixtures {
         override lazy val crateStore: MockCrateStore = new MockCrateStore(
@@ -156,8 +125,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
     )
 
-    val client = new HttpEndpointClient(
-      credentials = new MockHttpEndpointCredentials(endpointAddress, testUser, testPassword)
+    val client = new GrpcEndpointClient(
+      credentials = new MockGrpcEndpointCredentials(endpointAddress, testNode, testSecret)
     )
 
     client
@@ -168,7 +137,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Endpoint [http://localhost:$endpointPort] responded to push with unexpected status: [500 Internal Server Error]"
+            s"Push to endpoint [${endpointAddress.host}] failed for crate [${testManifest.crate}]: " +
+              s"[Push failed for node [$testNode]: [[persistDisabled] is set to [true]]]"
           )
           endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
           endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(1)
@@ -180,12 +150,12 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
   it should "successfully push crates via a stream sink" in {
     val endpointPort = ports.dequeue()
-    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+    val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val endpoint = new TestHttpEndpoint(port = endpointPort)
+    val endpoint = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
-      credentials = new MockHttpEndpointCredentials(endpointAddress, testUser, testPassword)
+    val client = new GrpcEndpointClient(
+      credentials = new MockGrpcEndpointCredentials(endpointAddress, testNode, testSecret)
     )
 
     client.sink(endpointAddress, testManifest).flatMap { sink =>
@@ -206,12 +176,12 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
   it should "successfully pull crates" in {
     val endpointPort = ports.dequeue()
-    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+    val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val endpoint = new TestHttpEndpoint(port = endpointPort)
+    val endpoint = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
-      credentials = new MockHttpEndpointCredentials(endpointAddress, testUser, testPassword)
+    val client = new GrpcEndpointClient(
+      credentials = new MockGrpcEndpointCredentials(endpointAddress, testNode, testSecret)
     )
 
     client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).flatMap { _ =>
@@ -242,12 +212,12 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
   it should "handle trying to pull missing crates" in {
     val endpointPort = ports.dequeue()
-    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+    val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val _ = new TestHttpEndpoint(port = endpointPort)
+    val _ = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
-      credentials = new MockHttpEndpointCredentials(endpointAddress, testUser, testPassword)
+    val client = new GrpcEndpointClient(
+      credentials = new MockGrpcEndpointCredentials(endpointAddress, testNode, testSecret)
     )
 
     client.pull(endpointAddress, Crate.generateId()).map { response =>
@@ -257,53 +227,53 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
   it should "handle pull failures" in {
     val endpointPort = ports.dequeue()
-    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+    val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val _ = new TestHttpEndpoint(port = endpointPort)
+    val _ = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
-      credentials = new MockHttpEndpointCredentials(endpointAddress, "invalid-user", testPassword)
+    val client = new GrpcEndpointClient(
+      credentials = new MockGrpcEndpointCredentials(endpointAddress, testNode, "invalid-secret")
     )
 
+    val crateId = Crate.generateId()
+
     client
-      .pull(endpointAddress, Crate.generateId())
+      .pull(endpointAddress, crateId)
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
       .recover {
         case NonFatal(e) =>
-          e.getMessage should be(
-            s"Endpoint [http://localhost:$endpointPort] responded to pull with unexpected status: [401 Unauthorized]"
-          )
+          e.getMessage should startWith(s"Pull from endpoint [${endpointAddress.host}] failed for crate [$crateId]")
       }
   }
 
   it should "be able to authenticate against multiple endpoints" in {
     val primaryEndpointPort = ports.dequeue()
-    val primaryEndpointAddress = HttpEndpointAddress(s"http://localhost:$primaryEndpointPort")
+    val primaryEndpointAddress = GrpcEndpointAddress("localhost", primaryEndpointPort, tlsEnabled = false)
     val secondaryEndpointPort = ports.dequeue()
-    val secondaryEndpointAddress = HttpEndpointAddress(s"http://localhost:$secondaryEndpointPort")
+    val secondaryEndpointAddress = GrpcEndpointAddress("localhost", secondaryEndpointPort, tlsEnabled = false)
 
-    val primaryEndpointUser = "primary-endpoint-user"
-    val primaryEndpointPassword = "primary-endpoint-password"
-    val secondaryEndpointUser = "secondary-endpoint-user"
-    val secondaryEndpointPassword = "secondary-endpoint-password"
+    val primaryEndpointNode = Node.generateId()
+    val primaryEndpointSecret = "primary-endpoint-secret"
+    val secondaryEndpointNode = Node.generateId()
+    val secondaryEndpointSecret = "secondary-endpoint-secret"
 
-    new TestHttpEndpoint(
-      testAuthenticator = new MockHttpAuthenticator(primaryEndpointUser, primaryEndpointPassword),
+    new TestGrpcEndpoint(
+      testAuthenticator = new MockGrpcAuthenticator(primaryEndpointNode, primaryEndpointSecret),
       port = primaryEndpointPort
     )
 
-    new TestHttpEndpoint(
-      testAuthenticator = new MockHttpAuthenticator(secondaryEndpointUser, secondaryEndpointPassword),
+    new TestGrpcEndpoint(
+      testAuthenticator = new MockGrpcAuthenticator(secondaryEndpointNode, secondaryEndpointSecret),
       port = secondaryEndpointPort
     )
 
-    val client = new HttpEndpointClient(
-      credentials = new MockHttpEndpointCredentials(
+    val client = new GrpcEndpointClient(
+      credentials = new MockGrpcEndpointCredentials(
         Map(
-          primaryEndpointAddress -> (primaryEndpointUser, primaryEndpointPassword),
-          secondaryEndpointAddress -> (secondaryEndpointUser, secondaryEndpointPassword)
+          primaryEndpointAddress -> (primaryEndpointNode, primaryEndpointSecret),
+          secondaryEndpointAddress -> (secondaryEndpointNode, secondaryEndpointSecret)
         )
       )
     )
@@ -318,12 +288,12 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
   it should "fail to push crates if no credentials are available" in {
     val endpointPort = ports.dequeue()
-    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+    val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val _ = new TestHttpEndpoint(port = endpointPort)
+    val _ = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
-      credentials = new MockHttpEndpointCredentials(Map.empty)
+    val client = new GrpcEndpointClient(
+      credentials = new MockGrpcEndpointCredentials(Map.empty)
     )
 
     client
@@ -334,7 +304,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Push to endpoint [${endpointAddress.uri}] failed for crate [${testManifest.crate}]; " +
+            s"Push to endpoint [${endpointAddress.host}] failed for crate [${testManifest.crate}]; " +
               s"unable to retrieve credentials"
           )
       }
@@ -342,12 +312,12 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
   it should "fail to push crates via sink if no credentials are available" in {
     val endpointPort = ports.dequeue()
-    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+    val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val _ = new TestHttpEndpoint(port = endpointPort)
+    val _ = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
-      credentials = new MockHttpEndpointCredentials(Map.empty)
+    val client = new GrpcEndpointClient(
+      credentials = new MockGrpcEndpointCredentials(Map.empty)
     )
 
     client
@@ -358,7 +328,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Push to endpoint [${endpointAddress.uri}] via sink failed for crate [${testManifest.crate}]; " +
+            s"Push to endpoint [${endpointAddress.host}] via sink failed for crate [${testManifest.crate}]; " +
               s"unable to retrieve credentials"
           )
       }
@@ -366,12 +336,12 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
   it should "fail to pull crates if no credentials are available" in {
     val endpointPort = ports.dequeue()
-    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+    val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val _ = new TestHttpEndpoint(port = endpointPort)
+    val _ = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
-      credentials = new MockHttpEndpointCredentials(Map.empty)
+    val client = new GrpcEndpointClient(
+      credentials = new MockGrpcEndpointCredentials(Map.empty)
     )
 
     val crateId = Crate.generateId()
@@ -384,20 +354,19 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Pull from endpoint [${endpointAddress.uri}] failed for crate [$crateId]; " +
-              s"unable to retrieve credentials"
+            s"Pull from endpoint [${endpointAddress.host}] failed for crate [$crateId]; unable to retrieve credentials"
           )
       }
   }
 
   it should "successfully discard existing crates" in {
     val endpointPort = ports.dequeue()
-    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+    val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val endpoint = new TestHttpEndpoint(port = endpointPort)
+    val endpoint = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
-      credentials = new MockHttpEndpointCredentials(endpointAddress, testUser, testPassword)
+    val client = new GrpcEndpointClient(
+      credentials = new MockGrpcEndpointCredentials(endpointAddress, testNode, testSecret)
     )
 
     client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).flatMap { _ =>
@@ -413,12 +382,12 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
   it should "fail to discard crates if no credentials are available" in {
     val endpointPort = ports.dequeue()
-    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+    val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val _ = new TestHttpEndpoint(port = endpointPort)
+    val _ = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
-      credentials = new MockHttpEndpointCredentials(Map.empty)
+    val client = new GrpcEndpointClient(
+      credentials = new MockGrpcEndpointCredentials(Map.empty)
     )
 
     val crateId = Crate.generateId()
@@ -431,7 +400,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Discard from endpoint [${endpointAddress.uri}] failed for crate [$crateId]; " +
+            s"Discard from endpoint [${endpointAddress.host}] failed for crate [$crateId]; " +
               s"unable to retrieve credentials"
           )
       }
@@ -439,12 +408,12 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
   it should "fail to discard missing crates" in {
     val endpointPort = ports.dequeue()
-    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+    val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val _ = new TestHttpEndpoint(port = endpointPort)
+    val _ = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
-      credentials = new MockHttpEndpointCredentials(endpointAddress, testUser, testPassword)
+    val client = new GrpcEndpointClient(
+      credentials = new MockGrpcEndpointCredentials(endpointAddress, testNode, testSecret)
     )
 
     client.discard(endpointAddress, Crate.generateId()).map { result =>
@@ -454,24 +423,16 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
   it should "handle discard failures" in {
     val endpointPort = ports.dequeue()
-    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+    val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val _ = new TestHttpEndpoint(port = endpointPort)
+    val _ = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
-      credentials = new MockHttpEndpointCredentials(endpointAddress, "invalid-user", testPassword)
+    val client = new GrpcEndpointClient(
+      credentials = new MockGrpcEndpointCredentials(endpointAddress, testNode, "invalid-secret")
     )
 
-    client
-      .discard(endpointAddress, Crate.generateId())
-      .map { response =>
-        fail(s"Received unexpected response from endpoint: [$response]")
-      }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Endpoint [${endpointAddress.uri}] responded to discard with unexpected status: [401 Unauthorized]"
-          )
-      }
+    client.discard(endpointAddress, Crate.generateId()).map { result =>
+      result should be(false)
+    }
   }
 }

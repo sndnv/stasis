@@ -37,7 +37,7 @@ class CrateToChunks(
       in,
       new InHandler {
         override def onUpstreamFinish(): Unit = {
-          if (partial.position != 0) {
+          if (partial.position() != 0) {
             partial.flip()
             val data = ByteString.fromByteBuffer(partial)
 
