@@ -59,7 +59,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val endpoint = new TestHttpEndpoint()
     endpoint.testReservationStore.put(testReservation).await
 
-    Put(s"/crate/${testReservation.crate}?reservation=${testReservation.id}")
+    Put(s"/crates/${testReservation.crate}?reservation=${testReservation.id}")
       .addCredentials(testCredentials)
       .withEntity(crateContent) ~> endpoint.routes ~> check {
       status should be(StatusCodes.OK)
@@ -69,7 +69,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   it should "fail to authenticate if no reservation ID is provided" in {
     val endpoint = new TestHttpEndpoint()
 
-    Put(s"/crate/${Crate.generateId()}")
+    Put(s"/crates/${Crate.generateId()}")
       .addCredentials(testCredentials)
       .withEntity(crateContent) ~> endpoint.routes ~> check {
       rejection should be(MissingQueryParamRejection("reservation"))
@@ -79,7 +79,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   it should "fail to authenticate a client with no credentials" in {
     val endpoint = new TestHttpEndpoint()
 
-    Put(s"/crate/some-crate-id?reservation=${testReservation.id}")
+    Put(s"/crates/some-crate-id?reservation=${testReservation.id}")
       .withEntity(crateContent) ~> endpoint.routes ~> check {
       status should be(StatusCodes.Unauthorized)
     }
@@ -88,13 +88,13 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   it should "fail to authenticate a client with invalid credentials" in {
     val endpoint = new TestHttpEndpoint()
 
-    Put(s"/crate/some-crate-id?reservation=${testReservation.id}")
+    Put(s"/crates/some-crate-id?reservation=${testReservation.id}")
       .addCredentials(testCredentials.copy(password = "invalid-password"))
       .withEntity(crateContent) ~> endpoint.routes ~> check {
       status should be(StatusCodes.Unauthorized)
     }
 
-    Put(s"/crate/some-crate-id?reservation=${testReservation.id}")
+    Put(s"/crates/some-crate-id?reservation=${testReservation.id}")
       .addCredentials(testCredentials.copy(username = "invalid-username"))
       .withEntity(crateContent) ~> endpoint.routes ~> check {
       status should be(StatusCodes.Unauthorized)
@@ -124,7 +124,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       target = Node.generateId()
     )
 
-    Put(s"/reserve")
+    Put(s"/reservations")
       .addCredentials(testCredentials)
       .withEntity(Marshal(storageRequest).to[RequestEntity].await) ~> endpoint.routes ~> check {
       status should be(StatusCodes.OK)
@@ -151,7 +151,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       source = Node.generateId()
     )
 
-    Put(s"/reserve")
+    Put(s"/reservations")
       .addCredentials(testCredentials)
       .withEntity(Marshal(storageRequest).to[RequestEntity].await) ~> endpoint.routes ~> check {
       status should be(StatusCodes.InsufficientStorage)
@@ -162,7 +162,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val endpoint = new TestHttpEndpoint()
     endpoint.testReservationStore.put(testReservation).await
 
-    Put(s"/crate/${testReservation.crate}?reservation=${testReservation.id}")
+    Put(s"/crates/${testReservation.crate}?reservation=${testReservation.id}")
       .addCredentials(testCredentials)
       .withEntity(crateContent) ~> endpoint.routes ~> check {
       status should be(StatusCodes.OK)
@@ -174,7 +174,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     val crateId = Crate.generateId()
 
-    Put(s"/crate/$crateId?reservation=${testReservation.id}")
+    Put(s"/crates/$crateId?reservation=${testReservation.id}")
       .addCredentials(testCredentials)
       .withEntity(crateContent) ~> endpoint.routes ~> check {
       status should be(StatusCodes.FailedDependency)
@@ -185,7 +185,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val endpoint = new TestHttpEndpoint()
     endpoint.testReservationStore.put(testReservation).await
 
-    Put(s"/crate/${Crate.generateId()}?reservation=${testReservation.id}")
+    Put(s"/crates/${Crate.generateId()}?reservation=${testReservation.id}")
       .addCredentials(testCredentials)
       .withEntity(crateContent) ~> endpoint.routes ~> check {
       status should be(StatusCodes.BadRequest)
@@ -196,12 +196,12 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val endpoint = new TestHttpEndpoint()
     endpoint.testReservationStore.put(testReservation).await
 
-    Put(s"/crate/${testReservation.crate}?reservation=${testReservation.id}")
+    Put(s"/crates/${testReservation.crate}?reservation=${testReservation.id}")
       .addCredentials(testCredentials)
       .withEntity(crateContent) ~> endpoint.routes ~> check {
       status should be(StatusCodes.OK)
 
-      Get(s"/crate/${testReservation.crate}")
+      Get(s"/crates/${testReservation.crate}")
         .addCredentials(testCredentials) ~> endpoint.routes ~> check {
         status should be(StatusCodes.OK)
         responseAs[ByteString] should be(crateContent.getBytes)
@@ -212,7 +212,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   it should "fail to retrieve missing crates" in {
     val endpoint = new TestHttpEndpoint()
 
-    Get(s"/crate/${Crate.generateId()}?reservation=${testReservation.id}")
+    Get(s"/crates/${Crate.generateId()}?reservation=${testReservation.id}")
       .addCredentials(testCredentials) ~> endpoint.routes ~> check {
       status should be(StatusCodes.NotFound)
     }
@@ -222,12 +222,12 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val endpoint = new TestHttpEndpoint()
     endpoint.testReservationStore.put(testReservation).await
 
-    Put(s"/crate/${testReservation.crate}?reservation=${testReservation.id}")
+    Put(s"/crates/${testReservation.crate}?reservation=${testReservation.id}")
       .addCredentials(testCredentials)
       .withEntity(crateContent) ~> endpoint.routes ~> check {
       status should be(StatusCodes.OK)
 
-      Delete(s"/crate/${testReservation.crate}")
+      Delete(s"/crates/${testReservation.crate}")
         .addCredentials(testCredentials) ~> endpoint.routes ~> check {
         status should be(StatusCodes.OK)
       }
@@ -237,7 +237,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   it should "fail to delete missing crates" in {
     val endpoint = new TestHttpEndpoint()
 
-    Delete(s"/crate/${Crate.generateId()}")
+    Delete(s"/crates/${Crate.generateId()}")
       .addCredentials(testCredentials) ~> endpoint.routes ~> check {
       status should be(StatusCodes.InternalServerError)
     }

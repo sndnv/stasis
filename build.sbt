@@ -12,9 +12,17 @@ lazy val crossVersions = Seq(defaultScalaVersion)
 
 scalaVersion in ThisBuild := defaultScalaVersion
 
+lazy val commonSettings = Seq(
+  crossScalaVersions := crossVersions,
+  logBuffered in Test := false,
+  parallelExecution in Test := false,
+  wartremoverWarnings in(Compile, compile) ++= Warts.unsafe,
+  scalacOptions := Seq("-unchecked", "-deprecation", "-feature")
+)
+
 lazy val core = (project in file("./core"))
+  .settings(commonSettings)
   .settings(
-    crossScalaVersions := crossVersions,
     libraryDependencies ++= Seq(
       "com.typesafe.akka"       %% "akka-actor"            % akkaVersion,
       "com.typesafe.akka"       %% "akka-actor-typed"      % akkaVersion,
@@ -34,13 +42,18 @@ lazy val core = (project in file("./core"))
       "com.typesafe.akka"       %% "akka-stream-testkit"   % akkaVersion       % Test,
       "com.typesafe.akka"       %% "akka-http-testkit"     % akkaHttpVersion   % Test,
       "com.github.tomakehurst"  %  "wiremock"              % "2.20.0"          % Test
-    ),
-    logBuffered in Test := false,
-    parallelExecution in Test := false,
-    wartremoverWarnings in(Compile, compile) ++= Warts.unsafe,
-    scalacOptions := Seq("-unchecked", "-deprecation", "-feature")
+    )
   )
   .dependsOn(proto)
+
+lazy val server = (project in file("./server"))
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.julienrf"            %% "play-json-derived-codecs" % "5.0.0"
+    )
+  )
+  .dependsOn(core % "compile->compile;test->test")
 
 lazy val proto = (project in file("./proto"))
   .settings(

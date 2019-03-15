@@ -70,7 +70,7 @@ class HttpEndpoint(
           onComplete(authenticator.authenticate(credentials)) {
             case Success(node) =>
               concat(
-                path("reserve") {
+                path("reservations") {
                   put {
                     entity(as[CrateStorageRequest]) { storageRequest =>
                       onSuccess(router.reserve(storageRequest)) {
@@ -85,7 +85,7 @@ class HttpEndpoint(
                     }
                   }
                 },
-                path("crate" / JavaUUID) { crateId: Crate.Id =>
+                path("crates" / JavaUUID) { crateId: Crate.Id =>
                   concat(
                     put {
                       parameters("reservation".as[java.util.UUID]) {
@@ -93,14 +93,9 @@ class HttpEndpoint(
                           onSuccess(reservationStore.get(reservationId)) {
                             case Some(reservation) if reservation.crate == crateId =>
                               extractDataBytes { stream =>
+                                val manifest = Manifest(source = node, reservation = reservation)
                                 onSuccess(
-                                  router.push(
-                                    Manifest(
-                                      source = node,
-                                      reservation = reservation
-                                    ),
-                                    stream.mapMaterializedValue(_ => NotUsed)
-                                  )
+                                  router.push(manifest, stream.mapMaterializedValue(_ => NotUsed))
                                 ) { _ =>
                                   log.info("Crate created with manifest: [{}]", manifest)
                                   complete(StatusCodes.OK)

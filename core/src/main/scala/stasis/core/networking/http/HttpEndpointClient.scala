@@ -128,7 +128,7 @@ class HttpEndpointClient(
         .singleRequest(
           request = HttpRequest(
             method = HttpMethods.PUT,
-            uri = s"${address.uri}/reserve",
+            uri = s"${address.uri}/reservations",
             entity = requestEntity
           ).addCredentials(endpointCredentials)
         )
@@ -174,7 +174,7 @@ class HttpEndpointClient(
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.PUT,
-          uri = s"${address.uri}/crate/${manifest.crate}?reservation=${reservation.id}",
+          uri = s"${address.uri}/crates/${manifest.crate}?reservation=${reservation.id}",
           entity = HttpEntity(ContentTypes.`application/octet-stream`, content)
         ).addCredentials(endpointCredentials)
       )
@@ -201,7 +201,7 @@ class HttpEndpointClient(
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.GET,
-          uri = s"${address.uri}/crate/$crate"
+          uri = s"${address.uri}/crates/$crate"
         ).addCredentials(endpointCredentials)
       )
       .flatMap {
@@ -233,7 +233,7 @@ class HttpEndpointClient(
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.DELETE,
-          uri = s"${address.uri}/crate/$crate"
+          uri = s"${address.uri}/crates/$crate"
         ).addCredentials(endpointCredentials)
       )
       .flatMap {

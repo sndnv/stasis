@@ -1,7 +1,7 @@
 ## Data Container
 Packing binary data into self-describing container files
 
-### What does is do?
+### What does it do?
 * Large pieces of data (crates) are partitioned into fixed-sized chunks
 * All chunks of a crate are stored in order (no need for sorting when retrieving) but not necessarily in contiguous blocks
 * Each chunk is written (appended) at the end of the container file
