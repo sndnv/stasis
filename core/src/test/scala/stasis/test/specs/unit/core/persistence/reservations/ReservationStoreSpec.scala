@@ -1,7 +1,5 @@
 package stasis.test.specs.unit.core.persistence.reservations
 
-import scala.concurrent.duration._
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.packaging.Crate
@@ -10,6 +8,8 @@ import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.routing.Node
 import stasis.test.specs.unit.AsyncUnitSpec
+
+import scala.concurrent.duration._
 
 class ReservationStoreSpec extends AsyncUnitSpec {
 
@@ -35,7 +35,6 @@ class ReservationStoreSpec extends AsyncUnitSpec {
       crate = Crate.generateId(),
       size = 1,
       copies = 3,
-      retention = 3.seconds,
       expiration = 1.second,
       origin = Node.generateId(),
       target = Node.generateId()
@@ -60,7 +59,6 @@ class ReservationStoreSpec extends AsyncUnitSpec {
       crate = Crate.generateId(),
       size = 1,
       copies = 3,
-      retention = 3.seconds,
       expiration = 1.second,
       origin = Node.generateId(),
       target = Node.generateId()
@@ -87,7 +85,6 @@ class ReservationStoreSpec extends AsyncUnitSpec {
       crate = Crate.generateId(),
       size = 1,
       copies = 3,
-      retention = 3.seconds,
       expiration = 1.second,
       origin = Node.generateId(),
       target = Node.generateId()

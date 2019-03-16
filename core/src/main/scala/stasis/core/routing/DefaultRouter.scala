@@ -295,7 +295,6 @@ class DefaultRouter(
 
                 if (reservations.nonEmpty) {
                   val reservedCopies = reservations.map(_.copies).sum
-                  val minRetention = reservations.map(_.retention.toSeconds).foldLeft(Long.MaxValue)(math.min)
                   val minExpiration = reservations.map(_.expiration.toSeconds).foldLeft(Long.MaxValue)(math.min)
 
                   val reservation = CrateStorageReservation(
@@ -303,7 +302,6 @@ class DefaultRouter(
                     crate = request.crate,
                     size = request.size,
                     copies = math.min(request.copies, reservedCopies),
-                    retention = math.min(request.retention.toSeconds, minRetention).seconds,
                     expiration = minExpiration.seconds,
                     origin = request.origin,
                     target = routerId

@@ -1,6 +1,5 @@
 package stasis.test.specs.unit.core.networking.http
 
-import scala.concurrent.duration._
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{Behavior, SpawnProtocol}
 import akka.http.scaladsl.marshalling.Marshal
@@ -19,6 +18,8 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.mocks.{MockCrateStore, MockReservationStore}
 import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockHttpAuthenticator
+
+import scala.concurrent.duration._
 
 class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
@@ -49,7 +50,6 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     crate = Crate.generateId(),
     size = crateContent.length,
     copies = 3,
-    retention = 3.seconds,
     expiration = 1.second,
     origin = Node.generateId(),
     target = Node.generateId()
@@ -108,7 +108,6 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       crate = Crate.generateId(),
       size = 42,
       copies = 3,
-      retention = 15.seconds,
       origin = Node.generateId(),
       source = Node.generateId()
     )
@@ -118,7 +117,6 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       crate = Crate.generateId(),
       size = storageRequest.size,
       copies = storageRequest.copies,
-      retention = storageRequest.retention,
       expiration = 1.day,
       origin = Node.generateId(),
       target = Node.generateId()
@@ -131,7 +129,6 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       val actualReservation = responseAs[CrateStorageReservation]
       actualReservation.size should be(expectedReservation.size)
       actualReservation.copies should be(expectedReservation.copies)
-      actualReservation.retention should be(expectedReservation.retention)
       actualReservation.expiration should be(expectedReservation.expiration)
     }
   }
@@ -146,7 +143,6 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       crate = Crate.generateId(),
       size = 100,
       copies = 3,
-      retention = 15.seconds,
       origin = Node.generateId(),
       source = Node.generateId()
     )

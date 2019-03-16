@@ -79,7 +79,6 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     crate = Crate.generateId(),
     size = testContent.size,
     copies = 4,
-    retention = 60.seconds,
     source = Node.generateId(),
     origin = Node.generateId()
   )
@@ -844,7 +843,6 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       crate = Crate.generateId(),
       size = 1,
       copies = 1,
-      retention = 1.second,
       origin = Node.generateId(),
       source = Node.generateId()
     )
@@ -863,7 +861,6 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       val actualReservation = response.get
       actualReservation.size should be(expectedReservation.size)
       actualReservation.copies should be(expectedReservation.copies)
-      actualReservation.retention should be(expectedReservation.retention)
       actualReservation.expiration should be(expectedReservation.expiration)
     }
   }
@@ -879,7 +876,6 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       crate = Crate.generateId(),
       size = 1,
       copies = 1,
-      retention = 1.second,
       origin = Node.generateId(),
       source = Node.generateId()
     )
@@ -898,7 +894,6 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       crate = Crate.generateId(),
       size = 1,
       copies = 1,
-      retention = 1.second,
       origin = Node.generateId(),
       source = Node.generateId()
     )
@@ -918,7 +913,6 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       crate = Crate.generateId(),
       size = 1,
       copies = 1,
-      retention = 1.second,
       origin = Node.generateId(),
       source = Node.generateId()
     )

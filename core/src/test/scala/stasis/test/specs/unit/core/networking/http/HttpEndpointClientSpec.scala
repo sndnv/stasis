@@ -18,7 +18,6 @@ import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockHttpAuthenticator
 
 import scala.collection.mutable
-import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
 class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
@@ -39,7 +38,6 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     crate = Crate.generateId(),
     size = 1,
     copies = 7,
-    retention = 42.seconds,
     source = Node.generateId(),
     origin = Node.generateId()
   )

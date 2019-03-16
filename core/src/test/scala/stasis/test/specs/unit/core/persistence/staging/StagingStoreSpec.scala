@@ -53,7 +53,6 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
     crate = Crate.generateId(),
     size = testContent.size,
     copies = 4,
-    retention = 60.seconds,
     source = Node.generateId(),
     origin = Node.generateId()
   )

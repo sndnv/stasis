@@ -17,9 +17,8 @@ message ReserveRequest {
     Uuid crate = 2;
     int64 size = 3;
     int32 copies = 4;
-    int64 retention = 5;
-    Uuid origin = 6;
-    Uuid source = 7;
+    Uuid origin = 5;
+    Uuid source = 6;
 }
 
 message ReserveResponse {

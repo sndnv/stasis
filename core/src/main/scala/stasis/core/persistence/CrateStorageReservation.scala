@@ -10,7 +10,6 @@ final case class CrateStorageReservation(
   crate: Crate.Id,
   size: Long,
   copies: Int,
-  retention: FiniteDuration,
   origin: Node.Id,
   target: Node.Id,
   expiration: FiniteDuration
@@ -26,7 +25,6 @@ object CrateStorageReservation {
     crate = request.crate,
     size = request.size,
     copies = request.copies,
-    retention = request.retention,
     origin = request.origin,
     target = target,
     expiration = expiration

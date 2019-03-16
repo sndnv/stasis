@@ -18,7 +18,6 @@ object Requests {
         crate = Some(storageRequest.crate),
         size = storageRequest.size,
         copies = storageRequest.copies,
-        retention = storageRequest.retention.toSeconds,
         origin = Some(storageRequest.origin),
         source = Some(storageRequest.source)
       )
@@ -45,7 +44,6 @@ object Requests {
           crate = crate,
           size = reserveRequest.size,
           copies = reserveRequest.copies,
-          retention = reserveRequest.retention.seconds,
           origin = origin,
           source = source
         )

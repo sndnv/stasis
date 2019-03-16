@@ -1,8 +1,5 @@
 package stasis.test.specs.unit.core.persistence.crates
 
-import scala.concurrent.Future
-import scala.concurrent.duration._
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
@@ -21,6 +18,9 @@ import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.core.routing.Node
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.mocks.{MockCrateStore, MockReservationStore}
+
+import scala.concurrent.Future
+import scala.concurrent.duration._
 
 class CrateStoreSpec extends AsyncUnitSpec {
 
@@ -57,7 +57,6 @@ class CrateStoreSpec extends AsyncUnitSpec {
     crate = Crate.generateId(),
     size = testContent.size,
     copies = 4,
-    retention = 60.seconds,
     source = Node.generateId(),
     origin = Node.generateId()
   )
@@ -279,7 +278,6 @@ class CrateStoreSpec extends AsyncUnitSpec {
       crate = Crate.generateId(),
       size = Long.MaxValue,
       copies = 1,
-      retention = 1.second,
       origin = Node.generateId(),
       source = Node.generateId()
     )

@@ -10,7 +10,6 @@ final case class CrateStorageRequest(
   crate: Crate.Id,
   size: Long,
   copies: Int,
-  retention: FiniteDuration,
   origin: Node.Id,
   source: Node.Id
 )
@@ -20,17 +19,15 @@ object CrateStorageRequest {
     crate: Crate.Id,
     size: Long,
     copies: Int,
-    retention: FiniteDuration,
     origin: Node.Id,
     source: Node.Id
   ): CrateStorageRequest =
-    new CrateStorageRequest(id = generateId(), crate, size, copies, retention, origin, source)
+    new CrateStorageRequest(id = generateId(), crate, size, copies, origin, source)
 
   def apply(manifest: Manifest): CrateStorageRequest = CrateStorageRequest(
     crate = manifest.crate,
     size = manifest.size,
     copies = manifest.copies,
-    retention = manifest.retention,
     origin = manifest.origin,
     source = manifest.source
   )

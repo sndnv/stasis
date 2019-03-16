@@ -57,7 +57,6 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     crate = Crate.generateId(),
     size = crateContent.length,
     copies = 3,
-    retention = 3.seconds,
     expiration = 1.second,
     origin = testNode,
     target = Node.generateId()
@@ -154,7 +153,6 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       crate = Crate.generateId(),
       size = 42,
       copies = 3,
-      retention = 15.seconds,
       origin = testNode,
       source = Node.generateId()
     )
@@ -164,7 +162,6 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       crate = storageRequest.crate,
       size = storageRequest.size,
       copies = storageRequest.copies,
-      retention = storageRequest.retention,
       expiration = 1.day,
       origin = testNode,
       target = Node.generateId()
@@ -198,7 +195,6 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       crate = Crate.generateId(),
       size = 100,
       copies = 3,
-      retention = 15.seconds,
       origin = testNode,
       source = Node.generateId()
     )
@@ -224,7 +220,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
         response.result.failure match {
           case Some(failure) =>
             failure.message should be(
-              s"Node [$testNode] made reservation request with missing data: [Missing [id]: [ReserveRequest(None,None,0,0,0,None,None)]]"
+              s"Node [$testNode] made reservation request with missing data: [Missing [id]: [ReserveRequest(None,None,0,0,None,None)]]"
             )
 
           case None =>
@@ -244,7 +240,6 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       crate = Crate.generateId(),
       size = 42,
       copies = 3,
-      retention = 15.seconds,
       origin = testNode,
       source = Node.generateId()
     )

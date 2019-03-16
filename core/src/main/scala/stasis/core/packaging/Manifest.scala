@@ -9,7 +9,6 @@ final case class Manifest(
   crate: Crate.Id,
   size: Long,
   copies: Int,
-  retention: FiniteDuration,
   origin: Node.Id,
   source: Node.Id,
   destinations: Seq[Node.Id]
@@ -21,7 +20,6 @@ object Manifest {
       crate = reservation.crate,
       size = reservation.size,
       copies = reservation.copies,
-      retention = reservation.retention,
       origin = reservation.origin,
       source = source,
       destinations = Seq.empty
@@ -33,12 +31,10 @@ object Manifest {
     source: Node.Id,
     size: Long,
     copies: Int,
-    retention: FiniteDuration
   ): Manifest = Manifest(
     crate = crate,
     size = size,
     copies = copies,
-    retention = retention,
     origin = origin,
     source = source,
     destinations = Seq.empty

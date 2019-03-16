@@ -7,8 +7,6 @@ import stasis.core.persistence.CrateStorageRequest
 import stasis.core.routing.Node
 import stasis.test.specs.unit.AsyncUnitSpec
 
-import scala.concurrent.duration._
-
 class RequestsSpec extends AsyncUnitSpec {
 
   import Implicits._
@@ -17,7 +15,6 @@ class RequestsSpec extends AsyncUnitSpec {
     crate = Crate.generateId(),
     size = 42,
     copies = 3,
-    retention = 15.seconds,
     origin = Node.generateId(),
     source = Node.generateId()
   )
@@ -28,7 +25,6 @@ class RequestsSpec extends AsyncUnitSpec {
       crate = Some(storageRequest.crate),
       size = storageRequest.size,
       copies = storageRequest.copies,
-      retention = storageRequest.retention.toSeconds,
       origin = Some(storageRequest.origin),
       source = Some(storageRequest.source)
     )

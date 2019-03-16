@@ -1,7 +1,5 @@
 package stasis.test.specs.unit.core.persistence.manifests
 
-import scala.concurrent.duration._
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.packaging.{Crate, Manifest}
@@ -28,7 +26,6 @@ class ManifestStoreSpec extends AsyncUnitSpec {
       crate = Crate.generateId(),
       size = 1,
       copies = 4,
-      retention = 60.seconds,
       source = Node.generateId(),
       origin = Node.generateId()
     )
@@ -52,7 +49,6 @@ class ManifestStoreSpec extends AsyncUnitSpec {
       crate = Crate.generateId(),
       size = 1,
       copies = 4,
-      retention = 60.seconds,
       source = Node.generateId(),
       origin = Node.generateId()
     )
