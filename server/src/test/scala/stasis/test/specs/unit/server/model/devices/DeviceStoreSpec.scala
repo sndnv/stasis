@@ -5,7 +5,7 @@ import akka.actor.ActorSystem
 import stasis.core.routing.Node
 import stasis.server.model.devices.Device
 import stasis.server.model.users.User
-import stasis.server.security.Permission
+import stasis.server.security.{CurrentUser, Permission}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.MockDeviceStore
 
@@ -23,7 +23,7 @@ class DeviceStoreSpec extends AsyncUnitSpec {
     limits = None
   )
 
-  private val self = User.generateId()
+  private val self = CurrentUser(User.generateId())
 
   "A DeviceStore" should "provide a view resource (privileged)" in {
     val store = new MockDeviceStore()
@@ -59,7 +59,7 @@ class DeviceStoreSpec extends AsyncUnitSpec {
   it should "return existing devices for current user via view resource (self)" in {
     val store = new MockDeviceStore()
 
-    val ownDevice = mockDevice.copy(owner = self)
+    val ownDevice = mockDevice.copy(owner = self.id)
     store.manage().create(ownDevice).await
 
     store.viewSelf().get(self, ownDevice.id).map(result => result should be(Some(ownDevice)))
@@ -79,7 +79,7 @@ class DeviceStoreSpec extends AsyncUnitSpec {
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Expected to retrieve own [$self] device but device for user [${mockDevice.owner}] found"
+            s"Expected to retrieve own [${self.id}] device but device for user [${mockDevice.owner}] found"
           )
       }
   }
@@ -93,7 +93,7 @@ class DeviceStoreSpec extends AsyncUnitSpec {
   it should "return a list of devices for current user via view resource (self)" in {
     val store = new MockDeviceStore()
 
-    val ownDevice = mockDevice.copy(owner = self)
+    val ownDevice = mockDevice.copy(owner = self.id)
     store.manage().create(ownDevice).await
     store.manage().create(mockDevice.copy(id = Device.generateId())).await
     store.manage().create(mockDevice.copy(id = Device.generateId())).await
@@ -175,7 +175,7 @@ class DeviceStoreSpec extends AsyncUnitSpec {
   it should "allow creating devices for current user via management resource (self)" in {
     val store = new MockDeviceStore()
 
-    val ownDevice = mockDevice.copy(owner = self)
+    val ownDevice = mockDevice.copy(owner = self.id)
 
     for {
       createResult <- store.manageSelf().create(self, ownDevice)
@@ -198,7 +198,7 @@ class DeviceStoreSpec extends AsyncUnitSpec {
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Expected to create own [$self] device but device for user [${mockDevice.owner}] provided"
+            s"Expected to create own [${self.id}] device but device for user [${mockDevice.owner}] provided"
           )
       }
   }
@@ -208,7 +208,7 @@ class DeviceStoreSpec extends AsyncUnitSpec {
 
     val updatedIsActive = false
 
-    val ownDevice = mockDevice.copy(owner = self)
+    val ownDevice = mockDevice.copy(owner = self.id)
 
     for {
       createResult <- store.manageSelf().create(self, ownDevice)
@@ -235,7 +235,7 @@ class DeviceStoreSpec extends AsyncUnitSpec {
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Expected to update own [$self] device but device for user [${mockDevice.owner}] provided"
+            s"Expected to update own [${self.id}] device but device for user [${mockDevice.owner}] provided"
           )
       }
   }
@@ -243,7 +243,7 @@ class DeviceStoreSpec extends AsyncUnitSpec {
   it should "allow deleting devices for current user via management resource (self)" in {
     val store = new MockDeviceStore()
 
-    val ownDevice = mockDevice.copy(owner = self)
+    val ownDevice = mockDevice.copy(owner = self.id)
 
     for {
       createResult <- store.manageSelf().create(self, ownDevice)
@@ -272,7 +272,7 @@ class DeviceStoreSpec extends AsyncUnitSpec {
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Expected to delete own [$self] device but device for user [${mockDevice.owner}] provided"
+            s"Expected to delete own [${self.id}] device but device for user [${mockDevice.owner}] provided"
           )
       }
   }

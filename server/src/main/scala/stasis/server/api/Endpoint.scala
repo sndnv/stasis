@@ -1,8 +1,5 @@
 package stasis.server.api
 
-import scala.concurrent.{ExecutionContextExecutor, Future}
-import scala.util.control.NonFatal
-import scala.util.{Failure, Success}
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.Http
@@ -10,8 +7,13 @@ import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{ExceptionHandler, Route}
 import akka.stream.ActorMaterializer
+import stasis.server.api.routes.RoutesContext
 import stasis.server.security.exceptions.AuthorizationFailure
 import stasis.server.security.{ResourceProvider, UserAuthenticator}
+
+import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.util.control.NonFatal
+import scala.util.{Failure, Success}
 
 class Endpoint(
   resourceProvider: ResourceProvider,
@@ -21,7 +23,7 @@ class Endpoint(
   private implicit val mat: ActorMaterializer = ActorMaterializer()
   private implicit val ec: ExecutionContextExecutor = system.dispatcher
 
-  private implicit val log: LoggingAdapter = Logging(system, this.getClass.getName)
+  private val log: LoggingAdapter = Logging(system, this.getClass.getName)
 
   def start(hostname: String, port: Int): Future[Http.ServerBinding] =
     Http().bindAndHandle(endpointRoutes, hostname, port)
@@ -62,26 +64,18 @@ class Endpoint(
         case Some(credentials) =>
           onComplete(authenticator.authenticate(credentials)) {
             case Success(user) =>
+              implicit val context: RoutesContext = RoutesContext(resourceProvider, user, ec, log)
+
               concat(
                 pathPrefix("datasets") {
                   concat(
-                    pathPrefix("definitions") {
-                      routes.DatasetDefinitions(resourceProvider, user)
-                    },
-                    pathPrefix("entries") {
-                      routes.DatasetEntries(resourceProvider, user)
-                    }
+                    pathPrefix("definitions") { routes.DatasetDefinitions() },
+                    pathPrefix("entries") { routes.DatasetEntries() }
                   )
                 },
-                pathPrefix("users") {
-                  routes.Users(resourceProvider, user)
-                },
-                pathPrefix("devices") {
-                  routes.Devices(resourceProvider, user)
-                },
-                pathPrefix("schedules") {
-                  routes.Schedules(resourceProvider, user)
-                }
+                pathPrefix("users") { routes.Users() },
+                pathPrefix("devices") { routes.Devices() },
+                pathPrefix("schedules") { routes.Schedules() }
               )
 
             case Failure(e) =>

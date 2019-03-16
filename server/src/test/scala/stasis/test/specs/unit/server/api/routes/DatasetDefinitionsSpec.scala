@@ -9,11 +9,11 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import stasis.core.routing.Node
 import stasis.server.api.requests.{CreateDatasetDefinition, UpdateDatasetDefinition}
 import stasis.server.api.responses.{CreatedDatasetDefinition, DeletedDatasetDefinition}
-import stasis.server.api.routes.DatasetDefinitions
+import stasis.server.api.routes.{DatasetDefinitions, RoutesContext}
 import stasis.server.model.datasets.{DatasetDefinition, DatasetDefinitionStore}
 import stasis.server.model.devices.{Device, DeviceStore}
 import stasis.server.model.users.User
-import stasis.server.security.ResourceProvider
+import stasis.server.security.{CurrentUser, ResourceProvider}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.{MockDatasetDefinitionStore, MockDeviceStore}
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
@@ -35,7 +35,7 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     lazy val definitionStore: DatasetDefinitionStore = new MockDatasetDefinitionStore
 
-    lazy val provider: ResourceProvider = new MockResourceProvider(
+    implicit lazy val provider: ResourceProvider = new MockResourceProvider(
       resources = Set(
         deviceStore.view(),
         deviceStore.viewSelf(),
@@ -46,16 +46,18 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       )
     )
 
-    lazy val routes: Route = DatasetDefinitions(provider, user)
+    lazy implicit val context: RoutesContext = RoutesContext.collect()
+
+    lazy val routes: Route = DatasetDefinitions()
   }
 
-  private val user = User.generateId()
+  private implicit val user: CurrentUser = CurrentUser(User.generateId())
 
   private val userDevice =
     Device(
       id = Device.generateId(),
       node = Node.generateId(),
-      owner = user,
+      owner = user.id,
       isActive = true,
       limits = None
     )

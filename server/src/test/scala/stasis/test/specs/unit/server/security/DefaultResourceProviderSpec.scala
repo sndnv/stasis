@@ -3,9 +3,10 @@ package stasis.test.specs.unit.server.security
 import akka.actor.ActorSystem
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.server.model.users.User
-import stasis.server.security.{DefaultResourceProvider, Permission, Resource}
+import stasis.server.security.{CurrentUser, DefaultResourceProvider, Permission, Resource}
 import stasis.test.specs.unit.AsyncUnitSpec
 
+import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
 class DefaultResourceProviderSpec extends AsyncUnitSpec {
@@ -31,17 +32,19 @@ class DefaultResourceProviderSpec extends AsyncUnitSpec {
     permissions = Set(Permission.Manage.Self)
   )
 
+  private implicit val currentUser: CurrentUser = CurrentUser(testUser.id)
+
   userStore.put(testUser.id, testUser).await
 
   "A DefaultResourceProvider" should "successfully provide resources for authorized users" in {
-    provider.provide[ManageSelfResource](testUser.id).map { resource =>
+    provider.provide[ManageSelfResource].map { resource =>
       resource should be(manageSelfResource)
     }
   }
 
   it should "fail to provide resources for unauthorized users" in {
     provider
-      .provide[ViewPrivilegedResource](testUser.id)
+      .provide[ViewPrivilegedResource]
       .map { response =>
         fail(s"Received unexpected response from provider: [$response]")
       }
@@ -55,7 +58,7 @@ class DefaultResourceProviderSpec extends AsyncUnitSpec {
 
   it should "fail to provide missing resources" in {
     provider
-      .provide[ManageServiceResource](testUser.id)
+      .provide[ManageServiceResource]
       .map { response =>
         fail(s"Received unexpected response from provider: [$response]")
       }
@@ -68,16 +71,16 @@ class DefaultResourceProviderSpec extends AsyncUnitSpec {
   }
 
   it should "fail to provide resources for missing users" in {
-    val otherUser = User.generateId()
+    val otherUser: CurrentUser = CurrentUser(User.generateId())
 
     provider
-      .provide[viewPrivilegedResource.type](otherUser)
+      .provide[viewPrivilegedResource.type](otherUser, implicitly[ClassTag[viewPrivilegedResource.type]])
       .map { response =>
         fail(s"Received unexpected response from provider: [$response]")
       }
       .recover {
         case NonFatal(e) =>
-          e.getMessage should be(s"User [$otherUser] not found")
+          e.getMessage should be(s"User [${otherUser.id}] not found")
       }
   }
 }

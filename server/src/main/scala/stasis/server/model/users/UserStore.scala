@@ -1,7 +1,7 @@
 package stasis.server.model.users
 
 import akka.Done
-import stasis.server.security.{Permission, Resource}
+import stasis.server.security.{CurrentUser, Permission, Resource}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -25,8 +25,8 @@ trait UserStore { store =>
 
   final def viewSelf(): UserStore.View.Self =
     new UserStore.View.Self {
-      override def get(self: User.Id): Future[Option[User]] =
-        store.get(self)
+      override def get(self: CurrentUser): Future[Option[User]] =
+        store.get(self.id)
     }
 
   final def manage(): UserStore.Manage.Privileged =
@@ -43,10 +43,10 @@ trait UserStore { store =>
 
   final def manageSelf(): UserStore.Manage.Self =
     new UserStore.Manage.Self {
-      override def deactivate(self: User.Id): Future[Done] =
-        store.get(self).flatMap {
+      override def deactivate(self: CurrentUser): Future[Done] =
+        store.get(self.id).flatMap {
           case Some(user) => store.update(user.copy(isActive = false))
-          case None       => Future.failed(new IllegalArgumentException(s"Expected user [$self] not found"))
+          case None       => Future.failed(new IllegalArgumentException(s"Expected user [${self.id}] not found"))
         }
     }
 }
@@ -60,7 +60,7 @@ object UserStore {
     }
 
     sealed trait Self extends Resource {
-      def get(self: User.Id): Future[Option[User]]
+      def get(self: CurrentUser): Future[Option[User]]
       override def requiredPermission: Permission = Permission.View.Self
     }
   }
@@ -74,7 +74,7 @@ object UserStore {
     }
 
     sealed trait Self extends Resource {
-      def deactivate(self: User.Id): Future[Done]
+      def deactivate(self: CurrentUser): Future[Done]
       override def requiredPermission: Permission = Permission.Manage.Self
     }
   }

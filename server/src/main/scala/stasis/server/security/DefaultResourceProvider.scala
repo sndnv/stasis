@@ -1,8 +1,8 @@
 package stasis.server.security
 
 import stasis.core.persistence.backends.KeyValueBackend
-import stasis.server.security.exceptions.AuthorizationFailure
 import stasis.server.model.users.User
+import stasis.server.security.exceptions.AuthorizationFailure
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
@@ -12,8 +12,8 @@ class DefaultResourceProvider(
   users: KeyValueBackend[User.Id, User]
 )(implicit ec: ExecutionContext)
     extends ResourceProvider {
-  override def provide[R <: Resource](user: User.Id)(implicit tag: ClassTag[R]): Future[R] =
-    users.get(user).flatMap {
+  override def provide[R <: Resource](implicit user: CurrentUser, tag: ClassTag[R]): Future[R] =
+    users.get(user.id).flatMap {
       case Some(userData) =>
         resources.collectFirst { case resource: R => resource } match {
           case Some(resource) =>
@@ -22,20 +22,20 @@ class DefaultResourceProvider(
             } else {
               Future.failed(
                 AuthorizationFailure(
-                  s"User [$user] does not have permission [${resource.requiredPermission}] for resource [$resource]"
+                  s"User [${user.id}] does not have permission [${resource.requiredPermission}] for resource [$resource]"
                 )
               )
             }
 
           case None =>
             Future.failed(
-              AuthorizationFailure(s"Resource [$tag] requested by user [$user] was not found")
+              AuthorizationFailure(s"Resource [$tag] requested by user [${user.id}] was not found")
             )
         }
 
       case None =>
         Future.failed(
-          AuthorizationFailure(s"User [$user] not found")
+          AuthorizationFailure(s"User [${user.id}] not found")
         )
     }
 }

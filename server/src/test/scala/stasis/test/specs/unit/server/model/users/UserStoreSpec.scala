@@ -3,7 +3,7 @@ package stasis.test.specs.unit.server.model.users
 import akka.Done
 import akka.actor.ActorSystem
 import stasis.server.model.users.User
-import stasis.server.security.Permission
+import stasis.server.security.{CurrentUser, Permission}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.MockUserStore
 
@@ -20,7 +20,7 @@ class UserStoreSpec extends AsyncUnitSpec {
     permissions = Set.empty
   )
 
-  private val self = User.generateId()
+  private val self = CurrentUser(User.generateId())
 
   "A UserStore" should "provide a view resource (privileged)" in {
     val store = new MockUserStore()
@@ -56,10 +56,10 @@ class UserStoreSpec extends AsyncUnitSpec {
   it should "return existing users for current user via view resource (self)" in {
     val store = new MockUserStore()
 
-    val ownUser = mockUser.copy(id = self)
+    val ownUser = mockUser.copy(id = self.id)
     store.manage().create(ownUser).await
 
-    store.viewSelf().get(ownUser.id).map(result => result should be(Some(ownUser)))
+    store.viewSelf().get(self).map(result => result should be(Some(ownUser)))
   }
 
   it should "provide management resource (privileged)" in {
@@ -121,13 +121,13 @@ class UserStoreSpec extends AsyncUnitSpec {
   it should "allow deactivating own user via management resource (self)" in {
     val store = new MockUserStore()
 
-    val ownUser = mockUser.copy(id = self)
+    val ownUser = mockUser.copy(id = self.id)
 
     for {
       createResult <- store.manage().create(ownUser)
-      getResult <- store.viewSelf().get(ownUser.id)
+      getResult <- store.viewSelf().get(self)
       updateResult <- store.manageSelf().deactivate(self)
-      updatedGetResult <- store.viewSelf().get(ownUser.id)
+      updatedGetResult <- store.viewSelf().get(self)
     } yield {
       createResult should be(Done)
       getResult should be(Some(ownUser))
@@ -148,7 +148,7 @@ class UserStoreSpec extends AsyncUnitSpec {
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Expected user [$self] not found"
+            s"Expected user [${self.id}] not found"
           )
       }
   }

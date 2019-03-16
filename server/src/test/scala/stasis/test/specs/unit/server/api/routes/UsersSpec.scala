@@ -7,9 +7,9 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import stasis.server.api.requests.{CreateUser, UpdateUserLimits, UpdateUserPermissions, UpdateUserState}
 import stasis.server.api.responses.{CreatedUser, DeletedUser}
-import stasis.server.api.routes.Users
+import stasis.server.api.routes.{RoutesContext, Users}
 import stasis.server.model.users.{User, UserStore}
-import stasis.server.security.{Permission, ResourceProvider}
+import stasis.server.security.{CurrentUser, Permission, ResourceProvider}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.MockUserStore
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
@@ -29,7 +29,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest {
   private trait TestFixtures {
     lazy val userStore: UserStore = new MockUserStore()
 
-    lazy val provider: ResourceProvider = new MockResourceProvider(
+    implicit lazy val provider: ResourceProvider = new MockResourceProvider(
       resources = Set(
         userStore.view(),
         userStore.viewSelf(),
@@ -38,14 +38,16 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest {
       )
     )
 
-    lazy val routes: Route = Users(provider, user)
+    lazy implicit val context: RoutesContext = RoutesContext.collect()
+
+    lazy val routes: Route = Users()
   }
 
-  private val user = User.generateId()
+  private implicit val user: CurrentUser = CurrentUser(User.generateId())
 
   private val users = Seq(
     User(
-      id = user,
+      id = user.id,
       isActive = true,
       limits = None,
       permissions = Set.empty

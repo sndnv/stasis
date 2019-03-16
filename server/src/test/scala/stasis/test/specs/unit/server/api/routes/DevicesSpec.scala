@@ -8,10 +8,10 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import stasis.core.routing.Node
 import stasis.server.api.requests._
 import stasis.server.api.responses.{CreatedDevice, DeletedDevice}
-import stasis.server.api.routes.Devices
+import stasis.server.api.routes.{Devices, RoutesContext}
 import stasis.server.model.devices.{Device, DeviceStore}
 import stasis.server.model.users.{User, UserStore}
-import stasis.server.security.ResourceProvider
+import stasis.server.security.{CurrentUser, ResourceProvider}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.{MockDeviceStore, MockUserStore}
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
@@ -33,7 +33,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     lazy val deviceStore: DeviceStore = new MockDeviceStore()
 
-    lazy val provider: ResourceProvider = new MockResourceProvider(
+    implicit lazy val provider: ResourceProvider = new MockResourceProvider(
       resources = Set(
         userStore.view(),
         userStore.viewSelf(),
@@ -44,7 +44,9 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       )
     )
 
-    lazy val routes: Route = Devices(provider, user.id)
+    lazy implicit val context: RoutesContext = RoutesContext.collect()
+
+    lazy val routes: Route = Devices()
   }
 
   private val user = User(
@@ -53,6 +55,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     limits = None,
     permissions = Set.empty
   )
+
+  private implicit val currentUser: CurrentUser = CurrentUser(user.id)
 
   private val devices = Seq(
     Device(

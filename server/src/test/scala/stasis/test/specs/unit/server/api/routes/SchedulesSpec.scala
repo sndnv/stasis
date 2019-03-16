@@ -9,10 +9,10 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import stasis.server.api.requests.{CreateSchedule, UpdateSchedule}
 import stasis.server.api.responses.{CreatedSchedule, DeletedSchedule}
-import stasis.server.api.routes.Schedules
+import stasis.server.api.routes.{RoutesContext, Schedules}
 import stasis.server.model.schedules.{Schedule, ScheduleStore}
 import stasis.server.model.users.User
-import stasis.server.security.ResourceProvider
+import stasis.server.security.{CurrentUser, ResourceProvider}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.MockScheduleStore
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
@@ -32,17 +32,19 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   private trait TestFixtures {
     lazy val scheduleStore: ScheduleStore = new MockScheduleStore()
 
-    lazy val provider: ResourceProvider = new MockResourceProvider(
+    lazy implicit val provider: ResourceProvider = new MockResourceProvider(
       resources = Set(
         scheduleStore.view(),
         scheduleStore.manage()
       )
     )
 
-    lazy val routes: Route = Schedules(provider, user)
+    lazy implicit val context: RoutesContext = RoutesContext.collect()
+
+    lazy val routes: Route = Schedules()
   }
 
-  private val user = User.generateId()
+  private implicit val user: CurrentUser = CurrentUser(User.generateId())
 
   private val schedules = Seq(
     Schedule(
