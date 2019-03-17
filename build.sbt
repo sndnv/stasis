@@ -34,6 +34,7 @@ lazy val core = (project in file("./core"))
       "de.heikoseeberger"       %% "akka-http-play-json"   % "1.23.0",
       "org.bitbucket.b_c"       %  "jose4j"                % "0.6.4",
       "org.apache.geode"        %  "geode-core"            % "1.8.0"           % Provided,
+      "org.apache.ignite"       %  "ignite-core"           % "2.7.0"           % Provided,
       "com.typesafe.slick"      %% "slick"                 % "3.2.3"           % Provided,
       "com.h2database"          %  "h2"                    % "1.4.197"         % Test,
       "org.scalacheck"          %% "scalacheck"            % "1.14.0"          % Test,
