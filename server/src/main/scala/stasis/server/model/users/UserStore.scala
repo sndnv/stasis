@@ -1,9 +1,11 @@
 package stasis.server.model.users
 
-import akka.Done
-import stasis.server.security.{CurrentUser, Permission, Resource}
-
 import scala.concurrent.{ExecutionContext, Future}
+
+import akka.Done
+import stasis.server.security.{CurrentUser, Resource}
+import stasis.shared.model.users.User
+import stasis.shared.security.Permission
 
 trait UserStore { store =>
   protected implicit def ec: ExecutionContext

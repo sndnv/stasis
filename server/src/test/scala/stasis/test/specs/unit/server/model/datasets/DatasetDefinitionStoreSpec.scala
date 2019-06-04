@@ -1,15 +1,15 @@
 package stasis.test.specs.unit.server.model.datasets
 
-import akka.Done
-import akka.actor.ActorSystem
-import stasis.server.model.datasets.DatasetDefinition
-import stasis.server.model.devices.Device
-import stasis.server.security.Permission
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.server.model.mocks.MockDatasetDefinitionStore
-
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
+
+import akka.Done
+import akka.actor.ActorSystem
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.devices.Device
+import stasis.shared.security.Permission
+import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.server.model.mocks.MockDatasetDefinitionStore
 
 class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
 

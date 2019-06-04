@@ -1,10 +1,12 @@
 package stasis.server.model.datasets
 
-import akka.Done
-import stasis.server.model.devices.Device
-import stasis.server.security.{Permission, Resource}
-
 import scala.concurrent.{ExecutionContext, Future}
+
+import akka.Done
+import stasis.server.security.Resource
+import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.model.devices.Device
+import stasis.shared.security.Permission
 
 trait DatasetEntryStore { store =>
   protected implicit def ec: ExecutionContext
@@ -99,6 +101,7 @@ object DatasetEntryStore {
       def list(definition: DatasetDefinition.Id): Future[Map[DatasetEntry.Id, DatasetEntry]]
       override def requiredPermission: Permission = Permission.View.Privileged
     }
+
     sealed trait Self extends Resource {
       def get(ownDevices: Seq[Device.Id], entry: DatasetEntry.Id): Future[Option[DatasetEntry]]
       def list(ownDevices: Seq[Device.Id], definition: DatasetDefinition.Id): Future[Map[DatasetEntry.Id, DatasetEntry]]
@@ -112,6 +115,7 @@ object DatasetEntryStore {
       def delete(entry: DatasetEntry.Id): Future[Boolean]
       override def requiredPermission: Permission = Permission.Manage.Privileged
     }
+
     sealed trait Self extends Resource {
       def create(ownDevices: Seq[Device.Id], entry: DatasetEntry): Future[Done]
       def delete(ownDevices: Seq[Device.Id], entry: DatasetEntry.Id): Future[Boolean]

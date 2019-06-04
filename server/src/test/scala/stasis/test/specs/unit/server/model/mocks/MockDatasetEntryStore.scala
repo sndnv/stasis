@@ -1,12 +1,13 @@
 package stasis.test.specs.unit.server.model.mocks
 
+import scala.concurrent.{ExecutionContext, Future}
+
 import akka.Done
 import akka.actor.ActorSystem
 import akka.util.Timeout
 import stasis.core.persistence.backends.memory.MemoryBackend
-import stasis.server.model.datasets.{DatasetEntry, DatasetEntryStore}
-
-import scala.concurrent.{ExecutionContext, Future}
+import stasis.server.model.datasets.DatasetEntryStore
+import stasis.shared.model.datasets.DatasetEntry
 
 class MockDatasetEntryStore()(implicit system: ActorSystem, timeout: Timeout) extends DatasetEntryStore {
   private val backend: MemoryBackend[DatasetEntry.Id, DatasetEntry] =

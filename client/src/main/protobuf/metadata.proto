@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "stasis.client.model.proto";
+
+package stasis.client;
+
+message FileMetadata {
+    string path = 1;
+    int64 size = 2;
+    string link = 3;
+    bool isHidden = 4;
+    int64 created = 5;
+    int64 updated = 6;
+    string owner = 7;
+    string group = 8;
+    string permissions = 9;
+    bytes checksum = 10;
+    CrateId crate = 11;
+}
+
+message DatasetMetadata {
+    repeated FileMetadata contentChanged = 1;
+    repeated FileMetadata metadataChanged = 2;
+}
+
+message CrateId {
+    int64 mostSignificantBits = 1;
+    int64 leastSignificantBits = 2;
+}

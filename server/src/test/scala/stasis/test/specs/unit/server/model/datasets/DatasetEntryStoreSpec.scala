@@ -2,15 +2,16 @@ package stasis.test.specs.unit.server.model.datasets
 
 import java.time.Instant
 
+import scala.util.control.NonFatal
+
 import akka.Done
 import akka.actor.ActorSystem
-import stasis.server.model.datasets.{DatasetDefinition, DatasetEntry}
-import stasis.server.model.devices.Device
-import stasis.server.security.Permission
+import stasis.core.packaging.Crate
+import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.model.devices.Device
+import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.MockDatasetEntryStore
-
-import scala.util.control.NonFatal
 
 class DatasetEntryStoreSpec extends AsyncUnitSpec {
 
@@ -23,6 +24,7 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
     definition = DatasetDefinition.generateId(),
     device = Device.generateId(),
     data = Set.empty,
+    metadata = Crate.generateId(),
     created = Instant.now()
   )
 

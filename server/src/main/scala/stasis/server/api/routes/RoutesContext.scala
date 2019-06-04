@@ -1,4 +1,5 @@
 package stasis.server.api.routes
+
 import akka.event.LoggingAdapter
 import stasis.server.security.{CurrentUser, ResourceProvider}
 

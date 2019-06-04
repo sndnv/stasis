@@ -2,14 +2,14 @@ package stasis.test.specs.unit.server.model.schedules
 
 import java.time.LocalTime
 
+import scala.concurrent.duration._
+
 import akka.Done
 import akka.actor.ActorSystem
-import stasis.server.model.schedules.Schedule
-import stasis.server.security.Permission
+import stasis.shared.model.schedules.Schedule
+import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.MockScheduleStore
-
-import scala.concurrent.duration._
 
 class ScheduleStoreSpec extends AsyncUnitSpec {
 

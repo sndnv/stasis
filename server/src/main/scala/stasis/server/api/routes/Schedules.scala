@@ -1,17 +1,17 @@
 package stasis.server.api.routes
 
+import scala.concurrent.Future
+
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import stasis.server.api.requests.{CreateSchedule, UpdateSchedule}
-import stasis.server.api.responses.{CreatedSchedule, DeletedSchedule}
 import stasis.server.model.schedules.ScheduleStore
-
-import scala.concurrent.Future
+import stasis.shared.api.requests.{CreateSchedule, UpdateSchedule}
+import stasis.shared.api.responses.{CreatedSchedule, DeletedSchedule}
 
 object Schedules extends ApiRoutes {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
-  import stasis.server.api.Formats._
+  import stasis.shared.api.Formats._
 
   def apply()(implicit ctx: RoutesContext): Route =
     concat(

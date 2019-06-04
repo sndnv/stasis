@@ -3,8 +3,8 @@ package stasis.server.api.routes
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import stasis.server.api.requests.{CreateDatasetDefinition, UpdateDatasetDefinition}
-import stasis.server.api.responses.{CreatedDatasetDefinition, DeletedDatasetDefinition}
+import stasis.shared.api.requests.{CreateDatasetDefinition, UpdateDatasetDefinition}
+import stasis.shared.api.responses.{CreatedDatasetDefinition, DeletedDatasetDefinition}
 import stasis.server.model.datasets.DatasetDefinitionStore
 import stasis.server.model.devices.DeviceStore
 
@@ -12,7 +12,7 @@ import scala.concurrent.Future
 
 object DatasetDefinitions extends ApiRoutes {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
-  import stasis.server.api.Formats._
+  import stasis.shared.api.Formats._
 
   def apply()(implicit ctx: RoutesContext): Route =
     concat(

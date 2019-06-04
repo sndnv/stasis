@@ -1,9 +1,11 @@
 package stasis.server.model.devices
 
-import akka.Done
-import stasis.server.security.{CurrentUser, Permission, Resource}
-
 import scala.concurrent.{ExecutionContext, Future}
+
+import akka.Done
+import stasis.server.security.{CurrentUser, Resource}
+import stasis.shared.model.devices.Device
+import stasis.shared.security.Permission
 
 trait DeviceStore { store =>
   protected implicit def ec: ExecutionContext

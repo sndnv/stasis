@@ -1,13 +1,14 @@
 package stasis.test.specs.unit.server.security
 
-import akka.actor.ActorSystem
-import stasis.core.persistence.backends.memory.MemoryBackend
-import stasis.server.model.users.User
-import stasis.server.security.{CurrentUser, DefaultResourceProvider, Permission, Resource}
-import stasis.test.specs.unit.AsyncUnitSpec
-
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
+
+import akka.actor.ActorSystem
+import stasis.core.persistence.backends.memory.MemoryBackend
+import stasis.server.security.{CurrentUser, DefaultResourceProvider, Resource}
+import stasis.shared.model.users.User
+import stasis.shared.security.Permission
+import stasis.test.specs.unit.AsyncUnitSpec
 
 class DefaultResourceProviderSpec extends AsyncUnitSpec {
   import DefaultResourceProviderSpec._

@@ -7,14 +7,17 @@ import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{RequestEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import stasis.core.packaging.Crate
 import stasis.core.routing.Node
-import stasis.server.api.requests.CreateDatasetEntry
-import stasis.server.api.responses.{CreatedDatasetEntry, DeletedDatasetEntry}
 import stasis.server.api.routes.{DatasetEntries, RoutesContext}
-import stasis.server.model.datasets.{DatasetDefinition, DatasetEntry, DatasetEntryStore}
-import stasis.server.model.devices.{Device, DeviceStore}
-import stasis.server.model.users.User
+import stasis.server.model.datasets.DatasetEntryStore
+import stasis.server.model.devices.DeviceStore
 import stasis.server.security.{CurrentUser, ResourceProvider}
+import stasis.shared.api.requests.CreateDatasetEntry
+import stasis.shared.api.responses.{CreatedDatasetEntry, DeletedDatasetEntry}
+import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.model.devices.Device
+import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.{MockDatasetEntryStore, MockDeviceStore}
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
@@ -23,7 +26,7 @@ import scala.concurrent.Future
 
 class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
-  import stasis.server.api.Formats._
+  import stasis.shared.api.Formats._
 
   import scala.language.implicitConversions
 
@@ -70,6 +73,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       definition = definition,
       device = userDevice.id,
       data = Set.empty,
+      metadata = Crate.generateId(),
       created = Instant.now()
     ),
     DatasetEntry(
@@ -77,6 +81,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       definition = definition,
       device = Device.generateId(),
       data = Set.empty,
+      metadata = Crate.generateId(),
       created = Instant.now()
     )
   )
@@ -84,6 +89,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   private val createRequest = CreateDatasetEntry(
     definition = definition,
     device = userDevice.id,
+    metadata = Crate.generateId(),
     data = Set.empty
   )
 

@@ -1,18 +1,19 @@
 package stasis.server.api.routes
 
+import scala.concurrent.Future
+
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import stasis.server.api.requests._
-import stasis.server.api.responses.{CreatedDevice, DeletedDevice}
-import stasis.server.model.devices.{Device, DeviceStore}
+import stasis.server.model.devices.DeviceStore
 import stasis.server.model.users.UserStore
-
-import scala.concurrent.Future
+import stasis.shared.api.requests._
+import stasis.shared.api.responses.{CreatedDevice, DeletedDevice}
+import stasis.shared.model.devices.Device
 
 object Devices extends ApiRoutes {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
-  import stasis.server.api.Formats._
+  import stasis.shared.api.Formats._
 
   private def updatePrivileged(
     updateRequest: UpdateDevice,

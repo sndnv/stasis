@@ -1,12 +1,13 @@
 package stasis.test.specs.unit.server.model.mocks
 
+import scala.concurrent.Future
+
 import akka.Done
 import akka.actor.ActorSystem
 import akka.util.Timeout
 import stasis.core.persistence.backends.memory.MemoryBackend
-import stasis.server.model.schedules.{Schedule, ScheduleStore}
-
-import scala.concurrent.Future
+import stasis.server.model.schedules.ScheduleStore
+import stasis.shared.model.schedules.Schedule
 
 class MockScheduleStore()(implicit system: ActorSystem, timeout: Timeout) extends ScheduleStore {
   private val backend: MemoryBackend[Schedule.Id, Schedule] =

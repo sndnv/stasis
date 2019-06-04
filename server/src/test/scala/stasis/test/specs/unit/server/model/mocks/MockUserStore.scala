@@ -1,12 +1,13 @@
 package stasis.test.specs.unit.server.model.mocks
 
+import scala.concurrent.{ExecutionContext, Future}
+
 import akka.Done
 import akka.actor.ActorSystem
 import akka.util.Timeout
 import stasis.core.persistence.backends.memory.MemoryBackend
-import stasis.server.model.users.{User, UserStore}
-
-import scala.concurrent.{ExecutionContext, Future}
+import stasis.server.model.users.UserStore
+import stasis.shared.model.users.User
 
 class MockUserStore(implicit system: ActorSystem, timeout: Timeout) extends UserStore {
   private val backend: MemoryBackend[User.Id, User] =
