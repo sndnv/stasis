@@ -1,7 +1,7 @@
 package stasis.server.security
 
 import stasis.core.persistence.backends.KeyValueBackend
-import stasis.server.model.users.User
+import stasis.shared.model.users.User
 import stasis.server.security.exceptions.AuthorizationFailure
 
 import scala.concurrent.{ExecutionContext, Future}

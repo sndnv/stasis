@@ -1,30 +1,31 @@
 package stasis.test.specs.unit.server.api.routes
 import java.time.LocalTime
 
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{RequestEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import stasis.server.api.requests.{CreateSchedule, UpdateSchedule}
-import stasis.server.api.responses.{CreatedSchedule, DeletedSchedule}
 import stasis.server.api.routes.{RoutesContext, Schedules}
-import stasis.server.model.schedules.{Schedule, ScheduleStore}
-import stasis.server.model.users.User
+import stasis.server.model.schedules.ScheduleStore
 import stasis.server.security.{CurrentUser, ResourceProvider}
+import stasis.shared.api.requests.{CreateSchedule, UpdateSchedule}
+import stasis.shared.api.responses.{CreatedSchedule, DeletedSchedule}
+import stasis.shared.model.schedules.Schedule
+import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.MockScheduleStore
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
 
-import scala.concurrent.Future
-import scala.concurrent.duration._
-
 class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
-  import stasis.server.api.Formats._
-
   import scala.language.implicitConversions
+
+  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import stasis.shared.api.Formats._
 
   private implicit val untypedSystem: ActorSystem = ActorSystem(name = "SchedulesSpec")
   private implicit val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)

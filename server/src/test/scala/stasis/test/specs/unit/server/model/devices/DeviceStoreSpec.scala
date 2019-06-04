@@ -1,15 +1,16 @@
 package stasis.test.specs.unit.server.model.devices
 
+import scala.util.control.NonFatal
+
 import akka.Done
 import akka.actor.ActorSystem
 import stasis.core.routing.Node
-import stasis.server.model.devices.Device
-import stasis.server.model.users.User
-import stasis.server.security.{CurrentUser, Permission}
+import stasis.server.security.CurrentUser
+import stasis.shared.model.devices.Device
+import stasis.shared.model.users.User
+import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.MockDeviceStore
-
-import scala.util.control.NonFatal
 
 class DeviceStoreSpec extends AsyncUnitSpec {
 

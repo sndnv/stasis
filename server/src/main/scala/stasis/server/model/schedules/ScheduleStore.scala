@@ -3,7 +3,9 @@ package stasis.server.model.schedules
 import scala.concurrent.Future
 
 import akka.Done
-import stasis.server.security.{Permission, Resource}
+import stasis.server.security.Resource
+import stasis.shared.model.schedules.Schedule
+import stasis.shared.security.Permission
 
 trait ScheduleStore { store =>
   protected def create(schedule: Schedule): Future[Done]

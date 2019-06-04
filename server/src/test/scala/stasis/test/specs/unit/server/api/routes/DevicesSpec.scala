@@ -1,4 +1,7 @@
 package stasis.test.specs.unit.server.api.routes
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.marshalling.Marshal
@@ -6,24 +9,23 @@ import akka.http.scaladsl.model.{RequestEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import stasis.core.routing.Node
-import stasis.server.api.requests._
-import stasis.server.api.responses.{CreatedDevice, DeletedDevice}
 import stasis.server.api.routes.{Devices, RoutesContext}
-import stasis.server.model.devices.{Device, DeviceStore}
-import stasis.server.model.users.{User, UserStore}
+import stasis.server.model.devices.DeviceStore
+import stasis.server.model.users.UserStore
 import stasis.server.security.{CurrentUser, ResourceProvider}
+import stasis.shared.api.requests._
+import stasis.shared.api.responses.{CreatedDevice, DeletedDevice}
+import stasis.shared.model.devices.Device
+import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.{MockDeviceStore, MockUserStore}
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
 
-import scala.concurrent.Future
-import scala.concurrent.duration._
-
 class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
-  import stasis.server.api.Formats._
-
   import scala.language.implicitConversions
+
+  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import stasis.shared.api.Formats._
 
   private implicit val untypedSystem: ActorSystem = ActorSystem(name = "DevicesSpec")
   private implicit val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)

@@ -7,10 +7,6 @@ jdk:
 - oraclejdk8
 - openjdk11
 
-branches:
-  only:
-    - master
-
 script:
   - sbt ++$TRAVIS_SCALA_VERSION qa
 

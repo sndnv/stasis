@@ -1,13 +1,14 @@
 package stasis.test.specs.unit.server.model.users
 
+import scala.util.control.NonFatal
+
 import akka.Done
 import akka.actor.ActorSystem
-import stasis.server.model.users.User
-import stasis.server.security.{CurrentUser, Permission}
+import stasis.server.security.CurrentUser
+import stasis.shared.model.users.User
+import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.MockUserStore
-
-import scala.util.control.NonFatal
 
 class UserStoreSpec extends AsyncUnitSpec {
 

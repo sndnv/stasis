@@ -1,12 +1,13 @@
 package stasis.test.specs.unit.server.model.mocks
 
+import scala.concurrent.{ExecutionContext, Future}
+
 import akka.Done
 import akka.actor.ActorSystem
 import akka.util.Timeout
 import stasis.core.persistence.backends.memory.MemoryBackend
-import stasis.server.model.devices.{Device, DeviceStore}
-
-import scala.concurrent.{ExecutionContext, Future}
+import stasis.server.model.devices.DeviceStore
+import stasis.shared.model.devices.Device
 
 class MockDeviceStore()(implicit system: ActorSystem, timeout: Timeout) extends DeviceStore {
   private val backend: MemoryBackend[Device.Id, Device] =
