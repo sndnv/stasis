@@ -4,21 +4,21 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.routing.Node
-import stasis.core.security.psk.PreSharedKeyAuthenticator
+import stasis.core.security.psk.PreSharedKeyNodeAuthenticator
 import stasis.test.specs.unit.AsyncUnitSpec
 
 import scala.util.control.NonFatal
 
-class PreSharedKeyAuthenticatorSpec extends AsyncUnitSpec {
+class PreSharedKeyNodeAuthenticatorSpec extends AsyncUnitSpec {
 
   private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
-    "PreSharedKeyAuthenticatorSpec"
+    "PreSharedKeyNodeAuthenticatorSpec"
   )
 
-  "A PreSharedKeyAuthenticator" should "authenticate nodes with valid secrets" in {
+  "A PreSharedKeyNodeAuthenticator" should "authenticate nodes with valid secrets" in {
     val backend = MemoryBackend[String, String]("psk-authenticator-store")
-    val authenticator = new PreSharedKeyAuthenticator(backend)
+    val authenticator = new PreSharedKeyNodeAuthenticator(backend)
 
     val expectedNode: Node.Id = Node.generateId()
     val nodeSecret: String = "some-secret"
@@ -34,7 +34,7 @@ class PreSharedKeyAuthenticatorSpec extends AsyncUnitSpec {
 
   it should "refuse authentication attempts with invalid secrets" in {
     val backend = MemoryBackend[String, String]("psk-authenticator-store")
-    val authenticator = new PreSharedKeyAuthenticator(backend)
+    val authenticator = new PreSharedKeyNodeAuthenticator(backend)
 
     val expectedNode: Node.Id = Node.generateId()
     val nodeSecret: String = "some-secret"
@@ -54,7 +54,7 @@ class PreSharedKeyAuthenticatorSpec extends AsyncUnitSpec {
 
   it should "refuse authentication attempts with invalid node IDs" in {
     val backend = MemoryBackend[String, String]("psk-authenticator-store")
-    val authenticator = new PreSharedKeyAuthenticator(backend)
+    val authenticator = new PreSharedKeyNodeAuthenticator(backend)
 
     val node = "some-node"
     val nodeSecret: String = "some-secret"
@@ -72,7 +72,7 @@ class PreSharedKeyAuthenticatorSpec extends AsyncUnitSpec {
 
   it should "refuse authentication attempts for missing nodes" in {
     val backend = MemoryBackend[String, String]("psk-authenticator-store")
-    val authenticator = new PreSharedKeyAuthenticator(backend)
+    val authenticator = new PreSharedKeyNodeAuthenticator(backend)
 
     val expectedNode: Node.Id = Node.generateId()
     val nodeSecret: String = "some-secret"

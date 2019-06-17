@@ -10,7 +10,7 @@ import stasis.core.security.exceptions.AuthenticationFailure
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-class PreSharedKeyAuthenticator(
+class PreSharedKeyNodeAuthenticator(
   backend: KeyValueBackend[String, String]
 )(implicit ec: ExecutionContext)
     extends NodeAuthenticator[(String, String)] {
