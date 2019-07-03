@@ -30,6 +30,10 @@ lazy val client = (project in file("./client"))
   )
   .dependsOn(shared % "compile->compile;test->test")
 
+lazy val identity = (project in file("./identity"))
+  .settings(commonSettings)
+  .dependsOn(core % "compile->compile;test->test")
+
 lazy val shared = (project in file("./shared"))
   .settings(commonSettings)
   .settings(
@@ -51,7 +55,7 @@ lazy val core = (project in file("./core"))
       "com.typesafe.akka"       %% "akka-http2-support"   % akkaHttpVersion,
       "com.typesafe.play"       %% "play-json"            % "2.7.0",
       "de.heikoseeberger"       %% "akka-http-play-json"  % "1.23.0",
-      "org.bitbucket.b_c"       %  "jose4j"               % "0.6.4",
+      "org.bitbucket.b_c"       %  "jose4j"               % "0.6.5",
       "org.apache.geode"        %  "geode-core"           % "1.8.0"           % Provided,
       "com.typesafe.slick"      %% "slick"                % "3.2.3"           % Provided,
       "com.h2database"          %  "h2"                   % "1.4.197"         % Test,

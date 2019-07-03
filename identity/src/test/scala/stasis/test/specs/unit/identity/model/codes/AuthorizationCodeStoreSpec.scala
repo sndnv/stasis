@@ -1,0 +1,73 @@
+package stasis.test.specs.unit.identity.model.codes
+
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
+import akka.Done
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import stasis.core.persistence.backends.memory.MemoryBackend
+import stasis.identity.model.clients.Client
+import stasis.identity.model.codes.{AuthorizationCodeStore, StoredAuthorizationCode}
+import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.identity.model.Generators
+
+class AuthorizationCodeStoreSpec extends AsyncUnitSpec {
+  "An AuthorizationCodeStore" should "add, retrieve and delete authorization codes" in {
+    val store = createStore()
+
+    val expectedCode = Generators.generateAuthorizationCode
+    val client = Client.generateId()
+    val owner = Generators.generateResourceOwner
+    val expectedStoredCode = StoredAuthorizationCode(expectedCode, owner, scope = None)
+
+    for {
+      _ <- store.put(client, expectedCode, owner, scope = None)
+      actualCode <- store.get(client)
+      someCodes <- store.codes
+      _ <- store.delete(client)
+      missingCode <- store.get(client)
+      noCodes <- store.codes
+    } yield {
+      actualCode should be(Some(expectedStoredCode))
+      someCodes should be(Map(client -> expectedStoredCode))
+      missingCode should be(None)
+      noCodes should be(Map.empty)
+    }
+  }
+
+  it should "expire authorization codes" in {
+    val expiration = 50.millis
+    val store = createStore(expiration)
+
+    val expectedCode = Generators.generateAuthorizationCode
+    val client = Client.generateId()
+    val owner = Generators.generateResourceOwner
+    val expectedStoredCode = StoredAuthorizationCode(expectedCode, owner, scope = None)
+
+    for {
+      _ <- store.put(client, expectedCode, owner, scope = None)
+      actualCode <- store.get(client)
+      someCodes <- store.codes
+      _ <- akka.pattern.after(expiration * 2, using = system.scheduler)(Future.successful(Done))
+      missingCode <- store.get(client)
+      noCodes <- store.codes
+    } yield {
+      actualCode should be(Some(expectedStoredCode))
+      someCodes should be(Map(client -> expectedStoredCode))
+      missingCode should be(None)
+      noCodes should be(Map.empty)
+    }
+  }
+
+  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+    "AuthorizationCodeStoreSpec"
+  )
+
+  private def createStore(expiration: FiniteDuration = 3.seconds): AuthorizationCodeStore =
+    AuthorizationCodeStore(
+      expiration = expiration,
+      MemoryBackend[Client.Id, StoredAuthorizationCode](name = s"code-store-${java.util.UUID.randomUUID()}")
+    )
+}

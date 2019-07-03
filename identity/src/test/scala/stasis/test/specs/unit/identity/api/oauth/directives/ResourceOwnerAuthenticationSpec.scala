@@ -1,0 +1,165 @@
+package stasis.test.specs.unit.identity.api.oauth.directives
+
+import akka.event.LoggingAdapter
+import akka.http.scaladsl.model
+import akka.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
+import akka.http.scaladsl.model.{StatusCodes, Uri}
+import akka.http.scaladsl.server.Directives
+import akka.stream.{ActorMaterializer, Materializer}
+import stasis.identity.api.Formats._
+import stasis.identity.api.oauth.directives.ResourceOwnerAuthentication
+import stasis.identity.authentication.oauth.{DefaultResourceOwnerAuthenticator, ResourceOwnerAuthenticator}
+import stasis.identity.model.owners.ResourceOwnerStore
+import stasis.identity.model.secrets.Secret
+import stasis.test.specs.unit.identity.RouteTest
+import stasis.test.specs.unit.identity.model.Generators
+
+import scala.concurrent.duration._
+
+class ResourceOwnerAuthenticationSpec extends RouteTest {
+  "A ResourceOwnerAuthentication directive" should "authenticate resource owners with provided credentials" in {
+    val owners = createOwnerStore()
+    val directive = createDirective(owners)
+
+    val ownerPassword = "some-password"
+    val salt = Secret.generateSalt()
+    val password = Secret.derive(ownerPassword, salt)
+    val owner = Generators.generateResourceOwner.copy(password = password, salt = salt)
+
+    val routes = directive.authenticateResourceOwner(owner.username, ownerPassword) { extractedOwner =>
+      Directives.complete(StatusCodes.OK, extractedOwner.username)
+    }
+
+    owners.put(owner).await
+    Get() ~> routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[String] should be(owner.username)
+    }
+  }
+
+  it should "fail to authenticate resource owners with invalid provided credentials" in {
+    val owners = createOwnerStore()
+    val directive = createDirective(owners)
+
+    val salt = Secret.generateSalt()
+    val password = Secret.derive(rawSecret = "some-password", salt)
+    val owner = Generators.generateResourceOwner.copy(password = password, salt = salt)
+
+    val routes = directive.authenticateResourceOwner(owner.username, "other-password") { extractedOwner =>
+      Directives.complete(StatusCodes.OK, extractedOwner.username)
+    }
+
+    owners.put(owner).await
+    Get() ~> routes ~> check {
+      status should be(StatusCodes.Unauthorized)
+    }
+  }
+
+  it should "authenticate resource owners with extracted credentials" in {
+    val owners = createOwnerStore()
+    val directive = createDirective(owners)
+
+    val ownerPassword = "some-password"
+    val salt = Secret.generateSalt()
+    val password = Secret.derive(ownerPassword, salt)
+    val owner = Generators.generateResourceOwner.copy(password = password, salt = salt)
+    val credentials = BasicHttpCredentials(owner.username, ownerPassword)
+    val redirectUri = Uri("http://example.com")
+    val state = "some-state"
+
+    val routes = directive.authenticateResourceOwner(redirectUri, state) { extractedOwner =>
+      Directives.complete(StatusCodes.OK, extractedOwner.username)
+    }
+
+    owners.put(owner).await
+    Get().addCredentials(credentials) ~> routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[String] should be(owner.username)
+    }
+  }
+
+  it should "fail to authenticate resource owners with invalid extracted credentials" in {
+    val owners = createOwnerStore()
+    val directive = createDirective(owners)
+
+    val salt = Secret.generateSalt()
+    val password = Secret.derive(rawSecret = "some-password", salt)
+    val owner = Generators.generateResourceOwner.copy(password = password, salt = salt)
+    val credentials = BasicHttpCredentials(owner.username, "other-password")
+    val redirectUri = Uri("http://example.com")
+    val state = "some-state"
+
+    val routes = directive.authenticateResourceOwner(redirectUri, state) { extractedOwner =>
+      Directives.complete(StatusCodes.OK, extractedOwner.username)
+    }
+
+    owners.put(owner).await
+    Get().addCredentials(credentials) ~> routes ~> check {
+      status should be(StatusCodes.Found)
+      headers should contain(
+        model.headers.Location(Uri(s"$redirectUri?error=access_denied&state=$state"))
+      )
+    }
+  }
+
+  it should "fail if a resource owner provided unsupported credentials" in {
+    val owners = createOwnerStore()
+    val directive = createDirective(owners)
+
+    val owner = Generators.generateResourceOwner
+    val credentials = OAuth2BearerToken("some-token")
+    val redirectUri = Uri("http://example.com")
+    val state = "some-state"
+
+    val routes = directive.authenticateResourceOwner(redirectUri, state) { extractedOwner =>
+      Directives.complete(StatusCodes.OK, extractedOwner.username)
+    }
+
+    owners.put(owner).await
+    Get().addCredentials(credentials) ~> routes ~> check {
+      status should be(StatusCodes.Found)
+      headers should contain(
+        model.headers.Location(Uri(s"$redirectUri?error=access_denied&state=$state"))
+      )
+    }
+  }
+
+  it should "fail if a resource owner provided no credentials" in {
+    val owners = createOwnerStore()
+    val directive = createDirective(owners)
+
+    val owner = Generators.generateResourceOwner
+    val redirectUri = Uri("http://example.com")
+    val state = "some-state"
+
+    val routes = directive.authenticateResourceOwner(redirectUri, state) { extractedOwner =>
+      Directives.complete(StatusCodes.OK, extractedOwner.username)
+    }
+
+    owners.put(owner).await
+    Get() ~> routes ~> check {
+      status should be(StatusCodes.Found)
+      headers should contain(
+        model.headers.Location(Uri(s"$redirectUri?error=access_denied&state=$state"))
+      )
+    }
+  }
+
+  private implicit val secretConfig: Secret.ResourceOwnerConfig = Secret.ResourceOwnerConfig(
+    algorithm = "PBKDF2WithHmacSHA512",
+    iterations = 10000,
+    derivedKeySize = 32,
+    saltSize = 16,
+    authenticationDelay = 20.millis
+  )
+
+  private def createDirective(
+    owners: ResourceOwnerStore
+  ) = new ResourceOwnerAuthentication {
+    override implicit protected def mat: Materializer = ActorMaterializer()
+
+    override protected def log: LoggingAdapter = createLogger()
+    override protected def resourceOwnerAuthenticator: ResourceOwnerAuthenticator =
+      new DefaultResourceOwnerAuthenticator(owners.view, secretConfig)
+  }
+}
