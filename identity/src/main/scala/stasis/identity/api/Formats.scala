@@ -11,7 +11,7 @@ import stasis.identity.model.errors.{AuthorizationError, TokenError}
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.realms.Realm
 import stasis.identity.model.tokens.{AccessToken, RefreshToken, StoredRefreshToken, TokenType}
-import stasis.identity.model.{GrantType, ResponseType, Seconds}
+import stasis.identity.model.{ChallengeMethod, GrantType, ResponseType, Seconds}
 
 object Formats {
   implicit val authorizationErrorFormat: Writes[AuthorizationError] = Writes[AuthorizationError] { error =>
@@ -37,6 +37,11 @@ object Formats {
   implicit val grantTypeFormat: Format[GrantType] = Format[GrantType](
     fjs = Reads[GrantType](_.validate[String].map(convertStringToGrantType)),
     tjs = Writes[GrantType](grantType => JsString(convertGrantTypeToString(grantType)))
+  )
+
+  implicit val challengeMethodFormat: Format[ChallengeMethod] = Format[ChallengeMethod](
+    fjs = Reads[ChallengeMethod](_.validate[String].map(convertStringToChallengeMethod)),
+    tjs = Writes[ChallengeMethod](challengeMethod => JsString(convertChallengeMethodToString(challengeMethod)))
   )
 
   implicit val responseTypeFormat: Format[ResponseType] = Format[ResponseType](
@@ -126,6 +131,9 @@ object Formats {
   implicit val updateOwnerCredentialsFormat: Format[UpdateOwnerCredentials] = Json.format[UpdateOwnerCredentials]
   implicit val createRealmFormat: Format[CreateRealm] = Json.format[CreateRealm]
 
+  implicit val stringToChallengeMethod: Unmarshaller[String, ChallengeMethod] =
+    Unmarshaller.strict { convertStringToChallengeMethod }
+
   implicit val stringToResponseType: Unmarshaller[String, ResponseType] =
     Unmarshaller.strict { convertStringToResponseType }
 
@@ -140,6 +148,14 @@ object Formats {
 
   implicit val stringToRefreshToken: Unmarshaller[String, RefreshToken] =
     Unmarshaller.strict(RefreshToken)
+
+  private def convertStringToChallengeMethod(string: String): ChallengeMethod = string.toLowerCase match {
+    case "plain" => ChallengeMethod.Plain
+    case "s256"  => ChallengeMethod.S256
+  }
+
+  private def convertChallengeMethodToString(challengeMethod: ChallengeMethod): String =
+    challengeMethod.toString.toLowerCase
 
   private def convertStringToResponseType(string: String): ResponseType = string match {
     case "code"  => ResponseType.Code

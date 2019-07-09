@@ -4,6 +4,7 @@ import akka.http.scaladsl.model.StatusCodes
 import stasis.identity.api.Formats._
 import stasis.identity.api.manage.Codes
 import stasis.identity.model.clients.Client
+import stasis.identity.model.codes.StoredAuthorizationCode
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.api.manage.CodesSpec.PartialStoredAuthorizationCode
 import stasis.test.specs.unit.identity.model.Generators
@@ -20,7 +21,11 @@ class CodesSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
     val expectedCodes = Generators.generateSeq(min = 2, g = Generators.generateAuthorizationCode)
 
-    Future.sequence(expectedCodes.map(code => store.put(Client.generateId(), code, owner, scope = None))).await
+    Future
+      .sequence(
+        expectedCodes.map(code => store.put(Client.generateId(), StoredAuthorizationCode(code, owner, scope = None)))
+      )
+      .await
     Get() ~> codes.routes(user) ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[PartialStoredAuthorizationCode]].sortBy(_.code) should be(
@@ -39,7 +44,7 @@ class CodesSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
 
-    store.put(client, code, owner, scope = None).await
+    store.put(client, StoredAuthorizationCode(code, owner, scope = None)).await
     Get(s"/$client") ~> codes.routes(user) ~> check {
       status should be(StatusCodes.OK)
       responseAs[PartialStoredAuthorizationCode] should be(
@@ -55,7 +60,7 @@ class CodesSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
 
-    store.put(Client.generateId(), code, owner, scope = None).await
+    store.put(Client.generateId(), StoredAuthorizationCode(code, owner, scope = None)).await
     Get(s"/${Client.generateId()}") ~> codes.routes(user) ~> check {
       status should be(StatusCodes.NotFound)
     }
@@ -69,7 +74,7 @@ class CodesSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
 
-    store.put(client, code, owner, scope = None).await
+    store.put(client, StoredAuthorizationCode(code, owner, scope = None)).await
     Delete(s"/$client") ~> codes.routes(user) ~> check {
       status should be(StatusCodes.OK)
       store.codes.await should be(Map.empty)

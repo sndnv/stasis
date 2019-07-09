@@ -15,15 +15,15 @@ import stasis.identity.model.codes.AuthorizationCode
 import stasis.identity.model.errors.TokenError
 import stasis.identity.model.realms.Realm
 import stasis.identity.model.tokens._
-import stasis.identity.model.{GrantType, ResponseType, Seconds}
+import stasis.identity.model.{ChallengeMethod, GrantType, ResponseType, Seconds}
 
 import scala.concurrent.ExecutionContext
 
-class AuthorizationCodeGrant(
+class PkceAuthorizationCodeGrant(
   override val providers: Providers
 )(implicit system: ActorSystem, override val mat: Materializer)
     extends AuthDirectives {
-  import AuthorizationCodeGrant._
+  import PkceAuthorizationCodeGrant._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
   override implicit protected def ec: ExecutionContext = system.dispatcher
@@ -36,7 +36,9 @@ class AuthorizationCodeGrant(
         "client_id".as[Client.Id],
         "redirect_uri".as[String].?,
         "scope".as[String].?,
-        "state".as[String]
+        "state".as[String],
+        "code_challenge".as[String],
+        "code_challenge_method".as[ChallengeMethod].?
       ).as(AuthorizationRequest) { request =>
         retrieveClient(request.client_id) {
           case client if request.redirect_uri.forall(_ == client.redirectUri) =>
@@ -51,7 +53,9 @@ class AuthorizationCodeGrant(
                   redirectUri = redirectUri,
                   state = request.state,
                   owner = owner,
-                  scope = scope
+                  scope = scope,
+                  challenge = request.code_challenge,
+                  challengeMethod = request.code_challenge_method
                 ) { code =>
                   log.debug(
                     "Realm [{}]: Successfully generated authorization code for client [{}]",
@@ -89,11 +93,12 @@ class AuthorizationCodeGrant(
         "grant_type".as[GrantType],
         "code".as[AuthorizationCode],
         "redirect_uri".as[String].?,
-        "client_id".as[Client.Id]
+        "client_id".as[Client.Id],
+        "code_verifier".as[String]
       ).as(AccessTokenRequest) { request =>
-        authenticateClient(realm) {
+        retrieveClient(request.client_id) {
           case client if client.id == request.client_id && request.redirect_uri.forall(_ == client.redirectUri) =>
-            consumeAuthorizationCode(client.id, request.code) { (owner, scope) =>
+            consumeAuthorizationCode(client.id, request.code, request.code_verifier) { (owner, scope) =>
               extractApiAudience(scope) { audience =>
                 val scope = apiAudienceToScope(audience)
 
@@ -148,7 +153,7 @@ class AuthorizationCodeGrant(
     }
 }
 
-object AuthorizationCodeGrant {
+object PkceAuthorizationCodeGrant {
   implicit val accessTokenResponseFormat: Format[AccessTokenResponse] = Json.format[AccessTokenResponse]
 
   final case class AuthorizationRequest(
@@ -156,23 +161,28 @@ object AuthorizationCodeGrant {
     client_id: Client.Id,
     redirect_uri: Option[String],
     scope: Option[String],
-    state: String
+    state: String,
+    code_challenge: String,
+    code_challenge_method: Option[ChallengeMethod]
   ) {
     require(response_type == ResponseType.Code, "response type must be 'code'")
     require(redirect_uri.forall(_.nonEmpty), "redirect URI must not be empty")
     require(scope.forall(_.nonEmpty), "scope must not be empty")
     require(state.nonEmpty, "state must not be empty")
+    require(code_challenge.nonEmpty, "code challenge must not be empty")
   }
 
   final case class AccessTokenRequest(
     grant_type: GrantType,
     code: AuthorizationCode,
     redirect_uri: Option[String],
-    client_id: Client.Id
+    client_id: Client.Id,
+    code_verifier: String
   ) {
     require(grant_type == GrantType.AuthorizationCode, "grant type must be 'authorization_code'")
     require(code.value.nonEmpty, "code must not be empty")
     require(redirect_uri.forall(_.nonEmpty), "redirect URI must not be empty")
+    require(code_verifier.nonEmpty, "code verifier must not be empty")
   }
 
   final case class AuthorizationResponse(
@@ -180,6 +190,7 @@ object AuthorizationCodeGrant {
     state: String,
     scope: Option[String]
   ) {
+    // TODO - make generic?
     def asQuery: Uri.Query =
       Uri.Query(
         scope.foldLeft(

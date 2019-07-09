@@ -5,7 +5,7 @@ import stasis.identity.api.Formats._
 import stasis.identity.model.codes.StoredAuthorizationCode
 import stasis.identity.model.errors.{AuthorizationError, TokenError}
 import stasis.identity.model.tokens.{AccessToken, RefreshToken, StoredRefreshToken, TokenType}
-import stasis.identity.model.{GrantType, ResponseType, Seconds}
+import stasis.identity.model.{ChallengeMethod, GrantType, ResponseType, Seconds}
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.identity.model.Generators
 
@@ -48,6 +48,19 @@ class FormatsSpec extends UnitSpec {
       case (grant, json) =>
         grantTypeFormat.writes(grant).toString should be(json)
         grantTypeFormat.reads(Json.parse(json).as[JsString]).asOpt should be(Some(grant))
+    }
+  }
+
+  they should "convert challenge methods t/from JSON" in {
+    val challenges = Map(
+      ChallengeMethod.Plain -> "\"plain\"",
+      ChallengeMethod.S256 -> "\"s256\""
+    )
+
+    challenges.foreach {
+      case (challenge, json) =>
+        challengeMethodFormat.writes(challenge).toString should be(json)
+        challengeMethodFormat.reads(Json.parse(json).as[JsString]).asOpt should be(Some(challenge))
     }
   }
 
