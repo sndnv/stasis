@@ -33,7 +33,7 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
     val grant = new ResourceOwnerPasswordCredentialsGrant(providers)
 
     val realm = Generators.generateRealm
-    val api = Generators.generateApi
+    val api = Generators.generateApi.copy(realm = realm.id)
 
     val clientRawPassword = "some-password"
     val clientSalt = Generators.generateString(withSize = secrets.client.saltSize)
@@ -85,7 +85,7 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
     val grant = new ResourceOwnerPasswordCredentialsGrant(providers)
 
     val realm = Generators.generateRealm.copy(refreshTokensAllowed = false)
-    val api = Generators.generateApi
+    val api = Generators.generateApi.copy(realm = realm.id)
 
     val clientRawPassword = "some-password"
     val clientSalt = Generators.generateString(withSize = secrets.client.saltSize)

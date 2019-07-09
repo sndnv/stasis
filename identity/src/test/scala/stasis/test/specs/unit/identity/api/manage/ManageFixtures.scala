@@ -18,7 +18,7 @@ import scala.concurrent.duration._
 trait ManageFixtures { _: RouteTest =>
   def createManageProviders(expiration: FiniteDuration = 3.seconds) = Providers(
     apiStore = ApiStore(
-      MemoryBackend[Api.Id, Api](name = s"api-store-${java.util.UUID.randomUUID()}")
+      MemoryBackend[(Realm.Id, Api.Id), Api](name = s"api-store-${java.util.UUID.randomUUID()}")
     ),
     clientStore = ClientStore(
       MemoryBackend[Client.Id, Client](name = s"client-store-${java.util.UUID.randomUUID()}")

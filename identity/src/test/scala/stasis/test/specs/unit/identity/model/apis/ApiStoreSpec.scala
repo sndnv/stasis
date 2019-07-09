@@ -4,6 +4,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.identity.model.apis.{Api, ApiStore}
+import stasis.identity.model.realms.Realm
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.identity.model.Generators
 
@@ -15,14 +16,14 @@ class ApiStoreSpec extends AsyncUnitSpec {
 
     for {
       _ <- store.put(expectedApi)
-      actualApi <- store.get(expectedApi.id)
+      actualApi <- store.get(expectedApi.realm, expectedApi.id)
       someApis <- store.apis
-      _ <- store.delete(expectedApi.id)
-      missingApi <- store.get(expectedApi.id)
+      _ <- store.delete(expectedApi.realm, expectedApi.id)
+      missingApi <- store.get(expectedApi.realm, expectedApi.id)
       noApis <- store.apis
     } yield {
       actualApi should be(Some(expectedApi))
-      someApis should be(Map(expectedApi.id -> expectedApi))
+      someApis should be(Map(expectedApi.realm -> expectedApi.id -> expectedApi))
       missingApi should be(None)
       noApis should be(Map.empty)
     }
@@ -36,14 +37,14 @@ class ApiStoreSpec extends AsyncUnitSpec {
 
     for {
       _ <- store.put(expectedApi)
-      actualApi <- storeView.get(expectedApi.id)
+      actualApi <- storeView.get(expectedApi.realm, expectedApi.id)
       someApis <- storeView.apis
-      _ <- store.delete(expectedApi.id)
-      missingApi <- storeView.get(expectedApi.id)
+      _ <- store.delete(expectedApi.realm, expectedApi.id)
+      missingApi <- storeView.get(expectedApi.realm, expectedApi.id)
       noApis <- storeView.apis
     } yield {
       actualApi should be(Some(expectedApi))
-      someApis should be(Map(expectedApi.id -> expectedApi))
+      someApis should be(Map(expectedApi.realm -> expectedApi.id -> expectedApi))
       missingApi should be(None)
       noApis should be(Map.empty)
       a[ClassCastException] should be thrownBy { val _ = storeView.asInstanceOf[ApiStore] }
@@ -56,6 +57,6 @@ class ApiStoreSpec extends AsyncUnitSpec {
   )
 
   private def createStore() = ApiStore(
-    MemoryBackend[Api.Id, Api](name = s"api-store-${java.util.UUID.randomUUID()}")
+    MemoryBackend[(Realm.Id, Api.Id), Api](name = s"api-store-${java.util.UUID.randomUUID()}")
   )
 }

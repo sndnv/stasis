@@ -35,7 +35,7 @@ class RefreshTokenGrant(
       ).as(AccessTokenRequest) { request =>
         authenticateClient(realm) { client =>
           consumeRefreshToken(client.id, request.scope, request.refresh_token) { owner =>
-            extractApiAudience(request.scope) { audience =>
+            extractApiAudience(realm.id, request.scope) { audience =>
               val scope = apiAudienceToScope(audience)
 
               (generateAccessToken(owner, audience) & generateRefreshToken(realm, client.id, owner, scope)) {

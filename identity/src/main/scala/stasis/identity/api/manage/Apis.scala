@@ -45,14 +45,14 @@ class Apis(store: ApiStore)(implicit system: ActorSystem, materializer: Material
         )
       },
       path(Segment) { apiId =>
-        validateRealm(realm, store.get(apiId)) { api =>
+        validateRealm(realm, store.get(realm, apiId)) { api =>
           concat(
             get {
               log.info("Realm [{}]: User [{}] successfully retrieved API [{}]", realm, user, apiId)
               complete(api)
             },
             delete {
-              onSuccess(store.delete(apiId)) { _ =>
+              onSuccess(store.delete(realm, apiId)) { _ =>
                 log.info("Realm [{}]: User [{}] successfully deleted API [{}]", realm, user, apiId)
                 complete(StatusCodes.OK)
               }
