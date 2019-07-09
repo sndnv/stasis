@@ -1,14 +1,19 @@
 package stasis.test.specs.unit.identity.api.oauth.directives
 
+import java.security.MessageDigest
+
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives
 import akka.stream.{ActorMaterializer, Materializer}
+import com.google.common.io.BaseEncoding
 import play.api.libs.json._
 import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.AuthorizationCodeConsumption
+import stasis.identity.api.oauth.directives.AuthorizationCodeConsumption.ChallengeVerification
+import stasis.identity.model.ChallengeMethod
 import stasis.identity.model.clients.Client
-import stasis.identity.model.codes.AuthorizationCodeStore
+import stasis.identity.model.codes.{AuthorizationCodeStore, StoredAuthorizationCode}
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
 
@@ -17,7 +22,7 @@ import scala.concurrent.ExecutionContext
 class AuthorizationCodeConsumptionSpec extends RouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  "An AuthorizationCodeConsumption directive" should "consume valid authorization codes" in {
+  "An AuthorizationCodeConsumption directive" should "consume valid authorization codes without challenges" in {
     val codes = createCodeStore()
     val directive = createDirective(codes)
 
@@ -37,13 +42,171 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
         )
     }
 
-    codes.put(client, code, owner, scope = Some(scope)).await
+    codes.put(client, StoredAuthorizationCode(code, owner, scope = Some(scope))).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.OK)
       val fields = responseAs[JsObject].fields
       fields should contain("owner" -> JsString(owner.username))
       fields should contain("scope" -> JsString(scope))
       codes.codes.await should be(Map.empty)
+    }
+  }
+
+  it should "fail if the provided authorization code has an unexpected associated challenge" in {
+    val codes = createCodeStore()
+    val directive = createDirective(codes)
+
+    val client = Client.generateId()
+    val owner = Generators.generateResourceOwner
+    val code = Generators.generateAuthorizationCode
+    val scope = "some-scope"
+    val challenge = StoredAuthorizationCode.Challenge(value = Generators.generateString(withSize = 128), method = None)
+
+    val routes = directive.consumeAuthorizationCode(client, code) {
+      case (extractedOwner, extractedScope) =>
+        Directives.complete(
+          StatusCodes.OK,
+          Json.obj(
+            "owner" -> JsString(extractedOwner.username),
+            "scope" -> Json.toJson(extractedScope)
+          )
+        )
+    }
+
+    codes.put(client, StoredAuthorizationCode(code, owner, scope = Some(scope), challenge = Some(challenge))).await
+    Get() ~> routes ~> check {
+      status should be(StatusCodes.BadRequest)
+      responseAs[JsObject].fields should contain("error" -> JsString("invalid_grant"))
+    }
+  }
+
+  it should "consume valid authorization codes with challenges (plain)" in {
+    val codes = createCodeStore()
+    val directive = createDirective(codes)
+
+    val client = Client.generateId()
+    val owner = Generators.generateResourceOwner
+    val code = Generators.generateAuthorizationCode
+    val scope = "some-scope"
+    val verifier = Generators.generateString(withSize = 128)
+    val challenge = StoredAuthorizationCode.Challenge(value = verifier, method = Some(ChallengeMethod.Plain))
+
+    val routes = directive.consumeAuthorizationCode(client, code, verifier) {
+      case (extractedOwner, extractedScope) =>
+        Directives.complete(
+          StatusCodes.OK,
+          Json.obj(
+            "owner" -> JsString(extractedOwner.username),
+            "scope" -> Json.toJson(extractedScope)
+          )
+        )
+    }
+
+    codes.put(client, StoredAuthorizationCode(code, owner, scope = Some(scope), challenge = Some(challenge))).await
+    Get() ~> routes ~> check {
+      status should be(StatusCodes.OK)
+      val fields = responseAs[JsObject].fields
+      fields should contain("owner" -> JsString(owner.username))
+      fields should contain("scope" -> JsString(scope))
+      codes.codes.await should be(Map.empty)
+    }
+  }
+
+  it should "consume valid authorization codes with challenges (S256)" in {
+    val codes = createCodeStore()
+    val directive = createDirective(codes)
+
+    val client = Client.generateId()
+    val owner = Generators.generateResourceOwner
+    val code = Generators.generateAuthorizationCode
+    val scope = "some-scope"
+    val verifier = Generators.generateString(withSize = 128)
+
+    val encodedVerifier =
+      BaseEncoding
+        .base64Url()
+        .encode(
+          MessageDigest
+            .getInstance(ChallengeVerification.DigestAlgorithm)
+            .digest(verifier.getBytes(ChallengeVerification.Charset))
+        )
+
+    val challenge = StoredAuthorizationCode.Challenge(value = encodedVerifier, method = Some(ChallengeMethod.S256))
+
+    val routes = directive.consumeAuthorizationCode(client, code, verifier) {
+      case (extractedOwner, extractedScope) =>
+        Directives.complete(
+          StatusCodes.OK,
+          Json.obj(
+            "owner" -> JsString(extractedOwner.username),
+            "scope" -> Json.toJson(extractedScope)
+          )
+        )
+    }
+
+    codes.put(client, StoredAuthorizationCode(code, owner, scope = Some(scope), challenge = Some(challenge))).await
+    Get() ~> routes ~> check {
+      status should be(StatusCodes.OK)
+      val fields = responseAs[JsObject].fields
+      fields should contain("owner" -> JsString(owner.username))
+      fields should contain("scope" -> JsString(scope))
+      codes.codes.await should be(Map.empty)
+    }
+  }
+
+  it should "fail if the provided verifier did not match the challenge of the authorization code" in {
+    val codes = createCodeStore()
+    val directive = createDirective(codes)
+
+    val client = Client.generateId()
+    val owner = Generators.generateResourceOwner
+    val code = Generators.generateAuthorizationCode
+    val scope = "some-scope"
+    val challenge = StoredAuthorizationCode.Challenge(value = Generators.generateString(withSize = 128), method = None)
+
+    val routes = directive.consumeAuthorizationCode(client, code, Generators.generateString(withSize = 128)) {
+      case (extractedOwner, extractedScope) =>
+        Directives.complete(
+          StatusCodes.OK,
+          Json.obj(
+            "owner" -> JsString(extractedOwner.username),
+            "scope" -> Json.toJson(extractedScope)
+          )
+        )
+    }
+
+    codes.put(client, StoredAuthorizationCode(code, owner, scope = Some(scope), challenge = Some(challenge))).await
+    Get() ~> routes ~> check {
+      status should be(StatusCodes.BadRequest)
+      responseAs[JsObject].fields should contain("error" -> JsString("invalid_grant"))
+    }
+  }
+
+  it should "fail if the provided authorization code expected a challenge but none was provided" in {
+    val codes = createCodeStore()
+    val directive = createDirective(codes)
+
+    val client = Client.generateId()
+    val owner = Generators.generateResourceOwner
+    val code = Generators.generateAuthorizationCode
+    val scope = "some-scope"
+    val verifier = Generators.generateString(withSize = 128)
+
+    val routes = directive.consumeAuthorizationCode(client, code, verifier) {
+      case (extractedOwner, extractedScope) =>
+        Directives.complete(
+          StatusCodes.OK,
+          Json.obj(
+            "owner" -> JsString(extractedOwner.username),
+            "scope" -> Json.toJson(extractedScope)
+          )
+        )
+    }
+
+    codes.put(client, StoredAuthorizationCode(code, owner, scope = Some(scope), challenge = None)).await
+    Get() ~> routes ~> check {
+      status should be(StatusCodes.BadRequest)
+      responseAs[JsObject].fields should contain("error" -> JsString("invalid_grant"))
     }
   }
 
@@ -61,7 +224,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
         Directives.complete(StatusCodes.OK)
     }
 
-    codes.put(client, Generators.generateAuthorizationCode, owner, scope = Some(scope)).await
+    codes.put(client, StoredAuthorizationCode(Generators.generateAuthorizationCode, owner, scope = Some(scope))).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.BadRequest)
       responseAs[JsObject].fields should contain("error" -> JsString("invalid_grant"))
@@ -106,7 +269,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
         )
     }
 
-    codes.put(client, code, owner, scope = Some(scope)).await
+    codes.put(client, StoredAuthorizationCode(code, owner, scope = Some(scope))).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.InternalServerError)
     }

@@ -5,9 +5,10 @@ import akka.http.scaladsl.model.{StatusCodes, Uri}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Directive, Directive1}
 import stasis.identity.api.directives.BaseApiDirective
+import stasis.identity.model.ChallengeMethod
 import stasis.identity.model.clients.Client
 import stasis.identity.model.codes.generators.AuthorizationCodeGenerator
-import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore}
+import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, StoredAuthorizationCode}
 import stasis.identity.model.errors.AuthorizationError
 import stasis.identity.model.owners.ResourceOwner
 
@@ -29,10 +30,44 @@ trait AuthorizationCodeGeneration extends BaseApiDirective {
   ): Directive1[AuthorizationCode] =
     Directive { inner =>
       val code = authorizationCodeGenerator.generate()
+      val storedCode = StoredAuthorizationCode(code, owner, scope)
 
-      onComplete(authorizationCodeStore.put(client, code, owner, scope)) {
+      storeCode(client, redirectUri, state, owner, scope, storedCode) { code =>
+        inner(Tuple1(code))
+      }
+    }
+
+  def generateAuthorizationCode(
+    client: Client.Id,
+    redirectUri: Uri,
+    state: String,
+    owner: ResourceOwner,
+    scope: Option[String],
+    challenge: String,
+    challengeMethod: Option[ChallengeMethod]
+  ): Directive1[AuthorizationCode] =
+    Directive { inner =>
+      val code = authorizationCodeGenerator.generate()
+      val codeChallenge = StoredAuthorizationCode.Challenge(challenge, challengeMethod)
+      val storedCode = StoredAuthorizationCode(code, owner, scope, Some(codeChallenge))
+
+      storeCode(client, redirectUri, state, owner, scope, storedCode) { code =>
+        inner(Tuple1(code))
+      }
+    }
+
+  private def storeCode(
+    client: Client.Id,
+    redirectUri: Uri,
+    state: String,
+    owner: ResourceOwner,
+    scope: Option[String],
+    storedCode: StoredAuthorizationCode
+  ): Directive1[AuthorizationCode] =
+    Directive { inner =>
+      onComplete(authorizationCodeStore.put(client, storedCode)) {
         case Success(_) =>
-          inner(Tuple1(code))
+          inner(Tuple1(storedCode.code))
 
         case Failure(e) =>
           log.error(

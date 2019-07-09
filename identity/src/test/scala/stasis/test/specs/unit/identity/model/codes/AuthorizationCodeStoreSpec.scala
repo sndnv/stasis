@@ -22,7 +22,7 @@ class AuthorizationCodeStoreSpec extends AsyncUnitSpec {
     val expectedStoredCode = StoredAuthorizationCode(expectedCode, owner, scope = None)
 
     for {
-      _ <- store.put(client, expectedCode, owner, scope = None)
+      _ <- store.put(client, StoredAuthorizationCode(expectedCode, owner, scope = None))
       actualCode <- store.get(client)
       someCodes <- store.codes
       _ <- store.delete(client)
@@ -46,7 +46,7 @@ class AuthorizationCodeStoreSpec extends AsyncUnitSpec {
     val expectedStoredCode = StoredAuthorizationCode(expectedCode, owner, scope = None)
 
     for {
-      _ <- store.put(client, expectedCode, owner, scope = None)
+      _ <- store.put(client, StoredAuthorizationCode(expectedCode, owner, scope = None))
       actualCode <- store.get(client)
       someCodes <- store.codes
       _ <- akka.pattern.after(expiration * 2, using = system.scheduler)(Future.successful(Done))

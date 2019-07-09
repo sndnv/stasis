@@ -8,6 +8,7 @@ import stasis.identity.api.Manage
 import stasis.identity.api.manage.setup.Config
 import stasis.identity.model.apis.Api
 import stasis.identity.model.clients.Client
+import stasis.identity.model.codes.StoredAuthorizationCode
 import stasis.identity.model.realms.Realm
 import stasis.identity.model.secrets.Secret
 import stasis.test.specs.unit.identity.RouteTest
@@ -40,7 +41,7 @@ class ManageSpec extends RouteTest with ManageFixtures {
     val code = Generators.generateAuthorizationCode
     val owner = Generators.generateResourceOwner
 
-    providers.codeStore.put(client, code, owner, scope = None).await
+    providers.codeStore.put(client, StoredAuthorizationCode(code, owner, scope = None)).await
     Get(s"/master/codes/$client").addCredentials(credentials) ~> manage.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[JsObject].fields should contain("code" -> JsString(code.value))

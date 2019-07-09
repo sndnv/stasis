@@ -20,6 +20,7 @@ class OAuth(
   override protected def realmStore: RealmStoreView = providers.realmStore.view
 
   private val authorizationCodeGrant = new AuthorizationCodeGrant(providers)
+  private val pkceAuthorizationCodeGrant = new PkceAuthorizationCodeGrant(providers)
   private val clientCredentialsGrant = new ClientCredentialsGrant(providers)
   private val implicitGrant = new ImplicitGrant(providers)
   private val refreshTokenGrant = new RefreshTokenGrant(providers)
@@ -33,8 +34,15 @@ class OAuth(
             concat(
               path("authorization") {
                 parameter("response_type".as[String]) {
-                  case "code"  => authorizationCodeGrant.authorization(realm)
-                  case "token" => implicitGrant.authorization(realm)
+                  case "code" =>
+                    parameter("code_challenge".as[String].?) {
+                      case Some(_) => pkceAuthorizationCodeGrant.authorization(realm)
+                      case None    => authorizationCodeGrant.authorization(realm)
+                    }
+
+                  case "token" =>
+                    implicitGrant.authorization(realm)
+
                   case responseType =>
                     val message = s"Realm [$realmId]: The request includes an invalid response type: [$responseType]"
                     log.warning(message)
@@ -43,10 +51,21 @@ class OAuth(
               },
               path("token") {
                 parameter("grant_type".as[String]) {
-                  case "authorization_code" => authorizationCodeGrant.token(realm)
-                  case "client_credentials" => clientCredentialsGrant.token(realm)
-                  case "refresh_token"      => refreshTokenGrant.token(realm)
-                  case "password"           => passwordCredentialsGrant.token(realm)
+                  case "authorization_code" =>
+                    parameter("code_verifier".as[String].?) {
+                      case Some(_) => pkceAuthorizationCodeGrant.token(realm)
+                      case None    => authorizationCodeGrant.token(realm)
+                    }
+
+                  case "client_credentials" =>
+                    clientCredentialsGrant.token(realm)
+
+                  case "refresh_token" =>
+                    refreshTokenGrant.token(realm)
+
+                  case "password" =>
+                    passwordCredentialsGrant.token(realm)
+
                   case grantType =>
                     val message = s"Realm [$realmId]: The request includes an invalid grant type: [$grantType]"
                     log.warning(message)
