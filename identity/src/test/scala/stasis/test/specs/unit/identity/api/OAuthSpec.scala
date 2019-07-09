@@ -18,7 +18,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
 
     val realm = Generators.generateRealm
     val client = Generators.generateClient.copy(realm = realm.id)
-    val api = Generators.generateApi
+    val api = Generators.generateApi.copy(realm = realm.id)
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.owner.saltSize)
@@ -72,7 +72,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
 
     val realm = Generators.generateRealm
     val client = Generators.generateClient.copy(realm = realm.id)
-    val api = Generators.generateApi
+    val api = Generators.generateApi.copy(realm = realm.id)
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.owner.saltSize)
@@ -131,7 +131,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
 
     val realm = Generators.generateRealm
     val client = Generators.generateClient.copy(realm = realm.id)
-    val api = Generators.generateApi
+    val api = Generators.generateApi.copy(realm = realm.id)
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.owner.saltSize)
@@ -201,7 +201,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     val realm = Generators.generateRealm
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
-    val api = Generators.generateApi
+    val api = Generators.generateApi.copy(realm = realm.id)
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.client.saltSize)
@@ -252,7 +252,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     val realm = Generators.generateRealm
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
-    val api = Generators.generateApi
+    val api = Generators.generateApi.copy(realm = realm.id)
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.client.saltSize)
@@ -347,7 +347,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
 
     val realm = Generators.generateRealm
     val owner = Generators.generateResourceOwner.copy(realm = realm.id)
-    val api = Generators.generateApi
+    val api = Generators.generateApi.copy(realm = realm.id)
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.client.saltSize)
@@ -395,7 +395,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     val oauth = new OAuth(providers)
 
     val realm = Generators.generateRealm
-    val api = Generators.generateApi
+    val api = Generators.generateApi.copy(realm = realm.id)
 
     val clientRawPassword = "some-password"
     val clientSalt = Generators.generateString(withSize = secrets.client.saltSize)

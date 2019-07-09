@@ -44,7 +44,7 @@ class PkceAuthorizationCodeGrant(
           case client if request.redirect_uri.forall(_ == client.redirectUri) =>
             val redirectUri = Uri(request.redirect_uri.getOrElse(client.redirectUri))
 
-            (authenticateResourceOwner(redirectUri, request.state) & extractApiAudience(request.scope)) {
+            (authenticateResourceOwner(redirectUri, request.state) & extractApiAudience(realm.id, request.scope)) {
               (owner, audience) =>
                 val scope = apiAudienceToScope(audience)
 
@@ -99,7 +99,7 @@ class PkceAuthorizationCodeGrant(
         retrieveClient(request.client_id) {
           case client if client.id == request.client_id && request.redirect_uri.forall(_ == client.redirectUri) =>
             consumeAuthorizationCode(client.id, request.code, request.code_verifier) { (owner, scope) =>
-              extractApiAudience(scope) { audience =>
+              extractApiAudience(realm.id, scope) { audience =>
                 val scope = apiAudienceToScope(audience)
 
                 (generateAccessToken(owner, audience) & generateRefreshToken(realm, client.id, owner, scope)) {

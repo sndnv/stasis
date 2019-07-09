@@ -38,7 +38,7 @@ class ApisSpec extends RouteTest {
 
     Post().withEntity(request) ~> apis.routes(user, realm) ~> check {
       status should be(StatusCodes.OK)
-      store.get(request.id).await should be(Some(request.toApi(realm)))
+      store.get(realm, request.id).await should be(Some(request.toApi(realm)))
     }
   }
 

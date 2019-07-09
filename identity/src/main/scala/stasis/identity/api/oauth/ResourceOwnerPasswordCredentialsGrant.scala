@@ -36,7 +36,7 @@ class ResourceOwnerPasswordCredentialsGrant(
       ).as(AccessTokenRequest) { request =>
         authenticateClient(realm) { client =>
           authenticateResourceOwner(request.username, request.password) { owner =>
-            extractApiAudience(request.scope) { audience =>
+            extractApiAudience(realm.id, request.scope) { audience =>
               val scope = apiAudienceToScope(audience)
 
               (generateAccessToken(owner, audience) & generateRefreshToken(realm, client.id, owner, scope)) {

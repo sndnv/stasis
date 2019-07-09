@@ -36,7 +36,7 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
   def createLogger(): LoggingAdapter = Logging(system, this.getClass.getName)
 
   def createApiStore(): ApiStore = ApiStore(
-    MemoryBackend[Api.Id, Api](name = s"api-store-${java.util.UUID.randomUUID()}")
+    MemoryBackend[(Realm.Id, Api.Id), Api](name = s"api-store-${java.util.UUID.randomUUID()}")
   )
 
   def createClientStore(): ClientStore = ClientStore(
@@ -68,7 +68,7 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
     failingEntries: Boolean = false,
     failingContains: Boolean = false
   ): ApiStore = ApiStore(
-    new FailingMemoryBackend[Api.Id, Api] {
+    new FailingMemoryBackend[(Realm.Id, Api.Id), Api] {
       override def system: ActorSystem[SpawnProtocol] = typedSystem
       override def storeName: String = s"api-store-${java.util.UUID.randomUUID()}"
       override def putFails: Boolean = failingPut

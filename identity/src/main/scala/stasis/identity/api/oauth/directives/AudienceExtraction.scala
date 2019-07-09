@@ -9,6 +9,7 @@ import stasis.identity.api.directives.BaseApiDirective
 import stasis.identity.model.apis.{Api, ApiStoreView}
 import stasis.identity.model.clients.{Client, ClientStoreView}
 import stasis.identity.model.errors.TokenError
+import stasis.identity.model.realms.Realm
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
@@ -52,13 +53,13 @@ trait AudienceExtraction extends BaseApiDirective {
       }
     }
 
-  def extractApiAudience(scopeOpt: Option[String]): Directive1[Seq[Api]] =
+  def extractApiAudience(realm: Realm.Id, scopeOpt: Option[String]): Directive1[Seq[Api]] =
     Directive { inner =>
       extractAudienceFromScope(scopeOpt) { apiIds =>
         getAudienceFromStore(
           audience = apiIds,
           audienceType = "API",
-          get = apiStore.get
+          get = (id: Api.Id) => apiStore.get(realm, id)
         )(result => inner(Tuple1(result)))
       }
     }

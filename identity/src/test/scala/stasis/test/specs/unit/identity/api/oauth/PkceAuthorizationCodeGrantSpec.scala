@@ -76,7 +76,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
 
     val realm = Generators.generateRealm
     val client = Generators.generateClient.copy(realm = realm.id)
-    val api = Generators.generateApi
+    val api = Generators.generateApi.copy(realm = realm.id)
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.owner.saltSize)
@@ -131,7 +131,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
 
     val realm = Generators.generateRealm
     val client = Generators.generateClient.copy(realm = realm.id)
-    val api = Generators.generateApi
+    val api = Generators.generateApi.copy(realm = realm.id)
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.owner.saltSize)
@@ -171,7 +171,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     val realm = Generators.generateRealm
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
-    val api = Generators.generateApi
+    val api = Generators.generateApi.copy(realm = realm.id)
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.client.saltSize)
@@ -229,7 +229,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     val realm = Generators.generateRealm.copy(refreshTokensAllowed = false)
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
-    val api = Generators.generateApi
+    val api = Generators.generateApi.copy(realm = realm.id)
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.client.saltSize)
@@ -287,7 +287,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     val realm = Generators.generateRealm
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
-    val api = Generators.generateApi
+    val api = Generators.generateApi.copy(realm = realm.id)
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.client.saltSize)
@@ -335,7 +335,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     val realm = Generators.generateRealm
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
-    val api = Generators.generateApi
+    val api = Generators.generateApi.copy(realm = realm.id)
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.client.saltSize)

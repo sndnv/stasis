@@ -32,7 +32,7 @@ class RefreshTokenGrantSpec extends RouteTest with OAuthFixtures {
 
     val realm = Generators.generateRealm
     val owner = Generators.generateResourceOwner.copy(realm = realm.id)
-    val api = Generators.generateApi
+    val api = Generators.generateApi.copy(realm = realm.id)
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.client.saltSize)
@@ -79,7 +79,7 @@ class RefreshTokenGrantSpec extends RouteTest with OAuthFixtures {
 
     val realm = Generators.generateRealm.copy(refreshTokensAllowed = false)
     val owner = Generators.generateResourceOwner.copy(realm = realm.id)
-    val api = Generators.generateApi
+    val api = Generators.generateApi.copy(realm = realm.id)
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.client.saltSize)

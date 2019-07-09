@@ -38,7 +38,7 @@ class ImplicitGrant(
           case client if request.redirect_uri.forall(_ == client.redirectUri) =>
             val redirectUri = Uri(request.redirect_uri.getOrElse(client.redirectUri))
 
-            (authenticateResourceOwner(redirectUri, request.state) & extractApiAudience(request.scope)) {
+            (authenticateResourceOwner(redirectUri, request.state) & extractApiAudience(realm.id, request.scope)) {
               (owner, audience) =>
                 generateAccessToken(owner, audience) { accessToken =>
                   val scope = apiAudienceToScope(audience)
