@@ -57,10 +57,12 @@ class ImplicitGrant(
                     client.id
                   )
 
-                  redirect(
-                    redirectUri.withQuery(response.asQuery),
-                    StatusCodes.Found
-                  )
+                  discardEntity {
+                    redirect(
+                      redirectUri.withQuery(response.asQuery),
+                      StatusCodes.Found
+                    )
+                  }
                 }
             }
 
@@ -72,10 +74,12 @@ class ImplicitGrant(
               request.redirect_uri
             )
 
-            complete(
-              StatusCodes.BadRequest,
-              "The request has missing, invalid or mismatching redirection URI and/or client identifier"
-            )
+            discardEntity {
+              complete(
+                StatusCodes.BadRequest,
+                "The request has missing, invalid or mismatching redirection URI and/or client identifier"
+              )
+            }
         }
       }
     }

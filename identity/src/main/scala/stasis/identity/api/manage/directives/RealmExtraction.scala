@@ -21,9 +21,7 @@ trait RealmExtraction extends BaseApiDirective {
 
         case None =>
           log.warning("Requested realm [{}] was not found", realmId)
-          discardEntity {
-            complete(StatusCodes.NotFound)
-          }
+          discardEntity & complete(StatusCodes.NotFound)
       }
     }
 }

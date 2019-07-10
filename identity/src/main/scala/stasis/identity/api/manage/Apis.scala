@@ -14,11 +14,10 @@ import stasis.identity.model.realms.Realm
 
 import scala.concurrent.ExecutionContext
 
-class Apis(store: ApiStore)(implicit system: ActorSystem, materializer: Materializer) extends RealmValidation[Api] {
+class Apis(store: ApiStore)(implicit system: ActorSystem, override val mat: Materializer) extends RealmValidation[Api] {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.identity.api.Formats._
 
-  override implicit protected def mat: Materializer = materializer
   private implicit val ec: ExecutionContext = system.dispatcher
   protected def log: LoggingAdapter = Logging(system, this.getClass.getName)
 
@@ -31,7 +30,7 @@ class Apis(store: ApiStore)(implicit system: ActorSystem, materializer: Material
           get {
             filterRealm(realm, store.apis) { apis =>
               log.info("Realm [{}]: User [{}] successfully retrieved [{}] APIs", realm, user, apis.size)
-              complete(apis.values)
+              discardEntity & complete(apis.values)
             }
           },
           post {
@@ -49,12 +48,12 @@ class Apis(store: ApiStore)(implicit system: ActorSystem, materializer: Material
           concat(
             get {
               log.info("Realm [{}]: User [{}] successfully retrieved API [{}]", realm, user, apiId)
-              complete(api)
+              discardEntity & complete(api)
             },
             delete {
               onSuccess(store.delete(realm, apiId)) { _ =>
                 log.info("Realm [{}]: User [{}] successfully deleted API [{}]", realm, user, apiId)
-                complete(StatusCodes.OK)
+                discardEntity & complete(StatusCodes.OK)
               }
             }
           )

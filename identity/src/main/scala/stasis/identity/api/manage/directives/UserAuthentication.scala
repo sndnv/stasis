@@ -39,9 +39,7 @@ trait UserAuthentication extends BaseApiDirective {
                   )
                 )
 
-                discardEntity {
-                  complete(StatusCodes.Unauthorized)
-                }
+                discardEntity & complete(StatusCodes.Unauthorized)
             }
 
           case Some(unsupportedCredentials) =>
@@ -56,9 +54,7 @@ trait UserAuthentication extends BaseApiDirective {
               )
             )
 
-            discardEntity {
-              complete(StatusCodes.Unauthorized)
-            }
+            discardEntity & complete(StatusCodes.Unauthorized)
 
           case None =>
             log.warning(

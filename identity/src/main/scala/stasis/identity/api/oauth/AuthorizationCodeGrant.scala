@@ -59,10 +59,12 @@ class AuthorizationCodeGrant(
                     client.id
                   )
 
-                  redirect(
-                    redirectUri.withQuery(AuthorizationResponse(code, request.state, scope).asQuery),
-                    StatusCodes.Found
-                  )
+                  discardEntity {
+                    redirect(
+                      redirectUri.withQuery(AuthorizationResponse(code, request.state, scope).asQuery),
+                      StatusCodes.Found
+                    )
+                  }
                 }
             }
 
@@ -75,10 +77,12 @@ class AuthorizationCodeGrant(
               request.redirect_uri
             )
 
-            complete(
-              StatusCodes.BadRequest,
-              "The request has missing, invalid or mismatching redirection URI and/or client identifier"
-            )
+            discardEntity {
+              complete(
+                StatusCodes.BadRequest,
+                "The request has missing, invalid or mismatching redirection URI and/or client identifier"
+              )
+            }
         }
       }
     }
@@ -109,19 +113,21 @@ class AuthorizationCodeGrant(
                       client.id
                     )
 
-                    complete(
-                      StatusCodes.OK,
-                      List[HttpHeader](
-                        headers.`Content-Type`(ContentTypes.`application/json`),
-                        headers.`Cache-Control`(headers.CacheDirectives.`no-store`)
-                      ),
-                      AccessTokenResponse(
-                        access_token = accessToken,
-                        token_type = TokenType.Bearer,
-                        expires_in = client.tokenExpiration,
-                        refresh_token = refreshToken
+                    discardEntity {
+                      complete(
+                        StatusCodes.OK,
+                        List[HttpHeader](
+                          headers.`Content-Type`(ContentTypes.`application/json`),
+                          headers.`Cache-Control`(headers.CacheDirectives.`no-store`)
+                        ),
+                        AccessTokenResponse(
+                          access_token = accessToken,
+                          token_type = TokenType.Bearer,
+                          expires_in = client.tokenExpiration,
+                          refresh_token = refreshToken
+                        )
                       )
-                    )
+                    }
                 }
               }
             }
@@ -139,10 +145,12 @@ class AuthorizationCodeGrant(
               )
             )
 
-            complete(
-              StatusCodes.BadRequest,
-              TokenError.InvalidRequest
-            )
+            discardEntity {
+              complete(
+                StatusCodes.BadRequest,
+                TokenError.InvalidRequest
+              )
+            }
         }
       }
     }

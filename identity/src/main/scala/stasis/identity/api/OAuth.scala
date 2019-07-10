@@ -46,7 +46,7 @@ class OAuth(
                   case responseType =>
                     val message = s"Realm [$realmId]: The request includes an invalid response type: [$responseType]"
                     log.warning(message)
-                    complete(StatusCodes.BadRequest, message)
+                    discardEntity & complete(StatusCodes.BadRequest, message)
                 }
               },
               path("token") {
@@ -69,7 +69,7 @@ class OAuth(
                   case grantType =>
                     val message = s"Realm [$realmId]: The request includes an invalid grant type: [$grantType]"
                     log.warning(message)
-                    complete(StatusCodes.BadRequest, message)
+                    discardEntity & complete(StatusCodes.BadRequest, message)
                 }
               }
             )

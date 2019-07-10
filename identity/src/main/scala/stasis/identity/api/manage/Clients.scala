@@ -20,11 +20,10 @@ import scala.concurrent.ExecutionContext
 class Clients(
   store: ClientStore,
   clientSecretConfig: Secret.ClientConfig
-)(implicit system: ActorSystem, materializer: Materializer)
+)(implicit system: ActorSystem, override val mat: Materializer)
     extends RealmValidation[Client] {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  override implicit protected def mat: Materializer = materializer
   private implicit val ec: ExecutionContext = system.dispatcher
   protected def log: LoggingAdapter = Logging(system, this.getClass.getName)
 
@@ -39,7 +38,7 @@ class Clients(
           get {
             filterRealm(realm, store.clients) { clients =>
               log.info("Realm [{}]: User [{}] successfully retrieved [{}] clients", realm, user, clients.size)
-              complete(clients.values)
+              discardEntity & complete(clients.values)
             }
           },
           post {
@@ -78,7 +77,7 @@ class Clients(
                 concat(
                   get {
                     log.info("Realm [{}]: User [{}] successfully retrieved client [{}]", realm, user, clientId)
-                    complete(client)
+                    discardEntity & complete(client)
                   },
                   put {
                     entity(as[UpdateClient]) { request =>
@@ -99,7 +98,7 @@ class Clients(
                   delete {
                     onSuccess(store.delete(clientId)) { _ =>
                       log.info("Realm [{}]: User [{}] successfully deleted client [{}]", realm, user, clientId)
-                      complete(StatusCodes.OK)
+                      discardEntity & complete(StatusCodes.OK)
                     }
                   }
                 )

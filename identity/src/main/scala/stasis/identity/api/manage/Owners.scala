@@ -17,12 +17,11 @@ import scala.concurrent.ExecutionContext
 class Owners(
   store: ResourceOwnerStore,
   ownerSecretConfig: Secret.ResourceOwnerConfig
-)(implicit system: ActorSystem, materializer: Materializer)
+)(implicit system: ActorSystem, override val mat: Materializer)
     extends RealmValidation[ResourceOwner] {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.identity.api.Formats._
 
-  override implicit protected def mat: Materializer = materializer
   private implicit val ec: ExecutionContext = system.dispatcher
   protected def log: LoggingAdapter = Logging(system, this.getClass.getName)
 
@@ -42,7 +41,7 @@ class Owners(
                 user,
                 owners.size
               )
-              complete(owners.values)
+              discardEntity & complete(owners.values)
             }
           },
           post {
@@ -91,7 +90,7 @@ class Owners(
                       user,
                       ownerUsername
                     )
-                    complete(owner)
+                    discardEntity & complete(owner)
                   },
                   put {
                     entity(as[UpdateOwner]) { request =>
@@ -122,7 +121,7 @@ class Owners(
                         user,
                         ownerUsername
                       )
-                      complete(StatusCodes.OK)
+                      discardEntity & complete(StatusCodes.OK)
                     }
                   }
                 )
