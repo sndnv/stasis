@@ -50,20 +50,22 @@ class RefreshTokenGrant(
                     client.id
                   )
 
-                  complete(
-                    StatusCodes.OK,
-                    List[HttpHeader](
-                      headers.`Content-Type`(ContentTypes.`application/json`),
-                      headers.`Cache-Control`(headers.CacheDirectives.`no-store`)
-                    ),
-                    AccessTokenResponse(
-                      access_token = accessToken,
-                      token_type = TokenType.Bearer,
-                      expires_in = client.tokenExpiration,
-                      refresh_token = refreshToken,
-                      scope = scope
+                  discardEntity {
+                    complete(
+                      StatusCodes.OK,
+                      List[HttpHeader](
+                        headers.`Content-Type`(ContentTypes.`application/json`),
+                        headers.`Cache-Control`(headers.CacheDirectives.`no-store`)
+                      ),
+                      AccessTokenResponse(
+                        access_token = accessToken,
+                        token_type = TokenType.Bearer,
+                        expires_in = client.tokenExpiration,
+                        refresh_token = refreshToken,
+                        scope = scope
+                      )
                     )
-                  )
+                  }
               }
             }
           }

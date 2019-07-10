@@ -5,10 +5,13 @@ import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
+import akka.stream.Materializer
+import stasis.identity.api.directives.BaseApiDirective
 import stasis.identity.model.codes.AuthorizationCodeStore
 import stasis.identity.model.owners.ResourceOwner
 
-class Codes(store: AuthorizationCodeStore)(implicit system: ActorSystem) {
+class Codes(store: AuthorizationCodeStore)(implicit system: ActorSystem, override val mat: Materializer)
+    extends BaseApiDirective {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.identity.api.Formats._
 
@@ -20,7 +23,7 @@ class Codes(store: AuthorizationCodeStore)(implicit system: ActorSystem) {
         get {
           onSuccess(store.codes) { codes =>
             log.info("User [{}] successfully retrieved [{}] authorization codes", user, codes.size)
-            complete(codes.values)
+            discardEntity & complete(codes.values)
           }
         }
       },
@@ -34,7 +37,7 @@ class Codes(store: AuthorizationCodeStore)(implicit system: ActorSystem) {
                   user,
                   clientId
                 )
-                complete(code)
+                discardEntity & complete(code)
 
               case None =>
                 log.warning(
@@ -42,17 +45,17 @@ class Codes(store: AuthorizationCodeStore)(implicit system: ActorSystem) {
                   user,
                   clientId
                 )
-                complete(StatusCodes.NotFound)
+                discardEntity & complete(StatusCodes.NotFound)
             }
           },
           delete {
             onSuccess(store.delete(clientId)) { deleted =>
               if (deleted) {
                 log.info("User [{}] successfully deleted authorization code for client [{}]", user, clientId)
-                complete(StatusCodes.OK)
+                discardEntity & complete(StatusCodes.OK)
               } else {
                 log.warning("User [{}] failed to delete authorization code for client [{}]", user, clientId)
-                complete(StatusCodes.NotFound)
+                discardEntity & complete(StatusCodes.NotFound)
               }
             }
           }

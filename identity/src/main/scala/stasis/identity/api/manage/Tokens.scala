@@ -5,10 +5,13 @@ import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
+import akka.stream.Materializer
+import stasis.identity.api.directives.BaseApiDirective
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.tokens.RefreshTokenStore
 
-class Tokens(store: RefreshTokenStore)(implicit system: ActorSystem) {
+class Tokens(store: RefreshTokenStore)(implicit system: ActorSystem, override val mat: Materializer)
+    extends BaseApiDirective {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.identity.api.Formats._
 
@@ -20,7 +23,7 @@ class Tokens(store: RefreshTokenStore)(implicit system: ActorSystem) {
         get {
           onSuccess(store.tokens) { tokens =>
             log.info("User [{}] successfully retrieved [{}] refresh tokens", user, tokens.size)
-            complete(tokens.values)
+            discardEntity & complete(tokens.values)
           }
         }
       },
@@ -30,7 +33,7 @@ class Tokens(store: RefreshTokenStore)(implicit system: ActorSystem) {
             onSuccess(store.get(clientId)) {
               case Some(token) =>
                 log.info("User [{}] successfully retrieved refresh token for client [{}]", user, clientId)
-                complete(token)
+                discardEntity & complete(token)
 
               case None =>
                 log.warning(
@@ -38,17 +41,17 @@ class Tokens(store: RefreshTokenStore)(implicit system: ActorSystem) {
                   user,
                   clientId
                 )
-                complete(StatusCodes.NotFound)
+                discardEntity & complete(StatusCodes.NotFound)
             }
           },
           delete {
             onSuccess(store.delete(clientId)) { deleted =>
               if (deleted) {
                 log.info("User [{}] successfully deleted refresh token for client [{}]", user, clientId)
-                complete(StatusCodes.OK)
+                discardEntity & complete(StatusCodes.OK)
               } else {
                 log.warning("User [{}] failed to delete refresh token for client [{}]", user, clientId)
-                complete(StatusCodes.NotFound)
+                discardEntity & complete(StatusCodes.NotFound)
               }
             }
           }

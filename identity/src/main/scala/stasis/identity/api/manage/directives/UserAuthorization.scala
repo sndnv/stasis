@@ -30,9 +30,7 @@ trait UserAuthorization extends BaseApiDirective {
               scope
             )
 
-            discardEntity {
-              complete(StatusCodes.Forbidden)
-            }
+            discardEntity & complete(StatusCodes.Forbidden)
           }
 
         case _ =>
@@ -42,9 +40,7 @@ trait UserAuthorization extends BaseApiDirective {
             user.username
           )
 
-          discardEntity {
-            complete(StatusCodes.Forbidden)
-          }
+          discardEntity & complete(StatusCodes.Forbidden)
       }
     }
 }

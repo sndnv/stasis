@@ -41,9 +41,7 @@ trait RealmValidation[T] extends BaseApiDirective {
 
         case None =>
           log.warning("Entity for realm [{}] was not found", realm)
-          discardEntity {
-            complete(StatusCodes.NotFound)
-          }
+          discardEntity & complete(StatusCodes.NotFound)
       }
     }
 }
