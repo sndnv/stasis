@@ -1,0 +1,28 @@
+package stasis.core.security.jwt
+
+import java.security.Key
+
+import org.jose4j.jwk._
+import stasis.core.security.exceptions.ProviderFailure
+
+import scala.concurrent.Future
+
+final class LocalKeyProvider(
+  jwk: JsonWebKey,
+  override val issuer: String
+) extends JwtKeyProvider {
+
+  private val key: Key = jwk match {
+    case key: RsaJsonWebKey           => key.getPublicKey
+    case key: EllipticCurveJsonWebKey => key.getPublicKey
+    case key: OctetSequenceJsonWebKey => key.getKey
+  }
+
+  override def allowedAlgorithms: Seq[String] = Seq(jwk.getAlgorithm)
+
+  override def key(id: Option[String]): Future[Key] =
+    id match {
+      case Some(keyId) => Future.failed(ProviderFailure(s"Key [$keyId] was not expected"))
+      case None        => Future.successful(key)
+    }
+}
