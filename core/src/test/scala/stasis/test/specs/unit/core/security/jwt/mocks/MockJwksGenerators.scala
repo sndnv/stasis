@@ -53,7 +53,7 @@ object MockJwksGenerators {
   def generateRandomRsaKeys(
     count: Int,
     keyPrefix: Option[String]
-  )(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Seq[JsonWebKey] =
+  )(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Seq[RsaJsonWebKey] =
     (0 until count).map { i =>
       generateRandomRsaKey(keyPrefix.map(prefix => s"$prefix-$i"))
     }
@@ -61,7 +61,7 @@ object MockJwksGenerators {
   def generateRandomEcKeys(
     count: Int,
     keyPrefix: Option[String]
-  )(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Seq[JsonWebKey] =
+  )(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Seq[EllipticCurveJsonWebKey] =
     (0 until count).map { i =>
       generateRandomEcKey(keyPrefix.map(prefix => s"$prefix-$i"))
     }
@@ -69,14 +69,14 @@ object MockJwksGenerators {
   def generateRandomSecretKeys(
     count: Int,
     keyPrefix: Option[String]
-  )(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Seq[JsonWebKey] =
+  )(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Seq[OctetSequenceJsonWebKey] =
     (0 until count).map { i =>
       generateRandomSecretKey(keyPrefix.map(prefix => s"$prefix-$i"))
     }
 
   def generateRandomRsaKey(
     keyId: Option[String]
-  )(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): JsonWebKey = {
+  )(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): RsaJsonWebKey = {
     val algo = RSA.ALGORITHMS(rnd.nextInt(0, RSA.ALGORITHMS.length))
     val jwk = RsaJwkGenerator.generateJwk(RSA.KEY_SIZE)
     keyId.foreach(id => jwk.setKeyId(id))
@@ -86,7 +86,7 @@ object MockJwksGenerators {
 
   def generateRandomEcKey(
     keyId: Option[String]
-  )(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): JsonWebKey = {
+  )(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): EllipticCurveJsonWebKey = {
     val algo = EC.ALGORITHMS(rnd.nextInt(0, EC.ALGORITHMS.length))
     val curve = EC.CURVES(rnd.nextInt(0, EC.CURVES.length))
     val jwk = EcJwkGenerator.generateJwk(EllipticCurves.getSpec(curve))
@@ -97,7 +97,7 @@ object MockJwksGenerators {
 
   def generateRandomSecretKey(
     keyId: Option[String]
-  )(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): JsonWebKey = {
+  )(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): OctetSequenceJsonWebKey = {
     val algo = Secret.ALGORITHMS(rnd.nextInt(0, Secret.ALGORITHMS.length))
     val jwk = OctJwkGenerator.generateJwk(Secret.KEY_SIZE)
     keyId.foreach(id => jwk.setKeyId(id))
