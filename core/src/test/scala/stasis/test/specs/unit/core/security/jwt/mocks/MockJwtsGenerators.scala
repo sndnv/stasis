@@ -9,7 +9,7 @@ object MockJwtsGenerators {
     issuer: String,
     audience: String,
     subject: String,
-    signingKey: JsonWebKey
+    signatureKey: JsonWebKey
   ): String = {
 
     val jwt = new JwtClaims
@@ -23,14 +23,14 @@ object MockJwtsGenerators {
     val jws = new JsonWebSignature
     jws.setPayload(jwt.toJson)
 
-    signingKey match {
+    signatureKey match {
       case key: RsaJsonWebKey           => jws.setKey(key.getPrivateKey)
       case key: EllipticCurveJsonWebKey => jws.setKey(key.getPrivateKey)
       case key: OctetSequenceJsonWebKey => jws.setKey(key.getKey)
     }
 
-    jws.setKeyIdHeaderValue(signingKey.getKeyId)
-    jws.setAlgorithmHeaderValue(signingKey.getAlgorithm)
+    jws.setKeyIdHeaderValue(signatureKey.getKeyId)
+    jws.setAlgorithmHeaderValue(signatureKey.getAlgorithm)
 
     jws.getCompactSerialization
   }

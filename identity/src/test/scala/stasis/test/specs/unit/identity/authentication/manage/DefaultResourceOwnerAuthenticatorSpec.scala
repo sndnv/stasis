@@ -147,7 +147,11 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
   private val provider = new JwtKeyProvider {
     override def key(id: Option[String]): Future[Key] = Future.successful(jwk.getKey)
     override def issuer: String = test.issuer
-    override def allowedAlgorithms: Seq[String] = Seq(AlgorithmIdentifiers.RSA_USING_SHA256)
+    override def allowedAlgorithms: Seq[String] = Seq(
+      AlgorithmIdentifiers.RSA_USING_SHA256,
+      AlgorithmIdentifiers.RSA_USING_SHA384,
+      AlgorithmIdentifiers.RSA_USING_SHA512
+    )
   }
 
   private val tokenGenerator = new JwtBearerAccessTokenGenerator(
