@@ -23,7 +23,7 @@ trait JwtAuthenticatorBehaviour {
         issuer = "self",
         audience = "self",
         subject = expectedSubject,
-        signingKey = withJwk
+        signatureKey = withJwk
       )
 
       for {
@@ -45,7 +45,7 @@ trait JwtAuthenticatorBehaviour {
         issuer = "self",
         audience = "some-audience",
         subject = expectedSubject,
-        signingKey = withJwk
+        signatureKey = withJwk
       )
 
       authenticator

@@ -26,7 +26,7 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
       issuer = "self",
       audience = "self",
       subject = expectedNode.toString,
-      signingKey = jwk
+      signatureKey = jwk
     )
 
     for {
@@ -50,7 +50,7 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
       issuer = "self",
       audience = "self",
       subject = expectedNode,
-      signingKey = jwk
+      signatureKey = jwk
     )
 
     authenticator
