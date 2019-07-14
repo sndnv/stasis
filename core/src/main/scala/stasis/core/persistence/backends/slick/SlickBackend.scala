@@ -30,7 +30,7 @@ class SlickBackend[K, V](
     database.run(store.schema.create).map(_ => Done)
 
   override def drop(): Future[Done] =
-    database.run(store.schema.truncate).map(_ => Done)
+    database.run(store.schema.drop).map(_ => Done)
 
   override def put(key: K, value: V): Future[Done] = {
     val action = store

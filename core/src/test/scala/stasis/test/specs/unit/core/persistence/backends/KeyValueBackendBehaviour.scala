@@ -104,6 +104,7 @@ trait KeyValueBackendBehaviour { _: AsyncUnitSpec =>
         _ <- store.put(key = s"$testKey-2", value = testValue + 2)
         existing <- store.entries
         _ <- store.drop()
+        _ <- store.init()
         missing <- store.entries
         _ <- after(store)
       } yield {
