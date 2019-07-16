@@ -17,7 +17,7 @@ class OAuth(
     extends RealmExtraction {
 
   override protected def log: LoggingAdapter = Logging(system, this.getClass.getName)
-  override protected def realmStore: RealmStoreView = providers.realmStore.view
+  override protected def realmStore: RealmStoreView = providers.realmStore
 
   private val authorizationCodeGrant = new AuthorizationCodeGrant(providers)
   private val pkceAuthorizationCodeGrant = new PkceAuthorizationCodeGrant(providers)

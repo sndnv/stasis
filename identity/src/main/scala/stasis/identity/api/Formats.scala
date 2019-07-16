@@ -14,7 +14,7 @@ import stasis.identity.model.tokens.{AccessToken, RefreshToken, StoredRefreshTok
 import stasis.identity.model.{ChallengeMethod, GrantType, ResponseType, Seconds}
 
 object Formats {
-  implicit val authorizationErrorFormat: Writes[AuthorizationError] = Writes[AuthorizationError] { error =>
+  implicit val authorizationErrorWrites: Writes[AuthorizationError] = Writes[AuthorizationError] { error =>
     Json.obj(
       "error" -> JsString(error.error),
       "error_description" -> JsString(error.error_description),
@@ -22,7 +22,7 @@ object Formats {
     )
   }
 
-  implicit val tokenErrorFormat: Writes[TokenError] = Writes[TokenError] { error =>
+  implicit val tokenErrorWrites: Writes[TokenError] = Writes[TokenError] { error =>
     Json.obj(
       "error" -> JsString(error.error),
       "error_description" -> JsString(error.error_description)
@@ -73,9 +73,12 @@ object Formats {
       tjs = Writes[Seconds](seconds => JsNumber(seconds.value))
     )
 
+  implicit val codeChallengeFormat: Format[StoredAuthorizationCode.Challenge] =
+    Json.format[StoredAuthorizationCode.Challenge]
+
   implicit val apiFormat: Format[Api] = Json.format[Api]
 
-  implicit val clientFormat: Writes[Client] =
+  implicit val clientWrites: Writes[Client] =
     Writes[Client](
       client =>
         Json.obj(
@@ -88,17 +91,18 @@ object Formats {
       )
     )
 
-  implicit val storedAuthorizationCodeFormat: Writes[StoredAuthorizationCode] =
+  implicit val storedAuthorizationCodeWrites: Writes[StoredAuthorizationCode] =
     Writes[StoredAuthorizationCode](
       code =>
         Json.obj(
           "code" -> Json.toJson(code.code),
           "owner" -> Json.toJson(code.owner.username),
-          "scope" -> Json.toJson(code.scope)
+          "scope" -> Json.toJson(code.scope),
+          "challenge" -> Json.toJson(code.challenge)
       )
     )
 
-  implicit val resourceOwnerFormat: Writes[ResourceOwner] =
+  implicit val resourceOwnerWrites: Writes[ResourceOwner] =
     Writes[ResourceOwner](
       owner =>
         Json.obj(
@@ -111,13 +115,14 @@ object Formats {
 
   implicit val realmFormat: Format[Realm] = Json.format[Realm]
 
-  implicit val storedRefreshTokenFormat: Writes[StoredRefreshToken] =
+  implicit val storedRefreshTokenWrites: Writes[StoredRefreshToken] =
     Writes[StoredRefreshToken](
       token =>
         Json.obj(
           "token" -> Json.toJson(token.token),
           "owner" -> Json.toJson(token.owner.username),
-          "scope" -> Json.toJson(token.scope)
+          "scope" -> Json.toJson(token.scope),
+          "expiration" -> Json.toJson(token.expiration)
       )
     )
 

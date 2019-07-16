@@ -231,7 +231,6 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     stores.codes.put(client.id, storedCode).await
     Post(uri).addCredentials(credentials) ~> oauth.routes ~> check {
       status should be(StatusCodes.OK)
-      headers should contain(model.headers.`Content-Type`(ContentTypes.`application/json`))
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
 
       val actualResponse = responseAs[String]
@@ -289,7 +288,6 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     stores.codes.put(client.id, storedCode).await
     Post(uri).addCredentials(credentials) ~> oauth.routes ~> check {
       status should be(StatusCodes.OK)
-      headers should contain(model.headers.`Content-Type`(ContentTypes.`application/json`))
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
 
       val actualResponse = responseAs[String]
@@ -330,7 +328,6 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     Post(uri).addCredentials(credentials) ~> oauth.routes ~> check {
       status should be(StatusCodes.OK)
 
-      headers should contain(model.headers.`Content-Type`(ContentTypes.`application/json`))
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
 
       val actualResponse = responseAs[String]
@@ -375,7 +372,6 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     Post(uri).addCredentials(credentials) ~> oauth.routes ~> check {
       status should be(StatusCodes.OK)
 
-      headers should contain(model.headers.`Content-Type`(ContentTypes.`application/json`))
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
 
       val actualResponse = responseAs[String]
@@ -429,7 +425,6 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     Post(uri).addCredentials(credentials) ~> oauth.routes ~> check {
       status should be(StatusCodes.OK)
 
-      headers should contain(model.headers.`Content-Type`(ContentTypes.`application/json`))
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
 
       val actualResponse = responseAs[String]

@@ -1,9 +1,9 @@
 package stasis.identity.model.clients
 
-import scala.concurrent.Future
-
 import akka.Done
 import stasis.core.persistence.backends.KeyValueBackend
+
+import scala.concurrent.Future
 
 trait ClientStore { store =>
   def put(client: Client): Future[Done]

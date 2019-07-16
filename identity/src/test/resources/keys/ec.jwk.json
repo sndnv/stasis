@@ -1,0 +1,9 @@
+{
+  "kty": "EC",
+  "kid": "stasis-identity-ec-0",
+  "alg": "ES256",
+  "x": "cL5LvINRcxl56jDUka2d8o9oUVi9OKFuqh8D5DLksdM",
+  "y": "_VfZLJCsFRkk3u07KKvwBon0W_vksAvne2AEELW7lvk",
+  "crv": "P-256",
+  "d": "RDgJk4Z2pR1qIceV1NnFgmTWCcM4DWbsjFwxM2INpM0"
+}

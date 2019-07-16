@@ -58,7 +58,6 @@ class RefreshTokenGrantSpec extends RouteTest with OAuthFixtures {
     Post(request).addCredentials(credentials) ~> grant.token(realm) ~> check {
       status should be(StatusCodes.OK)
 
-      headers should contain(model.headers.`Content-Type`(ContentTypes.`application/json`))
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
 
       val actualResponse = responseAs[AccessTokenResponse]
@@ -105,7 +104,6 @@ class RefreshTokenGrantSpec extends RouteTest with OAuthFixtures {
     Post(request).addCredentials(credentials) ~> grant.token(realm) ~> check {
       status should be(StatusCodes.OK)
 
-      headers should contain(model.headers.`Content-Type`(ContentTypes.`application/json`))
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
 
       val actualResponse = responseAs[AccessTokenResponse]

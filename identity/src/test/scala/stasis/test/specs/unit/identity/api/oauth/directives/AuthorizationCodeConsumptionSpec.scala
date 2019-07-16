@@ -1,12 +1,12 @@
 package stasis.test.specs.unit.identity.api.oauth.directives
 
 import java.security.MessageDigest
+import java.util.Base64
 
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives
 import akka.stream.{ActorMaterializer, Materializer}
-import com.google.common.io.BaseEncoding
 import play.api.libs.json._
 import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.AuthorizationCodeConsumption
@@ -123,9 +123,9 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     val verifier = Generators.generateString(withSize = 128)
 
     val encodedVerifier =
-      BaseEncoding
-        .base64Url()
-        .encode(
+      Base64.getUrlEncoder
+        .withoutPadding()
+        .encodeToString(
           MessageDigest
             .getInstance(ChallengeVerification.DigestAlgorithm)
             .digest(verifier.getBytes(ChallengeVerification.Charset))

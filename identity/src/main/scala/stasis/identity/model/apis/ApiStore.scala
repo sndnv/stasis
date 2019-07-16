@@ -1,9 +1,10 @@
 package stasis.identity.model.apis
 
-import scala.concurrent.Future
 import akka.Done
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.identity.model.realms.Realm
+
+import scala.concurrent.Future
 
 trait ApiStore { store =>
   def put(api: Api): Future[Done]

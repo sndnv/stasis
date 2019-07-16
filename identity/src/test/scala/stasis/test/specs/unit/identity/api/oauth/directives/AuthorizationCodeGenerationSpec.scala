@@ -11,6 +11,7 @@ import stasis.identity.model.ChallengeMethod
 import stasis.identity.model.clients.Client
 import stasis.identity.model.codes.{AuthorizationCodeStore, StoredAuthorizationCode}
 import stasis.identity.model.codes.generators.{AuthorizationCodeGenerator, DefaultAuthorizationCodeGenerator}
+import stasis.identity.model.errors.AuthorizationError
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
 
@@ -107,7 +108,7 @@ class AuthorizationCodeGenerationSpec extends RouteTest {
     Get() ~> routes ~> check {
       status should be(StatusCodes.Found)
       headers should contain(
-        model.headers.Location(Uri(s"$redirectUri?error=server_error&state=$state"))
+        model.headers.Location(redirectUri.withQuery(AuthorizationError.ServerError(withState = state).asQuery))
       )
     }
   }

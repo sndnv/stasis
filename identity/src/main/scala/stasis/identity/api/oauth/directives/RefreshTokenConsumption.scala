@@ -36,7 +36,7 @@ trait RefreshTokenConsumption extends BaseApiDirective {
           storedToken
         }
       ) {
-        case Success(Some(StoredRefreshToken(`providedToken`, owner, storedScope))) =>
+        case Success(Some(StoredRefreshToken(`providedToken`, owner, storedScope, _))) =>
           if (providedScopeAllowed(storedScope, providedScope)) {
             inner(Tuple1(owner))
           } else {
@@ -55,7 +55,7 @@ trait RefreshTokenConsumption extends BaseApiDirective {
             }
           }
 
-        case Success(Some(StoredRefreshToken(storedToken, owner, _))) =>
+        case Success(Some(StoredRefreshToken(storedToken, owner, _, _))) =>
           log.warning(
             "Refresh token [{}] stored for client [{}] and owner [{}] did not match provided token",
             storedToken,

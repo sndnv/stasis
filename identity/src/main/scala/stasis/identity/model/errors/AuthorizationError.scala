@@ -9,6 +9,7 @@ sealed abstract class AuthorizationError(
 ) {
   def asQuery: Uri.Query = Uri.Query(
     "error" -> error,
+    "error_description" -> error_description,
     "state" -> state
   )
 }

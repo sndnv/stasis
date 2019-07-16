@@ -1,8 +1,10 @@
 package stasis.test.specs.unit.identity.model.tokens
 
-import akka.Done
+import java.time.Instant
+
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.scalatest.concurrent.Eventually
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.identity.model.clients.Client
 import stasis.identity.model.tokens.{RefreshTokenStore, StoredRefreshToken}
@@ -12,14 +14,13 @@ import stasis.test.specs.unit.identity.model.Generators
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class RefreshTokenStoreSpec extends AsyncUnitSpec {
+class RefreshTokenStoreSpec extends AsyncUnitSpec with Eventually {
   "An RefreshTokenStore" should "add, retrieve and delete refresh tokens" in {
     val store = createStore()
 
     val client = Client.generateId()
     val owner = Generators.generateResourceOwner
     val expectedToken = Generators.generateRefreshToken
-    val expectedStoredToken = StoredRefreshToken(expectedToken, owner, scope = None)
 
     for {
       _ <- store.put(client, expectedToken, owner, scope = None)
@@ -29,6 +30,13 @@ class RefreshTokenStoreSpec extends AsyncUnitSpec {
       missingToken <- store.get(client)
       noTokens <- store.tokens
     } yield {
+      val expectedStoredToken = StoredRefreshToken(
+        expectedToken,
+        owner,
+        scope = None,
+        expiration = actualToken.map(_.expiration).getOrElse(Instant.MIN)
+      )
+
       actualToken should be(Some(expectedStoredToken))
       someTokens should be(Map(client -> expectedStoredToken))
       missingToken should be(None)
@@ -43,21 +51,37 @@ class RefreshTokenStoreSpec extends AsyncUnitSpec {
     val client = Client.generateId()
     val owner = Generators.generateResourceOwner
     val expectedToken = Generators.generateRefreshToken
-    val expectedStoredToken = StoredRefreshToken(expectedToken, owner, scope = None)
 
-    for {
-      _ <- store.put(client, expectedToken, owner, scope = None)
-      actualToken <- store.get(client)
-      someTokens <- store.tokens
-      _ <- akka.pattern.after(expiration * 2, using = system.scheduler)(Future.successful(Done))
-      missingToken <- store.get(client)
-      noTokens <- store.tokens
-    } yield {
-      actualToken should be(Some(expectedStoredToken))
-      someTokens should be(Map(client -> expectedStoredToken))
-      missingToken should be(None)
-      noTokens should be(Map.empty)
+    store.put(client, expectedToken, owner, scope = None).await
+
+    eventually {
+      store.get(client).await should be(None)
+      store.tokens.await should be(Map.empty)
     }
+  }
+
+  it should "expire existing refresh tokens at startup" in {
+    val backend = MemoryBackend[Client.Id, StoredRefreshToken](name = s"token-store-${java.util.UUID.randomUUID()}")
+
+    val owner = Generators.generateResourceOwner
+    val expectedToken = Generators.generateRefreshToken
+
+    val tokens = Seq(
+      StoredRefreshToken(expectedToken, owner, scope = None, expiration = Instant.now().minusSeconds(1)),
+      StoredRefreshToken(expectedToken, owner, scope = None, expiration = Instant.now().minusSeconds(2)),
+      StoredRefreshToken(expectedToken, owner, scope = None, expiration = Instant.now().plusSeconds(42))
+    )
+
+    Future
+      .sequence(tokens.map(token => backend.put(Client.generateId(), token)))
+      .flatMap { _ =>
+        val store = RefreshTokenStore(expiration = 3.seconds, backend = backend)
+
+        eventually {
+          val remainingTokens = store.tokens.await
+          remainingTokens.values.toSeq should be(tokens.drop(2))
+        }
+      }
   }
 
   private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(

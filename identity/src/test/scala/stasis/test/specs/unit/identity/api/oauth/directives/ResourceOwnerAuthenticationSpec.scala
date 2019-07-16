@@ -9,6 +9,7 @@ import akka.stream.{ActorMaterializer, Materializer}
 import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.ResourceOwnerAuthentication
 import stasis.identity.authentication.oauth.{DefaultResourceOwnerAuthenticator, ResourceOwnerAuthenticator}
+import stasis.identity.model.errors.AuthorizationError
 import stasis.identity.model.owners.ResourceOwnerStore
 import stasis.identity.model.secrets.Secret
 import stasis.test.specs.unit.identity.RouteTest
@@ -97,7 +98,7 @@ class ResourceOwnerAuthenticationSpec extends RouteTest {
     Get().addCredentials(credentials) ~> routes ~> check {
       status should be(StatusCodes.Found)
       headers should contain(
-        model.headers.Location(Uri(s"$redirectUri?error=access_denied&state=$state"))
+        model.headers.Location(redirectUri.withQuery(AuthorizationError.AccessDenied(withState = state).asQuery))
       )
     }
   }
@@ -119,7 +120,7 @@ class ResourceOwnerAuthenticationSpec extends RouteTest {
     Get().addCredentials(credentials) ~> routes ~> check {
       status should be(StatusCodes.Found)
       headers should contain(
-        model.headers.Location(Uri(s"$redirectUri?error=access_denied&state=$state"))
+        model.headers.Location(redirectUri.withQuery(AuthorizationError.AccessDenied(withState = state).asQuery))
       )
     }
   }
@@ -140,7 +141,7 @@ class ResourceOwnerAuthenticationSpec extends RouteTest {
     Get() ~> routes ~> check {
       status should be(StatusCodes.Found)
       headers should contain(
-        model.headers.Location(Uri(s"$redirectUri?error=access_denied&state=$state"))
+        model.headers.Location(redirectUri.withQuery(AuthorizationError.AccessDenied(withState = state).asQuery))
       )
     }
   }

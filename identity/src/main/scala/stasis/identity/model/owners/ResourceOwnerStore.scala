@@ -1,9 +1,9 @@
 package stasis.identity.model.owners
 
-import scala.concurrent.Future
-
 import akka.Done
 import stasis.core.persistence.backends.KeyValueBackend
+
+import scala.concurrent.Future
 
 trait ResourceOwnerStore { store =>
   def put(owner: ResourceOwner): Future[Done]
