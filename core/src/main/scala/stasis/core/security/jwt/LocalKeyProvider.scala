@@ -22,7 +22,8 @@ final class LocalKeyProvider(
 
   override def key(id: Option[String]): Future[Key] =
     id match {
-      case Some(keyId) => Future.failed(ProviderFailure(s"Key [$keyId] was not expected"))
-      case None        => Future.successful(key)
+      case Some(keyId) if jwk.getKeyId == keyId => Future.successful(key)
+      case Some(keyId)                          => Future.failed(ProviderFailure(s"Key [$keyId] was not expected"))
+      case None                                 => Future.successful(key)
     }
 }
