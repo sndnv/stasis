@@ -4,10 +4,11 @@ import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
 
 import akka.util.ByteString
+import com.typesafe.{config => typesafe}
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 import scala.util.Random
 
 final case class Secret(value: ByteString) {
@@ -37,6 +38,17 @@ object Secret {
     override val authenticationDelay: FiniteDuration
   ) extends Config
 
+  object ClientConfig {
+    def apply(clientSecretsConfig: typesafe.Config): ClientConfig =
+      ClientConfig(
+        algorithm = clientSecretsConfig.getString("algorithm"),
+        iterations = clientSecretsConfig.getInt("iterations"),
+        derivedKeySize = clientSecretsConfig.getInt("derived-key-size"),
+        saltSize = clientSecretsConfig.getInt("salt-size"),
+        authenticationDelay = clientSecretsConfig.getDuration("authentication-delay").toMillis.millis
+      )
+  }
+
   final case class ResourceOwnerConfig(
     override val algorithm: String,
     override val iterations: Int,
@@ -45,7 +57,16 @@ object Secret {
     override val authenticationDelay: FiniteDuration
   ) extends Config
 
-  def apply(value: ByteString): Secret = new Secret(value)
+  object ResourceOwnerConfig {
+    def apply(ownerSecretsConfig: typesafe.Config): ResourceOwnerConfig =
+      ResourceOwnerConfig(
+        algorithm = ownerSecretsConfig.getString("algorithm"),
+        iterations = ownerSecretsConfig.getInt("iterations"),
+        derivedKeySize = ownerSecretsConfig.getInt("derived-key-size"),
+        saltSize = ownerSecretsConfig.getInt("salt-size"),
+        authenticationDelay = ownerSecretsConfig.getDuration("authentication-delay").toMillis.millis
+      )
+  }
 
   def derive(
     rawSecret: String,

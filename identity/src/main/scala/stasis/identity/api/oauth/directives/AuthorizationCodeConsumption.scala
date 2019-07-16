@@ -2,12 +2,12 @@ package stasis.identity.api.oauth.directives
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.security.MessageDigest
+import java.util.Base64
 
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directive, Route}
 import akka.http.scaladsl.server.Directives._
-import com.google.common.io.BaseEncoding
 import stasis.identity.api.Formats._
 import stasis.identity.api.directives.BaseApiDirective
 import stasis.identity.model.ChallengeMethod
@@ -71,9 +71,9 @@ trait AuthorizationCodeConsumption extends BaseApiDirective {
                   .digest(verifier.getBytes(ChallengeVerification.Charset))
 
               val encodedVerifier =
-                BaseEncoding
-                  .base64Url()
-                  .encode(hashedVerifier)
+                Base64.getUrlEncoder
+                  .withoutPadding()
+                  .encodeToString(hashedVerifier)
 
               encodedVerifier == challenge.value
 

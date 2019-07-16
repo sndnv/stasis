@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.identity.api
 
 import akka.http.scaladsl.model.StatusCodes
-import play.api.libs.json.{JsArray, JsObject, JsString}
+import play.api.libs.json.{JsArray, JsObject, Json}
 import stasis.identity.api.Jwks
 import stasis.test.specs.unit.core.security.jwt.mocks.MockJwksGenerators
 import stasis.test.specs.unit.identity.RouteTest
@@ -25,7 +25,7 @@ class JwksSpec extends RouteTest {
     Get("/jwks.json") ~> jwks.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[JsObject].fields should contain(
-        "keys" -> JsArray(expectedKeys.map(jwk => JsString(jwk.toJson)))
+        "keys" -> JsArray(expectedKeys.map(jwk => Json.parse(jwk.toJson)))
       )
     }
   }

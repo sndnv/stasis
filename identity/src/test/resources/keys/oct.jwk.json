@@ -1,0 +1,6 @@
+{
+  "kty": "oct",
+  "kid": "stasis-identity-oct-0",
+  "alg": "HS256",
+  "k": "W18CYwzxAGWtleQr5gpavBHgyT4JZCArIdHUWMCz_CA"
+}

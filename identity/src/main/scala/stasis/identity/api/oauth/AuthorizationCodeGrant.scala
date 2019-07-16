@@ -117,7 +117,6 @@ class AuthorizationCodeGrant(
                       complete(
                         StatusCodes.OK,
                         List[HttpHeader](
-                          headers.`Content-Type`(ContentTypes.`application/json`),
                           headers.`Cache-Control`(headers.CacheDirectives.`no-store`)
                         ),
                         AccessTokenResponse(

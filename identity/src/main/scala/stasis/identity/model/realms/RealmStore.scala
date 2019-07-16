@@ -1,10 +1,10 @@
 package stasis.identity.model.realms
 
-import scala.concurrent.Future
-
 import akka.Done
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.identity.model.realms.Realm.Id
+
+import scala.concurrent.Future
 
 trait RealmStore { store =>
   def put(realm: Realm): Future[Done]

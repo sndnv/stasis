@@ -72,6 +72,6 @@ class IdentityEndpoint(
       pathPrefix("manage") { manage.routes }
     )
 
-  def start(hostname: String, port: Int): Future[Http.ServerBinding] =
-    Http().bindAndHandle(routes, hostname, port)
+  def start(interface: String, port: Int): Future[Http.ServerBinding] =
+    Http().bindAndHandle(routes, interface, port)
 }

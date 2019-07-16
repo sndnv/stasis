@@ -36,11 +36,8 @@ class Jwks(keys: Seq[JsonWebKey])(implicit system: ActorSystem, override val mat
 object Jwks {
   import play.api.libs.json._
 
-  implicit val jwksResponseFormat: Writes[JwksResponse] = Writes[JwksResponse] { jwks =>
-    Json.obj(
-      "keys" -> JsArray(jwks.keys.map(jwk => JsString(jwk.toJson)))
-    )
-  }
+  implicit val jwkFormat: Writes[JsonWebKey] = Writes[JsonWebKey](jwk => Json.parse(jwk.toJson))
+  implicit val jwksResponseFormat: Writes[JwksResponse] = Json.writes[JwksResponse]
 
   final case class JwksResponse(keys: Seq[JsonWebKey])
 }

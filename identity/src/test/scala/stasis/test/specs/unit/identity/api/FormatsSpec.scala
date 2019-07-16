@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.identity.api
 
+import java.time.Instant
+
 import play.api.libs.json._
 import stasis.identity.api.Formats._
 import stasis.identity.model.codes.StoredAuthorizationCode
@@ -12,7 +14,7 @@ import stasis.test.specs.unit.identity.model.Generators
 class FormatsSpec extends UnitSpec {
   "Formats" should "convert authorization errors to JSON" in {
     val error = AuthorizationError.InvalidScope(withState = Generators.generateString(withSize = 16))
-    val json = authorizationErrorFormat.writes(error).toString
+    val json = authorizationErrorWrites.writes(error).toString
     val parsedFields = Json.parse(json).as[JsObject].fields
 
     parsedFields should contain("error" -> JsString(error.error))
@@ -22,7 +24,7 @@ class FormatsSpec extends UnitSpec {
 
   they should "convert token errors to JSON" in {
     val error = TokenError.InvalidScope
-    val json = tokenErrorFormat.writes(error).toString
+    val json = tokenErrorWrites.writes(error).toString
     val parsedFields = Json.parse(json).as[JsObject].fields
 
     parsedFields should contain("error" -> JsString(error.error))
@@ -109,6 +111,18 @@ class FormatsSpec extends UnitSpec {
     secondsFormat.reads(Json.parse(json).as[JsNumber]).asOpt should be(Some(seconds))
   }
 
+  they should "convert code challenges to/from JSON" in {
+    val codeChallenge = StoredAuthorizationCode.Challenge(
+      value = Generators.generateString(withSize = 16),
+      method = Some(ChallengeMethod.S256)
+    )
+    val json = codeChallengeFormat.writes(codeChallenge).toString
+    val parsedFields = Json.parse(json).as[JsObject].fields
+
+    parsedFields should contain("value" -> JsString(codeChallenge.value))
+    parsedFields should contain("method" -> JsString("s256"))
+  }
+
   they should "convert APIs to/from JSON" in {
     val api = Generators.generateApi
     val json = apiFormat.writes(api).toString
@@ -122,7 +136,7 @@ class FormatsSpec extends UnitSpec {
 
   they should "convert clients to JSON" in {
     val client = Generators.generateClient
-    val json = clientFormat.writes(client).toString
+    val json = clientWrites.writes(client).toString
     val parsedFields = Json.parse(json).as[JsObject].fields
     val parsedKeys = parsedFields.map(_._1)
 
@@ -140,20 +154,27 @@ class FormatsSpec extends UnitSpec {
     val code = StoredAuthorizationCode(
       code = Generators.generateAuthorizationCode,
       owner = Generators.generateResourceOwner,
-      scope = Some(Generators.generateString(withSize = 16))
+      scope = Some(Generators.generateString(withSize = 16)),
+      challenge = Some(
+        StoredAuthorizationCode.Challenge(
+          value = Generators.generateString(withSize = 16),
+          method = Some(ChallengeMethod.S256)
+        )
+      )
     )
-    val json = storedAuthorizationCodeFormat.writes(code).toString
+    val json = storedAuthorizationCodeWrites.writes(code).toString
     val parsedFields = Json.parse(json).as[JsObject].fields
     val parsedKeys = parsedFields.map(_._1)
 
     parsedFields should contain("code" -> JsString(code.code.value))
     parsedFields should contain("scope" -> JsString(code.scope.getOrElse("invalid-scope")))
     parsedKeys should contain("owner")
+    parsedKeys should contain("challenge")
   }
 
   they should "convert resource owners to JSON" in {
     val owner = Generators.generateResourceOwner
-    val json = resourceOwnerFormat.writes(owner).toString
+    val json = resourceOwnerWrites.writes(owner).toString
     val parsedFields = Json.parse(json).as[JsObject].fields
     val parsedKeys = parsedFields.map(_._1)
 
@@ -180,14 +201,16 @@ class FormatsSpec extends UnitSpec {
     val token = StoredRefreshToken(
       token = Generators.generateRefreshToken,
       owner = Generators.generateResourceOwner,
-      scope = Some(Generators.generateString(withSize = 16))
+      scope = Some(Generators.generateString(withSize = 16)),
+      expiration = Instant.now()
     )
-    val json = storedRefreshTokenFormat.writes(token).toString
+    val json = storedRefreshTokenWrites.writes(token).toString
     val parsedFields = Json.parse(json).as[JsObject].fields
     val parsedKeys = parsedFields.map(_._1)
 
     parsedFields should contain("token" -> JsString(token.token.value))
     parsedFields should contain("scope" -> JsString(token.scope.getOrElse("invalid-scope")))
     parsedKeys should contain("owner")
+    parsedKeys should contain("expiration")
   }
 }

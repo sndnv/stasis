@@ -7,6 +7,8 @@ homepage in ThisBuild := Some(url("https://github.com/sndnv/stasis"))
 lazy val defaultScalaVersion = "2.12.8"
 lazy val akkaVersion = "2.5.20"
 lazy val akkaHttpVersion = "10.1.7"
+lazy val slickVersion = "3.2.3"
+lazy val h2Version = "1.4.197"
 
 lazy val crossVersions = Seq(defaultScalaVersion)
 
@@ -32,7 +34,14 @@ lazy val client = (project in file("./client"))
 
 lazy val identity = (project in file("./identity"))
   .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.typesafe.slick" %% "slick" % slickVersion,
+      "com.h2database"     %  "h2"    % h2Version
+    )
+  )
   .dependsOn(core % "compile->compile;test->test")
+  .enablePlugins(JavaAppPackaging)
 
 lazy val shared = (project in file("./shared"))
   .settings(commonSettings)
@@ -57,8 +66,8 @@ lazy val core = (project in file("./core"))
       "de.heikoseeberger"       %% "akka-http-play-json"  % "1.23.0",
       "org.bitbucket.b_c"       %  "jose4j"               % "0.6.5",
       "org.apache.geode"        %  "geode-core"           % "1.8.0"           % Provided,
-      "com.typesafe.slick"      %% "slick"                % "3.2.3"           % Provided,
-      "com.h2database"          %  "h2"                   % "1.4.197"         % Test,
+      "com.typesafe.slick"      %% "slick"                % slickVersion      % Provided,
+      "com.h2database"          %  "h2"                   % h2Version         % Test,
       "org.scalacheck"          %% "scalacheck"           % "1.14.0"          % Test,
       "org.scalatest"           %% "scalatest"            % "3.0.5"           % Test,
       "com.typesafe.akka"       %% "akka-testkit"         % akkaVersion       % Test,

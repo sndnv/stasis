@@ -39,7 +39,7 @@ trait OAuthFixtures { _: RouteTest =>
     Providers(
       apiStore = stores.apis.view,
       clientStore = stores.clients.view,
-      realmStore = stores.realms,
+      realmStore = stores.realms.view,
       refreshTokenStore = stores.tokens,
       authorizationCodeStore = stores.codes,
       accessTokenGenerator = new JwtBearerAccessTokenGenerator(

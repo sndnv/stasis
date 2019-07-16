@@ -47,7 +47,6 @@ class ClientCredentialsGrant(
               complete(
                 StatusCodes.OK,
                 List[HttpHeader](
-                  headers.`Content-Type`(ContentTypes.`application/json`),
                   headers.`Cache-Control`(CacheDirectives.`no-store`)
                 ),
                 AccessTokenResponse(

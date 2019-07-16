@@ -1,5 +1,7 @@
 package stasis.identity.model.tokens
 
+import java.time.Instant
+
 import akka.Done
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import stasis.core.persistence.backends.KeyValueBackend
@@ -31,9 +33,9 @@ object RefreshTokenStore {
         scope: Option[String]
       ): Future[Done] =
         backend
-          .put(client, StoredRefreshToken(token, owner, scope))
+          .put(client, StoredRefreshToken(token, owner, scope, Instant.now().plusSeconds(expiration.toSeconds)))
           .map { result =>
-            val _ = akka.pattern.after(expiration, system.scheduler)(backend.delete(client))
+            val _ = expire(client)
             result
           }
 
@@ -45,5 +47,19 @@ object RefreshTokenStore {
 
       override def tokens: Future[Map[Client.Id, StoredRefreshToken]] =
         backend.entries
+
+      private val _ = backend.entries.flatMap { entries =>
+        val now = Instant.now()
+
+        Future.sequence(
+          entries.map {
+            case (client, token) if token.expiration.isBefore(now) => backend.delete(client)
+            case (client, _)                                       => expire(client)
+          }
+        )
+      }
+
+      private def expire(client: Client.Id): Future[Boolean] =
+        akka.pattern.after(expiration, system.scheduler)(backend.delete(client))
     }
 }

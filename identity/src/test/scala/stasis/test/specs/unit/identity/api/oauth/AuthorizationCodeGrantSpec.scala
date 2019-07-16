@@ -184,7 +184,6 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.codes.put(client.id, StoredAuthorizationCode(code, owner, scope = grant.apiAudienceToScope(Seq(api)))).await
     Post(request).addCredentials(credentials) ~> grant.token(realm) ~> check {
       status should be(StatusCodes.OK)
-      headers should contain(model.headers.`Content-Type`(ContentTypes.`application/json`))
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
 
       val actualResponse = responseAs[AccessTokenResponse]
@@ -229,7 +228,6 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.codes.put(client.id, StoredAuthorizationCode(code, owner, scope = grant.apiAudienceToScope(Seq(api)))).await
     Post(request).addCredentials(credentials) ~> grant.token(realm) ~> check {
       status should be(StatusCodes.OK)
-      headers should contain(model.headers.`Content-Type`(ContentTypes.`application/json`))
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
 
       val actualResponse = responseAs[AccessTokenResponse]

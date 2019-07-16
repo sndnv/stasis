@@ -1,0 +1,13 @@
+{
+  "kty": "RSA",
+  "kid": "stasis-identity-rsa-0",
+  "alg": "RS256",
+  "n": "v_pqAya475upzdgJK_T6ibLLZ4Lmm1UjERvIVHPBwrL08tPKXw2UGix0rZutu6zrN0s0OueqxENiM5quo4IAT0GN4voSAurz-xYD44Ae96wpP32On6-L6C7-uzsXvFYH2HoIF-Emu9ht-qERXbD57PWZg-HHwawIBmMH2jkmoOM",
+  "e": "AQAB",
+  "d": "BH_Z_DjsHLGJSUnG7UDQnmmSWtq2jO1x5PTBvTj5UZbgJtDP7WpkDjj8gxUi_UMQQDuC_d5wIilyI8N8VFi3qRl71e4sUnknrdzQ3Pg2yJbcPpTAZxrdtinTOmQ8KouyTyvxJwx-iUpW0gkp1Ri-S-9kSSmVeC1NsQ0L0DRzgQ",
+  "p": "37pa1VX3xMBwKV8n1rLwUSrmNuyhAH4X84QDMZ-ldZLHe7pFoh-C077PJt7b82mQLRq0-1moGV5OadHRFT6JoQ",
+  "q": "26uhJFvvkde014XE0MvlFNrGcXgEzkBO-eoEIGBK5lCWnj_9Thjs31UbeuLL-lTqgHVh6_3Oca9ThGZ-bfSEAw",
+  "dp": "R0XI1hmy-v0LPkLQIDeVE2aFPI4ZpFyHKM6vbcmcHl6KKkJnGITNWsN4nrt0epDwm03cxg4D3UEL3e43m3r2wQ",
+  "dq": "oB44NSJ2O545iSdOUMtuTYcyQp8zEYu6hVvYaikGL17qiqsl3fk5H4kPoMET4YJn8_6bw8Ka6i7b95Ql78vdNQ",
+  "qi": "YqOlIH99DDat6D_jas0jQ_lkzZ1ppR7R8Id8hqtLq8CWNRiPA6uu1aN0sI8K7G41wJvwjuodku6-roNUItUSpA"
+}
