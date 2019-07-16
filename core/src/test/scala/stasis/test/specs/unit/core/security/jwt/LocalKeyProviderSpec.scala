@@ -44,7 +44,20 @@ class LocalKeyProviderSpec extends AsyncUnitSpec {
     }
   }
 
-  it should "reject requests for specific keys" in {
+  it should "provide (pre-configured) keys with expected identifiers" in {
+    val expectedKeyId = "some-ec-key"
+    val expectedKey = MockJwksGenerators.generateRandomEcKey(keyId = Some(expectedKeyId))
+    val provider = new LocalKeyProvider(expectedKey, issuer = "self")
+
+    for {
+      actualKey <- provider.key(id = Some(expectedKeyId))
+    } yield {
+      actualKey should be(expectedKey.getPublicKey)
+      provider.allowedAlgorithms should be(Seq(expectedKey.getAlgorithm))
+    }
+  }
+
+  it should "reject requests for keys with unexpected identifiers" in {
     val testKey = MockJwksGenerators.generateRandomSecretKey(keyId = Some("some-secret-key"))
     val provider = new LocalKeyProvider(testKey, issuer = "self")
     val keyId = "some-key-id"
