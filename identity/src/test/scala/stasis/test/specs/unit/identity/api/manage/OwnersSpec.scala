@@ -60,6 +60,28 @@ class OwnersSpec extends RouteTest {
     }
   }
 
+  they should "reject creation requests for existing users" in {
+    val store = createOwnerStore()
+    val realm = Generators.generateRealmId
+    val owners = new Owners(store, secretConfig)
+
+    val request = CreateOwner(
+      username = "some-user",
+      rawPassword = "some-password",
+      allowedScopes = Seq("some-scope")
+    )
+
+    Post().withEntity(request) ~> owners.routes(user, realm) ~> check {
+      status should be(StatusCodes.OK)
+      store.owners.await.size should be(1)
+
+      Post().withEntity(request) ~> owners.routes(user, realm) ~> check {
+        status should be(StatusCodes.Conflict)
+        store.owners.await.size should be(1)
+      }
+    }
+  }
+
   they should "update existing resource owner credentials" in {
     val store = createOwnerStore()
     val realm = Generators.generateRealmId

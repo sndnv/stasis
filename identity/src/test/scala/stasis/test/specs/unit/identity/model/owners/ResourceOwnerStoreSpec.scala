@@ -17,14 +17,18 @@ class ResourceOwnerStoreSpec extends AsyncUnitSpec {
       _ <- store.put(expectedResourceOwner)
       actualResourceOwner <- store.get(expectedResourceOwner.username)
       someResourceOwners <- store.owners
+      containsOwnerAfterPut <- store.contains(expectedResourceOwner.username)
       _ <- store.delete(expectedResourceOwner.username)
       missingResourceOwner <- store.get(expectedResourceOwner.username)
+      containsOwnerAfterDelete <- store.contains(expectedResourceOwner.username)
       noResourceOwners <- store.owners
     } yield {
       actualResourceOwner should be(Some(expectedResourceOwner))
       someResourceOwners should be(Map(expectedResourceOwner.username -> expectedResourceOwner))
+      containsOwnerAfterPut should be(true)
       missingResourceOwner should be(None)
       noResourceOwners should be(Map.empty)
+      containsOwnerAfterDelete should be(false)
     }
   }
 
@@ -38,14 +42,18 @@ class ResourceOwnerStoreSpec extends AsyncUnitSpec {
       _ <- store.put(expectedResourceOwner)
       actualResourceOwner <- storeView.get(expectedResourceOwner.username)
       someResourceOwners <- storeView.owners
+      containsOwnerAfterPut <- storeView.contains(expectedResourceOwner.username)
       _ <- store.delete(expectedResourceOwner.username)
       missingResourceOwner <- storeView.get(expectedResourceOwner.username)
+      containsOwnerAfterDelete <- storeView.contains(expectedResourceOwner.username)
       noResourceOwners <- storeView.owners
     } yield {
       actualResourceOwner should be(Some(expectedResourceOwner))
       someResourceOwners should be(Map(expectedResourceOwner.username -> expectedResourceOwner))
+      containsOwnerAfterPut should be(true)
       missingResourceOwner should be(None)
       noResourceOwners should be(Map.empty)
+      containsOwnerAfterDelete should be(false)
       a[ClassCastException] should be thrownBy { val _ = storeView.asInstanceOf[ResourceOwnerStore] }
     }
   }

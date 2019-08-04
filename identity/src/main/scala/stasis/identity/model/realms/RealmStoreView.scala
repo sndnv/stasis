@@ -5,4 +5,5 @@ import scala.concurrent.Future
 trait RealmStoreView {
   def get(realm: Realm.Id): Future[Option[Realm]]
   def realms: Future[Map[Realm.Id, Realm]]
+  def contains(realm: Realm.Id): Future[Boolean]
 }

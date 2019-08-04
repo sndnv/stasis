@@ -18,14 +18,18 @@ class ApiStoreSpec extends AsyncUnitSpec {
       _ <- store.put(expectedApi)
       actualApi <- store.get(expectedApi.realm, expectedApi.id)
       someApis <- store.apis
+      containsApiAfterPut <- store.contains(expectedApi.realm, expectedApi.id)
       _ <- store.delete(expectedApi.realm, expectedApi.id)
       missingApi <- store.get(expectedApi.realm, expectedApi.id)
+      containsApiAfterDelete <- store.contains(expectedApi.realm, expectedApi.id)
       noApis <- store.apis
     } yield {
       actualApi should be(Some(expectedApi))
       someApis should be(Map(expectedApi.realm -> expectedApi.id -> expectedApi))
+      containsApiAfterPut should be(true)
       missingApi should be(None)
       noApis should be(Map.empty)
+      containsApiAfterDelete should be(false)
     }
   }
 
@@ -39,14 +43,18 @@ class ApiStoreSpec extends AsyncUnitSpec {
       _ <- store.put(expectedApi)
       actualApi <- storeView.get(expectedApi.realm, expectedApi.id)
       someApis <- storeView.apis
+      containsApiAfterPut <- storeView.contains(expectedApi.realm, expectedApi.id)
       _ <- store.delete(expectedApi.realm, expectedApi.id)
       missingApi <- storeView.get(expectedApi.realm, expectedApi.id)
+      containsApiAfterDelete <- storeView.contains(expectedApi.realm, expectedApi.id)
       noApis <- storeView.apis
     } yield {
       actualApi should be(Some(expectedApi))
       someApis should be(Map(expectedApi.realm -> expectedApi.id -> expectedApi))
+      containsApiAfterPut should be(true)
       missingApi should be(None)
       noApis should be(Map.empty)
+      containsApiAfterDelete should be(false)
       a[ClassCastException] should be thrownBy { val _ = storeView.asInstanceOf[ApiStore] }
     }
   }

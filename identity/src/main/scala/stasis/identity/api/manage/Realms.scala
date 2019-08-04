@@ -29,10 +29,21 @@ class Realms(store: RealmStore)(implicit system: ActorSystem, override val mat: 
           },
           post {
             entity(as[CreateRealm]) { request =>
-              val realm = request.toRealm
-              onSuccess(store.put(realm)) { _ =>
-                log.info("User [{}] successfully created realm [{}]", user, realm.id)
-                complete(StatusCodes.OK)
+              onSuccess(store.contains(request.id)) {
+                case true =>
+                  log.warning(
+                    "User [{}] tried to create realm [{}] but it already exists",
+                    user,
+                    request.id
+                  )
+                  complete(StatusCodes.Conflict)
+
+                case false =>
+                  val realm = request.toRealm
+                  onSuccess(store.put(realm)) { _ =>
+                    log.info("User [{}] successfully created realm [{}]", user, realm.id)
+                    complete(StatusCodes.OK)
+                  }
               }
             }
           }

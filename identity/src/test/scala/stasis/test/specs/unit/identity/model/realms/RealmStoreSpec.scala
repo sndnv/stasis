@@ -17,14 +17,18 @@ class RealmStoreSpec extends AsyncUnitSpec {
       _ <- store.put(expectedRealm)
       actualRealm <- store.get(expectedRealm.id)
       someRealms <- store.realms
+      containsRealmAfterPut <- store.contains(expectedRealm.id)
       _ <- store.delete(expectedRealm.id)
       missingRealm <- store.get(expectedRealm.id)
+      containsRealmAfterDelete <- store.contains(expectedRealm.id)
       noRealms <- store.realms
     } yield {
       actualRealm should be(Some(expectedRealm))
       someRealms should be(Map(expectedRealm.id -> expectedRealm))
+      containsRealmAfterPut should be(true)
       missingRealm should be(None)
       noRealms should be(Map.empty)
+      containsRealmAfterDelete should be(false)
     }
   }
 
@@ -38,14 +42,18 @@ class RealmStoreSpec extends AsyncUnitSpec {
       _ <- store.put(expectedRealm)
       actualRealm <- storeView.get(expectedRealm.id)
       someRealms <- storeView.realms
+      containsRealmAfterPut <- storeView.contains(expectedRealm.id)
       _ <- store.delete(expectedRealm.id)
       missingRealm <- storeView.get(expectedRealm.id)
+      containsRealmAfterDelete <- storeView.contains(expectedRealm.id)
       noRealms <- storeView.realms
     } yield {
       actualRealm should be(Some(expectedRealm))
       someRealms should be(Map(expectedRealm.id -> expectedRealm))
+      containsRealmAfterPut should be(true)
       missingRealm should be(None)
       noRealms should be(Map.empty)
+      containsRealmAfterDelete should be(false)
       a[ClassCastException] should be thrownBy { val _ = storeView.asInstanceOf[RealmStore] }
     }
   }

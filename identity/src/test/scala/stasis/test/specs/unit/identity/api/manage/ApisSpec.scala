@@ -42,6 +42,24 @@ class ApisSpec extends RouteTest {
     }
   }
 
+  they should "reject creation requests for existing APIs" in {
+    val store = createApiStore()
+    val realm = Generators.generateRealmId
+    val apis = new Apis(store)
+
+    val request = CreateApi(id = "some-api")
+
+    Post().withEntity(request) ~> apis.routes(user, realm) ~> check {
+      status should be(StatusCodes.OK)
+      store.apis.await.size should be(1)
+
+      Post().withEntity(request) ~> apis.routes(user, realm) ~> check {
+        status should be(StatusCodes.Conflict)
+        store.apis.await.size should be(1)
+      }
+    }
+  }
+
   they should "respond with existing APIs" in {
     val store = createApiStore()
     val realm = Generators.generateRealmId

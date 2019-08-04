@@ -45,17 +45,30 @@ class Owners(
             }
           },
           post {
-            entity(as[CreateOwner]) { request =>
-              val owner = request.toResourceOwner(realm)
-              onSuccess(store.put(owner)) { _ =>
-                log.info(
-                  "Realm [{}]: User [{}] successfully created resource owner [{}]",
-                  realm,
-                  user,
-                  owner.username
-                )
-                complete(StatusCodes.OK)
-              }
+            entity(as[CreateOwner]) {
+              request =>
+                onSuccess(store.contains(request.username)) {
+                  case true =>
+                    log.warning(
+                      "Realm [{}]: User [{}] tried to create resource owner [{}] but it already exists",
+                      realm,
+                      user,
+                      request.username
+                    )
+                    complete(StatusCodes.Conflict)
+
+                  case false =>
+                    val owner = request.toResourceOwner(realm)
+                    onSuccess(store.put(owner)) { _ =>
+                      log.info(
+                        "Realm [{}]: User [{}] successfully created resource owner [{}]",
+                        realm,
+                        user,
+                        owner.username
+                      )
+                      complete(StatusCodes.OK)
+                    }
+                }
             }
           }
         )

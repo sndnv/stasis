@@ -40,6 +40,23 @@ class RealmsSpec extends RouteTest {
     }
   }
 
+  they should "reject creation requests for existing realms" in {
+    val store = createRealmStore()
+    val realms = new Realms(store)
+
+    val request = CreateRealm(id = "some-realm", refreshTokensAllowed = true)
+
+    Post().withEntity(request) ~> realms.routes(user) ~> check {
+      status should be(StatusCodes.OK)
+      store.realms.await.size should be(1)
+
+      Post().withEntity(request) ~> realms.routes(user) ~> check {
+        status should be(StatusCodes.Conflict)
+        store.realms.await.size should be(1)
+      }
+    }
+  }
+
   they should "respond with existing realms" in {
     val store = createRealmStore()
     val realms = new Realms(store)
