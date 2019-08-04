@@ -11,10 +11,12 @@ trait ApiStore { store =>
   def delete(realm: Realm.Id, api: Api.Id): Future[Boolean]
   def get(realm: Realm.Id, api: Api.Id): Future[Option[Api]]
   def apis: Future[Map[(Realm.Id, Api.Id), Api]]
+  def contains(realm: Realm.Id, api: Api.Id): Future[Boolean]
 
   def view: ApiStoreView = new ApiStoreView {
     override def get(realm: Realm.Id, api: Api.Id): Future[Option[Api]] = store.get(realm, api)
     override def apis: Future[Map[(Realm.Id, Api.Id), Api]] = store.apis
+    override def contains(realm: Realm.Id, api: Api.Id): Future[Boolean] = store.contains(realm, api)
   }
 }
 
@@ -24,5 +26,6 @@ object ApiStore {
     override def delete(realm: Realm.Id, api: Api.Id): Future[Boolean] = backend.delete(realm, api)
     override def get(realm: Realm.Id, api: Api.Id): Future[Option[Api]] = backend.get(realm, api)
     override def apis: Future[Map[(Realm.Id, Api.Id), Api]] = backend.entries
+    override def contains(realm: Realm.Id, api: Api.Id): Future[Boolean] = backend.contains((realm, api))
   }
 }

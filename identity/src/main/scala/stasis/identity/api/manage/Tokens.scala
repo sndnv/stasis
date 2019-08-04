@@ -23,7 +23,7 @@ class Tokens(store: RefreshTokenStore)(implicit system: ActorSystem, override va
         get {
           onSuccess(store.tokens) { tokens =>
             log.info("User [{}] successfully retrieved [{}] refresh tokens", user, tokens.size)
-            discardEntity & complete(tokens.values)
+            discardEntity & complete(tokens)
           }
         }
       },

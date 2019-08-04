@@ -34,11 +34,29 @@ class Apis(store: ApiStore)(implicit system: ActorSystem, override val mat: Mate
             }
           },
           post {
-            entity(as[CreateApi]) { request =>
-              onSuccess(store.put(request.toApi(realm))) { _ =>
-                log.info("Realm [{}]: User [{}] successfully created API [{}]", realm, user, request.id)
-                complete(StatusCodes.OK)
-              }
+            entity(as[CreateApi]) {
+              request =>
+                onSuccess(store.contains(realm, request.id)) {
+                  case true =>
+                    log.warning(
+                      "Realm [{}]: User [{}] tried to create API [{}] but it already exists",
+                      realm,
+                      user,
+                      request.id
+                    )
+                    complete(StatusCodes.Conflict)
+
+                  case false =>
+                    onSuccess(store.put(request.toApi(realm))) { _ =>
+                      log.info(
+                        "Realm [{}]: User [{}] successfully created API [{}]",
+                        realm,
+                        user,
+                        request.id
+                      )
+                      complete(StatusCodes.OK)
+                    }
+                }
             }
           }
         )
