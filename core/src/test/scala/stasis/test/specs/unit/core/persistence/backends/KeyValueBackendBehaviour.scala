@@ -28,6 +28,23 @@ trait KeyValueBackendBehaviour { _: AsyncUnitSpec =>
       }
     }
 
+    it should "update existing values" in {
+      val store = createBackend()
+      val updatedTestValue = 23
+
+      for {
+        _ <- before(store)
+        _ <- store.put(key = testKey, value = testValue)
+        existing <- store.get(key = testKey)
+        _ <- store.put(key = testKey, value = updatedTestValue)
+        updated <- store.get(key = testKey)
+        _ <- after(store)
+      } yield {
+        existing should be(Some(testValue))
+        updated should be(Some(updatedTestValue))
+      }
+    }
+
     it should "fail to retrieve missing values" in {
       val store = createBackend()
 
