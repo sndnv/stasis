@@ -17,12 +17,11 @@ class RefreshTokenGenerationSpec extends RouteTest {
     val tokens = createTokenStore()
     val directive = createDirective(tokens)
 
-    val realm = Generators.generateRealm
     val client = Client.generateId()
     val owner = Generators.generateResourceOwner
     val scope = Some("some-scope")
 
-    val routes = directive.generateRefreshToken(realm, client, owner, scope) {
+    val routes = directive.generateRefreshToken(client, owner, scope) {
       case Some(token) =>
         Directives.complete(StatusCodes.OK, token.value)
 
@@ -48,12 +47,11 @@ class RefreshTokenGenerationSpec extends RouteTest {
     val tokens = createFailingTokenStore(failingPut = true)
     val directive = createDirective(tokens)
 
-    val realm = Generators.generateRealm
     val client = Client.generateId()
     val owner = Generators.generateResourceOwner
     val scope = Some("some-scope")
 
-    val routes = directive.generateRefreshToken(realm, client, owner, scope) {
+    val routes = directive.generateRefreshToken(client, owner, scope) {
       case Some(token) =>
         Directives.complete(StatusCodes.OK, token.value)
 
@@ -69,16 +67,15 @@ class RefreshTokenGenerationSpec extends RouteTest {
     }
   }
 
-  it should "fail if refresh token generation is not allowed for a realm" in {
+  it should "fail if refresh token generation is not allowed" in {
     val tokens = createTokenStore()
-    val directive = createDirective(tokens)
+    val directive = createDirective(tokens, withRefreshTokens = false)
 
-    val realm = Generators.generateRealm.copy(refreshTokensAllowed = false)
     val client = Client.generateId()
     val owner = Generators.generateResourceOwner
     val scope = Some("some-scope")
 
-    val routes = directive.generateRefreshToken(realm, client, owner, scope) {
+    val routes = directive.generateRefreshToken(client, owner, scope) {
       case Some(_) =>
         Directives.complete(
           StatusCodes.InternalServerError,
@@ -96,8 +93,12 @@ class RefreshTokenGenerationSpec extends RouteTest {
   }
 
   private def createDirective(
-    tokens: RefreshTokenStore
+    tokens: RefreshTokenStore,
+    withRefreshTokens: Boolean = true
   ) = new RefreshTokenGeneration {
+
+    override protected def refreshTokensAllowed: Boolean = withRefreshTokens
+
     override implicit protected def mat: Materializer = ActorMaterializer()
 
     override protected def log: LoggingAdapter = createLogger()

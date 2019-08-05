@@ -8,7 +8,6 @@ import scala.util.Random
 import akka.util.ByteString
 import stasis.identity.model.apis.Api
 import stasis.identity.model.clients.Client
-import stasis.identity.model.realms.Realm
 import stasis.identity.model.secrets.Secret
 import scala.concurrent.duration._
 
@@ -37,10 +36,6 @@ object Generators {
       final val SaltSize = 16
     }
 
-    object Realms {
-      final val IdSize = 32
-    }
-
     object Tokens {
       final val TokenSize = 64
     }
@@ -59,9 +54,6 @@ object Generators {
   def generateApiId(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Api.Id =
     generateString(withSize = Defaults.Apis.IdSize)
 
-  def generateRealmId(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Realm.Id =
-    generateString(withSize = Defaults.Realms.IdSize)
-
   def generateUri(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): String = {
     val host = generateString(withSize = 10)
     val port = rnd.nextInt(50000, 60000)
@@ -77,15 +69,11 @@ object Generators {
     Stream.continually(g).take(rnd.nextInt(min, max))
 
   def generateApi(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Api =
-    Api(
-      id = generateApiId,
-      realm = generateRealmId
-    )
+    Api(id = generateApiId)
 
   def generateClient(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Client =
     Client(
       id = Client.generateId(),
-      realm = generateRealmId,
       allowedScopes = generateSeq(min = 1, g = generateString(withSize = 10)),
       redirectUri = generateUri,
       tokenExpiration = generateFiniteDuration,
@@ -102,15 +90,8 @@ object Generators {
       username = generateString(withSize = Defaults.Owners.UsernameSize),
       password = generateSecret(withSize = Defaults.Owners.SecretSize),
       salt = generateString(withSize = Defaults.Owners.SaltSize),
-      realm = generateRealmId,
       allowedScopes = generateSeq(min = 1, g = generateString(withSize = 10)),
       active = true
-    )
-
-  def generateRealm(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Realm =
-    Realm(
-      id = generateRealmId,
-      refreshTokensAllowed = true
     )
 
   def generateSecret(withSize: Int)(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Secret =

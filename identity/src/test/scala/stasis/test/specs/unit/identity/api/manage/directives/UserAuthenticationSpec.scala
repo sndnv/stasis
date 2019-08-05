@@ -22,7 +22,7 @@ class UserAuthenticationSpec extends RouteTest {
       auth = (_: OAuth2BearerToken) => Future.successful(owner)
     )
 
-    val routes = directive.authenticate(owner.realm) { authenticatedOwner =>
+    val routes = directive.authenticate() { authenticatedOwner =>
       Directives.complete(StatusCodes.OK, authenticatedOwner.username)
     }
 
@@ -33,13 +33,11 @@ class UserAuthenticationSpec extends RouteTest {
   }
 
   it should "fail to authenticate users with invalid bearer tokens" in {
-    val owner = Generators.generateResourceOwner
-
     val directive = createDirective(
       auth = (_: OAuth2BearerToken) => Future.failed(new RuntimeException("Test authentication failure"))
     )
 
-    val routes = directive.authenticate(owner.realm) { authenticatedOwner =>
+    val routes = directive.authenticate() { authenticatedOwner =>
       Directives.complete(StatusCodes.OK, authenticatedOwner.username)
     }
 
@@ -55,7 +53,7 @@ class UserAuthenticationSpec extends RouteTest {
       auth = (_: OAuth2BearerToken) => Future.successful(owner)
     )
 
-    val routes = directive.authenticate(owner.realm) { authenticatedOwner =>
+    val routes = directive.authenticate() { authenticatedOwner =>
       Directives.complete(StatusCodes.OK, authenticatedOwner.username)
     }
 
@@ -71,20 +69,23 @@ class UserAuthenticationSpec extends RouteTest {
       auth = (_: OAuth2BearerToken) => Future.successful(owner)
     )
 
-    val routes = directive.authenticate(owner.realm) { authenticatedOwner =>
+    val routes = directive.authenticate() { authenticatedOwner =>
       Directives.complete(StatusCodes.OK, authenticatedOwner.username)
     }
 
     Get() ~> routes ~> check {
       status should be(StatusCodes.Unauthorized)
-      headers should be(List(model.headers.`WWW-Authenticate`(HttpChallenges.basic(owner.realm))))
+      headers should be(List(model.headers.`WWW-Authenticate`(HttpChallenges.basic(testRealm))))
     }
   }
 
   private def createDirective(auth: OAuth2BearerToken => Future[ResourceOwner]) = new UserAuthentication {
+    override protected def realm: String = testRealm
     override implicit protected def mat: Materializer = ActorMaterializer()
     override protected def log: LoggingAdapter = createLogger()
     override protected def authenticator: ResourceOwnerAuthenticator =
       (credentials: OAuth2BearerToken) => auth(credentials)
   }
+
+  private val testRealm: String = "some-realm"
 }

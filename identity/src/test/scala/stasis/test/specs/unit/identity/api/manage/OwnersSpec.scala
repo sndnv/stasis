@@ -6,7 +6,6 @@ import stasis.identity.api.Formats._
 import stasis.identity.api.manage.Owners
 import stasis.identity.api.manage.requests.{CreateOwner, UpdateOwner, UpdateOwnerCredentials}
 import stasis.identity.model.owners.ResourceOwner
-import stasis.identity.model.realms.Realm
 import stasis.identity.model.secrets.Secret
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.api.manage.OwnersSpec.PartialResourceOwner
@@ -20,7 +19,6 @@ class OwnersSpec extends RouteTest {
 
   "Owners routes" should "respond with all resource owners" in {
     val store = createOwnerStore()
-    val realm = Generators.generateRealmId
     val owners = new Owners(store, secretConfig)
 
     val secret = Secret(ByteString("some-secret"))
@@ -28,10 +26,10 @@ class OwnersSpec extends RouteTest {
 
     val expectedOwners = Generators
       .generateSeq(min = 2, g = Generators.generateResourceOwner)
-      .map(_.copy(realm = realm, password = secret, salt = salt))
+      .map(_.copy(password = secret, salt = salt))
 
     Future.sequence(expectedOwners.map(store.put)).await
-    Get() ~> owners.routes(user, realm) ~> check {
+    Get() ~> owners.routes(user) ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[PartialResourceOwner]].map(_.toOwner(secret, salt)).sortBy(_.username) should be(
         expectedOwners.sortBy(_.username))
@@ -40,7 +38,6 @@ class OwnersSpec extends RouteTest {
 
   they should "create new resource owners" in {
     val store = createOwnerStore()
-    val realm = Generators.generateRealmId
     val owners = new Owners(store, secretConfig)
 
     val request = CreateOwner(
@@ -49,7 +46,7 @@ class OwnersSpec extends RouteTest {
       allowedScopes = Seq("some-scope")
     )
 
-    Post().withEntity(request) ~> owners.routes(user, realm) ~> check {
+    Post().withEntity(request) ~> owners.routes(user) ~> check {
       status should be(StatusCodes.OK)
       val createdOwner = store.owners.await.values.toList match {
         case owner :: Nil => owner
@@ -62,7 +59,6 @@ class OwnersSpec extends RouteTest {
 
   they should "reject creation requests for existing users" in {
     val store = createOwnerStore()
-    val realm = Generators.generateRealmId
     val owners = new Owners(store, secretConfig)
 
     val request = CreateOwner(
@@ -71,11 +67,11 @@ class OwnersSpec extends RouteTest {
       allowedScopes = Seq("some-scope")
     )
 
-    Post().withEntity(request) ~> owners.routes(user, realm) ~> check {
+    Post().withEntity(request) ~> owners.routes(user) ~> check {
       status should be(StatusCodes.OK)
       store.owners.await.size should be(1)
 
-      Post().withEntity(request) ~> owners.routes(user, realm) ~> check {
+      Post().withEntity(request) ~> owners.routes(user) ~> check {
         status should be(StatusCodes.Conflict)
         store.owners.await.size should be(1)
       }
@@ -84,14 +80,13 @@ class OwnersSpec extends RouteTest {
 
   they should "update existing resource owner credentials" in {
     val store = createOwnerStore()
-    val realm = Generators.generateRealmId
     val owners = new Owners(store, secretConfig)
 
-    val owner = Generators.generateResourceOwner.copy(realm = realm)
+    val owner = Generators.generateResourceOwner
     val request = UpdateOwnerCredentials(rawPassword = "some-password")
 
     store.put(owner).await
-    Put(s"/${owner.username}/credentials").withEntity(request) ~> owners.routes(user, realm) ~> check {
+    Put(s"/${owner.username}/credentials").withEntity(request) ~> owners.routes(user) ~> check {
       status should be(StatusCodes.OK)
       store.get(owner.username).await match {
         case Some(updatedOwner) =>
@@ -105,15 +100,14 @@ class OwnersSpec extends RouteTest {
 
   they should "respond with existing resource owners" in {
     val store = createOwnerStore()
-    val realm = Generators.generateRealmId
     val owners = new Owners(store, secretConfig)
 
     val secret = Secret(ByteString("some-secret"))
     val salt = "some-salt"
-    val expectedOwner = Generators.generateResourceOwner.copy(realm = realm, password = secret, salt = salt)
+    val expectedOwner = Generators.generateResourceOwner.copy(password = secret, salt = salt)
 
     store.put(expectedOwner).await
-    Get(s"/${expectedOwner.username}") ~> owners.routes(user, realm) ~> check {
+    Get(s"/${expectedOwner.username}") ~> owners.routes(user) ~> check {
       status should be(StatusCodes.OK)
       responseAs[PartialResourceOwner].toOwner(secret, salt) should be(expectedOwner)
     }
@@ -121,17 +115,16 @@ class OwnersSpec extends RouteTest {
 
   they should "update existing resource owners" in {
     val store = createOwnerStore()
-    val realm = Generators.generateRealmId
     val owners = new Owners(store, secretConfig)
 
-    val owner = Generators.generateResourceOwner.copy(realm = realm)
+    val owner = Generators.generateResourceOwner
     val request = UpdateOwner(
       allowedScopes = Seq("some-scope"),
       active = false
     )
 
     store.put(owner).await
-    Put(s"/${owner.username}").withEntity(request) ~> owners.routes(user, realm) ~> check {
+    Put(s"/${owner.username}").withEntity(request) ~> owners.routes(user) ~> check {
       status should be(StatusCodes.OK)
       store.get(owner.username).await should be(
         Some(
@@ -146,13 +139,12 @@ class OwnersSpec extends RouteTest {
 
   they should "delete existing resource owners" in {
     val store = createOwnerStore()
-    val realm = Generators.generateRealmId
     val owners = new Owners(store, secretConfig)
 
-    val owner = Generators.generateResourceOwner.copy(realm = realm)
+    val owner = Generators.generateResourceOwner
 
     store.put(owner).await
-    Delete(s"/${owner.username}") ~> owners.routes(user, realm) ~> check {
+    Delete(s"/${owner.username}") ~> owners.routes(user) ~> check {
       status should be(StatusCodes.OK)
       store.owners.await should be(Map.empty)
     }
@@ -160,10 +152,9 @@ class OwnersSpec extends RouteTest {
 
   they should "not delete missing resource owners" in {
     val store = createOwnerStore()
-    val realm = Generators.generateRealmId
     val owners = new Owners(store, secretConfig)
 
-    Delete("/some-user") ~> owners.routes(user, realm) ~> check {
+    Delete("/some-user") ~> owners.routes(user) ~> check {
       status should be(StatusCodes.NotFound)
     }
   }
@@ -186,7 +177,6 @@ object OwnersSpec {
 
   final case class PartialResourceOwner(
     username: ResourceOwner.Id,
-    realm: Realm.Id,
     allowedScopes: Seq[String],
     active: Boolean
   ) {
@@ -195,7 +185,6 @@ object OwnersSpec {
         username = username,
         password = secret,
         salt = salt,
-        realm = realm,
         allowedScopes = allowedScopes,
         active = active
       )

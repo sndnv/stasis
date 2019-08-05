@@ -10,7 +10,6 @@ import stasis.identity.api.directives.BaseApiDirective
 import stasis.identity.authentication.oauth.ClientAuthenticator
 import stasis.identity.model.clients.Client
 import stasis.identity.model.errors.TokenError
-import stasis.identity.model.realms.Realm
 
 import scala.util.{Failure, Success}
 
@@ -21,7 +20,9 @@ trait ClientAuthentication extends BaseApiDirective {
 
   protected def clientAuthenticator: ClientAuthenticator
 
-  def authenticateClient(realm: Realm): Directive1[Client] =
+  protected def realm: String
+
+  def authenticateClient(): Directive1[Client] =
     Directive { inner =>
       extractClientIP { remoteAddress =>
         extractCredentials {
@@ -40,7 +41,7 @@ trait ClientAuthentication extends BaseApiDirective {
                 discardEntity {
                   complete(
                     StatusCodes.Unauthorized,
-                    List(headers.`WWW-Authenticate`(HttpChallenges.basic(realm.id))),
+                    List(headers.`WWW-Authenticate`(HttpChallenges.basic(realm))),
                     TokenError.InvalidClient
                   )
                 }
@@ -56,7 +57,7 @@ trait ClientAuthentication extends BaseApiDirective {
             discardEntity {
               complete(
                 StatusCodes.Unauthorized,
-                List(headers.`WWW-Authenticate`(HttpChallenges.basic(realm.id))),
+                List(headers.`WWW-Authenticate`(HttpChallenges.basic(realm))),
                 TokenError.InvalidClient
               )
             }
@@ -70,7 +71,7 @@ trait ClientAuthentication extends BaseApiDirective {
             discardEntity {
               complete(
                 StatusCodes.Unauthorized,
-                List(headers.`WWW-Authenticate`(HttpChallenges.basic(realm.id))),
+                List(headers.`WWW-Authenticate`(HttpChallenges.basic(realm))),
                 TokenError.InvalidClient
               )
             }

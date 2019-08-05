@@ -7,7 +7,6 @@ import akka.http.scaladsl.server.{Directive, Directive1}
 import stasis.identity.api.directives.BaseApiDirective
 import stasis.identity.model.clients.Client
 import stasis.identity.model.owners.ResourceOwner
-import stasis.identity.model.realms.Realm
 import stasis.identity.model.tokens.generators.RefreshTokenGenerator
 import stasis.identity.model.tokens.{RefreshToken, RefreshTokenStore}
 
@@ -20,14 +19,15 @@ trait RefreshTokenGeneration extends BaseApiDirective {
   protected def refreshTokenGenerator: RefreshTokenGenerator
   protected def refreshTokenStore: RefreshTokenStore
 
+  protected def refreshTokensAllowed: Boolean
+
   def generateRefreshToken(
-    realm: Realm,
     client: Client.Id,
     owner: ResourceOwner,
     scope: Option[String]
   ): Directive1[Option[RefreshToken]] =
     Directive { inner =>
-      if (realm.refreshTokensAllowed) {
+      if (refreshTokensAllowed) {
         val token = refreshTokenGenerator.generate()
 
         onComplete(refreshTokenStore.put(client, token, owner, scope)) {

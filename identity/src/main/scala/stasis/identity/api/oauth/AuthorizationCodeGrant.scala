@@ -9,17 +9,17 @@ import akka.stream.Materializer
 import play.api.libs.json.{Format, Json}
 import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.AuthDirectives
-import stasis.identity.api.oauth.setup.Providers
+import stasis.identity.api.oauth.setup.{Config, Providers}
 import stasis.identity.model.clients.Client
 import stasis.identity.model.codes.AuthorizationCode
 import stasis.identity.model.errors.TokenError
-import stasis.identity.model.realms.Realm
 import stasis.identity.model.tokens._
 import stasis.identity.model.{GrantType, ResponseType, Seconds}
 
 import scala.concurrent.ExecutionContext
 
 class AuthorizationCodeGrant(
+  override val config: Config,
   override val providers: Providers
 )(implicit system: ActorSystem, override val mat: Materializer)
     extends AuthDirectives {
@@ -29,7 +29,7 @@ class AuthorizationCodeGrant(
   override implicit protected def ec: ExecutionContext = system.dispatcher
   override protected def log: LoggingAdapter = Logging(system, this.getClass.getName)
 
-  def authorization(realm: Realm): Route =
+  def authorization(): Route =
     get {
       parameters(
         "response_type".as[ResponseType],
@@ -42,7 +42,7 @@ class AuthorizationCodeGrant(
           case client if request.redirect_uri.forall(_ == client.redirectUri) =>
             val redirectUri = Uri(request.redirect_uri.getOrElse(client.redirectUri))
 
-            (authenticateResourceOwner(redirectUri, request.state) & extractApiAudience(realm.id, request.scope)) {
+            (authenticateResourceOwner(redirectUri, request.state) & extractApiAudience(request.scope)) {
               (owner, audience) =>
                 val scope = apiAudienceToScope(audience)
 
@@ -53,11 +53,7 @@ class AuthorizationCodeGrant(
                   owner = owner,
                   scope = scope
                 ) { code =>
-                  log.debug(
-                    "Realm [{}]: Successfully generated authorization code for client [{}]",
-                    realm.id,
-                    client.id
-                  )
+                  log.debug("Successfully generated authorization code for client [{}]", client.id)
 
                   discardEntity {
                     redirect(
@@ -70,8 +66,7 @@ class AuthorizationCodeGrant(
 
           case client =>
             log.warning(
-              "Realm [{}]: Redirect URI [{}] for client [{}] did not match URI provided in request: [{}]",
-              realm.id,
+              "Redirect URI [{}] for client [{}] did not match URI provided in request: [{}]",
               client.redirectUri,
               client.id,
               request.redirect_uri
@@ -87,7 +82,7 @@ class AuthorizationCodeGrant(
       }
     }
 
-  def token(realm: Realm): Route =
+  def token(): Route =
     post {
       parameters(
         "grant_type".as[GrantType],
@@ -95,17 +90,16 @@ class AuthorizationCodeGrant(
         "redirect_uri".as[String].?,
         "client_id".as[Client.Id]
       ).as(AccessTokenRequest) { request =>
-        authenticateClient(realm) {
+        authenticateClient() {
           case client if client.id == request.client_id && request.redirect_uri.forall(_ == client.redirectUri) =>
             consumeAuthorizationCode(client.id, request.code) { (owner, scope) =>
-              extractApiAudience(realm.id, scope) { audience =>
+              extractApiAudience(scope) { audience =>
                 val scope = apiAudienceToScope(audience)
 
-                (generateAccessToken(owner, audience) & generateRefreshToken(realm, client.id, owner, scope)) {
+                (generateAccessToken(owner, audience) & generateRefreshToken(client.id, owner, scope)) {
                   (accessToken, refreshToken) =>
                     log.debug(
-                      "Realm [{}]: Successfully generated {} for client [{}]",
-                      realm.id,
+                      "Successfully generated {} for client [{}]",
                       refreshToken match {
                         case Some(_) => "access and refresh tokens"
                         case None    => "access token"
@@ -133,15 +127,12 @@ class AuthorizationCodeGrant(
 
           case client =>
             log.warning(
-              "Realm [{}]: Encountered mismatched client identifiers (expected [{}], found [{}]) " +
+              "Encountered mismatched client identifiers (expected [{}], found [{}]) " +
                 "and/or redirect URIs (expected [{}], found [{}])",
-              Array(
-                realm.id,
-                client.id,
-                request.client_id,
-                client.redirectUri,
-                request.redirect_uri
-              )
+              client.id,
+              request.client_id,
+              client.redirectUri,
+              request.redirect_uri
             )
 
             discardEntity {

@@ -37,7 +37,7 @@ class CreateClientSpec extends UnitSpec {
       tokenExpiration = request.tokenExpiration
     )
 
-    val actualClient = request.toClient(realm = expectedClient.realm)
+    val actualClient = request.toClient
 
     actualClient should be(
       expectedClient.copy(id = actualClient.id, secret = actualClient.secret, salt = actualClient.salt)

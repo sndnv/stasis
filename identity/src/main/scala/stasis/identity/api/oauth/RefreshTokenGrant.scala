@@ -9,14 +9,14 @@ import akka.stream.Materializer
 import play.api.libs.json.{Format, Json}
 import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.AuthDirectives
-import stasis.identity.api.oauth.setup.Providers
-import stasis.identity.model.realms.Realm
+import stasis.identity.api.oauth.setup.{Config, Providers}
 import stasis.identity.model.tokens._
 import stasis.identity.model.{GrantType, Seconds}
 
 import scala.concurrent.ExecutionContext
 
 class RefreshTokenGrant(
+  override val config: Config,
   override val providers: Providers
 )(implicit system: ActorSystem, override val mat: Materializer)
     extends AuthDirectives {
@@ -26,23 +26,22 @@ class RefreshTokenGrant(
   override implicit protected def ec: ExecutionContext = system.dispatcher
   override protected def log: LoggingAdapter = Logging(system, this.getClass.getName)
 
-  def token(realm: Realm): Route =
+  def token(): Route =
     post {
       parameters(
         "grant_type".as[GrantType],
         "refresh_token".as[RefreshToken],
         "scope".as[String].?
       ).as(AccessTokenRequest) { request =>
-        authenticateClient(realm) { client =>
+        authenticateClient() { client =>
           consumeRefreshToken(client.id, request.scope, request.refresh_token) { owner =>
-            extractApiAudience(realm.id, request.scope) { audience =>
+            extractApiAudience(request.scope) { audience =>
               val scope = apiAudienceToScope(audience)
 
-              (generateAccessToken(owner, audience) & generateRefreshToken(realm, client.id, owner, scope)) {
+              (generateAccessToken(owner, audience) & generateRefreshToken(client.id, owner, scope)) {
                 (accessToken, refreshToken) =>
                   log.debug(
-                    "Realm [{}]: Successfully generated {} for client [{}]",
-                    realm.id,
+                    "Successfully generated {} for client [{}]",
                     refreshToken match {
                       case Some(_) => "access and refresh tokens"
                       case None    => "access token"

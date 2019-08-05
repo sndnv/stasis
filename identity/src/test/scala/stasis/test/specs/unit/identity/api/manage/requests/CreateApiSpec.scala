@@ -12,8 +12,8 @@ class CreateApiSpec extends UnitSpec {
   }
 
   it should "be convertible to Api" in {
-    val expectedApi = Api(id = request.id, realm = "some-realm")
-    val actualApi = request.toApi(realm = expectedApi.realm)
+    val expectedApi = Api(id = request.id)
+    val actualApi = request.toApi
 
     actualApi should be(expectedApi)
   }

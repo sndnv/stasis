@@ -8,15 +8,15 @@ import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
 import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.AuthDirectives
-import stasis.identity.api.oauth.setup.Providers
+import stasis.identity.api.oauth.setup.{Config, Providers}
 import stasis.identity.model.clients.Client
-import stasis.identity.model.realms.Realm
 import stasis.identity.model.tokens.{AccessToken, TokenType}
 import stasis.identity.model.{ResponseType, Seconds}
 
 import scala.concurrent.ExecutionContext
 
 class ImplicitGrant(
+  override val config: Config,
   override val providers: Providers
 )(implicit system: ActorSystem, override val mat: Materializer)
     extends AuthDirectives {
@@ -25,7 +25,7 @@ class ImplicitGrant(
   override implicit protected def ec: ExecutionContext = system.dispatcher
   override protected def log: LoggingAdapter = Logging(system, this.getClass.getName)
 
-  def authorization(realm: Realm): Route =
+  def authorization(): Route =
     get {
       parameters(
         "response_type".as[ResponseType],
@@ -38,7 +38,7 @@ class ImplicitGrant(
           case client if request.redirect_uri.forall(_ == client.redirectUri) =>
             val redirectUri = Uri(request.redirect_uri.getOrElse(client.redirectUri))
 
-            (authenticateResourceOwner(redirectUri, request.state) & extractApiAudience(realm.id, request.scope)) {
+            (authenticateResourceOwner(redirectUri, request.state) & extractApiAudience(request.scope)) {
               (owner, audience) =>
                 generateAccessToken(owner, audience) { accessToken =>
                   val scope = apiAudienceToScope(audience)
@@ -51,11 +51,7 @@ class ImplicitGrant(
                     scope = scope
                   )
 
-                  log.debug(
-                    "Realm [{}]: Successfully generated access token for client [{}]",
-                    realm.id,
-                    client.id
-                  )
+                  log.debug("Successfully generated access token for client [{}]", client.id)
 
                   discardEntity {
                     redirect(
@@ -68,8 +64,7 @@ class ImplicitGrant(
 
           case client =>
             log.warning(
-              "Realm [{}]: Encountered mismatched redirect URIs (expected [{}], found [{}])",
-              realm.id,
+              "Encountered mismatched redirect URIs (expected [{}], found [{}])",
               client.redirectUri,
               request.redirect_uri
             )

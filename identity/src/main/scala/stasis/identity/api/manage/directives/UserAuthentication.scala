@@ -8,7 +8,6 @@ import akka.http.scaladsl.server.{Directive, Directive1}
 import stasis.identity.api.directives.BaseApiDirective
 import stasis.identity.authentication.manage.ResourceOwnerAuthenticator
 import stasis.identity.model.owners.ResourceOwner
-import stasis.identity.model.realms.Realm
 
 import scala.util.{Failure, Success}
 
@@ -18,7 +17,9 @@ trait UserAuthentication extends BaseApiDirective {
 
   protected def authenticator: ResourceOwnerAuthenticator
 
-  def authenticate(realm: Realm.Id): Directive1[ResourceOwner] =
+  protected def realm: String
+
+  def authenticate(): Directive1[ResourceOwner] =
     Directive { inner =>
       (extractMethod & extractUri & extractClientIP) { (method, uri, remoteAddress) =>
         extractCredentials {
@@ -29,9 +30,8 @@ trait UserAuthentication extends BaseApiDirective {
 
               case Failure(e) =>
                 log.warning(
-                  "Realm [{}]: Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{}]",
+                  "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{}]",
                   Array(
-                    realm,
                     method.value,
                     uri,
                     remoteAddress,
@@ -44,9 +44,8 @@ trait UserAuthentication extends BaseApiDirective {
 
           case Some(unsupportedCredentials) =>
             log.warning(
-              "Realm [{}]: Rejecting [{}] request for [{}] with unsupported credentials [{}] from [{}]",
+              "Rejecting [{}] request for [{}] with unsupported credentials [{}] from [{}]",
               Array(
-                realm,
                 method.value,
                 uri,
                 unsupportedCredentials.scheme(),
@@ -58,8 +57,7 @@ trait UserAuthentication extends BaseApiDirective {
 
           case None =>
             log.warning(
-              "Realm [{}]: Rejecting [{}] request for [{}] with no credentials from [{}]",
-              realm,
+              "Rejecting [{}] request for [{}] with no credentials from [{}]",
               method.value,
               uri,
               remoteAddress

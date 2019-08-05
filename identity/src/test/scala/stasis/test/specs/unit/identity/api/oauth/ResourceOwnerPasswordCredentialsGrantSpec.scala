@@ -29,16 +29,14 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
   }
 
   they should "generate access and refresh tokens for valid requests" in {
-    val (stores, secrets, providers) = createOAuthFixtures()
-    val grant = new ResourceOwnerPasswordCredentialsGrant(providers)
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val grant = new ResourceOwnerPasswordCredentialsGrant(config, providers)
 
-    val realm = Generators.generateRealm
-    val api = Generators.generateApi.copy(realm = realm.id)
+    val api = Generators.generateApi
 
     val clientRawPassword = "some-password"
     val clientSalt = Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
-      realm = realm.id,
       secret = Secret.derive(clientRawPassword, clientSalt)(secrets.client),
       salt = clientSalt
     )
@@ -47,7 +45,6 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
     val ownerRawPassword = "some-password"
     val ownerSalt = Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
-      realm = realm.id,
       password = Secret.derive(ownerRawPassword, ownerSalt)(secrets.owner),
       salt = ownerSalt
     )
@@ -62,7 +59,7 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
     stores.apis.put(api).await
     stores.clients.put(client).await
     stores.owners.put(owner).await
-    Post(request).addCredentials(credentials) ~> grant.token(realm) ~> check {
+    Post(request).addCredentials(credentials) ~> grant.token() ~> check {
       status should be(StatusCodes.OK)
 
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
@@ -80,16 +77,14 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
   }
 
   they should "generate only access tokens when refresh tokens are not allowed" in {
-    val (stores, secrets, providers) = createOAuthFixtures()
-    val grant = new ResourceOwnerPasswordCredentialsGrant(providers)
+    val (stores, secrets, config, providers) = createOAuthFixtures(withRefreshTokens = false)
+    val grant = new ResourceOwnerPasswordCredentialsGrant(config, providers)
 
-    val realm = Generators.generateRealm.copy(refreshTokensAllowed = false)
-    val api = Generators.generateApi.copy(realm = realm.id)
+    val api = Generators.generateApi
 
     val clientRawPassword = "some-password"
     val clientSalt = Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
-      realm = realm.id,
       secret = Secret.derive(clientRawPassword, clientSalt)(secrets.client),
       salt = clientSalt
     )
@@ -98,7 +93,6 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
     val ownerRawPassword = "some-password"
     val ownerSalt = Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
-      realm = realm.id,
       password = Secret.derive(ownerRawPassword, ownerSalt)(secrets.owner),
       salt = ownerSalt
     )
@@ -113,7 +107,7 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
     stores.apis.put(api).await
     stores.clients.put(client).await
     stores.owners.put(owner).await
-    Post(request).addCredentials(credentials) ~> grant.token(realm) ~> check {
+    Post(request).addCredentials(credentials) ~> grant.token() ~> check {
       status should be(StatusCodes.OK)
 
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))

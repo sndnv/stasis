@@ -1,10 +1,7 @@
 package stasis.identity.model.apis
 
-import stasis.identity.model.realms.Realm
-
 final case class Api(
   id: Api.Id,
-  realm: Realm.Id
 ) {
   require(
     id.matches("^[a-zA-Z0-9\\-_]+$"),
@@ -15,5 +12,5 @@ final case class Api(
 object Api {
   type Id = String
 
-  final val ManageMaster: Id = "manage-master"
+  final val ManageIdentity: Id = "manage-identity"
 }

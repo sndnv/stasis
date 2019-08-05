@@ -23,7 +23,6 @@ class PersistenceSpec extends AsyncUnitSpec {
 
     val expectedApi = Generators.generateApi
     val expectedClient = Generators.generateClient
-    val expectedRealm = Generators.generateRealm
     val expectedOwner = Generators.generateResourceOwner
 
     val expectedToken = StoredRefreshToken(
@@ -42,11 +41,9 @@ class PersistenceSpec extends AsyncUnitSpec {
     for {
       _ <- persistence.init()
       _ <- persistence.apis.put(expectedApi)
-      actualApi <- persistence.apis.get(expectedApi.realm, expectedApi.id)
+      actualApi <- persistence.apis.get(expectedApi.id)
       _ <- persistence.clients.put(expectedClient)
       actualClient <- persistence.clients.get(expectedClient.id)
-      _ <- persistence.realms.put(expectedRealm)
-      actualRealm <- persistence.realms.get(expectedRealm.id)
       _ <- persistence.resourceOwners.put(expectedOwner)
       actualOwner <- persistence.resourceOwners.get(expectedOwner.username)
       _ <- persistence.refreshTokens.put(expectedClient.id, expectedToken.token, expectedOwner, scope = None)
@@ -57,7 +54,6 @@ class PersistenceSpec extends AsyncUnitSpec {
     } yield {
       actualApi should be(Some(expectedApi))
       actualClient should be(Some(expectedClient))
-      actualRealm should be(Some(expectedRealm))
       actualOwner should be(Some(expectedOwner))
       actualToken should be(Some(expectedToken.copy(expiration = actualToken.map(_.expiration).getOrElse(Instant.MIN))))
       actualCode should be(Some(expectedCode))

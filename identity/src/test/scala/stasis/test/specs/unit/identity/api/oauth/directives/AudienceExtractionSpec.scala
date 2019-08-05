@@ -94,12 +94,11 @@ class AudienceExtractionSpec extends RouteTest {
     val clientStore = createClientStore()
     val apiStore = createApiStore()
     val directive = createDirective(clients = clientStore, apis = apiStore)
-    val realm = Generators.generateRealmId
 
-    val apis = Generators.generateSeq(min = 1, g = Generators.generateApi.copy(realm = realm))
+    val apis = Generators.generateSeq(min = 1, g = Generators.generateApi)
     val scope = directive.apiAudienceToScope(apis)
 
-    val routes = directive.extractApiAudience(realm, scopeOpt = scope) { apis =>
+    val routes = directive.extractApiAudience(scopeOpt = scope) { apis =>
       Directives.complete(StatusCodes.OK, apis.map(_.id).mkString(","))
     }
 

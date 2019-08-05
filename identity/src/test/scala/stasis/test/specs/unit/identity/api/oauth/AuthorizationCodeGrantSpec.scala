@@ -2,7 +2,7 @@ package stasis.test.specs.unit.identity.api.oauth
 
 import akka.http.scaladsl.model
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, CacheDirectives}
-import akka.http.scaladsl.model.{ContentTypes, StatusCodes, Uri}
+import akka.http.scaladsl.model.{StatusCodes, Uri}
 import play.api.libs.json._
 import stasis.identity.api.oauth.AuthorizationCodeGrant
 import stasis.identity.api.oauth.AuthorizationCodeGrant._
@@ -66,17 +66,15 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
   }
 
   they should "generate authorization codes for valid requests" in {
-    val (stores, secrets, providers) = createOAuthFixtures()
-    val grant = new AuthorizationCodeGrant(providers)
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val grant = new AuthorizationCodeGrant(config, providers)
 
-    val realm = Generators.generateRealm
-    val client = Generators.generateClient.copy(realm = realm.id)
-    val api = Generators.generateApi.copy(realm = realm.id)
+    val client = Generators.generateClient
+    val api = Generators.generateApi
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
-      realm = realm.id,
       password = Secret.derive(rawPassword, salt)(secrets.owner),
       salt = salt
     )
@@ -93,7 +91,7 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.clients.put(client).await
     stores.owners.put(owner).await
     stores.apis.put(api).await
-    Get(request).addCredentials(credentials) ~> grant.authorization(realm) ~> check {
+    Get(request).addCredentials(credentials) ~> grant.authorization() ~> check {
       status should be(StatusCodes.Found)
       stores.codes.get(client.id).await match {
         case Some(storedCode) =>
@@ -117,17 +115,15 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
   }
 
   they should "not generate authorization codes when invalid redirect URIs are provided" in {
-    val (stores, secrets, providers) = createOAuthFixtures()
-    val grant = new AuthorizationCodeGrant(providers)
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val grant = new AuthorizationCodeGrant(config, providers)
 
-    val realm = Generators.generateRealm
-    val client = Generators.generateClient.copy(realm = realm.id)
-    val api = Generators.generateApi.copy(realm = realm.id)
+    val client = Generators.generateClient
+    val api = Generators.generateApi
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
-      realm = realm.id,
       password = Secret.derive(rawPassword, salt)(secrets.owner),
       salt = salt
     )
@@ -144,7 +140,7 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.clients.put(client).await
     stores.owners.put(owner).await
     stores.apis.put(api).await
-    Get(request).addCredentials(credentials) ~> grant.authorization(realm) ~> check {
+    Get(request).addCredentials(credentials) ~> grant.authorization() ~> check {
       status should be(StatusCodes.BadRequest)
       responseAs[String] should be(
         "The request has missing, invalid or mismatching redirection URI and/or client identifier"
@@ -154,18 +150,16 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
   }
 
   they should "generate access and refresh tokens for valid authorization codes" in {
-    val (stores, secrets, providers) = createOAuthFixtures()
-    val grant = new AuthorizationCodeGrant(providers)
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val grant = new AuthorizationCodeGrant(config, providers)
 
-    val realm = Generators.generateRealm
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
-    val api = Generators.generateApi.copy(realm = realm.id)
+    val api = Generators.generateApi
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
-      realm = realm.id,
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
     )
@@ -182,7 +176,7 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.owners.put(owner).await
     stores.apis.put(api).await
     stores.codes.put(client.id, StoredAuthorizationCode(code, owner, scope = grant.apiAudienceToScope(Seq(api)))).await
-    Post(request).addCredentials(credentials) ~> grant.token(realm) ~> check {
+    Post(request).addCredentials(credentials) ~> grant.token() ~> check {
       status should be(StatusCodes.OK)
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
 
@@ -198,18 +192,16 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
   }
 
   they should "generate only access tokens when refresh tokens are not allowed" in {
-    val (stores, secrets, providers) = createOAuthFixtures()
-    val grant = new AuthorizationCodeGrant(providers)
+    val (stores, secrets, config, providers) = createOAuthFixtures(withRefreshTokens = false)
+    val grant = new AuthorizationCodeGrant(config, providers)
 
-    val realm = Generators.generateRealm.copy(refreshTokensAllowed = false)
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
-    val api = Generators.generateApi.copy(realm = realm.id)
+    val api = Generators.generateApi
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
-      realm = realm.id,
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
     )
@@ -226,7 +218,7 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.owners.put(owner).await
     stores.apis.put(api).await
     stores.codes.put(client.id, StoredAuthorizationCode(code, owner, scope = grant.apiAudienceToScope(Seq(api)))).await
-    Post(request).addCredentials(credentials) ~> grant.token(realm) ~> check {
+    Post(request).addCredentials(credentials) ~> grant.token() ~> check {
       status should be(StatusCodes.OK)
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
 
@@ -242,18 +234,16 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
   }
 
   they should "not generate access or refresh tokens when invalid redirect URIs are provided" in {
-    val (stores, secrets, providers) = createOAuthFixtures()
-    val grant = new AuthorizationCodeGrant(providers)
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val grant = new AuthorizationCodeGrant(config, providers)
 
-    val realm = Generators.generateRealm
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
-    val api = Generators.generateApi.copy(realm = realm.id)
+    val api = Generators.generateApi
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
-      realm = realm.id,
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
     )
@@ -270,7 +260,7 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.owners.put(owner).await
     stores.apis.put(api).await
     stores.codes.put(client.id, StoredAuthorizationCode(code, owner, scope = grant.apiAudienceToScope(Seq(api)))).await
-    Post(request).addCredentials(credentials) ~> grant.token(realm) ~> check {
+    Post(request).addCredentials(credentials) ~> grant.token() ~> check {
       status should be(StatusCodes.BadRequest)
       responseAs[JsObject].fields should contain("error" -> JsString("invalid_request"))
     }

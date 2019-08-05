@@ -7,12 +7,11 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
 import stasis.identity.api.Formats._
-import stasis.identity.api.manage.directives.RealmValidation
+import stasis.identity.api.directives.BaseApiDirective
 import stasis.identity.api.manage.requests.{CreateClient, UpdateClient, UpdateClientCredentials}
 import stasis.identity.api.manage.responses.CreatedClient
 import stasis.identity.model.clients.{Client, ClientStore}
 import stasis.identity.model.owners.ResourceOwner
-import stasis.identity.model.realms.Realm
 import stasis.identity.model.secrets.Secret
 
 import scala.concurrent.ExecutionContext
@@ -21,31 +20,29 @@ class Clients(
   store: ClientStore,
   clientSecretConfig: Secret.ClientConfig
 )(implicit system: ActorSystem, override val mat: Materializer)
-    extends RealmValidation[Client] {
+    extends BaseApiDirective {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
   private implicit val ec: ExecutionContext = system.dispatcher
   protected def log: LoggingAdapter = Logging(system, this.getClass.getName)
 
-  override implicit protected def extractor: RealmValidation.Extractor[Client] = _.realm
-
   private implicit val secretConfig: Secret.ClientConfig = clientSecretConfig
 
-  def routes(user: ResourceOwner.Id, realm: Realm.Id): Route =
+  def routes(user: ResourceOwner.Id): Route =
     concat(
       pathEndOrSingleSlash {
         concat(
           get {
-            filterRealm(realm, store.clients) { clients =>
-              log.info("Realm [{}]: User [{}] successfully retrieved [{}] clients", realm, user, clients.size)
+            onSuccess(store.clients) { clients =>
+              log.info("User [{}] successfully retrieved [{}] clients", user, clients.size)
               discardEntity & complete(clients.values)
             }
           },
           post {
             entity(as[CreateClient]) { request =>
-              val client = request.toClient(realm)
+              val client = request.toClient
               onSuccess(store.put(client)) { _ =>
-                log.info("Realm [{}]: User [{}] successfully created client [{}]", realm, user, client.id)
+                log.info("User [{}] successfully created client [{}]", user, client.id)
                 complete(CreatedClient(client.id))
               }
             }
@@ -53,8 +50,8 @@ class Clients(
         )
       },
       pathPrefix(JavaUUID) { clientId =>
-        validateRealm(realm, store.get(clientId)) {
-          client =>
+        onSuccess(store.get(clientId)) {
+          case Some(client) =>
             concat(
               path("credentials") {
                 put {
@@ -62,12 +59,7 @@ class Clients(
                     val (secret, salt) = request.toSecret()
 
                     onSuccess(store.put(client.copy(secret = secret, salt = salt))) { _ =>
-                      log.info(
-                        "Realm [{}]: User [{}] successfully updated credentials for client [{}]",
-                        realm,
-                        user,
-                        clientId
-                      )
+                      log.info("User [{}] successfully updated credentials for client [{}]", user, clientId)
                       complete(StatusCodes.OK)
                     }
                   }
@@ -76,7 +68,7 @@ class Clients(
               pathEndOrSingleSlash {
                 concat(
                   get {
-                    log.info("Realm [{}]: User [{}] successfully retrieved client [{}]", realm, user, clientId)
+                    log.info("User [{}] successfully retrieved client [{}]", user, clientId)
                     discardEntity & complete(client)
                   },
                   put {
@@ -90,20 +82,24 @@ class Clients(
                           )
                         )
                       ) { _ =>
-                        log.info("Realm [{}]: User [{}] successfully updated client [{}]", realm, user, clientId)
+                        log.info("User [{}] successfully updated client [{}]", user, clientId)
                         complete(StatusCodes.OK)
                       }
                     }
                   },
                   delete {
                     onSuccess(store.delete(clientId)) { _ =>
-                      log.info("Realm [{}]: User [{}] successfully deleted client [{}]", realm, user, clientId)
+                      log.info("User [{}] successfully deleted client [{}]", user, clientId)
                       discardEntity & complete(StatusCodes.OK)
                     }
                   }
                 )
               }
             )
+
+          case None =>
+            log.warning("User [{}] made request for client [{}] but it was not found", user, clientId)
+            discardEntity & complete(StatusCodes.NotFound)
         }
       }
     )

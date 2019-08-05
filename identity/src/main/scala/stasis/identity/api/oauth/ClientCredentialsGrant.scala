@@ -10,14 +10,14 @@ import akka.stream.Materializer
 import play.api.libs.json.{Format, Json}
 import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.AuthDirectives
-import stasis.identity.api.oauth.setup.Providers
-import stasis.identity.model.realms.Realm
+import stasis.identity.api.oauth.setup.{Config, Providers}
 import stasis.identity.model.tokens.{AccessToken, TokenType}
 import stasis.identity.model.{GrantType, Seconds}
 
 import scala.concurrent.ExecutionContext
 
 class ClientCredentialsGrant(
+  override val config: Config,
   override val providers: Providers
 )(implicit system: ActorSystem, override val mat: Materializer)
     extends AuthDirectives {
@@ -27,21 +27,17 @@ class ClientCredentialsGrant(
   override implicit protected def ec: ExecutionContext = system.dispatcher
   override protected def log: LoggingAdapter = Logging(system, this.getClass.getName)
 
-  def token(realm: Realm): Route =
+  def token(): Route =
     post {
       parameters(
         "grant_type".as[GrantType],
         "scope".as[String].?
       ).as(AccessTokenRequest) { request =>
-        (authenticateClient(realm) & extractClientAudience(request.scope)) { (client, audience) =>
+        (authenticateClient() & extractClientAudience(request.scope)) { (client, audience) =>
           generateAccessToken(client, audience) { accessToken =>
             val scope = clientAudienceToScope(audience)
 
-            log.debug(
-              "Realm [{}]: Successfully generated access token for client [{}]",
-              realm.id,
-              client.id
-            )
+            log.debug("Successfully generated access token for client [{}]", client.id)
 
             discardEntity {
               complete(
