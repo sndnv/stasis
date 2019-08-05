@@ -23,7 +23,7 @@ class GeodeBackend[K, V](
   }
 
   override def put(key: K, value: V): Future[Done] = Future {
-    region.create(key.asGeodeKey, value.asGeodeValue)
+    val _ = region.put(key.asGeodeKey, value.asGeodeValue)
     Done
   }
 

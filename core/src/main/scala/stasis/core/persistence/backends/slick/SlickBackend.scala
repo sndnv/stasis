@@ -34,7 +34,7 @@ class SlickBackend[K, V](
 
   override def put(key: K, value: V): Future[Done] = {
     val action = store
-      .+=((key: String) -> (value: ByteString).toArray)
+      .insertOrUpdate((key: String) -> (value: ByteString).toArray)
       .map(_ => Done)
 
     database.run(action)
