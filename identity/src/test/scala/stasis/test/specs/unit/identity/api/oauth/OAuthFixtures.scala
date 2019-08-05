@@ -1,14 +1,13 @@
 package stasis.test.specs.unit.identity.api.oauth
 
 import org.jose4j.jwk.JsonWebKey
-import stasis.identity.api.oauth.setup.Providers
+import stasis.identity.api.oauth.setup.{Config, Providers}
 import stasis.identity.authentication.oauth.{DefaultClientAuthenticator, DefaultResourceOwnerAuthenticator}
 import stasis.identity.model.apis.ApiStore
 import stasis.identity.model.clients.ClientStore
 import stasis.identity.model.codes.AuthorizationCodeStore
 import stasis.identity.model.codes.generators.DefaultAuthorizationCodeGenerator
 import stasis.identity.model.owners.ResourceOwnerStore
-import stasis.identity.model.realms.RealmStore
 import stasis.identity.model.secrets.Secret
 import stasis.identity.model.tokens.RefreshTokenStore
 import stasis.identity.model.tokens.generators.{JwtBearerAccessTokenGenerator, RandomRefreshTokenGenerator}
@@ -24,7 +23,6 @@ trait OAuthFixtures { _: RouteTest =>
     stores: TestStores = TestStores(
       apis = createApiStore(),
       clients = createClientStore(),
-      realms = createRealmStore(),
       tokens = createTokenStore(),
       codes = createCodeStore(),
       owners = createOwnerStore()
@@ -32,14 +30,18 @@ trait OAuthFixtures { _: RouteTest =>
     jwk: JsonWebKey = MockJwksGenerators.generateRandomRsaKey(
       keyId = Some(Generators.generateString(withSize = 16))
     ),
-    testSecretConfig: TestSecretConfig = TestSecretConfig()
-  ): (TestStores, TestSecretConfig, Providers) = (
+    testSecretConfig: TestSecretConfig = TestSecretConfig(),
+    withRefreshTokens: Boolean = true
+  ): (TestStores, TestSecretConfig, Config, Providers) = (
     stores,
     testSecretConfig,
+    Config(
+      realm = "test-realm",
+      refreshTokensAllowed = withRefreshTokens
+    ),
     Providers(
       apiStore = stores.apis.view,
       clientStore = stores.clients.view,
-      realmStore = stores.realms.view,
       refreshTokenStore = stores.tokens,
       authorizationCodeStore = stores.codes,
       accessTokenGenerator = new JwtBearerAccessTokenGenerator(
@@ -59,7 +61,6 @@ object OAuthFixtures {
   final case class TestStores(
     apis: ApiStore,
     clients: ClientStore,
-    realms: RealmStore,
     tokens: RefreshTokenStore,
     codes: AuthorizationCodeStore,
     owners: ResourceOwnerStore

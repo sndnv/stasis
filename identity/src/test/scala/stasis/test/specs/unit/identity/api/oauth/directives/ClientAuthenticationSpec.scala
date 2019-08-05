@@ -24,15 +24,13 @@ class ClientAuthenticationSpec extends RouteTest {
     val clients = createClientStore()
     val directive = createDirective(clients)
 
-    val realm = Generators.generateRealm
-
     val clientPassword = "some-password"
     val salt = Secret.generateSalt()
     val secret = Secret.derive(clientPassword, salt)
     val client = Generators.generateClient.copy(secret = secret, salt = salt)
     val credentials = BasicHttpCredentials(client.id.toString, clientPassword)
 
-    val routes = directive.authenticateClient(realm = realm) { extractedClient =>
+    val routes = directive.authenticateClient() { extractedClient =>
       Directives.complete(StatusCodes.OK, extractedClient.id.toString)
     }
 
@@ -47,21 +45,19 @@ class ClientAuthenticationSpec extends RouteTest {
     val clients = createClientStore()
     val directive = createDirective(clients)
 
-    val realm = Generators.generateRealm
-
     val salt = Secret.generateSalt()
     val secret = Secret.derive("some-password", salt)
     val client = Generators.generateClient.copy(secret = secret, salt = salt)
     val credentials = BasicHttpCredentials(client.id.toString, "invalid-password")
 
-    val routes = directive.authenticateClient(realm = realm) { extractedClient =>
+    val routes = directive.authenticateClient() { extractedClient =>
       Directives.complete(StatusCodes.OK, extractedClient.id.toString)
     }
 
     clients.put(client).await
     Get().addCredentials(credentials) ~> routes ~> check {
       status should be(StatusCodes.Unauthorized)
-      headers should contain(model.headers.`WWW-Authenticate`(HttpChallenges.basic(realm.id)))
+      headers should contain(model.headers.`WWW-Authenticate`(HttpChallenges.basic(testRealm)))
       responseAs[JsObject].fields should contain("error" -> JsString("invalid_client"))
     }
   }
@@ -70,21 +66,19 @@ class ClientAuthenticationSpec extends RouteTest {
     val clients = createClientStore()
     val directive = createDirective(clients)
 
-    val realm = Generators.generateRealm
-
     val salt = Secret.generateSalt()
     val secret = Secret.derive("some-password", salt)
     val client = Generators.generateClient.copy(secret = secret, salt = salt)
     val credentials = OAuth2BearerToken("some-token")
 
-    val routes = directive.authenticateClient(realm = realm) { extractedClient =>
+    val routes = directive.authenticateClient() { extractedClient =>
       Directives.complete(StatusCodes.OK, extractedClient.id.toString)
     }
 
     clients.put(client).await
     Get().addCredentials(credentials) ~> routes ~> check {
       status should be(StatusCodes.Unauthorized)
-      headers should contain(model.headers.`WWW-Authenticate`(HttpChallenges.basic(realm.id)))
+      headers should contain(model.headers.`WWW-Authenticate`(HttpChallenges.basic(testRealm)))
       responseAs[JsObject].fields should contain("error" -> JsString("invalid_client"))
     }
   }
@@ -93,17 +87,16 @@ class ClientAuthenticationSpec extends RouteTest {
     val clients = createClientStore()
     val directive = createDirective(clients)
 
-    val realm = Generators.generateRealm
     val client = Generators.generateClient
 
-    val routes = directive.authenticateClient(realm = realm) { extractedClient =>
+    val routes = directive.authenticateClient() { extractedClient =>
       Directives.complete(StatusCodes.OK, extractedClient.id.toString)
     }
 
     clients.put(client).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.Unauthorized)
-      headers should contain(model.headers.`WWW-Authenticate`(HttpChallenges.basic(realm.id)))
+      headers should contain(model.headers.`WWW-Authenticate`(HttpChallenges.basic(testRealm)))
       responseAs[JsObject].fields should contain("error" -> JsString("invalid_client"))
     }
   }
@@ -119,6 +112,9 @@ class ClientAuthenticationSpec extends RouteTest {
   private def createDirective(
     clients: ClientStore
   ) = new ClientAuthentication {
+
+    override protected def realm: String = testRealm
+
     override implicit protected def mat: Materializer = ActorMaterializer()
 
     override protected def log: LoggingAdapter = createLogger()
@@ -128,4 +124,6 @@ class ClientAuthenticationSpec extends RouteTest {
       secretConfig = secretConfig
     )
   }
+
+  private val testRealm: String = "some-realm"
 }

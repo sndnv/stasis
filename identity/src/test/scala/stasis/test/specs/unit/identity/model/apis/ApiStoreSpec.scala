@@ -4,7 +4,6 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.identity.model.apis.{Api, ApiStore}
-import stasis.identity.model.realms.Realm
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.identity.model.Generators
 
@@ -16,16 +15,16 @@ class ApiStoreSpec extends AsyncUnitSpec {
 
     for {
       _ <- store.put(expectedApi)
-      actualApi <- store.get(expectedApi.realm, expectedApi.id)
+      actualApi <- store.get(expectedApi.id)
       someApis <- store.apis
-      containsApiAfterPut <- store.contains(expectedApi.realm, expectedApi.id)
-      _ <- store.delete(expectedApi.realm, expectedApi.id)
-      missingApi <- store.get(expectedApi.realm, expectedApi.id)
-      containsApiAfterDelete <- store.contains(expectedApi.realm, expectedApi.id)
+      containsApiAfterPut <- store.contains(expectedApi.id)
+      _ <- store.delete(expectedApi.id)
+      missingApi <- store.get(expectedApi.id)
+      containsApiAfterDelete <- store.contains(expectedApi.id)
       noApis <- store.apis
     } yield {
       actualApi should be(Some(expectedApi))
-      someApis should be(Map(expectedApi.realm -> expectedApi.id -> expectedApi))
+      someApis should be(Map(expectedApi.id -> expectedApi))
       containsApiAfterPut should be(true)
       missingApi should be(None)
       noApis should be(Map.empty)
@@ -41,16 +40,16 @@ class ApiStoreSpec extends AsyncUnitSpec {
 
     for {
       _ <- store.put(expectedApi)
-      actualApi <- storeView.get(expectedApi.realm, expectedApi.id)
+      actualApi <- storeView.get(expectedApi.id)
       someApis <- storeView.apis
-      containsApiAfterPut <- storeView.contains(expectedApi.realm, expectedApi.id)
-      _ <- store.delete(expectedApi.realm, expectedApi.id)
-      missingApi <- storeView.get(expectedApi.realm, expectedApi.id)
-      containsApiAfterDelete <- storeView.contains(expectedApi.realm, expectedApi.id)
+      containsApiAfterPut <- storeView.contains(expectedApi.id)
+      _ <- store.delete(expectedApi.id)
+      missingApi <- storeView.get(expectedApi.id)
+      containsApiAfterDelete <- storeView.contains(expectedApi.id)
       noApis <- storeView.apis
     } yield {
       actualApi should be(Some(expectedApi))
-      someApis should be(Map(expectedApi.realm -> expectedApi.id -> expectedApi))
+      someApis should be(Map(expectedApi.id -> expectedApi))
       containsApiAfterPut should be(true)
       missingApi should be(None)
       noApis should be(Map.empty)
@@ -65,6 +64,6 @@ class ApiStoreSpec extends AsyncUnitSpec {
   )
 
   private def createStore() = ApiStore(
-    MemoryBackend[(Realm.Id, Api.Id), Api](name = s"api-store-${java.util.UUID.randomUUID()}")
+    MemoryBackend[Api.Id, Api](name = s"api-store-${java.util.UUID.randomUUID()}")
   )
 }

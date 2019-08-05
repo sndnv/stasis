@@ -37,6 +37,8 @@ trait Service {
   private val rawConfig: typesafe.Config = systemConfig.getConfig("stasis.identity")
   private val config: Config = Config(rawConfig.getConfig("service"))
 
+  private val realm: String = rawConfig.getString("realm")
+
   val persistence: Persistence = new Persistence(
     persistenceConfig = rawConfig.getConfig("persistence"),
     authorizationCodeExpiration = rawConfig.getDuration("codes.authorization.expiration").toMillis.millis,
@@ -58,7 +60,6 @@ trait Service {
   private val oauthProviders = oauthApi.setup.Providers(
     apiStore = persistence.apis.view,
     clientStore = persistence.clients.view,
-    realmStore = persistence.realms.view,
     refreshTokenStore = persistence.refreshTokens,
     authorizationCodeStore = persistence.authorizationCodes,
     accessTokenGenerator = new JwtBearerAccessTokenGenerator(
@@ -87,7 +88,6 @@ trait Service {
     clientStore = persistence.clients,
     codeStore = persistence.authorizationCodes,
     ownerStore = persistence.resourceOwners,
-    realmStore = persistence.realms,
     tokenStore = persistence.refreshTokens,
     ownerAuthenticator = new manage.DefaultResourceOwnerAuthenticator(
       store = persistence.resourceOwners.view,
@@ -96,7 +96,7 @@ trait Service {
           jwk = accessTokenSignatureKey,
           issuer = accessTokenIssuer
         ),
-        audience = Api.ManageMaster,
+        audience = Api.ManageIdentity,
         expirationTolerance =
           rawConfig.getDuration("authenticators.resource-owner.expiration-tolerance").toMillis.millis
       )
@@ -105,12 +105,17 @@ trait Service {
 
   private val endpoint = new IdentityEndpoint(
     keys = Seq(accessTokenSignatureKey),
+    oauthConfig = oauthApi.setup.Config(
+      realm = realm,
+      refreshTokensAllowed = rawConfig.getBoolean("tokens.refresh.allowed")
+    ),
     oauthProviders = oauthProviders,
-    manageProviders = manageProviders,
     manageConfig = manageApi.setup.Config(
+      realm = realm,
       clientSecrets = clientSecretsConfig,
       ownerSecrets = ownerSecretsConfig
-    )
+    ),
+    manageProviders = manageProviders
   )
 
   private val serviceState: AtomicReference[State] = new AtomicReference[State](State.Starting)

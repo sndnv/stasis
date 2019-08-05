@@ -52,17 +52,15 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
   }
 
   they should "generate access tokens for valid requests" in {
-    val (stores, secrets, providers) = createOAuthFixtures()
-    val grant = new ImplicitGrant(providers)
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val grant = new ImplicitGrant(config, providers)
 
-    val realm = Generators.generateRealm
-    val client = Generators.generateClient.copy(realm = realm.id)
-    val api = Generators.generateApi.copy(realm = realm.id)
+    val client = Generators.generateClient
+    val api = Generators.generateApi
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
-      realm = realm.id,
       password = Secret.derive(rawPassword, salt)(secrets.owner),
       salt = salt
     )
@@ -79,7 +77,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
     stores.clients.put(client).await
     stores.owners.put(owner).await
     stores.apis.put(api).await
-    Get(request).addCredentials(credentials) ~> grant.authorization(realm) ~> check {
+    Get(request).addCredentials(credentials) ~> grant.authorization() ~> check {
       status should be(StatusCodes.Found)
 
       headers.find(_.is("location")) match {
@@ -98,17 +96,15 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
   }
 
   they should "not generate access tokens when invalid redirect URIs are provided" in {
-    val (stores, secrets, providers) = createOAuthFixtures()
-    val grant = new ImplicitGrant(providers)
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val grant = new ImplicitGrant(config, providers)
 
-    val realm = Generators.generateRealm
-    val client = Generators.generateClient.copy(realm = realm.id)
-    val api = Generators.generateApi.copy(realm = realm.id)
+    val client = Generators.generateClient
+    val api = Generators.generateApi
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
-      realm = realm.id,
       password = Secret.derive(rawPassword, salt)(secrets.owner),
       salt = salt
     )
@@ -125,7 +121,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
     stores.clients.put(client).await
     stores.owners.put(owner).await
     stores.apis.put(api).await
-    Get(request).addCredentials(credentials) ~> grant.authorization(realm) ~> check {
+    Get(request).addCredentials(credentials) ~> grant.authorization() ~> check {
       status should be(StatusCodes.BadRequest)
       responseAs[String] should be(
         "The request has missing, invalid or mismatching redirection URI and/or client identifier"

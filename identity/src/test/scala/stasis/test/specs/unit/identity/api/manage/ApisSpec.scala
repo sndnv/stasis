@@ -15,15 +15,13 @@ class ApisSpec extends RouteTest {
 
   "Apis routes" should "respond with all APIs" in {
     val store = createApiStore()
-    val realm = Generators.generateRealmId
     val apis = new Apis(store)
 
     val expectedApis = Generators
       .generateSeq(min = 2, g = Generators.generateApi)
-      .map(_.copy(realm = realm))
 
     Future.sequence(expectedApis.map(store.put)).await
-    Get() ~> apis.routes(user, realm) ~> check {
+    Get() ~> apis.routes(user) ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[Api]].sortBy(_.id) should be(expectedApis.sortBy(_.id))
     }
@@ -31,29 +29,27 @@ class ApisSpec extends RouteTest {
 
   they should "create new APIs" in {
     val store = createApiStore()
-    val realm = Generators.generateRealmId
     val apis = new Apis(store)
 
     val request = CreateApi(id = "some-api")
 
-    Post().withEntity(request) ~> apis.routes(user, realm) ~> check {
+    Post().withEntity(request) ~> apis.routes(user) ~> check {
       status should be(StatusCodes.OK)
-      store.get(realm, request.id).await should be(Some(request.toApi(realm)))
+      store.get(request.id).await should be(Some(request.toApi))
     }
   }
 
   they should "reject creation requests for existing APIs" in {
     val store = createApiStore()
-    val realm = Generators.generateRealmId
     val apis = new Apis(store)
 
     val request = CreateApi(id = "some-api")
 
-    Post().withEntity(request) ~> apis.routes(user, realm) ~> check {
+    Post().withEntity(request) ~> apis.routes(user) ~> check {
       status should be(StatusCodes.OK)
       store.apis.await.size should be(1)
 
-      Post().withEntity(request) ~> apis.routes(user, realm) ~> check {
+      Post().withEntity(request) ~> apis.routes(user) ~> check {
         status should be(StatusCodes.Conflict)
         store.apis.await.size should be(1)
       }
@@ -62,13 +58,12 @@ class ApisSpec extends RouteTest {
 
   they should "respond with existing APIs" in {
     val store = createApiStore()
-    val realm = Generators.generateRealmId
     val apis = new Apis(store)
 
-    val expectedApi = Generators.generateApi.copy(realm = realm)
+    val expectedApi = Generators.generateApi
 
     store.put(expectedApi).await
-    Get(s"/${expectedApi.id}") ~> apis.routes(user, realm) ~> check {
+    Get(s"/${expectedApi.id}") ~> apis.routes(user) ~> check {
       status should be(StatusCodes.OK)
       responseAs[Api] should be(expectedApi)
     }
@@ -76,13 +71,12 @@ class ApisSpec extends RouteTest {
 
   they should "delete existing APIs" in {
     val store = createApiStore()
-    val realm = Generators.generateRealmId
     val apis = new Apis(store)
 
-    val api = Generators.generateApi.copy(realm = realm)
+    val api = Generators.generateApi
 
     store.put(api).await
-    Delete(s"/${api.id}") ~> apis.routes(user, realm) ~> check {
+    Delete(s"/${api.id}") ~> apis.routes(user) ~> check {
       status should be(StatusCodes.OK)
       store.apis.await should be(Map.empty)
     }
@@ -90,10 +84,9 @@ class ApisSpec extends RouteTest {
 
   they should "not delete missing APIs" in {
     val store = createApiStore()
-    val realm = Generators.generateRealmId
     val apis = new Apis(store)
 
-    Delete("/some-api") ~> apis.routes(user, realm) ~> check {
+    Delete("/some-api") ~> apis.routes(user) ~> check {
       status should be(StatusCodes.NotFound)
     }
   }

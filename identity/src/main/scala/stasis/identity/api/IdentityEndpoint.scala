@@ -9,22 +9,23 @@ import akka.http.scaladsl.server._
 import akka.stream.ActorMaterializer
 import org.jose4j.jwk.JsonWebKey
 import stasis.identity.api.manage.setup.{Config => ManageConfig, Providers => ManageProviders}
-import stasis.identity.api.oauth.setup.{Providers => OAuthProviders}
+import stasis.identity.api.oauth.setup.{Config => OAuthConfig, Providers => OAuthProviders}
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 class IdentityEndpoint(
   keys: Seq[JsonWebKey],
+  oauthConfig: OAuthConfig,
   oauthProviders: OAuthProviders,
-  manageProviders: ManageProviders,
-  manageConfig: ManageConfig
+  manageConfig: ManageConfig,
+  manageProviders: ManageProviders
 )(implicit system: ActorSystem) {
 
   private val log: LoggingAdapter = Logging(system, this.getClass.getName)
   private implicit val mat: ActorMaterializer = ActorMaterializer()
 
-  private val oauth = new OAuth(oauthProviders)
+  private val oauth = new OAuth(oauthConfig, oauthProviders)
   private val jwks = new Jwks(keys)
   private val manage = new Manage(manageProviders, manageConfig)
 

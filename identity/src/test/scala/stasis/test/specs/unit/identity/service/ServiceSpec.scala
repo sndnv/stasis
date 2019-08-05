@@ -12,9 +12,8 @@ import org.jose4j.jws.JsonWebSignature
 import org.scalatest.concurrent.Eventually
 import play.api.libs.json._
 import stasis.identity.api.Formats._
-import stasis.identity.api.manage.requests.{CreateApi, CreateOwner, CreateRealm}
+import stasis.identity.api.manage.requests.{CreateApi, CreateOwner}
 import stasis.identity.model.apis.Api
-import stasis.identity.model.realms.Realm
 import stasis.identity.service.Service
 import stasis.test.specs.unit.identity.RouteTest
 
@@ -36,7 +35,7 @@ class ServiceSpec extends RouteTest with Eventually {
     val owner = ResourceOwnerCredentials(
       username = "existing-user",
       password = "existing-user-password",
-      scope = s"urn:stasis:identity:audience:${Api.ManageMaster}"
+      scope = s"urn:stasis:identity:audience:${Api.ManageIdentity}"
     )
 
     val client = ClientCredentials(
@@ -44,47 +43,34 @@ class ServiceSpec extends RouteTest with Eventually {
       password = "existing-client-secret"
     )
 
-    val newRealm = "new-realm"
     val newApi = "new-api"
     val newUser = "new-user"
     val newUserPassword = "new-user-password"
     val newUserScope = "urn:stasis:identity:audience:new-api"
 
     for {
-      masterAccessToken <- getAccessToken(
+      accessToken <- getAccessToken(
         serviceUrl = serviceUrl,
-        realm = Realm.Master,
         owner = owner,
         client = client
       )
       _ <- createEntity(
         serviceUrl = serviceUrl,
-        entities = "realms",
-        realm = Realm.Master,
-        request = CreateRealm(id = newRealm, refreshTokensAllowed = true),
-        accessToken = masterAccessToken
-      )
-      _ <- createEntity(
-        serviceUrl = serviceUrl,
         entities = "apis",
-        realm = newRealm,
         request = CreateApi(id = newApi),
-        accessToken = masterAccessToken
+        accessToken = accessToken
       )
       _ <- createEntity(
         serviceUrl = serviceUrl,
         entities = "owners",
-        realm = newRealm,
         request = CreateOwner(username = newUser, rawPassword = newUserPassword, allowedScopes = Seq(newUserScope)),
-        accessToken = masterAccessToken
+        accessToken = accessToken
       )
-      newRealmAccessToken <- getAccessToken(
+      newAccessToken <- getAccessToken(
         serviceUrl = serviceUrl,
-        realm = newRealm,
         owner = ResourceOwnerCredentials(username = newUser, password = newUserPassword, scope = newUserScope),
         client = client
       )
-      realms <- service.persistence.realms.realms
       apis <- service.persistence.apis.apis
       owners <- service.persistence.resourceOwners.owners
       clients <- service.persistence.clients.clients
@@ -92,13 +78,12 @@ class ServiceSpec extends RouteTest with Eventually {
       _ <- service.persistence.drop()
       _ = service.stop()
     } yield {
-      realms.size should be(3)
       apis.size should be(3)
       owners.size should be(2)
       clients.size should be(1)
 
       val jws = new JsonWebSignature()
-      jws.setCompactSerialization(newRealmAccessToken)
+      jws.setCompactSerialization(newAccessToken)
       jws.setKey(signatureKey.getKey)
 
       jws.verifySignature() should be(true)
@@ -117,7 +102,6 @@ class ServiceSpec extends RouteTest with Eventually {
 
   private def getAccessToken(
     serviceUrl: String,
-    realm: Realm.Id,
     owner: ResourceOwnerCredentials,
     client: ClientCredentials
   ): Future[String] =
@@ -126,7 +110,7 @@ class ServiceSpec extends RouteTest with Eventually {
         .singleRequest(
           request = HttpRequest(
             method = HttpMethods.POST,
-            uri = s"$serviceUrl/oauth/$realm/token" +
+            uri = s"$serviceUrl/oauth/token" +
               s"?grant_type=password" +
               s"&username=${owner.username}" +
               s"&password=${owner.password}" +
@@ -141,7 +125,6 @@ class ServiceSpec extends RouteTest with Eventually {
   private def createEntity(
     serviceUrl: String,
     entities: String,
-    realm: Realm.Id,
     request: RequestEntity,
     accessToken: String
   ): Future[Done] =
@@ -149,7 +132,7 @@ class ServiceSpec extends RouteTest with Eventually {
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.POST,
-          uri = s"$serviceUrl/manage/$realm/$entities",
+          uri = s"$serviceUrl/manage/$entities",
           entity = request
         ).addCredentials(OAuth2BearerToken(token = accessToken))
       )

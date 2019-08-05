@@ -5,9 +5,9 @@ import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import play.api.libs.json._
-import stasis.identity.api.IdentityEndpoint
+import stasis.identity.api.{IdentityEndpoint, Manage}
 import stasis.identity.api.manage.setup.Config
-import stasis.identity.model.realms.Realm
+import stasis.identity.model.apis.Api
 import stasis.identity.model.secrets.Secret
 import stasis.test.specs.unit.core.security.jwt.mocks.MockJwksGenerators
 import stasis.test.specs.unit.identity.RouteTest
@@ -22,10 +22,8 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
   private val ports: mutable.Queue[Int] = (24000 to 24100).to[mutable.Queue]
 
   "An IdentityEndpoint" should "provide OAuth routes" in {
-    val (stores, _, oauthProviders) = createOAuthFixtures()
+    val (_, _, oauthConfig, oauthProviders) = createOAuthFixtures()
     val manageProviders = createManageProviders()
-
-    val realm = Generators.generateRealm
 
     val endpoint = new IdentityEndpoint(
       keys = Seq(
@@ -33,26 +31,24 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
           keyId = Some(Generators.generateString(withSize = 16))
         )
       ),
+      oauthConfig = oauthConfig,
       oauthProviders = oauthProviders,
-      manageProviders = manageProviders,
-      manageConfig = manageConfig
+      manageConfig = manageConfig,
+      manageProviders = manageProviders
     )
 
     val responseType = "some-response"
 
-    stores.realms.put(realm).await
-    Get(s"/oauth/${realm.id}/authorization?response_type=$responseType") ~> endpoint.routes ~> check {
+    Get(s"/oauth/authorization?response_type=$responseType") ~> endpoint.routes ~> check {
       status should be(StatusCodes.BadRequest)
-      responseAs[String] should be(
-        s"Realm [${realm.id}]: The request includes an invalid response type: [$responseType]"
-      )
+      responseAs[String] should be(s"The request includes an invalid response type: [$responseType]")
     }
   }
 
   it should "provide JWKs routes" in {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-    val (_, _, oauthProviders) = createOAuthFixtures()
+    val (_, _, oauthConfig, oauthProviders) = createOAuthFixtures()
     val manageProviders = createManageProviders()
 
     val keys = Seq(
@@ -63,9 +59,10 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
 
     val endpoint = new IdentityEndpoint(
       keys = keys,
+      oauthConfig = oauthConfig,
       oauthProviders = oauthProviders,
-      manageProviders = manageProviders,
-      manageConfig = manageConfig
+      manageConfig = manageConfig,
+      manageProviders = manageProviders
     )
 
     Get("/jwks/jwks.json") ~> endpoint.routes ~> check {
@@ -80,10 +77,10 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import stasis.identity.api.Formats._
 
-    val (_, _, oauthProviders) = createOAuthFixtures()
-    val manageProviders = createManageProviders()
+    val (_, _, oauthConfig, oauthProviders) = createOAuthFixtures()
+    val manageProviders = createManageProviders(withOwnerScopes = Seq(Manage.Scopes.ManageApis))
 
-    val realm = Generators.generateRealm
+    val api = Generators.generateApi
 
     val endpoint = new IdentityEndpoint(
       keys = Seq(
@@ -91,27 +88,26 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
           keyId = Some(Generators.generateString(withSize = 16))
         )
       ),
+      oauthConfig = oauthConfig,
       oauthProviders = oauthProviders,
-      manageProviders = manageProviders,
-      manageConfig = manageConfig
+      manageConfig = manageConfig,
+      manageProviders = manageProviders
     )
 
     val credentials = OAuth2BearerToken("some-token")
 
-    manageProviders.realmStore.put(realm).await
-    Get(s"/manage/master/realms/${realm.id}").addCredentials(credentials) ~> endpoint.routes ~> check {
+    manageProviders.apiStore.put(api).await
+    Get(s"/manage/apis/${api.id}").addCredentials(credentials) ~> endpoint.routes ~> check {
       status should be(StatusCodes.OK)
-      responseAs[Realm] should be(realm)
+      responseAs[Api] should be(api)
     }
   }
 
   it should "handle parameter rejections reported by routes" in {
     val endpointPort = ports.dequeue()
 
-    val (stores, _, oauthProviders) = createOAuthFixtures()
+    val (_, _, oauthConfig, oauthProviders) = createOAuthFixtures()
     val manageProviders = createManageProviders()
-
-    val realm = Generators.generateRealm
 
     val endpoint = new IdentityEndpoint(
       keys = Seq(
@@ -119,12 +115,11 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
           keyId = Some(Generators.generateString(withSize = 16))
         )
       ),
+      oauthConfig = oauthConfig,
       oauthProviders = oauthProviders,
-      manageProviders = manageProviders,
-      manageConfig = manageConfig
+      manageConfig = manageConfig,
+      manageProviders = manageProviders
     )
-
-    stores.realms.put(realm).await
 
     endpoint.start(
       interface = "localhost",
@@ -135,7 +130,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.GET,
-          uri = s"http://localhost:$endpointPort/oauth/${realm.id}/authorization?response_type=code"
+          uri = s"http://localhost:$endpointPort/oauth/authorization?response_type=code"
         )
       )
       .map { response =>
@@ -149,8 +144,8 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
   it should "handle generic failures reported by routes" in {
     val endpointPort = ports.dequeue()
 
-    val (_, _, oauthProviders) = createOAuthFixtures()
-    val manageProviders = createManageProviders()
+    val (_, _, oauthConfig, oauthProviders) = createOAuthFixtures()
+    val manageProviders = createManageProviders(withOwnerScopes = Seq(Manage.Scopes.ManageApis))
 
     val endpoint = new IdentityEndpoint(
       keys = Seq(
@@ -158,9 +153,10 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
           keyId = Some(Generators.generateString(withSize = 16))
         )
       ),
+      oauthConfig = oauthConfig,
       oauthProviders = oauthProviders,
-      manageProviders = manageProviders.copy(realmStore = createFailingRealmStore(failingGet = true)),
-      manageConfig = manageConfig
+      manageConfig = manageConfig,
+      manageProviders = manageProviders.copy(apiStore = createFailingApiStore(failingGet = true))
     )
 
     endpoint.start(
@@ -174,7 +170,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.GET,
-          uri = s"http://localhost:$endpointPort/manage/master/realms/some-realm"
+          uri = s"http://localhost:$endpointPort/manage/apis/some-api"
         ).addCredentials(credentials)
       )
       .map { response =>
@@ -186,6 +182,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
   }
 
   private val manageConfig = Config(
+    realm = "test-realm",
     clientSecrets = Secret.ClientConfig(
       algorithm = "PBKDF2WithHmacSHA512",
       iterations = 10000,

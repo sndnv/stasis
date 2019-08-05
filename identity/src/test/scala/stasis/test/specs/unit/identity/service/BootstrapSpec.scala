@@ -7,7 +7,6 @@ import akka.event.{Logging, LoggingAdapter}
 import com.typesafe.config.Config
 import stasis.identity.model.Seconds
 import stasis.identity.model.apis.Api
-import stasis.identity.model.realms.Realm
 import stasis.identity.model.secrets.Secret
 import stasis.identity.service.Bootstrap.Entities
 import stasis.identity.service.{Bootstrap, Persistence}
@@ -17,26 +16,8 @@ import stasis.test.specs.unit.identity.model.Generators
 import scala.concurrent.duration._
 
 class BootstrapSpec extends AsyncUnitSpec {
-  "Bootstrap" should "validate provided entities" in {
-    val entities = Entities(
-      realms = Seq.empty,
-      apis = Seq.empty,
-      clients = Seq.empty,
-      owners = Seq.empty
-    )
-
-    an[IllegalArgumentException] should be thrownBy entities.copy(
-      realms = Seq(Realm(id = Realm.Master, refreshTokensAllowed = false))
-    )
-
-    an[IllegalArgumentException] should be thrownBy entities.copy(
-      apis = Seq(Api(id = Api.ManageMaster, realm = Realm.Master))
-    )
-  }
-
-  it should "setup the service with provided entities" in {
+  "Bootstrap" should "setup the service with provided entities" in {
     val expectedEntities = Entities(
-      realms = Generators.generateSeq(min = 1, g = Generators.generateRealm),
       apis = Generators.generateSeq(min = 1, g = Generators.generateApi),
       clients = Generators.generateSeq(min = 1, g = Generators.generateClient),
       owners = Generators.generateSeq(min = 1, g = Generators.generateResourceOwner)
@@ -55,17 +36,14 @@ class BootstrapSpec extends AsyncUnitSpec {
       )
       .flatMap { _ =>
         for {
-          actualRealms <- persistence.realms.realms
           actualApis <- persistence.apis.apis
           actualClients <- persistence.clients.clients
           actualOwners <- persistence.resourceOwners.owners
           _ <- persistence.drop()
         } yield {
-          val masterRealm = Realm(id = Realm.Master, refreshTokensAllowed = false)
-          val masterApi = Api(id = Api.ManageMaster, realm = Realm.Master)
+          val identityApi = Api(id = Api.ManageIdentity)
 
-          actualRealms.values.toSeq.sortBy(_.id) should be((expectedEntities.realms :+ masterRealm).sortBy(_.id))
-          actualApis.values.toSeq.sortBy(_.id) should be((expectedEntities.apis :+ masterApi).sortBy(_.id))
+          actualApis.values.toSeq.sortBy(_.id) should be((expectedEntities.apis :+ identityApi).sortBy(_.id))
           actualClients.values.toSeq.sortBy(_.id) should be(expectedEntities.clients.sortBy(_.id))
           actualOwners.values.toSeq.sortBy(_.username) should be(expectedEntities.owners.sortBy(_.username))
         }
@@ -79,14 +57,9 @@ class BootstrapSpec extends AsyncUnitSpec {
       refreshTokenExpiration = 3.seconds
     )
 
-    val expectedRealms = Seq(
-      Realm(id = Realm.Master, refreshTokensAllowed = false),
-      Realm(id = "example-realm", refreshTokensAllowed = true)
-    )
-
     val expectedApis = Seq(
-      Api(id = Api.ManageMaster, realm = Realm.Master),
-      Api(id = "example-api", realm = "example-realm")
+      Api(id = Api.ManageIdentity),
+      Api(id = "example-api")
     )
 
     Bootstrap
@@ -96,18 +69,15 @@ class BootstrapSpec extends AsyncUnitSpec {
       )
       .flatMap { _ =>
         for {
-          actualRealms <- persistence.realms.realms
           actualApis <- persistence.apis.apis
           actualClients <- persistence.clients.clients
           actualOwners <- persistence.resourceOwners.owners
           _ <- persistence.drop()
         } yield {
-          actualRealms.values.toSeq.sortBy(_.id) should be(expectedRealms.sortBy(_.id))
           actualApis.values.toSeq.sortBy(_.id) should be(expectedApis.sortBy(_.id))
 
           actualClients.values.toList.sortBy(_.redirectUri) match {
             case client1 :: client2 :: client3 :: Nil =>
-              client1.realm should be("example-realm")
               client1.allowedScopes should be(Seq("example-scope-a", "example-scope-b", "example-scope-c"))
               client1.redirectUri should be("http://localhost:8080/example/uri1")
               client1.tokenExpiration should be(Seconds(90 * 60))
@@ -129,7 +99,6 @@ class BootstrapSpec extends AsyncUnitSpec {
           actualOwners.values.toList match {
             case owner :: Nil =>
               owner.username should be("example-user")
-              owner.realm should be("example-realm")
               owner.allowedScopes should be(Seq("example-scope-a", "example-scope-b", "example-scope-c"))
               owner.active should be(true)
               owner.password.isSameAs(
@@ -159,13 +128,11 @@ class BootstrapSpec extends AsyncUnitSpec {
       .flatMap { _ =>
         for {
           _ <- persistence.init()
-          actualRealms <- persistence.realms.realms
           actualApis <- persistence.apis.apis
           actualClients <- persistence.clients.clients
           actualOwners <- persistence.resourceOwners.owners
           _ <- persistence.drop()
         } yield {
-          actualRealms should be(Map.empty)
           actualApis should be(Map.empty)
           actualClients should be(Map.empty)
           actualOwners should be(Map.empty)

@@ -9,7 +9,6 @@ import stasis.identity.model.clients.Client
 import stasis.identity.model.codes.{AuthorizationCode, StoredAuthorizationCode}
 import stasis.identity.model.errors.{AuthorizationError, TokenError}
 import stasis.identity.model.owners.ResourceOwner
-import stasis.identity.model.realms.Realm
 import stasis.identity.model.tokens.{AccessToken, RefreshToken, StoredRefreshToken, TokenType}
 import stasis.identity.model.{ChallengeMethod, GrantType, ResponseType, Seconds}
 
@@ -83,7 +82,6 @@ object Formats {
       client =>
         Json.obj(
           "id" -> Json.toJson(client.id),
-          "realm" -> Json.toJson(client.realm),
           "allowedScopes" -> Json.toJson(client.allowedScopes),
           "redirectUri" -> Json.toJson(client.redirectUri),
           "tokenExpiration" -> Json.toJson(client.tokenExpiration),
@@ -107,13 +105,10 @@ object Formats {
       owner =>
         Json.obj(
           "username" -> Json.toJson(owner.username),
-          "realm" -> Json.toJson(owner.realm),
           "allowedScopes" -> Json.toJson(owner.allowedScopes),
           "active" -> Json.toJson(owner.active)
       )
     )
-
-  implicit val realmFormat: Format[Realm] = Json.format[Realm]
 
   implicit val storedRefreshTokenWrites: Writes[StoredRefreshToken] =
     Writes[StoredRefreshToken](
@@ -134,7 +129,6 @@ object Formats {
   implicit val createOwnerFormat: Format[CreateOwner] = Json.format[CreateOwner]
   implicit val updateOwnerFormat: Format[UpdateOwner] = Json.format[UpdateOwner]
   implicit val updateOwnerCredentialsFormat: Format[UpdateOwnerCredentials] = Json.format[UpdateOwnerCredentials]
-  implicit val createRealmFormat: Format[CreateRealm] = Json.format[CreateRealm]
 
   implicit val stringToChallengeMethod: Unmarshaller[String, ChallengeMethod] =
     Unmarshaller.strict { convertStringToChallengeMethod }

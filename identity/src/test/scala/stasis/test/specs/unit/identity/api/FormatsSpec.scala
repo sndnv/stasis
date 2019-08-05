@@ -129,7 +129,6 @@ class FormatsSpec extends UnitSpec {
     val parsedFields = Json.parse(json).as[JsObject].fields
 
     parsedFields should contain("id" -> JsString(api.id))
-    parsedFields should contain("realm" -> JsString(api.realm))
 
     apiFormat.reads(Json.parse(json).as[JsObject]).asOpt should be(Some(api))
   }
@@ -141,7 +140,6 @@ class FormatsSpec extends UnitSpec {
     val parsedKeys = parsedFields.map(_._1)
 
     parsedFields should contain("id" -> JsString(client.id.toString))
-    parsedFields should contain("realm" -> JsString(client.realm))
     parsedFields should contain("allowedScopes" -> JsArray(client.allowedScopes.map(JsString)))
     parsedFields should contain("redirectUri" -> JsString(client.redirectUri))
     parsedFields should contain("tokenExpiration" -> JsNumber(client.tokenExpiration.value))
@@ -179,22 +177,10 @@ class FormatsSpec extends UnitSpec {
     val parsedKeys = parsedFields.map(_._1)
 
     parsedFields should contain("username" -> JsString(owner.username))
-    parsedFields should contain("realm" -> JsString(owner.realm))
     parsedFields should contain("allowedScopes" -> JsArray(owner.allowedScopes.map(JsString)))
     parsedFields should contain("active" -> JsBoolean(owner.active))
     parsedKeys should not contain "secret"
     parsedKeys should not contain "salt"
-  }
-
-  they should "convert realms to/from JSON" in {
-    val realm = Generators.generateRealm
-    val json = realmFormat.writes(realm).toString
-    val parsedFields = Json.parse(json).as[JsObject].fields
-
-    parsedFields should contain("id" -> JsString(realm.id))
-    parsedFields should contain("refreshTokensAllowed" -> JsBoolean(realm.refreshTokensAllowed))
-
-    realmFormat.reads(Json.parse(json).as[JsObject]).asOpt should be(Some(realm))
   }
 
   they should "convert stored refresh tokens to JSON" in {

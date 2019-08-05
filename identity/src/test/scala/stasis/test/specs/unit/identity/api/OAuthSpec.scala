@@ -2,10 +2,11 @@ package stasis.test.specs.unit.identity.api
 
 import akka.http.scaladsl.model
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, CacheDirectives}
-import akka.http.scaladsl.model.{ContentTypes, StatusCodes, Uri}
+import akka.http.scaladsl.model.{StatusCodes, Uri}
 import stasis.identity.api.OAuth
 import stasis.identity.api.oauth.directives.AudienceExtraction
 import stasis.identity.model.codes.StoredAuthorizationCode
+import stasis.identity.model.errors.AuthorizationError
 import stasis.identity.model.secrets.Secret
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.api.oauth.OAuthFixtures
@@ -13,17 +14,15 @@ import stasis.test.specs.unit.identity.model.Generators
 
 class OAuthSpec extends RouteTest with OAuthFixtures {
   "OAuth routes" should "handle code authorization requests" in {
-    val (stores, secrets, providers) = createOAuthFixtures()
-    val oauth = new OAuth(providers)
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val oauth = new OAuth(config, providers)
 
-    val realm = Generators.generateRealm
-    val client = Generators.generateClient.copy(realm = realm.id)
-    val api = Generators.generateApi.copy(realm = realm.id)
+    val client = Generators.generateClient
+    val api = Generators.generateApi
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
-      realm = realm.id,
       password = Secret.derive(rawPassword, salt)(secrets.owner),
       salt = salt
     )
@@ -33,13 +32,12 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     val scope = s"${AudienceExtraction.UrnPrefix}:${api.id}"
 
     val uri =
-      s"/${realm.id}/authorization" +
+      s"/authorization" +
         s"?response_type=code" +
         s"&client_id=${client.id}" +
         s"&scope=$scope" +
         s"&state=$state"
 
-    stores.realms.put(realm).await
     stores.clients.put(client).await
     stores.owners.put(owner).await
     stores.apis.put(api).await
@@ -67,17 +65,15 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
   }
 
   they should "handle PKCE code authorization requests" in {
-    val (stores, secrets, providers) = createOAuthFixtures()
-    val oauth = new OAuth(providers)
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val oauth = new OAuth(config, providers)
 
-    val realm = Generators.generateRealm
-    val client = Generators.generateClient.copy(realm = realm.id)
-    val api = Generators.generateApi.copy(realm = realm.id)
+    val client = Generators.generateClient
+    val api = Generators.generateApi
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
-      realm = realm.id,
       password = Secret.derive(rawPassword, salt)(secrets.owner),
       salt = salt
     )
@@ -91,14 +87,13 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     )
 
     val uri =
-      s"/${realm.id}/authorization" +
+      s"/authorization" +
         s"?response_type=code" +
         s"&client_id=${client.id}" +
         s"&scope=$scope" +
         s"&state=$state" +
         s"&code_challenge=${storedChallenge.value}"
 
-    stores.realms.put(realm).await
     stores.clients.put(client).await
     stores.owners.put(owner).await
     stores.apis.put(api).await
@@ -126,17 +121,15 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
   }
 
   they should "handle token authorization requests" in {
-    val (stores, secrets, providers) = createOAuthFixtures()
-    val oauth = new OAuth(providers)
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val oauth = new OAuth(config, providers)
 
-    val realm = Generators.generateRealm
-    val client = Generators.generateClient.copy(realm = realm.id)
-    val api = Generators.generateApi.copy(realm = realm.id)
+    val client = Generators.generateClient
+    val api = Generators.generateApi
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
-      realm = realm.id,
       password = Secret.derive(rawPassword, salt)(secrets.owner),
       salt = salt
     )
@@ -146,13 +139,12 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     val state = Generators.generateString(withSize = 16)
 
     val uri =
-      s"/${realm.id}/authorization" +
+      s"/authorization" +
         s"?response_type=token" +
         s"&client_id=${client.id}" +
         s"&scope=$scope" +
         s"&state=$state"
 
-    stores.realms.put(realm).await
     stores.clients.put(client).await
     stores.owners.put(owner).await
     stores.apis.put(api).await
@@ -175,38 +167,34 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
   }
 
   they should "reject authorization requests with invalid response types" in {
-    val (stores, _, providers) = createOAuthFixtures()
-    val oauth = new OAuth(providers)
+    val (_, _, config, providers) = createOAuthFixtures()
+    val oauth = new OAuth(config, providers)
 
-    val realm = Generators.generateRealm
     val responseType = "some-response"
 
     val uri =
-      s"/${realm.id}/authorization" +
+      s"/authorization" +
         s"?response_type=$responseType"
 
-    stores.realms.put(realm).await
     Get(uri) ~> oauth.routes ~> check {
       status should be(StatusCodes.BadRequest)
       responseAs[String] should be(
-        s"Realm [${realm.id}]: The request includes an invalid response type: [$responseType]"
+        s"The request includes an invalid response type: [$responseType]"
       )
     }
   }
 
   they should "handle authorization code token grants" in {
-    val (stores, secrets, providers) = createOAuthFixtures()
-    val oauth = new OAuth(providers)
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val oauth = new OAuth(config, providers)
 
-    val realm = Generators.generateRealm
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
-    val api = Generators.generateApi.copy(realm = realm.id)
+    val api = Generators.generateApi
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
-      realm = realm.id,
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
     )
@@ -219,12 +207,11 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     )
 
     val uri =
-      s"/${realm.id}/token" +
+      s"/token" +
         s"?grant_type=authorization_code" +
         s"&code=${code.value}" +
         s"&client_id=${client.id}"
 
-    stores.realms.put(realm).await
     stores.clients.put(client).await
     stores.owners.put(owner).await
     stores.apis.put(api).await
@@ -245,18 +232,16 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
   }
 
   they should "handle PKCE authorization code token grants" in {
-    val (stores, secrets, providers) = createOAuthFixtures()
-    val oauth = new OAuth(providers)
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val oauth = new OAuth(config, providers)
 
-    val realm = Generators.generateRealm
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
-    val api = Generators.generateApi.copy(realm = realm.id)
+    val api = Generators.generateApi
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
-      realm = realm.id,
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
     )
@@ -275,13 +260,12 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     )
 
     val uri =
-      s"/${realm.id}/token" +
+      s"/token" +
         s"?grant_type=authorization_code" +
         s"&code=${code.value}" +
         s"&client_id=${client.id}" +
         s"&code_verifier=${storedChallenge.value}"
 
-    stores.realms.put(realm).await
     stores.clients.put(client).await
     stores.owners.put(owner).await
     stores.apis.put(api).await
@@ -302,15 +286,12 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
   }
 
   they should "handle client credentials token grants" in {
-    val (stores, secrets, providers) = createOAuthFixtures()
-    val oauth = new OAuth(providers)
-
-    val realm = Generators.generateRealm
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val oauth = new OAuth(config, providers)
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
-      realm = realm.id,
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
     )
@@ -319,11 +300,10 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     val scope = s"${AudienceExtraction.UrnPrefix}:${client.id}"
 
     val uri =
-      s"/${realm.id}/token" +
+      s"/token" +
         s"?grant_type=client_credentials" +
         s"&scope=$scope"
 
-    stores.realms.put(realm).await
     stores.clients.put(client).await
     Post(uri).addCredentials(credentials) ~> oauth.routes ~> check {
       status should be(StatusCodes.OK)
@@ -339,17 +319,15 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
   }
 
   they should "handle refresh token grants" in {
-    val (stores, secrets, providers) = createOAuthFixtures()
-    val oauth = new OAuth(providers)
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val oauth = new OAuth(config, providers)
 
-    val realm = Generators.generateRealm
-    val owner = Generators.generateResourceOwner.copy(realm = realm.id)
-    val api = Generators.generateApi.copy(realm = realm.id)
+    val owner = Generators.generateResourceOwner
+    val api = Generators.generateApi
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
-      realm = realm.id,
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
     )
@@ -359,12 +337,11 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     val scope = s"${AudienceExtraction.UrnPrefix}:${api.id}"
 
     val uri =
-      s"/${realm.id}/token" +
+      s"/token" +
         s"?grant_type=refresh_token" +
         s"&refresh_token=${token.value}" +
         s"&scope=$scope"
 
-    stores.realms.put(realm).await
     stores.owners.put(owner).await
     stores.apis.put(api).await
     stores.clients.put(client).await
@@ -387,16 +364,14 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
   }
 
   they should "handle password token grants" in {
-    val (stores, secrets, providers) = createOAuthFixtures()
-    val oauth = new OAuth(providers)
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val oauth = new OAuth(config, providers)
 
-    val realm = Generators.generateRealm
-    val api = Generators.generateApi.copy(realm = realm.id)
+    val api = Generators.generateApi
 
     val clientRawPassword = "some-password"
     val clientSalt = Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
-      realm = realm.id,
       secret = Secret.derive(clientRawPassword, clientSalt)(secrets.client),
       salt = clientSalt
     )
@@ -405,20 +380,18 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     val ownerRawPassword = "some-password"
     val ownerSalt = Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
-      realm = realm.id,
       password = Secret.derive(ownerRawPassword, ownerSalt)(secrets.owner),
       salt = ownerSalt
     )
     val scope = s"${AudienceExtraction.UrnPrefix}:${api.id}"
 
     val uri =
-      s"/${realm.id}/token" +
+      s"/token" +
         s"?grant_type=password" +
         s"&username=${owner.username}" +
         s"&password=$ownerRawPassword" +
         s"&scope=$scope"
 
-    stores.realms.put(realm).await
     stores.apis.put(api).await
     stores.clients.put(client).await
     stores.owners.put(owner).await
@@ -440,22 +413,80 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
   }
 
   they should "reject token grants with invalid grant type" in {
-    val (stores, _, providers) = createOAuthFixtures()
-    val oauth = new OAuth(providers)
+    val (_, _, config, providers) = createOAuthFixtures()
+    val oauth = new OAuth(config, providers)
 
-    val realm = Generators.generateRealm
     val grantType = "some-grant"
 
-    val uri =
-      s"/${realm.id}/token" +
-        s"?grant_type=$grantType"
+    val uri = s"/token?grant_type=$grantType"
 
-    stores.realms.put(realm).await
     Post(uri) ~> oauth.routes ~> check {
       status should be(StatusCodes.BadRequest)
       responseAs[String] should be(
-        s"Realm [${realm.id}]: The request includes an invalid grant type: [$grantType]"
+        s"The request includes an invalid grant type: [$grantType]"
       )
+    }
+  }
+
+  they should "reject requests when clients fail authentication" in {
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val oauth = new OAuth(config, providers)
+
+    val salt = Generators.generateString(withSize = secrets.client.saltSize)
+    val client = Generators.generateClient.copy(
+      secret = Secret.derive("some-password", salt)(secrets.client),
+      salt = salt
+    )
+
+    val scope = s"${AudienceExtraction.UrnPrefix}:${client.id}"
+
+    val uri =
+      s"/token" +
+        s"?grant_type=client_credentials" +
+        s"&scope=$scope"
+
+    stores.clients.put(client).await
+    Post(uri) ~> oauth.routes ~> check {
+      status should be(StatusCodes.Unauthorized)
+    }
+  }
+
+  they should "reject requests when owners fail authentication" in {
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val oauth = new OAuth(config, providers)
+
+    val client = Generators.generateClient
+    val api = Generators.generateApi
+
+    val salt = Generators.generateString(withSize = secrets.owner.saltSize)
+    val owner = Generators.generateResourceOwner.copy(
+      password = Secret.derive("some-password", salt)(secrets.owner),
+      salt = salt
+    )
+
+    val scope = s"${AudienceExtraction.UrnPrefix}:${api.id}"
+    val state = Generators.generateString(withSize = 16)
+
+    val uri =
+      s"/authorization" +
+        s"?response_type=token" +
+        s"&client_id=${client.id}" +
+        s"&scope=$scope" +
+        s"&state=$state"
+
+    stores.clients.put(client).await
+    stores.owners.put(owner).await
+    stores.apis.put(api).await
+    Get(uri) ~> oauth.routes ~> check {
+      status should be(StatusCodes.Found)
+      headers.find(_.is("location")) match {
+        case Some(location) =>
+          val query = AuthorizationError.AccessDenied(withState = state).asQuery
+          location.value().endsWith(query.toString) should be(true)
+
+        case None =>
+          fail("Unexpected response received; location header not found")
+      }
     }
   }
 }

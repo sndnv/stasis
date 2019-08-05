@@ -6,73 +6,65 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
-import stasis.identity.api.manage.directives.RealmExtraction
+import stasis.identity.api.directives.BaseApiDirective
 import stasis.identity.api.oauth._
-import stasis.identity.api.oauth.setup.Providers
-import stasis.identity.model.realms.RealmStoreView
+import stasis.identity.api.oauth.setup.{Config, Providers}
 
 class OAuth(
+  config: Config,
   providers: Providers
 )(implicit system: ActorSystem, override val mat: Materializer)
-    extends RealmExtraction {
+    extends BaseApiDirective {
 
-  override protected def log: LoggingAdapter = Logging(system, this.getClass.getName)
-  override protected def realmStore: RealmStoreView = providers.realmStore
+  private val log: LoggingAdapter = Logging(system, this.getClass.getName)
 
-  private val authorizationCodeGrant = new AuthorizationCodeGrant(providers)
-  private val pkceAuthorizationCodeGrant = new PkceAuthorizationCodeGrant(providers)
-  private val clientCredentialsGrant = new ClientCredentialsGrant(providers)
-  private val implicitGrant = new ImplicitGrant(providers)
-  private val refreshTokenGrant = new RefreshTokenGrant(providers)
-  private val passwordCredentialsGrant = new ResourceOwnerPasswordCredentialsGrant(providers)
+  private val authorizationCodeGrant = new AuthorizationCodeGrant(config, providers)
+  private val pkceAuthorizationCodeGrant = new PkceAuthorizationCodeGrant(config, providers)
+  private val clientCredentialsGrant = new ClientCredentialsGrant(config, providers)
+  private val implicitGrant = new ImplicitGrant(config, providers)
+  private val refreshTokenGrant = new RefreshTokenGrant(config, providers)
+  private val passwordCredentialsGrant = new ResourceOwnerPasswordCredentialsGrant(config, providers)
 
   def routes: Route =
     concat(
-      pathPrefix(Segment) { realmId =>
-        extractRealm(realmId) {
-          realm =>
-            concat(
-              path("authorization") {
-                parameter("response_type".as[String]) {
-                  case "code" =>
-                    parameter("code_challenge".as[String].?) {
-                      case Some(_) => pkceAuthorizationCodeGrant.authorization(realm)
-                      case None    => authorizationCodeGrant.authorization(realm)
-                    }
+      path("authorization") {
+        parameter("response_type".as[String]) {
+          case "code" =>
+            parameter("code_challenge".as[String].?) {
+              case Some(_) => pkceAuthorizationCodeGrant.authorization()
+              case None    => authorizationCodeGrant.authorization()
+            }
 
-                  case "token" =>
-                    implicitGrant.authorization(realm)
+          case "token" =>
+            implicitGrant.authorization()
 
-                  case responseType =>
-                    val message = s"Realm [$realmId]: The request includes an invalid response type: [$responseType]"
-                    log.warning(message)
-                    discardEntity & complete(StatusCodes.BadRequest, message)
-                }
-              },
-              path("token") {
-                parameter("grant_type".as[String]) {
-                  case "authorization_code" =>
-                    parameter("code_verifier".as[String].?) {
-                      case Some(_) => pkceAuthorizationCodeGrant.token(realm)
-                      case None    => authorizationCodeGrant.token(realm)
-                    }
+          case responseType =>
+            val message = s"The request includes an invalid response type: [$responseType]"
+            log.warning(message)
+            discardEntity & complete(StatusCodes.BadRequest, message)
+        }
+      },
+      path("token") {
+        parameter("grant_type".as[String]) {
+          case "authorization_code" =>
+            parameter("code_verifier".as[String].?) {
+              case Some(_) => pkceAuthorizationCodeGrant.token()
+              case None    => authorizationCodeGrant.token()
+            }
 
-                  case "client_credentials" =>
-                    clientCredentialsGrant.token(realm)
+          case "client_credentials" =>
+            clientCredentialsGrant.token()
 
-                  case "refresh_token" =>
-                    refreshTokenGrant.token(realm)
+          case "refresh_token" =>
+            refreshTokenGrant.token()
 
-                  case "password" =>
-                    passwordCredentialsGrant.token(realm)
+          case "password" =>
+            passwordCredentialsGrant.token()
 
-                  case grantType =>
-                    val message = s"Realm [$realmId]: The request includes an invalid grant type: [$grantType]"
-                    log.warning(message)
-                    discardEntity & complete(StatusCodes.BadRequest, message)
-                }
-              }
-            )
+          case grantType =>
+            val message = s"The request includes an invalid grant type: [$grantType]"
+            log.warning(message)
+            discardEntity & complete(StatusCodes.BadRequest, message)
         }
       }
     )

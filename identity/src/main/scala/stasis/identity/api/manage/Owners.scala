@@ -6,10 +6,9 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
-import stasis.identity.api.manage.directives.RealmValidation
+import stasis.identity.api.directives.BaseApiDirective
 import stasis.identity.api.manage.requests.{CreateOwner, UpdateOwner, UpdateOwnerCredentials}
 import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore}
-import stasis.identity.model.realms.Realm
 import stasis.identity.model.secrets.Secret
 
 import scala.concurrent.ExecutionContext
@@ -18,29 +17,22 @@ class Owners(
   store: ResourceOwnerStore,
   ownerSecretConfig: Secret.ResourceOwnerConfig
 )(implicit system: ActorSystem, override val mat: Materializer)
-    extends RealmValidation[ResourceOwner] {
+    extends BaseApiDirective {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.identity.api.Formats._
 
   private implicit val ec: ExecutionContext = system.dispatcher
   protected def log: LoggingAdapter = Logging(system, this.getClass.getName)
 
-  override implicit protected def extractor: RealmValidation.Extractor[ResourceOwner] = _.realm
-
   private implicit val secretConfig: Secret.ResourceOwnerConfig = ownerSecretConfig
 
-  def routes(user: ResourceOwner.Id, realm: Realm.Id): Route =
+  def routes(user: ResourceOwner.Id): Route =
     concat(
       pathEndOrSingleSlash {
         concat(
           get {
-            filterRealm(realm, store.owners) { owners =>
-              log.info(
-                "Realm [{}]: User [{}] successfully retrieved [{}] resource owners",
-                realm,
-                user,
-                owners.size
-              )
+            onSuccess(store.owners) { owners =>
+              log.info("User [{}] successfully retrieved [{}] resource owners", user, owners.size)
               discardEntity & complete(owners.values)
             }
           },
@@ -50,22 +42,16 @@ class Owners(
                 onSuccess(store.contains(request.username)) {
                   case true =>
                     log.warning(
-                      "Realm [{}]: User [{}] tried to create resource owner [{}] but it already exists",
-                      realm,
+                      "User [{}] tried to create resource owner [{}] but it already exists",
                       user,
                       request.username
                     )
                     complete(StatusCodes.Conflict)
 
                   case false =>
-                    val owner = request.toResourceOwner(realm)
+                    val owner = request.toResourceOwner
                     onSuccess(store.put(owner)) { _ =>
-                      log.info(
-                        "Realm [{}]: User [{}] successfully created resource owner [{}]",
-                        realm,
-                        user,
-                        owner.username
-                      )
+                      log.info("User [{}] successfully created resource owner [{}]", user, owner.username)
                       complete(StatusCodes.OK)
                     }
                 }
@@ -74,8 +60,8 @@ class Owners(
         )
       },
       pathPrefix(Segment) { ownerUsername =>
-        validateRealm(realm, store.get(ownerUsername)) {
-          owner =>
+        onSuccess(store.get(ownerUsername)) {
+          case Some(owner) =>
             concat(
               path("credentials") {
                 put {
@@ -84,8 +70,7 @@ class Owners(
 
                     onSuccess(store.put(owner.copy(password = secret, salt = salt))) { _ =>
                       log.info(
-                        "Realm [{}]: User [{}] successfully updated credentials for resource owner [{}]",
-                        realm,
+                        "User [{}] successfully updated credentials for resource owner [{}]",
                         user,
                         ownerUsername
                       )
@@ -98,8 +83,7 @@ class Owners(
                 concat(
                   get {
                     log.info(
-                      "Realm [{}]: User [{}] successfully retrieved resource owner [{}]",
-                      realm,
+                      "User [{}] successfully retrieved resource owner [{}]",
                       user,
                       ownerUsername
                     )
@@ -115,12 +99,7 @@ class Owners(
                           )
                         )
                       ) { _ =>
-                        log.info(
-                          "Realm [{}]: User [{}] successfully updated resource owner [{}]",
-                          realm,
-                          user,
-                          ownerUsername
-                        )
+                        log.info("User [{}] successfully updated resource owner [{}]", user, ownerUsername)
                         complete(StatusCodes.OK)
 
                       }
@@ -128,18 +107,17 @@ class Owners(
                   },
                   delete {
                     onSuccess(store.delete(ownerUsername)) { _ =>
-                      log.info(
-                        "Realm [{}]: User [{}] successfully deleted resource owner [{}]",
-                        realm,
-                        user,
-                        ownerUsername
-                      )
+                      log.info("User [{}] successfully deleted resource owner [{}]", user, ownerUsername)
                       discardEntity & complete(StatusCodes.OK)
                     }
                   }
                 )
               }
             )
+
+          case None =>
+            log.warning("User [{}] made request for resource owner [{}] but it was not found", user, ownerUsername)
+            discardEntity & complete(StatusCodes.NotFound)
         }
       }
     )

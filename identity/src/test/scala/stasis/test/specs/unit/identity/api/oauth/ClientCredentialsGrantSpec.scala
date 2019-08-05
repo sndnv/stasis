@@ -2,7 +2,7 @@ package stasis.test.specs.unit.identity.api.oauth
 
 import akka.http.scaladsl.model
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, CacheDirectives}
-import akka.http.scaladsl.model.{ContentTypes, StatusCodes, Uri}
+import akka.http.scaladsl.model.{StatusCodes, Uri}
 import stasis.identity.api.oauth.ClientCredentialsGrant
 import stasis.identity.api.oauth.ClientCredentialsGrant.{AccessTokenRequest, AccessTokenResponse}
 import stasis.identity.model.GrantType
@@ -25,15 +25,12 @@ class ClientCredentialsGrantSpec extends RouteTest with OAuthFixtures {
   }
 
   they should "generate access tokens for valid requests" in {
-    val (stores, secrets, providers) = createOAuthFixtures()
-    val grant = new ClientCredentialsGrant(providers)
-
-    val realm = Generators.generateRealm
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val grant = new ClientCredentialsGrant(config, providers)
 
     val rawPassword = "some-password"
     val salt = Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
-      realm = realm.id,
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
     )
@@ -45,7 +42,7 @@ class ClientCredentialsGrantSpec extends RouteTest with OAuthFixtures {
     )
 
     stores.clients.put(client).await
-    Post(request).addCredentials(credentials) ~> grant.token(realm) ~> check {
+    Post(request).addCredentials(credentials) ~> grant.token() ~> check {
       status should be(StatusCodes.OK)
 
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))

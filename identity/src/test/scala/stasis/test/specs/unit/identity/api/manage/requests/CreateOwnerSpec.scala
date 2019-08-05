@@ -34,7 +34,7 @@ class CreateOwnerSpec extends UnitSpec {
       allowedScopes = request.allowedScopes
     )
 
-    val actualOwner = request.toResourceOwner(realm = expectedOwner.realm)
+    val actualOwner = request.toResourceOwner
 
     actualOwner should be(expectedOwner.copy(password = actualOwner.password, salt = actualOwner.salt))
   }

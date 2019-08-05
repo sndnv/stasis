@@ -12,7 +12,6 @@ import stasis.identity.model.apis.{ApiStore, ApiStoreSerdes}
 import stasis.identity.model.clients.{Client, ClientStore, ClientStoreSerdes}
 import stasis.identity.model.codes.{AuthorizationCodeStore, StoredAuthorizationCode}
 import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore, ResourceOwnerStoreSerdes}
-import stasis.identity.model.realms.{Realm, RealmStore, RealmStoreSerdes}
 import stasis.identity.model.tokens.{RefreshTokenStore, RefreshTokenStoreSerdes, StoredRefreshToken}
 
 import scala.concurrent.duration.FiniteDuration
@@ -43,9 +42,6 @@ class Persistence(
   val clients: ClientStore =
     ClientStore(backend = backends.clients)
 
-  val realms: RealmStore =
-    RealmStore(backend = backends.realms)
-
   val resourceOwners: ResourceOwnerStore =
     ResourceOwnerStore(backend = backends.owners)
 
@@ -59,7 +55,6 @@ class Persistence(
     for {
       _ <- backends.apis.init()
       _ <- backends.clients.init()
-      _ <- backends.realms.init()
       _ <- backends.owners.init()
       _ <- backends.tokens.init()
       _ <- backends.codes.init()
@@ -71,7 +66,6 @@ class Persistence(
     for {
       _ <- backends.apis.drop()
       _ <- backends.clients.drop()
-      _ <- backends.realms.drop()
       _ <- backends.owners.drop()
       _ <- backends.tokens.drop()
       _ <- backends.codes.drop()
@@ -92,13 +86,6 @@ class Persistence(
       profile = profile,
       database = database,
       serdes = ClientStoreSerdes
-    )
-
-    val realms: KeyValueBackend[Realm.Id, Realm] = new SlickBackend(
-      tableName = "REALMS",
-      profile = profile,
-      database = database,
-      serdes = RealmStoreSerdes
     )
 
     val owners: KeyValueBackend[ResourceOwner.Id, ResourceOwner] = new SlickBackend(

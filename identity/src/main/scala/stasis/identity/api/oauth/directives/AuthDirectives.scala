@@ -1,6 +1,6 @@
 package stasis.identity.api.oauth.directives
 
-import stasis.identity.api.oauth.setup.Providers
+import stasis.identity.api.oauth.setup.{Config, Providers}
 import stasis.identity.authentication.oauth.{ClientAuthenticator, ResourceOwnerAuthenticator}
 import stasis.identity.model.apis.ApiStoreView
 import stasis.identity.model.clients.ClientStoreView
@@ -21,6 +21,10 @@ trait AuthDirectives
     with ResourceOwnerAuthentication {
 
   protected def providers: Providers
+  protected def config: Config
+
+  override protected def realm: String = config.realm
+  override protected def refreshTokensAllowed: Boolean = config.refreshTokensAllowed
 
   override protected def apiStore: ApiStoreView = providers.apiStore
   override protected def clientStore: ClientStoreView = providers.clientStore

@@ -14,7 +14,6 @@ import stasis.identity.model.apis.{Api, ApiStore}
 import stasis.identity.model.clients.{Client, ClientStore}
 import stasis.identity.model.codes.{AuthorizationCodeStore, StoredAuthorizationCode}
 import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore}
-import stasis.identity.model.realms.{Realm, RealmStore}
 import stasis.identity.model.tokens.{RefreshTokenStore, StoredRefreshToken}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.identity.RouteTest.FailingMemoryBackend
@@ -36,7 +35,7 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
   def createLogger(): LoggingAdapter = Logging(system, this.getClass.getName)
 
   def createApiStore(): ApiStore = ApiStore(
-    MemoryBackend[(Realm.Id, Api.Id), Api](name = s"api-store-${java.util.UUID.randomUUID()}")
+    MemoryBackend[Api.Id, Api](name = s"api-store-${java.util.UUID.randomUUID()}")
   )
 
   def createClientStore(): ClientStore = ClientStore(
@@ -52,10 +51,6 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
     MemoryBackend[ResourceOwner.Id, ResourceOwner](name = s"owner-store-${java.util.UUID.randomUUID()}")
   )
 
-  def createRealmStore(): RealmStore = RealmStore(
-    MemoryBackend[Realm.Id, Realm](name = s"realm-store-${java.util.UUID.randomUUID()}")
-  )
-
   def createTokenStore(expiration: FiniteDuration = 3.seconds): RefreshTokenStore = RefreshTokenStore(
     expiration = expiration,
     MemoryBackend[Client.Id, StoredRefreshToken](name = s"token-store-${java.util.UUID.randomUUID()}")
@@ -68,7 +63,7 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
     failingEntries: Boolean = false,
     failingContains: Boolean = false
   ): ApiStore = ApiStore(
-    new FailingMemoryBackend[(Realm.Id, Api.Id), Api] {
+    new FailingMemoryBackend[Api.Id, Api] {
       override def system: ActorSystem[SpawnProtocol] = typedSystem
       override def storeName: String = s"api-store-${java.util.UUID.randomUUID()}"
       override def putFails: Boolean = failingPut
@@ -127,24 +122,6 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
     new FailingMemoryBackend[ResourceOwner.Id, ResourceOwner] {
       override def system: ActorSystem[SpawnProtocol] = typedSystem
       override def storeName: String = s"owner-store-${java.util.UUID.randomUUID()}"
-      override def putFails: Boolean = failingPut
-      override def deleteFails: Boolean = failingDelete
-      override def getFails: Boolean = failingGet
-      override def entriesFails: Boolean = failingEntries
-      override def containsFails: Boolean = failingContains
-    }
-  )
-
-  def createFailingRealmStore(
-    failingPut: Boolean = false,
-    failingDelete: Boolean = false,
-    failingGet: Boolean = false,
-    failingEntries: Boolean = false,
-    failingContains: Boolean = false
-  ): RealmStore = RealmStore(
-    new FailingMemoryBackend[Realm.Id, Realm] {
-      override def system: ActorSystem[SpawnProtocol] = typedSystem
-      override def storeName: String = s"realm-store-${java.util.UUID.randomUUID()}"
       override def putFails: Boolean = failingPut
       override def deleteFails: Boolean = failingDelete
       override def getFails: Boolean = failingGet
