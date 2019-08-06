@@ -14,7 +14,7 @@ import play.api.libs.json._
 import stasis.identity.api.Formats._
 import stasis.identity.api.manage.requests.{CreateApi, CreateOwner}
 import stasis.identity.model.apis.Api
-import stasis.identity.service.Service
+import stasis.identity.service.{Persistence, Service}
 import stasis.test.specs.unit.identity.RouteTest
 
 import scala.collection.JavaConverters._
@@ -32,6 +32,13 @@ class ServiceSpec extends RouteTest with Eventually {
     val servicePort = 19090
     val serviceUrl = s"http://$serviceInterface:$servicePort"
 
+    val persistence = eventually {
+      service.state match {
+        case Service.State.Started(persistence: Persistence, _) => persistence
+        case state                                              => fail(s"Unexpected service state encountered: [$state]")
+      }
+    }
+
     val owner = ResourceOwnerCredentials(
       username = "existing-user",
       password = "existing-user-password",
@@ -39,7 +46,7 @@ class ServiceSpec extends RouteTest with Eventually {
     )
 
     val client = ClientCredentials(
-      username = eventually { getEntity(service.persistence.clients.clients).id.toString },
+      username = getEntity(persistence.clients.clients).id.toString,
       password = "existing-client-secret"
     )
 
@@ -71,11 +78,11 @@ class ServiceSpec extends RouteTest with Eventually {
         owner = ResourceOwnerCredentials(username = newUser, password = newUserPassword, scope = newUserScope),
         client = client
       )
-      apis <- service.persistence.apis.apis
-      owners <- service.persistence.resourceOwners.owners
-      clients <- service.persistence.clients.clients
+      apis <- persistence.apis.apis
+      owners <- persistence.resourceOwners.owners
+      clients <- persistence.clients.clients
       signatureKey <- getJwk(serviceUrl)
-      _ <- service.persistence.drop()
+      _ <- persistence.drop()
       _ = service.stop()
     } yield {
       apis.size should be(3)
@@ -96,7 +103,17 @@ class ServiceSpec extends RouteTest with Eventually {
     }
 
     eventually {
-      service.state should be(Service.State.Failed)
+      service.state shouldBe a[Service.State.BootstrapFailed]
+    }
+  }
+
+  it should "handle startup failures" in {
+    val service = new Service {
+      override protected def systemConfig: Config = ConfigFactory.load("application-invalid-config")
+    }
+
+    eventually {
+      service.state shouldBe a[Service.State.StartupFailed]
     }
   }
 
