@@ -66,7 +66,7 @@ trait UserAuthentication extends BaseApiDirective {
             discardEntity {
               complete(
                 StatusCodes.Unauthorized,
-                List(headers.`WWW-Authenticate`(HttpChallenges.basic(realm)))
+                List(headers.`WWW-Authenticate`(HttpChallenges.oAuth2(realm)))
               )
             }
         }

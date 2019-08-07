@@ -75,7 +75,7 @@ class UserAuthenticationSpec extends RouteTest {
 
     Get() ~> routes ~> check {
       status should be(StatusCodes.Unauthorized)
-      headers should be(List(model.headers.`WWW-Authenticate`(HttpChallenges.basic(testRealm))))
+      headers should be(List(model.headers.`WWW-Authenticate`(HttpChallenges.oAuth2(testRealm))))
     }
   }
 
