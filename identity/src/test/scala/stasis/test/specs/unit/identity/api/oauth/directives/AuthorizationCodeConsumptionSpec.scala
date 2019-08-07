@@ -42,7 +42,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
         )
     }
 
-    codes.put(client, StoredAuthorizationCode(code, owner, scope = Some(scope))).await
+    codes.put(StoredAuthorizationCode(code, client, owner, scope = Some(scope))).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.OK)
       val fields = responseAs[JsObject].fields
@@ -73,7 +73,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
         )
     }
 
-    codes.put(client, StoredAuthorizationCode(code, owner, scope = Some(scope), challenge = Some(challenge))).await
+    codes.put(StoredAuthorizationCode(code, client, owner, scope = Some(scope), challenge = Some(challenge))).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.BadRequest)
       responseAs[JsObject].fields should contain("error" -> JsString("invalid_grant"))
@@ -102,7 +102,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
         )
     }
 
-    codes.put(client, StoredAuthorizationCode(code, owner, scope = Some(scope), challenge = Some(challenge))).await
+    codes.put(StoredAuthorizationCode(code, client, owner, scope = Some(scope), challenge = Some(challenge))).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.OK)
       val fields = responseAs[JsObject].fields
@@ -144,7 +144,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
         )
     }
 
-    codes.put(client, StoredAuthorizationCode(code, owner, scope = Some(scope), challenge = Some(challenge))).await
+    codes.put(StoredAuthorizationCode(code, client, owner, scope = Some(scope), challenge = Some(challenge))).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.OK)
       val fields = responseAs[JsObject].fields
@@ -175,7 +175,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
         )
     }
 
-    codes.put(client, StoredAuthorizationCode(code, owner, scope = Some(scope), challenge = Some(challenge))).await
+    codes.put(StoredAuthorizationCode(code, client, owner, scope = Some(scope), challenge = Some(challenge))).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.BadRequest)
       responseAs[JsObject].fields should contain("error" -> JsString("invalid_grant"))
@@ -203,7 +203,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
         )
     }
 
-    codes.put(client, StoredAuthorizationCode(code, owner, scope = Some(scope), challenge = None)).await
+    codes.put(StoredAuthorizationCode(code, client, owner, scope = Some(scope), challenge = None)).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.BadRequest)
       responseAs[JsObject].fields should contain("error" -> JsString("invalid_grant"))
@@ -224,25 +224,28 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
         Directives.complete(StatusCodes.OK)
     }
 
-    codes.put(client, StoredAuthorizationCode(Generators.generateAuthorizationCode, owner, scope = Some(scope))).await
+    codes.put(StoredAuthorizationCode(Generators.generateAuthorizationCode, client, owner, scope = Some(scope))).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.BadRequest)
       responseAs[JsObject].fields should contain("error" -> JsString("invalid_grant"))
     }
   }
 
-  it should "fail if no authorization codes are found for clients" in {
+  it should "fail if the provided and found authorization code clients do not match" in {
     val codes = createCodeStore()
     val directive = createDirective(codes)
 
     val client = Client.generateId()
+    val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
+    val scope = "some-scope"
 
     val routes = directive.consumeAuthorizationCode(client, code) {
       case (_, _) =>
         Directives.complete(StatusCodes.OK)
     }
 
+    codes.put(StoredAuthorizationCode(code, Client.generateId(), owner, scope = Some(scope))).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.BadRequest)
       responseAs[JsObject].fields should contain("error" -> JsString("invalid_grant"))
@@ -269,7 +272,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
         )
     }
 
-    codes.put(client, StoredAuthorizationCode(code, owner, scope = Some(scope))).await
+    codes.put(StoredAuthorizationCode(code, client, owner, scope = Some(scope))).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.InternalServerError)
     }

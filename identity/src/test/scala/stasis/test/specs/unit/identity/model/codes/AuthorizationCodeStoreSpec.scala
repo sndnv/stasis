@@ -2,13 +2,12 @@ package stasis.test.specs.unit.identity.model.codes
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
-
 import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.identity.model.clients.Client
-import stasis.identity.model.codes.{AuthorizationCodeStore, StoredAuthorizationCode}
+import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, StoredAuthorizationCode}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.identity.model.Generators
 
@@ -19,18 +18,18 @@ class AuthorizationCodeStoreSpec extends AsyncUnitSpec {
     val expectedCode = Generators.generateAuthorizationCode
     val client = Client.generateId()
     val owner = Generators.generateResourceOwner
-    val expectedStoredCode = StoredAuthorizationCode(expectedCode, owner, scope = None)
+    val expectedStoredCode = StoredAuthorizationCode(expectedCode, client, owner, scope = None)
 
     for {
-      _ <- store.put(client, StoredAuthorizationCode(expectedCode, owner, scope = None))
-      actualCode <- store.get(client)
+      _ <- store.put(StoredAuthorizationCode(expectedCode, client, owner, scope = None))
+      actualCode <- store.get(expectedCode)
       someCodes <- store.codes
-      _ <- store.delete(client)
-      missingCode <- store.get(client)
+      _ <- store.delete(expectedCode)
+      missingCode <- store.get(expectedCode)
       noCodes <- store.codes
     } yield {
       actualCode should be(Some(expectedStoredCode))
-      someCodes should be(Map(client -> expectedStoredCode))
+      someCodes should be(Map(expectedCode -> expectedStoredCode))
       missingCode should be(None)
       noCodes should be(Map.empty)
     }
@@ -43,18 +42,18 @@ class AuthorizationCodeStoreSpec extends AsyncUnitSpec {
     val expectedCode = Generators.generateAuthorizationCode
     val client = Client.generateId()
     val owner = Generators.generateResourceOwner
-    val expectedStoredCode = StoredAuthorizationCode(expectedCode, owner, scope = None)
+    val expectedStoredCode = StoredAuthorizationCode(expectedCode, client, owner, scope = None)
 
     for {
-      _ <- store.put(client, StoredAuthorizationCode(expectedCode, owner, scope = None))
-      actualCode <- store.get(client)
+      _ <- store.put(StoredAuthorizationCode(expectedCode, client, owner, scope = None))
+      actualCode <- store.get(expectedCode)
       someCodes <- store.codes
       _ <- akka.pattern.after(expiration * 2, using = system.scheduler)(Future.successful(Done))
-      missingCode <- store.get(client)
+      missingCode <- store.get(expectedCode)
       noCodes <- store.codes
     } yield {
       actualCode should be(Some(expectedStoredCode))
-      someCodes should be(Map(client -> expectedStoredCode))
+      someCodes should be(Map(expectedCode -> expectedStoredCode))
       missingCode should be(None)
       noCodes should be(Map.empty)
     }
@@ -68,6 +67,6 @@ class AuthorizationCodeStoreSpec extends AsyncUnitSpec {
   private def createStore(expiration: FiniteDuration = 3.seconds): AuthorizationCodeStore =
     AuthorizationCodeStore(
       expiration = expiration,
-      MemoryBackend[Client.Id, StoredAuthorizationCode](name = s"code-store-${java.util.UUID.randomUUID()}")
+      MemoryBackend[AuthorizationCode, StoredAuthorizationCode](name = s"code-store-${java.util.UUID.randomUUID()}")
     )
 }

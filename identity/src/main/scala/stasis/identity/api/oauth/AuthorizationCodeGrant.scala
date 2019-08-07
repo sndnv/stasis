@@ -53,7 +53,11 @@ class AuthorizationCodeGrant(
                   owner = owner,
                   scope = scope
                 ) { code =>
-                  log.debug("Successfully generated authorization code for client [{}]", client.id)
+                  log.debug(
+                    "Successfully generated authorization code for client [{}] and owner [{}]",
+                    client.id,
+                    owner.username
+                  )
 
                   discardEntity {
                     redirect(
@@ -99,12 +103,13 @@ class AuthorizationCodeGrant(
                 (generateAccessToken(owner, audience) & generateRefreshToken(client.id, owner, scope)) {
                   (accessToken, refreshToken) =>
                     log.debug(
-                      "Successfully generated {} for client [{}]",
+                      "Successfully generated {} for client [{}] and owner [{}]",
                       refreshToken match {
                         case Some(_) => "access and refresh tokens"
                         case None    => "access token"
                       },
-                      client.id
+                      client.id,
+                      owner.username
                     )
 
                     discardEntity {

@@ -43,8 +43,8 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     stores.apis.put(api).await
     Get(uri).addCredentials(credentials) ~> oauth.routes ~> check {
       status should be(StatusCodes.Found)
-      stores.codes.get(client.id).await match {
-        case Some(storedCode) =>
+      stores.codes.codes.await.headOption match {
+        case Some((_, storedCode)) =>
           storedCode.challenge should be(None)
 
           headers should contain(
@@ -99,8 +99,8 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     stores.apis.put(api).await
     Get(uri).addCredentials(credentials) ~> oauth.routes ~> check {
       status should be(StatusCodes.Found)
-      stores.codes.get(client.id).await match {
-        case Some(storedCode) =>
+      stores.codes.codes.await.headOption match {
+        case Some((_, storedCode)) =>
           storedCode.challenge should be(Some(storedChallenge))
 
           headers should contain(
@@ -201,8 +201,9 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     val credentials = BasicHttpCredentials(client.id.toString, rawPassword)
 
     val storedCode = StoredAuthorizationCode(
-      code,
-      owner,
+      code = code,
+      client = client.id,
+      owner = owner,
       scope = Some(s"${AudienceExtraction.UrnPrefix}:${api.id}")
     )
 
@@ -215,7 +216,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     stores.clients.put(client).await
     stores.owners.put(owner).await
     stores.apis.put(api).await
-    stores.codes.put(client.id, storedCode).await
+    stores.codes.put(storedCode).await
     Post(uri).addCredentials(credentials) ~> oauth.routes ~> check {
       status should be(StatusCodes.OK)
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
@@ -253,10 +254,11 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     )
 
     val storedCode = StoredAuthorizationCode(
-      code,
-      owner,
+      code = code,
+      client = client.id,
+      owner = owner,
       scope = Some(s"${AudienceExtraction.UrnPrefix}:${api.id}"),
-      Some(storedChallenge)
+      challenge = Some(storedChallenge)
     )
 
     val uri =
@@ -269,7 +271,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     stores.clients.put(client).await
     stores.owners.put(owner).await
     stores.apis.put(api).await
-    stores.codes.put(client.id, storedCode).await
+    stores.codes.put(storedCode).await
     Post(uri).addCredentials(credentials) ~> oauth.routes ~> check {
       status should be(StatusCodes.OK)
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))

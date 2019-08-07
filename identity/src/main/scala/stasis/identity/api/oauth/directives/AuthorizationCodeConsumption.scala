@@ -34,11 +34,12 @@ trait AuthorizationCodeConsumption extends BaseApiDirective {
   ): Directive[(ResourceOwner, Option[String])] =
     consumeCode(
       client,
+      providedCode,
       handler = inner => {
-        case Success(Some(StoredAuthorizationCode(`providedCode`, owner, scope, None))) =>
+        case Success(Some(StoredAuthorizationCode(`providedCode`, `client`, owner, scope, None))) =>
           inner(Tuple2(owner, scope))
 
-        case Success(Some(StoredAuthorizationCode(`providedCode`, owner, _, Some(_)))) =>
+        case Success(Some(StoredAuthorizationCode(`providedCode`, `client`, owner, _, Some(_)))) =>
           log.warning(
             "Authorization code for client [{}] and owner [{}] has challenge but none was expected",
             client,
@@ -61,8 +62,9 @@ trait AuthorizationCodeConsumption extends BaseApiDirective {
   ): Directive[(ResourceOwner, Option[String])] =
     consumeCode(
       client,
+      providedCode,
       handler = inner => {
-        case Success(Some(StoredAuthorizationCode(`providedCode`, owner, scope, Some(challenge)))) =>
+        case Success(Some(StoredAuthorizationCode(`providedCode`, `client`, owner, scope, Some(challenge)))) =>
           val verifierMatchesChallenge = challenge.method match {
             case Some(ChallengeMethod.S256) =>
               val hashedVerifier =
@@ -104,7 +106,7 @@ trait AuthorizationCodeConsumption extends BaseApiDirective {
             }
           }
 
-        case Success(Some(StoredAuthorizationCode(`providedCode`, owner, _, None))) =>
+        case Success(Some(StoredAuthorizationCode(`providedCode`, `client`, owner, _, None))) =>
           log.warning(
             "Authorization code for client [{}] and owner [{}] has no challenge but one was expected",
             client,
@@ -122,6 +124,7 @@ trait AuthorizationCodeConsumption extends BaseApiDirective {
 
   private def consumeCode(
     client: Client.Id,
+    providedCode: AuthorizationCode,
     handler: (
       ((ResourceOwner, Option[String])) => Route
     ) => PartialFunction[Try[Option[StoredAuthorizationCode]], Route]
@@ -129,19 +132,20 @@ trait AuthorizationCodeConsumption extends BaseApiDirective {
     Directive { inner =>
       onComplete(
         for {
-          storedCode <- authorizationCodeStore.get(client)
-          _ <- authorizationCodeStore.delete(client)
+          storedCode <- authorizationCodeStore.get(providedCode)
+          _ <- authorizationCodeStore.delete(providedCode)
         } yield {
           storedCode
         }
       ) {
         handler(inner).orElse {
-          case Success(Some(StoredAuthorizationCode(storedCode, owner, _, _))) =>
+          case Success(Some(StoredAuthorizationCode(storedCode, storedClient, owner, _, _))) =>
             log.warning(
-              "Authorization code [{}] stored for client [{}] and owner [{}] did not match provided code",
-              storedCode,
+              "Authorization code [{}] stored for client [{}] and owner [{}] did not have expected client [{}]",
+              storedCode.value,
               client,
-              owner.username
+              owner.username,
+              storedClient
             )
 
             discardEntity {
@@ -153,8 +157,8 @@ trait AuthorizationCodeConsumption extends BaseApiDirective {
 
           case Success(None) =>
             log.warning(
-              "No authorization code found for client [{}]",
-              client
+              "Authorization code [{}] was not found",
+              providedCode.value
             )
 
             discardEntity {

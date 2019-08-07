@@ -27,8 +27,8 @@ class ManageSpec extends RouteTest with ManageFixtures {
     val code = Generators.generateAuthorizationCode
     val owner = Generators.generateResourceOwner
 
-    providers.codeStore.put(client, StoredAuthorizationCode(code, owner, scope = None)).await
-    Get(s"/codes/$client").addCredentials(credentials) ~> manage.routes ~> check {
+    providers.codeStore.put(StoredAuthorizationCode(code, client, owner, scope = None)).await
+    Get(s"/codes/${code.value}").addCredentials(credentials) ~> manage.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[JsObject].fields should contain("code" -> JsString(code.value))
     }

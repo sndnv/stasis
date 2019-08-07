@@ -39,8 +39,8 @@ class AuthorizationCodeGenerationSpec extends RouteTest {
     Get() ~> routes ~> check {
       status should be(StatusCodes.OK)
 
-      codes.get(client).await match {
-        case Some(expectedCode) =>
+      codes.codes.await.headOption match {
+        case Some((_, expectedCode)) =>
           responseAs[String] should be(expectedCode.code.value)
           expectedCode.challenge should be(None)
 
@@ -79,8 +79,8 @@ class AuthorizationCodeGenerationSpec extends RouteTest {
     Get() ~> routes ~> check {
       status should be(StatusCodes.OK)
 
-      codes.get(client).await match {
-        case Some(expectedCode) =>
+      codes.codes.await.headOption match {
+        case Some((_, expectedCode)) =>
           responseAs[String] should be(expectedCode.code.value)
           expectedCode.challenge should be(Some(expectedChallenge))
 

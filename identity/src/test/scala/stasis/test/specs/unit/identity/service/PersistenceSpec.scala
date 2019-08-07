@@ -34,6 +34,7 @@ class PersistenceSpec extends AsyncUnitSpec {
 
     val expectedCode = StoredAuthorizationCode(
       code = Generators.generateAuthorizationCode,
+      client = expectedClient.id,
       owner = expectedOwner,
       scope = None
     )
@@ -48,8 +49,8 @@ class PersistenceSpec extends AsyncUnitSpec {
       actualOwner <- persistence.resourceOwners.get(expectedOwner.username)
       _ <- persistence.refreshTokens.put(expectedClient.id, expectedToken.token, expectedOwner, scope = None)
       actualToken <- persistence.refreshTokens.get(expectedClient.id)
-      _ <- persistence.authorizationCodes.put(expectedClient.id, expectedCode)
-      actualCode <- persistence.authorizationCodes.get(expectedClient.id)
+      _ <- persistence.authorizationCodes.put(expectedCode)
+      actualCode <- persistence.authorizationCodes.get(expectedCode.code)
       _ <- persistence.drop()
     } yield {
       actualApi should be(Some(expectedApi))

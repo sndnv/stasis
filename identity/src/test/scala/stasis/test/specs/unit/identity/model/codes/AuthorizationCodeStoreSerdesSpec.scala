@@ -19,6 +19,7 @@ class AuthorizationCodeStoreSerdesSpec extends UnitSpec {
   they should "serialize and deserialize values" in {
     val code = StoredAuthorizationCode(
       code = Generators.generateAuthorizationCode,
+      client = Generators.generateClient.id,
       owner = Generators.generateResourceOwner,
       scope = Some(Generators.generateString(withSize = 16)),
       challenge = Some(
