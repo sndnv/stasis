@@ -30,13 +30,13 @@ trait RefreshTokenConsumption extends BaseApiDirective {
     Directive { inner =>
       onComplete(
         for {
-          storedToken <- refreshTokenStore.get(client)
-          _ <- refreshTokenStore.delete(client)
+          storedToken <- refreshTokenStore.get(providedToken)
+          _ <- refreshTokenStore.delete(providedToken)
         } yield {
           storedToken
         }
       ) {
-        case Success(Some(StoredRefreshToken(`providedToken`, owner, storedScope, _))) =>
+        case Success(Some(StoredRefreshToken(`providedToken`, `client`, owner, storedScope, _))) =>
           if (providedScopeAllowed(storedScope, providedScope)) {
             inner(Tuple1(owner))
           } else {
@@ -47,28 +47,19 @@ trait RefreshTokenConsumption extends BaseApiDirective {
               storedScope
             )
 
-            discardEntity {
-              complete(
-                StatusCodes.BadRequest,
-                TokenError.InvalidScope
-              )
-            }
+            discardEntity & complete(StatusCodes.BadRequest, TokenError.InvalidScope)
           }
 
-        case Success(Some(StoredRefreshToken(storedToken, owner, _, _))) =>
+        case Success(Some(StoredRefreshToken(storedToken, storedClient, owner, _, _))) =>
           log.warning(
-            "Refresh token [{}] stored for client [{}] and owner [{}] did not match provided token",
+            "Refresh token [{}] stored for client [{}] and owner [{}] did not have expected client [{}]",
             storedToken,
             client,
-            owner.username
+            owner.username,
+            storedClient
           )
 
-          discardEntity {
-            complete(
-              StatusCodes.BadRequest,
-              TokenError.InvalidGrant
-            )
-          }
+          discardEntity & complete(StatusCodes.BadRequest, TokenError.InvalidGrant)
 
         case Success(None) =>
           log.warning(
@@ -76,12 +67,7 @@ trait RefreshTokenConsumption extends BaseApiDirective {
             client
           )
 
-          discardEntity {
-            complete(
-              StatusCodes.BadRequest,
-              TokenError.InvalidGrant
-            )
-          }
+          discardEntity & complete(StatusCodes.BadRequest, TokenError.InvalidGrant)
 
         case Failure(e) =>
           log.error(
@@ -91,11 +77,7 @@ trait RefreshTokenConsumption extends BaseApiDirective {
             e.getMessage
           )
 
-          discardEntity {
-            complete(
-              StatusCodes.InternalServerError
-            )
-          }
+          discardEntity & complete(StatusCodes.InternalServerError)
       }
     }
 

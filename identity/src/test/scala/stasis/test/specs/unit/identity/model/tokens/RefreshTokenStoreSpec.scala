@@ -7,7 +7,7 @@ import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.scalatest.concurrent.Eventually
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.identity.model.clients.Client
-import stasis.identity.model.tokens.{RefreshTokenStore, StoredRefreshToken}
+import stasis.identity.model.tokens.{RefreshToken, RefreshTokenStore, StoredRefreshToken}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.identity.model.Generators
 
@@ -24,21 +24,22 @@ class RefreshTokenStoreSpec extends AsyncUnitSpec with Eventually {
 
     for {
       _ <- store.put(client, expectedToken, owner, scope = None)
-      actualToken <- store.get(client)
+      actualToken <- store.get(expectedToken)
       someTokens <- store.tokens
-      _ <- store.delete(client)
-      missingToken <- store.get(client)
+      _ <- store.delete(expectedToken)
+      missingToken <- store.get(expectedToken)
       noTokens <- store.tokens
     } yield {
       val expectedStoredToken = StoredRefreshToken(
-        expectedToken,
-        owner,
+        token = expectedToken,
+        client = client,
+        owner = owner,
         scope = None,
         expiration = actualToken.map(_.expiration).getOrElse(Instant.MIN)
       )
 
       actualToken should be(Some(expectedStoredToken))
-      someTokens should be(Map(client -> expectedStoredToken))
+      someTokens should be(Map(expectedToken -> expectedStoredToken))
       missingToken should be(None)
       noTokens should be(Map.empty)
     }
@@ -55,33 +56,48 @@ class RefreshTokenStoreSpec extends AsyncUnitSpec with Eventually {
     store.put(client, expectedToken, owner, scope = None).await
 
     eventually {
-      store.get(client).await should be(None)
+      store.get(expectedToken).await should be(None)
       store.tokens.await should be(Map.empty)
     }
   }
 
   it should "expire existing refresh tokens at startup" in {
-    val backend = MemoryBackend[Client.Id, StoredRefreshToken](name = s"token-store-${java.util.UUID.randomUUID()}")
+    val backend = MemoryBackend[RefreshToken, StoredRefreshToken](name = s"token-store-${java.util.UUID.randomUUID()}")
 
     val owner = Generators.generateResourceOwner
     val expectedToken = Generators.generateRefreshToken
 
     val tokens = Seq(
-      StoredRefreshToken(expectedToken, owner, scope = None, expiration = Instant.now().minusSeconds(1)),
-      StoredRefreshToken(expectedToken, owner, scope = None, expiration = Instant.now().minusSeconds(2)),
-      StoredRefreshToken(expectedToken, owner, scope = None, expiration = Instant.now().plusSeconds(42))
+      StoredRefreshToken(
+        token = expectedToken,
+        client = Client.generateId(),
+        owner = owner,
+        scope = None,
+        expiration = Instant.now().minusSeconds(1)
+      ),
+      StoredRefreshToken(
+        token = expectedToken,
+        client = Client.generateId(),
+        owner = owner,
+        scope = None,
+        expiration = Instant.now().minusSeconds(2)
+      ),
+      StoredRefreshToken(
+        token = expectedToken,
+        client = Client.generateId(),
+        owner = owner,
+        scope = None,
+        expiration = Instant.now().plusSeconds(42)
+      )
     )
 
-    Future
-      .sequence(tokens.map(token => backend.put(Client.generateId(), token)))
-      .flatMap { _ =>
-        val store = RefreshTokenStore(expiration = 3.seconds, backend = backend)
+    tokens.foreach(token => backend.put(token.token, token).await)
 
-        eventually {
-          val remainingTokens = store.tokens.await
-          remainingTokens.values.toSeq should be(tokens.drop(2))
-        }
-      }
+    val store = RefreshTokenStore(expiration = 3.seconds, backend = backend)
+    eventually {
+      val remainingTokens = store.tokens.await
+      remainingTokens.values.toSeq should be(tokens.drop(2))
+    }
   }
 
   private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
@@ -91,6 +107,6 @@ class RefreshTokenStoreSpec extends AsyncUnitSpec with Eventually {
 
   private def createStore(expiration: FiniteDuration = 3.seconds): RefreshTokenStore = RefreshTokenStore(
     expiration = expiration,
-    MemoryBackend[Client.Id, StoredRefreshToken](name = s"token-store-${java.util.UUID.randomUUID()}")
+    MemoryBackend[RefreshToken, StoredRefreshToken](name = s"token-store-${java.util.UUID.randomUUID()}")
   )
 }

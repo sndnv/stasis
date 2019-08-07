@@ -17,15 +17,16 @@ class TokensSpec extends RouteTest {
     val store = createTokenStore()
     val tokens = new Tokens(store)
 
+    val client = Client.generateId()
     val owner = Generators.generateResourceOwner
     val expectedTokens = Generators.generateSeq(min = 2, g = Generators.generateRefreshToken)
 
-    Future.sequence(expectedTokens.map(token => store.put(Client.generateId(), token, owner, scope = None))).await
+    Future.sequence(expectedTokens.map(token => store.put(client, token, owner, scope = None))).await
     Get() ~> tokens.routes(user) ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[(String, PartialStoredRefreshToken)]].map(_._2).sortBy(_.token) should be(
         expectedTokens
-          .map(token => PartialStoredRefreshToken(token.value, owner.username, scope = None))
+          .map(token => PartialStoredRefreshToken(token.value, client, owner.username, scope = None))
           .sortBy(_.token))
     }
   }
@@ -39,10 +40,10 @@ class TokensSpec extends RouteTest {
     val token = Generators.generateRefreshToken
 
     store.put(client, token, owner, scope = None).await
-    Get(s"/$client") ~> tokens.routes(user) ~> check {
+    Get(s"/${token.value}") ~> tokens.routes(user) ~> check {
       status should be(StatusCodes.OK)
       responseAs[PartialStoredRefreshToken] should be(
-        PartialStoredRefreshToken(token.value, owner.username, scope = None)
+        PartialStoredRefreshToken(token.value, client, owner.username, scope = None)
       )
     }
   }
@@ -55,7 +56,7 @@ class TokensSpec extends RouteTest {
     val token = Generators.generateRefreshToken
 
     store.put(Client.generateId(), token, owner, scope = None).await
-    Get(s"/${Client.generateId()}") ~> tokens.routes(user) ~> check {
+    Get(s"/${Generators.generateRefreshToken.value}") ~> tokens.routes(user) ~> check {
       status should be(StatusCodes.NotFound)
     }
   }
@@ -69,7 +70,7 @@ class TokensSpec extends RouteTest {
     val token = Generators.generateRefreshToken
 
     store.put(client, token, owner, scope = None).await
-    Delete(s"/$client") ~> tokens.routes(user) ~> check {
+    Delete(s"/${token.value}") ~> tokens.routes(user) ~> check {
       status should be(StatusCodes.OK)
       store.tokens.await should be(Map.empty)
     }
@@ -79,7 +80,7 @@ class TokensSpec extends RouteTest {
     val store = createTokenStore()
     val tokens = new Tokens(store)
 
-    Delete(s"/${Client.generateId()}") ~> tokens.routes(user) ~> check {
+    Delete(s"/${Generators.generateRefreshToken.value}") ~> tokens.routes(user) ~> check {
       status should be(StatusCodes.NotFound)
     }
   }
@@ -95,6 +96,7 @@ object TokensSpec {
 
   final case class PartialStoredRefreshToken(
     token: String,
+    client: Client.Id,
     owner: String,
     scope: Option[String]
   )

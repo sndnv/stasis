@@ -65,7 +65,7 @@ class RefreshTokenGrantSpec extends RouteTest with OAuthFixtures {
       actualResponse.refresh_token.exists(_.value.nonEmpty) should be(true)
       actualResponse.scope should be(request.scope)
 
-      val newTokenGenerated = stores.tokens.get(client.id).await.exists(_.token != token)
+      val newTokenGenerated = stores.tokens.tokens.await.headOption.exists(_._2.token != token)
       newTokenGenerated should be(true)
     }
   }

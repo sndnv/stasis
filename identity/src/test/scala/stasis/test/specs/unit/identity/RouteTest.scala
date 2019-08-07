@@ -14,7 +14,7 @@ import stasis.identity.model.apis.{Api, ApiStore}
 import stasis.identity.model.clients.{Client, ClientStore}
 import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, StoredAuthorizationCode}
 import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore}
-import stasis.identity.model.tokens.{RefreshTokenStore, StoredRefreshToken}
+import stasis.identity.model.tokens.{RefreshToken, RefreshTokenStore, StoredRefreshToken}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.identity.RouteTest.FailingMemoryBackend
 
@@ -53,7 +53,7 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
 
   def createTokenStore(expiration: FiniteDuration = 3.seconds): RefreshTokenStore = RefreshTokenStore(
     expiration = expiration,
-    MemoryBackend[Client.Id, StoredRefreshToken](name = s"token-store-${java.util.UUID.randomUUID()}")
+    MemoryBackend[RefreshToken, StoredRefreshToken](name = s"token-store-${java.util.UUID.randomUUID()}")
   )
 
   def createFailingApiStore(
@@ -139,7 +139,7 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
     failingContains: Boolean = false
   ): RefreshTokenStore = RefreshTokenStore(
     expiration = expiration,
-    new FailingMemoryBackend[Client.Id, StoredRefreshToken] {
+    new FailingMemoryBackend[RefreshToken, StoredRefreshToken] {
       override def system: ActorSystem[SpawnProtocol] = typedSystem
       override def storeName: String = s"token-store-${java.util.UUID.randomUUID()}"
       override def putFails: Boolean = failingPut

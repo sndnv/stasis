@@ -103,18 +103,20 @@ class RefreshTokenConsumptionSpec extends RouteTest {
     }
   }
 
-  it should "fail if no refresh tokens are found for clients" in {
+  it should "fail if the provided and found refresh token clients do not match" in {
     val tokens = createTokenStore()
     val directive = createDirective(tokens)
 
     val client = Client.generateId()
+    val owner = Generators.generateResourceOwner
     val token = Generators.generateRefreshToken
     val scope = Some("some-scope")
 
-    val routes = directive.consumeRefreshToken(client, scope, token) { extractedOwner =>
+    val routes = directive.consumeRefreshToken(Client.generateId(), scope, token) { extractedOwner =>
       Directives.complete(StatusCodes.OK, extractedOwner.username)
     }
 
+    tokens.put(client, token, owner, scope).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.BadRequest)
       responseAs[JsObject].fields should contain("error" -> JsString("invalid_grant"))

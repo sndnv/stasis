@@ -43,7 +43,7 @@ class ManageSpec extends RouteTest with ManageFixtures {
     val owner = Generators.generateResourceOwner
 
     providers.tokenStore.put(client, token, owner, scope = None).await
-    Get(s"/tokens/$client").addCredentials(credentials) ~> manage.routes ~> check {
+    Get(s"/tokens/${token.value}").addCredentials(credentials) ~> manage.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[JsObject].fields should contain("token" -> JsString(token.value))
     }

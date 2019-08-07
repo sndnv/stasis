@@ -227,7 +227,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
       actualResponse.contains("expires_in") should be(true)
       actualResponse.contains("refresh_token") should be(true)
 
-      val refreshTokenGenerated = stores.tokens.get(client.id).await.nonEmpty
+      val refreshTokenGenerated = stores.tokens.tokens.await.headOption.nonEmpty
       refreshTokenGenerated should be(true)
     }
   }
@@ -282,7 +282,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
       actualResponse.contains("expires_in") should be(true)
       actualResponse.contains("refresh_token") should be(true)
 
-      val refreshTokenGenerated = stores.tokens.get(client.id).await.nonEmpty
+      val refreshTokenGenerated = stores.tokens.tokens.await.headOption.nonEmpty
       refreshTokenGenerated should be(true)
     }
   }
@@ -360,7 +360,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
       actualResponse.contains("refresh_token") should be(true)
       actualResponse.contains("scope") should be(true)
 
-      val newTokenGenerated = stores.tokens.get(client.id).await.exists(_.token != token)
+      val newTokenGenerated = stores.tokens.tokens.await.headOption.exists(_._2.token != token)
       newTokenGenerated should be(true)
     }
   }
@@ -409,7 +409,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
       actualResponse.contains("refresh_token") should be(true)
       actualResponse.contains("scope") should be(true)
 
-      val refreshTokenGenerated = stores.tokens.get(client.id).await.nonEmpty
+      val refreshTokenGenerated = stores.tokens.tokens.await.headOption.nonEmpty
       refreshTokenGenerated should be(true)
     }
   }

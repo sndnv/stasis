@@ -33,9 +33,9 @@ class RefreshTokenGenerationSpec extends RouteTest {
     }
 
     Get() ~> routes ~> check {
-      val expectedToken = tokens.get(client).await match {
-        case Some(storedToken) => storedToken.token.value
-        case None              => fail("Unexpected response received; no token found")
+      val expectedToken = tokens.tokens.await.headOption match {
+        case Some((_, storedToken)) => storedToken.token.value
+        case None                   => fail("Unexpected response received; no token found")
       }
 
       status should be(StatusCodes.OK)

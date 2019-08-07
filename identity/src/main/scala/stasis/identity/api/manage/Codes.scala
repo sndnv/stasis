@@ -52,10 +52,10 @@ class Codes(store: AuthorizationCodeStore)(implicit system: ActorSystem, overrid
           delete {
             onSuccess(store.delete(AuthorizationCode(code))) { deleted =>
               if (deleted) {
-                log.info("User [{}] successfully deleted authorization code", user)
+                log.info("User [{}] successfully deleted authorization code [{}]", user, code)
                 discardEntity & complete(StatusCodes.OK)
               } else {
-                log.warning("User [{}] failed to delete authorization code", user)
+                log.warning("User [{}] failed to delete authorization code [{}]", user, code)
                 discardEntity & complete(StatusCodes.NotFound)
               }
             }

@@ -8,7 +8,7 @@ import akka.http.scaladsl.server._
 import akka.stream.Materializer
 import stasis.identity.api.directives.BaseApiDirective
 import stasis.identity.model.owners.ResourceOwner
-import stasis.identity.model.tokens.RefreshTokenStore
+import stasis.identity.model.tokens.{RefreshToken, RefreshTokenStore}
 
 class Tokens(store: RefreshTokenStore)(implicit system: ActorSystem, override val mat: Materializer)
     extends BaseApiDirective {
@@ -27,30 +27,35 @@ class Tokens(store: RefreshTokenStore)(implicit system: ActorSystem, override va
           }
         }
       },
-      path(JavaUUID) { clientId =>
+      path(Segment) { token =>
         concat(
           get {
-            onSuccess(store.get(clientId)) {
-              case Some(token) =>
-                log.info("User [{}] successfully retrieved refresh token for client [{}]", user, clientId)
-                discardEntity & complete(token)
+            onSuccess(store.get(RefreshToken(token))) {
+              case Some(storedToken) =>
+                log.info(
+                  "User [{}] successfully retrieved refresh token for client [{}] and owner [{}]",
+                  user,
+                  storedToken.client,
+                  storedToken.owner.username
+                )
+                discardEntity & complete(storedToken)
 
               case None =>
                 log.warning(
-                  "User [{}] requested a refresh token for client [{}] but none was found",
+                  "User [{}] requested refresh token [{}] but it was not found",
                   user,
-                  clientId
+                  token
                 )
                 discardEntity & complete(StatusCodes.NotFound)
             }
           },
           delete {
-            onSuccess(store.delete(clientId)) { deleted =>
+            onSuccess(store.delete(RefreshToken(token))) { deleted =>
               if (deleted) {
-                log.info("User [{}] successfully deleted refresh token for client [{}]", user, clientId)
+                log.info("User [{}] successfully deleted refresh token [{}]", user, token)
                 discardEntity & complete(StatusCodes.OK)
               } else {
-                log.warning("User [{}] failed to delete refresh token for client [{}]", user, clientId)
+                log.warning("User [{}] failed to delete refresh token [{}]", user, token)
                 discardEntity & complete(StatusCodes.NotFound)
               }
             }

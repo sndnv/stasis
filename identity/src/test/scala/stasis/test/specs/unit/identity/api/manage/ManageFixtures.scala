@@ -7,7 +7,7 @@ import stasis.identity.model.apis.{Api, ApiStore}
 import stasis.identity.model.clients.{Client, ClientStore}
 import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, StoredAuthorizationCode}
 import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore}
-import stasis.identity.model.tokens.{RefreshTokenStore, StoredRefreshToken}
+import stasis.identity.model.tokens.{RefreshToken, RefreshTokenStore, StoredRefreshToken}
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
 
@@ -34,7 +34,7 @@ trait ManageFixtures { _: RouteTest =>
     ),
     tokenStore = RefreshTokenStore(
       expiration = expiration,
-      MemoryBackend[Client.Id, StoredRefreshToken](name = s"token-store-${java.util.UUID.randomUUID()}")
+      MemoryBackend[RefreshToken, StoredRefreshToken](name = s"token-store-${java.util.UUID.randomUUID()}")
     ),
     ownerAuthenticator = (_: OAuth2BearerToken) =>
       Future.successful(Generators.generateResourceOwner.copy(allowedScopes = withOwnerScopes))
