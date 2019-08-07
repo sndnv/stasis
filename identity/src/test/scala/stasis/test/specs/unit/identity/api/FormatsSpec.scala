@@ -4,6 +4,7 @@ import java.time.Instant
 
 import play.api.libs.json._
 import stasis.identity.api.Formats._
+import stasis.identity.model.clients.Client
 import stasis.identity.model.codes.StoredAuthorizationCode
 import stasis.identity.model.errors.{AuthorizationError, TokenError}
 import stasis.identity.model.tokens.{AccessToken, RefreshToken, StoredRefreshToken, TokenType}
@@ -151,7 +152,7 @@ class FormatsSpec extends UnitSpec {
   they should "convert stored authorization codes to JSON" in {
     val code = StoredAuthorizationCode(
       code = Generators.generateAuthorizationCode,
-      client = Generators.generateClient.id,
+      client = Client.generateId(),
       owner = Generators.generateResourceOwner,
       scope = Some(Generators.generateString(withSize = 16)),
       challenge = Some(
@@ -188,6 +189,7 @@ class FormatsSpec extends UnitSpec {
   they should "convert stored refresh tokens to JSON" in {
     val token = StoredRefreshToken(
       token = Generators.generateRefreshToken,
+      client = Client.generateId(),
       owner = Generators.generateResourceOwner,
       scope = Some(Generators.generateString(withSize = 16)),
       expiration = Instant.now()
@@ -197,6 +199,7 @@ class FormatsSpec extends UnitSpec {
     val parsedKeys = parsedFields.map(_._1)
 
     parsedFields should contain("token" -> JsString(token.token.value))
+    parsedFields should contain("client" -> JsString(token.client.toString))
     parsedFields should contain("scope" -> JsString(token.scope.getOrElse("invalid-scope")))
     parsedKeys should contain("owner")
     parsedKeys should contain("expiration")

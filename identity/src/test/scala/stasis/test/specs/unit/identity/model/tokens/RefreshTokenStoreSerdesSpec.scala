@@ -9,17 +9,18 @@ import stasis.test.specs.unit.identity.model.Generators
 
 class RefreshTokenStoreSerdesSpec extends UnitSpec {
   "RefreshTokenStoreSerdes" should "serialize and deserialize keys" in {
-    val client = Client.generateId()
+    val token = Generators.generateRefreshToken
 
-    val serialized = RefreshTokenStoreSerdes.serializeKey(client)
+    val serialized = RefreshTokenStoreSerdes.serializeKey(token)
     val deserialized = RefreshTokenStoreSerdes.deserializeKey(serialized)
 
-    deserialized should be(client)
+    deserialized should be(token)
   }
 
   they should "serialize and deserialize values" in {
     val token = StoredRefreshToken(
       token = Generators.generateRefreshToken,
+      client = Client.generateId(),
       owner = Generators.generateResourceOwner,
       scope = Some(Generators.generateString(withSize = 16)),
       expiration = Instant.now()

@@ -12,7 +12,7 @@ import stasis.identity.model.apis.{ApiStore, ApiStoreSerdes}
 import stasis.identity.model.clients.{Client, ClientStore, ClientStoreSerdes}
 import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, StoredAuthorizationCode}
 import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore, ResourceOwnerStoreSerdes}
-import stasis.identity.model.tokens.{RefreshTokenStore, RefreshTokenStoreSerdes, StoredRefreshToken}
+import stasis.identity.model.tokens.{RefreshToken, RefreshTokenStore, RefreshTokenStoreSerdes, StoredRefreshToken}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -95,7 +95,7 @@ class Persistence(
       serdes = ResourceOwnerStoreSerdes
     )
 
-    val tokens: KeyValueBackend[Client.Id, StoredRefreshToken] = new SlickBackend(
+    val tokens: KeyValueBackend[RefreshToken, StoredRefreshToken] = new SlickBackend(
       tableName = "REFRESH_TOKENS",
       profile = profile,
       database = database,

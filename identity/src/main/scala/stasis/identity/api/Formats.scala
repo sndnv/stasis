@@ -116,6 +116,7 @@ object Formats {
       token =>
         Json.obj(
           "token" -> Json.toJson(token.token),
+          "client" -> Json.toJson(token.client),
           "owner" -> Json.toJson(token.owner.username),
           "scope" -> Json.toJson(token.scope),
           "expiration" -> Json.toJson(token.expiration)

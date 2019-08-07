@@ -8,18 +8,18 @@ import stasis.test.specs.unit.identity.model.Generators
 
 class AuthorizationCodeStoreSerdesSpec extends UnitSpec {
   "AuthorizationCodeStoreSerdes" should "serialize and deserialize keys" in {
-    val client = Client.generateId()
+    val code = Generators.generateAuthorizationCode
 
-    val serialized = AuthorizationCodeStoreSerdes.serializeKey(client)
+    val serialized = AuthorizationCodeStoreSerdes.serializeKey(code)
     val deserialized = AuthorizationCodeStoreSerdes.deserializeKey(serialized)
 
-    deserialized should be(client)
+    deserialized should be(code)
   }
 
   they should "serialize and deserialize values" in {
     val code = StoredAuthorizationCode(
       code = Generators.generateAuthorizationCode,
-      client = Generators.generateClient.id,
+      client = Client.generateId(),
       owner = Generators.generateResourceOwner,
       scope = Some(Generators.generateString(withSize = 16)),
       challenge = Some(

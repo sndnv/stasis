@@ -2,7 +2,7 @@ package stasis.test.specs.unit.identity.api.oauth
 
 import akka.http.scaladsl.model
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, CacheDirectives}
-import akka.http.scaladsl.model.{ContentTypes, StatusCodes, Uri}
+import akka.http.scaladsl.model.{StatusCodes, Uri}
 import stasis.identity.api.oauth.ResourceOwnerPasswordCredentialsGrant
 import stasis.identity.api.oauth.ResourceOwnerPasswordCredentialsGrant.{AccessTokenRequest, AccessTokenResponse}
 import stasis.identity.model.GrantType
@@ -71,7 +71,7 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
       actualResponse.refresh_token.exists(_.value.nonEmpty) should be(true)
       actualResponse.scope should be(request.scope)
 
-      val refreshTokenGenerated = stores.tokens.get(client.id).await.nonEmpty
+      val refreshTokenGenerated = stores.tokens.tokens.await.headOption.nonEmpty
       refreshTokenGenerated should be(true)
     }
   }

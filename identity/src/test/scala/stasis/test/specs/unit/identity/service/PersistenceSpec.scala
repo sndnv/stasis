@@ -27,6 +27,7 @@ class PersistenceSpec extends AsyncUnitSpec {
 
     val expectedToken = StoredRefreshToken(
       token = Generators.generateRefreshToken,
+      client = expectedClient.id,
       owner = expectedOwner,
       scope = None,
       expiration = Instant.now().plusSeconds(42)
@@ -48,7 +49,7 @@ class PersistenceSpec extends AsyncUnitSpec {
       _ <- persistence.resourceOwners.put(expectedOwner)
       actualOwner <- persistence.resourceOwners.get(expectedOwner.username)
       _ <- persistence.refreshTokens.put(expectedClient.id, expectedToken.token, expectedOwner, scope = None)
-      actualToken <- persistence.refreshTokens.get(expectedClient.id)
+      actualToken <- persistence.refreshTokens.get(expectedToken.token)
       _ <- persistence.authorizationCodes.put(expectedCode)
       actualCode <- persistence.authorizationCodes.get(expectedCode.code)
       _ <- persistence.drop()

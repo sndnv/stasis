@@ -235,7 +235,7 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
       actualResponse.expires_in.value should be > 0L
       actualResponse.refresh_token.exists(_.value.nonEmpty) should be(true)
 
-      val refreshTokenGenerated = stores.tokens.get(client.id).await.nonEmpty
+      val refreshTokenGenerated = stores.tokens.tokens.await.headOption.nonEmpty
       refreshTokenGenerated should be(true)
     }
   }
@@ -277,7 +277,7 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
       actualResponse.expires_in.value should be > 0L
       actualResponse.refresh_token should be(None)
 
-      val refreshTokenGenerated = stores.tokens.get(client.id).await.nonEmpty
+      val refreshTokenGenerated = stores.tokens.tokens.await.headOption.nonEmpty
       refreshTokenGenerated should be(false)
     }
   }

@@ -13,15 +13,15 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait RefreshTokenStore { store =>
   def put(client: Client.Id, token: RefreshToken, owner: ResourceOwner, scope: Option[String]): Future[Done]
-  def delete(client: Client.Id): Future[Boolean]
-  def get(client: Client.Id): Future[Option[StoredRefreshToken]]
-  def tokens: Future[Map[Client.Id, StoredRefreshToken]]
+  def delete(token: RefreshToken): Future[Boolean]
+  def get(token: RefreshToken): Future[Option[StoredRefreshToken]]
+  def tokens: Future[Map[RefreshToken, StoredRefreshToken]]
 }
 
 object RefreshTokenStore {
   def apply(
     expiration: FiniteDuration,
-    backend: KeyValueBackend[Client.Id, StoredRefreshToken]
+    backend: KeyValueBackend[RefreshToken, StoredRefreshToken]
   )(implicit system: ActorSystem[SpawnProtocol]): RefreshTokenStore =
     new RefreshTokenStore {
       private implicit val ec: ExecutionContext = system.executionContext
@@ -33,19 +33,19 @@ object RefreshTokenStore {
         scope: Option[String]
       ): Future[Done] =
         backend
-          .put(client, StoredRefreshToken(token, owner, scope, Instant.now().plusSeconds(expiration.toSeconds)))
+          .put(token, StoredRefreshToken(token, client, owner, scope, Instant.now().plusSeconds(expiration.toSeconds)))
           .map { result =>
-            val _ = expire(client)
+            val _ = expire(token)
             result
           }
 
-      override def delete(client: Client.Id): Future[Boolean] =
-        backend.delete(client)
+      override def delete(token: RefreshToken): Future[Boolean] =
+        backend.delete(token)
 
-      override def get(client: Client.Id): Future[Option[StoredRefreshToken]] =
-        backend.get(client)
+      override def get(token: RefreshToken): Future[Option[StoredRefreshToken]] =
+        backend.get(token)
 
-      override def tokens: Future[Map[Client.Id, StoredRefreshToken]] =
+      override def tokens: Future[Map[RefreshToken, StoredRefreshToken]] =
         backend.entries
 
       private val _ = backend.entries.flatMap { entries =>
@@ -53,13 +53,13 @@ object RefreshTokenStore {
 
         Future.sequence(
           entries.map {
-            case (client, token) if token.expiration.isBefore(now) => backend.delete(client)
-            case (client, _)                                       => expire(client)
+            case (token, storedToken) if storedToken.expiration.isBefore(now) => backend.delete(token)
+            case (token, _)                                                   => expire(token)
           }
         )
       }
 
-      private def expire(client: Client.Id): Future[Boolean] =
-        akka.pattern.after(expiration, system.scheduler)(backend.delete(client))
+      private def expire(token: RefreshToken): Future[Boolean] =
+        akka.pattern.after(expiration, system.scheduler)(backend.delete(token))
     }
 }
