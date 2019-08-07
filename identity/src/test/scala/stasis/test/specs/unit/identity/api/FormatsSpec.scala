@@ -151,6 +151,7 @@ class FormatsSpec extends UnitSpec {
   they should "convert stored authorization codes to JSON" in {
     val code = StoredAuthorizationCode(
       code = Generators.generateAuthorizationCode,
+      client = Generators.generateClient.id,
       owner = Generators.generateResourceOwner,
       scope = Some(Generators.generateString(withSize = 16)),
       challenge = Some(
@@ -165,6 +166,7 @@ class FormatsSpec extends UnitSpec {
     val parsedKeys = parsedFields.map(_._1)
 
     parsedFields should contain("code" -> JsString(code.code.value))
+    parsedFields should contain("client" -> JsString(code.client.toString))
     parsedFields should contain("scope" -> JsString(code.scope.getOrElse("invalid-scope")))
     parsedKeys should contain("owner")
     parsedKeys should contain("challenge")

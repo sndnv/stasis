@@ -94,6 +94,7 @@ object Formats {
       code =>
         Json.obj(
           "code" -> Json.toJson(code.code),
+          "client" -> Json.toJson(code.client),
           "owner" -> Json.toJson(code.owner.username),
           "scope" -> Json.toJson(code.scope),
           "challenge" -> Json.toJson(code.challenge)

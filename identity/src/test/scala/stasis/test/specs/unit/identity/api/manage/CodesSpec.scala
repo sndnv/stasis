@@ -23,7 +23,7 @@ class CodesSpec extends RouteTest {
 
     Future
       .sequence(
-        expectedCodes.map(code => store.put(Client.generateId(), StoredAuthorizationCode(code, owner, scope = None)))
+        expectedCodes.map(code => store.put(StoredAuthorizationCode(code, Client.generateId(), owner, scope = None)))
       )
       .await
     Get() ~> codes.routes(user) ~> check {
@@ -44,8 +44,8 @@ class CodesSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
 
-    store.put(client, StoredAuthorizationCode(code, owner, scope = None)).await
-    Get(s"/$client") ~> codes.routes(user) ~> check {
+    store.put(StoredAuthorizationCode(code, client, owner, scope = None)).await
+    Get(s"/${code.value}") ~> codes.routes(user) ~> check {
       status should be(StatusCodes.OK)
       responseAs[PartialStoredAuthorizationCode] should be(
         PartialStoredAuthorizationCode(code.value, owner.username, scope = None)
@@ -60,8 +60,8 @@ class CodesSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
 
-    store.put(Client.generateId(), StoredAuthorizationCode(code, owner, scope = None)).await
-    Get(s"/${Client.generateId()}") ~> codes.routes(user) ~> check {
+    store.put(StoredAuthorizationCode(code, Client.generateId(), owner, scope = None)).await
+    Get(s"/${Generators.generateAuthorizationCode.value}") ~> codes.routes(user) ~> check {
       status should be(StatusCodes.NotFound)
     }
   }
@@ -74,8 +74,8 @@ class CodesSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
 
-    store.put(client, StoredAuthorizationCode(code, owner, scope = None)).await
-    Delete(s"/$client") ~> codes.routes(user) ~> check {
+    store.put(StoredAuthorizationCode(code, client, owner, scope = None)).await
+    Delete(s"/${code.value}") ~> codes.routes(user) ~> check {
       status should be(StatusCodes.OK)
       store.codes.await should be(Map.empty)
     }
@@ -85,7 +85,7 @@ class CodesSpec extends RouteTest {
     val store = createCodeStore()
     val codes = new Codes(store)
 
-    Delete(s"/${Client.generateId()}") ~> codes.routes(user) ~> check {
+    Delete(s"/${Generators.generateAuthorizationCode.value}") ~> codes.routes(user) ~> check {
       status should be(StatusCodes.NotFound)
     }
   }

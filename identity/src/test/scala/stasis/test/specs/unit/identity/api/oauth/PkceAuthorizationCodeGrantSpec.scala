@@ -100,8 +100,8 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.apis.put(api).await
     Get(request).addCredentials(credentials) ~> grant.authorization() ~> check {
       status should be(StatusCodes.Found)
-      stores.codes.get(client.id).await match {
-        case Some(storedCode) =>
+      stores.codes.codes.await.headOption match {
+        case Some((_, storedCode)) =>
           storedCode.challenge should be(
             Some(StoredAuthorizationCode.Challenge(request.code_challenge, request.code_challenge_method))
           )
@@ -121,6 +121,57 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
           fail("Unexpected response received; no authorization code found")
       }
     }
+  }
+
+  they should "support multiple concurrent authorization requests" in {
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val grant = new PkceAuthorizationCodeGrant(config, providers)
+
+    val api = Generators.generateApi
+    val client = Generators.generateClient
+
+    stores.apis.put(api).await
+    stores.clients.put(client).await
+
+    val requests = Generators.generateSeq(
+      min = 3,
+      g = {
+
+        val rawPassword = Generators.generateString(24)
+        val salt = Generators.generateString(withSize = secrets.owner.saltSize)
+        val owner = Generators.generateResourceOwner.copy(
+          password = Secret.derive(rawPassword, salt)(secrets.owner),
+          salt = salt
+        )
+        val credentials = BasicHttpCredentials(owner.username, rawPassword)
+
+        val request = AuthorizationRequest(
+          response_type = ResponseType.Code,
+          client_id = client.id,
+          redirect_uri = Some(client.redirectUri),
+          scope = grant.apiAudienceToScope(Seq(api)),
+          state = Generators.generateString(withSize = 16),
+          code_challenge = Generators.generateString(withSize = 128),
+          code_challenge_method = Some(ChallengeMethod.Plain)
+        )
+
+        stores.owners.put(owner).await
+
+        (credentials, request)
+      }
+    )
+
+    requests.foreach {
+      case (credentials, request) =>
+        Get(request).addCredentials(credentials) ~> grant.authorization() ~> check {
+          status should be(StatusCodes.Found)
+        }
+    }
+
+    val codes = stores.codes.codes.await
+    codes.size should be(requests.size)
+    codes.values.map(_.client).toSeq.distinct should be(Seq(client.id))
+    codes.values.map(_.owner.username).toSeq.sorted should be(requests.map(_._1.username).sorted)
   }
 
   they should "not generate authorization codes when invalid redirect URIs are provided" in {
@@ -183,6 +234,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
 
     val storedCode = StoredAuthorizationCode(
       code = code,
+      client = client.id,
       owner = owner,
       scope = grant.apiAudienceToScope(Seq(api)),
       challenge = Some(challenge)
@@ -199,7 +251,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.clients.put(client).await
     stores.owners.put(owner).await
     stores.apis.put(api).await
-    stores.codes.put(client.id, storedCode).await
+    stores.codes.put(storedCode).await
     Post(request).addCredentials(credentials) ~> grant.token() ~> check {
       status should be(StatusCodes.OK)
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
@@ -238,6 +290,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
 
     val storedCode = StoredAuthorizationCode(
       code = code,
+      client = client.id,
       owner = owner,
       scope = grant.apiAudienceToScope(Seq(api)),
       challenge = Some(challenge)
@@ -254,7 +307,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.clients.put(client).await
     stores.owners.put(owner).await
     stores.apis.put(api).await
-    stores.codes.put(client.id, storedCode).await
+    stores.codes.put(storedCode).await
     Post(request).addCredentials(credentials) ~> grant.token() ~> check {
       status should be(StatusCodes.OK)
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
@@ -293,6 +346,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
 
     val storedCode = StoredAuthorizationCode(
       code = code,
+      client = client.id,
       owner = owner,
       scope = grant.apiAudienceToScope(Seq(api)),
       challenge = Some(challenge)
@@ -309,7 +363,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.clients.put(client).await
     stores.owners.put(owner).await
     stores.apis.put(api).await
-    stores.codes.put(client.id, storedCode).await
+    stores.codes.put(storedCode).await
     Post(request).addCredentials(credentials) ~> grant.token() ~> check {
       status should be(StatusCodes.BadRequest)
       responseAs[JsObject].fields should contain("error" -> JsString("invalid_request"))
@@ -339,6 +393,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
 
     val storedCode = StoredAuthorizationCode(
       code = code,
+      client = client.id,
       owner = owner,
       scope = grant.apiAudienceToScope(Seq(api)),
       challenge = Some(challenge)
@@ -355,7 +410,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.clients.put(client).await
     stores.owners.put(owner).await
     stores.apis.put(api).await
-    stores.codes.put(client.id, storedCode).await
+    stores.codes.put(storedCode).await
     Post(request).addCredentials(credentials) ~> grant.token() ~> check {
       status should be(StatusCodes.BadRequest)
       responseAs[JsObject].fields should contain("error" -> JsString("invalid_grant"))

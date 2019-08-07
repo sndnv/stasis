@@ -30,7 +30,7 @@ trait AuthorizationCodeGeneration extends BaseApiDirective {
   ): Directive1[AuthorizationCode] =
     Directive { inner =>
       val code = authorizationCodeGenerator.generate()
-      val storedCode = StoredAuthorizationCode(code, owner, scope)
+      val storedCode = StoredAuthorizationCode(code, client, owner, scope)
 
       storeCode(client, redirectUri, state, owner, scope, storedCode) { code =>
         inner(Tuple1(code))
@@ -49,7 +49,7 @@ trait AuthorizationCodeGeneration extends BaseApiDirective {
     Directive { inner =>
       val code = authorizationCodeGenerator.generate()
       val codeChallenge = StoredAuthorizationCode.Challenge(challenge, challengeMethod)
-      val storedCode = StoredAuthorizationCode(code, owner, scope, Some(codeChallenge))
+      val storedCode = StoredAuthorizationCode(code, client, owner, scope, Some(codeChallenge))
 
       storeCode(client, redirectUri, state, owner, scope, storedCode) { code =>
         inner(Tuple1(code))
@@ -65,15 +65,16 @@ trait AuthorizationCodeGeneration extends BaseApiDirective {
     storedCode: StoredAuthorizationCode
   ): Directive1[AuthorizationCode] =
     Directive { inner =>
-      onComplete(authorizationCodeStore.put(client, storedCode)) {
+      onComplete(authorizationCodeStore.put(storedCode)) {
         case Success(_) =>
           inner(Tuple1(storedCode.code))
 
         case Failure(e) =>
           log.error(
             e,
-            "Failed to store authorization code for client [{}]: [{}]",
+            "Failed to store authorization code for client [{}] and owner [{}]: [{}]",
             client,
+            owner.username,
             e.getMessage
           )
 

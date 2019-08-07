@@ -12,7 +12,7 @@ import stasis.core.persistence.backends.KeyValueBackend
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.identity.model.apis.{Api, ApiStore}
 import stasis.identity.model.clients.{Client, ClientStore}
-import stasis.identity.model.codes.{AuthorizationCodeStore, StoredAuthorizationCode}
+import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, StoredAuthorizationCode}
 import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore}
 import stasis.identity.model.tokens.{RefreshTokenStore, StoredRefreshToken}
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -44,7 +44,7 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
 
   def createCodeStore(expiration: FiniteDuration = 3.seconds): AuthorizationCodeStore = AuthorizationCodeStore(
     expiration = expiration,
-    MemoryBackend[Client.Id, StoredAuthorizationCode](name = s"code-store-${java.util.UUID.randomUUID()}")
+    MemoryBackend[AuthorizationCode, StoredAuthorizationCode](name = s"code-store-${java.util.UUID.randomUUID()}")
   )
 
   def createOwnerStore(): ResourceOwnerStore = ResourceOwnerStore(
@@ -101,7 +101,7 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
     failingContains: Boolean = false
   ): AuthorizationCodeStore = AuthorizationCodeStore(
     expiration = expiration,
-    new FailingMemoryBackend[Client.Id, StoredAuthorizationCode] {
+    new FailingMemoryBackend[AuthorizationCode, StoredAuthorizationCode] {
       override def system: ActorSystem[SpawnProtocol] = typedSystem
       override def storeName: String = s"code-store-${java.util.UUID.randomUUID()}"
       override def putFails: Boolean = failingPut

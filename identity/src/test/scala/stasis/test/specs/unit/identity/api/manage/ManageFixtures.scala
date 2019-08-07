@@ -5,7 +5,7 @@ import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.identity.api.manage.setup.Providers
 import stasis.identity.model.apis.{Api, ApiStore}
 import stasis.identity.model.clients.{Client, ClientStore}
-import stasis.identity.model.codes.{AuthorizationCodeStore, StoredAuthorizationCode}
+import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, StoredAuthorizationCode}
 import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore}
 import stasis.identity.model.tokens.{RefreshTokenStore, StoredRefreshToken}
 import stasis.test.specs.unit.identity.RouteTest
@@ -27,7 +27,7 @@ trait ManageFixtures { _: RouteTest =>
     ),
     codeStore = AuthorizationCodeStore(
       expiration = expiration,
-      MemoryBackend[Client.Id, StoredAuthorizationCode](name = s"code-store-${java.util.UUID.randomUUID()}")
+      MemoryBackend[AuthorizationCode, StoredAuthorizationCode](name = s"code-store-${java.util.UUID.randomUUID()}")
     ),
     ownerStore = ResourceOwnerStore(
       MemoryBackend[ResourceOwner.Id, ResourceOwner](name = s"owner-store-${java.util.UUID.randomUUID()}")

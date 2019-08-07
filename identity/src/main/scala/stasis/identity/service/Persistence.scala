@@ -10,7 +10,7 @@ import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.backends.slick.SlickBackend
 import stasis.identity.model.apis.{ApiStore, ApiStoreSerdes}
 import stasis.identity.model.clients.{Client, ClientStore, ClientStoreSerdes}
-import stasis.identity.model.codes.{AuthorizationCodeStore, StoredAuthorizationCode}
+import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, StoredAuthorizationCode}
 import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore, ResourceOwnerStoreSerdes}
 import stasis.identity.model.tokens.{RefreshTokenStore, RefreshTokenStoreSerdes, StoredRefreshToken}
 
@@ -102,8 +102,8 @@ class Persistence(
       serdes = RefreshTokenStoreSerdes
     )
 
-    val codes: KeyValueBackend[Client.Id, StoredAuthorizationCode] =
-      MemoryBackend[Client.Id, StoredAuthorizationCode](
+    val codes: KeyValueBackend[AuthorizationCode, StoredAuthorizationCode] =
+      MemoryBackend[AuthorizationCode, StoredAuthorizationCode](
         name = s"code-store-${java.util.UUID.randomUUID()}"
       )
   }
