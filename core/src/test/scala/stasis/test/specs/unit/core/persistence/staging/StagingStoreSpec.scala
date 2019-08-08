@@ -58,7 +58,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
   )
 
   override protected def afterAll(): Unit =
-    system.terminate().await
+    system.terminate()
 
   "A StagingStore" should "stage crates to temporary storage" in {
     val fixtures = new TestFixtures {}
