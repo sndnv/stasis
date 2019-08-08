@@ -30,7 +30,7 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with Eventually with BeforeAnd
   private val ports: mutable.Queue[Int] = (18000 to 18100).to[mutable.Queue]
 
   override protected def afterAll(): Unit =
-    system.terminate().await
+    system.terminate()
 
   "An RemoteKeyProvider" should "provide keys from a JWKS endpoint" in {
     val endpoint = new MockJwksEndpoint(port = ports.dequeue())

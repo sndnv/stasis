@@ -2,8 +2,7 @@ package stasis.test.specs.unit.core.networking.grpc
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.HttpConnectionContext
-import akka.http.scaladsl.UseHttp2.Always
+import akka.http.scaladsl.ConnectionContext
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -56,7 +55,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val fixtures: TestFixtures = new TestFixtures {},
     port: Int
   ) extends GrpcEndpoint(fixtures.router, fixtures.reservationStore.view, testAuthenticator) {
-    private val _ = start("localhost", port, HttpConnectionContext(http2 = Always))
+    private val _ = start("localhost", port, ConnectionContext.noEncryption())
   }
 
   private val ports: mutable.Queue[Int] = (20000 to 20100).to[mutable.Queue]

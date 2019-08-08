@@ -4,11 +4,11 @@ name in ThisBuild := "stasis"
 licenses in ThisBuild := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
 homepage in ThisBuild := Some(url("https://github.com/sndnv/stasis"))
 
-lazy val defaultScalaVersion = "2.12.8"
-lazy val akkaVersion = "2.5.20"
-lazy val akkaHttpVersion = "10.1.7"
-lazy val slickVersion = "3.2.3"
-lazy val h2Version = "1.4.197"
+lazy val defaultScalaVersion = "2.12.9"
+lazy val akkaVersion = "2.5.23"
+lazy val akkaHttpVersion = "10.1.9"
+lazy val slickVersion = "3.3.1"
+lazy val h2Version = "1.4.199"
 
 lazy val crossVersions = Seq(defaultScalaVersion)
 
@@ -22,8 +22,8 @@ lazy val client = (project in file("./client"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.github.pathikrit"  %%  "better-files"  % "3.7.1",
-      "at.favre.lib"          %   "hkdf"          % "1.0.2"
+      "com.github.pathikrit"  %%  "better-files"  % "3.8.0",
+      "at.favre.lib"          %   "hkdf"          % "1.1.0"
     ),
     PB.targets in Compile := Seq(
       scalapb.gen() -> (sourceManaged in Compile).value
@@ -47,7 +47,7 @@ lazy val shared = (project in file("./shared"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.julienrf" %% "play-json-derived-codecs" % "5.0.0"
+      "org.julienrf" %% "play-json-derived-codecs" % "6.0.0"
     )
   )
   .dependsOn(core % "compile->compile;test->test")
@@ -62,18 +62,18 @@ lazy val core = (project in file("./core"))
       "com.typesafe.akka"       %% "akka-http"            % akkaHttpVersion,
       "com.typesafe.akka"       %% "akka-http-core"       % akkaHttpVersion,
       "com.typesafe.akka"       %% "akka-http2-support"   % akkaHttpVersion,
-      "com.typesafe.play"       %% "play-json"            % "2.7.0",
-      "de.heikoseeberger"       %% "akka-http-play-json"  % "1.23.0",
+      "com.typesafe.play"       %% "play-json"            % "2.7.4",
+      "de.heikoseeberger"       %% "akka-http-play-json"  % "1.27.0",
       "org.bitbucket.b_c"       %  "jose4j"               % "0.6.5",
-      "org.apache.geode"        %  "geode-core"           % "1.8.0"           % Provided,
+      "org.apache.geode"        %  "geode-core"           % "1.9.0"           % Provided,
       "com.typesafe.slick"      %% "slick"                % slickVersion      % Provided,
       "com.h2database"          %  "h2"                   % h2Version         % Test,
       "org.scalacheck"          %% "scalacheck"           % "1.14.0"          % Test,
-      "org.scalatest"           %% "scalatest"            % "3.0.5"           % Test,
+      "org.scalatest"           %% "scalatest"            % "3.0.8"           % Test,
       "com.typesafe.akka"       %% "akka-testkit"         % akkaVersion       % Test,
       "com.typesafe.akka"       %% "akka-stream-testkit"  % akkaVersion       % Test,
       "com.typesafe.akka"       %% "akka-http-testkit"    % akkaHttpVersion   % Test,
-      "com.github.tomakehurst"  %  "wiremock"             % "2.20.0"          % Test
+      "com.github.tomakehurst"  %  "wiremock-jre8"        % "2.24.1"          % Test
     )
   )
   .dependsOn(proto)
