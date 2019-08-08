@@ -5,7 +5,6 @@ import stasis.identity.model.secrets.Secret
 
 final case class Client(
   id: Client.Id,
-  allowedScopes: Seq[String],
   redirectUri: String,
   tokenExpiration: Seconds,
   secret: Secret,
