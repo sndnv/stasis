@@ -65,25 +65,24 @@ class RefreshTokenStoreSpec extends AsyncUnitSpec with Eventually {
     val backend = MemoryBackend[RefreshToken, StoredRefreshToken](name = s"token-store-${java.util.UUID.randomUUID()}")
 
     val owner = Generators.generateResourceOwner
-    val expectedToken = Generators.generateRefreshToken
 
     val tokens = Seq(
       StoredRefreshToken(
-        token = expectedToken,
+        token = Generators.generateRefreshToken,
         client = Client.generateId(),
         owner = owner,
         scope = None,
         expiration = Instant.now().minusSeconds(1)
       ),
       StoredRefreshToken(
-        token = expectedToken,
+        token = Generators.generateRefreshToken,
         client = Client.generateId(),
         owner = owner,
         scope = None,
         expiration = Instant.now().minusSeconds(2)
       ),
       StoredRefreshToken(
-        token = expectedToken,
+        token = Generators.generateRefreshToken,
         client = Client.generateId(),
         owner = owner,
         scope = None,
