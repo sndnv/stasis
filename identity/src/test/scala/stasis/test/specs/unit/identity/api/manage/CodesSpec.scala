@@ -28,7 +28,7 @@ class CodesSpec extends RouteTest {
       .await
     Get() ~> codes.routes(user) ~> check {
       status should be(StatusCodes.OK)
-      responseAs[Seq[(String, PartialStoredAuthorizationCode)]].map(_._2).sortBy(_.code) should be(
+      responseAs[Seq[PartialStoredAuthorizationCode]].sortBy(_.code) should be(
         expectedCodes
           .map(code => PartialStoredAuthorizationCode(code.value, owner.username, scope = None))
           .sortBy(_.code)

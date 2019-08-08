@@ -78,7 +78,6 @@ class BootstrapSpec extends AsyncUnitSpec {
 
           actualClients.values.toList.sortBy(_.redirectUri) match {
             case client1 :: client2 :: client3 :: Nil =>
-              client1.allowedScopes should be(Seq("example-scope-a", "example-scope-b", "example-scope-c"))
               client1.redirectUri should be("http://localhost:8080/example/uri1")
               client1.tokenExpiration should be(Seconds(90 * 60))
               client1.active should be(true)

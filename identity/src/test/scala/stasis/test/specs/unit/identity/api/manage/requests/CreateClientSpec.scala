@@ -9,14 +9,12 @@ import scala.concurrent.duration._
 
 class CreateClientSpec extends UnitSpec {
   private val request = CreateClient(
-    allowedScopes = Seq("some-scope"),
     redirectUri = "some-uri",
     tokenExpiration = 5.seconds,
     rawSecret = "some-secret"
   )
 
   "A CreateClient request" should "validate its content" in {
-    an[IllegalArgumentException] should be thrownBy request.copy(allowedScopes = Seq.empty)
     an[IllegalArgumentException] should be thrownBy request.copy(redirectUri = "")
     an[IllegalArgumentException] should be thrownBy request.copy(tokenExpiration = 0.seconds)
     an[IllegalArgumentException] should be thrownBy request.copy(rawSecret = "")
@@ -32,7 +30,6 @@ class CreateClientSpec extends UnitSpec {
     )
 
     val expectedClient = Generators.generateClient.copy(
-      allowedScopes = request.allowedScopes,
       redirectUri = request.redirectUri,
       tokenExpiration = request.tokenExpiration
     )

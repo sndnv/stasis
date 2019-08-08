@@ -76,7 +76,6 @@ class Clients(
                       onSuccess(
                         store.put(
                           client.copy(
-                            allowedScopes = request.allowedScopes,
                             tokenExpiration = request.tokenExpiration,
                             active = request.active
                           )

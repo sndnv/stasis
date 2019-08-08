@@ -82,7 +82,6 @@ object Formats {
       client =>
         Json.obj(
           "id" -> Json.toJson(client.id),
-          "allowedScopes" -> Json.toJson(client.allowedScopes),
           "redirectUri" -> Json.toJson(client.redirectUri),
           "tokenExpiration" -> Json.toJson(client.tokenExpiration),
           "active" -> Json.toJson(client.active)

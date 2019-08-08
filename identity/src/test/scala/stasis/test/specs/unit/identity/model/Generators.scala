@@ -74,7 +74,6 @@ object Generators {
   def generateClient(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Client =
     Client(
       id = Client.generateId(),
-      allowedScopes = generateSeq(min = 1, g = generateString(withSize = 10)),
       redirectUri = generateUri,
       tokenExpiration = generateFiniteDuration,
       secret = generateSecret(Defaults.Clients.SecretSize),

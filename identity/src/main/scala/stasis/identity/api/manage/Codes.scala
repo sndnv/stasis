@@ -23,7 +23,7 @@ class Codes(store: AuthorizationCodeStore)(implicit system: ActorSystem, overrid
         get {
           onSuccess(store.codes) { codes =>
             log.info("User [{}] successfully retrieved [{}] authorization codes", user, codes.size)
-            discardEntity & complete(codes)
+            discardEntity & complete(codes.values)
           }
         }
       },

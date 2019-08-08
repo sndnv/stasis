@@ -91,7 +91,6 @@ object Bootstrap {
       id = Try(config.getString("id"))
         .flatMap(id => Try(java.util.UUID.fromString(id)))
         .getOrElse(Client.generateId()),
-      allowedScopes = config.getStringList("allowed-scopes").asScala,
       redirectUri = config.getString("redirect-uri"),
       tokenExpiration = Seconds(config.getDuration("token-expiration").getSeconds),
       secret = Secret.derive(rawSecret = config.getString("raw-secret"), salt),

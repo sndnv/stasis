@@ -42,7 +42,6 @@ class ClientsSpec extends RouteTest {
     val clients = new Clients(store, secretConfig)
 
     val request = CreateClient(
-      allowedScopes = Seq("some-scope"),
       redirectUri = "some-uri",
       tokenExpiration = 3.seconds,
       rawSecret = "some-secret"
@@ -101,7 +100,6 @@ class ClientsSpec extends RouteTest {
 
     val client = Generators.generateClient
     val request = UpdateClient(
-      allowedScopes = Seq("some-scope"),
       tokenExpiration = 3.seconds,
       active = false
     )
@@ -112,7 +110,6 @@ class ClientsSpec extends RouteTest {
       store.get(client.id).await should be(
         Some(
           client.copy(
-            allowedScopes = request.allowedScopes,
             tokenExpiration = request.tokenExpiration,
             active = request.active
           )
@@ -164,14 +161,12 @@ object ClientsSpec {
 
   final case class PartialClient(
     id: Client.Id,
-    allowedScopes: Seq[String],
     redirectUri: String,
     tokenExpiration: Seconds,
     active: Boolean
   ) {
     def toClient(secret: Secret, salt: String): Client = Client(
       id = id,
-      allowedScopes = allowedScopes,
       redirectUri = redirectUri,
       tokenExpiration = tokenExpiration,
       secret = secret,

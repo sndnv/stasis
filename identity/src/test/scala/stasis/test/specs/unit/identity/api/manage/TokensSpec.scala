@@ -24,7 +24,7 @@ class TokensSpec extends RouteTest {
     Future.sequence(expectedTokens.map(token => store.put(client, token, owner, scope = None))).await
     Get() ~> tokens.routes(user) ~> check {
       status should be(StatusCodes.OK)
-      responseAs[Seq[(String, PartialStoredRefreshToken)]].map(_._2).sortBy(_.token) should be(
+      responseAs[Seq[PartialStoredRefreshToken]].sortBy(_.token) should be(
         expectedTokens
           .map(token => PartialStoredRefreshToken(token.value, client, owner.username, scope = None))
           .sortBy(_.token))

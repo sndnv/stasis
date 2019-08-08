@@ -7,13 +7,11 @@ import scala.concurrent.duration._
 
 class UpdateClientSpec extends UnitSpec {
   private val request = UpdateClient(
-    allowedScopes = Seq("some-scope"),
     tokenExpiration = 1.second,
     active = true
   )
 
   "An UpdateClient request" should "validate its content" in {
-    an[IllegalArgumentException] should be thrownBy request.copy(allowedScopes = Seq.empty)
     an[IllegalArgumentException] should be thrownBy request.copy(tokenExpiration = 0.seconds)
   }
 }
