@@ -34,7 +34,12 @@ trait ManageFixtures { _: RouteTest =>
     ),
     tokenStore = RefreshTokenStore(
       expiration = expiration,
-      MemoryBackend[RefreshToken, StoredRefreshToken](name = s"token-store-${java.util.UUID.randomUUID()}")
+      MemoryBackend[RefreshToken, StoredRefreshToken](
+        name = s"token-store-${java.util.UUID.randomUUID()}"
+      ),
+      MemoryBackend[(Client.Id, ResourceOwner.Id), RefreshToken](
+        name = s"token-directory-${java.util.UUID.randomUUID()}"
+      )
     ),
     ownerAuthenticator = (_: OAuth2BearerToken) =>
       Future.successful(Generators.generateResourceOwner.copy(allowedScopes = withOwnerScopes))
