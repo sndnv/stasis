@@ -4,11 +4,10 @@ import akka.http.scaladsl.model.StatusCodes
 import stasis.identity.api.Formats._
 import stasis.identity.api.manage.Tokens
 import stasis.identity.model.clients.Client
+import stasis.identity.model.tokens.RefreshToken
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.api.manage.TokensSpec.PartialStoredRefreshToken
 import stasis.test.specs.unit.identity.model.Generators
-
-import scala.concurrent.Future
 
 class TokensSpec extends RouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
@@ -17,17 +16,15 @@ class TokensSpec extends RouteTest {
     val store = createTokenStore()
     val tokens = new Tokens(store)
 
-    val client = Client.generateId()
     val owner = Generators.generateResourceOwner
-    val expectedTokens = Generators.generateSeq(min = 2, g = Generators.generateRefreshToken)
+    val expectedTokens = Generators
+      .generateSeq(min = 2, g = Generators.generateRefreshToken)
+      .map(token => PartialStoredRefreshToken(token.value, Client.generateId(), owner.username, scope = None))
 
-    Future.sequence(expectedTokens.map(token => store.put(client, token, owner, scope = None))).await
+    expectedTokens.foreach(token => store.put(token.client, RefreshToken(token.token), owner, token.scope).await)
     Get() ~> tokens.routes(user) ~> check {
       status should be(StatusCodes.OK)
-      responseAs[Seq[PartialStoredRefreshToken]].sortBy(_.token) should be(
-        expectedTokens
-          .map(token => PartialStoredRefreshToken(token.value, client, owner.username, scope = None))
-          .sortBy(_.token))
+      responseAs[Seq[PartialStoredRefreshToken]].sortBy(_.token) should be(expectedTokens.sortBy(_.token))
     }
   }
 

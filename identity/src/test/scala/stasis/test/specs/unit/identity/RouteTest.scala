@@ -53,7 +53,8 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
 
   def createTokenStore(expiration: FiniteDuration = 3.seconds): RefreshTokenStore = RefreshTokenStore(
     expiration = expiration,
-    MemoryBackend[RefreshToken, StoredRefreshToken](name = s"token-store-${java.util.UUID.randomUUID()}")
+    MemoryBackend[RefreshToken, StoredRefreshToken](name = s"token-store-${java.util.UUID.randomUUID()}"),
+    MemoryBackend[(Client.Id, ResourceOwner.Id), RefreshToken](name = s"token-directory-${java.util.UUID.randomUUID()}")
   )
 
   def createFailingApiStore(
@@ -147,7 +148,8 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
       override def getFails: Boolean = failingGet
       override def entriesFails: Boolean = failingEntries
       override def containsFails: Boolean = failingContains
-    }
+    },
+    MemoryBackend[(Client.Id, ResourceOwner.Id), RefreshToken](name = s"token-directory-${java.util.UUID.randomUUID()}")
   )
 }
 

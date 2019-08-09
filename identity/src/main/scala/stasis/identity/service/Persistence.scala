@@ -46,7 +46,11 @@ class Persistence(
     ResourceOwnerStore(backend = backends.owners)
 
   val refreshTokens: RefreshTokenStore =
-    RefreshTokenStore(expiration = refreshTokenExpiration, backend = backends.tokens)
+    RefreshTokenStore(
+      expiration = refreshTokenExpiration,
+      backend = backends.tokens,
+      directory = backends.tokenDirectory
+    )
 
   val authorizationCodes: AuthorizationCodeStore =
     AuthorizationCodeStore(expiration = authorizationCodeExpiration, backend = backends.codes)
@@ -101,6 +105,11 @@ class Persistence(
       database = database,
       serdes = RefreshTokenStoreSerdes
     )
+
+    val tokenDirectory: KeyValueBackend[(Client.Id, ResourceOwner.Id), RefreshToken] =
+      MemoryBackend[(Client.Id, ResourceOwner.Id), RefreshToken](
+        name = s"token-directory-${java.util.UUID.randomUUID()}"
+      )
 
     val codes: KeyValueBackend[AuthorizationCode, StoredAuthorizationCode] =
       MemoryBackend[AuthorizationCode, StoredAuthorizationCode](
