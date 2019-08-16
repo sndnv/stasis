@@ -14,8 +14,9 @@ import stasis.identity.model.owners.ResourceOwnerStore
 import stasis.identity.model.secrets.Secret
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
-
 import scala.concurrent.duration._
+
+import play.api.libs.json.{JsObject, JsString}
 
 class ResourceOwnerAuthenticationSpec extends RouteTest {
   "A ResourceOwnerAuthentication directive" should "authenticate resource owners with provided credentials" in {
@@ -56,7 +57,7 @@ class ResourceOwnerAuthenticationSpec extends RouteTest {
     }
   }
 
-  it should "authenticate resource owners with extracted credentials" in {
+  it should "authenticate resource owners with extracted credentials (redirected)" in {
     val owners = createOwnerStore()
     val directive = createDirective(owners)
 
@@ -68,7 +69,7 @@ class ResourceOwnerAuthenticationSpec extends RouteTest {
     val redirectUri = Uri("http://example.com")
     val state = "some-state"
 
-    val routes = directive.authenticateResourceOwner(redirectUri, state) { extractedOwner =>
+    val routes = directive.authenticateResourceOwner(redirectUri, state, noRedirect = false) { extractedOwner =>
       Directives.complete(StatusCodes.OK, extractedOwner.username)
     }
 
@@ -79,7 +80,30 @@ class ResourceOwnerAuthenticationSpec extends RouteTest {
     }
   }
 
-  it should "fail to authenticate resource owners with invalid extracted credentials" in {
+  it should "authenticate resource owners with extracted credentials (rejected)" in {
+    val owners = createOwnerStore()
+    val directive = createDirective(owners)
+
+    val ownerPassword = "some-password"
+    val salt = Secret.generateSalt()
+    val password = Secret.derive(ownerPassword, salt)
+    val owner = Generators.generateResourceOwner.copy(password = password, salt = salt)
+    val credentials = BasicHttpCredentials(owner.username, ownerPassword)
+    val redirectUri = Uri("http://example.com")
+    val state = "some-state"
+
+    val routes = directive.authenticateResourceOwner(redirectUri, state, noRedirect = true) { extractedOwner =>
+      Directives.complete(StatusCodes.OK, extractedOwner.username)
+    }
+
+    owners.put(owner).await
+    Get("/?no_redirect=true").addCredentials(credentials) ~> routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[String] should be(owner.username)
+    }
+  }
+
+  it should "fail to authenticate resource owners with invalid extracted credentials (redirected)" in {
     val owners = createOwnerStore()
     val directive = createDirective(owners)
 
@@ -90,7 +114,7 @@ class ResourceOwnerAuthenticationSpec extends RouteTest {
     val redirectUri = Uri("http://example.com")
     val state = "some-state"
 
-    val routes = directive.authenticateResourceOwner(redirectUri, state) { extractedOwner =>
+    val routes = directive.authenticateResourceOwner(redirectUri, state, noRedirect = false) { extractedOwner =>
       Directives.complete(StatusCodes.OK, extractedOwner.username)
     }
 
@@ -103,6 +127,32 @@ class ResourceOwnerAuthenticationSpec extends RouteTest {
     }
   }
 
+  it should "fail to authenticate resource owners with invalid extracted credentials (rejected)" in {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+
+    val owners = createOwnerStore()
+    val directive = createDirective(owners)
+
+    val salt = Secret.generateSalt()
+    val password = Secret.derive(rawSecret = "some-password", salt)
+    val owner = Generators.generateResourceOwner.copy(password = password, salt = salt)
+    val credentials = BasicHttpCredentials(owner.username, "other-password")
+    val redirectUri = Uri("http://example.com")
+    val state = "some-state"
+
+    val routes = directive.authenticateResourceOwner(redirectUri, state, noRedirect = true) { extractedOwner =>
+      Directives.complete(StatusCodes.OK, extractedOwner.username)
+    }
+
+    owners.put(owner).await
+    Get("/?no_redirect=true").addCredentials(credentials) ~> routes ~> check {
+      status should be(StatusCodes.Unauthorized)
+      val response = responseAs[JsObject]
+      response.fields should contain("error" -> JsString("access_denied"))
+      response.fields should contain("state" -> JsString(state))
+    }
+  }
+
   it should "fail if a resource owner provided unsupported credentials" in {
     val owners = createOwnerStore()
     val directive = createDirective(owners)
@@ -112,7 +162,7 @@ class ResourceOwnerAuthenticationSpec extends RouteTest {
     val redirectUri = Uri("http://example.com")
     val state = "some-state"
 
-    val routes = directive.authenticateResourceOwner(redirectUri, state) { extractedOwner =>
+    val routes = directive.authenticateResourceOwner(redirectUri, state, noRedirect = false) { extractedOwner =>
       Directives.complete(StatusCodes.OK, extractedOwner.username)
     }
 
@@ -133,7 +183,7 @@ class ResourceOwnerAuthenticationSpec extends RouteTest {
     val redirectUri = Uri("http://example.com")
     val state = "some-state"
 
-    val routes = directive.authenticateResourceOwner(redirectUri, state) { extractedOwner =>
+    val routes = directive.authenticateResourceOwner(redirectUri, state, noRedirect = false) { extractedOwner =>
       Directives.complete(StatusCodes.OK, extractedOwner.username)
     }
 

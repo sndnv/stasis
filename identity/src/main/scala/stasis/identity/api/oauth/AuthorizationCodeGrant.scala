@@ -31,58 +31,69 @@ class AuthorizationCodeGrant(
 
   def authorization(): Route =
     get {
-      parameters(
+      (parameters(
         "response_type".as[ResponseType],
         "client_id".as[Client.Id],
         "redirect_uri".as[String].?,
         "scope".as[String].?,
         "state".as[String]
-      ).as(AuthorizationRequest) { request =>
-        retrieveClient(request.client_id) {
-          case client if request.redirect_uri.forall(_ == client.redirectUri) =>
-            val redirectUri = Uri(request.redirect_uri.getOrElse(client.redirectUri))
+      ).as(AuthorizationRequest) & parameter("no_redirect".as[Boolean] ? false)) {
+        case (request, noRedirect) =>
+          retrieveClient(request.client_id) {
+            case client if request.redirect_uri.forall(_ == client.redirectUri) =>
+              val redirectUri = Uri(request.redirect_uri.getOrElse(client.redirectUri))
 
-            (authenticateResourceOwner(redirectUri, request.state) & extractApiAudience(request.scope)) {
-              (owner, audience) =>
-                val scope = apiAudienceToScope(audience)
+              (authenticateResourceOwner(redirectUri, request.state, noRedirect) & extractApiAudience(request.scope)) {
+                (owner, audience) =>
+                  val scope = apiAudienceToScope(audience)
 
-                generateAuthorizationCode(
-                  client = client.id,
-                  redirectUri = redirectUri,
-                  state = request.state,
-                  owner = owner,
-                  scope = scope
-                ) { code =>
-                  log.debug(
-                    "Successfully generated authorization code for client [{}] and owner [{}]",
-                    client.id,
-                    owner.username
-                  )
-
-                  discardEntity {
-                    redirect(
-                      redirectUri.withQuery(AuthorizationResponse(code, request.state, scope).asQuery),
-                      StatusCodes.Found
+                  generateAuthorizationCode(
+                    client = client.id,
+                    redirectUri = redirectUri,
+                    state = request.state,
+                    owner = owner,
+                    scope = scope
+                  ) { code =>
+                    log.debug(
+                      "Successfully generated authorization code for client [{}] and owner [{}]",
+                      client.id,
+                      owner.username
                     )
+
+                    val response = AuthorizationResponse(code, request.state, scope)
+
+                    if (noRedirect) {
+                      discardEntity & complete(
+                        StatusCodes.OK,
+                        AuthorizationResponseWithRedirectUri(
+                          response = response,
+                          responseRedirectUri = redirectUri.withQuery(response.asQuery)
+                        )
+                      )
+                    } else {
+                      discardEntity & redirect(
+                        redirectUri.withQuery(response.asQuery),
+                        StatusCodes.Found
+                      )
+                    }
                   }
-                }
-            }
+              }
 
-          case client =>
-            log.warning(
-              "Redirect URI [{}] for client [{}] did not match URI provided in request: [{}]",
-              client.redirectUri,
-              client.id,
-              request.redirect_uri
-            )
-
-            discardEntity {
-              complete(
-                StatusCodes.BadRequest,
-                "The request has missing, invalid or mismatching redirection URI and/or client identifier"
+            case client =>
+              log.warning(
+                "Redirect URI [{}] for client [{}] did not match URI provided in request: [{}]",
+                client.redirectUri,
+                client.id,
+                request.redirect_uri
               )
-            }
-        }
+
+              discardEntity {
+                complete(
+                  StatusCodes.BadRequest,
+                  "The request has missing, invalid or mismatching redirection URI and/or client identifier"
+                )
+              }
+          }
       }
     }
 
@@ -152,7 +163,11 @@ class AuthorizationCodeGrant(
 }
 
 object AuthorizationCodeGrant {
-  implicit val accessTokenResponseFormat: Format[AccessTokenResponse] = Json.format[AccessTokenResponse]
+  implicit val accessTokenResponseFormat: Format[AccessTokenResponse] =
+    Json.format[AccessTokenResponse]
+
+  implicit val authorizationResponseWithRedirectUriFormat: Format[AuthorizationResponseWithRedirectUri] =
+    Json.format[AuthorizationResponseWithRedirectUri]
 
   final case class AuthorizationRequest(
     response_type: ResponseType,
@@ -191,6 +206,23 @@ object AuthorizationCodeGrant {
             "state" -> state
           )
         ) { case (baseParams, actualScope) => baseParams + ("scope" -> actualScope) }
+      )
+  }
+
+  final case class AuthorizationResponseWithRedirectUri(
+    code: AuthorizationCode,
+    state: String,
+    scope: Option[String],
+    redirect_uri: String
+  )
+
+  object AuthorizationResponseWithRedirectUri {
+    def apply(response: AuthorizationResponse, responseRedirectUri: Uri): AuthorizationResponseWithRedirectUri =
+      AuthorizationResponseWithRedirectUri(
+        code = response.code,
+        state = response.state,
+        scope = response.scope,
+        redirect_uri = responseRedirectUri.toString
       )
   }
 

@@ -58,7 +58,7 @@ object Generators {
     val host = generateString(withSize = 10)
     val port = rnd.nextInt(50000, 60000)
     val endpoint = generateString(withSize = 20)
-    s"http://$host:$port/$endpoint"
+    s"http://$host:$port/$endpoint".toLowerCase
   }
 
   def generateSeq[T](
