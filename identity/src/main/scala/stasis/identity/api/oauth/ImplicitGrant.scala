@@ -27,60 +27,76 @@ class ImplicitGrant(
 
   def authorization(): Route =
     get {
-      parameters(
+      (parameters(
         "response_type".as[ResponseType],
         "client_id".as[Client.Id],
         "redirect_uri".as[String].?,
         "scope".as[String].?,
         "state".as[String]
-      ).as(AuthorizationRequest) { request =>
-        retrieveClient(request.client_id) {
-          case client if request.redirect_uri.forall(_ == client.redirectUri) =>
-            val redirectUri = Uri(request.redirect_uri.getOrElse(client.redirectUri))
+      ).as(AuthorizationRequest) & parameter("no_redirect".as[Boolean] ? false)) {
+        case (request, noRedirect) =>
+          retrieveClient(request.client_id) {
+            case client if request.redirect_uri.forall(_ == client.redirectUri) =>
+              val redirectUri = Uri(request.redirect_uri.getOrElse(client.redirectUri))
 
-            (authenticateResourceOwner(redirectUri, request.state) & extractApiAudience(request.scope)) {
-              (owner, audience) =>
-                generateAccessToken(owner, audience) { accessToken =>
-                  val scope = apiAudienceToScope(audience)
+              (authenticateResourceOwner(redirectUri, request.state, noRedirect) & extractApiAudience(request.scope)) {
+                (owner, audience) =>
+                  generateAccessToken(owner, audience) { accessToken =>
+                    val scope = apiAudienceToScope(audience)
 
-                  val response = AccessTokenResponse(
-                    access_token = accessToken,
-                    token_type = TokenType.Bearer,
-                    expires_in = client.tokenExpiration,
-                    state = request.state,
-                    scope = scope
-                  )
-
-                  log.debug("Successfully generated access token for client [{}]", client.id)
-
-                  discardEntity {
-                    redirect(
-                      redirectUri.withQuery(response.asQuery),
-                      StatusCodes.Found
+                    val response = AccessTokenResponse(
+                      access_token = accessToken,
+                      token_type = TokenType.Bearer,
+                      expires_in = client.tokenExpiration,
+                      state = request.state,
+                      scope = scope
                     )
+
+                    log.debug("Successfully generated access token for client [{}]", client.id)
+
+                    if (noRedirect) {
+                      import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+
+                      discardEntity & complete(
+                        StatusCodes.OK,
+                        AccessTokenResponseWithRedirectUri(
+                          response = response,
+                          responseRedirectUri = redirectUri.withQuery(response.asQuery)
+                        )
+                      )
+                    } else {
+                      discardEntity & redirect(
+                        redirectUri.withQuery(response.asQuery),
+                        StatusCodes.Found
+                      )
+                    }
                   }
-                }
-            }
+              }
 
-          case client =>
-            log.warning(
-              "Encountered mismatched redirect URIs (expected [{}], found [{}])",
-              client.redirectUri,
-              request.redirect_uri
-            )
-
-            discardEntity {
-              complete(
-                StatusCodes.BadRequest,
-                "The request has missing, invalid or mismatching redirection URI and/or client identifier"
+            case client =>
+              log.warning(
+                "Encountered mismatched redirect URIs (expected [{}], found [{}])",
+                client.redirectUri,
+                request.redirect_uri
               )
-            }
-        }
+
+              discardEntity {
+                complete(
+                  StatusCodes.BadRequest,
+                  "The request has missing, invalid or mismatching redirection URI and/or client identifier"
+                )
+              }
+          }
       }
     }
 }
 
 object ImplicitGrant {
+  import play.api.libs.json.{Format, Json}
+
+  implicit val accessTokenResponseWithRedirectUriFormat: Format[AccessTokenResponseWithRedirectUri] =
+    Json.format[AccessTokenResponseWithRedirectUri]
+
   final case class AuthorizationRequest(
     response_type: ResponseType,
     client_id: Client.Id,
@@ -113,4 +129,29 @@ object ImplicitGrant {
         ) { case (baseParams, actualScope) => baseParams + ("scope" -> actualScope) }
       )
   }
+
+  final case class AccessTokenResponseWithRedirectUri(
+    access_token: AccessToken,
+    token_type: TokenType,
+    expires_in: Seconds,
+    state: String,
+    scope: Option[String],
+    redirect_uri: String
+  )
+
+  object AccessTokenResponseWithRedirectUri {
+    def apply(
+      response: AccessTokenResponse,
+      responseRedirectUri: Uri
+    ): AccessTokenResponseWithRedirectUri =
+      AccessTokenResponseWithRedirectUri(
+        access_token = response.access_token,
+        token_type = response.token_type,
+        expires_in = response.expires_in,
+        state = response.state,
+        scope = response.scope,
+        redirect_uri = responseRedirectUri.toString
+      )
+  }
+
 }

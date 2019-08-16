@@ -65,7 +65,26 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     actualQuery should be(expectedQuery)
   }
 
-  they should "generate authorization codes for valid requests" in {
+  they should "convert authorization responses to authorization responses with redirect URIs" in {
+    val baseResponse = AuthorizationResponse(
+      code = AuthorizationCode("some-code"),
+      state = "some-state",
+      scope = Some("some-scope")
+    )
+
+    val expectedResponse = AuthorizationResponseWithRedirectUri(
+      code = AuthorizationCode("some-code"),
+      state = "some-state",
+      scope = Some("some-scope"),
+      redirect_uri = "some-uri"
+    )
+
+    val actualResponse = AuthorizationResponseWithRedirectUri(baseResponse, "some-uri")
+
+    actualResponse should be(expectedResponse)
+  }
+
+  they should "generate authorization codes for valid requests (redirected)" in {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val grant = new AuthorizationCodeGrant(config, providers)
 
@@ -107,6 +126,59 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
               )
             )
           )
+
+        case None =>
+          fail("Unexpected response received; no authorization code found")
+      }
+    }
+  }
+
+  they should "generate authorization codes for valid requests (completed)" in {
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val grant = new AuthorizationCodeGrant(config, providers)
+
+    val client = Generators.generateClient
+    val api = Generators.generateApi
+
+    val rawPassword = "some-password"
+    val salt = Generators.generateString(withSize = secrets.owner.saltSize)
+    val owner = Generators.generateResourceOwner.copy(
+      password = Secret.derive(rawPassword, salt)(secrets.owner),
+      salt = salt
+    )
+    val credentials = BasicHttpCredentials(owner.username, rawPassword)
+
+    val request = AuthorizationRequest(
+      response_type = ResponseType.Code,
+      client_id = client.id,
+      redirect_uri = Some(client.redirectUri),
+      scope = grant.apiAudienceToScope(Seq(api)),
+      state = Generators.generateString(withSize = 16)
+    )
+
+    stores.clients.put(client).await
+    stores.owners.put(owner).await
+    stores.apis.put(api).await
+    Get(request.withoutRedirect).addCredentials(credentials) ~> grant.authorization() ~> check {
+      status should be(StatusCodes.OK)
+      stores.codes.codes.await.headOption match {
+        case Some((AuthorizationCode(code), storedCode)) =>
+          storedCode.challenge should be(None)
+
+          val response = responseAs[JsObject]
+          response.fields should contain("code" -> JsString(code))
+          response.fields should contain("state" -> JsString(request.state))
+          response.fields should contain("scope" -> JsString(request.scope.getOrElse("invalid")))
+
+          val redirectUri = response.fields.find(_._1 == "redirect_uri") match {
+            case Some((_, uri)) => uri.as[String]
+            case None           => fail("Unexpected response received; no redirect URI found")
+          }
+
+          redirectUri should startWith(request.redirect_uri.getOrElse("invalid"))
+          redirectUri should include(s"code=$code")
+          redirectUri should include(s"state=${request.state}")
+          redirectUri should include(s"scope=${request.scope.getOrElse("invalid")}")
 
         case None =>
           fail("Unexpected response received; no authorization code found")
@@ -318,14 +390,19 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
   import scala.language.implicitConversions
 
   implicit def authorizationRequestToLocalUri(request: AuthorizationRequest): Uri =
-    Uri(
-      s"/" +
-        s"?response_type=${request.response_type.toString.toLowerCase}" +
-        s"&client_id=${request.client_id}" +
-        s"&redirect_uri=${request.redirect_uri.getOrElse("")}" +
-        s"&scope=${request.scope.getOrElse("")}" +
-        s"&state=${request.state}"
-    )
+    Uri(authorizationRequestToQueryString(request))
+
+  implicit class AuthorizationRequestWithNoRedirect(request: AuthorizationRequest) {
+    def withoutRedirect: Uri = Uri(s"${authorizationRequestToQueryString(request)}&no_redirect=true")
+  }
+
+  private def authorizationRequestToQueryString(request: AuthorizationRequest): String =
+    s"/" +
+      s"?response_type=${request.response_type.toString.toLowerCase}" +
+      s"&client_id=${request.client_id}" +
+      s"&redirect_uri=${request.redirect_uri.getOrElse("")}" +
+      s"&scope=${request.scope.getOrElse("")}" +
+      s"&state=${request.state}"
 
   implicit def accessTokenRequestToLocalUri(request: AccessTokenRequest): Uri =
     Uri(

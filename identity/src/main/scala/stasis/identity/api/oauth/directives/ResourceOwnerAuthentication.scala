@@ -4,7 +4,7 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.model.{StatusCodes, Uri}
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.{Directive, Directive1}
+import akka.http.scaladsl.server.{Directive, Directive1, StandardRoute}
 import stasis.identity.api.Formats._
 import stasis.identity.api.directives.BaseApiDirective
 import stasis.identity.authentication.oauth.ResourceOwnerAuthenticator
@@ -14,6 +14,7 @@ import stasis.identity.model.owners.ResourceOwner
 import scala.util.{Failure, Success}
 
 trait ResourceOwnerAuthentication extends BaseApiDirective {
+  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
   protected def log: LoggingAdapter
 
@@ -32,13 +33,26 @@ trait ResourceOwnerAuthentication extends BaseApiDirective {
             e.getMessage
           )
 
-          discardEntity {
-            complete(StatusCodes.Unauthorized)
-          }
+          discardEntity & complete(StatusCodes.Unauthorized)
       }
     }
 
-  def authenticateResourceOwner(redirectUri: Uri, state: String): Directive1[ResourceOwner] =
+  def authenticateResourceOwner(redirectUri: Uri, state: String, noRedirect: Boolean): Directive1[ResourceOwner] =
+    authenticateResourceOwner(
+      unauthorizedResponse = if (noRedirect) {
+        complete(
+          StatusCodes.Unauthorized,
+          AuthorizationError.AccessDenied(state)
+        )
+      } else {
+        redirect(
+          redirectUri.withQuery(AuthorizationError.AccessDenied(state).asQuery),
+          StatusCodes.Found
+        )
+      }
+    )
+
+  private def authenticateResourceOwner(unauthorizedResponse: => StandardRoute): Directive1[ResourceOwner] =
     Directive { inner =>
       extractClientIP { remoteAddress =>
         extractCredentials {
@@ -54,12 +68,7 @@ trait ResourceOwnerAuthentication extends BaseApiDirective {
                   e.getMessage
                 )
 
-                discardEntity {
-                  redirect(
-                    redirectUri.withQuery(AuthorizationError.AccessDenied(state).asQuery),
-                    StatusCodes.Found
-                  )
-                }
+                discardEntity & unauthorizedResponse
             }
 
           case Some(unsupportedCredentials) =>
@@ -68,26 +77,14 @@ trait ResourceOwnerAuthentication extends BaseApiDirective {
               remoteAddress,
               unsupportedCredentials.scheme()
             )
-
-            discardEntity {
-              redirect(
-                redirectUri.withQuery(AuthorizationError.AccessDenied(state).asQuery),
-                StatusCodes.Found
-              )
-            }
+            discardEntity & unauthorizedResponse
 
           case None =>
             log.warning(
               "Resource owner with address [{}] provided no credentials",
               remoteAddress
             )
-
-            discardEntity {
-              redirect(
-                redirectUri.withQuery(AuthorizationError.AccessDenied(state).asQuery),
-                StatusCodes.Found
-              )
-            }
+            discardEntity & unauthorizedResponse
         }
       }
     }
