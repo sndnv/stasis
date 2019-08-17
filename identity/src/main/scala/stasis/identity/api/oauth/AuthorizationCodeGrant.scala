@@ -12,7 +12,7 @@ import stasis.identity.api.oauth.directives.AuthDirectives
 import stasis.identity.api.oauth.setup.{Config, Providers}
 import stasis.identity.model.clients.Client
 import stasis.identity.model.codes.AuthorizationCode
-import stasis.identity.model.errors.TokenError
+import stasis.identity.model.errors.{AuthorizationError, TokenError}
 import stasis.identity.model.tokens._
 import stasis.identity.model.{GrantType, ResponseType, Seconds}
 
@@ -90,7 +90,7 @@ class AuthorizationCodeGrant(
               discardEntity {
                 complete(
                   StatusCodes.BadRequest,
-                  "The request has missing, invalid or mismatching redirection URI and/or client identifier"
+                  AuthorizationError.InvalidRequest(withState = request.state)
                 )
               }
           }

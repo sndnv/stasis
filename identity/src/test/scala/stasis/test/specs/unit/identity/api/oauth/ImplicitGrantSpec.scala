@@ -168,6 +168,8 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
   }
 
   they should "not generate access tokens when invalid redirect URIs are provided" in {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val grant = new ImplicitGrant(config, providers)
 
@@ -195,9 +197,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
     stores.apis.put(api).await
     Get(request).addCredentials(credentials) ~> grant.authorization() ~> check {
       status should be(StatusCodes.BadRequest)
-      responseAs[String] should be(
-        "The request has missing, invalid or mismatching redirection URI and/or client identifier"
-      )
+      responseAs[JsObject].fields should contain("error" -> JsString("invalid_request"))
     }
   }
 
