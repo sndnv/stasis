@@ -22,10 +22,6 @@ result = subprocess.run(
         'run',
         '-it',
         '--mount', 'src={},target=/opt/identity-ui,type=bind'.format(identity_ui_path),
-        '-e', 'IDENTITY_UI_API_URL=http://test-api-url',
-        '-e', 'IDENTITY_UI_AUTH_CLIENT_ID=test-client',
-        '-e', 'IDENTITY_UI_AUTH_REDIRECT_URI=http://test-redirect-uri',
-        '-e', 'IDENTITY_UI_AUTH_DERIVATION_SALT=test-salt',
         identity_ui_image,
         '/bin/sh', '-c', 'rm -r ./coverage; yarn lint; yarn test'
     ]
