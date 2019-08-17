@@ -7,6 +7,8 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.Sink
+import akka.util.ByteString
 import org.jose4j.jwk.JsonWebKey
 import stasis.identity.api.manage.setup.{Config => ManageConfig, Providers => ManageProviders}
 import stasis.identity.api.oauth.setup.{Config => OAuthConfig, Providers => OAuthProviders}
@@ -33,7 +35,7 @@ class IdentityEndpoint(
     ExceptionHandler {
       case NonFatal(e) =>
         extractRequestEntity { entity =>
-          val _ = entity.discardBytes()
+          val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
           val failureReference = java.util.UUID.randomUUID()
 
           log.error(
@@ -56,7 +58,7 @@ class IdentityEndpoint(
       .handle {
         case MissingQueryParamRejection(parameterName) =>
           extractRequestEntity { entity =>
-            val _ = entity.discardBytes()
+            val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
             val message = s"Parameter [$parameterName] is missing, invalid or malformed"
             log.warning(message)
