@@ -44,6 +44,7 @@ object Bootstrap {
             .map(resource => new File(resource.getFile))
             .getOrElse(new File(configFile))
         )
+        .resolve()
         .getConfig("bootstrap")
 
       val entities = Entities(
