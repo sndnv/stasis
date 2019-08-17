@@ -41,7 +41,7 @@ class EntityAuthenticatorSpec extends AsyncUnitSpec {
       }
   }
 
-  it should "provide authentication responses after a pre-configured delay" in {
+  it should "provide authentication responses after a pre-configured delay (success)" in {
     val expectedDelay = 200.millis
     val authenticator = new MockEntityAuthenticator(secretConfig.copy(authenticationDelay = expectedDelay))
 
@@ -60,6 +60,32 @@ class EntityAuthenticatorSpec extends AsyncUnitSpec {
       }
   }
 
+  it should "provide authentication responses after a pre-configured delay (failure)" in {
+    val expectedDelay = 200.millis
+    val authenticator = new MockEntityAuthenticator(
+      secretConfig = secretConfig.copy(authenticationDelay = expectedDelay),
+      failingGet = true
+    )
+
+    val entity = "some-entity"
+
+    val start = System.currentTimeMillis()
+
+    authenticator
+      .authenticate(BasicHttpCredentials(username = entity, password = entity))
+      .map { result =>
+        fail(s"Unexpected result received: [$result]")
+      }
+      .recover {
+        case NonFatal(e) =>
+          val end = System.currentTimeMillis()
+          val duration = (end - start).millis
+
+          e.getMessage should be("failure")
+          duration should be >= expectedDelay
+      }
+  }
+
   private implicit val system: ActorSystem = ActorSystem(name = "EntityAuthenticatorSpec")
 
   private implicit val secretConfig: Secret.ClientConfig = Secret.ClientConfig(
@@ -70,13 +96,18 @@ class EntityAuthenticatorSpec extends AsyncUnitSpec {
     authenticationDelay = 50.millis
   )
 
-  private class MockEntityAuthenticator(secretConfig: Secret.Config)(implicit protected val system: ActorSystem)
+  private class MockEntityAuthenticator(secretConfig: Secret.Config, failingGet: Boolean = false)(
+    implicit protected val system: ActorSystem)
       extends EntityAuthenticator[String] {
 
     override implicit protected def config: Secret.Config = secretConfig
 
     override protected def getEntity(username: String): Future[String] =
-      Future.successful(username)
+      if (failingGet) {
+        Future.failed(new Exception("failure"))
+      } else {
+        Future.successful(username)
+      }
 
     override protected def extractSecret: String => Secret =
       entity => Secret.derive(rawSecret = entity, salt = entity)
