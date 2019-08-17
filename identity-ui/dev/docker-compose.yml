@@ -1,0 +1,32 @@
+version: '3'
+
+services:
+  identity:
+    image: identity:0.0.1-SNAPSHOT
+    ports:
+      - '9090:9090'
+    environment:
+      - IDENTITY_BOOTSTRAP_ENABLED=true
+      - IDENTITY_BOOTSTRAP_CONFIG=/opt/docker/config/bootstrap.conf
+      - IDENTITY_LOGLEVEL=DEBUG
+      - IDENTITY_SERVICE_INTERFACE=0.0.0.0
+      - IDENTITY_SERVICE_PORT=9090
+      - IDENTITY_TOKENS_REFRESH_ALLOWED=true
+      - IDENTITY_UI_DEV_CLIENT_ID=a928359a-e2ee-4db7-9307-8071b2a1c756
+      - IDENTITY_UI_DEV_REDIRECT_URI=http://localhost:8080/manage/login/callback
+      - IDENTITY_UI_DEV_CLIENT_SECRET=test-secret
+      - IDENTITY_UI_DEV_OWNER_PASSWORD=passw0rd
+    volumes:
+      - ./bootstrap.conf:/opt/docker/config/bootstrap.conf
+
+  identity-ui:
+    image: identity-ui:latest
+    command: /bin/sh -c "yarn serve"
+    ports:
+      - '8080:8080'
+    environment:
+      - IDENTITY_UI_API_URL=http://localhost:8080
+      - IDENTITY_UI_AUTH_CLIENT_ID=a928359a-e2ee-4db7-9307-8071b2a1c756
+      - IDENTITY_UI_AUTH_REDIRECT_URI=http://localhost:8080/manage/login/callback
+    volumes:
+      - '../:/opt/identity-ui'
