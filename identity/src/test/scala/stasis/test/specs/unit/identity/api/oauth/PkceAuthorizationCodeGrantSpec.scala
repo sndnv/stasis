@@ -280,9 +280,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.apis.put(api).await
     Get(request).addCredentials(credentials) ~> grant.authorization() ~> check {
       status should be(StatusCodes.BadRequest)
-      responseAs[String] should be(
-        "The request has missing, invalid or mismatching redirection URI and/or client identifier"
-      )
+      responseAs[JsObject].fields should contain("error" -> JsString("invalid_request"))
       stores.codes.codes.await should be(Map.empty)
     }
   }

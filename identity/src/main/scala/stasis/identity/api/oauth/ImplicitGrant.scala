@@ -10,6 +10,7 @@ import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.AuthDirectives
 import stasis.identity.api.oauth.setup.{Config, Providers}
 import stasis.identity.model.clients.Client
+import stasis.identity.model.errors.AuthorizationError
 import stasis.identity.model.tokens.{AccessToken, TokenType}
 import stasis.identity.model.{ResponseType, Seconds}
 
@@ -21,6 +22,7 @@ class ImplicitGrant(
 )(implicit system: ActorSystem, override val mat: Materializer)
     extends AuthDirectives {
   import ImplicitGrant._
+  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
   override implicit protected def ec: ExecutionContext = system.dispatcher
   override protected def log: LoggingAdapter = Logging(system, this.getClass.getName)
@@ -55,8 +57,6 @@ class ImplicitGrant(
                     log.debug("Successfully generated access token for client [{}]", client.id)
 
                     if (noRedirect) {
-                      import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
-
                       discardEntity & complete(
                         StatusCodes.OK,
                         AccessTokenResponseWithRedirectUri(
@@ -83,7 +83,7 @@ class ImplicitGrant(
               discardEntity {
                 complete(
                   StatusCodes.BadRequest,
-                  "The request has missing, invalid or mismatching redirection URI and/or client identifier"
+                  AuthorizationError.InvalidRequest(withState = request.state)
                 )
               }
           }
