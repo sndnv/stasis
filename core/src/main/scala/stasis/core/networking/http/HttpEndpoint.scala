@@ -10,6 +10,8 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{ExceptionHandler, Route}
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.Sink
+import akka.util.ByteString
 import stasis.core.networking.Endpoint
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.reservations.ReservationStoreView
@@ -44,7 +46,7 @@ class HttpEndpoint(
     ExceptionHandler {
       case NonFatal(e) =>
         extractRequestEntity { entity =>
-          val _ = entity.discardBytes()
+          val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
           val failureReference = java.util.UUID.randomUUID()
 
           log.error(

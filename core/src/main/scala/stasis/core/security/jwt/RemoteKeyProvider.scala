@@ -10,7 +10,8 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, StatusCodes}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
-import akka.util.Timeout
+import akka.stream.scaladsl.Sink
+import akka.util.{ByteString, Timeout}
 import org.jose4j.jwk.JsonWebKeySet
 import org.jose4j.jws.AlgorithmIdentifiers
 import stasis.core.persistence.backends.memory.MemoryBackend
@@ -151,7 +152,7 @@ object RemoteKeyProvider {
               Unmarshal(entity).to[String]
 
             case _ =>
-              val _ = entity.discardBytes()
+              val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
               Future.failed(ProviderFailure(s"Endpoint responded with unexpected status: [${status.value}]"))
           }
       }
