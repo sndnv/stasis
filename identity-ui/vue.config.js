@@ -2,18 +2,19 @@ const DefinePlugin = require('webpack').DefinePlugin;
 
 module.exports = {
   devServer: {
+    https: true,
     proxy: {
       '^/api': {
-        target: 'http://identity:9090',
+        target: 'https://identity:9090',
         pathRewrite: {
           '^/api': '/'
         }
       },
       '^/oauth': {
-        target: 'http://identity:9090'
+        target: 'https://identity:9090'
       },
       '^/jwks': {
-        target: 'http://identity:9090'
+        target: 'https://identity:9090'
       }
     }
   },
