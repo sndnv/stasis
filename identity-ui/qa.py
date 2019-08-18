@@ -5,7 +5,7 @@ import subprocess
 import sys
 
 identity_ui_path = os.path.dirname(os.path.realpath(__file__))
-identity_ui_image = 'identity-ui:latest-test'
+identity_ui_image = 'identity-ui:test-latest'
 
 image_exists = subprocess.run(
     ['docker', 'inspect', identity_ui_image],
@@ -14,7 +14,15 @@ image_exists = subprocess.run(
 ).returncode == 0
 
 if not image_exists:
-    subprocess.run(['docker', 'build', '-t', identity_ui_image, identity_ui_path])
+    subprocess.run(
+        [
+            'docker',
+            'build',
+            '--target', 'dev-stage',
+            '-t', identity_ui_image,
+            identity_ui_path
+        ]
+    )
 
 result = subprocess.run(
     [
