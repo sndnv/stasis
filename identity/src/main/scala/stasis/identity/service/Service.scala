@@ -130,7 +130,11 @@ trait Service {
           case Success(_) =>
             log.info("Identity service starting on [{}:{}]...", config.interface, config.port)
             serviceState.set(Service.State.Started(persistence, endpoint))
-            val _ = endpoint.start(interface = config.interface, port = config.port)
+            val _ = endpoint.start(
+              interface = config.interface,
+              port = config.port,
+              context = EndpointContext.create(config.context)
+            )
 
           case Failure(e) =>
             log.error(e, "Bootstrap failed: [{}]", e.getMessage)
@@ -163,14 +167,20 @@ object Service {
     final case class StartupFailed(throwable: Throwable) extends State
   }
 
-  final case class Config(interface: String, port: Int, internalQueryTimeout: FiniteDuration)
+  final case class Config(
+    interface: String,
+    port: Int,
+    internalQueryTimeout: FiniteDuration,
+    context: EndpointContext.Config
+  )
 
   object Config {
     def apply(config: com.typesafe.config.Config): Config =
       Config(
         interface = config.getString("interface"),
         port = config.getInt("port"),
-        internalQueryTimeout = config.getDuration("internal-query-timeout").toMillis.millis
+        internalQueryTimeout = config.getDuration("internal-query-timeout").toMillis.millis,
+        context = EndpointContext.Config(config.getConfig("context"))
       )
   }
 }

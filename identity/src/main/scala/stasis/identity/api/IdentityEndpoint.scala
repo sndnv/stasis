@@ -2,7 +2,7 @@ package stasis.identity.api
 
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
-import akka.http.scaladsl.Http
+import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
@@ -75,6 +75,11 @@ class IdentityEndpoint(
       pathPrefix("manage") { manage.routes }
     )
 
-  def start(interface: String, port: Int): Future[Http.ServerBinding] =
-    Http().bindAndHandle(routes, interface, port)
+  def start(interface: String, port: Int, context: ConnectionContext): Future[Http.ServerBinding] =
+    Http().bindAndHandle(
+      handler = routes,
+      interface = interface,
+      port = port,
+      connectionContext = context
+    )
 }

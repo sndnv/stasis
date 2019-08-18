@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.identity.api
 
-import akka.http.scaladsl.Http
+import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
 import akka.http.scaladsl.unmarshalling.Unmarshal
@@ -123,7 +123,8 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
 
     endpoint.start(
       interface = "localhost",
-      port = endpointPort
+      port = endpointPort,
+      context = ConnectionContext.noEncryption()
     )
 
     Http()
@@ -161,7 +162,8 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
 
     endpoint.start(
       interface = "localhost",
-      port = endpointPort
+      port = endpointPort,
+      context = ConnectionContext.noEncryption()
     )
 
     val credentials = OAuth2BearerToken("some-token")
