@@ -22,7 +22,7 @@ services:
       - ./certs/localhost.p12:/opt/docker/certs/localhost.p12
 
   identity-ui:
-    image: identity-ui:latest
+    image: identity-ui:dev-latest
     command: /bin/sh -c "yarn serve"
     ports:
       - '8080:8080'

@@ -3,7 +3,7 @@ export default {
     cookies: {
         authentication_token: 'stasis-identity-jwt',
         context: 'stasis-identity-context',
-        secure: false
+        secure: process.env.NODE_ENV != 'test'
     },
     authentication: {
         client_id: process.env.IDENTITY_UI_AUTH_CLIENT_ID,
