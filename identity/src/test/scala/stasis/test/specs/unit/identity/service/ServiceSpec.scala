@@ -1,12 +1,15 @@
 package stasis.test.specs.unit.identity.service
 
+import java.security.SecureRandom
+
 import akka.Done
-import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
+import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.util.ByteString
 import com.typesafe.config.{Config, ConfigFactory}
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+import javax.net.ssl.{SSLContext, TrustManagerFactory}
 import org.jose4j.jwk.{JsonWebKey, JsonWebKeySet}
 import org.jose4j.jws.JsonWebSignature
 import org.scalatest.concurrent.Eventually
@@ -14,7 +17,7 @@ import play.api.libs.json._
 import stasis.identity.api.Formats._
 import stasis.identity.api.manage.requests.{CreateApi, CreateOwner}
 import stasis.identity.model.apis.Api
-import stasis.identity.service.{Persistence, Service}
+import stasis.identity.service.{EndpointContext, Persistence, Service}
 import stasis.test.specs.unit.identity.RouteTest
 
 import scala.collection.JavaConverters._
@@ -27,10 +30,12 @@ class ServiceSpec extends RouteTest with Eventually {
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
   "Identity Service" should "authenticate and authorize actions" in {
+    implicit val trustedContext: HttpsConnectionContext = createTrustedContext()
+
     val service = new Service {}
     val serviceInterface = "localhost"
     val servicePort = 19090
-    val serviceUrl = s"http://$serviceInterface:$servicePort"
+    val serviceUrl = s"https://$serviceInterface:$servicePort"
 
     val persistence = eventually {
       service.state match {
@@ -121,7 +126,7 @@ class ServiceSpec extends RouteTest with Eventually {
     serviceUrl: String,
     owner: ResourceOwnerCredentials,
     client: ClientCredentials
-  ): Future[String] =
+  )(implicit trustedContext: HttpsConnectionContext): Future[String] =
     for {
       response <- Http()
         .singleRequest(
@@ -132,7 +137,8 @@ class ServiceSpec extends RouteTest with Eventually {
               s"&username=${owner.username}" +
               s"&password=${owner.password}" +
               s"&scope=${owner.scope}"
-          ).addCredentials(BasicHttpCredentials(client.username, client.password))
+          ).addCredentials(BasicHttpCredentials(client.username, client.password)),
+          connectionContext = trustedContext
         )
       entity <- response.entity.dataBytes.runFold(ByteString.empty)(_ concat _)
     } yield {
@@ -144,14 +150,15 @@ class ServiceSpec extends RouteTest with Eventually {
     entities: String,
     request: RequestEntity,
     accessToken: String
-  ): Future[Done] =
+  )(implicit trustedContext: HttpsConnectionContext): Future[Done] =
     Http()
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.POST,
           uri = s"$serviceUrl/manage/$entities",
           entity = request
-        ).addCredentials(OAuth2BearerToken(token = accessToken))
+        ).addCredentials(OAuth2BearerToken(token = accessToken)),
+        connectionContext = trustedContext
       )
       .flatMap {
         case HttpResponse(StatusCodes.OK, _, _, _) => Future.successful(Done)
@@ -160,14 +167,15 @@ class ServiceSpec extends RouteTest with Eventually {
 
   private def getJwk(
     serviceUrl: String
-  ): Future[JsonWebKey] =
+  )(implicit trustedContext: HttpsConnectionContext): Future[JsonWebKey] =
     for {
       response <- Http()
         .singleRequest(
           request = HttpRequest(
             method = HttpMethods.GET,
             uri = s"$serviceUrl/jwks/jwks.json"
-          )
+          ),
+          connectionContext = trustedContext
         )
       entity <- response.entity.dataBytes.runFold(ByteString.empty)(_ concat _)
     } yield {
@@ -182,6 +190,21 @@ class ServiceSpec extends RouteTest with Eventually {
       case Some(entity) => entity
       case None         => fail("Existing entity expected but none was found")
     }
+
+  private def createTrustedContext(): HttpsConnectionContext = {
+    val config = ConfigFactory.load().getConfig("stasis.test.identity.service.context")
+    val contextConfig = EndpointContext.Config(config)
+
+    val keyStore = EndpointContext.loadKeyStore(contextConfig)
+
+    val factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm)
+    factory.init(keyStore)
+
+    val sslContext = SSLContext.getInstance(contextConfig.protocol)
+    sslContext.init(None.orNull, factory.getTrustManagers, new SecureRandom())
+
+    new HttpsConnectionContext(sslContext)
+  }
 }
 
 object ServiceSpec {
