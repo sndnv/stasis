@@ -1,4 +1,4 @@
-package stasis.test.specs.unit.identity.service
+package stasis.test.specs.unit.core.security.tls
 
 import java.security.SecureRandom
 
@@ -10,7 +10,7 @@ import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
 import javax.net.ssl.{SSLContext, TrustManagerFactory}
-import stasis.identity.service.EndpointContext
+import stasis.core.security.tls.EndpointContext
 import stasis.test.specs.unit.AsyncUnitSpec
 
 import scala.collection.mutable
@@ -20,13 +20,13 @@ class EndpointContextSpec extends AsyncUnitSpec {
 
   "An EndpointContext" should "load its config" in {
     val expectedConfig = EndpointContext.Config(
-      keystorePath = "./identity/src/test/resources/certs/localhost.p12",
+      keystorePath = "./core/src/test/resources/certs/localhost.p12",
       keystoreType = "PKCS12",
       keystorePassword = "",
       protocol = "TLS"
     )
 
-    val actualConfig = EndpointContext.Config(config.getConfig("service.context"))
+    val actualConfig = EndpointContext.Config(config.getConfig("context"))
 
     actualConfig should be(expectedConfig)
   }
@@ -34,7 +34,7 @@ class EndpointContextSpec extends AsyncUnitSpec {
   it should "create an SSL context" in {
     val interface = "localhost"
     val port = ports.dequeue()
-    val contextConfig = EndpointContext.Config(config.getConfig("service.context"))
+    val contextConfig = EndpointContext.Config(config.getConfig("context"))
     val context = EndpointContext.create(contextConfig)
 
     implicit val system: ActorSystem = ActorSystem(name = "EndpointContextSpec")
@@ -63,10 +63,10 @@ class EndpointContextSpec extends AsyncUnitSpec {
       }
   }
 
-  private val config: Config = ConfigFactory.load().getConfig("stasis.test.identity")
+  private val config: Config = ConfigFactory.load().getConfig("stasis.test.core.security.tls")
 
   private def createTrustedContext(): HttpsConnectionContext = {
-    val contextConfig = EndpointContext.Config(config.getConfig("service.context"))
+    val contextConfig = EndpointContext.Config(config.getConfig("context"))
 
     val keyStore = EndpointContext.loadKeyStore(contextConfig)
 

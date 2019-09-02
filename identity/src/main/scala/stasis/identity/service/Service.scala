@@ -9,6 +9,7 @@ import akka.event.{Logging, LoggingAdapter}
 import com.typesafe.{config => typesafe}
 import org.jose4j.jwk.JsonWebKey
 import stasis.core.security.jwt.{JwtAuthenticator, LocalKeyProvider}
+import stasis.core.security.tls.EndpointContext
 import stasis.identity.api.{IdentityEndpoint, manage => manageApi, oauth => oauthApi}
 import stasis.identity.authentication.{manage, oauth}
 import stasis.identity.model.apis.Api

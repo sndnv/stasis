@@ -1,4 +1,4 @@
-package stasis.identity.service
+package stasis.core.security.tls
 
 import java.io.FileInputStream
 import java.security.{KeyStore, SecureRandom}
@@ -25,6 +25,7 @@ object EndpointContext {
       )
   }
 
+  @SuppressWarnings(Array("org.wartremover.warts.Null"))
   def create(config: Config): ConnectionContext = {
     val keyStore = loadKeyStore(config)
 
@@ -32,7 +33,11 @@ object EndpointContext {
     factory.init(keyStore, config.keystorePassword.toCharArray)
 
     val sslContext = SSLContext.getInstance(config.protocol)
-    sslContext.init( /* km */ factory.getKeyManagers, /* tm */ None.orNull, /* random */ new SecureRandom())
+    sslContext.init(
+      factory.getKeyManagers, // km
+      None.orNull, // tm
+      new SecureRandom() // random
+    )
 
     new HttpsConnectionContext(sslContext)
   }

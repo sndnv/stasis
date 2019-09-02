@@ -14,10 +14,11 @@ import org.jose4j.jwk.{JsonWebKey, JsonWebKeySet}
 import org.jose4j.jws.JsonWebSignature
 import org.scalatest.concurrent.Eventually
 import play.api.libs.json._
+import stasis.core.security.tls.EndpointContext
 import stasis.identity.api.Formats._
 import stasis.identity.api.manage.requests.{CreateApi, CreateOwner}
 import stasis.identity.model.apis.Api
-import stasis.identity.service.{EndpointContext, Persistence, Service}
+import stasis.identity.service.{Persistence, Service}
 import stasis.test.specs.unit.identity.RouteTest
 
 import scala.collection.JavaConverters._
