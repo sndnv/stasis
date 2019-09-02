@@ -2,7 +2,7 @@ package stasis.server.api
 
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
-import akka.http.scaladsl.Http
+import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{ExceptionHandler, Route}
@@ -27,8 +27,13 @@ class ServerEndpoint(
 
   private val log: LoggingAdapter = Logging(system, this.getClass.getName)
 
-  def start(hostname: String, port: Int): Future[Http.ServerBinding] =
-    Http().bindAndHandle(endpointRoutes, hostname, port)
+  def start(hostname: String, port: Int, context: ConnectionContext): Future[Http.ServerBinding] =
+    Http().bindAndHandle(
+      handler = endpointRoutes,
+      interface = hostname,
+      port = port,
+      connectionContext = context
+    )
 
   private implicit def sanitizingExceptionHandler: ExceptionHandler =
     ExceptionHandler {

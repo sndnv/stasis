@@ -4,10 +4,9 @@ import java.time.{Instant, LocalTime}
 
 import scala.collection.mutable
 import scala.concurrent.duration._
-
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
-import akka.http.scaladsl.Http
+import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
@@ -235,7 +234,11 @@ class ServerEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     )
 
     val endpointPort = ports.dequeue()
-    val _ = endpoint.start(hostname = "localhost", port = endpointPort)
+    val _ = endpoint.start(
+      hostname = "localhost",
+      port = endpointPort,
+      context = ConnectionContext.noEncryption()
+    )
 
     Http()
       .singleRequest(
@@ -258,7 +261,11 @@ class ServerEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     )
 
     val endpointPort = ports.dequeue()
-    val _ = endpoint.start(hostname = "localhost", port = endpointPort)
+    val _ = endpoint.start(
+      hostname = "localhost",
+      port = endpointPort,
+      context = ConnectionContext.noEncryption()
+    )
 
     Http()
       .singleRequest(

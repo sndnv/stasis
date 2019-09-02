@@ -2,6 +2,7 @@ package stasis.test.specs.unit.core.networking.http
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import akka.http.scaladsl.ConnectionContext
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
@@ -60,7 +61,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
         authenticator = testAuthenticator,
         reservationStore = fixtures.reservationStore.view
       ) {
-    private val _ = start(hostname = "localhost", port = port)
+    private val _ = start(hostname = "localhost", port = port, context = ConnectionContext.noEncryption())
   }
 
   private val ports: mutable.Queue[Int] = (19000 to 19100).to[mutable.Queue]

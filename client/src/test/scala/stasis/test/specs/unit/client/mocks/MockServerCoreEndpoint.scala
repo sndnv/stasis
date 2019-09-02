@@ -2,7 +2,7 @@ package stasis.test.specs.unit.client.mocks
 
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.http.scaladsl.Http
+import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -38,5 +38,9 @@ class MockServerCoreEndpoint(
     crateStore.retrieve(entry).map(_.isDefined)
 
   def start(port: Int): Future[Http.ServerBinding] =
-    endpoint.start(hostname = "localhost", port = port)
+    endpoint.start(
+      hostname = "localhost",
+      port = port,
+      context = ConnectionContext.noEncryption()
+    )
 }
