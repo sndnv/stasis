@@ -1,4 +1,4 @@
-package stasis.identity.api.directives
+package stasis.core.api.directives
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Directive, Directive0}
@@ -6,7 +6,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 
-trait BaseApiDirective {
+trait EntityDiscardingDirectives {
   protected implicit def mat: Materializer
 
   def discardEntity: Directive0 =

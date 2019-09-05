@@ -5,15 +5,15 @@ import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.model.{StatusCodes, Uri}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Directive, Directive1, StandardRoute}
+import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.api.Formats._
-import stasis.identity.api.directives.BaseApiDirective
 import stasis.identity.authentication.oauth.ResourceOwnerAuthenticator
 import stasis.identity.model.errors.AuthorizationError
 import stasis.identity.model.owners.ResourceOwner
 
 import scala.util.{Failure, Success}
 
-trait ResourceOwnerAuthentication extends BaseApiDirective {
+trait ResourceOwnerAuthentication extends EntityDiscardingDirectives {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
   protected def log: LoggingAdapter

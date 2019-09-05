@@ -4,10 +4,10 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.complete
 import akka.http.scaladsl.server.{Directive, Directive0}
-import stasis.identity.api.directives.BaseApiDirective
+import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.model.owners.ResourceOwner
 
-trait UserAuthorization extends BaseApiDirective {
+trait UserAuthorization extends EntityDiscardingDirectives {
 
   protected def log: LoggingAdapter
 

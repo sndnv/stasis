@@ -7,10 +7,10 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
 import org.jose4j.jwk.JsonWebKey
-import stasis.identity.api.directives.BaseApiDirective
+import stasis.core.api.directives.EntityDiscardingDirectives
 
 class Jwks(keys: Seq[JsonWebKey])(implicit system: ActorSystem, override val mat: Materializer)
-    extends BaseApiDirective {
+    extends EntityDiscardingDirectives {
   import Jwks._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 

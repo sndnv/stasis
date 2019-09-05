@@ -5,13 +5,13 @@ import akka.http.scaladsl.model.headers.{HttpChallenges, OAuth2BearerToken}
 import akka.http.scaladsl.model.{headers, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Directive, Directive1}
-import stasis.identity.api.directives.BaseApiDirective
+import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.authentication.manage.ResourceOwnerAuthenticator
 import stasis.identity.model.owners.ResourceOwner
 
 import scala.util.{Failure, Success}
 
-trait UserAuthentication extends BaseApiDirective {
+trait UserAuthentication extends EntityDiscardingDirectives {
 
   protected def log: LoggingAdapter
 

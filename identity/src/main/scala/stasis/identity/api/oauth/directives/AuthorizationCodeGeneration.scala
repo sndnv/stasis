@@ -4,7 +4,7 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.{StatusCodes, Uri}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Directive, Directive1}
-import stasis.identity.api.directives.BaseApiDirective
+import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.model.ChallengeMethod
 import stasis.identity.model.clients.Client
 import stasis.identity.model.codes.generators.AuthorizationCodeGenerator
@@ -14,7 +14,7 @@ import stasis.identity.model.owners.ResourceOwner
 
 import scala.util.{Failure, Success}
 
-trait AuthorizationCodeGeneration extends BaseApiDirective {
+trait AuthorizationCodeGeneration extends EntityDiscardingDirectives {
 
   protected def log: LoggingAdapter
 

@@ -86,7 +86,7 @@ class ServerEndpoint(
               )
 
             case Failure(e) =>
-              val _ = request.discardEntityBytes()
+              val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
               log.warning(
                 "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{}]",
@@ -100,7 +100,7 @@ class ServerEndpoint(
           }
 
         case None =>
-          val _ = request.discardEntityBytes()
+          val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
           log.warning(
             "Rejecting [{}] request for [{}] with no credentials from [{}]",
