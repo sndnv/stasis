@@ -1,14 +1,14 @@
 package stasis.identity.api.oauth.directives
 
 import akka.http.scaladsl.server.{Directive, Directive1}
-import stasis.identity.api.directives.BaseApiDirective
+import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.model.apis.Api
 import stasis.identity.model.clients.Client
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.tokens.AccessToken
 import stasis.identity.model.tokens.generators.AccessTokenGenerator
 
-trait AccessTokenGeneration extends BaseApiDirective {
+trait AccessTokenGeneration extends EntityDiscardingDirectives {
 
   protected def accessTokenGenerator: AccessTokenGenerator
 

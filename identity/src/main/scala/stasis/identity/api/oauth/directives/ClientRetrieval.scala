@@ -4,12 +4,12 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Directive, Directive1}
-import stasis.identity.api.directives.BaseApiDirective
+import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.model.clients.{Client, ClientStoreView}
 
 import scala.util.{Failure, Success}
 
-trait ClientRetrieval extends BaseApiDirective {
+trait ClientRetrieval extends EntityDiscardingDirectives {
 
   protected def log: LoggingAdapter
 

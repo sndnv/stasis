@@ -4,8 +4,8 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Directive, Directive1}
+import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.api.Formats._
-import stasis.identity.api.directives.BaseApiDirective
 import stasis.identity.model.apis.{Api, ApiStoreView}
 import stasis.identity.model.clients.{Client, ClientStoreView}
 import stasis.identity.model.errors.TokenError
@@ -14,7 +14,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
 
-trait AudienceExtraction extends BaseApiDirective {
+trait AudienceExtraction extends EntityDiscardingDirectives {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
   protected implicit def ec: ExecutionContext

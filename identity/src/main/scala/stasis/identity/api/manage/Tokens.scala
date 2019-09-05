@@ -6,12 +6,12 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
-import stasis.identity.api.directives.BaseApiDirective
+import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.tokens.{RefreshToken, RefreshTokenStore}
 
 class Tokens(store: RefreshTokenStore)(implicit system: ActorSystem, override val mat: Materializer)
-    extends BaseApiDirective {
+    extends EntityDiscardingDirectives {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.identity.api.Formats._
 

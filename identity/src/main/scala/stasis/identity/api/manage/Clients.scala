@@ -6,8 +6,8 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
+import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.api.Formats._
-import stasis.identity.api.directives.BaseApiDirective
 import stasis.identity.api.manage.requests.{CreateClient, UpdateClient, UpdateClientCredentials}
 import stasis.identity.api.manage.responses.CreatedClient
 import stasis.identity.model.clients.{Client, ClientStore}
@@ -20,7 +20,7 @@ class Clients(
   store: ClientStore,
   clientSecretConfig: Secret.ClientConfig
 )(implicit system: ActorSystem, override val mat: Materializer)
-    extends BaseApiDirective {
+    extends EntityDiscardingDirectives {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
   private implicit val ec: ExecutionContext = system.dispatcher

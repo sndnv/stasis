@@ -8,8 +8,8 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directive, Route}
 import akka.http.scaladsl.server.Directives._
+import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.api.Formats._
-import stasis.identity.api.directives.BaseApiDirective
 import stasis.identity.model.ChallengeMethod
 import stasis.identity.model.clients.Client
 import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, StoredAuthorizationCode}
@@ -19,7 +19,7 @@ import stasis.identity.model.owners.ResourceOwner
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
 
-trait AuthorizationCodeConsumption extends BaseApiDirective {
+trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
   import AuthorizationCodeConsumption._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 

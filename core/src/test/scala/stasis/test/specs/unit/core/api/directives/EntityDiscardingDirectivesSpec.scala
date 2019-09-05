@@ -1,19 +1,19 @@
-package stasis.test.specs.unit.identity.api.directives
+package stasis.test.specs.unit.core.api.directives
 
 import java.util.concurrent.atomic.AtomicInteger
 
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives
+import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.stream.scaladsl.Source
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.util.ByteString
-import stasis.identity.api.Formats._
-import stasis.identity.api.directives.BaseApiDirective
-import stasis.test.specs.unit.identity.RouteTest
+import stasis.core.api.directives.EntityDiscardingDirectives
+import stasis.test.specs.unit.AsyncUnitSpec
 
-class BaseApiDirectiveSpec extends RouteTest {
-  "A BaseApiDirective" should "discard entities" in {
-    val directive = new BaseApiDirective {
+class EntityDiscardingDirectivesSpec extends AsyncUnitSpec with ScalatestRouteTest {
+  "A EntityDiscardingDirectives" should "discard entities" in {
+    val directive = new EntityDiscardingDirectives {
       override implicit protected def mat: Materializer = ActorMaterializer()
     }
 
@@ -36,7 +36,7 @@ class BaseApiDirectiveSpec extends RouteTest {
   }
 
   it should "consume entities" in {
-    val directive = new BaseApiDirective {
+    val directive = new EntityDiscardingDirectives {
       override implicit protected def mat: Materializer = ActorMaterializer()
     }
 
