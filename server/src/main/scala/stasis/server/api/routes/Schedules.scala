@@ -1,27 +1,31 @@
 package stasis.server.api.routes
 
-import scala.concurrent.Future
-
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import akka.stream.Materializer
 import stasis.server.model.schedules.ScheduleStore
+import stasis.server.security.CurrentUser
 import stasis.shared.api.requests.{CreateSchedule, UpdateSchedule}
 import stasis.shared.api.responses.{CreatedSchedule, DeletedSchedule}
 
-object Schedules extends ApiRoutes {
+import scala.concurrent.Future
+
+class Schedules()(implicit ctx: RoutesContext) extends ApiRoutes {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
-  def apply()(implicit ctx: RoutesContext): Route =
+  override implicit protected def mat: Materializer = ctx.mat
+
+  def routes(implicit currentUser: CurrentUser): Route =
     concat(
       pathEndOrSingleSlash {
         concat(
           get {
             resource[ScheduleStore.View.Service] { view =>
               view.list().map { schedules =>
-                log.info("User [{}] successfully retrieved [{}] schedules", ctx.user, schedules.size)
-                complete(schedules.values)
+                log.info("User [{}] successfully retrieved [{}] schedules", currentUser, schedules.size)
+                discardEntity & complete(schedules.values)
               }
             }
           },
@@ -31,7 +35,7 @@ object Schedules extends ApiRoutes {
                 val schedule = createRequest.toSchedule
 
                 manage.create(schedule).map { _ =>
-                  log.info("User [{}] successfully created schedule [{}]", ctx.user, schedule.id)
+                  log.info("User [{}] successfully created schedule [{}]", currentUser, schedule.id)
                   complete(CreatedSchedule(schedule.id))
                 }
               }
@@ -45,12 +49,12 @@ object Schedules extends ApiRoutes {
             resource[ScheduleStore.View.Service] { view =>
               view.get(scheduleId).map {
                 case Some(schedule) =>
-                  log.info("User [{}] successfully retrieved schedule [{}]", ctx.user, scheduleId)
-                  complete(schedule)
+                  log.info("User [{}] successfully retrieved schedule [{}]", currentUser, scheduleId)
+                  discardEntity & complete(schedule)
 
                 case None =>
-                  log.warning("User [{}] failed to retrieve schedule [{}]", ctx.user, scheduleId)
-                  complete(StatusCodes.NotFound)
+                  log.warning("User [{}] failed to retrieve schedule [{}]", currentUser, scheduleId)
+                  discardEntity & complete(StatusCodes.NotFound)
               }
             }
           },
@@ -62,12 +66,12 @@ object Schedules extends ApiRoutes {
                     view.get(scheduleId).flatMap {
                       case Some(schedule) =>
                         manage.update(updateRequest.toUpdatedSchedule(schedule)).map { _ =>
-                          log.info("User [{}] successfully updated schedule [{}]", ctx.user, scheduleId)
+                          log.info("User [{}] successfully updated schedule [{}]", currentUser, scheduleId)
                           complete(StatusCodes.OK)
                         }
 
                       case None =>
-                        log.warning("User [{}] failed to update missing schedule [{}]", ctx.user, scheduleId)
+                        log.warning("User [{}] failed to update missing schedule [{}]", currentUser, scheduleId)
                         Future.successful(complete(StatusCodes.BadRequest))
                     }
                 }
@@ -77,12 +81,12 @@ object Schedules extends ApiRoutes {
             resource[ScheduleStore.Manage.Service] { manage =>
               manage.delete(scheduleId).map { deleted =>
                 if (deleted) {
-                  log.info("User [{}] successfully deleted schedule [{}]", ctx.user, scheduleId)
+                  log.info("User [{}] successfully deleted schedule [{}]", currentUser, scheduleId)
                 } else {
-                  log.warning("User [{}] failed to delete schedule [{}]", ctx.user, scheduleId)
+                  log.warning("User [{}] failed to delete schedule [{}]", currentUser, scheduleId)
                 }
 
-                complete(DeletedSchedule(existing = deleted))
+                discardEntity & complete(DeletedSchedule(existing = deleted))
               }
             }
           }

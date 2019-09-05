@@ -325,7 +325,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     lazy implicit val context: RoutesContext = RoutesContext.collect()
 
-    lazy val routes: Route = Devices()
+    lazy val routes: Route = new Devices().routes
   }
 
   private val user = User(

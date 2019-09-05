@@ -228,7 +228,7 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     lazy implicit val context: RoutesContext = RoutesContext.collect()
 
-    lazy val routes: Route = DatasetDefinitions()
+    lazy val routes: Route = new DatasetDefinitions().routes
   }
 
   private implicit val user: CurrentUser = CurrentUser(User.generateId())

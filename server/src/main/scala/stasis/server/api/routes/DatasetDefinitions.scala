@@ -3,26 +3,30 @@ package stasis.server.api.routes
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import stasis.shared.api.requests.{CreateDatasetDefinition, UpdateDatasetDefinition}
-import stasis.shared.api.responses.{CreatedDatasetDefinition, DeletedDatasetDefinition}
+import akka.stream.Materializer
 import stasis.server.model.datasets.DatasetDefinitionStore
 import stasis.server.model.devices.DeviceStore
+import stasis.server.security.CurrentUser
+import stasis.shared.api.requests.{CreateDatasetDefinition, UpdateDatasetDefinition}
+import stasis.shared.api.responses.{CreatedDatasetDefinition, DeletedDatasetDefinition}
 
 import scala.concurrent.Future
 
-object DatasetDefinitions extends ApiRoutes {
+class DatasetDefinitions()(implicit ctx: RoutesContext) extends ApiRoutes {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
-  def apply()(implicit ctx: RoutesContext): Route =
+  override implicit protected def mat: Materializer = ctx.mat
+
+  def routes(implicit currentUser: CurrentUser): Route =
     concat(
       pathEndOrSingleSlash {
         concat(
           get {
             resource[DatasetDefinitionStore.View.Privileged] { view =>
               view.list().map { definitions =>
-                log.info("User [{}] successfully retrieved [{}] definitions", ctx.user, definitions.size)
-                complete(definitions.values)
+                log.info("User [{}] successfully retrieved [{}] definitions", currentUser, definitions.size)
+                discardEntity & complete(definitions.values)
               }
             }
           },
@@ -31,7 +35,7 @@ object DatasetDefinitions extends ApiRoutes {
               resource[DatasetDefinitionStore.Manage.Privileged] { manage =>
                 val definition = createRequest.toDefinition
                 manage.create(definition).map { _ =>
-                  log.info("User [{}] successfully created definition [{}]", ctx.user, definition.id)
+                  log.info("User [{}] successfully created definition [{}]", currentUser, definition.id)
                   complete(CreatedDatasetDefinition(definition.id))
                 }
               }
@@ -45,12 +49,12 @@ object DatasetDefinitions extends ApiRoutes {
             resource[DatasetDefinitionStore.View.Privileged] { view =>
               view.get(definitionId).map {
                 case Some(definition) =>
-                  log.info("User [{}] successfully retrieved definition [{}]", ctx.user, definitionId)
-                  complete(definition)
+                  log.info("User [{}] successfully retrieved definition [{}]", currentUser, definitionId)
+                  discardEntity & complete(definition)
 
                 case None =>
-                  log.warning("User [{}] failed to retrieve definition [{}]", ctx.user, definitionId)
-                  complete(StatusCodes.NotFound)
+                  log.warning("User [{}] failed to retrieve definition [{}]", currentUser, definitionId)
+                  discardEntity & complete(StatusCodes.NotFound)
               }
             }
           },
@@ -62,12 +66,12 @@ object DatasetDefinitions extends ApiRoutes {
                     view.get(definitionId).flatMap {
                       case Some(definition) =>
                         manage.update(updateRequest.toUpdatedDefinition(definition)).map { _ =>
-                          log.info("User [{}] successfully updated definition [{}]", ctx.user, definitionId)
+                          log.info("User [{}] successfully updated definition [{}]", currentUser, definitionId)
                           complete(StatusCodes.OK)
                         }
 
                       case None =>
-                        log.warning("User [{}] failed to update missing definition [{}]", ctx.user, definitionId)
+                        log.warning("User [{}] failed to update missing definition [{}]", currentUser, definitionId)
                         Future.successful(complete(StatusCodes.BadRequest))
                     }
                 }
@@ -77,12 +81,12 @@ object DatasetDefinitions extends ApiRoutes {
             resource[DatasetDefinitionStore.Manage.Privileged] { manage =>
               manage.delete(definitionId).map { deleted =>
                 if (deleted) {
-                  log.info("User [{}] successfully deleted definition [{}]", ctx.user, definitionId)
+                  log.info("User [{}] successfully deleted definition [{}]", currentUser, definitionId)
                 } else {
-                  log.warning("User [{}] failed to delete definition [{}]", ctx.user, definitionId)
+                  log.warning("User [{}] failed to delete definition [{}]", currentUser, definitionId)
                 }
 
-                complete(DeletedDatasetDefinition(existing = deleted))
+                discardEntity & complete(DeletedDatasetDefinition(existing = deleted))
               }
             }
           }
@@ -95,11 +99,11 @@ object DatasetDefinitions extends ApiRoutes {
               get {
                 resources[DeviceStore.View.Self, DatasetDefinitionStore.View.Self] { (deviceView, definitionView) =>
                   deviceView
-                    .list(ctx.user)
+                    .list(currentUser)
                     .flatMap(devices => definitionView.list(devices.keys.toSeq))
                     .map { definitions =>
-                      log.info("User [{}] successfully retrieved [{}] definitions", ctx.user, definitions.size)
-                      complete(definitions.values)
+                      log.info("User [{}] successfully retrieved [{}] definitions", currentUser, definitions.size)
+                      discardEntity & complete(definitions.values)
                     }
                 }
               },
@@ -110,10 +114,10 @@ object DatasetDefinitions extends ApiRoutes {
                       (deviceView, definitionManage) =>
                         val definition = createRequest.toDefinition
                         deviceView
-                          .list(ctx.user)
+                          .list(currentUser)
                           .flatMap(devices => definitionManage.create(devices.keys.toSeq, definition))
                           .map { _ =>
-                            log.info("User [{}] successfully created definition [{}]", ctx.user, definition.id)
+                            log.info("User [{}] successfully created definition [{}]", currentUser, definition.id)
                             complete(CreatedDatasetDefinition(definition.id))
                           }
                     }
@@ -128,16 +132,16 @@ object DatasetDefinitions extends ApiRoutes {
                   resources[DeviceStore.View.Self, DatasetDefinitionStore.View.Self] {
                     (deviceView, definitionView) =>
                       deviceView
-                        .list(ctx.user)
+                        .list(currentUser)
                         .flatMap(devices => definitionView.get(devices.keys.toSeq, definitionId))
                         .map {
                           case Some(definition) =>
-                            log.info("User [{}] successfully retrieved definition [{}]", ctx.user, definitionId)
-                            complete(definition)
+                            log.info("User [{}] successfully retrieved definition [{}]", currentUser, definitionId)
+                            discardEntity & complete(definition)
 
                           case None =>
-                            log.warning("User [{}] failed to retrieve definition [{}]", ctx.user, definitionId)
-                            complete(StatusCodes.NotFound)
+                            log.warning("User [{}] failed to retrieve definition [{}]", currentUser, definitionId)
+                            discardEntity & complete(StatusCodes.NotFound)
                         }
                   }
                 },
@@ -151,7 +155,7 @@ object DatasetDefinitions extends ApiRoutes {
                       ] {
                         (deviceView, definitionView, definitionManage) =>
                           deviceView
-                            .list(ctx.user)
+                            .list(currentUser)
                             .flatMap {
                               devices =>
                                 val deviceIds = devices.keys.toSeq
@@ -162,7 +166,7 @@ object DatasetDefinitions extends ApiRoutes {
                                       .map { _ =>
                                         log.info(
                                           "User [{}] successfully updated definition [{}]",
-                                          ctx.user,
+                                          currentUser,
                                           definitionId
                                         )
                                         complete(StatusCodes.OK)
@@ -171,7 +175,7 @@ object DatasetDefinitions extends ApiRoutes {
                                   case None =>
                                     log.warning(
                                       "User [{}] failed to update missing definition [{}]",
-                                      ctx.user,
+                                      currentUser,
                                       definitionId
                                     )
                                     Future.successful(complete(StatusCodes.BadRequest))
@@ -185,16 +189,16 @@ object DatasetDefinitions extends ApiRoutes {
                   resources[DeviceStore.View.Self, DatasetDefinitionStore.Manage.Self] {
                     (deviceView, definitionManage) =>
                       deviceView
-                        .list(ctx.user)
+                        .list(currentUser)
                         .flatMap(devices => definitionManage.delete(devices.keys.toSeq, definitionId))
                         .map { deleted =>
                           if (deleted) {
-                            log.info("User [{}] successfully deleted definition [{}]", ctx.user, definitionId)
+                            log.info("User [{}] successfully deleted definition [{}]", currentUser, definitionId)
                           } else {
-                            log.warning("User [{}] failed to delete definition [{}]", ctx.user, definitionId)
+                            log.warning("User [{}] failed to delete definition [{}]", currentUser, definitionId)
                           }
 
-                          complete(DeletedDatasetDefinition(existing = deleted))
+                          discardEntity & complete(DeletedDatasetDefinition(existing = deleted))
                         }
                   }
                 }

@@ -1,46 +1,32 @@
 package stasis.server.api.routes
 
-import scala.concurrent.Future
-
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import akka.stream.Materializer
 import stasis.server.model.users.UserStore
+import stasis.server.security.CurrentUser
 import stasis.shared.api.requests._
 import stasis.shared.api.responses.{CreatedUser, DeletedUser}
 import stasis.shared.model.users.User
 
-object Users extends ApiRoutes {
+import scala.concurrent.Future
+
+class Users()(implicit ctx: RoutesContext) extends ApiRoutes {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
-  private def update(
-    updateRequest: UpdateUser,
-    userId: User.Id
-  )(implicit ctx: RoutesContext): Route =
-    resources[UserStore.View.Privileged, UserStore.Manage.Privileged] { (view, manage) =>
-      view.get(userId).flatMap {
-        case Some(user) =>
-          manage.update(updateRequest.toUpdatedUser(user)).map { _ =>
-            log.info("User [{}] successfully updated user [{}]", ctx.user, userId)
-            complete(StatusCodes.OK)
-          }
+  override implicit protected def mat: Materializer = ctx.mat
 
-        case None =>
-          log.warning("User [{}] failed to update missing user [{}]", ctx.user, userId)
-          Future.successful(complete(StatusCodes.BadRequest))
-      }
-    }
-
-  def apply()(implicit ctx: RoutesContext): Route =
+  def routes(implicit currentUser: CurrentUser): Route =
     concat(
       pathEndOrSingleSlash {
         concat(
           get {
             resource[UserStore.View.Privileged] { view =>
               view.list().map { users =>
-                log.info("User [{}] successfully retrieved [{}] users", ctx.user, users.size)
-                complete(users.values)
+                log.info("User [{}] successfully retrieved [{}] users", currentUser, users.size)
+                discardEntity & complete(users.values)
               }
             }
           },
@@ -49,7 +35,7 @@ object Users extends ApiRoutes {
               resource[UserStore.Manage.Privileged] { manage =>
                 val user = createRequest.toUser
                 manage.create(user).map { _ =>
-                  log.info("User [{}] successfully created user [{}]", ctx.user, user.id)
+                  log.info("User [{}] successfully created user [{}]", currentUser, user.id)
                   complete(CreatedUser(user.id))
                 }
               }
@@ -65,12 +51,12 @@ object Users extends ApiRoutes {
                 resource[UserStore.View.Privileged] { view =>
                   view.get(userId).map {
                     case Some(user) =>
-                      log.info("User [{}] successfully retrieved user [{}]", ctx.user, userId)
-                      complete(user)
+                      log.info("User [{}] successfully retrieved user [{}]", currentUser, userId)
+                      discardEntity & complete(user)
 
                     case None =>
-                      log.warning("User [{}] failed to retrieve user [{}]", ctx.user, userId)
-                      complete(StatusCodes.NotFound)
+                      log.warning("User [{}] failed to retrieve user [{}]", currentUser, userId)
+                      discardEntity & complete(StatusCodes.NotFound)
                   }
                 }
               },
@@ -78,12 +64,12 @@ object Users extends ApiRoutes {
                 resource[UserStore.Manage.Privileged] { manage =>
                   manage.delete(userId).map { deleted =>
                     if (deleted) {
-                      log.info("User [{}] successfully deleted user [{}]", ctx.user, userId)
+                      log.info("User [{}] successfully deleted user [{}]", currentUser, userId)
                     } else {
-                      log.warning("User [{}] failed to delete user [{}]", ctx.user, userId)
+                      log.warning("User [{}] failed to delete user [{}]", currentUser, userId)
                     }
 
-                    complete(DeletedUser(existing = deleted))
+                    discardEntity & complete(DeletedUser(existing = deleted))
                   }
                 }
               }
@@ -117,14 +103,14 @@ object Users extends ApiRoutes {
           pathEndOrSingleSlash {
             get {
               resource[UserStore.View.Self] { view =>
-                view.get(ctx.user).map {
+                view.get(currentUser).map {
                   case Some(user) =>
-                    log.info("User [{}] successfully retrieved own data", ctx.user)
-                    complete(user)
+                    log.info("User [{}] successfully retrieved own data", currentUser)
+                    discardEntity & complete(user)
 
                   case None =>
-                    log.warning("User [{}] failed to retrieve own data [{}]", ctx.user)
-                    complete(StatusCodes.NotFound)
+                    log.warning("User [{}] failed to retrieve own data [{}]", currentUser)
+                    discardEntity & complete(StatusCodes.NotFound)
                 }
               }
             }
@@ -132,8 +118,8 @@ object Users extends ApiRoutes {
           path("deactivate") {
             put {
               resource[UserStore.Manage.Self] { manage =>
-                manage.deactivate(ctx.user).map { _ =>
-                  log.info("User [{}] successfully deactivated own account", ctx.user)
+                manage.deactivate(currentUser).map { _ =>
+                  log.info("User [{}] successfully deactivated own account", currentUser)
                   complete(StatusCodes.OK)
                 }
               }
@@ -142,4 +128,22 @@ object Users extends ApiRoutes {
         )
       }
     )
+
+  private def update(
+    updateRequest: UpdateUser,
+    userId: User.Id
+  )(implicit ctx: RoutesContext, currentUser: CurrentUser): Route =
+    resources[UserStore.View.Privileged, UserStore.Manage.Privileged] { (view, manage) =>
+      view.get(userId).flatMap {
+        case Some(user) =>
+          manage.update(updateRequest.toUpdatedUser(user)).map { _ =>
+            log.info("User [{}] successfully updated user [{}]", currentUser, userId)
+            complete(StatusCodes.OK)
+          }
+
+        case None =>
+          log.warning("User [{}] failed to update missing user [{}]", currentUser, userId)
+          Future.successful(complete(StatusCodes.BadRequest))
+      }
+    }
 }

@@ -199,7 +199,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     lazy implicit val context: RoutesContext = RoutesContext.collect()
 
-    lazy val routes: Route = Users()
+    lazy val routes: Route = new Users().routes
   }
 
   private implicit val user: CurrentUser = CurrentUser(User.generateId())
