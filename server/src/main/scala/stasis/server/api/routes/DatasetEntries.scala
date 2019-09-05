@@ -3,16 +3,20 @@ package stasis.server.api.routes
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import akka.stream.Materializer
 import stasis.server.model.datasets.DatasetEntryStore
 import stasis.server.model.devices.DeviceStore
+import stasis.server.security.CurrentUser
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.responses.{CreatedDatasetEntry, DeletedDatasetEntry}
 
-object DatasetEntries extends ApiRoutes {
+class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
-  def apply()(implicit ctx: RoutesContext): Route =
+  override implicit protected def mat: Materializer = ctx.mat
+
+  def routes(implicit currentUser: CurrentUser): Route =
     concat(
       path("for-definition" / JavaUUID) { definitionId =>
         get {
@@ -20,11 +24,11 @@ object DatasetEntries extends ApiRoutes {
             view.list(definitionId).map { entries =>
               log.info(
                 "User [{}] successfully retrieved [{}] entries for definition [{}]",
-                ctx.user,
+                currentUser,
                 entries.size,
                 definitionId
               )
-              complete(entries.values)
+              discardEntity & complete(entries.values)
             }
           }
         }
@@ -35,12 +39,12 @@ object DatasetEntries extends ApiRoutes {
             resource[DatasetEntryStore.View.Privileged] { view =>
               view.get(entryId).map {
                 case Some(entry) =>
-                  log.info("User [{}] successfully retrieved entry [{}]", ctx.user, entryId)
-                  complete(entry)
+                  log.info("User [{}] successfully retrieved entry [{}]", currentUser, entryId)
+                  discardEntity & complete(entry)
 
                 case None =>
-                  log.warning("User [{}] failed to retrieve entry [{}]", ctx.user, entryId)
-                  complete(StatusCodes.NotFound)
+                  log.warning("User [{}] failed to retrieve entry [{}]", currentUser, entryId)
+                  discardEntity & complete(StatusCodes.NotFound)
               }
             }
           },
@@ -48,12 +52,12 @@ object DatasetEntries extends ApiRoutes {
             resource[DatasetEntryStore.Manage.Privileged] { manage =>
               manage.delete(entryId).map { deleted =>
                 if (deleted) {
-                  log.info("User [{}] successfully deleted entry [{}]", ctx.user, entryId)
+                  log.info("User [{}] successfully deleted entry [{}]", currentUser, entryId)
                 } else {
-                  log.warning("User [{}] failed to delete entry [{}]", ctx.user, entryId)
+                  log.warning("User [{}] failed to delete entry [{}]", currentUser, entryId)
                 }
 
-                complete(DeletedDatasetEntry(existing = deleted))
+                discardEntity & complete(DeletedDatasetEntry(existing = deleted))
               }
             }
           }
@@ -67,16 +71,16 @@ object DatasetEntries extends ApiRoutes {
                 get {
                   resources[DeviceStore.View.Self, DatasetEntryStore.View.Self] { (deviceView, entryView) =>
                     deviceView
-                      .list(ctx.user)
+                      .list(currentUser)
                       .flatMap(devices => entryView.list(devices.keys.toSeq, definitionId))
                       .map { entries =>
                         log.info(
                           "User [{}] successfully retrieved [{}] entries for definition [{}]",
-                          ctx.user,
+                          currentUser,
                           entries.size,
                           definitionId
                         )
-                        complete(entries.values)
+                        discardEntity & complete(entries.values)
                       }
                   }
                 },
@@ -86,10 +90,10 @@ object DatasetEntries extends ApiRoutes {
                       resources[DeviceStore.View.Self, DatasetEntryStore.Manage.Self] { (deviceView, entryManage) =>
                         val entry = createRequest.toEntry
                         deviceView
-                          .list(ctx.user)
+                          .list(currentUser)
                           .flatMap(devices => entryManage.create(devices.keys.toSeq, entry))
                           .map { _ =>
-                            log.info("User [{}] successfully created entry [{}]", ctx.user, entry.id)
+                            log.info("User [{}] successfully created entry [{}]", currentUser, entry.id)
                             complete(CreatedDatasetEntry(entry.id))
                           }
                       }
@@ -97,7 +101,7 @@ object DatasetEntries extends ApiRoutes {
                     case createRequest =>
                       log.warning(
                         "User [{}] attempted to create entry for definition [{}] but definition [{}] expected",
-                        ctx.user,
+                        currentUser,
                         createRequest.definition,
                         definitionId
                       )
@@ -110,34 +114,35 @@ object DatasetEntries extends ApiRoutes {
             entryId =>
               concat(
                 get {
-                  resources[DeviceStore.View.Self, DatasetEntryStore.View.Self] { (deviceView, entryView) =>
-                    deviceView
-                      .list(ctx.user)
-                      .flatMap(devices => entryView.get(devices.keys.toSeq, entryId))
-                      .map {
-                        case Some(entry) =>
-                          log.info("User [{}] successfully retrieved entry [{}]", ctx.user, entryId)
-                          complete(entry)
+                  resources[DeviceStore.View.Self, DatasetEntryStore.View.Self] {
+                    (deviceView, entryView) =>
+                      deviceView
+                        .list(currentUser)
+                        .flatMap(devices => entryView.get(devices.keys.toSeq, entryId))
+                        .map {
+                          case Some(entry) =>
+                            log.info("User [{}] successfully retrieved entry [{}]", currentUser, entryId)
+                            discardEntity & complete(entry)
 
-                        case None =>
-                          log.warning("User [{}] failed to retrieve entry [{}]", ctx.user, entryId)
-                          complete(StatusCodes.NotFound)
-                      }
+                          case None =>
+                            log.warning("User [{}] failed to retrieve entry [{}]", currentUser, entryId)
+                            discardEntity & complete(StatusCodes.NotFound)
+                        }
                   }
                 },
                 delete {
                   resources[DeviceStore.View.Self, DatasetEntryStore.Manage.Self] { (deviceView, entryManage) =>
                     deviceView
-                      .list(ctx.user)
+                      .list(currentUser)
                       .flatMap(devices => entryManage.delete(devices.keys.toSeq, entryId))
                       .map { deleted =>
                         if (deleted) {
-                          log.info("User [{}] successfully deleted entry [{}]", ctx.user, entryId)
+                          log.info("User [{}] successfully deleted entry [{}]", currentUser, entryId)
                         } else {
-                          log.warning("User [{}] failed to delete entry [{}]", ctx.user, entryId)
+                          log.warning("User [{}] failed to delete entry [{}]", currentUser, entryId)
                         }
 
-                        complete(DeletedDatasetEntry(existing = deleted))
+                        discardEntity & complete(DeletedDatasetEntry(existing = deleted))
                       }
                   }
                 }

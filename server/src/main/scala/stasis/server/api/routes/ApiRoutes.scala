@@ -2,13 +2,14 @@ package stasis.server.api.routes
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.server.Directives.onSuccess
 import akka.http.scaladsl.server.Route
+import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.server.security.{CurrentUser, Resource, ResourceProvider}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-trait ApiRoutes {
+trait ApiRoutes extends EntityDiscardingDirectives {
   def resource[R1 <: Resource](f: R1 => Future[Route])(
     implicit
     provider: ResourceProvider,
@@ -58,8 +59,6 @@ trait ApiRoutes {
     )(identity)
 
   implicit def routeContextToExecutionContext(implicit ctx: RoutesContext): ExecutionContext = ctx.ec
-
-  implicit def routeContextToCurrentUser(implicit ctx: RoutesContext): CurrentUser = ctx.user
 
   implicit def routeContextToResourceProvider(implicit ctx: RoutesContext): ResourceProvider = ctx.resourceProvider
 
