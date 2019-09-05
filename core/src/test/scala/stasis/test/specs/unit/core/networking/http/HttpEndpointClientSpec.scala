@@ -61,7 +61,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
         authenticator = testAuthenticator,
         reservationStore = fixtures.reservationStore.view
       ) {
-    private val _ = start(hostname = "localhost", port = port, context = ConnectionContext.noEncryption())
+    private val _ = start(interface = "localhost", port = port, context = ConnectionContext.noEncryption())
   }
 
   private val ports: mutable.Queue[Int] = (19000 to 19100).to[mutable.Queue]

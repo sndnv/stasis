@@ -1,7 +1,6 @@
 package stasis.server.security
 
-import stasis.core.persistence.backends.KeyValueBackend
-import stasis.shared.model.users.User
+import stasis.server.model.users.UserStore
 import stasis.server.security.exceptions.AuthorizationFailure
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -9,7 +8,7 @@ import scala.reflect.ClassTag
 
 class DefaultResourceProvider(
   resources: Set[Resource],
-  users: KeyValueBackend[User.Id, User]
+  users: UserStore.View.Privileged
 )(implicit ec: ExecutionContext)
     extends ResourceProvider {
   override def provide[R <: Resource](implicit user: CurrentUser, tag: ClassTag[R]): Future[R] =

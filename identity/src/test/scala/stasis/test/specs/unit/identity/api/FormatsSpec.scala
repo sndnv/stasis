@@ -35,7 +35,7 @@ class FormatsSpec extends UnitSpec {
   they should "convert token types to/from JSON" in {
     val json = "\"bearer\""
     tokenTypeFormat.writes(TokenType.Bearer).toString should be(json)
-    tokenTypeFormat.reads(Json.parse(json).as[JsString]).asOpt should be(Some(TokenType.Bearer))
+    tokenTypeFormat.reads(Json.parse(json)).asOpt should be(Some(TokenType.Bearer))
   }
 
   they should "convert grant types to/from JSON" in {
@@ -50,7 +50,7 @@ class FormatsSpec extends UnitSpec {
     grants.foreach {
       case (grant, json) =>
         grantTypeFormat.writes(grant).toString should be(json)
-        grantTypeFormat.reads(Json.parse(json).as[JsString]).asOpt should be(Some(grant))
+        grantTypeFormat.reads(Json.parse(json)).asOpt should be(Some(grant))
     }
   }
 
@@ -63,7 +63,7 @@ class FormatsSpec extends UnitSpec {
     challenges.foreach {
       case (challenge, json) =>
         challengeMethodFormat.writes(challenge).toString should be(json)
-        challengeMethodFormat.reads(Json.parse(json).as[JsString]).asOpt should be(Some(challenge))
+        challengeMethodFormat.reads(Json.parse(json)).asOpt should be(Some(challenge))
     }
   }
 
@@ -76,7 +76,7 @@ class FormatsSpec extends UnitSpec {
     responses.foreach {
       case (response, json) =>
         responseTypeFormat.writes(response).toString should be(json)
-        responseTypeFormat.reads(Json.parse(json).as[JsString]).asOpt should be(Some(response))
+        responseTypeFormat.reads(Json.parse(json)).asOpt should be(Some(response))
     }
   }
 
@@ -85,7 +85,7 @@ class FormatsSpec extends UnitSpec {
     val json = s"""\"${token.value}\""""
 
     accessTokenFormat.writes(token).toString should be(json)
-    accessTokenFormat.reads(Json.parse(json).as[JsString]).asOpt should be(Some(token))
+    accessTokenFormat.reads(Json.parse(json)).asOpt should be(Some(token))
   }
 
   they should "convert refresh tokens to/from JSON" in {
@@ -93,7 +93,7 @@ class FormatsSpec extends UnitSpec {
     val json = s"""\"${token.value}\""""
 
     refreshTokenFormat.writes(token).toString should be(json)
-    refreshTokenFormat.reads(Json.parse(json).as[JsString]).asOpt should be(Some(token))
+    refreshTokenFormat.reads(Json.parse(json)).asOpt should be(Some(token))
   }
 
   they should "convert authorization codes to/from JSON" in {
@@ -101,7 +101,7 @@ class FormatsSpec extends UnitSpec {
     val json = s"""\"${code.value}\""""
 
     authorizationCodeFormat.writes(code).toString should be(json)
-    authorizationCodeFormat.reads(Json.parse(json).as[JsString]).asOpt should be(Some(code))
+    authorizationCodeFormat.reads(Json.parse(json)).asOpt should be(Some(code))
   }
 
   they should "convert seconds to/from JSON" in {

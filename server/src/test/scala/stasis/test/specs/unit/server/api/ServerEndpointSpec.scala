@@ -2,14 +2,12 @@ package stasis.test.specs.unit.server.api
 
 import java.time.{Instant, LocalTime}
 
-import scala.collection.mutable
-import scala.concurrent.duration._
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
-import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.{ConnectionContext, Http}
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
 import stasis.server.api.ServerEndpoint
@@ -26,63 +24,19 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks._
 import stasis.test.specs.unit.server.security.mocks.{MockResourceProvider, MockUserAuthenticator}
 
-class ServerEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
-  import scala.language.implicitConversions
+import scala.collection.mutable
+import scala.concurrent.duration._
 
+class ServerEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
-
-  private implicit val untypedSystem: ActorSystem = ActorSystem(name = "ServerEndpointSpec")
-  private implicit val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)
-
-  private trait TestFixtures {
-    lazy val definitionStore: DatasetDefinitionStore = new MockDatasetDefinitionStore()
-    lazy val entryStore: DatasetEntryStore = new MockDatasetEntryStore()
-    lazy val deviceStore: DeviceStore = new MockDeviceStore()
-    lazy val scheduleStore: ScheduleStore = new MockScheduleStore()
-    lazy val userStore: UserStore = new MockUserStore()
-
-    lazy val provider: ResourceProvider = new MockResourceProvider(
-      resources = Set(
-        definitionStore.manage(),
-        definitionStore.manageSelf(),
-        definitionStore.view(),
-        definitionStore.viewSelf(),
-        entryStore.manage(),
-        entryStore.manageSelf(),
-        entryStore.view(),
-        entryStore.viewSelf(),
-        deviceStore.manage(),
-        deviceStore.manageSelf(),
-        deviceStore.view(),
-        deviceStore.viewSelf(),
-        scheduleStore.manage(),
-        scheduleStore.view(),
-        userStore.manage(),
-        userStore.manageSelf(),
-        userStore.view(),
-        userStore.viewSelf()
-      )
-    )
-
-    lazy val authenticator: UserAuthenticator = new MockUserAuthenticator(testUser.toString, testPassword)
-
-    lazy val endpoint: ServerEndpoint = new ServerEndpoint(provider, authenticator)
-  }
-
-  private val testUser = User.generateId()
-  private val testPassword = "test-password"
-
-  private val testCredentials = BasicHttpCredentials(username = testUser.toString, password = testPassword)
-
-  private val ports: mutable.Queue[Int] = (21000 to 21100).to[mutable.Queue]
 
   "A ServerEndpoint" should "successfully authenticate a user" in {
     val fixtures = new TestFixtures {}
 
     val user = User(
       id = testUser,
-      isActive = true,
+      active = true,
       limits = None,
       permissions = Set.empty
     )
@@ -175,7 +129,7 @@ class ServerEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     val user = User(
       id = testUser,
-      isActive = true,
+      active = true,
       limits = None,
       permissions = Set.empty
     )
@@ -195,7 +149,7 @@ class ServerEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       id = Device.generateId(),
       node = Node.generateId(),
       owner = User.generateId(),
-      isActive = true,
+      active = true,
       limits = None
     )
 
@@ -235,7 +189,7 @@ class ServerEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     val endpointPort = ports.dequeue()
     val _ = endpoint.start(
-      hostname = "localhost",
+      interface = "localhost",
       port = endpointPort,
       context = ConnectionContext.noEncryption()
     )
@@ -253,7 +207,7 @@ class ServerEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "handle generic failures reported by routes" in {
-    val userStore: UserStore = new MockUserStore()
+    val userStore: UserStore = MockUserStore()
 
     val endpoint = new ServerEndpoint(
       resourceProvider = new MockResourceProvider(Set(userStore.manageSelf())),
@@ -262,7 +216,7 @@ class ServerEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     val endpointPort = ports.dequeue()
     val _ = endpoint.start(
-      hostname = "localhost",
+      interface = "localhost",
       port = endpointPort,
       context = ConnectionContext.noEncryption()
     )
@@ -278,4 +232,49 @@ class ServerEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
         response.status should be(StatusCodes.InternalServerError)
       }
   }
+
+  private implicit val untypedSystem: ActorSystem = ActorSystem(name = "ServerEndpointSpec")
+  private implicit val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)
+
+  private trait TestFixtures {
+    lazy val definitionStore: DatasetDefinitionStore = MockDatasetDefinitionStore()
+    lazy val entryStore: DatasetEntryStore = MockDatasetEntryStore()
+    lazy val deviceStore: DeviceStore = MockDeviceStore()
+    lazy val scheduleStore: ScheduleStore = MockScheduleStore()
+    lazy val userStore: UserStore = MockUserStore()
+
+    lazy val provider: ResourceProvider = new MockResourceProvider(
+      resources = Set(
+        definitionStore.manage(),
+        definitionStore.manageSelf(),
+        definitionStore.view(),
+        definitionStore.viewSelf(),
+        entryStore.manage(),
+        entryStore.manageSelf(),
+        entryStore.view(),
+        entryStore.viewSelf(),
+        deviceStore.manage(),
+        deviceStore.manageSelf(),
+        deviceStore.view(),
+        deviceStore.viewSelf(),
+        scheduleStore.manage(),
+        scheduleStore.view(),
+        userStore.manage(),
+        userStore.manageSelf(),
+        userStore.view(),
+        userStore.viewSelf()
+      )
+    )
+
+    lazy val authenticator: UserAuthenticator = new MockUserAuthenticator(testUser.toString, testPassword)
+
+    lazy val endpoint: ServerEndpoint = new ServerEndpoint(provider, authenticator)
+  }
+
+  private val testUser = User.generateId()
+  private val testPassword = "test-password"
+
+  private val testCredentials = BasicHttpCredentials(username = testUser.toString, password = testPassword)
+
+  private val ports: mutable.Queue[Int] = (21000 to 21100).to[mutable.Queue]
 }

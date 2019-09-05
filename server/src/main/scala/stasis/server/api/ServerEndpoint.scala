@@ -27,10 +27,10 @@ class ServerEndpoint(
 
   private val log: LoggingAdapter = Logging(system, this.getClass.getName)
 
-  def start(hostname: String, port: Int, context: ConnectionContext): Future[Http.ServerBinding] =
+  def start(interface: String, port: Int, context: ConnectionContext): Future[Http.ServerBinding] =
     Http().bindAndHandle(
       handler = endpointRoutes,
-      interface = hostname,
+      interface = interface,
       port = port,
       connectionContext = context
     )

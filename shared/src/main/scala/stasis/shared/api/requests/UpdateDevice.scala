@@ -9,8 +9,8 @@ object UpdateDevice {
   implicit class RequestToUpdatedDevice(request: UpdateDevice) {
     def toUpdatedDevice(device: Device, owner: User): Device =
       request match {
-        case UpdateDeviceState(isActive) => device.copy(isActive = isActive)
-        case UpdateDeviceLimits(limits)  => device.copy(limits = Device.resolveLimits(owner.limits, limits))
+        case UpdateDeviceState(active)  => device.copy(active = active)
+        case UpdateDeviceLimits(limits) => device.copy(limits = Device.resolveLimits(owner.limits, limits))
       }
   }
 }

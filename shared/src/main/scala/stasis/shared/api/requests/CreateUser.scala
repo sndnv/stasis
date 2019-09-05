@@ -13,7 +13,7 @@ object CreateUser {
     def toUser: User =
       User(
         id = User.generateId(),
-        isActive = true,
+        active = true,
         limits = request.limits,
         permissions = request.permissions
       )

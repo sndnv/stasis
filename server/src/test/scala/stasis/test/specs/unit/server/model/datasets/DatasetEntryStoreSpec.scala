@@ -14,27 +14,13 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.MockDatasetEntryStore
 
 class DatasetEntryStoreSpec extends AsyncUnitSpec {
-
-  private implicit val system: ActorSystem = ActorSystem(name = "DatasetEntryStoreSpec")
-
-  private val ownDevices = Seq(Device.generateId(), Device.generateId())
-
-  private val mockEntry = DatasetEntry(
-    id = DatasetEntry.generateId(),
-    definition = DatasetDefinition.generateId(),
-    device = Device.generateId(),
-    data = Set.empty,
-    metadata = Crate.generateId(),
-    created = Instant.now()
-  )
-
   "A DatasetEntryStore" should "provide a view resource (privileged)" in {
-    val store = new MockDatasetEntryStore()
+    val store = MockDatasetEntryStore()
     store.view().requiredPermission should be(Permission.View.Privileged)
   }
 
   it should "return existing entries via view resource (privileged)" in {
-    val store = new MockDatasetEntryStore()
+    val store = MockDatasetEntryStore()
 
     store.manage().create(mockEntry).await
 
@@ -42,7 +28,7 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
   }
 
   it should "return a list of entries via view resource (privileged)" in {
-    val store = new MockDatasetEntryStore()
+    val store = MockDatasetEntryStore()
 
     store.manage().create(mockEntry).await
 
@@ -63,12 +49,12 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
   }
 
   it should "provide a view resource (self)" in {
-    val store = new MockDatasetEntryStore()
+    val store = MockDatasetEntryStore()
     store.viewSelf().requiredPermission should be(Permission.View.Self)
   }
 
   it should "return existing entries for current user via view resource (self)" in {
-    val store = new MockDatasetEntryStore()
+    val store = MockDatasetEntryStore()
 
     val ownDefinition = mockEntry.copy(device = ownDevices.head)
     store.manage().create(ownDefinition).await
@@ -77,7 +63,7 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
   }
 
   it should "fail to return existing entries not for current user via view resource (self)" in {
-    val store = new MockDatasetEntryStore()
+    val store = MockDatasetEntryStore()
 
     store.manage().create(mockEntry).await
 
@@ -96,13 +82,13 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
   }
 
   it should "fail to return missing entries for current user via view resource (self)" in {
-    val store = new MockDatasetEntryStore()
+    val store = MockDatasetEntryStore()
 
     store.viewSelf().get(ownDevices, mockEntry.id).map(result => result should be(None))
   }
 
   it should "return a list of entries for current user via view resource (self)" in {
-    val store = new MockDatasetEntryStore()
+    val store = MockDatasetEntryStore()
 
     val ownEntry = mockEntry.copy(device = ownDevices.head)
     store.manage().create(ownEntry).await
@@ -116,12 +102,12 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
   }
 
   it should "provide management resource (privileged)" in {
-    val store = new MockDatasetEntryStore()
+    val store = MockDatasetEntryStore()
     store.manage().requiredPermission should be(Permission.Manage.Privileged)
   }
 
   it should "allow creating entries via management resource (privileged)" in {
-    val store = new MockDatasetEntryStore()
+    val store = MockDatasetEntryStore()
 
     for {
       createResult <- store.manage().create(mockEntry)
@@ -133,7 +119,7 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
   }
 
   it should "allow deleting entries via management resource (privileged)" in {
-    val store = new MockDatasetEntryStore()
+    val store = MockDatasetEntryStore()
 
     for {
       createResult <- store.manage().create(mockEntry)
@@ -149,7 +135,7 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
   }
 
   it should "fail to delete missing entries via management resource (privileged)" in {
-    val store = new MockDatasetEntryStore()
+    val store = MockDatasetEntryStore()
 
     for {
       getResult <- store.view().get(mockEntry.id)
@@ -161,12 +147,12 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
   }
 
   it should "provide management resource (self)" in {
-    val store = new MockDatasetEntryStore()
+    val store = MockDatasetEntryStore()
     store.manageSelf().requiredPermission should be(Permission.Manage.Self)
   }
 
   it should "allow creating entries for current user via management resource (self)" in {
-    val store = new MockDatasetEntryStore()
+    val store = MockDatasetEntryStore()
 
     val ownEntry = mockEntry.copy(device = ownDevices.head)
 
@@ -180,7 +166,7 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
   }
 
   it should "fail to create entries for another user via management resource (self)" in {
-    val store = new MockDatasetEntryStore()
+    val store = MockDatasetEntryStore()
 
     store
       .manageSelf()
@@ -197,7 +183,7 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
   }
 
   it should "allow deleting entries for current user via management resource (self)" in {
-    val store = new MockDatasetEntryStore()
+    val store = MockDatasetEntryStore()
 
     val ownEntry = mockEntry.copy(device = ownDevices.head)
 
@@ -215,7 +201,7 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
   }
 
   it should "fail to delete entries for another user via management resource (self)" in {
-    val store = new MockDatasetEntryStore()
+    val store = MockDatasetEntryStore()
 
     store.manage().create(mockEntry).await
 
@@ -234,7 +220,7 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
   }
 
   it should "fail to delete missing entries for current user via management resource (self)" in {
-    val store = new MockDatasetEntryStore()
+    val store = MockDatasetEntryStore()
 
     for {
       getResult <- store.view().get(mockEntry.id)
@@ -244,4 +230,17 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
       deleteResult should be(false)
     }
   }
+
+  private implicit val system: ActorSystem = ActorSystem(name = "DatasetEntryStoreSpec")
+
+  private val ownDevices = Seq(Device.generateId(), Device.generateId())
+
+  private val mockEntry = DatasetEntry(
+    id = DatasetEntry.generateId(),
+    definition = DatasetDefinition.generateId(),
+    device = Device.generateId(),
+    data = Set.empty,
+    metadata = Crate.generateId(),
+    created = Instant.now()
+  )
 }

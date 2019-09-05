@@ -1,8 +1,8 @@
 package stasis.server.model.users
 
 import scala.concurrent.{ExecutionContext, Future}
-
 import akka.Done
+import stasis.core.persistence.backends.KeyValueBackend
 import stasis.server.security.{CurrentUser, Resource}
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
@@ -47,7 +47,7 @@ trait UserStore { store =>
     new UserStore.Manage.Self {
       override def deactivate(self: CurrentUser): Future[Done] =
         store.get(self.id).flatMap {
-          case Some(user) => store.update(user.copy(isActive = false))
+          case Some(user) => store.update(user.copy(active = false))
           case None       => Future.failed(new IllegalArgumentException(s"Expected user [${self.id}] not found"))
         }
     }
@@ -80,4 +80,16 @@ object UserStore {
       override def requiredPermission: Permission = Permission.Manage.Self
     }
   }
+
+  def apply(
+    backend: KeyValueBackend[User.Id, User]
+  )(implicit ctx: ExecutionContext): UserStore =
+    new UserStore {
+      override implicit protected def ec: ExecutionContext = ctx
+      override protected def create(user: User): Future[Done] = backend.put(user.id, user)
+      override protected def update(user: User): Future[Done] = backend.put(user.id, user)
+      override protected def delete(user: User.Id): Future[Boolean] = backend.delete(user)
+      override protected def get(user: User.Id): Future[Option[User]] = backend.get(user)
+      override protected def list(): Future[Map[User.Id, User]] = backend.entries
+    }
 }

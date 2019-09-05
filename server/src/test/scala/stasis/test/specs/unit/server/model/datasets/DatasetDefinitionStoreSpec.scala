@@ -12,27 +12,13 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.MockDatasetDefinitionStore
 
 class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
-
-  private implicit val system: ActorSystem = ActorSystem(name = "DatasetDefinitionStoreSpec")
-
-  private val ownDevices = Seq(Device.generateId(), Device.generateId())
-
-  private val mockDefinition = DatasetDefinition(
-    id = DatasetDefinition.generateId(),
-    device = Device.generateId(),
-    schedule = None,
-    redundantCopies = 1,
-    existingVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.LatestOnly, 1.second),
-    removedVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.LatestOnly, 1.second)
-  )
-
   "A DatasetDefinitionStore" should "provide a view resource (privileged)" in {
-    val store = new MockDatasetDefinitionStore()
+    val store = MockDatasetDefinitionStore()
     store.view().requiredPermission should be(Permission.View.Privileged)
   }
 
   it should "return existing definitions via view resource (privileged)" in {
-    val store = new MockDatasetDefinitionStore()
+    val store = MockDatasetDefinitionStore()
 
     store.manage().create(mockDefinition).await
 
@@ -40,7 +26,7 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
   }
 
   it should "return a list of definitions via view resource (privileged)" in {
-    val store = new MockDatasetDefinitionStore()
+    val store = MockDatasetDefinitionStore()
 
     store.manage().create(mockDefinition).await
     store.manage().create(mockDefinition.copy(id = DatasetDefinition.generateId())).await
@@ -53,12 +39,12 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
   }
 
   it should "provide a view resource (self)" in {
-    val store = new MockDatasetDefinitionStore()
+    val store = MockDatasetDefinitionStore()
     store.viewSelf().requiredPermission should be(Permission.View.Self)
   }
 
   it should "return existing definitions for current user via view resource (self)" in {
-    val store = new MockDatasetDefinitionStore()
+    val store = MockDatasetDefinitionStore()
 
     val ownDefinition = mockDefinition.copy(device = ownDevices.head)
     store.manage().create(ownDefinition).await
@@ -67,7 +53,7 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
   }
 
   it should "fail to return existing definitions not for current user via view resource (self)" in {
-    val store = new MockDatasetDefinitionStore()
+    val store = MockDatasetDefinitionStore()
 
     store.manage().create(mockDefinition).await
 
@@ -86,13 +72,13 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
   }
 
   it should "fail to return missing definitions for current user via view resource (self)" in {
-    val store = new MockDatasetDefinitionStore()
+    val store = MockDatasetDefinitionStore()
 
     store.viewSelf().get(ownDevices, mockDefinition.id).map(result => result should be(None))
   }
 
   it should "return a list of definitions for current user via view resource (self)" in {
-    val store = new MockDatasetDefinitionStore()
+    val store = MockDatasetDefinitionStore()
 
     val ownDefinition = mockDefinition.copy(device = ownDevices.head)
     store.manage().create(ownDefinition).await
@@ -106,12 +92,12 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
   }
 
   it should "provide management resource (privileged)" in {
-    val store = new MockDatasetDefinitionStore()
+    val store = MockDatasetDefinitionStore()
     store.manage().requiredPermission should be(Permission.Manage.Privileged)
   }
 
   it should "allow creating definitions via management resource (privileged)" in {
-    val store = new MockDatasetDefinitionStore()
+    val store = MockDatasetDefinitionStore()
 
     for {
       createResult <- store.manage().create(mockDefinition)
@@ -123,7 +109,7 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
   }
 
   it should "allow updating definitions via management resource (privileged)" in {
-    val store = new MockDatasetDefinitionStore()
+    val store = MockDatasetDefinitionStore()
 
     val updatedCopies = 42
 
@@ -141,7 +127,7 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
   }
 
   it should "allow deleting definitions via management resource (privileged)" in {
-    val store = new MockDatasetDefinitionStore()
+    val store = MockDatasetDefinitionStore()
 
     for {
       createResult <- store.manage().create(mockDefinition)
@@ -157,7 +143,7 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
   }
 
   it should "fail to delete missing definitions via management resource (privileged)" in {
-    val store = new MockDatasetDefinitionStore()
+    val store = MockDatasetDefinitionStore()
 
     for {
       getResult <- store.view().get(mockDefinition.id)
@@ -169,12 +155,12 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
   }
 
   it should "provide management resource (self)" in {
-    val store = new MockDatasetDefinitionStore()
+    val store = MockDatasetDefinitionStore()
     store.manageSelf().requiredPermission should be(Permission.Manage.Self)
   }
 
   it should "allow creating definitions for current user via management resource (self)" in {
-    val store = new MockDatasetDefinitionStore()
+    val store = MockDatasetDefinitionStore()
 
     val ownDefinition = mockDefinition.copy(device = ownDevices.head)
 
@@ -188,7 +174,7 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
   }
 
   it should "fail to create definitions for another user via management resource (self)" in {
-    val store = new MockDatasetDefinitionStore()
+    val store = MockDatasetDefinitionStore()
 
     store
       .manageSelf()
@@ -205,7 +191,7 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
   }
 
   it should "allow updating definitions for current user via management resource (self)" in {
-    val store = new MockDatasetDefinitionStore()
+    val store = MockDatasetDefinitionStore()
 
     val updatedCopies = 42
 
@@ -225,7 +211,7 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
   }
 
   it should "fail to update definitions for another user via management resource (self)" in {
-    val store = new MockDatasetDefinitionStore()
+    val store = MockDatasetDefinitionStore()
 
     store
       .manageSelf()
@@ -242,7 +228,7 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
   }
 
   it should "allow deleting definitions for current user via management resource (self)" in {
-    val store = new MockDatasetDefinitionStore()
+    val store = MockDatasetDefinitionStore()
 
     val ownDefinition = mockDefinition.copy(device = ownDevices.head)
 
@@ -260,7 +246,7 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
   }
 
   it should "fail to delete definitions for another user via management resource (self)" in {
-    val store = new MockDatasetDefinitionStore()
+    val store = MockDatasetDefinitionStore()
 
     store.manage().create(mockDefinition).await
 
@@ -279,7 +265,7 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
   }
 
   it should "fail to delete missing definitions for current user via management resource (self)" in {
-    val store = new MockDatasetDefinitionStore()
+    val store = MockDatasetDefinitionStore()
 
     for {
       getResult <- store.view().get(mockDefinition.id)
@@ -289,4 +275,17 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
       deleteResult should be(false)
     }
   }
+
+  private implicit val system: ActorSystem = ActorSystem(name = "DatasetDefinitionStoreSpec")
+
+  private val ownDevices = Seq(Device.generateId(), Device.generateId())
+
+  private val mockDefinition = DatasetDefinition(
+    id = DatasetDefinition.generateId(),
+    device = Device.generateId(),
+    schedule = None,
+    redundantCopies = 1,
+    existingVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.LatestOnly, 1.second),
+    removedVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.LatestOnly, 1.second)
+  )
 }

@@ -35,7 +35,7 @@ class ServiceSpec extends RouteTest with Eventually {
 
     val service = new Service {}
     val serviceInterface = "localhost"
-    val servicePort = 19090
+    val servicePort = 19999
     val serviceUrl = s"https://$serviceInterface:$servicePort"
 
     val persistence = eventually {

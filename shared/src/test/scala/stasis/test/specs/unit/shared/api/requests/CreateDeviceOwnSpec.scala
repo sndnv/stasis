@@ -10,7 +10,7 @@ class CreateDeviceOwnSpec extends UnitSpec {
   it should "convert requests to devices" in {
     val owner = User(
       id = User.generateId(),
-      isActive = true,
+      active = true,
       limits = None,
       permissions = Set.empty
     )
@@ -19,7 +19,7 @@ class CreateDeviceOwnSpec extends UnitSpec {
       id = Device.generateId(),
       node = Node.generateId(),
       owner = owner.id,
-      isActive = true,
+      active = true,
       limits = None
     )
 

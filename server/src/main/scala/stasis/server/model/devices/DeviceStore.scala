@@ -1,8 +1,8 @@
 package stasis.server.model.devices
 
 import scala.concurrent.{ExecutionContext, Future}
-
 import akka.Done
+import stasis.core.persistence.backends.KeyValueBackend
 import stasis.server.security.{CurrentUser, Resource}
 import stasis.shared.model.devices.Device
 import stasis.shared.security.Permission
@@ -132,4 +132,16 @@ object DeviceStore {
       override def requiredPermission: Permission = Permission.Manage.Self
     }
   }
+
+  def apply(
+    backend: KeyValueBackend[Device.Id, Device]
+  )(implicit ctx: ExecutionContext): DeviceStore =
+    new DeviceStore {
+      override implicit protected def ec: ExecutionContext = ctx
+      override protected def create(device: Device): Future[Done] = backend.put(device.id, device)
+      override protected def update(device: Device): Future[Done] = backend.put(device.id, device)
+      override protected def delete(device: Device.Id): Future[Boolean] = backend.delete(device)
+      override protected def get(device: Device.Id): Future[Option[Device]] = backend.get(device)
+      override protected def list(): Future[Map[Device.Id, Device]] = backend.entries
+    }
 }

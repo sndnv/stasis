@@ -11,25 +11,13 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.MockUserStore
 
 class UserStoreSpec extends AsyncUnitSpec {
-
-  private implicit val system: ActorSystem = ActorSystem(name = "UserStoreSpec")
-
-  private val mockUser = User(
-    id = User.generateId(),
-    isActive = true,
-    limits = None,
-    permissions = Set.empty
-  )
-
-  private val self = CurrentUser(User.generateId())
-
   "A UserStore" should "provide a view resource (privileged)" in {
-    val store = new MockUserStore()
+    val store = MockUserStore()
     store.view().requiredPermission should be(Permission.View.Privileged)
   }
 
   it should "return existing users via view resource (privileged)" in {
-    val store = new MockUserStore()
+    val store = MockUserStore()
 
     store.manage().create(mockUser).await
 
@@ -37,7 +25,7 @@ class UserStoreSpec extends AsyncUnitSpec {
   }
 
   it should "return a list of users via view resource (privileged)" in {
-    val store = new MockUserStore()
+    val store = MockUserStore()
 
     store.manage().create(mockUser).await
     store.manage().create(mockUser.copy(id = User.generateId())).await
@@ -50,12 +38,12 @@ class UserStoreSpec extends AsyncUnitSpec {
   }
 
   it should "provide a view resource (self)" in {
-    val store = new MockUserStore()
+    val store = MockUserStore()
     store.viewSelf().requiredPermission should be(Permission.View.Self)
   }
 
   it should "return existing users for current user via view resource (self)" in {
-    val store = new MockUserStore()
+    val store = MockUserStore()
 
     val ownUser = mockUser.copy(id = self.id)
     store.manage().create(ownUser).await
@@ -64,12 +52,12 @@ class UserStoreSpec extends AsyncUnitSpec {
   }
 
   it should "provide management resource (privileged)" in {
-    val store = new MockUserStore()
+    val store = MockUserStore()
     store.manage().requiredPermission should be(Permission.Manage.Privileged)
   }
 
   it should "allow creating users via management resource (privileged)" in {
-    val store = new MockUserStore()
+    val store = MockUserStore()
 
     for {
       createResult <- store.manage().create(mockUser)
@@ -81,25 +69,25 @@ class UserStoreSpec extends AsyncUnitSpec {
   }
 
   it should "allow updating users via management resource (privileged)" in {
-    val store = new MockUserStore()
+    val store = MockUserStore()
 
-    val updatedIsActive = false
+    val updatedActive = false
 
     for {
       createResult <- store.manage().create(mockUser)
       getResult <- store.view().get(mockUser.id)
-      updateResult <- store.manage().update(mockUser.copy(isActive = updatedIsActive))
+      updateResult <- store.manage().update(mockUser.copy(active = updatedActive))
       updatedGetResult <- store.view().get(mockUser.id)
     } yield {
       createResult should be(Done)
       getResult should be(Some(mockUser))
       updateResult should be(Done)
-      updatedGetResult should be(Some(mockUser.copy(isActive = updatedIsActive)))
+      updatedGetResult should be(Some(mockUser.copy(active = updatedActive)))
     }
   }
 
   it should "allow deleting users via management resource (privileged)" in {
-    val store = new MockUserStore()
+    val store = MockUserStore()
 
     for {
       createResult <- store.manage().create(mockUser)
@@ -115,12 +103,12 @@ class UserStoreSpec extends AsyncUnitSpec {
   }
 
   it should "provide management resource (self)" in {
-    val store = new MockUserStore()
+    val store = MockUserStore()
     store.manageSelf().requiredPermission should be(Permission.Manage.Self)
   }
 
   it should "allow deactivating own user via management resource (self)" in {
-    val store = new MockUserStore()
+    val store = MockUserStore()
 
     val ownUser = mockUser.copy(id = self.id)
 
@@ -133,12 +121,12 @@ class UserStoreSpec extends AsyncUnitSpec {
       createResult should be(Done)
       getResult should be(Some(ownUser))
       updateResult should be(Done)
-      updatedGetResult should be(Some(ownUser.copy(isActive = false)))
+      updatedGetResult should be(Some(ownUser.copy(active = false)))
     }
   }
 
   it should "fail to deactivate a missing user via management resource (self)" in {
-    val store = new MockUserStore()
+    val store = MockUserStore()
 
     store
       .manageSelf()
@@ -153,4 +141,15 @@ class UserStoreSpec extends AsyncUnitSpec {
           )
       }
   }
+
+  private implicit val system: ActorSystem = ActorSystem(name = "UserStoreSpec")
+
+  private val mockUser = User(
+    id = User.generateId(),
+    active = true,
+    limits = None,
+    permissions = Set.empty
+  )
+
+  private val self = CurrentUser(User.generateId())
 }

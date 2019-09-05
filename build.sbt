@@ -16,6 +16,13 @@ scalaVersion in ThisBuild := defaultScalaVersion
 
 lazy val server = (project in file("./server"))
   .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.typesafe.slick" %% "slick" % slickVersion,
+      "com.h2database"     %  "h2"    % h2Version
+    )
+  )
+  .enablePlugins(JavaAppPackaging)
   .dependsOn(shared % "compile->compile;test->test")
 
 lazy val client = (project in file("./client"))
@@ -45,11 +52,6 @@ lazy val identity = (project in file("./identity"))
 
 lazy val shared = (project in file("./shared"))
   .settings(commonSettings)
-  .settings(
-    libraryDependencies ++= Seq(
-      "org.julienrf" %% "play-json-derived-codecs" % "6.0.0"
-    )
-  )
   .dependsOn(core % "compile->compile;test->test")
 
 lazy val core = (project in file("./core"))

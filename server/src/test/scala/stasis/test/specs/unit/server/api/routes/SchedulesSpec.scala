@@ -1,4 +1,5 @@
 package stasis.test.specs.unit.server.api.routes
+
 import java.time.LocalTime
 
 import scala.concurrent.Future
@@ -22,71 +23,8 @@ import stasis.test.specs.unit.server.model.mocks.MockScheduleStore
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
 
 class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
-  import scala.language.implicitConversions
-
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
-
-  private implicit val untypedSystem: ActorSystem = ActorSystem(name = "SchedulesSpec")
-  private implicit val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)
-
-  private trait TestFixtures {
-    lazy val scheduleStore: ScheduleStore = new MockScheduleStore()
-
-    lazy implicit val provider: ResourceProvider = new MockResourceProvider(
-      resources = Set(
-        scheduleStore.view(),
-        scheduleStore.manage()
-      )
-    )
-
-    lazy implicit val context: RoutesContext = RoutesContext.collect()
-
-    lazy val routes: Route = Schedules()
-  }
-
-  private implicit val user: CurrentUser = CurrentUser(User.generateId())
-
-  private val schedules = Seq(
-    Schedule(
-      id = Schedule.generateId(),
-      process = Schedule.Process.Backup,
-      instant = LocalTime.now(),
-      interval = 3.seconds,
-      missed = Schedule.MissedAction.ExecuteImmediately,
-      overlap = Schedule.OverlapAction.ExecuteAnyway
-    ),
-    Schedule(
-      id = Schedule.generateId(),
-      process = Schedule.Process.Expiration,
-      instant = LocalTime.now(),
-      interval = 3.hours,
-      missed = Schedule.MissedAction.ExecuteNext,
-      overlap = Schedule.OverlapAction.CancelNew
-    )
-  )
-
-  private val createRequest = CreateSchedule(
-    process = Schedule.Process.Backup,
-    instant = LocalTime.now(),
-    interval = 3.seconds,
-    missed = Schedule.MissedAction.ExecuteImmediately,
-    overlap = Schedule.OverlapAction.ExecuteAnyway
-  )
-
-  private val updateRequest = UpdateSchedule(
-    process = Schedule.Process.Backup,
-    instant = LocalTime.now(),
-    interval = 5.hours,
-    missed = Schedule.MissedAction.ExecuteImmediately,
-    overlap = Schedule.OverlapAction.ExecuteAnyway
-  )
-
-  private implicit def createRequestToEntity(request: CreateSchedule): RequestEntity =
-    Marshal(request).to[RequestEntity].await
-
-  private implicit def updateRequestToEntity(request: UpdateSchedule): RequestEntity =
-    Marshal(request).to[RequestEntity].await
 
   "Schedules routes" should "respond with all schedules" in {
     val fixtures = new TestFixtures {}
@@ -172,4 +110,67 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       responseAs[DeletedSchedule] should be(DeletedSchedule(existing = false))
     }
   }
+
+  private implicit val untypedSystem: ActorSystem = ActorSystem(name = "SchedulesSpec")
+  private implicit val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)
+
+  private trait TestFixtures {
+    lazy val scheduleStore: ScheduleStore = MockScheduleStore()
+
+    lazy implicit val provider: ResourceProvider = new MockResourceProvider(
+      resources = Set(
+        scheduleStore.view(),
+        scheduleStore.manage()
+      )
+    )
+
+    lazy implicit val context: RoutesContext = RoutesContext.collect()
+
+    lazy val routes: Route = Schedules()
+  }
+
+  private implicit val user: CurrentUser = CurrentUser(User.generateId())
+
+  private val schedules = Seq(
+    Schedule(
+      id = Schedule.generateId(),
+      process = Schedule.Process.Backup,
+      instant = LocalTime.now(),
+      interval = 3.seconds,
+      missed = Schedule.MissedAction.ExecuteImmediately,
+      overlap = Schedule.OverlapAction.ExecuteAnyway
+    ),
+    Schedule(
+      id = Schedule.generateId(),
+      process = Schedule.Process.Expiration,
+      instant = LocalTime.now(),
+      interval = 3.hours,
+      missed = Schedule.MissedAction.ExecuteNext,
+      overlap = Schedule.OverlapAction.CancelNew
+    )
+  )
+
+  private val createRequest = CreateSchedule(
+    process = Schedule.Process.Backup,
+    instant = LocalTime.now(),
+    interval = 3.seconds,
+    missed = Schedule.MissedAction.ExecuteImmediately,
+    overlap = Schedule.OverlapAction.ExecuteAnyway
+  )
+
+  private val updateRequest = UpdateSchedule(
+    process = Schedule.Process.Backup,
+    instant = LocalTime.now(),
+    interval = 5.hours,
+    missed = Schedule.MissedAction.ExecuteImmediately,
+    overlap = Schedule.OverlapAction.ExecuteAnyway
+  )
+
+  import scala.language.implicitConversions
+
+  private implicit def createRequestToEntity(request: CreateSchedule): RequestEntity =
+    Marshal(request).to[RequestEntity].await
+
+  private implicit def updateRequestToEntity(request: UpdateSchedule): RequestEntity =
+    Marshal(request).to[RequestEntity].await
 }

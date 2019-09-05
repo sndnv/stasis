@@ -1,4 +1,5 @@
 package stasis.test.specs.unit.server.api.routes
+
 import java.time.Instant
 
 import akka.actor.ActorSystem
@@ -27,74 +28,6 @@ import scala.concurrent.Future
 class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
-
-  import scala.language.implicitConversions
-
-  private implicit val untypedSystem: ActorSystem = ActorSystem(name = "DatasetEntriesSpec")
-  private implicit val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)
-
-  private trait TestFixtures {
-    lazy val deviceStore: DeviceStore = new MockDeviceStore()
-
-    lazy val entryStore: DatasetEntryStore = new MockDatasetEntryStore()
-
-    implicit lazy val provider: ResourceProvider = new MockResourceProvider(
-      resources = Set(
-        deviceStore.view(),
-        deviceStore.viewSelf(),
-        entryStore.view(),
-        entryStore.viewSelf(),
-        entryStore.manage(),
-        entryStore.manageSelf()
-      )
-    )
-
-    lazy implicit val context: RoutesContext = RoutesContext.collect()
-
-    lazy val routes: Route = DatasetEntries()
-  }
-
-  private implicit val user: CurrentUser = CurrentUser(User.generateId())
-
-  private val definition = DatasetDefinition.generateId()
-
-  private val userDevice =
-    Device(
-      id = Device.generateId(),
-      node = Node.generateId(),
-      owner = user.id,
-      isActive = true,
-      limits = None
-    )
-
-  private val entries = Seq(
-    DatasetEntry(
-      id = DatasetEntry.generateId(),
-      definition = definition,
-      device = userDevice.id,
-      data = Set.empty,
-      metadata = Crate.generateId(),
-      created = Instant.now()
-    ),
-    DatasetEntry(
-      id = DatasetEntry.generateId(),
-      definition = definition,
-      device = Device.generateId(),
-      data = Set.empty,
-      metadata = Crate.generateId(),
-      created = Instant.now()
-    )
-  )
-
-  private val createRequest = CreateDatasetEntry(
-    definition = definition,
-    device = userDevice.id,
-    metadata = Crate.generateId(),
-    data = Set.empty
-  )
-
-  private implicit def createRequestToEntity(request: CreateDatasetEntry): RequestEntity =
-    Marshal(request).to[RequestEntity].await
 
   "DatasetEntries routes (full permissions)" should "respond with all entries for a definition" in {
     val fixtures = new TestFixtures {}
@@ -228,4 +161,72 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       responseAs[DeletedDatasetEntry] should be(DeletedDatasetEntry(existing = false))
     }
   }
+
+  private implicit val untypedSystem: ActorSystem = ActorSystem(name = "DatasetEntriesSpec")
+  private implicit val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)
+
+  private trait TestFixtures {
+    lazy val deviceStore: DeviceStore = MockDeviceStore()
+
+    lazy val entryStore: DatasetEntryStore = MockDatasetEntryStore()
+
+    implicit lazy val provider: ResourceProvider = new MockResourceProvider(
+      resources = Set(
+        deviceStore.view(),
+        deviceStore.viewSelf(),
+        entryStore.view(),
+        entryStore.viewSelf(),
+        entryStore.manage(),
+        entryStore.manageSelf()
+      )
+    )
+
+    lazy implicit val context: RoutesContext = RoutesContext.collect()
+
+    lazy val routes: Route = DatasetEntries()
+  }
+
+  private implicit val user: CurrentUser = CurrentUser(User.generateId())
+
+  private val definition = DatasetDefinition.generateId()
+
+  private val userDevice =
+    Device(
+      id = Device.generateId(),
+      node = Node.generateId(),
+      owner = user.id,
+      active = true,
+      limits = None
+    )
+
+  private val entries = Seq(
+    DatasetEntry(
+      id = DatasetEntry.generateId(),
+      definition = definition,
+      device = userDevice.id,
+      data = Set.empty,
+      metadata = Crate.generateId(),
+      created = Instant.now()
+    ),
+    DatasetEntry(
+      id = DatasetEntry.generateId(),
+      definition = definition,
+      device = Device.generateId(),
+      data = Set.empty,
+      metadata = Crate.generateId(),
+      created = Instant.now()
+    )
+  )
+
+  private val createRequest = CreateDatasetEntry(
+    definition = definition,
+    device = userDevice.id,
+    metadata = Crate.generateId(),
+    data = Set.empty
+  )
+
+  import scala.language.implicitConversions
+
+  private implicit def createRequestToEntity(request: CreateDatasetEntry): RequestEntity =
+    Marshal(request).to[RequestEntity].await
 }

@@ -1,8 +1,5 @@
 package stasis.test.specs.unit.server.api.routes
 
-import scala.concurrent.Future
-import scala.concurrent.duration._
-
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.marshalling.Marshal
@@ -23,98 +20,12 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.{MockDatasetDefinitionStore, MockDeviceStore}
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
 
-class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
-  import scala.language.implicitConversions
+import scala.concurrent.Future
+import scala.concurrent.duration._
 
+class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
-
-  private implicit val untypedSystem: ActorSystem = ActorSystem(name = "DatasetDefinitionsSpec")
-  private implicit val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)
-
-  private trait TestFixtures {
-    lazy val deviceStore: DeviceStore = new MockDeviceStore()
-
-    lazy val definitionStore: DatasetDefinitionStore = new MockDatasetDefinitionStore
-
-    implicit lazy val provider: ResourceProvider = new MockResourceProvider(
-      resources = Set(
-        deviceStore.view(),
-        deviceStore.viewSelf(),
-        definitionStore.view(),
-        definitionStore.viewSelf(),
-        definitionStore.manage(),
-        definitionStore.manageSelf()
-      )
-    )
-
-    lazy implicit val context: RoutesContext = RoutesContext.collect()
-
-    lazy val routes: Route = DatasetDefinitions()
-  }
-
-  private implicit val user: CurrentUser = CurrentUser(User.generateId())
-
-  private val userDevice =
-    Device(
-      id = Device.generateId(),
-      node = Node.generateId(),
-      owner = user.id,
-      isActive = true,
-      limits = None
-    )
-
-  private val definitions = Seq(
-    DatasetDefinition(
-      id = DatasetDefinition.generateId(),
-      device = userDevice.id,
-      schedule = None,
-      redundantCopies = 1,
-      existingVersions = DatasetDefinition.Retention(
-        DatasetDefinition.Retention.Policy.All,
-        duration = 1.second
-      ),
-      removedVersions = DatasetDefinition.Retention(
-        DatasetDefinition.Retention.Policy.LatestOnly,
-        duration = 1.second
-      )
-    ),
-    DatasetDefinition(
-      id = DatasetDefinition.generateId(),
-      device = Device.generateId(),
-      schedule = None,
-      redundantCopies = 2,
-      existingVersions = DatasetDefinition.Retention(
-        DatasetDefinition.Retention.Policy.AtMost(versions = 5),
-        duration = 1.second
-      ),
-      removedVersions = DatasetDefinition.Retention(
-        DatasetDefinition.Retention.Policy.LatestOnly,
-        duration = 1.second
-      )
-    )
-  )
-
-  private val createRequest = CreateDatasetDefinition(
-    device = Device.generateId(),
-    schedule = None,
-    redundantCopies = 1,
-    existingVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.All, duration = 1.second),
-    removedVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.All, duration = 1.second)
-  )
-
-  private val updateRequest = UpdateDatasetDefinition(
-    schedule = None,
-    redundantCopies = 1,
-    existingVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.All, duration = 1.second),
-    removedVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.All, duration = 1.second)
-  )
-
-  private implicit def createRequestToEntity(request: CreateDatasetDefinition): RequestEntity =
-    Marshal(request).to[RequestEntity].await
-
-  private implicit def updateRequestToEntity(request: UpdateDatasetDefinition): RequestEntity =
-    Marshal(request).to[RequestEntity].await
 
   "DatasetDefinitions routes (full permissions)" should "respond with all definitions" in {
     val fixtures = new TestFixtures {}
@@ -295,4 +206,94 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       responseAs[DeletedDatasetDefinition] should be(DeletedDatasetDefinition(existing = false))
     }
   }
+
+  private implicit val untypedSystem: ActorSystem = ActorSystem(name = "DatasetDefinitionsSpec")
+  private implicit val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)
+
+  private trait TestFixtures {
+    lazy val deviceStore: DeviceStore = MockDeviceStore()
+
+    lazy val definitionStore: DatasetDefinitionStore = MockDatasetDefinitionStore()
+
+    implicit lazy val provider: ResourceProvider = new MockResourceProvider(
+      resources = Set(
+        deviceStore.view(),
+        deviceStore.viewSelf(),
+        definitionStore.view(),
+        definitionStore.viewSelf(),
+        definitionStore.manage(),
+        definitionStore.manageSelf()
+      )
+    )
+
+    lazy implicit val context: RoutesContext = RoutesContext.collect()
+
+    lazy val routes: Route = DatasetDefinitions()
+  }
+
+  private implicit val user: CurrentUser = CurrentUser(User.generateId())
+
+  private val userDevice =
+    Device(
+      id = Device.generateId(),
+      node = Node.generateId(),
+      owner = user.id,
+      active = true,
+      limits = None
+    )
+
+  private val definitions = Seq(
+    DatasetDefinition(
+      id = DatasetDefinition.generateId(),
+      device = userDevice.id,
+      schedule = None,
+      redundantCopies = 1,
+      existingVersions = DatasetDefinition.Retention(
+        DatasetDefinition.Retention.Policy.All,
+        duration = 1.second
+      ),
+      removedVersions = DatasetDefinition.Retention(
+        DatasetDefinition.Retention.Policy.LatestOnly,
+        duration = 1.second
+      )
+    ),
+    DatasetDefinition(
+      id = DatasetDefinition.generateId(),
+      device = Device.generateId(),
+      schedule = None,
+      redundantCopies = 2,
+      existingVersions = DatasetDefinition.Retention(
+        DatasetDefinition.Retention.Policy.AtMost(versions = 5),
+        duration = 1.second
+      ),
+      removedVersions = DatasetDefinition.Retention(
+        DatasetDefinition.Retention.Policy.LatestOnly,
+        duration = 1.second
+      )
+    )
+  )
+
+  private val createRequest = CreateDatasetDefinition(
+    device = Device.generateId(),
+    schedule = None,
+    redundantCopies = 1,
+    existingVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.All, duration = 1.second),
+    removedVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.All, duration = 1.second)
+  )
+
+  private val updateRequest = UpdateDatasetDefinition(
+    schedule = None,
+    redundantCopies = 1,
+    existingVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.All, duration = 1.second),
+    removedVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.All, duration = 1.second)
+  )
+
+  import scala.language.implicitConversions
+
+  private implicit def createRequestToEntity(request: CreateDatasetDefinition): RequestEntity =
+    Marshal(request).to[RequestEntity].await
+
+  private implicit def updateRequestToEntity(request: UpdateDatasetDefinition): RequestEntity =
+    Marshal(request).to[RequestEntity].await
+
 }

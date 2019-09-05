@@ -39,7 +39,7 @@ class MockServerCoreEndpoint(
 
   def start(port: Int): Future[Http.ServerBinding] =
     endpoint.start(
-      hostname = "localhost",
+      interface = "localhost",
       port = port,
       context = ConnectionContext.noEncryption()
     )

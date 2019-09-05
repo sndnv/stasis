@@ -37,12 +37,12 @@ class GrpcEndpoint(
 
   private val log = Logging(system, this.getClass.getName)
 
-  def start(hostname: String, port: Int, connectionContext: HttpConnectionContext): Future[Http.ServerBinding] =
+  def start(interface: String, port: Int, connectionContext: HttpConnectionContext): Future[Http.ServerBinding] =
     Http2().bindAndHandleAsync(
-      authenticated(grpcHandler),
-      hostname,
-      port,
-      connectionContext
+      handler = authenticated(grpcHandler),
+      interface = interface,
+      port = port,
+      connectionContext = connectionContext
     )
 
   def reserve(node: Node.Id, reserveRequest: proto.ReserveRequest): Future[proto.ReserveResponse] =
