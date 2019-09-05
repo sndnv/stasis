@@ -12,7 +12,7 @@ class UpdateDeviceSpec extends UnitSpec {
   it should "convert requests to updated devices" in {
     val owner = User(
       id = User.generateId(),
-      isActive = true,
+      active = true,
       limits = None,
       permissions = Set.empty
     )
@@ -21,11 +21,11 @@ class UpdateDeviceSpec extends UnitSpec {
       id = Device.generateId(),
       node = Node.generateId(),
       owner = owner.id,
-      isActive = true,
+      active = true,
       limits = None
     )
 
-    val expectedDeviceWithUpdatedState = initialDevice.copy(isActive = false)
+    val expectedDeviceWithUpdatedState = initialDevice.copy(active = false)
 
     val expectedDeviceWithUpdatedLimits = initialDevice.copy(
       limits = Some(
@@ -39,7 +39,7 @@ class UpdateDeviceSpec extends UnitSpec {
       )
     )
 
-    val updateStateRequest = UpdateDeviceState(isActive = expectedDeviceWithUpdatedState.isActive)
+    val updateStateRequest = UpdateDeviceState(active = expectedDeviceWithUpdatedState.active)
     val updateLimitsRequest = UpdateDeviceLimits(limits = expectedDeviceWithUpdatedLimits.limits)
 
     updateStateRequest.toUpdatedDevice(initialDevice, owner) should be(expectedDeviceWithUpdatedState)

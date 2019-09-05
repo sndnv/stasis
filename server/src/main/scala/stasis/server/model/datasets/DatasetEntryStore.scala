@@ -1,8 +1,8 @@
 package stasis.server.model.datasets
 
 import scala.concurrent.{ExecutionContext, Future}
-
 import akka.Done
+import stasis.core.persistence.backends.KeyValueBackend
 import stasis.server.security.Resource
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.model.devices.Device
@@ -122,4 +122,23 @@ object DatasetEntryStore {
       override def requiredPermission: Permission = Permission.Manage.Self
     }
   }
+
+  def apply(
+    backend: KeyValueBackend[DatasetEntry.Id, DatasetEntry]
+  )(implicit ctx: ExecutionContext): DatasetEntryStore =
+    new DatasetEntryStore {
+      override implicit protected def ec: ExecutionContext = ctx
+
+      override protected def create(entry: DatasetEntry): Future[Done] =
+        backend.put(entry.id, entry)
+
+      override protected def delete(entry: DatasetEntry.Id): Future[Boolean] =
+        backend.delete(entry)
+
+      override protected def get(entry: DatasetEntry.Id): Future[Option[DatasetEntry]] =
+        backend.get(entry)
+
+      override protected def list(definition: DatasetEntry.Id): Future[Map[DatasetEntry.Id, DatasetEntry]] =
+        backend.entries.map(_.filter(_._2.definition == definition))(ctx)
+    }
 }

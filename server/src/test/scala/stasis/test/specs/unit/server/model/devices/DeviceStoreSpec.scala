@@ -13,26 +13,13 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.MockDeviceStore
 
 class DeviceStoreSpec extends AsyncUnitSpec {
-
-  private implicit val system: ActorSystem = ActorSystem(name = "DeviceStoreSpec")
-
-  private val mockDevice = Device(
-    id = Device.generateId(),
-    node = Node.generateId(),
-    owner = User.generateId(),
-    isActive = true,
-    limits = None
-  )
-
-  private val self = CurrentUser(User.generateId())
-
   "A DeviceStore" should "provide a view resource (privileged)" in {
-    val store = new MockDeviceStore()
+    val store = MockDeviceStore()
     store.view().requiredPermission should be(Permission.View.Privileged)
   }
 
   it should "return existing devices via view resource (privileged)" in {
-    val store = new MockDeviceStore()
+    val store = MockDeviceStore()
 
     store.manage().create(mockDevice).await
 
@@ -40,7 +27,7 @@ class DeviceStoreSpec extends AsyncUnitSpec {
   }
 
   it should "return a list of devices via view resource (privileged)" in {
-    val store = new MockDeviceStore()
+    val store = MockDeviceStore()
 
     store.manage().create(mockDevice).await
     store.manage().create(mockDevice.copy(id = Device.generateId())).await
@@ -53,12 +40,12 @@ class DeviceStoreSpec extends AsyncUnitSpec {
   }
 
   it should "provide a view resource (self)" in {
-    val store = new MockDeviceStore()
+    val store = MockDeviceStore()
     store.viewSelf().requiredPermission should be(Permission.View.Self)
   }
 
   it should "return existing devices for current user via view resource (self)" in {
-    val store = new MockDeviceStore()
+    val store = MockDeviceStore()
 
     val ownDevice = mockDevice.copy(owner = self.id)
     store.manage().create(ownDevice).await
@@ -67,7 +54,7 @@ class DeviceStoreSpec extends AsyncUnitSpec {
   }
 
   it should "fail to return existing devices not for current user via view resource (self)" in {
-    val store = new MockDeviceStore()
+    val store = MockDeviceStore()
 
     store.manage().create(mockDevice).await
 
@@ -86,13 +73,13 @@ class DeviceStoreSpec extends AsyncUnitSpec {
   }
 
   it should "fail to return missing devices for current user via view resource (self)" in {
-    val store = new MockDeviceStore()
+    val store = MockDeviceStore()
 
     store.viewSelf().get(self, mockDevice.id).map(result => result should be(None))
   }
 
   it should "return a list of devices for current user via view resource (self)" in {
-    val store = new MockDeviceStore()
+    val store = MockDeviceStore()
 
     val ownDevice = mockDevice.copy(owner = self.id)
     store.manage().create(ownDevice).await
@@ -106,12 +93,12 @@ class DeviceStoreSpec extends AsyncUnitSpec {
   }
 
   it should "provide management resource (privileged)" in {
-    val store = new MockDeviceStore()
+    val store = MockDeviceStore()
     store.manage().requiredPermission should be(Permission.Manage.Privileged)
   }
 
   it should "allow creating devices via management resource (privileged)" in {
-    val store = new MockDeviceStore()
+    val store = MockDeviceStore()
 
     for {
       createResult <- store.manage().create(mockDevice)
@@ -123,25 +110,25 @@ class DeviceStoreSpec extends AsyncUnitSpec {
   }
 
   it should "allow updating devices via management resource (privileged)" in {
-    val store = new MockDeviceStore()
+    val store = MockDeviceStore()
 
-    val updatedIsActive = false
+    val updatedActive = false
 
     for {
       createResult <- store.manage().create(mockDevice)
       getResult <- store.view().get(mockDevice.id)
-      updateResult <- store.manage().update(mockDevice.copy(isActive = updatedIsActive))
+      updateResult <- store.manage().update(mockDevice.copy(active = updatedActive))
       updatedGetResult <- store.view().get(mockDevice.id)
     } yield {
       createResult should be(Done)
       getResult should be(Some(mockDevice))
       updateResult should be(Done)
-      updatedGetResult should be(Some(mockDevice.copy(isActive = updatedIsActive)))
+      updatedGetResult should be(Some(mockDevice.copy(active = updatedActive)))
     }
   }
 
   it should "allow deleting devices via management resource (privileged)" in {
-    val store = new MockDeviceStore()
+    val store = MockDeviceStore()
 
     for {
       createResult <- store.manage().create(mockDevice)
@@ -157,7 +144,7 @@ class DeviceStoreSpec extends AsyncUnitSpec {
   }
 
   it should "fail to delete missing devices via management resource (privileged)" in {
-    val store = new MockDeviceStore()
+    val store = MockDeviceStore()
 
     for {
       getResult <- store.view().get(mockDevice.id)
@@ -169,12 +156,12 @@ class DeviceStoreSpec extends AsyncUnitSpec {
   }
 
   it should "provide management resource (self)" in {
-    val store = new MockDeviceStore()
+    val store = MockDeviceStore()
     store.manageSelf().requiredPermission should be(Permission.Manage.Self)
   }
 
   it should "allow creating devices for current user via management resource (self)" in {
-    val store = new MockDeviceStore()
+    val store = MockDeviceStore()
 
     val ownDevice = mockDevice.copy(owner = self.id)
 
@@ -188,7 +175,7 @@ class DeviceStoreSpec extends AsyncUnitSpec {
   }
 
   it should "fail to create devices for another user via management resource (self)" in {
-    val store = new MockDeviceStore()
+    val store = MockDeviceStore()
 
     store
       .manageSelf()
@@ -205,27 +192,27 @@ class DeviceStoreSpec extends AsyncUnitSpec {
   }
 
   it should "allow updating devices for current user via management resource (self)" in {
-    val store = new MockDeviceStore()
+    val store = MockDeviceStore()
 
-    val updatedIsActive = false
+    val updatedActive = false
 
     val ownDevice = mockDevice.copy(owner = self.id)
 
     for {
       createResult <- store.manageSelf().create(self, ownDevice)
       getResult <- store.viewSelf().get(self, ownDevice.id)
-      updateResult <- store.manageSelf().update(self, ownDevice.copy(isActive = updatedIsActive))
+      updateResult <- store.manageSelf().update(self, ownDevice.copy(active = updatedActive))
       updatedGetResult <- store.viewSelf().get(self, ownDevice.id)
     } yield {
       createResult should be(Done)
       getResult should be(Some(ownDevice))
       updateResult should be(Done)
-      updatedGetResult should be(Some(ownDevice.copy(isActive = updatedIsActive)))
+      updatedGetResult should be(Some(ownDevice.copy(active = updatedActive)))
     }
   }
 
   it should "fail to update devices for another user via management resource (self)" in {
-    val store = new MockDeviceStore()
+    val store = MockDeviceStore()
 
     store
       .manageSelf()
@@ -242,7 +229,7 @@ class DeviceStoreSpec extends AsyncUnitSpec {
   }
 
   it should "allow deleting devices for current user via management resource (self)" in {
-    val store = new MockDeviceStore()
+    val store = MockDeviceStore()
 
     val ownDevice = mockDevice.copy(owner = self.id)
 
@@ -260,7 +247,7 @@ class DeviceStoreSpec extends AsyncUnitSpec {
   }
 
   it should "fail to delete devices for another user via management resource (self)" in {
-    val store = new MockDeviceStore()
+    val store = MockDeviceStore()
 
     store.manage().create(mockDevice).await
 
@@ -279,7 +266,7 @@ class DeviceStoreSpec extends AsyncUnitSpec {
   }
 
   it should "fail to delete missing devices for current user via management resource (self)" in {
-    val store = new MockDeviceStore()
+    val store = MockDeviceStore()
 
     for {
       getResult <- store.view().get(mockDevice.id)
@@ -289,4 +276,16 @@ class DeviceStoreSpec extends AsyncUnitSpec {
       deleteResult should be(false)
     }
   }
+
+  private implicit val system: ActorSystem = ActorSystem(name = "DeviceStoreSpec")
+
+  private val mockDevice = Device(
+    id = Device.generateId(),
+    node = Node.generateId(),
+    owner = User.generateId(),
+    active = true,
+    limits = None
+  )
+
+  private val self = CurrentUser(User.generateId())
 }

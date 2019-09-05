@@ -39,21 +39,19 @@ final class RemoteKeyProvider(
 
   private val backend = MemoryBackend[String, Key](name = "asymmetric-jwt-key-provider-cache")
 
-  private val _ = refreshKeys()
+  private val init = refreshKeys()
 
   override def key(id: Option[String]): Future[Key] =
     id match {
-      case Some(keyId) =>
-        backend.get(keyId).flatMap {
-          case Some(key) =>
-            Future.successful(key)
+      case Some(keyId) if init.isCompleted => key(keyId)
+      case Some(keyId)                     => init.flatMap(_ => key(keyId))
+      case None                            => Future.failed(ProviderFailure("Key expected but none was provided"))
+    }
 
-          case None =>
-            Future.failed(ProviderFailure(s"Key [$keyId] was not found"))
-        }
-
-      case None =>
-        Future.failed(ProviderFailure("Key expected but none was provided"))
+  private def key(id: String): Future[Key] =
+    backend.get(id).flatMap {
+      case Some(key) => Future.successful(key)
+      case None      => Future.failed(ProviderFailure(s"Key [$id] was not found"))
     }
 
   private def refreshKeys(): Future[Done] =

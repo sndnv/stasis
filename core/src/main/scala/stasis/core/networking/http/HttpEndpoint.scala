@@ -3,12 +3,12 @@ package stasis.core.networking.http
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.event.Logging
-import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{ExceptionHandler, Route}
 import akka.http.scaladsl.unmarshalling.Unmarshaller
+import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
@@ -20,8 +20,8 @@ import stasis.core.routing.Router
 import stasis.core.security.NodeAuthenticator
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
-import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
+import scala.util.{Failure, Success}
 
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
 class HttpEndpoint(
@@ -39,10 +39,10 @@ class HttpEndpoint(
 
   private val log = Logging(system, this.getClass.getName)
 
-  def start(hostname: String, port: Int, context: ConnectionContext): Future[Http.ServerBinding] =
+  def start(interface: String, port: Int, context: ConnectionContext): Future[Http.ServerBinding] =
     Http().bindAndHandle(
       handler = routes,
-      interface = hostname,
+      interface = interface,
       port = port,
       connectionContext = context
     )
@@ -188,11 +188,9 @@ class HttpEndpoint(
 }
 
 object HttpEndpoint {
-  import java.util.concurrent.TimeUnit
-
   import play.api.libs.json._
 
-  import scala.concurrent.duration.FiniteDuration
+  import scala.concurrent.duration._
 
   implicit val stringToUuid: Unmarshaller[String, java.util.UUID] = Unmarshaller { implicit ec => param =>
     Future {
@@ -202,7 +200,7 @@ object HttpEndpoint {
 
   implicit val finiteDurationFormat: Format[FiniteDuration] = Format(
     Reads[FiniteDuration] { js =>
-      js.validate[Long].map(seconds => FiniteDuration(seconds, TimeUnit.SECONDS))
+      js.validate[Long].map(seconds => seconds.seconds)
     },
     Writes[FiniteDuration] { duration =>
       JsNumber(duration.toSeconds)

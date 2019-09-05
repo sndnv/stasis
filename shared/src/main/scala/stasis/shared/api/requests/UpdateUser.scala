@@ -8,7 +8,7 @@ object UpdateUser {
   implicit class RequestToUpdatedUser(request: UpdateUser) {
     def toUpdatedUser(user: User): User =
       request match {
-        case UpdateUserState(isActive)          => user.copy(isActive = isActive)
+        case UpdateUserState(active)            => user.copy(active = active)
         case UpdateUserLimits(limits)           => user.copy(limits = limits)
         case UpdateUserPermissions(permissions) => user.copy(permissions = permissions)
       }

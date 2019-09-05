@@ -5,7 +5,6 @@ import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.ActorMaterializer
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.concurrent.Eventually
 import stasis.core.security.jwt.RemoteKeyProvider
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.security.jwt.mocks.MockJwksEndpoint
@@ -15,7 +14,7 @@ import scala.concurrent.duration._
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
-class RemoteKeyProviderSpec extends AsyncUnitSpec with Eventually with BeforeAndAfterAll {
+class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
 
   private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
@@ -25,14 +24,12 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with Eventually with BeforeAnd
   private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
   private implicit val mat: ActorMaterializer = ActorMaterializer()
 
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(3.seconds, 250.milliseconds)
-
   private val ports: mutable.Queue[Int] = (18000 to 18100).to[mutable.Queue]
 
   override protected def afterAll(): Unit =
     system.terminate()
 
-  "An RemoteKeyProvider" should "provide keys from a JWKS endpoint" in {
+  "An RemoteKeyProvider" should "provide keys from a JWKs endpoint" in {
     val endpoint = new MockJwksEndpoint(port = ports.dequeue())
     endpoint.start()
 
@@ -45,10 +42,35 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with Eventually with BeforeAnd
     val expectedKeyId = "rsa-1"
     val expectedKey = endpoint.keys(expectedKeyId)
 
-    eventually {
-      val actualKey = provider.key(id = Some(expectedKeyId)).await
-      actualKey should be(expectedKey)
-    }
+    provider
+      .key(id = Some(expectedKeyId))
+      .map { actualKey =>
+        endpoint.stop()
+        actualKey should be(expectedKey)
+      }
+  }
+
+  it should "fail to provide missing keys" in {
+    val endpoint = new MockJwksEndpoint(port = ports.dequeue())
+    endpoint.start()
+
+    val provider = RemoteKeyProvider(
+      jwksEndpoint = s"${endpoint.url}/valid/jwks.json",
+      refreshInterval = 1.second,
+      issuer = "self"
+    )
+
+    val expectedKeyId = "rsa-42"
+
+    provider
+      .key(id = Some(expectedKeyId))
+      .map { response =>
+        fail(s"Received unexpected response from provider: [$response]")
+      }
+      .recover {
+        case NonFatal(e) =>
+          e.getMessage should be(s"Key [$expectedKeyId] was not found")
+      }
   }
 
   it should "not provide keys with no IDs" in {
@@ -69,7 +91,7 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with Eventually with BeforeAnd
       }
   }
 
-  it should "parse raw JWKS" in {
+  it should "parse raw JWKs" in {
     val rawJwks =
       """
         |{
@@ -121,7 +143,7 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with Eventually with BeforeAnd
     actualEmptyResult should be(expectedEmptyResult)
   }
 
-  it should "handle unexpected keys from JWKS endpoint" in {
+  it should "handle unexpected keys from JWKs endpoint" in {
     val rawJwks =
       """
         |{
@@ -165,18 +187,21 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with Eventually with BeforeAnd
     actualResult should be(expectedResult)
   }
 
-  it should "retrieve raw JWKS from endpoint" in {
+  it should "retrieve raw JWKs from endpoint" in {
     val endpoint = new MockJwksEndpoint(port = ports.dequeue())
     endpoint.start()
 
     val expectedResult = endpoint.jwks.toJson
 
-    RemoteKeyProvider.getRawJwks(s"${endpoint.url}/valid/jwks.json").map { actualResult =>
-      actualResult should be(expectedResult)
-    }
+    RemoteKeyProvider
+      .getRawJwks(s"${endpoint.url}/valid/jwks.json")
+      .map { actualResult =>
+        endpoint.stop()
+        actualResult should be(expectedResult)
+      }
   }
 
-  it should "handle JWKS endpoint failure" in {
+  it should "handle JWKs endpoint failure" in {
     val endpoint = new MockJwksEndpoint(port = ports.dequeue())
     endpoint.start()
 
@@ -187,6 +212,7 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with Eventually with BeforeAnd
       }
       .recover {
         case NonFatal(e) =>
+          endpoint.stop()
           e.getMessage should be("Endpoint responded with unexpected status: [500 Internal Server Error]")
       }
   }

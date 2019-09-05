@@ -3,7 +3,6 @@ package stasis.identity.service
 import java.io.File
 
 import akka.Done
-import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
 import com.typesafe.config.ConfigFactory
 import com.typesafe.{config => typesafe}
@@ -29,7 +28,7 @@ object Bootstrap {
     bootstrapConfig: typesafe.Config,
     persistence: Persistence
   )(
-    implicit system: ActorSystem,
+    implicit ec: ExecutionContext,
     log: LoggingAdapter,
     clientSecretConfig: Secret.ClientConfig,
     ownerSecretConfig: Secret.ResourceOwnerConfig
@@ -60,12 +59,10 @@ object Bootstrap {
   }
 
   def run(
-    entities: Bootstrap.Entities,
+    entities: Entities,
     persistence: Persistence
-  )(implicit system: ActorSystem, log: LoggingAdapter): Future[Done] = {
+  )(implicit ec: ExecutionContext, log: LoggingAdapter): Future[Done] = {
     val identityApi: Api = Api(id = Api.ManageIdentity)
-
-    implicit val ec: ExecutionContext = system.dispatcher
 
     for {
       _ <- persistence.init()

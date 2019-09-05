@@ -9,7 +9,7 @@ final case class Device(
   id: Device.Id,
   node: Node.Id,
   owner: User.Id,
-  isActive: Boolean,
+  active: Boolean,
   limits: Option[Device.Limits]
 )
 

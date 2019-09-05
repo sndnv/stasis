@@ -11,12 +11,12 @@ class UpdateUserSpec extends UnitSpec {
   it should "convert requests to updated users" in {
     val initialUser = User(
       id = User.generateId(),
-      isActive = true,
+      active = true,
       limits = None,
       permissions = Set.empty
     )
 
-    val expectedUserWithUpdatedState = initialUser.copy(isActive = false)
+    val expectedUserWithUpdatedState = initialUser.copy(active = false)
 
     val expectedUserWithUpdatedLimits = initialUser.copy(
       limits = Some(
@@ -33,7 +33,7 @@ class UpdateUserSpec extends UnitSpec {
 
     val expectedUserWithUpdatedPermissions = initialUser.copy(permissions = Set(Permission.Manage.Self))
 
-    val updateStateRequest = UpdateUserState(isActive = expectedUserWithUpdatedState.isActive)
+    val updateStateRequest = UpdateUserState(active = expectedUserWithUpdatedState.active)
 
     val updateLimitsRequest = UpdateUserLimits(limits = expectedUserWithUpdatedLimits.limits)
 

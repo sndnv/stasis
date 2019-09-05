@@ -1,6 +1,4 @@
 package stasis.test.specs.unit.server.api.routes
-import scala.concurrent.Future
-import scala.concurrent.duration._
 
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
@@ -21,100 +19,12 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.{MockDeviceStore, MockUserStore}
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
 
-class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
-  import scala.language.implicitConversions
+import scala.concurrent.Future
+import scala.concurrent.duration._
 
+class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
-
-  private implicit val untypedSystem: ActorSystem = ActorSystem(name = "DevicesSpec")
-  private implicit val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)
-
-  private trait TestFixtures {
-    lazy val userStore: UserStore = new MockUserStore()
-
-    lazy val deviceStore: DeviceStore = new MockDeviceStore()
-
-    implicit lazy val provider: ResourceProvider = new MockResourceProvider(
-      resources = Set(
-        userStore.view(),
-        userStore.viewSelf(),
-        deviceStore.view(),
-        deviceStore.viewSelf(),
-        deviceStore.manage(),
-        deviceStore.manageSelf()
-      )
-    )
-
-    lazy implicit val context: RoutesContext = RoutesContext.collect()
-
-    lazy val routes: Route = Devices()
-  }
-
-  private val user = User(
-    id = User.generateId(),
-    isActive = true,
-    limits = None,
-    permissions = Set.empty
-  )
-
-  private implicit val currentUser: CurrentUser = CurrentUser(user.id)
-
-  private val devices = Seq(
-    Device(
-      id = Device.generateId(),
-      node = Node.generateId(),
-      owner = user.id,
-      isActive = true,
-      limits = None
-    ),
-    Device(
-      id = Device.generateId(),
-      node = Node.generateId(),
-      owner = User.generateId(),
-      isActive = true,
-      limits = None
-    )
-  )
-
-  private val createRequestPrivileged = CreateDevicePrivileged(
-    node = Node.generateId(),
-    owner = user.id,
-    limits = None
-  )
-
-  private val createRequestOwn = CreateDeviceOwn(
-    node = Node.generateId(),
-    limits = None
-  )
-
-  private val updateRequestLimits = UpdateDeviceLimits(
-    limits = Some(
-      Device.Limits(
-        maxCrates = 1,
-        maxStorage = 2,
-        maxStoragePerCrate = 3,
-        maxRetention = 5.seconds,
-        minRetention = 5.seconds
-      )
-    )
-  )
-
-  private val updateRequestState = UpdateDeviceState(
-    isActive = false
-  )
-
-  private implicit def createRequestToEntity(request: CreateDevicePrivileged): RequestEntity =
-    Marshal(request).to[RequestEntity].await
-
-  private implicit def createRequestToEntity(request: CreateDeviceOwn): RequestEntity =
-    Marshal(request).to[RequestEntity].await
-
-  private implicit def updateRequestToEntity(request: UpdateDeviceLimits): RequestEntity =
-    Marshal(request).to[RequestEntity].await
-
-  private implicit def updateRequestToEntity(request: UpdateDeviceState): RequestEntity =
-    Marshal(request).to[RequestEntity].await
 
   "Devices routes (full permissions)" should "respond with all devices" in {
     val fixtures = new TestFixtures {}
@@ -176,7 +86,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.deviceStore
         .view()
         .get(devices.head.id)
-        .map(_.map(_.isActive) should be(Some(updateRequestState.isActive)))
+        .map(_.map(_.active) should be(Some(updateRequestState.active)))
     }
   }
 
@@ -316,7 +226,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.deviceStore
         .view()
         .get(devices.head.id)
-        .map(_.map(_.isActive) should be(Some(updateRequestState.isActive)))
+        .map(_.map(_.active) should be(Some(updateRequestState.active)))
     }
   }
 
@@ -393,4 +303,95 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       responseAs[DeletedDevice] should be(DeletedDevice(existing = false))
     }
   }
+
+  private implicit val untypedSystem: ActorSystem = ActorSystem(name = "DevicesSpec")
+  private implicit val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)
+
+  private trait TestFixtures {
+    lazy val userStore: UserStore = MockUserStore()
+
+    lazy val deviceStore: DeviceStore = MockDeviceStore()
+
+    implicit lazy val provider: ResourceProvider = new MockResourceProvider(
+      resources = Set(
+        userStore.view(),
+        userStore.viewSelf(),
+        deviceStore.view(),
+        deviceStore.viewSelf(),
+        deviceStore.manage(),
+        deviceStore.manageSelf()
+      )
+    )
+
+    lazy implicit val context: RoutesContext = RoutesContext.collect()
+
+    lazy val routes: Route = Devices()
+  }
+
+  private val user = User(
+    id = User.generateId(),
+    active = true,
+    limits = None,
+    permissions = Set.empty
+  )
+
+  private implicit val currentUser: CurrentUser = CurrentUser(user.id)
+
+  private val devices = Seq(
+    Device(
+      id = Device.generateId(),
+      node = Node.generateId(),
+      owner = user.id,
+      active = true,
+      limits = None
+    ),
+    Device(
+      id = Device.generateId(),
+      node = Node.generateId(),
+      owner = User.generateId(),
+      active = true,
+      limits = None
+    )
+  )
+
+  private val createRequestPrivileged = CreateDevicePrivileged(
+    node = Node.generateId(),
+    owner = user.id,
+    limits = None
+  )
+
+  private val createRequestOwn = CreateDeviceOwn(
+    node = Node.generateId(),
+    limits = None
+  )
+
+  private val updateRequestLimits = UpdateDeviceLimits(
+    limits = Some(
+      Device.Limits(
+        maxCrates = 1,
+        maxStorage = 2,
+        maxStoragePerCrate = 3,
+        maxRetention = 5.seconds,
+        minRetention = 5.seconds
+      )
+    )
+  )
+
+  private val updateRequestState = UpdateDeviceState(
+    active = false
+  )
+
+  import scala.language.implicitConversions
+
+  private implicit def createRequestToEntity(request: CreateDevicePrivileged): RequestEntity =
+    Marshal(request).to[RequestEntity].await
+
+  private implicit def createRequestToEntity(request: CreateDeviceOwn): RequestEntity =
+    Marshal(request).to[RequestEntity].await
+
+  private implicit def updateRequestToEntity(request: UpdateDeviceLimits): RequestEntity =
+    Marshal(request).to[RequestEntity].await
+
+  private implicit def updateRequestToEntity(request: UpdateDeviceState): RequestEntity =
+    Marshal(request).to[RequestEntity].await
 }

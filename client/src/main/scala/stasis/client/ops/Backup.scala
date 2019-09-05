@@ -17,8 +17,6 @@ class Backup(
   providers: Providers,
   clients: Clients
 )(implicit system: ActorSystem, parallelism: ParallelismConfig) { parent =>
-  private implicit val ec: ExecutionContext = system.dispatcher
-
   private implicit val mat: Materializer = ActorMaterializer(
     ActorMaterializerSettings(system).withSupervisionStrategy { e =>
       system.log.error(e, "Backup stream encountered failure: [{}]; resuming", e.getMessage)

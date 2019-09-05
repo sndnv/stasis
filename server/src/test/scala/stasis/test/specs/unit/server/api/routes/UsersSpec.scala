@@ -1,6 +1,4 @@
 package stasis.test.specs.unit.server.api.routes
-import scala.concurrent.Future
-import scala.concurrent.duration._
 
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
@@ -19,86 +17,12 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.MockUserStore
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
 
-class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest {
-  import scala.language.implicitConversions
+import scala.concurrent.Future
+import scala.concurrent.duration._
 
+class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
-
-  private implicit val untypedSystem: ActorSystem = ActorSystem(name = "UsersSpec")
-  private implicit val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)
-
-  private trait TestFixtures {
-    lazy val userStore: UserStore = new MockUserStore()
-
-    implicit lazy val provider: ResourceProvider = new MockResourceProvider(
-      resources = Set(
-        userStore.view(),
-        userStore.viewSelf(),
-        userStore.manage(),
-        userStore.manageSelf()
-      )
-    )
-
-    lazy implicit val context: RoutesContext = RoutesContext.collect()
-
-    lazy val routes: Route = Users()
-  }
-
-  private implicit val user: CurrentUser = CurrentUser(User.generateId())
-
-  private val users = Seq(
-    User(
-      id = user.id,
-      isActive = true,
-      limits = None,
-      permissions = Set.empty
-    ),
-    User(
-      id = User.generateId(),
-      isActive = true,
-      limits = None,
-      permissions = Set.empty
-    )
-  )
-
-  private val createRequest = CreateUser(
-    limits = None,
-    permissions = Set.empty
-  )
-
-  private val updateLimitsRequest = UpdateUserLimits(
-    limits = Some(
-      User.Limits(
-        maxDevices = 1,
-        maxCrates = 2,
-        maxStorage = 3,
-        maxStoragePerCrate = 4,
-        maxRetention = 5.hours,
-        minRetention = 6.minutes
-      )
-    )
-  )
-
-  private val updatePermissionsRequest = UpdateUserPermissions(
-    permissions = Set(Permission.View.Service)
-  )
-
-  private val updateStateRequest = UpdateUserState(
-    isActive = false
-  )
-
-  private implicit def createRequestToEntity(request: CreateUser): RequestEntity =
-    Marshal(request).to[RequestEntity].await
-
-  private implicit def updateRequestToEntity(request: UpdateUserLimits): RequestEntity =
-    Marshal(request).to[RequestEntity].await
-
-  private implicit def updateRequestToEntity(request: UpdateUserPermissions): RequestEntity =
-    Marshal(request).to[RequestEntity].await
-
-  private implicit def updateRequestToEntity(request: UpdateUserState): RequestEntity =
-    Marshal(request).to[RequestEntity].await
 
   "Users routes (full permissions)" should "respond with all users" in {
     val fixtures = new TestFixtures {}
@@ -175,7 +99,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.userStore
         .view()
         .get(users.head.id)
-        .map(_.map(_.isActive) should be(Some(updateStateRequest.isActive)))
+        .map(_.map(_.active) should be(Some(updateStateRequest.active)))
     }
   }
 
@@ -254,7 +178,84 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.userStore
         .view()
         .get(users.head.id)
-        .map(_.map(_.isActive) should be(Some(false)))
+        .map(_.map(_.active) should be(Some(false)))
     }
   }
+
+  private implicit val untypedSystem: ActorSystem = ActorSystem(name = "UsersSpec")
+  private implicit val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)
+
+  private trait TestFixtures {
+    lazy val userStore: UserStore = MockUserStore()
+
+    implicit lazy val provider: ResourceProvider = new MockResourceProvider(
+      resources = Set(
+        userStore.view(),
+        userStore.viewSelf(),
+        userStore.manage(),
+        userStore.manageSelf()
+      )
+    )
+
+    lazy implicit val context: RoutesContext = RoutesContext.collect()
+
+    lazy val routes: Route = Users()
+  }
+
+  private implicit val user: CurrentUser = CurrentUser(User.generateId())
+
+  private val users = Seq(
+    User(
+      id = user.id,
+      active = true,
+      limits = None,
+      permissions = Set.empty
+    ),
+    User(
+      id = User.generateId(),
+      active = true,
+      limits = None,
+      permissions = Set.empty
+    )
+  )
+
+  private val createRequest = CreateUser(
+    limits = None,
+    permissions = Set.empty
+  )
+
+  private val updateLimitsRequest = UpdateUserLimits(
+    limits = Some(
+      User.Limits(
+        maxDevices = 1,
+        maxCrates = 2,
+        maxStorage = 3,
+        maxStoragePerCrate = 4,
+        maxRetention = 5.hours,
+        minRetention = 6.minutes
+      )
+    )
+  )
+
+  private val updatePermissionsRequest = UpdateUserPermissions(
+    permissions = Set(Permission.View.Service)
+  )
+
+  private val updateStateRequest = UpdateUserState(
+    active = false
+  )
+
+  import scala.language.implicitConversions
+
+  private implicit def createRequestToEntity(request: CreateUser): RequestEntity =
+    Marshal(request).to[RequestEntity].await
+
+  private implicit def updateRequestToEntity(request: UpdateUserLimits): RequestEntity =
+    Marshal(request).to[RequestEntity].await
+
+  private implicit def updateRequestToEntity(request: UpdateUserPermissions): RequestEntity =
+    Marshal(request).to[RequestEntity].await
+
+  private implicit def updateRequestToEntity(request: UpdateUserState): RequestEntity =
+    Marshal(request).to[RequestEntity].await
 }

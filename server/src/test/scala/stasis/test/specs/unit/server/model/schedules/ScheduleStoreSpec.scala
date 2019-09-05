@@ -12,25 +12,13 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.MockScheduleStore
 
 class ScheduleStoreSpec extends AsyncUnitSpec {
-
-  private implicit val system: ActorSystem = ActorSystem(name = "ScheduleStoreSpec")
-
-  private val mockSchedule = Schedule(
-    id = Schedule.generateId(),
-    process = Schedule.Process.Backup,
-    instant = LocalTime.now(),
-    interval = 3.seconds,
-    missed = Schedule.MissedAction.ExecuteImmediately,
-    overlap = Schedule.OverlapAction.ExecuteAnyway
-  )
-
   "A ScheduleStore" should "provide a view resource (privileged)" in {
-    val store = new MockScheduleStore()
+    val store = MockScheduleStore()
     store.view().requiredPermission should be(Permission.View.Service)
   }
 
   it should "return existing schedules via view resource (privileged)" in {
-    val store = new MockScheduleStore()
+    val store = MockScheduleStore()
 
     store.manage().create(mockSchedule).await
 
@@ -38,7 +26,7 @@ class ScheduleStoreSpec extends AsyncUnitSpec {
   }
 
   it should "return a list of schedules via view resource (privileged)" in {
-    val store = new MockScheduleStore()
+    val store = MockScheduleStore()
 
     store.manage().create(mockSchedule).await
     store.manage().create(mockSchedule.copy(id = Schedule.generateId())).await
@@ -51,12 +39,12 @@ class ScheduleStoreSpec extends AsyncUnitSpec {
   }
 
   it should "provide management resource (privileged)" in {
-    val store = new MockScheduleStore()
+    val store = MockScheduleStore()
     store.manage().requiredPermission should be(Permission.Manage.Service)
   }
 
   it should "allow creating schedules via management resource (privileged)" in {
-    val store = new MockScheduleStore()
+    val store = MockScheduleStore()
 
     for {
       createResult <- store.manage().create(mockSchedule)
@@ -68,7 +56,7 @@ class ScheduleStoreSpec extends AsyncUnitSpec {
   }
 
   it should "allow updating schedules via management resource (privileged)" in {
-    val store = new MockScheduleStore()
+    val store = MockScheduleStore()
 
     val updatedInterval = 10.hours
 
@@ -86,7 +74,7 @@ class ScheduleStoreSpec extends AsyncUnitSpec {
   }
 
   it should "allow deleting schedules via management resource (privileged)" in {
-    val store = new MockScheduleStore()
+    val store = MockScheduleStore()
 
     for {
       createResult <- store.manage().create(mockSchedule)
@@ -100,4 +88,15 @@ class ScheduleStoreSpec extends AsyncUnitSpec {
       deletedGetResult should be(None)
     }
   }
+
+  private implicit val system: ActorSystem = ActorSystem(name = "ScheduleStoreSpec")
+
+  private val mockSchedule = Schedule(
+    id = Schedule.generateId(),
+    process = Schedule.Process.Backup,
+    instant = LocalTime.now(),
+    interval = 3.seconds,
+    missed = Schedule.MissedAction.ExecuteImmediately,
+    overlap = Schedule.OverlapAction.ExecuteAnyway
+  )
 }

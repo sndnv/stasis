@@ -1,8 +1,8 @@
 package stasis.server.model.schedules
 
 import scala.concurrent.Future
-
 import akka.Done
+import stasis.core.persistence.backends.KeyValueBackend
 import stasis.server.security.Resource
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.security.Permission
@@ -53,4 +53,15 @@ object ScheduleStore {
       override def requiredPermission: Permission = Permission.Manage.Service
     }
   }
+
+  def apply(
+    backend: KeyValueBackend[Schedule.Id, Schedule]
+  ): ScheduleStore =
+    new ScheduleStore {
+      override protected def create(schedule: Schedule): Future[Done] = backend.put(schedule.id, schedule)
+      override protected def update(schedule: Schedule): Future[Done] = backend.put(schedule.id, schedule)
+      override protected def delete(schedule: Schedule.Id): Future[Boolean] = backend.delete(schedule)
+      override protected def get(schedule: Schedule.Id): Future[Option[Schedule]] = backend.get(schedule)
+      override protected def list(): Future[Map[Schedule.Id, Schedule]] = backend.entries
+    }
 }

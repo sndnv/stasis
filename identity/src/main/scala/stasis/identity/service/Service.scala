@@ -6,6 +6,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.event.{Logging, LoggingAdapter}
+import akka.http.scaladsl.ConnectionContext
 import com.typesafe.{config => typesafe}
 import org.jose4j.jwk.JsonWebKey
 import stasis.core.security.jwt.{JwtAuthenticator, LocalKeyProvider}
@@ -122,30 +123,32 @@ trait Service {
       manageProviders = manageProviders
     )
 
-    (persistence, endpoint)
+    val context = EndpointContext.create(config.context)
+
+    (persistence, endpoint, context)
   } match {
-    case Success((persistence: Persistence, endpoint: IdentityEndpoint)) =>
+    case Success((persistence: Persistence, endpoint: IdentityEndpoint, context: ConnectionContext)) =>
       Bootstrap
         .run(rawConfig.getConfig("bootstrap"), persistence)
         .onComplete {
           case Success(_) =>
             log.info("Identity service starting on [{}:{}]...", config.interface, config.port)
-            serviceState.set(Service.State.Started(persistence, endpoint))
+            serviceState.set(State.Started(persistence, endpoint))
             val _ = endpoint.start(
               interface = config.interface,
               port = config.port,
-              context = EndpointContext.create(config.context)
+              context = context
             )
 
           case Failure(e) =>
             log.error(e, "Bootstrap failed: [{}]", e.getMessage)
-            serviceState.set(Service.State.BootstrapFailed(e))
+            serviceState.set(State.BootstrapFailed(e))
             stop()
         }
 
     case Failure(e) =>
       log.error(e, "Service startup failed: [{}]", e.getMessage)
-      serviceState.set(Service.State.StartupFailed(e))
+      serviceState.set(State.StartupFailed(e))
       stop()
   }
 
@@ -156,7 +159,7 @@ trait Service {
     val _ = system.terminate()
   }
 
-  def state: Service.State = serviceState.get()
+  def state: State = serviceState.get()
 }
 
 object Service {

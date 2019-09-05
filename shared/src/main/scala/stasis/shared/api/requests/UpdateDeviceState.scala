@@ -1,3 +1,3 @@
 package stasis.shared.api.requests
 
-final case class UpdateDeviceState(isActive: Boolean) extends UpdateDevice
+final case class UpdateDeviceState(active: Boolean) extends UpdateDevice

@@ -17,7 +17,7 @@ object CreateDevicePrivileged {
         id = Device.generateId(),
         node = request.node,
         owner = owner.id,
-        isActive = true,
+        active = true,
         limits = Device.resolveLimits(owner.limits, request.limits)
       )
   }

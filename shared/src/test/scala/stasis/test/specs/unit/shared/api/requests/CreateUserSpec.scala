@@ -8,7 +8,7 @@ class CreateUserSpec extends UnitSpec {
   it should "convert requests to users" in {
     val expectedUser = User(
       id = User.generateId(),
-      isActive = true,
+      active = true,
       limits = None,
       permissions = Set.empty
     )
