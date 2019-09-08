@@ -7,17 +7,17 @@ import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.util.{ByteString, Timeout}
 import akka.{Done, NotUsed}
-import stasis.core.packaging.Crate.Id
 import stasis.core.packaging.{Crate, Manifest}
+import stasis.core.persistence.backends.StreamingBackend
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.exceptions.PersistenceFailure
 import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
+import stasis.core.routing.Node
+
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-
-import stasis.core.routing.Node
 
 class MockCrateStore(
   reservationStore: ReservationStore,
@@ -26,10 +26,9 @@ class MockCrateStore(
   retrieveDisabled: Boolean = false,
   retrieveEmpty: Boolean = false,
   reservationDisabled: Boolean = false,
-  reservationExpiration: FiniteDuration = 1.day,
   discardDisabled: Boolean = false
 )(implicit system: ActorSystem[SpawnProtocol])
-    extends CrateStore(reservationStore, reservationExpiration, storeId = Node.generateId())(system.toUntyped) {
+    extends CrateStore(reservationStore, storeId = Node.generateId())(system.toUntyped) {
 
   import MockCrateStore._
 
@@ -84,52 +83,61 @@ class MockCrateStore(
 
   def statistics: Map[Statistic, Int] = stats.mapValues(_.get())
 
-  override protected def directSink(manifest: Manifest): Future[Sink[StoreValue, Future[Done]]] =
-    Future.successful(
-      Flow[ByteString]
-        .fold(ByteString.empty) {
-          case (folded, chunk) =>
-            folded.concat(chunk)
-        }
-        .mapAsyncUnordered(parallelism = 1) { data =>
-          stats(Statistic.PersistCompleted).incrementAndGet()
-          store.put(manifest.crate, data)
-        }
-        .toMat(Sink.ignore)(Keep.right)
-    )
+  override def backend: StreamingBackend = new StreamingBackend {
+    override def init(): Future[Done] = Future.successful(Done)
 
-  override protected def directSource(crate: Id): Future[Option[Source[StoreValue, NotUsed]]] =
-    if (!retrieveDisabled) {
-      if (!retrieveEmpty) {
-        stats(Statistic.RetrieveCompleted).incrementAndGet()
-        store.get(crate).map(_.map(Source.single))
+    override def drop(): Future[Done] = Future.successful(Done)
+
+    override def sink(key: StoreKey): Future[Sink[StoreValue, Future[Done]]] =
+      Future.successful(
+        Flow[ByteString]
+          .fold(ByteString.empty) {
+            case (folded, chunk) =>
+              folded.concat(chunk)
+          }
+          .mapAsyncUnordered(parallelism = 1) { data =>
+            stats(Statistic.PersistCompleted).incrementAndGet()
+            store.put(key, data)
+          }
+          .toMat(Sink.ignore)(Keep.right)
+      )
+
+    override def source(key: StoreKey): Future[Option[Source[StoreValue, NotUsed]]] =
+      if (!retrieveDisabled) {
+        if (!retrieveEmpty) {
+          stats(Statistic.RetrieveCompleted).incrementAndGet()
+          store.get(key).map(_.map(Source.single))
+        } else {
+          stats(Statistic.RetrieveEmpty).incrementAndGet()
+          Future.successful(None)
+        }
       } else {
-        stats(Statistic.RetrieveEmpty).incrementAndGet()
-        Future.successful(None)
+        stats(Statistic.RetrieveFailed).incrementAndGet()
+        Future.failed(new PersistenceFailure("[retrieveDisabled] is set to [true]"))
       }
-    } else {
-      stats(Statistic.RetrieveFailed).incrementAndGet()
-      Future.failed(new PersistenceFailure("[retrieveDisabled] is set to [true]"))
-    }
 
-  override protected def dropContent(crate: Id): Future[Boolean] =
-    if (!discardDisabled) {
-      store.delete(crate).map {
-        case true =>
-          stats(Statistic.DiscardCompleted).incrementAndGet()
-          true
+    override def delete(key: StoreKey): Future[Boolean] =
+      if (!discardDisabled) {
+        store.delete(key).map {
+          case true =>
+            stats(Statistic.DiscardCompleted).incrementAndGet()
+            true
 
-        case false =>
-          stats(Statistic.DiscardFailed).incrementAndGet()
-          false
+          case false =>
+            stats(Statistic.DiscardFailed).incrementAndGet()
+            false
+        }
+      } else {
+        stats(Statistic.DiscardFailed).incrementAndGet()
+        Future.successful(false)
       }
-    } else {
-      stats(Statistic.DiscardFailed).incrementAndGet()
+
+    override def contains(key: StoreKey): Future[Boolean] =
       Future.successful(false)
-    }
 
-  override protected def isStorageAvailable(request: CrateStorageRequest): Future[Boolean] =
-    Future.successful(true)
+    override def canStore(bytes: Long): Future[Boolean] =
+      Future.successful(true)
+  }
 }
 
 object MockCrateStore {

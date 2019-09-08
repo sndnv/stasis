@@ -7,15 +7,14 @@ import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{ExceptionHandler, Route}
-import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import stasis.core.networking.Endpoint
 import stasis.core.packaging.{Crate, Manifest}
+import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.reservations.ReservationStoreView
-import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.core.routing.Router
 import stasis.core.security.NodeAuthenticator
 
@@ -31,8 +30,8 @@ class HttpEndpoint(
 )(implicit val system: ActorSystem)
     extends Endpoint[HttpCredentials] {
 
-  import HttpEndpoint._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import stasis.core.api.Formats._
 
   private implicit val mat: ActorMaterializer = ActorMaterializer()
   private implicit val ec: ExecutionContextExecutor = system.dispatcher
@@ -185,28 +184,4 @@ class HttpEndpoint(
           complete(StatusCodes.Unauthorized)
       }
     }
-}
-
-object HttpEndpoint {
-  import play.api.libs.json._
-
-  import scala.concurrent.duration._
-
-  implicit val stringToUuid: Unmarshaller[String, java.util.UUID] = Unmarshaller { implicit ec => param =>
-    Future {
-      java.util.UUID.fromString(param)
-    }
-  }
-
-  implicit val finiteDurationFormat: Format[FiniteDuration] = Format(
-    Reads[FiniteDuration] { js =>
-      js.validate[Long].map(seconds => seconds.seconds)
-    },
-    Writes[FiniteDuration] { duration =>
-      JsNumber(duration.toSeconds)
-    }
-  )
-
-  implicit val crateStorageRequestFormat: Format[CrateStorageRequest] = Json.format[CrateStorageRequest]
-  implicit val crateStorageReservationFormat: Format[CrateStorageReservation] = Json.format[CrateStorageReservation]
 }

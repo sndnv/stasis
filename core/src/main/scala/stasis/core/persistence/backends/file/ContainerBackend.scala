@@ -1,8 +1,7 @@
 package stasis.core.persistence.backends.file
 
 import java.nio.ByteOrder
-
-import scala.concurrent.{ExecutionContext, Future}
+import java.util.UUID
 
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
@@ -11,12 +10,14 @@ import stasis.core.persistence.backends.StreamingBackend
 import stasis.core.persistence.backends.file.container.Container
 import stasis.core.persistence.backends.file.container.ops.ConversionOps
 
-class ContainerBackend[K <: java.util.UUID](
-  path: String,
-  maxChunkSize: Int,
-  maxChunks: Int
+import scala.concurrent.{ExecutionContext, Future}
+
+class ContainerBackend(
+  val path: String,
+  val maxChunkSize: Int,
+  val maxChunks: Int
 )(implicit ec: ExecutionContext)
-    extends StreamingBackend[K] {
+    extends StreamingBackend {
 
   private implicit val byteOrder: ByteOrder = ConversionOps.DEFAULT_BYTE_ORDER
 
@@ -28,16 +29,16 @@ class ContainerBackend[K <: java.util.UUID](
   override def drop(): Future[Done] =
     container.destroy()
 
-  override def sink(key: K): Future[Sink[ByteString, Future[Done]]] =
+  override def sink(key: UUID): Future[Sink[ByteString, Future[Done]]] =
     container.sink(key)
 
-  override def source(key: K): Future[Option[Source[ByteString, NotUsed]]] =
+  override def source(key: UUID): Future[Option[Source[ByteString, NotUsed]]] =
     container.source(key).map(_.map(_.mapMaterializedValue(_ => NotUsed)))
 
-  override def delete(key: K): Future[Boolean] =
+  override def delete(key: UUID): Future[Boolean] =
     container.delete(key)
 
-  override def contains(key: K): Future[Boolean] =
+  override def contains(key: UUID): Future[Boolean] =
     container.contains(key)
 
   override def canStore(bytes: Long): Future[Boolean] =

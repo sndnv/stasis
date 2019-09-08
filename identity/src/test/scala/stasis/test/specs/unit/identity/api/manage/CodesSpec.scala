@@ -19,7 +19,7 @@ class CodesSpec extends RouteTest {
     val codes = new Codes(store)
 
     val owner = Generators.generateResourceOwner
-    val expectedCodes = Generators.generateSeq(min = 2, g = Generators.generateAuthorizationCode)
+    val expectedCodes = stasis.test.Generators.generateSeq(min = 2, g = Generators.generateAuthorizationCode)
 
     Future
       .sequence(

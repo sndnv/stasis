@@ -22,7 +22,7 @@ class RefreshTokenStoreSerdesSpec extends UnitSpec {
       token = Generators.generateRefreshToken,
       client = Client.generateId(),
       owner = Generators.generateResourceOwner,
-      scope = Some(Generators.generateString(withSize = 16)),
+      scope = Some(stasis.test.Generators.generateString(withSize = 16)),
       expiration = Instant.now()
     )
 

@@ -17,7 +17,7 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
-class ServerEndpoint(
+class ApiEndpoint(
   resourceProvider: ResourceProvider,
   authenticator: UserAuthenticator
 )(implicit val system: ActorSystem) {

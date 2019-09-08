@@ -6,7 +6,7 @@ import stasis.test.specs.unit.identity.model.Generators
 
 class ApiStoreSerdesSpec extends UnitSpec {
   "ApiStoreSerdes" should "serialize and deserialize keys" in {
-    val apiId = Generators.generateString(withSize = 32)
+    val apiId = stasis.test.Generators.generateString(withSize = 32)
 
     val serialized = ApiStoreSerdes.serializeKey(apiId)
     val deserialized = ApiStoreSerdes.deserializeKey(serialized)

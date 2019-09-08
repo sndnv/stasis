@@ -1,17 +1,17 @@
 package stasis.core.persistence.backends.file
 
 import java.nio.file.{Files, Path, Paths}
-
-import scala.collection.JavaConverters._
-import scala.concurrent.{ExecutionContext, Future}
+import java.util.UUID
 
 import akka.stream.scaladsl.{FileIO, Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import stasis.core.persistence.backends.StreamingBackend
 
-class FileBackend[K <: java.util.UUID](parentDirectory: String)(implicit ec: ExecutionContext)
-    extends StreamingBackend[K] {
+import scala.collection.JavaConverters._
+import scala.concurrent.{ExecutionContext, Future}
+
+class FileBackend(val parentDirectory: String)(implicit ec: ExecutionContext) extends StreamingBackend {
 
   private val parent: Path = Paths.get(parentDirectory)
 
@@ -31,14 +31,14 @@ class FileBackend[K <: java.util.UUID](parentDirectory: String)(implicit ec: Exe
       Future.successful(Done)
     }
 
-  override def sink(key: K): Future[Sink[ByteString, Future[Done]]] =
+  override def sink(key: UUID): Future[Sink[ByteString, Future[Done]]] =
     Future.successful(
       FileIO
         .toPath(key.toPath)
         .mapMaterializedValue(_.flatMap(_ => Future.successful(Done)))
     )
 
-  override def source(key: K): Future[Option[Source[ByteString, NotUsed]]] = {
+  override def source(key: UUID): Future[Option[Source[ByteString, NotUsed]]] = {
     val path = key.toPath
     Future.successful(
       if (Files.exists(path)) {
@@ -49,11 +49,11 @@ class FileBackend[K <: java.util.UUID](parentDirectory: String)(implicit ec: Exe
     )
   }
 
-  override def delete(key: K): Future[Boolean] = Future {
+  override def delete(key: UUID): Future[Boolean] = Future {
     Files.deleteIfExists(key.toPath)
   }
 
-  override def contains(key: K): Future[Boolean] = Future {
+  override def contains(key: UUID): Future[Boolean] = Future {
     Files.exists(key.toPath)
   }
 
@@ -61,7 +61,7 @@ class FileBackend[K <: java.util.UUID](parentDirectory: String)(implicit ec: Exe
     parent.getFileSystem.getFileStores.asScala.exists(_.getUsableSpace >= bytes)
   }
 
-  private implicit class FileKey(key: K) {
+  private implicit class FileKey(key: UUID) {
     def toPath: Path = parent.resolve(key.toString)
   }
 }

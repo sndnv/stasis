@@ -14,7 +14,7 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
   protected implicit val system: ActorSystem = ActorSystem(name = "StreamingBackendBehaviour")
   protected implicit val mat: ActorMaterializer = ActorMaterializer()
 
-  def streamingBackend[B <: StreamingBackend[java.util.UUID]](
+  def streamingBackend[B <: StreamingBackend](
     createBackend: () => B,
     before: B => Future[Done] = (backend: B) => backend.init(),
     after: B => Future[Done] = (backend: B) => backend.drop()

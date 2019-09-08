@@ -7,7 +7,7 @@ import stasis.test.specs.unit.core.persistence.backends.StreamingBackendBehaviou
 class ContainerBackendSpec extends AsyncUnitSpec with StreamingBackendBehaviour {
   "A ContainerBackend" should behave like streamingBackend(
     createBackend = () =>
-      new ContainerBackend[java.util.UUID](
+      new ContainerBackend(
         path = s"${System.getProperty("user.dir")}/target/container_backend_test",
         maxChunkSize = 100,
         maxChunks = 100

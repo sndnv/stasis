@@ -20,7 +20,6 @@ import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockGrpcAuthenticator
 
 import scala.concurrent.Future
-import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
 class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
@@ -57,7 +56,6 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     crate = Crate.generateId(),
     size = crateContent.length,
     copies = 3,
-    expiration = 1.second,
     origin = testNode,
     target = Node.generateId()
   )
@@ -162,7 +160,6 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       crate = storageRequest.crate,
       size = storageRequest.size,
       copies = storageRequest.copies,
-      expiration = 1.day,
       origin = testNode,
       target = Node.generateId()
     )

@@ -6,7 +6,7 @@ import stasis.test.specs.unit.identity.model.Generators
 
 class ResourceOwnerStoreSerdesSpec extends UnitSpec {
   "ResourceOwnerStoreSerdes" should "serialize and deserialize keys" in {
-    val owner = Generators.generateString(withSize = 32)
+    val owner = stasis.test.Generators.generateString(withSize = 32)
 
     val serialized = ResourceOwnerStoreSerdes.serializeKey(owner)
     val deserialized = ResourceOwnerStoreSerdes.deserializeKey(serialized)

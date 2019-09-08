@@ -12,11 +12,11 @@ class JwksSpec extends RouteTest {
 
   "JWKs routes" should "provide a list of available JSON web keys" in {
     val expectedKeys =
-      Generators.generateSeq(
+      stasis.test.Generators.generateSeq(
         min = 1,
         max = 3,
         g = MockJwksGenerators.generateRandomRsaKey(
-          keyId = Some(Generators.generateString(withSize = 16))
+          keyId = Some(stasis.test.Generators.generateString(withSize = 16))
         )
       )
 

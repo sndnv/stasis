@@ -26,7 +26,7 @@ class ClientsSpec extends RouteTest {
     val secret = Secret(ByteString("some-secret"))
     val salt = "some-salt"
 
-    val expectedClients = Generators
+    val expectedClients = stasis.test.Generators
       .generateSeq(min = 2, g = Generators.generateClient)
       .map(_.copy(secret = secret, salt = salt))
 

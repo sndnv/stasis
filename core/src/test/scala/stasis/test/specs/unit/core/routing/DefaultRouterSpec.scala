@@ -15,74 +15,13 @@ import stasis.core.routing.exceptions.{DiscardFailure, DistributionFailure, Pull
 import stasis.core.routing.{DefaultRouter, Node}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.MockHttpEndpointClient
-import stasis.test.specs.unit.core.persistence.mocks.{
-  MockCrateStore,
-  MockManifestStore,
-  MockNodeStore,
-  MockReservationStore
-}
+import stasis.test.specs.unit.core.persistence.mocks._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
-
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
-    "DefaultRouterSpec"
-  )
-
-  private implicit val mat: ActorMaterializer = ActorMaterializer()(system.toUntyped)
-
-  private implicit val ec: ExecutionContext = system.executionContext
-
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(3.seconds, 250.milliseconds)
-
-  private trait TestFixtures {
-    lazy val reservationStore: MockReservationStore = new MockReservationStore()
-    lazy val crateStore: MockCrateStore = new MockCrateStore(reservationStore)
-    lazy val manifestStore: MockManifestStore = new MockManifestStore
-    lazy val nodeStore: MockNodeStore = new MockNodeStore
-    lazy val localNode: Node.Local = Node.Local(Node.generateId(), crateStore = crateStore)
-    lazy val stagingStore: Option[StagingStore] = None
-    lazy val remoteNodes: Seq[Node.Remote.Http] = Seq(
-      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:8000")),
-      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:9000"))
-    )
-
-    def testNodes: Seq[Node] = Seq(
-      remoteNodes.head,
-      localNode,
-      remoteNodes.last
-    )
-
-    Future.sequence(testNodes.map(node => nodeStore.put(node))).await
-  }
-
-  private class TestRouter(
-    val fixtures: TestFixtures = new TestFixtures {},
-    val testClient: MockHttpEndpointClient = new MockHttpEndpointClient()
-  )(implicit untypedSystem: akka.actor.ActorSystem = system.toUntyped)
-      extends DefaultRouter(
-        httpClient = testClient,
-        manifestStore = fixtures.manifestStore,
-        nodeStore = fixtures.nodeStore.view,
-        reservationStore = fixtures.reservationStore,
-        stagingStore = fixtures.stagingStore,
-        routerId = Node.generateId()
-      )
-
-  private val testContent = ByteString("some value")
-
-  private val testManifest = Manifest(
-    crate = Crate.generateId(),
-    size = testContent.size,
-    copies = 4,
-    source = Node.generateId(),
-    origin = Node.generateId()
-  )
-
   "A DefaultRouter" should "calculate crate copies distribution" in {
     val node1 = Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:8000"))
     val node2 = Node.Local(Node.generateId(), crateStore = null)
@@ -849,8 +788,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     val expectedReservation = CrateStorageReservation(
       request = request,
-      target = Node.generateId(),
-      expiration = 1.day
+      target = Node.generateId()
     )
 
     for {
@@ -861,7 +799,6 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       val actualReservation = response.get
       actualReservation.size should be(expectedReservation.size)
       actualReservation.copies should be(expectedReservation.copies)
-      actualReservation.expiration should be(expectedReservation.expiration)
     }
   }
 
@@ -919,4 +856,59 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     router.reserve(request).map(_ should be(None))
   }
+
+  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+    "DefaultRouterSpec"
+  )
+
+  private implicit val mat: ActorMaterializer = ActorMaterializer()(system.toUntyped)
+
+  private implicit val ec: ExecutionContext = system.executionContext
+
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(3.seconds, 250.milliseconds)
+
+  private trait TestFixtures {
+    lazy val reservationStore: MockReservationStore = new MockReservationStore()
+    lazy val crateStore: MockCrateStore = new MockCrateStore(reservationStore)
+    lazy val manifestStore: MockManifestStore = new MockManifestStore
+    lazy val nodeStore: MockNodeStore = new MockNodeStore
+    lazy val localNode: Node.Local = Node.Local(Node.generateId(), crateStore = crateStore)
+    lazy val stagingStore: Option[StagingStore] = None
+    lazy val remoteNodes: Seq[Node.Remote.Http] = Seq(
+      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:8000")),
+      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:9000"))
+    )
+
+    def testNodes: Seq[Node] = Seq(
+      remoteNodes.head,
+      localNode,
+      remoteNodes.last
+    )
+
+    Future.sequence(testNodes.map(node => nodeStore.put(node))).await
+  }
+
+  private class TestRouter(
+    val fixtures: TestFixtures = new TestFixtures {},
+    val testClient: MockHttpEndpointClient = new MockHttpEndpointClient()
+  )(implicit untypedSystem: akka.actor.ActorSystem = system.toUntyped)
+      extends DefaultRouter(
+        httpClient = testClient,
+        manifestStore = fixtures.manifestStore,
+        nodeStore = fixtures.nodeStore.view,
+        reservationStore = fixtures.reservationStore,
+        stagingStore = fixtures.stagingStore,
+        routerId = Node.generateId()
+      )
+
+  private val testContent = ByteString("some value")
+
+  private val testManifest = Manifest(
+    crate = Crate.generateId(),
+    size = testContent.size,
+    copies = 4,
+    source = Node.generateId(),
+    origin = Node.generateId()
+  )
 }

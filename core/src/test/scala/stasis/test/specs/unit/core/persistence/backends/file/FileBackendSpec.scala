@@ -7,7 +7,7 @@ import stasis.test.specs.unit.core.persistence.backends.StreamingBackendBehaviou
 class FileBackendSpec extends AsyncUnitSpec with StreamingBackendBehaviour {
   "A FileBackend" should behave like streamingBackend(
     createBackend = () =>
-      new FileBackend[java.util.UUID](
+      new FileBackend(
         parentDirectory = s"${System.getProperty("user.dir")}/target/file_backend_test"
     )
   )

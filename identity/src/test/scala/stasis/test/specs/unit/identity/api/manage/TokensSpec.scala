@@ -17,7 +17,7 @@ class TokensSpec extends RouteTest {
     val tokens = new Tokens(store)
 
     val owner = Generators.generateResourceOwner
-    val expectedTokens = Generators
+    val expectedTokens = stasis.test.Generators
       .generateSeq(min = 2, g = Generators.generateRefreshToken)
       .map(token => PartialStoredRefreshToken(token.value, Client.generateId(), owner.username, scope = None))
 

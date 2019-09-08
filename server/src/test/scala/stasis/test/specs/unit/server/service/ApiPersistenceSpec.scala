@@ -3,13 +3,13 @@ package stasis.test.specs.unit.server.service
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import com.typesafe.config.Config
-import stasis.server.service.Persistence
+import stasis.server.service.ApiPersistence
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.Generators
 
-class PersistenceSpec extends AsyncUnitSpec {
-  "Persistence" should "setup service data stores based on config" in {
-    val persistence = new Persistence(
+class ApiPersistenceSpec extends AsyncUnitSpec {
+  "ApiPersistence" should "setup service data stores based on config" in {
+    val persistence = new ApiPersistence(
       persistenceConfig = config.getConfig("persistence")
     )
 
@@ -43,7 +43,7 @@ class PersistenceSpec extends AsyncUnitSpec {
 
   private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
-    "PersistenceSpec"
+    "ApiPersistenceSpec"
   )
 
   private val config: Config = system.settings.config.getConfig("stasis.test.server")

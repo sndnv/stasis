@@ -17,7 +17,7 @@ trait JwtBearerAccessTokenGeneratorBehaviour { _: AsyncUnitSpec =>
 
     it should s"generate JWTs for clients ($withKeyType)" in {
       val client = Generators.generateClient
-      val audience = Generators.generateSeq(min = 1, g = Generators.generateClient)
+      val audience = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateClient)
       val token = generator.generate(client, audience)
 
       val jws = new JsonWebSignature()
@@ -40,7 +40,7 @@ trait JwtBearerAccessTokenGeneratorBehaviour { _: AsyncUnitSpec =>
 
     it should s"generate JWTs for resource owners ($withKeyType)" in {
       val owner = Generators.generateResourceOwner
-      val audience = Generators.generateSeq(min = 1, g = Generators.generateApi)
+      val audience = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateApi)
       val token = generator.generate(owner, audience)
 
       val jws = new JsonWebSignature()

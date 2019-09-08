@@ -7,10 +7,11 @@ import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.ConnectionContext
+import akka.util.Timeout
 import com.typesafe.{config => typesafe}
 import stasis.core.security.jwt.{JwtAuthenticator, RemoteKeyProvider}
 import stasis.core.security.tls.EndpointContext
-import stasis.server.api.ServerEndpoint
+import stasis.server.api.ApiEndpoint
 import stasis.server.security._
 
 import scala.concurrent.ExecutionContext
@@ -37,67 +38,69 @@ trait Service {
   private val config: Config = Config(rawConfig.getConfig("service"))
 
   Try {
-    val persistence: Persistence = new Persistence(
-      persistenceConfig = rawConfig.getConfig("persistence")
-    )
+    implicit val timeout: Timeout = config.internalQueryTimeout
+
+    val persistenceConfig = rawConfig.getConfig("persistence")
+
+    val apiPersistence: ApiPersistence = new ApiPersistence(persistenceConfig)
 
     val resources: Set[Resource] = Set(
-      persistence.datasetDefinitions.manage(),
-      persistence.datasetDefinitions.manageSelf(),
-      persistence.datasetDefinitions.view(),
-      persistence.datasetDefinitions.viewSelf(),
-      persistence.datasetEntries.manage(),
-      persistence.datasetEntries.manageSelf(),
-      persistence.datasetEntries.view(),
-      persistence.datasetEntries.viewSelf(),
-      persistence.devices.manage(),
-      persistence.devices.manageSelf(),
-      persistence.devices.view(),
-      persistence.devices.viewSelf(),
-      persistence.schedules.manage(),
-      persistence.schedules.view(),
-      persistence.users.manage(),
-      persistence.users.manageSelf(),
-      persistence.users.view(),
-      persistence.users.viewSelf()
+      apiPersistence.datasetDefinitions.manage(),
+      apiPersistence.datasetDefinitions.manageSelf(),
+      apiPersistence.datasetDefinitions.view(),
+      apiPersistence.datasetDefinitions.viewSelf(),
+      apiPersistence.datasetEntries.manage(),
+      apiPersistence.datasetEntries.manageSelf(),
+      apiPersistence.datasetEntries.view(),
+      apiPersistence.datasetEntries.viewSelf(),
+      apiPersistence.devices.manage(),
+      apiPersistence.devices.manageSelf(),
+      apiPersistence.devices.view(),
+      apiPersistence.devices.viewSelf(),
+      apiPersistence.schedules.manage(),
+      apiPersistence.schedules.view(),
+      apiPersistence.users.manage(),
+      apiPersistence.users.manageSelf(),
+      apiPersistence.users.view(),
+      apiPersistence.users.viewSelf()
     )
 
     val resourceProvider: ResourceProvider = new DefaultResourceProvider(
       resources = resources,
-      users = persistence.users.view()
+      users = apiPersistence.users.view()
     )
 
-    val authenticatorConfig = rawConfig.getConfig("authenticators.user")
-    val authenticator: UserAuthenticator = new DefaultUserAuthenticator(
-      store = persistence.users.view(),
+    val userAuthenticatorConfig = rawConfig.getConfig("authenticators.user")
+    val userAuthenticator: UserAuthenticator = new DefaultUserAuthenticator(
+      store = apiPersistence.users.view(),
       underlying = new JwtAuthenticator(
         provider = RemoteKeyProvider(
-          jwksEndpoint = authenticatorConfig.getString("jwks-endpoint"),
-          refreshInterval = authenticatorConfig.getDuration("refresh-interval").getSeconds.seconds,
-          issuer = authenticatorConfig.getString("issuer")
-        )(system, config.internalQueryTimeout),
-        audience = authenticatorConfig.getString("audience"),
-        expirationTolerance = authenticatorConfig.getDuration("expiration-tolerance").toMillis.millis
+          jwksEndpoint = userAuthenticatorConfig.getString("jwks-endpoint"),
+          refreshInterval = userAuthenticatorConfig.getDuration("refresh-interval").getSeconds.seconds,
+          issuer = userAuthenticatorConfig.getString("issuer")
+        ),
+        audience = userAuthenticatorConfig.getString("audience"),
+        expirationTolerance = userAuthenticatorConfig.getDuration("expiration-tolerance").toMillis.millis
       )
     )
 
-    val endpoint = new ServerEndpoint(
+    val apiEndpoint = new ApiEndpoint(
       resourceProvider = resourceProvider,
-      authenticator = authenticator
+      authenticator = userAuthenticator
     )
 
     val context = EndpointContext.create(config.context)
 
-    (persistence, endpoint, context)
+    (apiPersistence, apiEndpoint, context)
   } match {
-    case Success((persistence: Persistence, endpoint: ServerEndpoint, context: ConnectionContext)) =>
+    case Success((persistence: ApiPersistence, apiEndpoint: ApiEndpoint, context: ConnectionContext)) =>
       Bootstrap
         .run(rawConfig.getConfig("bootstrap"), persistence)
         .onComplete {
           case Success(_) =>
-            log.info("Service starting on [{}:{}]...", config.interface, config.port)
-            serviceState.set(State.Started(persistence, endpoint))
-            val _ = endpoint.start(
+            log.info("Service API starting on [{}:{}]...", config.interface, config.port)
+            serviceState.set(State.Started(persistence, apiEndpoint))
+            val _ = apiEndpoint.start(
               interface = config.interface,
               port = config.port,
               context = context
@@ -129,7 +132,7 @@ object Service {
   sealed trait State
   object State {
     case object Starting extends State
-    final case class Started(persistence: Persistence, endpoint: ServerEndpoint) extends State
+    final case class Started(persistence: ApiPersistence, apiEndpoint: ApiEndpoint) extends State
     final case class BootstrapFailed(throwable: Throwable) extends State
     final case class StartupFailed(throwable: Throwable) extends State
   }

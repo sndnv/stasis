@@ -13,10 +13,8 @@ import scala.concurrent.duration._
 object Formats {
   import play.api.libs.json._
 
-  implicit val finiteDurationFormat: Format[FiniteDuration] = Format(
-    fjs = js => js.validate[Long].map(seconds => seconds.seconds),
-    tjs = duration => JsNumber(duration.toSeconds)
-  )
+  implicit val finiteDurationFormat: Format[FiniteDuration] =
+    stasis.core.api.Formats.finiteDurationFormat
 
   implicit val permissionFormat: Format[Permission] = Format(
     fjs = _.validate[String].map(stringToPermission),
@@ -40,7 +38,7 @@ object Formats {
 
   implicit val retentionPolicyFormat: Format[DatasetDefinition.Retention.Policy] = Format(
     fjs = _.validate[JsObject].flatMap { policy =>
-      (policy \ "policy-type").validate[String] map {
+      (policy \ "policy-type").validate[String].map {
         case "at-most" =>
           DatasetDefinition.Retention.Policy.AtMost((policy \ "versions").as[Int])
 

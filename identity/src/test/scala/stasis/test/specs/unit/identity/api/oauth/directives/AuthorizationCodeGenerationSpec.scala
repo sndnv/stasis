@@ -60,7 +60,7 @@ class AuthorizationCodeGenerationSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
     val scope = "some-scope"
     val expectedChallenge = StoredAuthorizationCode.Challenge(
-      Generators.generateString(withSize = 128),
+      stasis.test.Generators.generateString(withSize = 128),
       Some(ChallengeMethod.S256)
     )
 

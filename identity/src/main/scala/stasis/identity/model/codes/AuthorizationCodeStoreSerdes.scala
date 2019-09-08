@@ -6,7 +6,6 @@ import akka.util.ByteString
 import play.api.libs.json._
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.identity.api.Formats.{authorizationCodeFormat, codeChallengeFormat}
-import stasis.identity.model.clients.Client
 import stasis.identity.model.owners.ResourceOwnerStoreSerdes.resourceOwnerFormat
 
 object AuthorizationCodeStoreSerdes extends KeyValueBackend.Serdes[AuthorizationCode, StoredAuthorizationCode] {

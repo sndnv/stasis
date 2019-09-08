@@ -12,7 +12,7 @@ import stasis.server.model.users.{UserStore, UserStoreSerdes}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class Persistence(
+class ApiPersistence(
   persistenceConfig: typesafe.Config,
 )(implicit system: ActorSystem[SpawnProtocol]) {
   private implicit val ec: ExecutionContext = system.executionContext

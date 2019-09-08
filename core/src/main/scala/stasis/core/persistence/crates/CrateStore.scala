@@ -7,18 +7,16 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import stasis.core.packaging.{Crate, Manifest}
+import stasis.core.persistence.backends.StreamingBackend
 import stasis.core.persistence.exceptions.ReservationFailure
 import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
-
-import stasis.core.persistence.backends.StreamingBackend
 import stasis.core.routing.Node
+
+import scala.concurrent.{ExecutionContext, Future}
 
 abstract class CrateStore(
   reservationStore: ReservationStore,
-  reservationExpiration: FiniteDuration,
   val storeId: Node.Id
 )(implicit val system: ActorSystem) { store =>
   private implicit val mat: ActorMaterializer = ActorMaterializer()
@@ -26,11 +24,13 @@ abstract class CrateStore(
 
   private val log = Logging(system, this.getClass.getName)
 
+  def backend: StreamingBackend
+
   def persist(manifest: Manifest, content: Source[ByteString, NotUsed]): Future[Done] = {
     log.debug("Persisting content for crate [{}] with manifest [{}]", manifest.crate, manifest)
 
     for {
-      sink <- sink(manifest)
+      sink <- sink(manifest.crate)
       result <- content.runWith(sink)
     } yield {
       log.debug("Persist completed for crate [{}]", manifest.crate)
@@ -38,18 +38,18 @@ abstract class CrateStore(
     }
   }
 
-  def sink(manifest: Manifest): Future[Sink[ByteString, Future[Done]]] = {
-    log.debug("Retrieving content sink for crate [{}] with manifest [{}]", manifest.crate, manifest)
+  def sink(crate: Crate.Id): Future[Sink[ByteString, Future[Done]]] = {
+    log.debug("Retrieving content sink for crate [{}]", crate)
 
-    reservationStore.delete(manifest.crate, storeId).flatMap { reservationRemoved =>
+    reservationStore.delete(crate, storeId).flatMap { reservationRemoved =>
       if (reservationRemoved) {
-        log.debug("Reservation for crate [{}] removed", manifest.crate)
-        directSink(manifest).map { sink =>
-          log.debug("Content sink for crate [{}] removed", manifest.crate)
+        log.debug("Reservation for crate [{}] removed", crate)
+        backend.sink(crate).map { sink =>
+          log.debug("Content sink for crate [{}] removed", crate)
           sink
         }
       } else {
-        val message = s"Failed to remove reservation for crate [${manifest.crate}]"
+        val message = s"Failed to remove reservation for crate [$crate]"
         log.error(message)
         Future.failed(ReservationFailure(message))
       }
@@ -58,12 +58,12 @@ abstract class CrateStore(
 
   def retrieve(crate: Crate.Id): Future[Option[Source[ByteString, NotUsed]]] = {
     log.debug("Retrieving content source for crate [{}]", crate)
-    directSource(crate)
+    backend.source(crate)
   }
 
   def discard(crate: Crate.Id): Future[Boolean] = {
     log.debug("Discarding crate [{}]", crate)
-    dropContent(crate).map { result =>
+    backend.delete(crate).map { result =>
       if (result) {
         log.debug("Discarded crate [{}]", crate)
       } else {
@@ -79,9 +79,9 @@ abstract class CrateStore(
 
     reservationStore.existsFor(request.crate, storeId).flatMap { exists =>
       if (!exists) {
-        isStorageAvailable(request).flatMap { storageAvailable =>
+        backend.canStore(request.size * request.copies).flatMap { storageAvailable =>
           if (storageAvailable) {
-            val reservation = CrateStorageReservation(request, target = storeId, reservationExpiration)
+            val reservation = CrateStorageReservation(request, target = storeId)
             reservationStore.put(reservation).map { _ =>
               Some(reservation)
             }
@@ -106,35 +106,18 @@ abstract class CrateStore(
   def view: CrateStoreView = new CrateStoreView {
     override def retrieve(crate: Crate.Id): Future[Option[Source[ByteString, NotUsed]]] = store.retrieve(crate)
   }
-
-  protected def directSink(manifest: Manifest): Future[Sink[ByteString, Future[Done]]]
-  protected def directSource(crate: Crate.Id): Future[Option[Source[ByteString, NotUsed]]]
-  protected def dropContent(crate: Crate.Id): Future[Boolean]
-  protected def isStorageAvailable(request: CrateStorageRequest): Future[Boolean]
 }
 
 object CrateStore {
   def apply(
-    backend: StreamingBackend[Crate.Id],
+    streamingBackend: StreamingBackend,
     reservationStore: ReservationStore,
-    reservationExpiration: FiniteDuration,
     storeId: Node.Id
   )(implicit system: ActorSystem): CrateStore =
     new CrateStore(
-      reservationStore,
-      reservationExpiration,
-      storeId
+      reservationStore = reservationStore,
+      storeId = storeId
     ) {
-      override protected def directSink(manifest: Manifest): Future[Sink[ByteString, Future[Done]]] =
-        backend.sink(manifest.crate)
-
-      override protected def directSource(crate: Crate.Id): Future[Option[Source[ByteString, NotUsed]]] =
-        backend.source(crate)
-
-      override protected def dropContent(crate: Crate.Id): Future[Boolean] =
-        backend.delete(crate)
-
-      override protected def isStorageAvailable(request: CrateStorageRequest): Future[Boolean] =
-        backend.canStore(request.size * request.copies)
+      override def backend: StreamingBackend = streamingBackend
     }
 }

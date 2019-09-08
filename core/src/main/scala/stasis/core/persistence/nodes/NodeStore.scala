@@ -1,10 +1,14 @@
 package stasis.core.persistence.nodes
 
-import scala.concurrent.Future
-
 import akka.Done
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
+import akka.util.Timeout
+import stasis.core.persistence.StoreInitializationResult
 import stasis.core.persistence.backends.KeyValueBackend
+import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.routing.Node
+
+import scala.concurrent.{ExecutionContext, Future}
 
 trait NodeStore { store =>
   def put(node: Node): Future[Done]
@@ -19,10 +23,59 @@ trait NodeStore { store =>
 }
 
 object NodeStore {
-  def apply(backend: KeyValueBackend[Node.Id, Node]): NodeStore = new NodeStore {
-    override def put(node: Node): Future[Done] = backend.put(node.id, node)
-    override def delete(node: Node.Id): Future[Boolean] = backend.delete(node)
-    override def get(node: Node.Id): Future[Option[Node]] = backend.get(node)
-    override def nodes: Future[Map[Node.Id, Node]] = backend.entries
+  def apply(
+    backend: KeyValueBackend[Node.Id, Node],
+    cachingEnabled: Boolean
+  )(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout): StoreInitializationResult[NodeStore] = {
+    implicit val ec: ExecutionContext = system.executionContext
+
+    val cacheOpt: Option[KeyValueBackend[Node.Id, Node]] =
+      if (cachingEnabled) {
+        Some(MemoryBackend[Node.Id, Node](name = s"nodes-cache-${java.util.UUID.randomUUID()}"))
+      } else {
+        None
+      }
+
+    val caching: Future[Done] = cacheOpt match {
+      case Some(cache) =>
+        backend.entries.flatMap { entries =>
+          Future
+            .sequence(entries.map { case (id, node) => cache.put(id, node) })
+            .map(_ => Done)
+        }
+
+      case None => Future.successful(Done)
+    }
+
+    val store: NodeStore = new NodeStore {
+      override def put(node: Node): Future[Done] =
+        cacheOpt match {
+          case Some(cache) => backend.put(node.id, node).flatMap(_ => cache.put(node.id, node))
+          case None        => backend.put(node.id, node)
+        }
+
+      override def delete(node: Node.Id): Future[Boolean] =
+        cacheOpt match {
+          case Some(cache) => backend.delete(node).flatMap(_ => cache.delete(node))
+          case None        => backend.delete(node)
+        }
+
+      override def get(node: Node.Id): Future[Option[Node]] =
+        cacheOpt match {
+          case Some(cache) => cache.get(node)
+          case None        => backend.get(node)
+        }
+
+      override def nodes: Future[Map[Node.Id, Node]] =
+        cacheOpt match {
+          case Some(cache) => cache.entries
+          case None        => backend.entries
+        }
+    }
+
+    StoreInitializationResult(
+      store = store,
+      init = caching
+    )
   }
 }

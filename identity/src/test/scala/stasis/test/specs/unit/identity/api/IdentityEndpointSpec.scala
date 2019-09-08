@@ -28,7 +28,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
     val endpoint = new IdentityEndpoint(
       keys = Seq(
         MockJwksGenerators.generateRandomRsaKey(
-          keyId = Some(Generators.generateString(withSize = 16))
+          keyId = Some(stasis.test.Generators.generateString(withSize = 16))
         )
       ),
       oauthConfig = oauthConfig,
@@ -53,7 +53,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
 
     val keys = Seq(
       MockJwksGenerators.generateRandomRsaKey(
-        keyId = Some(Generators.generateString(withSize = 16))
+        keyId = Some(stasis.test.Generators.generateString(withSize = 16))
       )
     )
 
@@ -85,7 +85,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
     val endpoint = new IdentityEndpoint(
       keys = Seq(
         MockJwksGenerators.generateRandomRsaKey(
-          keyId = Some(Generators.generateString(withSize = 16))
+          keyId = Some(stasis.test.Generators.generateString(withSize = 16))
         )
       ),
       oauthConfig = oauthConfig,
@@ -112,7 +112,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
     val endpoint = new IdentityEndpoint(
       keys = Seq(
         MockJwksGenerators.generateRandomRsaKey(
-          keyId = Some(Generators.generateString(withSize = 16))
+          keyId = Some(stasis.test.Generators.generateString(withSize = 16))
         )
       ),
       oauthConfig = oauthConfig,
@@ -151,7 +151,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
     val endpoint = new IdentityEndpoint(
       keys = Seq(
         MockJwksGenerators.generateRandomRsaKey(
-          keyId = Some(Generators.generateString(withSize = 16))
+          keyId = Some(stasis.test.Generators.generateString(withSize = 16))
         )
       ),
       oauthConfig = oauthConfig,
