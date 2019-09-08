@@ -21,14 +21,14 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = Generators.generateString(withSize = secrets.owner.saltSize)
+    val salt = stasis.test.Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
       password = Secret.derive(rawPassword, salt)(secrets.owner),
       salt = salt
     )
     val credentials = BasicHttpCredentials(owner.username, rawPassword)
 
-    val state = Generators.generateString(withSize = 16)
+    val state = stasis.test.Generators.generateString(withSize = 16)
     val scope = s"${AudienceExtraction.UrnPrefix}:${api.id}"
 
     val uri =
@@ -72,17 +72,17 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = Generators.generateString(withSize = secrets.owner.saltSize)
+    val salt = stasis.test.Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
       password = Secret.derive(rawPassword, salt)(secrets.owner),
       salt = salt
     )
     val credentials = BasicHttpCredentials(owner.username, rawPassword)
 
-    val state = Generators.generateString(withSize = 16)
+    val state = stasis.test.Generators.generateString(withSize = 16)
     val scope = s"${AudienceExtraction.UrnPrefix}:${api.id}"
     val storedChallenge = StoredAuthorizationCode.Challenge(
-      value = Generators.generateString(withSize = 128),
+      value = stasis.test.Generators.generateString(withSize = 128),
       method = None
     )
 
@@ -128,7 +128,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = Generators.generateString(withSize = secrets.owner.saltSize)
+    val salt = stasis.test.Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
       password = Secret.derive(rawPassword, salt)(secrets.owner),
       salt = salt
@@ -136,7 +136,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     val credentials = BasicHttpCredentials(owner.username, rawPassword)
 
     val scope = s"${AudienceExtraction.UrnPrefix}:${api.id}"
-    val state = Generators.generateString(withSize = 16)
+    val state = stasis.test.Generators.generateString(withSize = 16)
 
     val uri =
       s"/authorization" +
@@ -193,7 +193,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = Generators.generateString(withSize = secrets.client.saltSize)
+    val salt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
@@ -241,7 +241,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = Generators.generateString(withSize = secrets.client.saltSize)
+    val salt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
@@ -249,7 +249,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     val credentials = BasicHttpCredentials(client.id.toString, rawPassword)
 
     val storedChallenge = StoredAuthorizationCode.Challenge(
-      value = Generators.generateString(withSize = 128),
+      value = stasis.test.Generators.generateString(withSize = 128),
       method = None
     )
 
@@ -292,7 +292,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     val oauth = new OAuth(config, providers)
 
     val rawPassword = "some-password"
-    val salt = Generators.generateString(withSize = secrets.client.saltSize)
+    val salt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
@@ -328,7 +328,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = Generators.generateString(withSize = secrets.client.saltSize)
+    val salt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
@@ -372,7 +372,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val clientRawPassword = "some-password"
-    val clientSalt = Generators.generateString(withSize = secrets.client.saltSize)
+    val clientSalt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(clientRawPassword, clientSalt)(secrets.client),
       salt = clientSalt
@@ -380,7 +380,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     val credentials = BasicHttpCredentials(client.id.toString, clientRawPassword)
 
     val ownerRawPassword = "some-password"
-    val ownerSalt = Generators.generateString(withSize = secrets.owner.saltSize)
+    val ownerSalt = stasis.test.Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
       password = Secret.derive(ownerRawPassword, ownerSalt)(secrets.owner),
       salt = ownerSalt
@@ -434,7 +434,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 
-    val salt = Generators.generateString(withSize = secrets.client.saltSize)
+    val salt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive("some-password", salt)(secrets.client),
       salt = salt
@@ -460,14 +460,14 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     val client = Generators.generateClient
     val api = Generators.generateApi
 
-    val salt = Generators.generateString(withSize = secrets.owner.saltSize)
+    val salt = stasis.test.Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
       password = Secret.derive("some-password", salt)(secrets.owner),
       salt = salt
     )
 
     val scope = s"${AudienceExtraction.UrnPrefix}:${api.id}"
-    val state = Generators.generateString(withSize = 16)
+    val state = stasis.test.Generators.generateString(withSize = 16)
 
     val uri =
       s"/authorization" +

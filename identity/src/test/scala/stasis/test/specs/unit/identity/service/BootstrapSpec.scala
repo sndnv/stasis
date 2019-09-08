@@ -18,9 +18,9 @@ import scala.concurrent.duration._
 class BootstrapSpec extends AsyncUnitSpec {
   "Bootstrap" should "setup the service with provided entities" in {
     val expectedEntities = Entities(
-      apis = Generators.generateSeq(min = 1, g = Generators.generateApi),
-      clients = Generators.generateSeq(min = 1, g = Generators.generateClient),
-      owners = Generators.generateSeq(min = 1, g = Generators.generateResourceOwner)
+      apis = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateApi),
+      clients = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateClient),
+      owners = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateResourceOwner)
     )
 
     val persistence = new Persistence(

@@ -20,7 +20,7 @@ class AudienceExtractionSpec extends RouteTest {
   "An AudienceExtraction directive" should "convert client audience to scopes" in {
     val directive = createDirective(clients = createClientStore(), apis = createApiStore())
 
-    val clients = Generators.generateSeq(min = 1, g = Generators.generateClient)
+    val clients = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateClient)
     val validScope = directive.clientAudienceToScope(clients)
     val missingScope = directive.clientAudienceToScope(audience = Seq.empty)
 
@@ -39,7 +39,7 @@ class AudienceExtractionSpec extends RouteTest {
   it should "convert API audience to scopes" in {
     val directive = createDirective(clients = createClientStore(), apis = createApiStore())
 
-    val apis = Generators.generateSeq(min = 1, g = Generators.generateApi)
+    val apis = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateApi)
     val validScope = directive.apiAudienceToScope(apis)
     val missingScope = directive.apiAudienceToScope(audience = Seq.empty)
 
@@ -59,7 +59,7 @@ class AudienceExtractionSpec extends RouteTest {
     val apiStore = createApiStore()
     val directive = createDirective(clients = clientStore, apis = apiStore)
 
-    val clients = Generators.generateSeq(min = 1, g = Generators.generateClient)
+    val clients = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateClient)
     val scope = directive.clientAudienceToScope(clients)
 
     val routes = directive.extractClientAudience(scopeOpt = scope) { clients =>
@@ -95,7 +95,7 @@ class AudienceExtractionSpec extends RouteTest {
     val apiStore = createApiStore()
     val directive = createDirective(clients = clientStore, apis = apiStore)
 
-    val apis = Generators.generateSeq(min = 1, g = Generators.generateApi)
+    val apis = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateApi)
     val scope = directive.apiAudienceToScope(apis)
 
     val routes = directive.extractApiAudience(scopeOpt = scope) { apis =>
@@ -130,7 +130,7 @@ class AudienceExtractionSpec extends RouteTest {
     val apiStore = createApiStore()
     val directive = createDirective(clients = clientStore, apis = apiStore)
 
-    val clients = Generators.generateSeq(min = 1, g = Generators.generateClient)
+    val clients = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateClient)
 
     val routes = directive.extractClientAudience(scopeOpt = Some("invalid-scope")) { clients =>
       Directives.complete(StatusCodes.OK, clients.map(_.id.toString).mkString(","))
@@ -148,7 +148,7 @@ class AudienceExtractionSpec extends RouteTest {
     val apiStore = createApiStore()
     val directive = createDirective(clients = clientStore, apis = apiStore)
 
-    val clients = Generators.generateSeq(min = 1, g = Generators.generateClient)
+    val clients = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateClient)
     val scope = directive.clientAudienceToScope(clients)
 
     val routes = directive.extractClientAudience(scopeOpt = scope) { clients =>

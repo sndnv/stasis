@@ -60,7 +60,10 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
     val scope = "some-scope"
-    val challenge = StoredAuthorizationCode.Challenge(value = Generators.generateString(withSize = 128), method = None)
+    val challenge = StoredAuthorizationCode.Challenge(
+      value = stasis.test.Generators.generateString(withSize = 128),
+      method = None
+    )
 
     val routes = directive.consumeAuthorizationCode(client, code) {
       case (extractedOwner, extractedScope) =>
@@ -88,7 +91,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
     val scope = "some-scope"
-    val verifier = Generators.generateString(withSize = 128)
+    val verifier = stasis.test.Generators.generateString(withSize = 128)
     val challenge = StoredAuthorizationCode.Challenge(value = verifier, method = Some(ChallengeMethod.Plain))
 
     val routes = directive.consumeAuthorizationCode(client, code, verifier) {
@@ -120,7 +123,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
     val scope = "some-scope"
-    val verifier = Generators.generateString(withSize = 128)
+    val verifier = stasis.test.Generators.generateString(withSize = 128)
 
     val encodedVerifier =
       Base64.getUrlEncoder
@@ -162,9 +165,16 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
     val scope = "some-scope"
-    val challenge = StoredAuthorizationCode.Challenge(value = Generators.generateString(withSize = 128), method = None)
+    val challenge = StoredAuthorizationCode.Challenge(
+      value = stasis.test.Generators.generateString(withSize = 128),
+      method = None
+    )
 
-    val routes = directive.consumeAuthorizationCode(client, code, Generators.generateString(withSize = 128)) {
+    val routes = directive.consumeAuthorizationCode(
+      client = client,
+      providedCode = code,
+      stasis.test.Generators.generateString(withSize = 128)
+    ) {
       case (extractedOwner, extractedScope) =>
         Directives.complete(
           StatusCodes.OK,
@@ -190,7 +200,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
     val scope = "some-scope"
-    val verifier = Generators.generateString(withSize = 128)
+    val verifier = stasis.test.Generators.generateString(withSize = 128)
 
     val routes = directive.consumeAuthorizationCode(client, code, verifier) {
       case (extractedOwner, extractedScope) =>

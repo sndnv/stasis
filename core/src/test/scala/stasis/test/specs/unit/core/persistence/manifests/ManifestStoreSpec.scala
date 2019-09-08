@@ -9,16 +9,6 @@ import stasis.core.routing.Node
 import stasis.test.specs.unit.AsyncUnitSpec
 
 class ManifestStoreSpec extends AsyncUnitSpec {
-
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
-    "ManifestStoreSpec"
-  )
-
-  private def createStore(): ManifestStore = ManifestStore(
-    MemoryBackend[Crate.Id, Manifest](name = s"manifest-store-${java.util.UUID.randomUUID()}")
-  )
-
   "A ManifestStore" should "add, retrieve and delete manifests" in {
     val store = createStore()
 
@@ -64,4 +54,13 @@ class ManifestStoreSpec extends AsyncUnitSpec {
       a[ClassCastException] should be thrownBy { val _ = storeView.asInstanceOf[ManifestStore] }
     }
   }
+
+  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+    "ManifestStoreSpec"
+  )
+
+  private def createStore(): ManifestStore = ManifestStore(
+    MemoryBackend[Crate.Id, Manifest](name = s"manifest-store-${java.util.UUID.randomUUID()}")
+  )
 }

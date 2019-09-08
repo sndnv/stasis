@@ -24,7 +24,7 @@ class OwnersSpec extends RouteTest {
     val secret = Secret(ByteString("some-secret"))
     val salt = "some-salt"
 
-    val expectedOwners = Generators
+    val expectedOwners = stasis.test.Generators
       .generateSeq(min = 2, g = Generators.generateResourceOwner)
       .map(_.copy(password = secret, salt = salt))
 

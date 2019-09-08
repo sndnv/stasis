@@ -1,32 +1,19 @@
 package stasis.test.specs.unit.core.persistence.reservations
 
+import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.packaging.Crate
-import stasis.core.persistence.CrateStorageReservation
+import stasis.core.persistence.{CrateStorageReservation, StoreInitializationResult}
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.routing.Node
 import stasis.test.specs.unit.AsyncUnitSpec
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class ReservationStoreSpec extends AsyncUnitSpec {
-
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
-    "ReservationStoreSpec"
-  )
-
-  private def createStore(): ReservationStore = ReservationStore(
-    backend = MemoryBackend[CrateStorageReservation.Id, CrateStorageReservation](
-      name = s"reservation-store-${java.util.UUID.randomUUID()}"
-    ),
-    cache = MemoryBackend[(Crate.Id, Node.Id), CrateStorageReservation.Id](
-      name = s"reservation-cache-${java.util.UUID.randomUUID()}"
-    )
-  )
-
   "A ReservationStore" should "add, retrieve and delete reservations" in {
     val store = createStore()
 
@@ -35,7 +22,6 @@ class ReservationStoreSpec extends AsyncUnitSpec {
       crate = Crate.generateId(),
       size = 1,
       copies = 3,
-      expiration = 1.second,
       origin = Node.generateId(),
       target = Node.generateId()
     )
@@ -59,7 +45,6 @@ class ReservationStoreSpec extends AsyncUnitSpec {
       crate = Crate.generateId(),
       size = 1,
       copies = 3,
-      expiration = 1.second,
       origin = Node.generateId(),
       target = Node.generateId()
     )
@@ -76,6 +61,30 @@ class ReservationStoreSpec extends AsyncUnitSpec {
     }
   }
 
+  it should "expire old reservations" in {
+    val expiration = 100.millis
+    val store = createStore(reservationExpiration = expiration)
+
+    val expectedReservation = CrateStorageReservation(
+      id = CrateStorageReservation.generateId(),
+      crate = Crate.generateId(),
+      size = 1,
+      copies = 3,
+      origin = Node.generateId(),
+      target = Node.generateId()
+    )
+
+    for {
+      _ <- store.put(expectedReservation)
+      actualReservation <- store.get(expectedReservation.id)
+      _ <- akka.pattern.after(expiration * 2, using = system.scheduler)(Future.successful(Done))
+      missingReservation <- store.get(expectedReservation.id)
+    } yield {
+      actualReservation should be(Some(expectedReservation))
+      missingReservation should be(None)
+    }
+  }
+
   it should "provide a read-only view" in {
     val store = createStore()
     val storeView = store.view
@@ -85,7 +94,6 @@ class ReservationStoreSpec extends AsyncUnitSpec {
       crate = Crate.generateId(),
       size = 1,
       copies = 3,
-      expiration = 1.second,
       origin = Node.generateId(),
       target = Node.generateId()
     )
@@ -104,5 +112,23 @@ class ReservationStoreSpec extends AsyncUnitSpec {
       reservationMissing should be(false)
       a[ClassCastException] should be thrownBy { val _ = storeView.asInstanceOf[ReservationStore] }
     }
+  }
+
+  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+    "ReservationStoreSpec"
+  )
+
+  private def createStore(reservationExpiration: FiniteDuration = 3.seconds): ReservationStore = {
+    val StoreInitializationResult(store, init) = ReservationStore(
+      expiration = reservationExpiration,
+      backend = MemoryBackend[CrateStorageReservation.Id, CrateStorageReservation](
+        name = s"reservation-store-${java.util.UUID.randomUUID()}"
+      )
+    )
+
+    val _ = init.await
+
+    store
   }
 }

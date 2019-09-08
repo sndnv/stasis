@@ -11,23 +11,20 @@ final case class CrateStorageReservation(
   size: Long,
   copies: Int,
   origin: Node.Id,
-  target: Node.Id,
-  expiration: FiniteDuration
+  target: Node.Id
 )
 
 object CrateStorageReservation {
   def apply(
     request: CrateStorageRequest,
-    target: Node.Id,
-    expiration: FiniteDuration
+    target: Node.Id
   ): CrateStorageReservation = new CrateStorageReservation(
     id = generateId(),
     crate = request.crate,
     size = request.size,
     copies = request.copies,
     origin = request.origin,
-    target = target,
-    expiration = expiration
+    target = target
   )
 
   type Id = java.util.UUID

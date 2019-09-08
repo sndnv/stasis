@@ -15,7 +15,7 @@ import javax.net.ssl.{SSLContext, TrustManagerFactory}
 import org.jose4j.jwk.JsonWebKey
 import org.scalatest.concurrent.Eventually
 import stasis.core.security.tls.EndpointContext
-import stasis.server.service.{Persistence, Service}
+import stasis.server.service.{ApiPersistence, Service}
 import stasis.shared.api.requests.CreateUser
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
@@ -50,8 +50,8 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
 
     val persistence = eventually {
       service.state match {
-        case Service.State.Started(persistence: Persistence, _) => persistence
-        case state                                              => fail(s"Unexpected service state encountered: [$state]")
+        case Service.State.Started(persistence: ApiPersistence, _) => persistence
+        case state                                                 => fail(s"Unexpected service state encountered: [$state]")
       }
     }
 

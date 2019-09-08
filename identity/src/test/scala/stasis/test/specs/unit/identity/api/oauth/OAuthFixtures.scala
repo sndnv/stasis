@@ -14,7 +14,6 @@ import stasis.identity.model.tokens.generators.{JwtBearerAccessTokenGenerator, R
 import stasis.test.specs.unit.core.security.jwt.mocks.MockJwksGenerators
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.api.oauth.OAuthFixtures.{TestSecretConfig, TestStores}
-import stasis.test.specs.unit.identity.model.Generators
 
 import scala.concurrent.duration._
 
@@ -28,7 +27,7 @@ trait OAuthFixtures { _: RouteTest =>
       owners = createOwnerStore()
     ),
     jwk: JsonWebKey = MockJwksGenerators.generateRandomRsaKey(
-      keyId = Some(Generators.generateString(withSize = 16))
+      keyId = Some(stasis.test.Generators.generateString(withSize = 16))
     ),
     testSecretConfig: TestSecretConfig = TestSecretConfig(),
     withRefreshTokens: Boolean = true

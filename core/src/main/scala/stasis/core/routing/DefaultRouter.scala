@@ -7,6 +7,7 @@ import akka.stream.scaladsl.{Broadcast, Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import stasis.core.networking.http.{HttpEndpointAddress, HttpEndpointClient}
+import stasis.core.packaging.Crate.Id
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.manifests.ManifestStore
 import stasis.core.persistence.nodes.NodeStoreView
@@ -14,12 +15,10 @@ import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.persistence.staging.StagingStore
 import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.core.routing.exceptions.{DiscardFailure, DistributionFailure, PullFailure, PushFailure}
-import scala.concurrent.duration._
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
-
-import stasis.core.packaging.Crate.Id
 
 class DefaultRouter(
   httpClient: HttpEndpointClient,
@@ -295,14 +294,12 @@ class DefaultRouter(
 
                 if (reservations.nonEmpty) {
                   val reservedCopies = reservations.map(_.copies).sum
-                  val minExpiration = reservations.map(_.expiration.toSeconds).foldLeft(Long.MaxValue)(math.min)
 
                   val reservation = CrateStorageReservation(
                     id = CrateStorageReservation.generateId(),
                     crate = request.crate,
                     size = request.size,
                     copies = math.min(request.copies, reservedCopies),
-                    expiration = minExpiration.seconds,
                     origin = request.origin,
                     target = routerId
                   )
@@ -330,7 +327,7 @@ class DefaultRouter(
   private def nodeSink(node: Node, manifest: Manifest): Future[Sink[ByteString, Future[Done]]] =
     node match {
       case Node.Local(_, store) =>
-        store.sink(manifest)
+        store.sink(manifest.crate)
 
       case Node.Remote.Http(_, address) =>
         httpClient.sink(address, manifest)

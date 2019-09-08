@@ -30,7 +30,7 @@ object Bootstrap {
 
   def run(
     bootstrapConfig: typesafe.Config,
-    persistence: Persistence
+    persistence: ApiPersistence
   )(
     implicit ec: ExecutionContext,
     log: LoggingAdapter,
@@ -63,7 +63,7 @@ object Bootstrap {
 
   def run(
     entities: Entities,
-    persistence: Persistence
+    persistence: ApiPersistence
   )(implicit ec: ExecutionContext, log: LoggingAdapter): Future[Done] =
     for {
       _ <- persistence.init()

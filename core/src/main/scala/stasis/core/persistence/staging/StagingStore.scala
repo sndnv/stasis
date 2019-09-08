@@ -132,7 +132,7 @@ class StagingStore(
                   case (node, copies) =>
                     node match {
                       case Node.Local(_, store) =>
-                        store.sink(manifest.copy(copies = copies))
+                        store.sink(manifest.crate)
 
                       case Node.Remote.Http(_, address) =>
                         httpClient.sink(address, manifest.copy(copies = copies))

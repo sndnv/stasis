@@ -17,7 +17,7 @@ class ApisSpec extends RouteTest {
     val store = createApiStore()
     val apis = new Apis(store)
 
-    val expectedApis = Generators
+    val expectedApis = stasis.test.Generators
       .generateSeq(min = 2, g = Generators.generateApi)
 
     Future.sequence(expectedApis.map(store.put)).await

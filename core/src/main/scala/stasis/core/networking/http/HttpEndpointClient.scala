@@ -13,11 +13,11 @@ import akka.util.ByteString
 import akka.{Done, NotUsed}
 import stasis.core.networking.exceptions.{CredentialsFailure, EndpointFailure, ReservationFailure}
 import stasis.core.networking.{EndpointClient, EndpointCredentials}
+import stasis.core.packaging.Crate.Id
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
-import scala.concurrent.{ExecutionContext, Future}
 
-import stasis.core.packaging.Crate.Id
+import scala.concurrent.{ExecutionContext, Future}
 
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
 class HttpEndpointClient(
@@ -25,8 +25,8 @@ class HttpEndpointClient(
 )(implicit val system: ActorSystem)
     extends EndpointClient[HttpEndpointAddress, HttpCredentials] {
 
-  import HttpEndpoint._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import stasis.core.api.Formats._
 
   private implicit val mat: ActorMaterializer = ActorMaterializer()
   private implicit val ec: ExecutionContext = system.dispatcher

@@ -10,7 +10,7 @@ import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.event.{Logging, LoggingAdapter}
 import com.typesafe.config.Config
 import stasis.server.service.Bootstrap.Entities
-import stasis.server.service.{Bootstrap, Persistence}
+import stasis.server.service.{ApiPersistence, Bootstrap}
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
@@ -24,13 +24,13 @@ import scala.concurrent.duration._
 class BootstrapSpec extends AsyncUnitSpec {
   "Bootstrap" should "setup the service with provided entities" in {
     val expectedEntities = Entities(
-      definitions = Generators.generateSeq(min = 1, g = Generators.generateDefinition),
-      devices = Generators.generateSeq(min = 1, g = Generators.generateDevice),
-      schedules = Generators.generateSeq(min = 1, g = Generators.generateSchedule),
-      users = Generators.generateSeq(min = 1, g = Generators.generateUser)
+      definitions = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateDefinition),
+      devices = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateDevice),
+      schedules = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateSchedule),
+      users = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateUser)
     )
 
-    val persistence = new Persistence(
+    val persistence = new ApiPersistence(
       persistenceConfig = config.getConfig("persistence")
     )
 
@@ -56,7 +56,7 @@ class BootstrapSpec extends AsyncUnitSpec {
   }
 
   it should "setup the service with configured entities" in {
-    val persistence = new Persistence(
+    val persistence = new ApiPersistence(
       persistenceConfig = config.getConfig("persistence")
     )
 
@@ -200,7 +200,7 @@ class BootstrapSpec extends AsyncUnitSpec {
   }
 
   it should "not run if not enabled" in {
-    val persistence = new Persistence(
+    val persistence = new ApiPersistence(
       persistenceConfig = config.getConfig("persistence")
     )
 

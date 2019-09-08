@@ -10,7 +10,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.{ConnectionContext, Http}
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
-import stasis.server.api.ServerEndpoint
+import stasis.server.api.ApiEndpoint
 import stasis.server.model.datasets.{DatasetDefinitionStore, DatasetEntryStore}
 import stasis.server.model.devices.DeviceStore
 import stasis.server.model.schedules.ScheduleStore
@@ -27,11 +27,11 @@ import stasis.test.specs.unit.server.security.mocks.{MockResourceProvider, MockU
 import scala.collection.mutable
 import scala.concurrent.duration._
 
-class ServerEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
+class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
-  "A ServerEndpoint" should "successfully authenticate a user" in {
+  "A ApiEndpoint" should "successfully authenticate a user" in {
     val fixtures = new TestFixtures {}
 
     val user = User(
@@ -182,7 +182,7 @@ class ServerEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "handle authorization failures reported by routes" in {
-    val endpoint = new ServerEndpoint(
+    val endpoint = new ApiEndpoint(
       resourceProvider = new MockResourceProvider(Set.empty),
       authenticator = new MockUserAuthenticator(testUser.toString, testPassword)
     )
@@ -209,7 +209,7 @@ class ServerEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   it should "handle generic failures reported by routes" in {
     val userStore: UserStore = MockUserStore()
 
-    val endpoint = new ServerEndpoint(
+    val endpoint = new ApiEndpoint(
       resourceProvider = new MockResourceProvider(Set(userStore.manageSelf())),
       authenticator = new MockUserAuthenticator(testUser.toString, testPassword)
     )
@@ -233,7 +233,7 @@ class ServerEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  private implicit val untypedSystem: ActorSystem = ActorSystem(name = "ServerEndpointSpec")
+  private implicit val untypedSystem: ActorSystem = ActorSystem(name = "ApiEndpointSpec")
   private implicit val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)
 
   private trait TestFixtures {
@@ -268,7 +268,7 @@ class ServerEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     lazy val authenticator: UserAuthenticator = new MockUserAuthenticator(testUser.toString, testPassword)
 
-    lazy val endpoint: ServerEndpoint = new ServerEndpoint(provider, authenticator)
+    lazy val endpoint: ApiEndpoint = new ApiEndpoint(provider, authenticator)
   }
 
   private val testUser = User.generateId()

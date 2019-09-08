@@ -18,48 +18,6 @@ import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
 class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfterAll {
-
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
-    "StagingStoreSpec"
-  )
-
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(3.seconds, 250.milliseconds)
-
-  private trait TestFixtures {
-    lazy val stagingCrateStore: MockCrateStore = new MockCrateStore(new MockReservationStore())
-    lazy val nodeCrateStore: MockCrateStore = new MockCrateStore(new MockReservationStore())
-    lazy val testClient: MockHttpEndpointClient = new MockHttpEndpointClient()
-    lazy val localNodes: Map[Node.Local, Int] = Map(
-      Node.Local(Node.generateId(), crateStore = nodeCrateStore) -> 1
-    )
-    lazy val remoteNodes: Map[Node.Remote.Http, Int] = Map(
-      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:8000")) -> 1,
-      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:9000")) -> 1
-    )
-  }
-
-  private class TestStagingStore(
-    val fixtures: TestFixtures = new TestFixtures {}
-  ) extends StagingStore(
-        fixtures.stagingCrateStore,
-        fixtures.testClient,
-        destagingDelay = 50.milliseconds
-      )
-
-  private val testContent = ByteString("some value")
-
-  private val testManifest = Manifest(
-    crate = Crate.generateId(),
-    size = testContent.size,
-    copies = 4,
-    source = Node.generateId(),
-    origin = Node.generateId()
-  )
-
-  override protected def afterAll(): Unit =
-    system.terminate()
-
   "A StagingStore" should "stage crates to temporary storage" in {
     val fixtures = new TestFixtures {}
     val store = new TestStagingStore(fixtures)
@@ -212,4 +170,45 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
       result should be(false)
     }
   }
+
+  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+    "StagingStoreSpec"
+  )
+
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(3.seconds, 250.milliseconds)
+
+  private trait TestFixtures {
+    lazy val stagingCrateStore: MockCrateStore = new MockCrateStore(new MockReservationStore())
+    lazy val nodeCrateStore: MockCrateStore = new MockCrateStore(new MockReservationStore())
+    lazy val testClient: MockHttpEndpointClient = new MockHttpEndpointClient()
+    lazy val localNodes: Map[Node.Local, Int] = Map(
+      Node.Local(Node.generateId(), crateStore = nodeCrateStore) -> 1
+    )
+    lazy val remoteNodes: Map[Node.Remote.Http, Int] = Map(
+      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:8000")) -> 1,
+      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:9000")) -> 1
+    )
+  }
+
+  private class TestStagingStore(
+    val fixtures: TestFixtures = new TestFixtures {}
+  ) extends StagingStore(
+        fixtures.stagingCrateStore,
+        fixtures.testClient,
+        destagingDelay = 50.milliseconds
+      )
+
+  private val testContent = ByteString("some value")
+
+  private val testManifest = Manifest(
+    crate = Crate.generateId(),
+    size = testContent.size,
+    copies = 4,
+    source = Node.generateId(),
+    origin = Node.generateId()
+  )
+
+  override protected def afterAll(): Unit =
+    system.terminate()
 }

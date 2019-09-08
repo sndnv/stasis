@@ -83,7 +83,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = Generators.generateString(withSize = secrets.owner.saltSize)
+    val salt = stasis.test.Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
       password = Secret.derive(rawPassword, salt)(secrets.owner),
       salt = salt
@@ -95,7 +95,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
       client_id = client.id,
       redirect_uri = Some(client.redirectUri),
       scope = grant.apiAudienceToScope(Seq(api)),
-      state = Generators.generateString(withSize = 16)
+      state = stasis.test.Generators.generateString(withSize = 16)
     )
 
     stores.clients.put(client).await
@@ -129,7 +129,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = Generators.generateString(withSize = secrets.owner.saltSize)
+    val salt = stasis.test.Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
       password = Secret.derive(rawPassword, salt)(secrets.owner),
       salt = salt
@@ -141,7 +141,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
       client_id = client.id,
       redirect_uri = Some(client.redirectUri),
       scope = grant.apiAudienceToScope(Seq(api)),
-      state = Generators.generateString(withSize = 16)
+      state = stasis.test.Generators.generateString(withSize = 16)
     )
 
     stores.clients.put(client).await
@@ -177,7 +177,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = Generators.generateString(withSize = secrets.owner.saltSize)
+    val salt = stasis.test.Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
       password = Secret.derive(rawPassword, salt)(secrets.owner),
       salt = salt
@@ -189,7 +189,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
       client_id = client.id,
       redirect_uri = Some("some-uri"),
       scope = grant.apiAudienceToScope(Seq(api)),
-      state = Generators.generateString(withSize = 16)
+      state = stasis.test.Generators.generateString(withSize = 16)
     )
 
     stores.clients.put(client).await

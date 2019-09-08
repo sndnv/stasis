@@ -35,7 +35,7 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
     val api = Generators.generateApi
 
     val clientRawPassword = "some-password"
-    val clientSalt = Generators.generateString(withSize = secrets.client.saltSize)
+    val clientSalt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(clientRawPassword, clientSalt)(secrets.client),
       salt = clientSalt
@@ -43,7 +43,7 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
     val credentials = BasicHttpCredentials(client.id.toString, clientRawPassword)
 
     val ownerRawPassword = "some-password"
-    val ownerSalt = Generators.generateString(withSize = secrets.owner.saltSize)
+    val ownerSalt = stasis.test.Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
       password = Secret.derive(ownerRawPassword, ownerSalt)(secrets.owner),
       salt = ownerSalt
@@ -83,7 +83,7 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
     val api = Generators.generateApi
 
     val clientRawPassword = "some-password"
-    val clientSalt = Generators.generateString(withSize = secrets.client.saltSize)
+    val clientSalt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(clientRawPassword, clientSalt)(secrets.client),
       salt = clientSalt
@@ -91,7 +91,7 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
     val credentials = BasicHttpCredentials(client.id.toString, clientRawPassword)
 
     val ownerRawPassword = "some-password"
-    val ownerSalt = Generators.generateString(withSize = secrets.owner.saltSize)
+    val ownerSalt = stasis.test.Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
       password = Secret.derive(ownerRawPassword, ownerSalt)(secrets.owner),
       salt = ownerSalt

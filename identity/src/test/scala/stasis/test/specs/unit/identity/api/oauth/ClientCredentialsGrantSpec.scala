@@ -29,7 +29,7 @@ class ClientCredentialsGrantSpec extends RouteTest with OAuthFixtures {
     val grant = new ClientCredentialsGrant(config, providers)
 
     val rawPassword = "some-password"
-    val salt = Generators.generateString(withSize = secrets.client.saltSize)
+    val salt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt

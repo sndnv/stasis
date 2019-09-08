@@ -7,9 +7,8 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
-import stasis.core.packaging
-import stasis.core.packaging.Crate.Id
 import stasis.core.packaging.{Crate, Manifest}
+import stasis.core.persistence.backends.StreamingBackend
 import stasis.core.persistence.backends.memory.StreamingMemoryBackend
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.exceptions.ReservationFailure
@@ -23,52 +22,13 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class CrateStoreSpec extends AsyncUnitSpec {
-
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
-    "CrateStoreSpec"
-  )
-
-  private implicit val mat: ActorMaterializer = ActorMaterializer()(system.toUntyped)
-
-  private class TestCrateStore(
-    val reservationStore: ReservationStore = new MockReservationStore(ignoreMissingReservations = false),
-    val reservationExpiration: FiniteDuration = 1.second,
-    val isStorageAvailable: Boolean = true,
-    val backingCrateStore: MockCrateStore = new MockCrateStore(new MockReservationStore())
-  )(implicit val typedSystem: ActorSystem[SpawnProtocol])
-      extends CrateStore(reservationStore, reservationExpiration, storeId = Node.generateId())(typedSystem.toUntyped) {
-    override protected def directSink(manifest: packaging.Manifest): Future[Sink[ByteString, Future[Done]]] =
-      backingCrateStore.sink(manifest)
-
-    override protected def directSource(crate: Id): Future[Option[Source[ByteString, NotUsed]]] =
-      backingCrateStore.retrieve(crate)
-
-    override protected def dropContent(crate: Id): Future[Boolean] =
-      backingCrateStore.discard(crate)
-
-    override protected def isStorageAvailable(request: CrateStorageRequest): Future[Boolean] =
-      Future.successful(isStorageAvailable)
-  }
-
-  private val testContent = ByteString("some value")
-
-  private val testManifest = Manifest(
-    crate = Crate.generateId(),
-    size = testContent.size,
-    copies = 4,
-    source = Node.generateId(),
-    origin = Node.generateId()
-  )
-
   "A CrateStore" should "successfully reserve crate storage" in {
     val store = new TestCrateStore()
 
     val reservationRequest = CrateStorageRequest(testManifest)
     val expectedReservation = CrateStorageReservation(
       reservationRequest,
-      target = store.storeId,
-      expiration = 1.second
+      target = store.storeId
     )
 
     val actualReservation = store.reserve(reservationRequest).await match {
@@ -85,8 +45,7 @@ class CrateStoreSpec extends AsyncUnitSpec {
     val reservationRequest = CrateStorageRequest(testManifest)
     val expectedReservation = CrateStorageReservation(
       reservationRequest,
-      target = store.storeId,
-      expiration = 1.second
+      target = store.storeId
     )
 
     val actualReservation = store.reserve(reservationRequest).await match {
@@ -121,8 +80,7 @@ class CrateStoreSpec extends AsyncUnitSpec {
     val reservationRequest = CrateStorageRequest(testManifest)
     val expectedReservation = CrateStorageReservation(
       reservationRequest,
-      target = store.storeId,
-      expiration = 1.second
+      target = store.storeId
     )
 
     val actualReservation = store.reserve(reservationRequest).await match {
@@ -160,8 +118,7 @@ class CrateStoreSpec extends AsyncUnitSpec {
     val reservationRequest = CrateStorageRequest(testManifest)
     val expectedReservation = CrateStorageReservation(
       reservationRequest,
-      target = store.storeId,
-      expiration = 1.second
+      target = store.storeId
     )
 
     val actualReservation = store.reserve(reservationRequest).await match {
@@ -171,7 +128,7 @@ class CrateStoreSpec extends AsyncUnitSpec {
 
     actualReservation should be(expectedReservation.copy(id = actualReservation.id))
 
-    val sink = store.sink(testManifest).await
+    val sink = store.sink(testManifest.crate).await
     Source.single(testContent).runWith(sink).await
 
     store.backingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
@@ -182,7 +139,7 @@ class CrateStoreSpec extends AsyncUnitSpec {
     val store = new TestCrateStore()
 
     store
-      .sink(testManifest)
+      .sink(testManifest.crate)
       .map { response =>
         fail(s"Received unexpected push response from store: [$response]")
       }
@@ -268,9 +225,8 @@ class CrateStoreSpec extends AsyncUnitSpec {
 
   it should "create crate stores" in {
     val store = CrateStore(
-      backend = StreamingMemoryBackend(maxSize = 1000, name = "streaming-map-store"),
+      streamingBackend = StreamingMemoryBackend(maxSize = 1000, name = "streaming-map-store"),
       reservationStore = new MockReservationStore(),
-      reservationExpiration = 3.seconds,
       storeId = Node.generateId()
     )(system.toUntyped)
 
@@ -283,7 +239,7 @@ class CrateStoreSpec extends AsyncUnitSpec {
     )
 
     for {
-      sink <- store.sink(testManifest)
+      sink <- store.sink(testManifest.crate)
       source <- store.retrieve(testManifest.crate)
       discarded <- store.discard(testManifest.crate)
       reservation <- store.reserve(request)
@@ -294,4 +250,51 @@ class CrateStoreSpec extends AsyncUnitSpec {
       reservation should be(None)
     }
   }
+
+  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+    "CrateStoreSpec"
+  )
+
+  private implicit val mat: ActorMaterializer = ActorMaterializer()(system.toUntyped)
+
+  private class TestCrateStore(
+    val reservationStore: ReservationStore = new MockReservationStore(ignoreMissingReservations = false),
+    val reservationExpiration: FiniteDuration = 1.second,
+    val isStorageAvailable: Boolean = true,
+    val backingCrateStore: MockCrateStore = new MockCrateStore(new MockReservationStore())
+  )(implicit val typedSystem: ActorSystem[SpawnProtocol])
+      extends CrateStore(reservationStore, storeId = Node.generateId())(typedSystem.toUntyped) {
+
+    override def backend: StreamingBackend = new StreamingBackend {
+      override def init(): Future[Done] = Future.successful(Done)
+
+      override def drop(): Future[Done] = Future.successful(Done)
+
+      override def sink(key: Crate.Id): Future[Sink[ByteString, Future[Done]]] =
+        backingCrateStore.sink(key)
+
+      override def source(key: Crate.Id): Future[Option[Source[ByteString, NotUsed]]] =
+        backingCrateStore.retrieve(key)
+
+      override def delete(key: Crate.Id): Future[Boolean] =
+        backingCrateStore.discard(key)
+
+      override def contains(key: Crate.Id): Future[Boolean] =
+        Future.successful(false)
+
+      override def canStore(bytes: Long): Future[Boolean] =
+        Future.successful(isStorageAvailable)
+    }
+  }
+
+  private val testContent = ByteString("some value")
+
+  private val testManifest = Manifest(
+    crate = Crate.generateId(),
+    size = testContent.size,
+    copies = 4,
+    source = Node.generateId(),
+    origin = Node.generateId()
+  )
 }

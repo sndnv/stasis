@@ -9,21 +9,9 @@ import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
-
-import scala.concurrent.duration.{FiniteDuration, _}
-import scala.util.Random
+import stasis.test.Generators._
 
 object Generators {
-  def generateString(
-    withSize: Int
-  )(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): String = {
-    val random = Random.javaRandomToRandom(rnd)
-    random.alphanumeric.take(withSize).mkString("")
-  }
-
-  def generateFiniteDuration(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): FiniteDuration =
-    rnd.nextLong(0, 1.day.toSeconds).seconds
-
   def generateUser(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): User =
     User(
       id = User.generateId(),
@@ -76,11 +64,4 @@ object Generators {
       metadata = Crate.generateId(),
       created = Instant.now()
     )
-
-  def generateSeq[T](
-    min: Int = 0,
-    max: Int = 10,
-    g: => T
-  )(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Seq[T] =
-    Stream.continually(g).take(rnd.nextInt(min, max))
 }

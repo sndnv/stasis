@@ -21,10 +21,10 @@ class AuthorizationCodeStoreSerdesSpec extends UnitSpec {
       code = Generators.generateAuthorizationCode,
       client = Client.generateId(),
       owner = Generators.generateResourceOwner,
-      scope = Some(Generators.generateString(withSize = 16)),
+      scope = Some(stasis.test.Generators.generateString(withSize = 16)),
       challenge = Some(
         StoredAuthorizationCode.Challenge(
-          value = Generators.generateString(withSize = 32),
+          value = stasis.test.Generators.generateString(withSize = 32),
           method = Some(ChallengeMethod.S256)
         )
       )

@@ -20,7 +20,7 @@ class FormatsSpec extends UnitSpec {
 
     permissions.foreach {
       case (permission, json) =>
-        permissionFormat.writes(permission).toString() should be(json)
+        permissionFormat.writes(permission).toString should be(json)
         permissionFormat.reads(Json.parse(json)).asOpt should be(Some(permission))
     }
   }
@@ -33,7 +33,7 @@ class FormatsSpec extends UnitSpec {
 
     processes.foreach {
       case (process, json) =>
-        processFormat.writes(process).toString() should be(json)
+        processFormat.writes(process).toString should be(json)
         processFormat.reads(Json.parse(json)).asOpt should be(Some(process))
     }
   }
@@ -46,7 +46,7 @@ class FormatsSpec extends UnitSpec {
 
     actions.foreach {
       case (action, json) =>
-        missedActionFormat.writes(action).toString() should be(json)
+        missedActionFormat.writes(action).toString should be(json)
         missedActionFormat.reads(Json.parse(json)).asOpt should be(Some(action))
     }
   }
@@ -60,7 +60,7 @@ class FormatsSpec extends UnitSpec {
 
     actions.foreach {
       case (action, json) =>
-        overlapActionFormat.writes(action).toString() should be(json)
+        overlapActionFormat.writes(action).toString should be(json)
         overlapActionFormat.reads(Json.parse(json)).asOpt should be(Some(action))
     }
   }
@@ -74,7 +74,7 @@ class FormatsSpec extends UnitSpec {
 
     policies.foreach {
       case (_, (policy, json)) =>
-        retentionPolicyFormat.writes(policy).toString() should be(json)
+        retentionPolicyFormat.writes(policy).toString should be(json)
         retentionPolicyFormat.reads(Json.parse(json)).asOpt should be(Some(policy))
     }
   }
