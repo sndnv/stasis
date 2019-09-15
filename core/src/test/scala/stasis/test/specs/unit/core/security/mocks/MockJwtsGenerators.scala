@@ -1,4 +1,4 @@
-package stasis.test.specs.unit.core.security.jwt.mocks
+package stasis.test.specs.unit.core.security.mocks
 
 import org.jose4j.jwk.{EllipticCurveJsonWebKey, JsonWebKey, OctetSequenceJsonWebKey, RsaJsonWebKey}
 import org.jose4j.jws.JsonWebSignature

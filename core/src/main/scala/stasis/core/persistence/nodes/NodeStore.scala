@@ -14,10 +14,12 @@ trait NodeStore { store =>
   def put(node: Node): Future[Done]
   def delete(node: Node.Id): Future[Boolean]
   def get(node: Node.Id): Future[Option[Node]]
+  def contains(node: Node.Id): Future[Boolean]
   def nodes: Future[Map[Node.Id, Node]]
 
   def view: NodeStoreView = new NodeStoreView {
     override def get(node: Node.Id): Future[Option[Node]] = store.get(node)
+    override def contains(node: Node.Id): Future[Boolean] = store.contains(node)
     override def nodes: Future[Map[Node.Id, Node]] = store.nodes
   }
 }
@@ -64,6 +66,12 @@ object NodeStore {
         cacheOpt match {
           case Some(cache) => cache.get(node)
           case None        => backend.get(node)
+        }
+
+      override def contains(node: Node.Id): Future[Boolean] =
+        cacheOpt match {
+          case Some(cache) => cache.contains(node)
+          case None        => backend.contains(node)
         }
 
       override def nodes: Future[Map[Node.Id, Node]] =

@@ -9,7 +9,6 @@ import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.core.routing.Router
 import scala.concurrent.{ExecutionContext, Future}
 
-import stasis.core.packaging.Crate.Id
 import stasis.core.routing.exceptions.DiscardFailure
 
 class MockRouter(store: CrateStore)(implicit ec: ExecutionContext) extends Router {
@@ -22,7 +21,7 @@ class MockRouter(store: CrateStore)(implicit ec: ExecutionContext) extends Route
     crate: Crate.Id
   ): Future[Option[Source[ByteString, NotUsed]]] = store.retrieve(crate)
 
-  override def discard(crate: Id): Future[Done] = store.discard(crate).flatMap {
+  override def discard(crate: Crate.Id): Future[Done] = store.discard(crate).flatMap {
     case true  => Future.successful(Done)
     case false => Future.failed(DiscardFailure(s"Backing store could not find crate [$crate]"))
   }

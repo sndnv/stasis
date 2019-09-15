@@ -7,7 +7,6 @@ import akka.stream.scaladsl.{Broadcast, Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import stasis.core.networking.http.{HttpEndpointAddress, HttpEndpointClient}
-import stasis.core.packaging.Crate.Id
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.manifests.ManifestStore
 import stasis.core.persistence.nodes.NodeStoreView
@@ -232,7 +231,7 @@ class DefaultRouter(
     }
   }
 
-  override def discard(crate: Id): Future[Done] =
+  override def discard(crate: Crate.Id): Future[Done] =
     manifestStore.get(crate).flatMap {
       case Some(manifest) =>
         stagingStore

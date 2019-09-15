@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.core.security.jwt
 
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.security.jwt.mocks.MockJwksGenerators
+import stasis.test.specs.unit.core.security.mocks.MockJwksGenerators
 
 class JwtAuthenticatorSpec extends AsyncUnitSpec with JwtAuthenticatorBehaviour {
   "A JwtAuthenticator" should behave like authenticator(

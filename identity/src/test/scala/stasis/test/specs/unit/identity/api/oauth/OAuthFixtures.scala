@@ -11,7 +11,7 @@ import stasis.identity.model.owners.ResourceOwnerStore
 import stasis.identity.model.secrets.Secret
 import stasis.identity.model.tokens.RefreshTokenStore
 import stasis.identity.model.tokens.generators.{JwtBearerAccessTokenGenerator, RandomRefreshTokenGenerator}
-import stasis.test.specs.unit.core.security.jwt.mocks.MockJwksGenerators
+import stasis.test.specs.unit.core.security.mocks.MockJwksGenerators
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.api.oauth.OAuthFixtures.{TestSecretConfig, TestStores}
 

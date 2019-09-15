@@ -3,7 +3,7 @@ package stasis.test.specs.unit.core.security.jwt
 import org.jose4j.jwk.JsonWebKey
 import stasis.core.security.jwt.JwtAuthenticator
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.security.jwt.mocks.{MockJwtKeyProvider, MockJwtsGenerators}
+import stasis.test.specs.unit.core.security.mocks.{MockJwtProvider, MockJwtsGenerators}
 
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
@@ -13,7 +13,7 @@ trait JwtAuthenticatorBehaviour {
   def authenticator(withKeyType: String, withJwk: JsonWebKey): Unit = {
     it should s"successfully authenticate valid tokens ($withKeyType)" in {
       val authenticator = new JwtAuthenticator(
-        provider = MockJwtKeyProvider(withJwk),
+        provider = MockJwtProvider(withJwk),
         audience = "self",
         expirationTolerance = 10.seconds
       )
@@ -35,7 +35,7 @@ trait JwtAuthenticatorBehaviour {
 
     it should s"refuse authentication attempts with invalid tokens ($withKeyType)" in {
       val authenticator = new JwtAuthenticator(
-        provider = MockJwtKeyProvider(withJwk),
+        provider = MockJwtProvider(withJwk),
         audience = "self",
         expirationTolerance = 10.seconds
       )

@@ -8,12 +8,13 @@ import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import org.jose4j.jws.AlgorithmIdentifiers
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.security.exceptions.AuthenticationFailure
-import stasis.core.security.jwt.{JwtAuthenticator, JwtKeyProvider}
+import stasis.core.security.jwt.JwtAuthenticator
+import stasis.core.security.keys.KeyProvider
 import stasis.identity.authentication.manage.DefaultResourceOwnerAuthenticator
 import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore}
 import stasis.identity.model.tokens.generators.JwtBearerAccessTokenGenerator
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.security.jwt.mocks.MockJwksGenerators
+import stasis.test.specs.unit.core.security.mocks.MockJwksGenerators
 import stasis.test.specs.unit.identity.model.Generators
 
 import scala.concurrent.Future
@@ -144,7 +145,7 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
 
   private val jwk = MockJwksGenerators.generateRandomRsaKey(Some("some-key"))
 
-  private val provider = new JwtKeyProvider {
+  private val provider = new KeyProvider {
     override def key(id: Option[String]): Future[Key] = Future.successful(jwk.getKey)
     override def issuer: String = test.issuer
     override def allowedAlgorithms: Seq[String] = Seq(

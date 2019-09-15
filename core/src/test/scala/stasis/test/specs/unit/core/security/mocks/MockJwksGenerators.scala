@@ -1,4 +1,4 @@
-package stasis.test.specs.unit.core.security.jwt.mocks
+package stasis.test.specs.unit.core.security.mocks
 
 import java.util.concurrent.ThreadLocalRandom
 

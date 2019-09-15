@@ -1,4 +1,4 @@
-package stasis.test.specs.unit.core.security.jwt.mocks
+package stasis.test.specs.unit.core.security.mocks
 
 import java.security.PublicKey
 
@@ -9,7 +9,12 @@ import org.jose4j.jwk.JsonWebKeySet
 
 import scala.collection.JavaConverters._
 
-class MockJwksEndpoint(port: Int, rsaKeysCount: Int = 3, ecKeysCount: Int = 3, secretKeysCount: Int = 3) {
+class MockJwksEndpoint(
+  port: Int,
+  rsaKeysCount: Int = 3,
+  ecKeysCount: Int = 3,
+  secretKeysCount: Int = 3
+) {
   private val wireMockServer = new WireMockServer(new WireMockConfiguration().port(port))
 
   def start(): Unit = wireMockServer.start()
@@ -34,8 +39,7 @@ class MockJwksEndpoint(port: Int, rsaKeysCount: Int = 3, ecKeysCount: Int = 3, s
     get(urlEqualTo("/valid/jwks.json"))
       .willReturn(
         okJson(jwks.toJson)
-          .withStatus(200)
-          .withHeader("Content-Type", "application/json"))
+      )
   )
 
   wireMockServer.stubFor(

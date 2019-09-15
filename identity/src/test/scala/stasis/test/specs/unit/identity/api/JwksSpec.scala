@@ -3,7 +3,7 @@ package stasis.test.specs.unit.identity.api
 import akka.http.scaladsl.model.StatusCodes
 import play.api.libs.json.{JsArray, JsObject, Json}
 import stasis.identity.api.Jwks
-import stasis.test.specs.unit.core.security.jwt.mocks.MockJwksGenerators
+import stasis.test.specs.unit.core.security.mocks.MockJwksGenerators
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
 

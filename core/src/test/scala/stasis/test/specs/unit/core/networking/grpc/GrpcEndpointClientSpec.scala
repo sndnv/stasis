@@ -11,7 +11,7 @@ import stasis.core.networking.grpc.{GrpcEndpoint, GrpcEndpointAddress, GrpcEndpo
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.routing.Node
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.networking.mocks.MockGrpcEndpointCredentials
+import stasis.test.specs.unit.core.networking.mocks.MockGrpcNodeCredentialsProvider
 import stasis.test.specs.unit.core.persistence.mocks.{MockCrateStore, MockReservationStore}
 import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockGrpcAuthenticator
@@ -67,7 +67,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpoint = new TestGrpcEndpoint(port = endpointPort)
 
     val client = new GrpcEndpointClient(
-      credentials = new MockGrpcEndpointCredentials(endpointAddress, testNode, testSecret)
+      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
     )
 
     client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).map { _ =>
@@ -86,7 +86,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpoint = new TestGrpcEndpoint(port = endpointPort)
 
     val client = new GrpcEndpointClient(
-      credentials = new MockGrpcEndpointCredentials(endpointAddress, testNode, testSecret)
+      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
     )
 
     client
@@ -123,7 +123,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     )
 
     val client = new GrpcEndpointClient(
-      credentials = new MockGrpcEndpointCredentials(endpointAddress, testNode, testSecret)
+      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
     )
 
     client
@@ -152,7 +152,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpoint = new TestGrpcEndpoint(port = endpointPort)
 
     val client = new GrpcEndpointClient(
-      credentials = new MockGrpcEndpointCredentials(endpointAddress, testNode, testSecret)
+      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
     )
 
     client.sink(endpointAddress, testManifest).flatMap { sink =>
@@ -178,7 +178,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpoint = new TestGrpcEndpoint(port = endpointPort)
 
     val client = new GrpcEndpointClient(
-      credentials = new MockGrpcEndpointCredentials(endpointAddress, testNode, testSecret)
+      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
     )
 
     client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).flatMap { _ =>
@@ -214,7 +214,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
     val client = new GrpcEndpointClient(
-      credentials = new MockGrpcEndpointCredentials(endpointAddress, testNode, testSecret)
+      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
     )
 
     client.pull(endpointAddress, Crate.generateId()).map { response =>
@@ -229,7 +229,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
     val client = new GrpcEndpointClient(
-      credentials = new MockGrpcEndpointCredentials(endpointAddress, testNode, "invalid-secret")
+      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, "invalid-secret")
     )
 
     val crateId = Crate.generateId()
@@ -267,7 +267,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     )
 
     val client = new GrpcEndpointClient(
-      credentials = new MockGrpcEndpointCredentials(
+      credentials = new MockGrpcNodeCredentialsProvider(
         Map(
           primaryEndpointAddress -> (primaryEndpointNode, primaryEndpointSecret),
           secondaryEndpointAddress -> (secondaryEndpointNode, secondaryEndpointSecret)
@@ -290,7 +290,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
     val client = new GrpcEndpointClient(
-      credentials = new MockGrpcEndpointCredentials(Map.empty)
+      credentials = new MockGrpcNodeCredentialsProvider(Map.empty)
     )
 
     client
@@ -302,7 +302,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
         case NonFatal(e) =>
           e.getMessage should be(
             s"Push to endpoint [${endpointAddress.host}] failed for crate [${testManifest.crate}]; " +
-              s"unable to retrieve credentials"
+              s"unable to retrieve credentials: [No credentials found for [GrpcEndpointAddress(localhost,$endpointPort,false)]]"
           )
       }
   }
@@ -314,7 +314,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
     val client = new GrpcEndpointClient(
-      credentials = new MockGrpcEndpointCredentials(Map.empty)
+      credentials = new MockGrpcNodeCredentialsProvider(Map.empty)
     )
 
     client
@@ -326,7 +326,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
         case NonFatal(e) =>
           e.getMessage should be(
             s"Push to endpoint [${endpointAddress.host}] via sink failed for crate [${testManifest.crate}]; " +
-              s"unable to retrieve credentials"
+              s"unable to retrieve credentials: [No credentials found for [GrpcEndpointAddress(localhost,$endpointPort,false)]]"
           )
       }
   }
@@ -338,7 +338,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
     val client = new GrpcEndpointClient(
-      credentials = new MockGrpcEndpointCredentials(Map.empty)
+      credentials = new MockGrpcNodeCredentialsProvider(Map.empty)
     )
 
     val crateId = Crate.generateId()
@@ -351,7 +351,8 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Pull from endpoint [${endpointAddress.host}] failed for crate [$crateId]; unable to retrieve credentials"
+            s"Pull from endpoint [${endpointAddress.host}] failed for crate [$crateId]; " +
+              s"unable to retrieve credentials: [No credentials found for [GrpcEndpointAddress(localhost,$endpointPort,false)]]"
           )
       }
   }
@@ -363,7 +364,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpoint = new TestGrpcEndpoint(port = endpointPort)
 
     val client = new GrpcEndpointClient(
-      credentials = new MockGrpcEndpointCredentials(endpointAddress, testNode, testSecret)
+      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
     )
 
     client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).flatMap { _ =>
@@ -384,7 +385,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
     val client = new GrpcEndpointClient(
-      credentials = new MockGrpcEndpointCredentials(Map.empty)
+      credentials = new MockGrpcNodeCredentialsProvider(Map.empty)
     )
 
     val crateId = Crate.generateId()
@@ -398,7 +399,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
         case NonFatal(e) =>
           e.getMessage should be(
             s"Discard from endpoint [${endpointAddress.host}] failed for crate [$crateId]; " +
-              s"unable to retrieve credentials"
+              s"unable to retrieve credentials: [No credentials found for [GrpcEndpointAddress(localhost,$endpointPort,false)]]"
           )
       }
   }
@@ -410,7 +411,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
     val client = new GrpcEndpointClient(
-      credentials = new MockGrpcEndpointCredentials(endpointAddress, testNode, testSecret)
+      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
     )
 
     client.discard(endpointAddress, Crate.generateId()).map { result =>
@@ -425,7 +426,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
     val client = new GrpcEndpointClient(
-      credentials = new MockGrpcEndpointCredentials(endpointAddress, testNode, "invalid-secret")
+      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, "invalid-secret")
     )
 
     client.discard(endpointAddress, Crate.generateId()).map { result =>

@@ -1,15 +1,15 @@
-package stasis.test.specs.unit.core.security.jwt.mocks
+package stasis.test.specs.unit.core.security.mocks
 
 import java.security.Key
 
 import org.jose4j.jwk.JsonWebKey
 import org.jose4j.jws.AlgorithmIdentifiers
-import stasis.core.security.jwt.JwtKeyProvider
+import stasis.core.security.keys.KeyProvider
 
 import scala.concurrent.Future
 
-object MockJwtKeyProvider {
-  def apply(jwk: JsonWebKey): JwtKeyProvider = new JwtKeyProvider {
+object MockJwtProvider {
+  def apply(jwk: JsonWebKey): KeyProvider = new KeyProvider {
     override def key(id: Option[String]): Future[Key] = Future.successful(jwk.getKey)
 
     override def issuer: String = "self"
