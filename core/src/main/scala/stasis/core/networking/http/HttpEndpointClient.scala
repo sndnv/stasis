@@ -11,17 +11,18 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
+import stasis.core.networking.EndpointClient
 import stasis.core.networking.exceptions.{CredentialsFailure, EndpointFailure, ReservationFailure}
-import stasis.core.networking.{EndpointClient, EndpointCredentials}
-import stasis.core.packaging.Crate.Id
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
+import stasis.core.security.NodeCredentialsProvider
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
 class HttpEndpointClient(
-  override protected val credentials: EndpointCredentials[HttpEndpointAddress, HttpCredentials]
+  override protected val credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials]
 )(implicit val system: ActorSystem)
     extends EndpointClient[HttpEndpointAddress, HttpCredentials] {
 
@@ -40,21 +41,25 @@ class HttpEndpointClient(
   ): Future[Done] = {
     log.debug("Pushing to endpoint [{}] content with manifest [{}]", address.uri, manifest)
 
-    credentials.provide(address) match {
-      case Some(endpointCredentials) =>
+    credentials
+      .provide(address)
+      .recoverWith {
+        case NonFatal(e) =>
+          val message =
+            s"Push to endpoint [${address.uri}] failed for crate [${manifest.crate}];" +
+              s" unable to retrieve credentials: [${e.getMessage}]"
+          log.error(message)
+          Future.failed(CredentialsFailure(message))
+      }
+      .flatMap { endpointCredentials =>
         for {
           reservation <- reserveStorage(address, manifest, endpointCredentials)
           result <- pushCrate(address, manifest, content, reservation, endpointCredentials)
         } yield {
           result
         }
+      }
 
-      case None =>
-        val message =
-          s"Push to endpoint [${address.uri}] failed for crate [${manifest.crate}]; unable to retrieve credentials"
-        log.error(message)
-        Future.failed(CredentialsFailure(message))
-    }
   }
 
   override def sink(address: HttpEndpointAddress, manifest: Manifest): Future[Sink[ByteString, Future[Done]]] = {
@@ -69,19 +74,23 @@ class HttpEndpointClient(
       }
       .run()
 
-    credentials.provide(address) match {
-      case Some(endpointCredentials) =>
+    credentials
+      .provide(address)
+      .recoverWith {
+        case NonFatal(e) =>
+          val message =
+            s"Push to endpoint [${address.uri}] via sink failed for crate [${manifest.crate}];" +
+              s" unable to retrieve credentials: [${e.getMessage}]"
+          log.error(message)
+          Future.failed(CredentialsFailure(message))
+      }
+      .flatMap { endpointCredentials =>
         reserveStorage(address, manifest, endpointCredentials).map { reservation =>
           val _ = pushCrate(address, manifest, content, reservation, endpointCredentials)
           sink.mapMaterializedValue(_ => Future.successful(Done))
         }
+      }
 
-      case None =>
-        val message =
-          s"Push to endpoint [${address.uri}] via sink failed for crate [${manifest.crate}]; unable to retrieve credentials"
-        log.error(message)
-        Future.failed(CredentialsFailure(message))
-    }
   }
 
   override def pull(
@@ -90,30 +99,38 @@ class HttpEndpointClient(
   ): Future[Option[Source[ByteString, NotUsed]]] = {
     log.debug("Pulling from endpoint [{}] crate with ID [{}]", address.uri, crate)
 
-    credentials.provide(address) match {
-      case Some(endpointCredentials) =>
+    credentials
+      .provide(address)
+      .recoverWith {
+        case NonFatal(e) =>
+          val message =
+            s"Pull from endpoint [${address.uri}] failed for crate [$crate];" +
+              s" unable to retrieve credentials: [${e.getMessage}]"
+          log.error(message)
+          Future.failed(CredentialsFailure(message))
+      }
+      .flatMap { endpointCredentials =>
         pullCrate(address, crate, endpointCredentials)
+      }
 
-      case None =>
-        val message = s"Pull from endpoint [${address.uri}] failed for crate [$crate]; unable to retrieve credentials"
-        log.error(message)
-        Future.failed(CredentialsFailure(message))
-    }
   }
 
-  override def discard(address: HttpEndpointAddress, crate: Id): Future[Boolean] = {
+  override def discard(address: HttpEndpointAddress, crate: Crate.Id): Future[Boolean] = {
     log.debug("Discarding from endpoint [{}] crate with ID [{}]", address.uri, crate)
 
-    credentials.provide(address) match {
-      case Some(endpointCredentials) =>
+    credentials
+      .provide(address)
+      .recoverWith {
+        case NonFatal(e) =>
+          val message =
+            s"Discard from endpoint [${address.uri}] failed for crate [$crate];" +
+              s" unable to retrieve credentials: [${e.getMessage}]"
+          log.error(message)
+          Future.failed(CredentialsFailure(message))
+      }
+      .flatMap { endpointCredentials =>
         discardCrate(address, crate, endpointCredentials)
-
-      case None =>
-        val message =
-          s"Discard from endpoint [${address.uri}] failed for crate [$crate]; unable to retrieve credentials"
-        log.error(message)
-        Future.failed(CredentialsFailure(message))
-    }
+      }
   }
 
   private def reserveStorage(

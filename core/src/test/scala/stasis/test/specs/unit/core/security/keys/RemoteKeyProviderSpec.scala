@@ -1,13 +1,13 @@
-package stasis.test.specs.unit.core.security.jwt
+package stasis.test.specs.unit.core.security.keys
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.ActorMaterializer
 import org.scalatest.BeforeAndAfterAll
-import stasis.core.security.jwt.RemoteKeyProvider
+import stasis.core.security.keys.RemoteKeyProvider
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.security.jwt.mocks.MockJwksEndpoint
+import stasis.test.specs.unit.core.security.mocks.MockJwksEndpoint
 
 import scala.collection.mutable
 import scala.concurrent.duration._
@@ -15,20 +15,6 @@ import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
-
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
-    "RemoteKeyProviderSpec"
-  )
-
-  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
-
-  private val ports: mutable.Queue[Int] = (18000 to 18100).to[mutable.Queue]
-
-  override protected def afterAll(): Unit =
-    system.terminate()
-
   "An RemoteKeyProvider" should "provide keys from a JWKs endpoint" in {
     val endpoint = new MockJwksEndpoint(port = ports.dequeue())
     endpoint.start()
@@ -216,4 +202,17 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
           e.getMessage should be("Endpoint responded with unexpected status: [500 Internal Server Error]")
       }
   }
+
+  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+    "RemoteKeyProviderSpec"
+  )
+
+  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
+  private implicit val mat: ActorMaterializer = ActorMaterializer()
+
+  private val ports: mutable.Queue[Int] = (18000 to 18100).to[mutable.Queue]
+
+  override protected def afterAll(): Unit =
+    system.terminate()
 }

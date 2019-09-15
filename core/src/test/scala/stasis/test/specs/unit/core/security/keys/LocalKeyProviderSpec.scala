@@ -1,13 +1,12 @@
-package stasis.test.specs.unit.core.security.jwt
+package stasis.test.specs.unit.core.security.keys
 
-import stasis.core.security.jwt.LocalKeyProvider
+import stasis.core.security.keys.LocalKeyProvider
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.security.jwt.mocks.MockJwksGenerators
+import stasis.test.specs.unit.core.security.mocks.MockJwksGenerators
 
 import scala.util.control.NonFatal
 
 class LocalKeyProviderSpec extends AsyncUnitSpec {
-
   "An LocalKeyProvider" should "provide secret (pre-configured) keys" in {
     val expectedKey = MockJwksGenerators.generateRandomSecretKey(keyId = Some("some-secret-key"))
     val provider = new LocalKeyProvider(expectedKey, issuer = "self")

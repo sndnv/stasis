@@ -8,6 +8,7 @@ import org.jose4j.jwt.JwtClaims
 import org.jose4j.jwt.consumer.{JwtConsumer, JwtConsumerBuilder, JwtContext}
 import org.jose4j.jwx.JsonWebStructure
 import stasis.core.security.exceptions.AuthenticationFailure
+import stasis.core.security.keys.KeyProvider
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.FiniteDuration
@@ -16,7 +17,7 @@ import scala.util.Try
 import scala.util.control.NonFatal
 
 class JwtAuthenticator(
-  provider: JwtKeyProvider,
+  provider: KeyProvider,
   audience: String,
   expirationTolerance: FiniteDuration
 )(implicit ec: ExecutionContext) {

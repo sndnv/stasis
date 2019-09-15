@@ -29,11 +29,15 @@ class MockNodeStore(
 
   override def get(node: Node.Id): Future[Option[Node]] =
     replacementNodes.get(node) match {
-      case Some(replacement) =>
-        Future.successful(replacement)
+      case Some(replacement) => Future.successful(replacement)
+      case None              => store.get(node)
+    }
 
-      case None =>
-        store.get(node)
+  override def contains(node: Node.Id): Future[Boolean] =
+    if (replacementNodes.contains(node)) {
+      Future.successful(true)
+    } else {
+      store.contains(node)
     }
 
   override def nodes: Future[Map[Node.Id, Node]] =

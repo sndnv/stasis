@@ -20,7 +20,7 @@ import stasis.shared.api.requests.CreateUser
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.security.jwt.mocks.{MockJwksEndpoint, MockJwtsGenerators}
+import stasis.test.specs.unit.core.security.mocks.{MockJwksEndpoint, MockJwtsGenerators}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.Future

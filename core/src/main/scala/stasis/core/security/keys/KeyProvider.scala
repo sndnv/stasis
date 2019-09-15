@@ -1,10 +1,10 @@
-package stasis.core.security.jwt
+package stasis.core.security.keys
 
 import java.security.Key
 
 import scala.concurrent.Future
 
-trait JwtKeyProvider {
+trait KeyProvider {
   def key(id: Option[String]): Future[Key]
   def issuer: String
   def allowedAlgorithms: Seq[String]

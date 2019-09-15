@@ -1,16 +1,17 @@
-package stasis.core.security.psk
+package stasis.core.security
 
 import java.util.UUID
 
 import stasis.core.persistence.backends.KeyValueBackend
+import stasis.core.persistence.nodes.NodeStoreView
 import stasis.core.routing.Node
-import stasis.core.security.NodeAuthenticator
 import stasis.core.security.exceptions.AuthenticationFailure
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 class PreSharedKeyNodeAuthenticator(
+  nodeStore: NodeStoreView,
   backend: KeyValueBackend[String, String]
 )(implicit ec: ExecutionContext)
     extends NodeAuthenticator[(String, String)] {
@@ -19,10 +20,16 @@ class PreSharedKeyNodeAuthenticator(
 
     Try(UUID.fromString(node)) match {
       case Success(nodeId) =>
-        backend.get(node).flatMap {
-          case Some(`secret`) => Future.successful(nodeId)
-          case Some(_)        => Future.failed(AuthenticationFailure(s"Invalid secret supplied for node [$node]"))
-          case None           => Future.failed(AuthenticationFailure(s"Node [$node] was not found"))
+        nodeStore.contains(nodeId).flatMap { nodeExists =>
+          if (nodeExists) {
+            backend.get(node).flatMap {
+              case Some(`secret`) => Future.successful(nodeId)
+              case Some(_)        => Future.failed(AuthenticationFailure(s"Invalid secret supplied for node [$node]"))
+              case None           => Future.failed(AuthenticationFailure(s"Credentials for node [$node] not found"))
+            }
+          } else {
+            Future.failed(AuthenticationFailure(s"Node [$node] not found"))
+          }
         }
 
       case Failure(e) =>

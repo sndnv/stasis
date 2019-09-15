@@ -1,4 +1,4 @@
-package stasis.core.security.jwt
+package stasis.core.security.keys
 
 import java.security.Key
 
@@ -29,7 +29,7 @@ final class RemoteKeyProvider(
   override val issuer: String,
   override val allowedAlgorithms: Seq[String]
 )(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout)
-    extends JwtKeyProvider {
+    extends KeyProvider {
 
   private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
   private implicit val ec: ExecutionContext = system.executionContext
@@ -37,7 +37,7 @@ final class RemoteKeyProvider(
 
   private val log = Logging(untypedSystem, this.getClass.getName)
 
-  private val backend = MemoryBackend[String, Key](name = "asymmetric-jwt-key-provider-cache")
+  private val cache = MemoryBackend[String, Key](name = "jwk-provider-cache")
 
   private val init = refreshKeys()
 
@@ -49,7 +49,7 @@ final class RemoteKeyProvider(
     }
 
   private def key(id: String): Future[Key] =
-    backend.get(id).flatMap {
+    cache.get(id).flatMap {
       case Some(key) => Future.successful(key)
       case None      => Future.failed(ProviderFailure(s"Key [$id] was not found"))
     }
@@ -87,7 +87,7 @@ final class RemoteKeyProvider(
               case Right(jwk) =>
                 log.debug(
                   s"JWKS endpoint [$jwksEndpoint] provided key [${jwk.id}] with algorithm [${jwk.key.getAlgorithm}]")
-                backend.put(jwk.id, jwk.key)
+                cache.put(jwk.id, jwk.key)
 
               case Left(failure) =>
                 log.warning(s"JWKS endpoint provided key that could not be handled: [$failure]")

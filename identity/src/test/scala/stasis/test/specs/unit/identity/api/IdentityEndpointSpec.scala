@@ -9,7 +9,7 @@ import stasis.identity.api.{IdentityEndpoint, Manage}
 import stasis.identity.api.manage.setup.Config
 import stasis.identity.model.apis.Api
 import stasis.identity.model.secrets.Secret
-import stasis.test.specs.unit.core.security.jwt.mocks.MockJwksGenerators
+import stasis.test.specs.unit.core.security.mocks.MockJwksGenerators
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.api.manage.ManageFixtures
 import stasis.test.specs.unit.identity.api.oauth.OAuthFixtures

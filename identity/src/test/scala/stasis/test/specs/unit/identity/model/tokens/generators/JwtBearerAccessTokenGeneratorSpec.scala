@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.identity.model.tokens.generators
 
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.security.jwt.mocks.MockJwksGenerators
+import stasis.test.specs.unit.core.security.mocks.MockJwksGenerators
 
 class JwtBearerAccessTokenGeneratorSpec extends AsyncUnitSpec with JwtBearerAccessTokenGeneratorBehaviour {
   "A JwtBearerAccessTokenGenerator" should behave like jwtBearerAccessTokenGenerator(

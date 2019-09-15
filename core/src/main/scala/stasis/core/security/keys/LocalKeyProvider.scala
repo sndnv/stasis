@@ -1,4 +1,4 @@
-package stasis.core.security.jwt
+package stasis.core.security.keys
 
 import java.security.Key
 
@@ -10,7 +10,7 @@ import scala.concurrent.Future
 final class LocalKeyProvider(
   jwk: JsonWebKey,
   override val issuer: String
-) extends JwtKeyProvider {
+) extends KeyProvider {
 
   private val key: Key = jwk match {
     case key: RsaJsonWebKey           => key.getPublicKey

@@ -9,7 +9,6 @@ import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.util.{ByteString, Timeout}
 import akka.{Done, NotUsed}
 import stasis.core.networking.http.{HttpEndpointAddress, HttpEndpointClient}
-import stasis.core.packaging.Crate.Id
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.backends.memory.MemoryBackend
 
@@ -22,7 +21,9 @@ class MockHttpEndpointClient(
   discardFailureAddresses: Map[HttpEndpointAddress, Exception] = Map.empty,
   pullEmptyAddresses: Seq[HttpEndpointAddress] = Seq.empty
 )(implicit system: ActorSystem[SpawnProtocol])
-    extends HttpEndpointClient((_: HttpEndpointAddress) => None)(system.toUntyped) {
+    extends HttpEndpointClient(
+      (_: HttpEndpointAddress) => Future.failed(new RuntimeException("No credentials available"))
+    )(system.toUntyped) {
 
   import MockHttpEndpointClient._
 
@@ -106,7 +107,7 @@ class MockHttpEndpointClient(
         }
     }
 
-  override def discard(address: HttpEndpointAddress, crate: Id): Future[Boolean] =
+  override def discard(address: HttpEndpointAddress, crate: Crate.Id): Future[Boolean] =
     discardFailureAddresses.get(address) match {
       case Some(discardFailure) =>
         stats(Statistic.DiscardFailed).incrementAndGet()

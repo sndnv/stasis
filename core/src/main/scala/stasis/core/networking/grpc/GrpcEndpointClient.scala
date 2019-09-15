@@ -8,17 +8,18 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
+import stasis.core.networking.EndpointClient
 import stasis.core.networking.exceptions.{CredentialsFailure, EndpointFailure}
 import stasis.core.networking.grpc.internal.Client
-import stasis.core.networking.{EndpointClient, EndpointCredentials}
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
+import stasis.core.security.NodeCredentialsProvider
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 class GrpcEndpointClient(
-  override protected val credentials: EndpointCredentials[GrpcEndpointAddress, GrpcCredentials]
+  override protected val credentials: NodeCredentialsProvider[GrpcEndpointAddress, GrpcCredentials]
 )(implicit system: ActorSystem)
     extends EndpointClient[GrpcEndpointAddress, GrpcCredentials] {
 
@@ -36,8 +37,17 @@ class GrpcEndpointClient(
   ): Future[Done] = {
     log.debug("Pushing to endpoint [{}] content with manifest [{}]", address.host, manifest)
 
-    credentials.provide(address) match {
-      case Some(endpointCredentials) =>
+    credentials
+      .provide(address)
+      .recoverWith {
+        case NonFatal(e) =>
+          val message =
+            s"Push to endpoint [${address.host}] failed for crate [${manifest.crate}];" +
+              s" unable to retrieve credentials: [${e.getMessage}]"
+          log.error(message)
+          Future.failed(CredentialsFailure(message))
+      }
+      .flatMap { endpointCredentials =>
         val client = internal.Client(address)
 
         for {
@@ -46,13 +56,7 @@ class GrpcEndpointClient(
         } yield {
           result
         }
-
-      case None =>
-        val message =
-          s"Push to endpoint [${address.host}] failed for crate [${manifest.crate}]; unable to retrieve credentials"
-        log.error(message)
-        Future.failed(CredentialsFailure(message))
-    }
+      }
   }
 
   override def sink(
@@ -61,8 +65,17 @@ class GrpcEndpointClient(
   ): Future[Sink[ByteString, Future[Done]]] = {
     log.debug("Building content sink for endpoint [{}] with manifest [{}]", address.host, manifest)
 
-    credentials.provide(address) match {
-      case Some(endpointCredentials) =>
+    credentials
+      .provide(address)
+      .recoverWith {
+        case NonFatal(e) =>
+          val message =
+            s"Push to endpoint [${address.host}] via sink failed for crate [${manifest.crate}];" +
+              s" unable to retrieve credentials: [${e.getMessage}]"
+          log.error(message)
+          Future.failed(CredentialsFailure(message))
+      }
+      .flatMap { endpointCredentials =>
         val client = internal.Client(address)
 
         val (sink, content) = Source
@@ -78,13 +91,7 @@ class GrpcEndpointClient(
           val _ = pushCrate(client, address, manifest, endpointCredentials, reservation, content)
           sink.mapMaterializedValue(_ => Future.successful(Done))
         }
-
-      case None =>
-        val message =
-          s"Push to endpoint [${address.host}] via sink failed for crate [${manifest.crate}]; unable to retrieve credentials"
-        log.error(message)
-        Future.failed(CredentialsFailure(message))
-    }
+      }
   }
 
   override def pull(
@@ -95,8 +102,17 @@ class GrpcEndpointClient(
 
     val client = internal.Client(address)
 
-    credentials.provide(address) match {
-      case Some(endpointCredentials) =>
+    credentials
+      .provide(address)
+      .recoverWith {
+        case NonFatal(e) =>
+          val message =
+            s"Pull from endpoint [${address.host}] failed for crate [$crate];" +
+              s" unable to retrieve credentials: [${e.getMessage}]"
+          log.error(message)
+          Future.failed(CredentialsFailure(message))
+      }
+      .flatMap { endpointCredentials =>
         client
           .streamWithCredentials[proto.PullRequest, proto.PullChunk](_.pull(), endpointCredentials)
           .invoke(proto.PullRequest().withCrate(crate))
@@ -120,12 +136,7 @@ class GrpcEndpointClient(
               log.warning(message)
               Future.failed(EndpointFailure(message))
           }
-
-      case None =>
-        val message = s"Pull from endpoint [${address.host}] failed for crate [$crate]; unable to retrieve credentials"
-        log.error(message)
-        Future.failed(CredentialsFailure(message))
-    }
+      }
   }
 
   override def discard(
@@ -136,8 +147,17 @@ class GrpcEndpointClient(
 
     val client = internal.Client(address)
 
-    credentials.provide(address) match {
-      case Some(endpointCredentials) =>
+    credentials
+      .provide(address)
+      .recoverWith {
+        case NonFatal(e) =>
+          val message =
+            s"Discard from endpoint [${address.host}] failed for crate [$crate];" +
+              s" unable to retrieve credentials: [${e.getMessage}]"
+          log.error(message)
+          Future.failed(CredentialsFailure(message))
+      }
+      .flatMap { endpointCredentials =>
         client
           .requestWithCredentials(_.discard(), endpointCredentials)
           .invoke(proto.DiscardRequest().withCrate(crate))
@@ -157,13 +177,7 @@ class GrpcEndpointClient(
               log.warning(message)
               Future.successful(false)
           }
-
-      case None =>
-        val message =
-          s"Discard from endpoint [${address.host}] failed for crate [$crate]; unable to retrieve credentials"
-        log.error(message)
-        Future.failed(CredentialsFailure(message))
-    }
+      }
   }
 
   private def reserveStorage(

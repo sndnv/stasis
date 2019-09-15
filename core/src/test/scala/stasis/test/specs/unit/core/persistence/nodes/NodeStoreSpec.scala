@@ -27,14 +27,18 @@ class NodeStoreSpec extends AsyncUnitSpec {
       for {
         _ <- store.put(expectedNode)
         actualNode <- store.get(expectedNode.id)
+        actualNodeExists <- store.contains(expectedNode.id)
         someNodes <- store.nodes
         _ <- store.delete(expectedNode.id)
         missingNode <- store.get(expectedNode.id)
+        missingNodeExists <- store.contains(expectedNode.id)
         noNodes <- store.nodes
       } yield {
         actualNode should be(Some(expectedNode))
+        actualNodeExists should be(true)
         someNodes should be(Map(expectedNode.id -> expectedNode))
         missingNode should be(None)
+        missingNodeExists should be(false)
         noNodes should be(Map.empty)
       }
     }
@@ -51,14 +55,18 @@ class NodeStoreSpec extends AsyncUnitSpec {
       for {
         _ <- store.put(expectedNode)
         actualNode <- storeView.get(expectedNode.id)
+        actualNodeExists <- storeView.contains(expectedNode.id)
         someNodes <- storeView.nodes
         _ <- store.delete(expectedNode.id)
         missingNode <- storeView.get(expectedNode.id)
+        missingNodeExists <- storeView.contains(expectedNode.id)
         noNodes <- storeView.nodes
       } yield {
         actualNode should be(Some(expectedNode))
+        actualNodeExists should be(true)
         someNodes should be(Map(expectedNode.id -> expectedNode))
         missingNode should be(None)
+        missingNodeExists should be(false)
         noNodes should be(Map.empty)
         a[ClassCastException] should be thrownBy { val _ = storeView.asInstanceOf[NodeStore] }
       }
