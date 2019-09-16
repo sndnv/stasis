@@ -8,12 +8,12 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Broadcast, Sink, Source}
 import akka.util.{ByteString, Timeout}
 import akka.{Done, NotUsed}
-import stasis.core.networking.http.HttpEndpointClient
+import stasis.core.networking.EndpointClientProxy
 import stasis.core.packaging.{Crate, Manifest}
-import stasis.core.persistence.crates.CrateStore
-import stasis.core.persistence.exceptions.StagingFailure
 import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.backends.memory.MemoryBackend
+import stasis.core.persistence.crates.CrateStore
+import stasis.core.persistence.exceptions.StagingFailure
 import stasis.core.routing.Node
 
 import scala.concurrent.duration.FiniteDuration
@@ -22,7 +22,7 @@ import scala.util.control.NonFatal
 
 class StagingStore(
   crateStore: CrateStore,
-  httpClient: HttpEndpointClient,
+  endpointClient: EndpointClientProxy,
   destagingDelay: FiniteDuration
 )(implicit val system: ActorSystem[SpawnProtocol], timeout: Timeout) {
 
@@ -131,11 +131,11 @@ class StagingStore(
                 destinations.map {
                   case (node, copies) =>
                     node match {
-                      case Node.Local(_, store) =>
-                        store.sink(manifest.crate)
+                      case Node.Local(_, crateStore) =>
+                        crateStore.sink(manifest.crate)
 
-                      case Node.Remote.Http(_, address) =>
-                        httpClient.sink(address, manifest.copy(copies = copies))
+                      case node: Node.Remote[_] =>
+                        endpointClient.sink(node.address, manifest.copy(copies = copies))
                     }
                 }
               )

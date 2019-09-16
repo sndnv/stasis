@@ -4,13 +4,14 @@ import akka.actor.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{Behavior, SpawnProtocol}
+import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import stasis.core.networking.grpc.internal.{Implicits, Requests}
-import stasis.core.networking.grpc.{proto, GrpcCredentials, GrpcEndpoint}
+import stasis.core.networking.grpc.{proto, GrpcEndpoint}
 import stasis.core.packaging.Crate
 import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.core.routing.Node
@@ -49,7 +50,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   private val testNode = Node.generateId()
   private val testSecret = "test-secret"
 
-  private val testCredentials = GrpcCredentials.Psk(node = testNode.toString, secret = testSecret)
+  private val testCredentials = BasicHttpCredentials(username = testNode.toString, password = testSecret)
 
   private val testReservation = CrateStorageReservation(
     id = CrateStorageReservation.generateId(),
@@ -98,7 +99,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     endpoint
       .authenticated(mockHandler)(
-        Get(s"/${proto.StasisEndpoint.name}/method").addCredentials(testCredentials.copy(secret = "invalid-secret"))
+        Get(s"/${proto.StasisEndpoint.name}/method").addCredentials(testCredentials.copy(password = "invalid-secret"))
       )
       .map { response =>
         response.status should be(StatusCodes.Unauthorized)

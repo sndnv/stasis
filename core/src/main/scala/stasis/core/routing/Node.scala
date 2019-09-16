@@ -23,5 +23,8 @@ object Node {
   object Remote {
     final case class Http(override val id: Node.Id, override val address: HttpEndpointAddress)
         extends Remote[HttpEndpointAddress]
+
+    final case class Grpc(override val id: Node.Id, override val address: GrpcEndpointAddress)
+        extends Remote[GrpcEndpointAddress]
   }
 }

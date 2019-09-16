@@ -2,11 +2,10 @@ package stasis.test.specs.unit.core.networking.grpc.internal
 
 import java.util.UUID
 
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
 import akka.util.ByteString
 import stasis.core.networking.exceptions.EndpointFailure
 import stasis.core.networking.grpc.internal.Implicits
-import stasis.core.networking.grpc.{proto, GrpcCredentials}
+import stasis.core.networking.grpc.proto
 import stasis.test.specs.unit.UnitSpec
 
 class ImplicitsSpec extends UnitSpec {
@@ -44,17 +43,5 @@ class ImplicitsSpec extends UnitSpec {
 
     Implicits.akkaToProtobufByteString(akkaByteString) should be(protoByteString)
     Implicits.protobufToAkkaByteString(protoByteString) should be(akkaByteString)
-  }
-
-  it should "convert credentials" in {
-    val grpcTokenCredentials = GrpcCredentials.Jwt("token")
-    val grpcBasicCredentials = GrpcCredentials.Psk("test-node", "test-secret")
-    val httpTokenCredentials = OAuth2BearerToken(grpcTokenCredentials.token)
-    val httpBasicCredentials = BasicHttpCredentials(grpcBasicCredentials.node, grpcBasicCredentials.secret)
-
-    Implicits.grpcToHttpCredentials(grpcTokenCredentials) should be(httpTokenCredentials)
-    Implicits.grpcToHttpCredentials(grpcBasicCredentials) should be(httpBasicCredentials)
-    Implicits.httpToGrpcCredentials(httpTokenCredentials) should be(grpcTokenCredentials)
-    Implicits.httpToGrpcCredentials(httpBasicCredentials) should be(grpcBasicCredentials)
   }
 }

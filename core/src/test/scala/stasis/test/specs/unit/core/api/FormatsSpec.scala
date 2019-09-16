@@ -7,6 +7,7 @@ import akka.http.scaladsl.model.Uri
 import akka.util.Timeout
 import play.api.libs.json.Json
 import stasis.core.api.Formats._
+import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.backends.file.{ContainerBackend, FileBackend}
 import stasis.core.persistence.backends.memory.StreamingMemoryBackend
@@ -66,7 +67,8 @@ class FormatsSpec extends UnitSpec {
   they should "convert nodes to/from JSON" in {
     val nodeId = Node.generateId()
     val nodeBackend = StreamingMemoryBackend(maxSize = 42, name = "node-format-test")
-    val nodeAddress = HttpEndpointAddress("http://some-address:1234")
+    val httpAddress = HttpEndpointAddress(uri = "http://some-address:1234")
+    val grpcAddress = GrpcEndpointAddress(host = "some-host", port = 1234, tlsEnabled = false)
 
     implicit val reservationStore: ReservationStore = new MockReservationStore()
     implicit val reservationExpiration: FiniteDuration = 3.seconds
@@ -83,8 +85,17 @@ class FormatsSpec extends UnitSpec {
         s"""{"node-type":"local","id":"$nodeId","backend":${Json.toJson(nodeBackend).toString}}"""
       ),
       "remote-http" -> (
-        Node.Remote.Http(id = nodeId, address = nodeAddress),
-        s"""{"node-type":"remote-http","id":"$nodeId","address":{"uri":"${nodeAddress.uri}"}}"""
+        Node.Remote.Http(id = nodeId, address = httpAddress),
+        s"""{"node-type":"remote-http","id":"$nodeId","address":{"uri":"${httpAddress.uri}"}}"""
+      ),
+      "remote-grpc" -> (
+        Node.Remote.Grpc(id = nodeId, address = grpcAddress),
+        s"""
+           |{
+           |"node-type":"remote-grpc",
+           |"id":"$nodeId",
+           |"address":{"host":"${grpcAddress.host}","port":${grpcAddress.port},"tlsEnabled":${grpcAddress.tlsEnabled}}
+           |}""".stripMargin.replaceAll("\n", "").trim
       )
     )
 

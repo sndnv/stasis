@@ -3,8 +3,9 @@ package stasis.core.networking.grpc.internal
 import akka.actor.ActorSystem
 import akka.grpc.GrpcClientSettings
 import akka.grpc.scaladsl.{SingleResponseRequestBuilder, StreamResponseRequestBuilder}
+import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.stream.ActorMaterializer
-import stasis.core.networking.grpc.{proto, GrpcCredentials, GrpcEndpointAddress}
+import stasis.core.networking.grpc.{proto, GrpcEndpointAddress}
 
 import scala.concurrent.ExecutionContext
 
@@ -23,13 +24,13 @@ private[grpc] class Client(
 
   def requestWithCredentials[Req, Res](
     call: proto.StasisEndpointClient => SingleResponseRequestBuilder[Req, Res],
-    credentials: GrpcCredentials
+    credentials: HttpCredentials
   ): SingleResponseRequestBuilder[Req, Res] =
     call(client).addHeader(Credentials.HEADER, Credentials.marshal(credentials))
 
   def streamWithCredentials[Req, Res](
     call: proto.StasisEndpointClient => StreamResponseRequestBuilder[Req, Res],
-    credentials: GrpcCredentials
+    credentials: HttpCredentials
   ): StreamResponseRequestBuilder[Req, Res] =
     call(client).addHeader(Credentials.HEADER, Credentials.marshal(credentials))
 }

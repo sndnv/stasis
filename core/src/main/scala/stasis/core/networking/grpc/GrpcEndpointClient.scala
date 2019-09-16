@@ -4,6 +4,7 @@ import java.util.UUID
 
 import akka.actor.ActorSystem
 import akka.event.Logging
+import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
@@ -19,9 +20,9 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 class GrpcEndpointClient(
-  override protected val credentials: NodeCredentialsProvider[GrpcEndpointAddress, GrpcCredentials]
+  override protected val credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials]
 )(implicit system: ActorSystem)
-    extends EndpointClient[GrpcEndpointAddress, GrpcCredentials] {
+    extends EndpointClient[GrpcEndpointAddress, HttpCredentials] {
 
   import internal.Implicits._
 
@@ -184,7 +185,7 @@ class GrpcEndpointClient(
     client: Client,
     address: GrpcEndpointAddress,
     manifest: Manifest,
-    endpointCredentials: GrpcCredentials
+    endpointCredentials: HttpCredentials
   ): Future[CrateStorageReservation.Id] = {
     val client = internal.Client(address)
 
@@ -223,7 +224,7 @@ class GrpcEndpointClient(
     client: Client,
     address: GrpcEndpointAddress,
     manifest: Manifest,
-    endpointCredentials: GrpcCredentials,
+    endpointCredentials: HttpCredentials,
     reservation: CrateStorageReservation.Id,
     content: Source[ByteString, NotUsed]
   ): Future[Done] =

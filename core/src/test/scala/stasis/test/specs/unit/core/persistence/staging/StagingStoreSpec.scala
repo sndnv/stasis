@@ -6,12 +6,13 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
+import stasis.core.networking.EndpointClientProxy
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.staging.StagingStore
 import stasis.core.routing.Node
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.networking.mocks.MockHttpEndpointClient
+import stasis.test.specs.unit.core.networking.mocks.{MockGrpcEndpointClient, MockHttpEndpointClient}
 import stasis.test.specs.unit.core.persistence.mocks.{MockCrateStore, MockReservationStore}
 
 import scala.concurrent.duration._
@@ -194,8 +195,11 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
   private class TestStagingStore(
     val fixtures: TestFixtures = new TestFixtures {}
   ) extends StagingStore(
-        fixtures.stagingCrateStore,
-        fixtures.testClient,
+        crateStore = fixtures.stagingCrateStore,
+        endpointClient = new EndpointClientProxy(
+          httpClient = fixtures.testClient,
+          grpcClient = new MockGrpcEndpointClient()
+        ),
         destagingDelay = 50.milliseconds
       )
 

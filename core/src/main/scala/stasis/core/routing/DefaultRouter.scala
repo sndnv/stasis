@@ -6,7 +6,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Broadcast, Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
-import stasis.core.networking.http.{HttpEndpointAddress, HttpEndpointClient}
+import stasis.core.networking.EndpointClientProxy
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.manifests.ManifestStore
 import stasis.core.persistence.nodes.NodeStoreView
@@ -20,7 +20,7 @@ import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 class DefaultRouter(
-  httpClient: HttpEndpointClient,
+  endpointClient: EndpointClientProxy,
   manifestStore: ManifestStore,
   nodeStore: NodeStoreView,
   reservationStore: ReservationStore,
@@ -325,11 +325,11 @@ class DefaultRouter(
 
   private def nodeSink(node: Node, manifest: Manifest): Future[Sink[ByteString, Future[Done]]] =
     node match {
-      case Node.Local(_, store) =>
-        store.sink(manifest.crate)
+      case Node.Local(_, crateStore) =>
+        crateStore.sink(manifest.crate)
 
-      case Node.Remote.Http(_, address) =>
-        httpClient.sink(address, manifest)
+      case node: Node.Remote[_] =>
+        endpointClient.sink(node.address, manifest)
     }
 
   private def pullFromNode(node: Node, crate: Crate.Id): Future[Option[Source[ByteString, NotUsed]]] =
@@ -337,8 +337,8 @@ class DefaultRouter(
       case Node.Local(_, crateStore) =>
         crateStore.retrieve(crate)
 
-      case Node.Remote.Http(_, address: HttpEndpointAddress) =>
-        httpClient.pull(address, crate)
+      case node: Node.Remote[_] =>
+        endpointClient.pull(node.address, crate)
     }
 
   private def reserveOnNode(node: Node, request: CrateStorageRequest): Future[Option[CrateStorageReservation]] =
@@ -346,7 +346,7 @@ class DefaultRouter(
       case Node.Local(_, crateStore) =>
         crateStore.reserve(request)
 
-      case _: Node.Remote.Http =>
+      case _: Node.Remote[_] =>
         log.info("Skipping reservation on node [{}]; reserving on remote nodes is not supported", node)
         Future.successful(None)
     }
@@ -361,8 +361,8 @@ class DefaultRouter(
           case Some(Node.Local(_, crateStore)) =>
             crateStore.discard(manifest.crate).map(destination -> _)
 
-          case Some(Node.Remote.Http(_, address)) =>
-            httpClient.discard(address, manifest.crate).map(destination -> _)
+          case Some(node: Node.Remote[_]) =>
+            endpointClient.discard(node.address, manifest.crate).map(destination -> _)
 
           case None =>
             log.error(s"Crate [${manifest.crate}] was not discarded from node [$destination]; node not found")
