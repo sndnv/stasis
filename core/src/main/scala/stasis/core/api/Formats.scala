@@ -4,6 +4,7 @@ import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.scaladsl.model.Uri
 import akka.util.Timeout
+import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.packaging.Manifest
 import stasis.core.persistence.backends.StreamingBackend
@@ -32,6 +33,9 @@ object Formats {
 
   implicit val httpEndpointAddressFormat: Format[HttpEndpointAddress] =
     Json.format[HttpEndpointAddress]
+
+  implicit val grpcEndpointAddressFormat: Format[GrpcEndpointAddress] =
+    Json.format[GrpcEndpointAddress]
 
   implicit def streamingBackendReads(
     implicit system: ActorSystem[SpawnProtocol],
@@ -108,6 +112,12 @@ object Formats {
             id = (node \ "id").as[Node.Id],
             address = (node \ "address").as[HttpEndpointAddress]
           )
+
+        case "remote-grpc" =>
+          Node.Remote.Grpc(
+            id = (node \ "id").as[Node.Id],
+            address = (node \ "address").as[GrpcEndpointAddress]
+          )
       }
     }
   }
@@ -123,6 +133,13 @@ object Formats {
     case node: Node.Remote.Http =>
       Json.obj(
         "node-type" -> JsString("remote-http"),
+        "id" -> Json.toJson(node.id),
+        "address" -> Json.toJson(node.address)
+      )
+
+    case node: Node.Remote.Grpc =>
+      Json.obj(
+        "node-type" -> JsString("remote-grpc"),
         "id" -> Json.toJson(node.id),
         "address" -> Json.toJson(node.address)
       )

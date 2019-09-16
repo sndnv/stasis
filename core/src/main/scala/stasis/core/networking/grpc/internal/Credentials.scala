@@ -3,9 +3,9 @@ package stasis.core.networking.grpc.internal
 import java.nio.charset.StandardCharsets
 
 import akka.http.scaladsl.model.HttpRequest
+import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials, OAuth2BearerToken}
 import akka.parboiled2.util.Base64
 import stasis.core.networking.exceptions.CredentialsFailure
-import stasis.core.networking.grpc.GrpcCredentials
 
 import scala.concurrent.Future
 import scala.util.matching.Regex
@@ -15,22 +15,22 @@ object Credentials {
 
   private val creds: Regex = """^(Bearer|Basic) (.+)$""".r
 
-  def marshal(credentials: GrpcCredentials): String =
+  def marshal(credentials: HttpCredentials): String =
     credentials match {
-      case GrpcCredentials.Psk(node, secret) =>
-        val encoded = Base64.rfc2045().encodeToString(s"$node:$secret".getBytes(StandardCharsets.UTF_8), false)
+      case BasicHttpCredentials(username, password) =>
+        val encoded = Base64.rfc2045().encodeToString(s"$username:$password".getBytes(StandardCharsets.UTF_8), false)
         s"Basic $encoded"
 
-      case GrpcCredentials.Jwt(token) =>
+      case OAuth2BearerToken(token) =>
         s"Bearer $token"
     }
 
-  def unmarshal(rawCredentials: String): Either[CredentialsFailure, GrpcCredentials] =
+  def unmarshal(rawCredentials: String): Either[CredentialsFailure, HttpCredentials] =
     rawCredentials match {
       case creds(scheme, credentials) =>
         scheme match {
           case "Bearer" =>
-            Right(GrpcCredentials.Jwt(token = credentials))
+            Right(OAuth2BearerToken(token = credentials))
 
           case "Basic" =>
             new String(
@@ -38,7 +38,7 @@ object Credentials {
               StandardCharsets.UTF_8
             ).split(":").toList match {
               case node :: secret :: Nil =>
-                Right(GrpcCredentials.Psk(node, secret))
+                Right(BasicHttpCredentials(username = node, password = secret))
 
               case _ =>
                 Left(CredentialsFailure("Failed to extract basic auth credentials"))
@@ -49,7 +49,7 @@ object Credentials {
         Left(CredentialsFailure("Unexpected credentials format encountered"))
     }
 
-  def extract(request: HttpRequest): Future[GrpcCredentials] =
+  def extract(request: HttpRequest): Future[HttpCredentials] =
     request.headers.find(_.is(HEADER)) match {
       case Some(header) =>
         unmarshal(header.value()) match {

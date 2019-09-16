@@ -2,10 +2,9 @@ package stasis.core.networking.grpc.internal
 
 import java.util.UUID
 
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials, OAuth2BearerToken}
 import akka.util.ByteString
 import stasis.core.networking.exceptions.EndpointFailure
-import stasis.core.networking.grpc.{proto, GrpcCredentials}
+import stasis.core.networking.grpc.proto
 
 object Implicits {
 
@@ -34,16 +33,4 @@ object Implicits {
 
   implicit def protobufToAkkaByteString(string: com.google.protobuf.ByteString): ByteString =
     ByteString.fromByteBuffer(string.asReadOnlyByteBuffer())
-
-  implicit def grpcToHttpCredentials(credentials: GrpcCredentials): HttpCredentials =
-    credentials match {
-      case GrpcCredentials.Jwt(token)        => OAuth2BearerToken(token)
-      case GrpcCredentials.Psk(node, secret) => BasicHttpCredentials(username = node, password = secret)
-    }
-
-  implicit def httpToGrpcCredentials(credentials: HttpCredentials): GrpcCredentials =
-    credentials match {
-      case OAuth2BearerToken(token)                 => GrpcCredentials.Jwt(token)
-      case BasicHttpCredentials(username, password) => GrpcCredentials.Psk(node = username, secret = password)
-    }
 }

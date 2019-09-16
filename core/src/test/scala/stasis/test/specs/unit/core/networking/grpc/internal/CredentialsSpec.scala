@@ -3,10 +3,9 @@ package stasis.test.specs.unit.core.networking.grpc.internal
 import java.nio.charset.StandardCharsets
 
 import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials, CustomHeader}
+import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials, CustomHeader, OAuth2BearerToken}
 import akka.parboiled2.util.Base64
 import stasis.core.networking.exceptions.CredentialsFailure
-import stasis.core.networking.grpc.GrpcCredentials
 import stasis.core.networking.grpc.internal.Credentials
 import stasis.test.specs.unit.AsyncUnitSpec
 
@@ -21,13 +20,13 @@ class CredentialsSpec extends AsyncUnitSpec {
   private val tokenCredentials = s"Bearer $testToken"
 
   it should "successfully marshal credentials" in {
-    Credentials.marshal(GrpcCredentials.Psk(testNode, testSecret)) should be(basicCredentials)
-    Credentials.marshal(GrpcCredentials.Jwt(testToken)) should be(tokenCredentials)
+    Credentials.marshal(BasicHttpCredentials(testNode, testSecret)) should be(basicCredentials)
+    Credentials.marshal(OAuth2BearerToken(testToken)) should be(tokenCredentials)
   }
 
   it should "successfully unmarshal credentials" in {
-    Credentials.unmarshal(basicCredentials) should be(Right(GrpcCredentials.Psk(testNode, testSecret)))
-    Credentials.unmarshal(tokenCredentials) should be(Right(GrpcCredentials.Jwt(testToken)))
+    Credentials.unmarshal(basicCredentials) should be(Right(BasicHttpCredentials(testNode, testSecret)))
+    Credentials.unmarshal(tokenCredentials) should be(Right(OAuth2BearerToken(testToken)))
   }
 
   it should "fail to unmarshal invalid basic credentials" in {
@@ -45,7 +44,7 @@ class CredentialsSpec extends AsyncUnitSpec {
     val request = HttpRequest(headers = scala.collection.immutable.Seq(header))
 
     Credentials.extract(request).map { result =>
-      result should be(GrpcCredentials.Psk(testNode, testSecret))
+      result should be(BasicHttpCredentials(testNode, testSecret))
     }
   }
 

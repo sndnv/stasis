@@ -7,6 +7,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.scalatest.concurrent.Eventually
+import stasis.core.networking.EndpointClientProxy
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.staging.StagingStore
@@ -14,7 +15,7 @@ import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.core.routing.exceptions.{DiscardFailure, DistributionFailure, PullFailure, PushFailure}
 import stasis.core.routing.{DefaultRouter, Node}
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.networking.mocks.MockHttpEndpointClient
+import stasis.test.specs.unit.core.networking.mocks.{MockGrpcEndpointClient, MockHttpEndpointClient}
 import stasis.test.specs.unit.core.persistence.mocks._
 
 import scala.concurrent.duration._
@@ -119,7 +120,10 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         Some(
           new StagingStore(
             crateStore = stagingCrateStore,
-            httpClient = testClient,
+            endpointClient = new EndpointClientProxy(
+              httpClient = testClient,
+              grpcClient = new MockGrpcEndpointClient()
+            ),
             destagingDelay = 100.milliseconds
           )
         )
@@ -571,7 +575,10 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         Some(
           new StagingStore(
             crateStore = stagingCrateStore,
-            httpClient = testClient,
+            endpointClient = new EndpointClientProxy(
+              httpClient = testClient,
+              grpcClient = new MockGrpcEndpointClient()
+            ),
             destagingDelay = 10.seconds
           )
         )
@@ -894,7 +901,10 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     val testClient: MockHttpEndpointClient = new MockHttpEndpointClient()
   )(implicit untypedSystem: akka.actor.ActorSystem = system.toUntyped)
       extends DefaultRouter(
-        httpClient = testClient,
+        endpointClient = new EndpointClientProxy(
+          httpClient = testClient,
+          grpcClient = new MockGrpcEndpointClient()
+        ),
         manifestStore = fixtures.manifestStore,
         nodeStore = fixtures.nodeStore.view,
         reservationStore = fixtures.reservationStore,

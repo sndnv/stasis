@@ -2,14 +2,15 @@ package stasis.server.service
 
 import java.util.concurrent.atomic.AtomicReference
 
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter._
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.ConnectionContext
 import akka.util.Timeout
 import com.typesafe.{config => typesafe}
-import stasis.core.security.jwt.{JwtAuthenticator, RemoteKeyProvider}
+import stasis.core.security.jwt.JwtAuthenticator
+import stasis.core.security.keys.RemoteKeyProvider
 import stasis.core.security.tls.EndpointContext
 import stasis.server.api.ApiEndpoint
 import stasis.server.security._

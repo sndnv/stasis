@@ -9,6 +9,7 @@ import akka.grpc.Codecs
 import akka.grpc.scaladsl.{GrpcExceptionHandler, GrpcMarshalling}
 import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.model.Uri.Path.Segment
+import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
 import akka.http.scaladsl.{Http, Http2, HttpConnectionContext}
 import akka.stream.ActorMaterializer
@@ -26,9 +27,9 @@ import scala.util.control.NonFatal
 class GrpcEndpoint(
   router: Router,
   reservationStore: ReservationStoreView,
-  override protected val authenticator: NodeAuthenticator[GrpcCredentials]
+  override protected val authenticator: NodeAuthenticator[HttpCredentials]
 )(implicit system: ActorSystem)
-    extends Endpoint[GrpcCredentials] {
+    extends Endpoint[HttpCredentials] {
 
   import internal.Implicits._
 
