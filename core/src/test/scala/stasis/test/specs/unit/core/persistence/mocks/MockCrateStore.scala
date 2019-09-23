@@ -2,33 +2,29 @@ package stasis.test.specs.unit.core.persistence.mocks
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.util.{ByteString, Timeout}
 import akka.{Done, NotUsed}
 import stasis.core.packaging.{Crate, Manifest}
+import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.backends.StreamingBackend
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.exceptions.PersistenceFailure
-import stasis.core.persistence.reservations.ReservationStore
-import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
-import stasis.core.routing.Node
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class MockCrateStore(
-  reservationStore: ReservationStore,
-  maxReservationSize: Option[Long] = None,
+  maxStorageSize: Option[Long] = None,
   persistDisabled: Boolean = false,
+  sinkDisabled: Boolean = false,
   retrieveDisabled: Boolean = false,
   retrieveEmpty: Boolean = false,
-  reservationDisabled: Boolean = false,
   discardDisabled: Boolean = false
 )(implicit system: ActorSystem[SpawnProtocol])
-    extends CrateStore(reservationStore, storeId = Node.generateId())(system.toUntyped) {
+    extends CrateStore(backend = null /* not needed here; backend is overridden in this class */ ) {
 
   import MockCrateStore._
 
@@ -47,9 +43,6 @@ class MockCrateStore(
     Statistic.RetrieveCompleted -> new AtomicInteger(0),
     Statistic.RetrieveEmpty -> new AtomicInteger(0),
     Statistic.RetrieveFailed -> new AtomicInteger(0),
-    Statistic.ReserveCompleted -> new AtomicInteger(0),
-    Statistic.ReserveLimited -> new AtomicInteger(0),
-    Statistic.ReserveFailed -> new AtomicInteger(0),
     Statistic.DiscardCompleted -> new AtomicInteger(0),
     Statistic.DiscardFailed -> new AtomicInteger(0)
   )
@@ -65,25 +58,23 @@ class MockCrateStore(
       Future.failed(new PersistenceFailure("[persistDisabled] is set to [true]"))
     }
 
-  override def reserve(request: CrateStorageRequest): Future[Option[CrateStorageReservation]] =
-    if (!reservationDisabled) {
-      maxReservationSize match {
-        case Some(size) if request.size > size =>
-          stats(Statistic.ReserveLimited).incrementAndGet()
-          Future.successful(None)
-
-        case _ =>
-          stats(Statistic.ReserveCompleted).incrementAndGet()
-          super.reserve(request)
-      }
+  override def sink(crate: Crate.Id): Future[Sink[StoreValue, Future[Done]]] =
+    if (!sinkDisabled) {
+      super.sink(crate)
     } else {
-      stats(Statistic.ReserveFailed).incrementAndGet()
-      Future.failed(new PersistenceFailure("[reservationDisabled] is set to [true]"))
+      stats(Statistic.PersistFailed).incrementAndGet()
+      Future.failed(new PersistenceFailure("[sinkDisabled] is set to [true]"))
+    }
+
+  override def canStore(request: CrateStorageRequest): Future[Boolean] =
+    maxStorageSize match {
+      case Some(maxSize) => Future.successful(maxSize >= request.size)
+      case None          => super.canStore(request)
     }
 
   def statistics: Map[Statistic, Int] = stats.mapValues(_.get())
 
-  override def backend: StreamingBackend = new StreamingBackend {
+  override val backend: StreamingBackend = new StreamingBackend {
     override def init(): Future[Done] = Future.successful(Done)
 
     override def drop(): Future[Done] = Future.successful(Done)
@@ -143,9 +134,6 @@ class MockCrateStore(
 object MockCrateStore {
   sealed trait Statistic
   object Statistic {
-    case object ReserveCompleted extends Statistic
-    case object ReserveLimited extends Statistic
-    case object ReserveFailed extends Statistic
     case object RetrieveCompleted extends Statistic
     case object RetrieveEmpty extends Statistic
     case object RetrieveFailed extends Statistic

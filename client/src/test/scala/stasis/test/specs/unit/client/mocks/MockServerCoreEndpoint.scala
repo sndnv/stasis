@@ -9,6 +9,7 @@ import akka.util.ByteString
 import akka.{Done, NotUsed}
 import stasis.core.networking.http.HttpEndpoint
 import stasis.core.packaging.{Crate, Manifest}
+import stasis.core.routing.Node
 import stasis.test.specs.unit.core.persistence.mocks.{MockCrateStore, MockReservationStore}
 import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockHttpAuthenticator
@@ -22,8 +23,8 @@ class MockServerCoreEndpoint(
   private implicit val ec: ExecutionContext = typedSystem.executionContext
 
   private val reservationStore = new MockReservationStore()
-  private val crateStore = new MockCrateStore(reservationStore)
-  private val router = new MockRouter(crateStore)
+  private val crateStore = new MockCrateStore()
+  private val router = new MockRouter(crateStore, Node.generateId(), reservationStore)
 
   private val endpoint = new HttpEndpoint(
     router = router,

@@ -24,42 +24,7 @@ import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
-
   import Implicits._
-
-  private implicit val typedSystem: akka.actor.typed.ActorSystem[SpawnProtocol] = akka.actor.typed.ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
-    "GrpcEndpointSpec"
-  )
-
-  private implicit val untypedSystem: ActorSystem = typedSystem.toUntyped
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
-
-  private class TestGrpcEndpoint(
-    val testCrateStore: Option[MockCrateStore] = None,
-    val testReservationStore: MockReservationStore = new MockReservationStore(),
-    val testAuthenticator: MockGrpcAuthenticator = new MockGrpcAuthenticator(testNode, testSecret)
-  ) extends GrpcEndpoint(
-        new MockRouter(testCrateStore.getOrElse(new MockCrateStore(testReservationStore))),
-        testReservationStore.view,
-        testAuthenticator
-      )
-
-  private val crateContent = "some value"
-
-  private val testNode = Node.generateId()
-  private val testSecret = "test-secret"
-
-  private val testCredentials = BasicHttpCredentials(username = testNode.toString, password = testSecret)
-
-  private val testReservation = CrateStorageReservation(
-    id = CrateStorageReservation.generateId(),
-    crate = Crate.generateId(),
-    size = crateContent.length,
-    copies = 3,
-    origin = testNode,
-    target = Node.generateId()
-  )
 
   "An GRPC Endpoint" should "successfully authenticate a client" in {
     val endpoint = new TestGrpcEndpoint()
@@ -184,9 +149,8 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "reject reservation requests that cannot be fulfilled" in {
-    val reservationStore = new MockReservationStore()
     val endpoint = new TestGrpcEndpoint(
-      testCrateStore = Some(new MockCrateStore(reservationStore, maxReservationSize = Some(99)))
+      testCrateStore = Some(new MockCrateStore(maxStorageSize = Some(99)))
     )
 
     val storageRequest = CrateStorageRequest(
@@ -228,10 +192,10 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "handle reservation failures" in {
-    val reservationStore = new MockReservationStore()
     val endpoint = new TestGrpcEndpoint(
-      testReservationStore = reservationStore,
-      testCrateStore = Some(new MockCrateStore(reservationStore, reservationDisabled = true))
+      testReservationStore = new MockReservationStore(),
+      testCrateStore = Some(new MockCrateStore(maxStorageSize = Some(0))),
+      reservationDisabled = true
     )
 
     val storageRequest = CrateStorageRequest(
@@ -318,7 +282,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val reservationStore = new MockReservationStore()
     val endpoint = new TestGrpcEndpoint(
       testReservationStore = reservationStore,
-      testCrateStore = Some(new MockCrateStore(reservationStore, persistDisabled = true))
+      testCrateStore = Some(new MockCrateStore(persistDisabled = true))
     )
 
     endpoint
@@ -465,4 +429,44 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
         )
       }
   }
+
+  private implicit val typedSystem: akka.actor.typed.ActorSystem[SpawnProtocol] = akka.actor.typed.ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+    "GrpcEndpointSpec"
+  )
+
+  private implicit val untypedSystem: ActorSystem = typedSystem.toUntyped
+  private implicit val mat: ActorMaterializer = ActorMaterializer()
+
+  private class TestGrpcEndpoint(
+    val testCrateStore: Option[MockCrateStore] = None,
+    val testReservationStore: MockReservationStore = new MockReservationStore(),
+    val testAuthenticator: MockGrpcAuthenticator = new MockGrpcAuthenticator(testNode, testSecret),
+    val reservationDisabled: Boolean = false
+  ) extends GrpcEndpoint(
+        new MockRouter(
+          store = testCrateStore.getOrElse(new MockCrateStore()),
+          storeNode = testNode,
+          reservationStore = testReservationStore,
+          reservationDisabled = reservationDisabled
+        ),
+        testReservationStore.view,
+        testAuthenticator
+      )
+
+  private val crateContent = "some value"
+
+  private val testNode = Node.generateId()
+  private val testSecret = "test-secret"
+
+  private val testCredentials = BasicHttpCredentials(username = testNode.toString, password = testSecret)
+
+  private val testReservation = CrateStorageReservation(
+    id = CrateStorageReservation.generateId(),
+    crate = Crate.generateId(),
+    size = crateContent.length,
+    copies = 3,
+    origin = testNode,
+    target = Node.generateId()
+  )
 }

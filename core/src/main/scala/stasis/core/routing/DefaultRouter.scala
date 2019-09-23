@@ -1,13 +1,14 @@
 package stasis.core.routing
 
-import akka.actor.ActorSystem
+import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.event.Logging
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Broadcast, Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
-import stasis.core.networking.EndpointClientProxy
 import stasis.core.packaging.{Crate, Manifest}
+import stasis.core.persistence.exceptions.ReservationFailure
 import stasis.core.persistence.manifests.ManifestStore
 import stasis.core.persistence.nodes.NodeStoreView
 import stasis.core.persistence.reservations.ReservationStore
@@ -20,19 +21,20 @@ import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 class DefaultRouter(
-  endpointClient: EndpointClientProxy,
+  nodeProxy: NodeProxy,
   manifestStore: ManifestStore,
   nodeStore: NodeStoreView,
   reservationStore: ReservationStore,
   stagingStore: Option[StagingStore],
   val routerId: Node.Id
-)(implicit system: ActorSystem)
+)(implicit system: ActorSystem[SpawnProtocol])
     extends Router {
 
-  private implicit val ec: ExecutionContext = system.dispatcher
+  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
+  private implicit val ec: ExecutionContext = system.executionContext
   private implicit val mat: ActorMaterializer = ActorMaterializer()
 
-  private val log = Logging(system, this.getClass.getName)
+  private val log = Logging(untypedSystem, this.getClass.getName)
 
   override def push(
     manifest: Manifest,
@@ -67,27 +69,30 @@ class DefaultRouter(
                             node.id
                           )
 
-                          nodeSink(node, manifest.copy(copies = copies))
-                            .map { sink =>
-                              log.debug(
-                                "Content sink retrieved for node [{}] while pushing crate [{}]",
-                                node,
-                                manifest.crate
-                              )
-
-                              Some((sink, node))
-                            }
-                            .recover {
-                              case NonFatal(e) =>
-                                log.error(
-                                  "Failed to retrieve content sink for node [{}] while pushing crate [{}]: [{}]",
+                          reservationStore.delete(manifest.crate, node.id).flatMap { _ =>
+                            nodeProxy
+                              .sink(node, manifest.copy(copies = copies))
+                              .map { sink =>
+                                log.debug(
+                                  "Content sink retrieved for node [{}] while pushing crate [{}]",
                                   node,
-                                  manifest.crate,
-                                  e
+                                  manifest.crate
                                 )
 
-                                None
-                            }
+                                Some((sink, node))
+                              }
+                              .recover {
+                                case NonFatal(e) =>
+                                  log.error(
+                                    "Failed to retrieve content sink for node [{}] while pushing crate [{}]: [{}]",
+                                    node,
+                                    manifest.crate,
+                                    e
+                                  )
+
+                                  None
+                              }
+                          }
                       }
                     )
                     .flatMap { results =>
@@ -141,7 +146,8 @@ class DefaultRouter(
         case (currentNodeId, currentNode) :: remainingNodes =>
           currentNode match {
             case Some(node) =>
-              pullFromNode(node, crate)
+              nodeProxy
+                .pull(node, crate)
                 .flatMap {
                   case Some(content) =>
                     log.debug(
@@ -285,7 +291,31 @@ class DefaultRouter(
               .sequence(
                 distribution.map {
                   case (node, copies) =>
-                    reserveOnNode(node, request.copy(copies = copies))
+                    reservationStore.existsFor(request.crate, node.id).flatMap {
+                      exists =>
+                        if (!exists) {
+                          nodeProxy.canStore(node, request.copy(copies = copies)).flatMap { storageAvailable =>
+                            if (storageAvailable) {
+                              val reservation = CrateStorageReservation(request, target = node.id)
+                              reservationStore.put(reservation).map { _ =>
+                                Some(reservation)
+                              }
+                            } else {
+                              log.warning(
+                                "Storage request [{}] for crate [{}] cannot be fulfilled; storage not available",
+                                request,
+                                request.crate
+                              )
+                              Future.successful(None)
+                            }
+                          }
+                        } else {
+                          val message =
+                            s"Failed to process reservation request [$request]; reservation already exists for crate [${request.crate}]"
+                          log.error(message)
+                          Future.failed(ReservationFailure(message))
+                        }
+                    }
                 }
               )
               .flatMap { responses =>
@@ -323,34 +353,6 @@ class DefaultRouter(
       }
     }
 
-  private def nodeSink(node: Node, manifest: Manifest): Future[Sink[ByteString, Future[Done]]] =
-    node match {
-      case Node.Local(_, crateStore) =>
-        crateStore.sink(manifest.crate)
-
-      case node: Node.Remote[_] =>
-        endpointClient.sink(node.address, manifest)
-    }
-
-  private def pullFromNode(node: Node, crate: Crate.Id): Future[Option[Source[ByteString, NotUsed]]] =
-    node match {
-      case Node.Local(_, crateStore) =>
-        crateStore.retrieve(crate)
-
-      case node: Node.Remote[_] =>
-        endpointClient.pull(node.address, crate)
-    }
-
-  private def reserveOnNode(node: Node, request: CrateStorageRequest): Future[Option[CrateStorageReservation]] =
-    node match {
-      case Node.Local(_, crateStore) =>
-        crateStore.reserve(request)
-
-      case _: Node.Remote[_] =>
-        log.info("Skipping reservation on node [{}]; reserving on remote nodes is not supported", node)
-        Future.successful(None)
-    }
-
   private def discardFromNodes(
     manifest: Manifest,
     availableNodes: Map[Node.Id, Node]
@@ -358,11 +360,8 @@ class DefaultRouter(
     Future.sequence(
       manifest.destinations.map { destination =>
         availableNodes.get(destination) match {
-          case Some(Node.Local(_, crateStore)) =>
-            crateStore.discard(manifest.crate).map(destination -> _)
-
-          case Some(node: Node.Remote[_]) =>
-            endpointClient.discard(node.address, manifest.crate).map(destination -> _)
+          case Some(node) =>
+            nodeProxy.discard(node, manifest.crate).map(destination -> _)
 
           case None =>
             log.error(s"Crate [${manifest.crate}] was not discarded from node [$destination]; node not found")

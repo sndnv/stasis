@@ -20,46 +20,6 @@ import scala.collection.mutable
 import scala.util.control.NonFatal
 
 class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
-
-  private implicit val untypedSystem: akka.actor.ActorSystem =
-    akka.actor.ActorSystem(name = "GrpcEndpointClientSpec_Untyped")
-
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
-    "GrpcEndpointClientSpec_Typed"
-  )
-
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
-
-  private val crateContent = "some value"
-
-  private val testManifest = Manifest(
-    crate = Crate.generateId(),
-    size = 1,
-    copies = 7,
-    source = Node.generateId(),
-    origin = Node.generateId()
-  )
-
-  private val testNode = Node.generateId()
-  private val testSecret = "test-secret"
-
-  private trait TestFixtures {
-    lazy val reservationStore: MockReservationStore = new MockReservationStore()
-    lazy val crateStore: MockCrateStore = new MockCrateStore(reservationStore, maxReservationSize = Some(99))
-    lazy val router: MockRouter = new MockRouter(crateStore)
-  }
-
-  private class TestGrpcEndpoint(
-    val testAuthenticator: MockGrpcAuthenticator = new MockGrpcAuthenticator(testNode, testSecret),
-    val fixtures: TestFixtures = new TestFixtures {},
-    port: Int
-  ) extends GrpcEndpoint(fixtures.router, fixtures.reservationStore.view, testAuthenticator) {
-    private val _ = start("localhost", port, ConnectionContext.noEncryption())
-  }
-
-  private val ports: mutable.Queue[Int] = (20000 to 20100).to[mutable.Queue]
-
   "An GRPC Endpoint Client" should "successfully push crates" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
@@ -73,9 +33,6 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).map { _ =>
       endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
       endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(1)
-      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
-      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
     }
   }
 
@@ -102,9 +59,6 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
           )
           endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
           endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(0)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(1)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
       }
   }
 
@@ -115,10 +69,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpoint = new TestGrpcEndpoint(
       port = endpointPort,
       fixtures = new TestFixtures {
-        override lazy val crateStore: MockCrateStore = new MockCrateStore(
-          reservationStore,
-          persistDisabled = true
-        )
+        override lazy val crateStore: MockCrateStore = new MockCrateStore(persistDisabled = true)
       }
     )
 
@@ -139,9 +90,6 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
           )
           endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
           endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(1)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(1)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
       }
   }
 
@@ -163,9 +111,6 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
           eventually {
             endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
             endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-            endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(1)
-            endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
-            endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
           }
         }
     }
@@ -193,9 +138,6 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
               result.utf8String should be(crateContent)
               endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
               endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(1)
-              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
-              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
               endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(1)
               endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(0)
               endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
@@ -433,4 +375,43 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       result should be(false)
     }
   }
+
+  private implicit val untypedSystem: akka.actor.ActorSystem =
+    akka.actor.ActorSystem(name = "GrpcEndpointClientSpec_Untyped")
+
+  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+    "GrpcEndpointClientSpec_Typed"
+  )
+
+  private implicit val mat: ActorMaterializer = ActorMaterializer()
+
+  private val crateContent = "some value"
+
+  private val testManifest = Manifest(
+    crate = Crate.generateId(),
+    size = 1,
+    copies = 7,
+    source = Node.generateId(),
+    origin = Node.generateId()
+  )
+
+  private val testNode = Node.generateId()
+  private val testSecret = "test-secret"
+
+  private trait TestFixtures {
+    lazy val reservationStore: MockReservationStore = new MockReservationStore()
+    lazy val crateStore: MockCrateStore = new MockCrateStore(maxStorageSize = Some(99))
+    lazy val router: MockRouter = new MockRouter(crateStore, testNode, reservationStore)
+  }
+
+  private class TestGrpcEndpoint(
+    val testAuthenticator: MockGrpcAuthenticator = new MockGrpcAuthenticator(testNode, testSecret),
+    val fixtures: TestFixtures = new TestFixtures {},
+    port: Int
+  ) extends GrpcEndpoint(fixtures.router, fixtures.reservationStore.view, testAuthenticator) {
+    private val _ = start("localhost", port, ConnectionContext.noEncryption())
+  }
+
+  private val ports: mutable.Queue[Int] = (20000 to 20100).to[mutable.Queue]
 }

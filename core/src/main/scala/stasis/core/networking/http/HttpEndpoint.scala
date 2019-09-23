@@ -1,7 +1,8 @@
 package stasis.core.networking.http
 
 import akka.NotUsed
-import akka.actor.ActorSystem
+import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.event.Logging
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
@@ -27,16 +28,17 @@ class HttpEndpoint(
   router: Router,
   reservationStore: ReservationStoreView,
   override protected val authenticator: NodeAuthenticator[HttpCredentials]
-)(implicit val system: ActorSystem)
+)(implicit system: ActorSystem[SpawnProtocol])
     extends Endpoint[HttpCredentials] {
 
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.core.api.Formats._
 
+  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
   private implicit val mat: ActorMaterializer = ActorMaterializer()
-  private implicit val ec: ExecutionContextExecutor = system.dispatcher
+  private implicit val ec: ExecutionContextExecutor = system.executionContext
 
-  private val log = Logging(system, this.getClass.getName)
+  private val log = Logging(untypedSystem, this.getClass.getName)
 
   def start(interface: String, port: Int, context: ConnectionContext): Future[Http.ServerBinding] =
     Http().bindAndHandle(

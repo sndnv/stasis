@@ -6,15 +6,16 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
-import stasis.core.networking.EndpointClientProxy
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.packaging.{Crate, Manifest}
+import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.staging.StagingStore
-import stasis.core.routing.Node
+import stasis.core.routing.{Node, NodeProxy}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.{MockGrpcEndpointClient, MockHttpEndpointClient}
-import stasis.test.specs.unit.core.persistence.mocks.{MockCrateStore, MockReservationStore}
+import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
@@ -27,9 +28,6 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
     store.stage(testManifest, destinations = destinations, content = Source.single(testContent)).map { _ =>
       fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
       fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(1)
-      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
-      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
     }
   }
 
@@ -94,8 +92,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
   it should "fail to stage crates if storage cannot be reserved staging crate store" in {
     val fixtures = new TestFixtures {
       override lazy val stagingCrateStore: MockCrateStore = new MockCrateStore(
-        reservationStore = new MockReservationStore(),
-        maxReservationSize = Some(1)
+        maxStorageSize = Some(1)
       )
     }
     val store = new TestStagingStore(fixtures)
@@ -109,7 +106,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Failed to stage crate [${testManifest.crate}]; staging crate store reservation failed"
+            s"Failed to stage crate [${testManifest.crate}]; storage not available"
           )
       }
   }
@@ -118,7 +115,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
     {
       val fixtures = new TestFixtures {
         override lazy val stagingCrateStore: MockCrateStore =
-          new MockCrateStore(new MockReservationStore(), retrieveEmpty = true)
+          new MockCrateStore(retrieveEmpty = true)
       }
       val store = new TestStagingStore(fixtures)
       val destinations: Map[Node, Int] = fixtures.remoteNodes ++ fixtures.localNodes
@@ -147,9 +144,6 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
     } yield {
       fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
       fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(1)
-      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
-      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
 
       result should be(true)
     }
@@ -164,9 +158,6 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
     } yield {
       fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
       fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(0)
-      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
-      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
 
       result should be(false)
     }
@@ -180,11 +171,14 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(3.seconds, 250.milliseconds)
 
   private trait TestFixtures {
-    lazy val stagingCrateStore: MockCrateStore = new MockCrateStore(new MockReservationStore())
-    lazy val nodeCrateStore: MockCrateStore = new MockCrateStore(new MockReservationStore())
+    lazy val stagingCrateStore: MockCrateStore = new MockCrateStore()
+    lazy val nodeCrateStore: MockCrateStore = new MockCrateStore()
     lazy val testClient: MockHttpEndpointClient = new MockHttpEndpointClient()
     lazy val localNodes: Map[Node.Local, Int] = Map(
-      Node.Local(Node.generateId(), crateStore = nodeCrateStore) -> 1
+      Node.Local(
+        id = Node.generateId(),
+        storeDescriptor = null /* mock crate store is always provided in this test */
+      ) -> 1
     )
     lazy val remoteNodes: Map[Node.Remote.Http, Int] = Map(
       Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:8000")) -> 1,
@@ -196,10 +190,13 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
     val fixtures: TestFixtures = new TestFixtures {}
   ) extends StagingStore(
         crateStore = fixtures.stagingCrateStore,
-        endpointClient = new EndpointClientProxy(
+        nodeProxy = new NodeProxy(
           httpClient = fixtures.testClient,
           grpcClient = new MockGrpcEndpointClient()
-        ),
+        ) {
+          override protected def crateStore(id: Node.Id, storeDescriptor: CrateStore.Descriptor): Future[CrateStore] =
+            Future.successful(fixtures.nodeCrateStore)
+        },
         destagingDelay = 50.milliseconds
       )
 

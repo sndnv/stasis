@@ -1,6 +1,6 @@
 package stasis.client.api
 
-import akka.actor.ActorSystem
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -15,7 +15,7 @@ class DefaultServerCoreEndpointClient(
   coreAddress: HttpEndpointAddress,
   coreCredentials: HttpCredentials,
   override val self: Node.Id
-)(implicit system: ActorSystem)
+)(implicit system: ActorSystem[SpawnProtocol])
     extends ServerCoreEndpointClient {
   private val client: HttpEndpointClient = new HttpEndpointClient(credentials = _ => Future.successful(coreCredentials))
 

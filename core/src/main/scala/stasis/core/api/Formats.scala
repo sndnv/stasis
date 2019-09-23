@@ -1,21 +1,13 @@
 package stasis.core.api
 
-import akka.actor.typed.scaladsl.adapter._
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.scaladsl.model.Uri
-import akka.util.Timeout
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.packaging.Manifest
-import stasis.core.persistence.backends.StreamingBackend
-import stasis.core.persistence.backends.file.{ContainerBackend, FileBackend}
-import stasis.core.persistence.backends.memory.StreamingMemoryBackend
 import stasis.core.persistence.crates.CrateStore
-import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.core.routing.Node
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 object Formats {
@@ -37,44 +29,39 @@ object Formats {
   implicit val grpcEndpointAddressFormat: Format[GrpcEndpointAddress] =
     Json.format[GrpcEndpointAddress]
 
-  implicit def streamingBackendReads(
-    implicit system: ActorSystem[SpawnProtocol],
-    timeout: Timeout
-  ): Reads[StreamingBackend] = Reads {
-    _.validate[JsObject].flatMap { backend =>
-      implicit val ec: ExecutionContext = system.executionContext
-
-      (backend \ "backend-type").validate[String].map {
+  implicit val crateStoreDescriptorReads: Reads[CrateStore.Descriptor] = Reads {
+    _.validate[JsObject].flatMap { descriptor =>
+      (descriptor \ "backend-type").validate[String].map {
         case "memory" =>
-          StreamingMemoryBackend(
-            maxSize = (backend \ "max-size").as[Long],
-            name = (backend \ "name").as[String]
+          CrateStore.Descriptor.ForStreamingMemoryBackend(
+            maxSize = (descriptor \ "max-size").as[Long],
+            name = (descriptor \ "name").as[String]
           )
 
         case "container" =>
-          new ContainerBackend(
-            path = (backend \ "path").as[String],
-            maxChunkSize = (backend \ "max-chunk-size").as[Int],
-            maxChunks = (backend \ "max-chunks").as[Int]
+          CrateStore.Descriptor.ForContainerBackend(
+            path = (descriptor \ "path").as[String],
+            maxChunkSize = (descriptor \ "max-chunk-size").as[Int],
+            maxChunks = (descriptor \ "max-chunks").as[Int]
           )
 
         case "file" =>
-          new FileBackend(
-            parentDirectory = (backend \ "parent-directory").as[String]
+          CrateStore.Descriptor.ForFileBackend(
+            parentDirectory = (descriptor \ "parent-directory").as[String]
           )
       }
     }
   }
 
-  implicit val streamingBackendWrites: Writes[StreamingBackend] = Writes {
-    case backend: StreamingMemoryBackend =>
+  implicit val crateStoreDescriptorWrites: Writes[CrateStore.Descriptor] = Writes {
+    case backend: CrateStore.Descriptor.ForStreamingMemoryBackend =>
       Json.obj(
         "backend-type" -> JsString("memory"),
         "max-size" -> JsNumber(backend.maxSize),
         "name" -> JsString(backend.name)
       )
 
-    case backend: ContainerBackend =>
+    case backend: CrateStore.Descriptor.ForContainerBackend =>
       Json.obj(
         "backend-type" -> JsString("container"),
         "path" -> JsString(backend.path),
@@ -82,29 +69,21 @@ object Formats {
         "max-chunks" -> JsNumber(backend.maxChunks)
       )
 
-    case backend: FileBackend =>
+    case backend: CrateStore.Descriptor.ForFileBackend =>
       Json.obj(
         "backend-type" -> JsString("file"),
         "parent-directory" -> JsString(backend.parentDirectory)
       )
   }
 
-  implicit def nodeReads(
-    implicit system: ActorSystem[SpawnProtocol],
-    timeout: Timeout,
-    reservationStore: ReservationStore
-  ): Reads[Node] = Reads {
+  implicit val nodeReads: Reads[Node] = Reads {
     _.validate[JsObject].flatMap { node =>
       (node \ "node-type").validate[String].map {
         case "local" =>
           val id = (node \ "id").as[Node.Id]
           Node.Local(
             id = id,
-            crateStore = CrateStore(
-              streamingBackend = (node \ "backend").as[StreamingBackend],
-              reservationStore = reservationStore,
-              storeId = id
-            )(system.toUntyped)
+            storeDescriptor = (node \ "storeDescriptor").as[CrateStore.Descriptor]
           )
 
         case "remote-http" =>
@@ -127,7 +106,7 @@ object Formats {
       Json.obj(
         "node-type" -> JsString("local"),
         "id" -> Json.toJson(node.id),
-        "backend" -> Json.toJson(node.crateStore.backend)
+        "storeDescriptor" -> Json.toJson(node.storeDescriptor)
       )
 
     case node: Node.Remote.Http =>

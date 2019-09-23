@@ -14,7 +14,7 @@ object Node {
 
   def generateId(): Id = java.util.UUID.randomUUID()
 
-  final case class Local(override val id: Node.Id, crateStore: CrateStore) extends Node
+  final case class Local(override val id: Node.Id, storeDescriptor: CrateStore.Descriptor) extends Node
 
   sealed trait Remote[A <: EndpointAddress] extends Node {
     def address: A

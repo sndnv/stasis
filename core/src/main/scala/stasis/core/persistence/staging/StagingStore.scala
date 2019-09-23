@@ -8,13 +8,12 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Broadcast, Sink, Source}
 import akka.util.{ByteString, Timeout}
 import akka.{Done, NotUsed}
-import stasis.core.networking.EndpointClientProxy
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.exceptions.StagingFailure
-import stasis.core.routing.Node
+import stasis.core.routing.{Node, NodeProxy}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -22,17 +21,18 @@ import scala.util.control.NonFatal
 
 class StagingStore(
   crateStore: CrateStore,
-  endpointClient: EndpointClientProxy,
+  nodeProxy: NodeProxy,
   destagingDelay: FiniteDuration
-)(implicit val system: ActorSystem[SpawnProtocol], timeout: Timeout) {
+)(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout) {
 
+  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
   private implicit val ec: ExecutionContext = system.executionContext
-  private implicit val mat: ActorMaterializer = ActorMaterializer()(system.toUntyped)
+  private implicit val mat: ActorMaterializer = ActorMaterializer()
 
   private val scheduleStore: MemoryBackend[Crate.Id, Cancellable] =
     MemoryBackend[Crate.Id, Cancellable](name = "schedule-store")
 
-  private val log = Logging(system.toUntyped, this.getClass.getName)
+  private val log = Logging(untypedSystem, this.getClass.getName)
 
   def stage(
     manifest: Manifest,
@@ -42,10 +42,8 @@ class StagingStore(
     if (destinations.nonEmpty) {
       log.debug("Staging crate [{}] with manifest [{}]", manifest.crate, manifest)
 
-      crateStore.reserve(request = CrateStorageRequest(manifest)).flatMap {
-        case Some(reservation) =>
-          log.debug("Staging storage reservation for crate [{}] completed: [{}]", manifest.crate, reservation)
-
+      crateStore.canStore(request = CrateStorageRequest(manifest)).flatMap {
+        case true =>
           crateStore.persist(manifest, content).flatMap { _ =>
             log.debug(
               "Scheduling destaging of crate [{}] in [{}] second(s) to [{}] destination(s): [{}]",
@@ -62,8 +60,8 @@ class StagingStore(
             )
           }
 
-        case None =>
-          val message = s"Failed to stage crate [${manifest.crate}]; staging crate store reservation failed"
+        case false =>
+          val message = s"Failed to stage crate [${manifest.crate}]; storage not available"
           log.error(message)
           Future.failed(StagingFailure(message))
       }
@@ -130,13 +128,7 @@ class StagingStore(
               Future.sequence(
                 destinations.map {
                   case (node, copies) =>
-                    node match {
-                      case Node.Local(_, crateStore) =>
-                        crateStore.sink(manifest.crate)
-
-                      case node: Node.Remote[_] =>
-                        endpointClient.sink(node.address, manifest.copy(copies = copies))
-                    }
+                    nodeProxy.sink(node, manifest.copy(copies = copies))
                 }
               )
 

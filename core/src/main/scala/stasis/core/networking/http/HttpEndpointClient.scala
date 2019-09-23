@@ -1,6 +1,7 @@
 package stasis.core.networking.http
 
-import akka.actor.ActorSystem
+import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
@@ -23,16 +24,17 @@ import scala.util.control.NonFatal
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
 class HttpEndpointClient(
   override protected val credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials]
-)(implicit val system: ActorSystem)
+)(implicit system: ActorSystem[SpawnProtocol])
     extends EndpointClient[HttpEndpointAddress, HttpCredentials] {
 
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.core.api.Formats._
 
+  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
   private implicit val mat: ActorMaterializer = ActorMaterializer()
-  private implicit val ec: ExecutionContext = system.dispatcher
+  private implicit val ec: ExecutionContext = system.executionContext
 
-  private val log = Logging(system, this.getClass.getName)
+  private val log = Logging(untypedSystem, this.getClass.getName)
 
   override def push(
     address: HttpEndpointAddress,
