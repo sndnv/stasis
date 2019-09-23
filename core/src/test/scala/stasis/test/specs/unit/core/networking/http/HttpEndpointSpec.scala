@@ -20,38 +20,6 @@ import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockHttpAuthenticator
 
 class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
-
-  private implicit val typedSystem: akka.actor.typed.ActorSystem[SpawnProtocol] = akka.actor.typed.ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
-    "HttpEndpointSpec_Untyped"
-  )
-
-  private class TestHttpEndpoint(
-    val testCrateStore: Option[MockCrateStore] = None,
-    val testReservationStore: MockReservationStore = new MockReservationStore(),
-    val testAuthenticator: MockHttpAuthenticator = new MockHttpAuthenticator(testUser, testPassword)
-  ) extends HttpEndpoint(
-        new MockRouter(testCrateStore.getOrElse(new MockCrateStore(testReservationStore))),
-        testReservationStore.view,
-        testAuthenticator
-      )
-
-  private val crateContent = "some value"
-
-  private val testUser = "test-user"
-  private val testPassword = "test-password"
-
-  private val testCredentials = BasicHttpCredentials(username = testUser, password = testPassword)
-
-  private val testReservation = CrateStorageReservation(
-    id = CrateStorageReservation.generateId(),
-    crate = Crate.generateId(),
-    size = crateContent.length,
-    copies = 3,
-    origin = Node.generateId(),
-    target = Node.generateId()
-  )
-
   "An HTTP Endpoint" should "successfully authenticate a client" in {
     val endpoint = new TestHttpEndpoint()
     endpoint.testReservationStore.put(testReservation).await
@@ -129,9 +97,8 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "reject reservation requests that cannot be fulfilled" in {
-    val reservationStore = new MockReservationStore()
     val endpoint = new TestHttpEndpoint(
-      testCrateStore = Some(new MockCrateStore(reservationStore, maxReservationSize = Some(99)))
+      testCrateStore = Some(new MockCrateStore(maxStorageSize = Some(99)))
     )
 
     val storageRequest = CrateStorageRequest(
@@ -233,4 +200,35 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       status should be(StatusCodes.InternalServerError)
     }
   }
+
+  private implicit val typedSystem: akka.actor.typed.ActorSystem[SpawnProtocol] = akka.actor.typed.ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+    "HttpEndpointSpec_Untyped"
+  )
+
+  private class TestHttpEndpoint(
+    val testCrateStore: Option[MockCrateStore] = None,
+    val testReservationStore: MockReservationStore = new MockReservationStore(),
+    val testAuthenticator: MockHttpAuthenticator = new MockHttpAuthenticator(testUser, testPassword)
+  ) extends HttpEndpoint(
+        new MockRouter(testCrateStore.getOrElse(new MockCrateStore()), Node.generateId(), testReservationStore),
+        testReservationStore.view,
+        testAuthenticator
+      )
+
+  private val crateContent = "some value"
+
+  private val testUser = "test-user"
+  private val testPassword = "test-password"
+
+  private val testCredentials = BasicHttpCredentials(username = testUser, password = testPassword)
+
+  private val testReservation = CrateStorageReservation(
+    id = CrateStorageReservation.generateId(),
+    crate = Crate.generateId(),
+    size = crateContent.length,
+    copies = 3,
+    origin = Node.generateId(),
+    target = Node.generateId()
+  )
 }

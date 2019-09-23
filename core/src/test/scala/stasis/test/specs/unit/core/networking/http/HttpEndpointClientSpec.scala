@@ -22,50 +22,6 @@ import scala.collection.mutable
 import scala.util.control.NonFatal
 
 class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
-
-  private implicit val untypedSystem: akka.actor.ActorSystem =
-    akka.actor.ActorSystem(name = "HttpEndpointClientSpec_Untyped")
-
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
-    "HttpEndpointClientSpec_Typed"
-  )
-
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
-
-  private val crateContent = "some value"
-
-  private val testManifest = Manifest(
-    crate = Crate.generateId(),
-    size = 1,
-    copies = 7,
-    source = Node.generateId(),
-    origin = Node.generateId()
-  )
-
-  private val testUser = "test-user"
-  private val testPassword = "test-password"
-
-  private trait TestFixtures {
-    lazy val reservationStore: MockReservationStore = new MockReservationStore()
-    lazy val crateStore: MockCrateStore = new MockCrateStore(reservationStore, maxReservationSize = Some(99))
-    lazy val router: MockRouter = new MockRouter(crateStore)
-  }
-
-  private class TestHttpEndpoint(
-    val testAuthenticator: NodeAuthenticator[HttpCredentials] = new MockHttpAuthenticator(testUser, testPassword),
-    val fixtures: TestFixtures = new TestFixtures {},
-    port: Int
-  ) extends HttpEndpoint(
-        router = fixtures.router,
-        authenticator = testAuthenticator,
-        reservationStore = fixtures.reservationStore.view
-      ) {
-    private val _ = start(interface = "localhost", port = port, context = ConnectionContext.noEncryption())
-  }
-
-  private val ports: mutable.Queue[Int] = (19000 to 19100).to[mutable.Queue]
-
   "An HTTP Endpoint Client" should "successfully push crates" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
@@ -79,9 +35,6 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).map { _ =>
       endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
       endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(1)
-      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
-      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
     }
   }
 
@@ -107,9 +60,6 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
           )
           endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
           endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(0)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(1)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
       }
   }
 
@@ -135,9 +85,6 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
           )
           endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
           endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(0)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
       }
   }
 
@@ -148,10 +95,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpoint = new TestHttpEndpoint(
       port = endpointPort,
       fixtures = new TestFixtures {
-        override lazy val crateStore: MockCrateStore = new MockCrateStore(
-          reservationStore,
-          persistDisabled = true
-        )
+        override lazy val crateStore: MockCrateStore = new MockCrateStore(persistDisabled = true)
       }
     )
 
@@ -171,9 +115,6 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
           )
           endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
           endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(1)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(1)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
       }
   }
 
@@ -195,9 +136,6 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
           eventually {
             endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
             endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-            endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(1)
-            endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
-            endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
           }
         }
     }
@@ -225,9 +163,6 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
               result.utf8String should be(crateContent)
               endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
               endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(1)
-              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
-              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
               endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(1)
               endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(0)
               endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
@@ -473,4 +408,47 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
           )
       }
   }
+
+  private implicit val untypedSystem: akka.actor.ActorSystem =
+    akka.actor.ActorSystem(name = "HttpEndpointClientSpec_Untyped")
+
+  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+    "HttpEndpointClientSpec_Typed"
+  )
+
+  private implicit val mat: ActorMaterializer = ActorMaterializer()
+
+  private val crateContent = "some value"
+
+  private val testManifest = Manifest(
+    crate = Crate.generateId(),
+    size = 1,
+    copies = 7,
+    source = Node.generateId(),
+    origin = Node.generateId()
+  )
+
+  private val testUser = "test-user"
+  private val testPassword = "test-password"
+
+  private trait TestFixtures {
+    lazy val reservationStore: MockReservationStore = new MockReservationStore()
+    lazy val crateStore: MockCrateStore = new MockCrateStore(maxStorageSize = Some(99))
+    lazy val router: MockRouter = new MockRouter(crateStore, Node.generateId(), reservationStore)
+  }
+
+  private class TestHttpEndpoint(
+    val testAuthenticator: NodeAuthenticator[HttpCredentials] = new MockHttpAuthenticator(testUser, testPassword),
+    val fixtures: TestFixtures = new TestFixtures {},
+    port: Int
+  ) extends HttpEndpoint(
+        router = fixtures.router,
+        authenticator = testAuthenticator,
+        reservationStore = fixtures.reservationStore.view
+      ) {
+    private val _ = start(interface = "localhost", port = port, context = ConnectionContext.noEncryption())
+  }
+
+  private val ports: mutable.Queue[Int] = (19000 to 19100).to[mutable.Queue]
 }

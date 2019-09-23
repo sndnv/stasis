@@ -7,13 +7,13 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.scalatest.concurrent.Eventually
-import stasis.core.networking.EndpointClientProxy
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.packaging.{Crate, Manifest}
+import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.staging.StagingStore
 import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.core.routing.exceptions.{DiscardFailure, DistributionFailure, PullFailure, PushFailure}
-import stasis.core.routing.{DefaultRouter, Node}
+import stasis.core.routing.{DefaultRouter, Node, NodeProxy}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.{MockGrpcEndpointClient, MockHttpEndpointClient}
 import stasis.test.specs.unit.core.persistence.mocks._
@@ -24,9 +24,20 @@ import scala.util.{Failure, Success}
 
 class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
   "A DefaultRouter" should "calculate crate copies distribution" in {
-    val node1 = Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:8000"))
-    val node2 = Node.Local(Node.generateId(), crateStore = null)
-    val node3 = Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:9000"))
+    val node1 = Node.Remote.Http(
+      id = Node.generateId(),
+      address = HttpEndpointAddress("localhost:8000")
+    )
+
+    val node2 = Node.Local(
+      id = Node.generateId(),
+      storeDescriptor = null /* actual crate store is not needed for this test */
+    )
+
+    val node3 = Node.Remote.Http(
+      id = Node.generateId(),
+      address = HttpEndpointAddress("localhost:9000")
+    )
 
     DefaultRouter.distributeCopies(
       availableNodes = Seq(node1),
@@ -112,18 +123,22 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
   }
 
   it should "push crates to nodes using staging" in {
-    val stagingCrateStore = new MockCrateStore(new MockReservationStore())
+    val stagingCrateStore = new MockCrateStore()
     val testClient = new MockHttpEndpointClient()
 
-    val fixtures = new TestFixtures {
+    val fixtures = new TestFixtures { parent =>
       override lazy val stagingStore: Option[StagingStore] =
         Some(
           new StagingStore(
             crateStore = stagingCrateStore,
-            endpointClient = new EndpointClientProxy(
+            nodeProxy = new NodeProxy(
               httpClient = testClient,
               grpcClient = new MockGrpcEndpointClient()
-            ),
+            ) {
+              override protected def crateStore(id: Node.Id,
+                                                storeDescriptor: CrateStore.Descriptor): Future[CrateStore] =
+                Future.successful(parent.crateStore)
+            },
             destagingDelay = 100.milliseconds
           )
         )
@@ -135,9 +150,6 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     stagingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
     stagingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-    stagingCrateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(1)
-    stagingCrateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
-    stagingCrateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
 
     eventually {
       fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
@@ -175,9 +187,6 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     eventually {
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveCompleted) should be(1)
-      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveLimited) should be(0)
-      router.fixtures.crateStore.statistics(MockCrateStore.Statistic.ReserveFailed) should be(0)
     }
   }
 
@@ -458,7 +467,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     val router = new TestRouter(
       fixtures = new TestFixtures {
         override lazy val crateStore: MockCrateStore =
-          new MockCrateStore(new MockReservationStore(), retrieveEmpty = true)
+          new MockCrateStore(retrieveEmpty = true)
       }
     )
 
@@ -491,7 +500,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     val router = new TestRouter(
       fixtures = new TestFixtures {
         override lazy val crateStore: MockCrateStore =
-          new MockCrateStore(new MockReservationStore(), retrieveDisabled = true)
+          new MockCrateStore(retrieveDisabled = true)
       }
     )
 
@@ -567,7 +576,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
   }
 
   it should "successfully discard staged crates" in {
-    val stagingCrateStore = new MockCrateStore(new MockReservationStore())
+    val stagingCrateStore = new MockCrateStore()
     val testClient = new MockHttpEndpointClient()
 
     val fixtures = new TestFixtures {
@@ -575,7 +584,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         Some(
           new StagingStore(
             crateStore = stagingCrateStore,
-            endpointClient = new EndpointClientProxy(
+            nodeProxy = new NodeProxy(
               httpClient = testClient,
               grpcClient = new MockGrpcEndpointClient()
             ),
@@ -739,7 +748,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     val router = new TestRouter(
       fixtures = new TestFixtures {
         override lazy val crateStore: MockCrateStore =
-          new MockCrateStore(new MockReservationStore(), discardDisabled = true)
+          new MockCrateStore(discardDisabled = true)
       }
     )
 
@@ -849,7 +858,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     val router = new TestRouter(
       fixtures = new TestFixtures {
         override lazy val crateStore: MockCrateStore =
-          new MockCrateStore(new MockReservationStore(), reservationDisabled = true)
+          new MockCrateStore(maxStorageSize = Some(0))
       }
     )
 
@@ -860,6 +869,37 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       origin = Node.generateId(),
       source = Node.generateId()
     )
+
+    router.reserve(request).map(_ should be(None))
+  }
+
+  it should "fail to process reservation requests if reservation already exists" in {
+    val router = new TestRouter(
+      fixtures = new TestFixtures {
+        override def testNodes: Seq[Node] = Seq(localNode)
+      }
+    )
+
+    val request = CrateStorageRequest(
+      crate = Crate.generateId(),
+      size = 1,
+      copies = 1,
+      origin = Node.generateId(),
+      source = Node.generateId()
+    )
+
+    val expectedReservation = CrateStorageReservation(
+      request = request,
+      target = Node.generateId()
+    )
+
+    router.reserve(request).await match {
+      case Some(actualReservation) =>
+        actualReservation.size should be(expectedReservation.size)
+        actualReservation.copies should be(expectedReservation.copies)
+
+      case None => fail("Expected reservation response but none was received")
+    }
 
     router.reserve(request).map(_ should be(None))
   }
@@ -877,10 +917,13 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
   private trait TestFixtures {
     lazy val reservationStore: MockReservationStore = new MockReservationStore()
-    lazy val crateStore: MockCrateStore = new MockCrateStore(reservationStore)
+    lazy val crateStore: MockCrateStore = new MockCrateStore()
     lazy val manifestStore: MockManifestStore = new MockManifestStore
     lazy val nodeStore: MockNodeStore = new MockNodeStore
-    lazy val localNode: Node.Local = Node.Local(Node.generateId(), crateStore = crateStore)
+    lazy val localNode: Node.Local = Node.Local(
+      id = Node.generateId(),
+      storeDescriptor = null /* mock crate store is always provided in this test */
+    )
     lazy val stagingStore: Option[StagingStore] = None
     lazy val remoteNodes: Seq[Node.Remote.Http] = Seq(
       Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:8000")),
@@ -901,10 +944,13 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     val testClient: MockHttpEndpointClient = new MockHttpEndpointClient()
   )(implicit untypedSystem: akka.actor.ActorSystem = system.toUntyped)
       extends DefaultRouter(
-        endpointClient = new EndpointClientProxy(
+        nodeProxy = new NodeProxy(
           httpClient = testClient,
           grpcClient = new MockGrpcEndpointClient()
-        ),
+        ) {
+          override protected def crateStore(id: Node.Id, storeDescriptor: CrateStore.Descriptor): Future[CrateStore] =
+            Future.successful(fixtures.crateStore)
+        },
         manifestStore = fixtures.manifestStore,
         nodeStore = fixtures.nodeStore.view,
         reservationStore = fixtures.reservationStore,

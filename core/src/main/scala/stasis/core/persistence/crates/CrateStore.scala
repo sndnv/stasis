@@ -1,30 +1,28 @@
 package stasis.core.persistence.crates
 
-import akka.actor.ActorSystem
+import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.event.Logging
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import akka.util.{ByteString, Timeout}
 import akka.{Done, NotUsed}
 import stasis.core.packaging.{Crate, Manifest}
+import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.backends.StreamingBackend
-import stasis.core.persistence.exceptions.ReservationFailure
-import stasis.core.persistence.reservations.ReservationStore
-import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
-import stasis.core.routing.Node
+import stasis.core.persistence.backends.file.{ContainerBackend, FileBackend}
+import stasis.core.persistence.backends.memory.StreamingMemoryBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
-abstract class CrateStore(
-  reservationStore: ReservationStore,
-  val storeId: Node.Id
-)(implicit val system: ActorSystem) { store =>
+class CrateStore(
+  val backend: StreamingBackend
+)(implicit system: ActorSystem[SpawnProtocol]) { store =>
+  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
   private implicit val mat: ActorMaterializer = ActorMaterializer()
-  private implicit val ec: ExecutionContext = system.dispatcher
+  private implicit val ec: ExecutionContext = system.executionContext
 
-  private val log = Logging(system, this.getClass.getName)
-
-  def backend: StreamingBackend
+  private val log = Logging(untypedSystem, this.getClass.getName)
 
   def persist(manifest: Manifest, content: Source[ByteString, NotUsed]): Future[Done] = {
     log.debug("Persisting content for crate [{}] with manifest [{}]", manifest.crate, manifest)
@@ -41,19 +39,12 @@ abstract class CrateStore(
   def sink(crate: Crate.Id): Future[Sink[ByteString, Future[Done]]] = {
     log.debug("Retrieving content sink for crate [{}]", crate)
 
-    reservationStore.delete(crate, storeId).flatMap { reservationRemoved =>
-      if (reservationRemoved) {
-        log.debug("Reservation for crate [{}] removed", crate)
-        backend.sink(crate).map { sink =>
-          log.debug("Content sink for crate [{}] removed", crate)
-          sink
-        }
-      } else {
-        val message = s"Failed to remove reservation for crate [$crate]"
-        log.error(message)
-        Future.failed(ReservationFailure(message))
+    backend
+      .sink(crate)
+      .map { sink =>
+        log.debug("Content sink for crate [{}] removed", crate)
+        sink
       }
-    }
   }
 
   def retrieve(crate: Crate.Id): Future[Option[Source[ByteString, NotUsed]]] = {
@@ -63,61 +54,61 @@ abstract class CrateStore(
 
   def discard(crate: Crate.Id): Future[Boolean] = {
     log.debug("Discarding crate [{}]", crate)
-    backend.delete(crate).map { result =>
-      if (result) {
-        log.debug("Discarded crate [{}]", crate)
-      } else {
-        log.warning("Failed to discard crate [{}]; crate not found", crate)
-      }
-
-      result
-    }
-  }
-
-  def reserve(request: CrateStorageRequest): Future[Option[CrateStorageReservation]] = {
-    log.debug("Processing reservation request [{}] for crate [{}]", request, request.crate)
-
-    reservationStore.existsFor(request.crate, storeId).flatMap { exists =>
-      if (!exists) {
-        backend.canStore(request.size * request.copies).flatMap { storageAvailable =>
-          if (storageAvailable) {
-            val reservation = CrateStorageReservation(request, target = storeId)
-            reservationStore.put(reservation).map { _ =>
-              Some(reservation)
-            }
-          } else {
-            log.warning(
-              "Storage request [{}] for crate [{}] cannot be fulfilled; storage not available",
-              request,
-              request.crate
-            )
-            Future.successful(None)
-          }
+    backend
+      .delete(crate)
+      .map { result =>
+        if (result) {
+          log.debug("Discarded crate [{}]", crate)
+        } else {
+          log.warning("Failed to discard crate [{}]; crate not found", crate)
         }
-      } else {
-        val message =
-          s"Failed to process reservation request [$request]; reservation already exists for crate [${request.crate}]"
-        log.error(message)
-        Future.failed(ReservationFailure(message))
+
+        result
       }
-    }
   }
+
+  def canStore(request: CrateStorageRequest): Future[Boolean] =
+    backend.canStore(request.size * request.copies)
 
   def view: CrateStoreView = new CrateStoreView {
-    override def retrieve(crate: Crate.Id): Future[Option[Source[ByteString, NotUsed]]] = store.retrieve(crate)
+    override def retrieve(crate: Crate.Id): Future[Option[Source[ByteString, NotUsed]]] =
+      store.retrieve(crate)
   }
 }
 
 object CrateStore {
-  def apply(
-    streamingBackend: StreamingBackend,
-    reservationStore: ReservationStore,
-    storeId: Node.Id
-  )(implicit system: ActorSystem): CrateStore =
-    new CrateStore(
-      reservationStore = reservationStore,
-      storeId = storeId
-    ) {
-      override def backend: StreamingBackend = streamingBackend
+  sealed trait Descriptor
+  object Descriptor {
+    final case class ForStreamingMemoryBackend(maxSize: Long, name: String) extends Descriptor
+    final case class ForContainerBackend(path: String, maxChunkSize: Int, maxChunks: Int) extends Descriptor
+    final case class ForFileBackend(parentDirectory: String) extends Descriptor
+  }
+
+  def fromDescriptor(
+    descriptor: Descriptor
+  )(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout): CrateStore = {
+    implicit val ec: ExecutionContext = system.executionContext
+
+    val backend = descriptor match {
+      case Descriptor.ForStreamingMemoryBackend(maxSize, name) =>
+        StreamingMemoryBackend(
+          maxSize = maxSize,
+          name = name
+        )
+
+      case Descriptor.ForContainerBackend(path, maxChunkSize, maxChunks) =>
+        new ContainerBackend(
+          path = path,
+          maxChunkSize = maxChunkSize,
+          maxChunks = maxChunks
+        )
+
+      case Descriptor.ForFileBackend(parentDirectory) =>
+        new FileBackend(
+          parentDirectory = parentDirectory
+        )
     }
+
+    new CrateStore(backend = backend)
+  }
 }
