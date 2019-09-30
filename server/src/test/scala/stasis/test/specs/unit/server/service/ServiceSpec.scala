@@ -4,6 +4,8 @@ import java.security.SecureRandom
 import java.util.UUID
 
 import akka.Done
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.marshalling.{Marshal, Marshaller}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
@@ -14,13 +16,15 @@ import com.typesafe.config.{Config, ConfigFactory}
 import javax.net.ssl.{SSLContext, TrustManagerFactory}
 import org.jose4j.jwk.JsonWebKey
 import org.scalatest.concurrent.Eventually
+import stasis.core.networking.http.{HttpEndpointAddress, HttpEndpointClient}
+import stasis.core.packaging.Crate
 import stasis.core.security.tls.EndpointContext
-import stasis.server.service.{ApiPersistence, Service}
+import stasis.server.service.Service
 import stasis.shared.api.requests.CreateUser
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.security.mocks.{MockJwksEndpoint, MockJwtsGenerators}
+import stasis.test.specs.unit.core.security.mocks.{MockJwksEndpoint, MockJwtGenerators}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
@@ -44,14 +48,18 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     jwksEndpoint.start()
 
     val service = new Service {}
-    val serviceInterface = "localhost"
-    val servicePort = 29999
-    val serviceUrl = s"https://$serviceInterface:$servicePort"
+    val interface = "localhost"
 
-    val persistence = eventually {
+    val servicePort = 29999
+    val serviceUrl = s"https://$interface:$servicePort"
+
+    val corePort = 39999
+    val coreUrl = s"https://$interface:$corePort"
+
+    val (apiPersistence, corePersistence) = eventually {
       service.state match {
-        case Service.State.Started(persistence: ApiPersistence, _) => persistence
-        case state                                                 => fail(s"Unexpected service state encountered: [$state]")
+        case Service.State.Started(apiServices, coreServices) => (apiServices.persistence, coreServices.persistence)
+        case state                                            => fail(s"Unexpected service state encountered: [$state]")
       }
     }
 
@@ -64,14 +72,27 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
       )
     )
 
+    val existingNode = "8d470761-7c15-4060-a268-a13a57f57d4c"
+
+    val coreAddress = HttpEndpointAddress(coreUrl)
+    val coreClient = HttpEndpointClient(
+      credentials = {
+        case `coreAddress` => getJwt(subject = existingNode, signatureKey = defaultJwk).map(OAuth2BearerToken)
+        case address       => Future.failed(new IllegalArgumentException(s"Unexpected address provided: [$address]"))
+      },
+      context = trustedContext
+    )
+
     for {
       jwt <- getJwt(subject = existingUser.toString, signatureKey = defaultJwk)
-      usersBefore <- persistence.users.view().list().map(_.values.toSeq)
+      usersBefore <- apiPersistence.users.view().list().map(_.values.toSeq)
       apiUsersBefore <- getUsers(serviceUrl, jwt)
       _ <- createUser(serviceUrl, createUserRequest, jwt)
-      usersAfter <- persistence.users.view().list().map(_.values.toSeq)
+      usersAfter <- apiPersistence.users.view().list().map(_.values.toSeq)
       apiUsersAfter <- getUsers(serviceUrl, jwt)
-      _ <- persistence.drop()
+      crateDiscarded <- coreClient.discard(address = coreAddress, crate = Crate.generateId())
+      _ <- apiPersistence.drop()
+      _ <- corePersistence.drop()
       _ = service.stop()
       _ = jwksEndpoint.stop()
     } yield {
@@ -89,6 +110,8 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
         case other =>
           fail(s"Unexpected response received: [$other]")
       }
+
+      crateDiscarded should be(false)
     }
   }
 
@@ -115,10 +138,10 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
   private def getJwt(
     subject: String,
     signatureKey: JsonWebKey
-  )(implicit trustedContext: HttpsConnectionContext): Future[String] = {
-    val authConfig = defaultConfig.getConfig("stasis.server.authenticators.user")
+  ): Future[String] = {
+    val authConfig = defaultConfig.getConfig("stasis.server.authenticators.users")
 
-    val jwt = MockJwtsGenerators.generateJwt(
+    val jwt = MockJwtGenerators.generateJwt(
       issuer = authConfig.getString("issuer"),
       audience = authConfig.getString("audience"),
       subject = subject,
@@ -166,20 +189,24 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
 
   private def createTrustedContext(): HttpsConnectionContext = {
     val config = defaultConfig.getConfig("stasis.test.server.service.context")
-    val contextConfig = EndpointContext.Config(config)
 
-    val keyStore = EndpointContext.loadKeyStore(contextConfig)
+    val keyStore = EndpointContext.loadStore(EndpointContext.StoreConfig(config.getConfig("keystore")))
 
     val factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm)
     factory.init(keyStore)
 
-    val sslContext = SSLContext.getInstance(contextConfig.protocol)
+    val sslContext = SSLContext.getInstance(config.getString("protocol"))
     sslContext.init(None.orNull, factory.getTrustManagers, new SecureRandom())
 
     new HttpsConnectionContext(sslContext)
   }
 
   private val defaultConfig: Config = ConfigFactory.load()
+
+  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+    "ServiceSpec"
+  )
 
   import scala.language.implicitConversions
 

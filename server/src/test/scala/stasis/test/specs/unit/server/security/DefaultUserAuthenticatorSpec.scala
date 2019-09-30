@@ -14,7 +14,7 @@ import stasis.server.model.users.UserStore
 import stasis.server.security.DefaultUserAuthenticator
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.security.mocks.{MockJwksGenerators, MockJwtsGenerators}
+import stasis.test.specs.unit.core.security.mocks.{MockJwksGenerators, MockJwtGenerators}
 import stasis.test.specs.unit.server.model.Generators
 
 import scala.concurrent.Future
@@ -224,7 +224,7 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
     )
   }
 
-  private def generateToken(subject: String): String = MockJwtsGenerators.generateJwt(
+  private def generateToken(subject: String): String = MockJwtGenerators.generateJwt(
     issuer = issuer,
     audience = audience,
     subject = subject,

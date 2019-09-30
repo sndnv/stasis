@@ -9,14 +9,19 @@ import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.event.{Logging, LoggingAdapter}
 import com.typesafe.config.Config
+import stasis.core.networking.grpc.GrpcEndpointAddress
+import stasis.core.networking.http.HttpEndpointAddress
+import stasis.core.persistence.crates.CrateStore
+import stasis.core.routing.Node
 import stasis.server.service.Bootstrap.Entities
-import stasis.server.service.{ApiPersistence, Bootstrap}
+import stasis.server.service.{ApiPersistence, Bootstrap, CorePersistence}
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.persistence.{Generators => CoreGenerators}
 import stasis.test.specs.unit.server.model.Generators
 
 import scala.concurrent.duration._
@@ -27,36 +32,49 @@ class BootstrapSpec extends AsyncUnitSpec {
       definitions = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateDefinition),
       devices = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateDevice),
       schedules = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateSchedule),
-      users = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateUser)
+      users = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateUser),
+      nodes = stasis.test.Generators.generateSeq(min = 1, g = CoreGenerators.generateLocalNode)
     )
 
-    val persistence = new ApiPersistence(
+    val apiPersistence = new ApiPersistence(
+      persistenceConfig = config.getConfig("persistence")
+    )
+
+    val corePersistence = new CorePersistence(
       persistenceConfig = config.getConfig("persistence")
     )
 
     Bootstrap
       .run(
         entities = expectedEntities,
-        persistence = persistence
+        apiPersistence = apiPersistence,
+        corePersistence = corePersistence
       )
       .flatMap { _ =>
         for {
-          actualDefinitions <- persistence.datasetDefinitions.view().list()
-          actualDevices <- persistence.devices.view().list()
-          actualSchedules <- persistence.schedules.view().list()
-          actualUsers <- persistence.users.view().list()
-          _ <- persistence.drop()
+          actualDefinitions <- apiPersistence.datasetDefinitions.view().list()
+          actualDevices <- apiPersistence.devices.view().list()
+          actualSchedules <- apiPersistence.schedules.view().list()
+          actualUsers <- apiPersistence.users.view().list()
+          actualNodes <- corePersistence.nodes.nodes
+          _ <- apiPersistence.drop()
+          _ <- corePersistence.drop()
         } yield {
           actualDefinitions.values.toSeq.sortBy(_.id) should be(expectedEntities.definitions.sortBy(_.id))
           actualDevices.values.toSeq.sortBy(_.id) should be(expectedEntities.devices.sortBy(_.id))
           actualSchedules.values.toSeq.sortBy(_.id) should be(expectedEntities.schedules.sortBy(_.id))
           actualUsers.values.toSeq.sortBy(_.id) should be(expectedEntities.users.sortBy(_.id))
+          actualNodes.values.toSeq.sortBy(_.id) should be(expectedEntities.nodes.sortBy(_.id))
         }
       }
   }
 
   it should "setup the service with configured entities" in {
-    val persistence = new ApiPersistence(
+    val apiPersistence = new ApiPersistence(
+      persistenceConfig = config.getConfig("persistence")
+    )
+
+    val corePersistence = new CorePersistence(
       persistenceConfig = config.getConfig("persistence")
     )
 
@@ -66,15 +84,18 @@ class BootstrapSpec extends AsyncUnitSpec {
     Bootstrap
       .run(
         bootstrapConfig = config.getConfig("bootstrap-enabled"),
-        persistence = persistence
+        apiPersistence = apiPersistence,
+        corePersistence = corePersistence
       )
       .flatMap { _ =>
         for {
-          actualDefinitions <- persistence.datasetDefinitions.view().list()
-          actualDevices <- persistence.devices.view().list()
-          actualSchedules <- persistence.schedules.view().list()
-          actualUsers <- persistence.users.view().list()
-          _ <- persistence.drop()
+          actualDefinitions <- apiPersistence.datasetDefinitions.view().list()
+          actualDevices <- apiPersistence.devices.view().list()
+          actualSchedules <- apiPersistence.schedules.view().list()
+          actualUsers <- apiPersistence.users.view().list()
+          actualNodes <- corePersistence.nodes.nodes
+          _ <- apiPersistence.drop()
+          _ <- corePersistence.drop()
         } yield {
           actualDefinitions.values.toList.sortBy(_.id.toString) match {
             case definition1 :: definition2 :: Nil =>
@@ -195,33 +216,62 @@ class BootstrapSpec extends AsyncUnitSpec {
             case unexpectedResult =>
               fail(s"Unexpected result received: [$unexpectedResult]")
           }
+
+          actualNodes.values.toList.sortBy(_.id.toString) match {
+            case (node1: Node.Local) :: (node2: Node.Remote.Http) :: (node3: Node.Remote.Grpc) :: Nil =>
+              node1.storeDescriptor match {
+                case CrateStore.Descriptor.ForStreamingMemoryBackend(maxSize, name) =>
+                  maxSize should be(1024)
+                  name should be("test-memory-store")
+
+                case other =>
+                  fail(s"Unexpected local node store descriptor found: [$other]")
+              }
+
+              node2.address should be(HttpEndpointAddress("http://localhost:1234"))
+
+              node3.address should be(GrpcEndpointAddress(host = "localhost", port = 5678, tlsEnabled = true))
+
+            case unexpectedResult =>
+              fail(s"Unexpected result received: [$unexpectedResult]")
+          }
         }
       }
   }
 
   it should "not run if not enabled" in {
-    val persistence = new ApiPersistence(
+    val apiPersistence = new ApiPersistence(
       persistenceConfig = config.getConfig("persistence")
     )
+
+    val corePersistence = new CorePersistence(
+      persistenceConfig = config.getConfig("persistence")
+    )
+
+    val _ = corePersistence.init().await
 
     Bootstrap
       .run(
         bootstrapConfig = config.getConfig("bootstrap-disabled"),
-        persistence = persistence
+        apiPersistence = apiPersistence,
+        corePersistence = corePersistence
       )
       .flatMap { _ =>
         for {
-          _ <- persistence.init()
-          actualDefinitions <- persistence.datasetDefinitions.view().list()
-          actualDevices <- persistence.devices.view().list()
-          actualSchedules <- persistence.schedules.view().list()
-          actualUsers <- persistence.users.view().list()
-          _ <- persistence.drop()
+          _ <- apiPersistence.init()
+          actualDefinitions <- apiPersistence.datasetDefinitions.view().list()
+          actualDevices <- apiPersistence.devices.view().list()
+          actualSchedules <- apiPersistence.schedules.view().list()
+          actualUsers <- apiPersistence.users.view().list()
+          actualNodes <- corePersistence.nodes.nodes
+          _ <- apiPersistence.drop()
+          _ <- corePersistence.drop()
         } yield {
           actualDefinitions should be(Map.empty)
           actualDevices should be(Map.empty)
           actualSchedules should be(Map.empty)
           actualUsers should be(Map.empty)
+          actualNodes should be(Map.empty)
         }
       }
   }
