@@ -38,7 +38,7 @@ object NodeStore {
         None
       }
 
-    val caching: Future[Done] = cacheOpt match {
+    def caching(): Future[Done] = cacheOpt match {
       case Some(cache) =>
         backend.entries.flatMap { entries =>
           Future

@@ -4,6 +4,7 @@ import java.util.UUID
 
 import akka.actor.ActorSystem
 import akka.event.Logging
+import akka.http.scaladsl.HttpsConnectionContext
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Keep, Sink, Source}
@@ -20,7 +21,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 class GrpcEndpointClient(
-  override protected val credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials]
+  override protected val credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials],
+  context: Option[HttpsConnectionContext]
 )(implicit system: ActorSystem)
     extends EndpointClient[GrpcEndpointAddress, HttpCredentials] {
 
@@ -49,7 +51,7 @@ class GrpcEndpointClient(
           Future.failed(CredentialsFailure(message))
       }
       .flatMap { endpointCredentials =>
-        val client = internal.Client(address)
+        val client = internal.Client(address, context)
 
         for {
           reservation <- reserveStorage(client, address, manifest, endpointCredentials)
@@ -77,7 +79,7 @@ class GrpcEndpointClient(
           Future.failed(CredentialsFailure(message))
       }
       .flatMap { endpointCredentials =>
-        val client = internal.Client(address)
+        val client = internal.Client(address, context)
 
         val (sink, content) = Source
           .asSubscriber[ByteString]
@@ -101,7 +103,7 @@ class GrpcEndpointClient(
   ): Future[Option[Source[ByteString, NotUsed]]] = {
     log.debug("Pulling from endpoint [{}] crate with ID [{}]", address.host, crate)
 
-    val client = internal.Client(address)
+    val client = internal.Client(address, context)
 
     credentials
       .provide(address)
@@ -146,7 +148,7 @@ class GrpcEndpointClient(
   ): Future[Boolean] = {
     log.debug("Discarding from endpoint [{}] crate with ID [{}]", address.host, crate)
 
-    val client = internal.Client(address)
+    val client = internal.Client(address, context)
 
     credentials
       .provide(address)
@@ -187,7 +189,7 @@ class GrpcEndpointClient(
     manifest: Manifest,
     endpointCredentials: HttpCredentials
   ): Future[CrateStorageReservation.Id] = {
-    val client = internal.Client(address)
+    val client = internal.Client(address, context)
 
     val storageRequest = CrateStorageRequest(manifest)
 
@@ -248,4 +250,23 @@ class GrpcEndpointClient(
           log.warning(message)
           Future.failed(EndpointFailure(message))
       }
+}
+
+object GrpcEndpointClient {
+  def apply(
+    credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials]
+  )(implicit system: ActorSystem): GrpcEndpointClient =
+    new GrpcEndpointClient(
+      credentials = credentials,
+      context = None
+    )
+
+  def apply(
+    credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials],
+    context: HttpsConnectionContext
+  )(implicit system: ActorSystem): GrpcEndpointClient =
+    new GrpcEndpointClient(
+      credentials = credentials,
+      context = Some(context)
+    )
 }

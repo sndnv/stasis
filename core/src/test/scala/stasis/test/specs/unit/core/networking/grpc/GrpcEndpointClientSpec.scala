@@ -6,10 +6,12 @@ import akka.http.scaladsl.ConnectionContext
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.concurrent.Eventually
 import stasis.core.networking.grpc.{GrpcEndpoint, GrpcEndpointAddress, GrpcEndpointClient}
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.routing.Node
+import stasis.core.security.tls.EndpointContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.MockGrpcNodeCredentialsProvider
 import stasis.test.specs.unit.core.persistence.mocks.{MockCrateStore, MockReservationStore}
@@ -26,7 +28,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val endpoint = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new GrpcEndpointClient(
+    val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
     )
 
@@ -42,7 +44,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val endpoint = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new GrpcEndpointClient(
+    val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
     )
 
@@ -73,7 +75,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
     )
 
-    val client = new GrpcEndpointClient(
+    val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
     )
 
@@ -99,7 +101,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val endpoint = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new GrpcEndpointClient(
+    val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
     )
 
@@ -122,7 +124,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val endpoint = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new GrpcEndpointClient(
+    val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
     )
 
@@ -155,7 +157,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new GrpcEndpointClient(
+    val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
     )
 
@@ -170,7 +172,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new GrpcEndpointClient(
+    val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, "invalid-secret")
     )
 
@@ -208,7 +210,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       port = secondaryEndpointPort
     )
 
-    val client = new GrpcEndpointClient(
+    val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(
         Map(
           primaryEndpointAddress -> (primaryEndpointNode, primaryEndpointSecret),
@@ -231,7 +233,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new GrpcEndpointClient(
+    val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(Map.empty)
     )
 
@@ -255,7 +257,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new GrpcEndpointClient(
+    val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(Map.empty)
     )
 
@@ -279,7 +281,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new GrpcEndpointClient(
+    val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(Map.empty)
     )
 
@@ -305,7 +307,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val endpoint = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new GrpcEndpointClient(
+    val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
     )
 
@@ -326,7 +328,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new GrpcEndpointClient(
+    val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(Map.empty)
     )
 
@@ -352,7 +354,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new GrpcEndpointClient(
+    val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
     )
 
@@ -367,12 +369,39 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
-    val client = new GrpcEndpointClient(
+    val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, "invalid-secret")
     )
 
     client.discard(endpointAddress, Crate.generateId()).map { result =>
       result should be(false)
+    }
+  }
+
+  it should "support custom connection contexts" in {
+    val endpointPort = ports.dequeue()
+    val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = true)
+
+    val config: Config = ConfigFactory.load().getConfig("stasis.test.core.security.tls")
+
+    val endpointContext = EndpointContext.create(
+      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-server"))
+    )
+
+    val clientContext = EndpointContext.create(
+      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-client"))
+    )
+
+    val endpoint = new TestGrpcEndpoint(port = endpointPort, context = endpointContext)
+
+    val client = GrpcEndpointClient(
+      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret),
+      context = clientContext
+    )
+
+    client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).map { _ =>
+      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
     }
   }
 
@@ -408,9 +437,10 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
   private class TestGrpcEndpoint(
     val testAuthenticator: MockGrpcAuthenticator = new MockGrpcAuthenticator(testNode, testSecret),
     val fixtures: TestFixtures = new TestFixtures {},
+    context: ConnectionContext = ConnectionContext.noEncryption(),
     port: Int
   ) extends GrpcEndpoint(fixtures.router, fixtures.reservationStore.view, testAuthenticator) {
-    private val _ = start("localhost", port, ConnectionContext.noEncryption())
+    private val _ = start("localhost", port, connectionContext = context)
   }
 
   private val ports: mutable.Queue[Int] = (20000 to 20100).to[mutable.Queue]

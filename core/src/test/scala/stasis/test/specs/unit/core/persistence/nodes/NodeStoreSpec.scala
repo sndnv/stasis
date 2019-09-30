@@ -84,7 +84,7 @@ class NodeStoreSpec extends AsyncUnitSpec {
       cachingEnabled = cachingEnabled
     )
 
-    val _ = init.await
+    val _ = init().await
 
     store
   }

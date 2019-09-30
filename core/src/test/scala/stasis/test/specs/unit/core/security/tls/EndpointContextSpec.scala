@@ -1,15 +1,14 @@
 package stasis.test.specs.unit.core.security.tls
 
-import java.security.SecureRandom
+import java.io.FileNotFoundException
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
-import javax.net.ssl.{SSLContext, TrustManagerFactory}
 import stasis.core.security.tls.EndpointContext
 import stasis.test.specs.unit.AsyncUnitSpec
 
@@ -18,24 +17,98 @@ import scala.collection.mutable
 class EndpointContextSpec extends AsyncUnitSpec {
   private val ports: mutable.Queue[Int] = (25000 to 25100).to[mutable.Queue]
 
-  "An EndpointContext" should "load its config" in {
-    val expectedConfig = EndpointContext.Config(
-      keystorePath = "./core/src/test/resources/certs/localhost.p12",
-      keystoreType = "PKCS12",
-      keystorePassword = "",
-      protocol = "TLS"
+  "An EndpointContext" should "load store config" in {
+    val expectedConfig = EndpointContext.StoreConfig(
+      storePath = "./core/src/test/resources/certs/localhost.p12",
+      storeType = "PKCS12",
+      storePassword = ""
     )
 
-    val actualConfig = EndpointContext.Config(config.getConfig("context"))
+    val actualConfig = EndpointContext.StoreConfig(config.getConfig("context-server.keystore"))
 
     actualConfig should be(expectedConfig)
   }
 
-  it should "create an SSL context" in {
+  it should "load context config" in {
+    val expectedServerConfig = EndpointContext.ContextConfig(
+      protocol = "TLS",
+      keyStoreConfig = Some(
+        EndpointContext.StoreConfig(
+          storePath = "./core/src/test/resources/certs/localhost.p12",
+          storeType = "PKCS12",
+          storePassword = ""
+        )
+      ),
+      trustStoreConfig = None
+    )
+
+    val actualServerConfig = EndpointContext.ContextConfig(
+      config = config.getConfig("context-server")
+    )
+
+    actualServerConfig should be(expectedServerConfig)
+    actualServerConfig.requireClientAuth should be(false)
+
+    val expectedClientConfig = EndpointContext.ContextConfig(
+      protocol = "TLS",
+      keyStoreConfig = None,
+      trustStoreConfig = Some(
+        EndpointContext.StoreConfig(
+          storePath = "./core/src/test/resources/certs/localhost.p12",
+          storeType = "PKCS12",
+          storePassword = ""
+        )
+      )
+    )
+
+    val actualClientConfig = EndpointContext.ContextConfig(
+      config = config.getConfig("context-client")
+    )
+
+    actualClientConfig should be(expectedClientConfig)
+    actualClientConfig.requireClientAuth should be(false)
+
+    val expectedMutualConfig = EndpointContext.ContextConfig(
+      protocol = "TLS",
+      keyStoreConfig = Some(
+        EndpointContext.StoreConfig(
+          storePath = "./core/src/test/resources/certs/localhost.p12",
+          storeType = "PKCS12",
+          storePassword = ""
+        )
+      ),
+      trustStoreConfig = Some(
+        EndpointContext.StoreConfig(
+          storePath = "./core/src/test/resources/certs/localhost.p12",
+          storeType = "PKCS12",
+          storePassword = ""
+        )
+      )
+    )
+
+    val actualMutualConfig = EndpointContext.ContextConfig(
+      config = config.getConfig("context-mutual")
+    )
+
+    actualMutualConfig should be(expectedMutualConfig)
+    actualMutualConfig.requireClientAuth should be(true)
+  }
+
+  it should "create connection contexts (server/client)" in {
     val interface = "localhost"
     val port = ports.dequeue()
-    val contextConfig = EndpointContext.Config(config.getConfig("context"))
-    val context = EndpointContext.create(contextConfig)
+
+    val serverContext = EndpointContext.create(
+      contextConfig = EndpointContext.ContextConfig(
+        config = config.getConfig("context-server")
+      )
+    )
+
+    val clientContext = EndpointContext.create(
+      contextConfig = EndpointContext.ContextConfig(
+        config = config.getConfig("context-client")
+      )
+    )
 
     implicit val system: ActorSystem = ActorSystem(name = "EndpointContextSpec")
     implicit val mat: ActorMaterializer = ActorMaterializer()
@@ -46,7 +119,7 @@ class EndpointContextSpec extends AsyncUnitSpec {
       handler = get { Directives.complete(StatusCodes.OK) },
       interface = interface,
       port = port,
-      connectionContext = context
+      connectionContext = serverContext
     )
 
     Http()
@@ -55,7 +128,7 @@ class EndpointContextSpec extends AsyncUnitSpec {
           method = HttpMethods.GET,
           uri = endpointUrl
         ),
-        connectionContext = createTrustedContext()
+        connectionContext = clientContext
       )
       .map {
         case HttpResponse(status, _, _, _) => status should be(StatusCodes.OK)
@@ -63,19 +136,49 @@ class EndpointContextSpec extends AsyncUnitSpec {
       }
   }
 
-  private val config: Config = ConfigFactory.load().getConfig("stasis.test.core.security.tls")
+  it should "create connection contexts (mutual)" in {
+    val interface = "localhost"
+    val port = ports.dequeue()
 
-  private def createTrustedContext(): HttpsConnectionContext = {
-    val contextConfig = EndpointContext.Config(config.getConfig("context"))
+    val serverContext = EndpointContext.fromConfig(config = config.getConfig("context-mutual"))
+    val clientContext = EndpointContext.fromConfig(config = config.getConfig("context-mutual"))
 
-    val keyStore = EndpointContext.loadKeyStore(contextConfig)
+    implicit val system: ActorSystem = ActorSystem(name = "EndpointContextSpec")
+    implicit val mat: ActorMaterializer = ActorMaterializer()
 
-    val factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm)
-    factory.init(keyStore)
+    val endpointUrl = s"https://$interface:$port"
 
-    val sslContext = SSLContext.getInstance(contextConfig.protocol)
-    sslContext.init(None.orNull, factory.getTrustManagers, new SecureRandom())
+    val _ = Http().bindAndHandle(
+      handler = get { Directives.complete(StatusCodes.OK) },
+      interface = interface,
+      port = port,
+      connectionContext = serverContext
+    )
 
-    new HttpsConnectionContext(sslContext)
+    Http()
+      .singleRequest(
+        request = HttpRequest(
+          method = HttpMethods.GET,
+          uri = endpointUrl
+        ),
+        connectionContext = clientContext
+      )
+      .map {
+        case HttpResponse(status, _, _, _) => status should be(StatusCodes.OK)
+        case response                      => fail(s"Unexpected response received: [$response]")
+      }
   }
+
+  it should "fail if a store is missing" in {
+    val expectedMessage = "Store [./core/src/test/resources/certs/missing.p12] with type [JKS] was not found"
+
+    val actualException =
+      intercept[FileNotFoundException] {
+        EndpointContext.fromConfig(config = config.getConfig("context-missing"))
+      }
+
+    actualException.getMessage should be(expectedMessage)
+  }
+
+  private val config: Config = ConfigFactory.load().getConfig("stasis.test.core.security.tls")
 }

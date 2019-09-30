@@ -17,7 +17,7 @@ class DefaultServerCoreEndpointClient(
   override val self: Node.Id
 )(implicit system: ActorSystem[SpawnProtocol])
     extends ServerCoreEndpointClient {
-  private val client: HttpEndpointClient = new HttpEndpointClient(credentials = _ => Future.successful(coreCredentials))
+  private val client: HttpEndpointClient = HttpEndpointClient(_ => Future.successful(coreCredentials))
 
   override def push(manifest: packaging.Manifest, content: Source[ByteString, NotUsed]): Future[Done] =
     client.push(coreAddress, manifest, content)

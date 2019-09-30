@@ -39,15 +39,16 @@ object ReservationStore {
         name = s"reservations-cache-${java.util.UUID.randomUUID()}"
       )
 
-    val caching: Future[Done] = backend.entries
-      .flatMap { entries =>
-        Future
-          .sequence(
-            entries.values
-              .map(reservation => cache.put((reservation.crate, reservation.target), reservation.id))
-          )
-          .map(_ => Done)
-      }
+    def caching(): Future[Done] =
+      backend.entries
+        .flatMap { entries =>
+          Future
+            .sequence(
+              entries.values
+                .map(reservation => cache.put((reservation.crate, reservation.target), reservation.id))
+            )
+            .map(_ => Done)
+        }
 
     val store: ReservationStore = new ReservationStore {
       override def put(reservation: CrateStorageReservation): Future[Done] =

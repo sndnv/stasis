@@ -13,7 +13,8 @@ import scala.concurrent.Future
 
 class MockGrpcEndpointClient()(implicit system: ActorSystem[SpawnProtocol])
     extends GrpcEndpointClient(
-      (_: GrpcEndpointAddress) => Future.failed(new RuntimeException("No credentials available"))
+      (_: GrpcEndpointAddress) => Future.failed(new RuntimeException("No credentials available")),
+      context = None
     )(system.toUntyped) {
   override def push(
     address: GrpcEndpointAddress,

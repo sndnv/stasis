@@ -12,7 +12,7 @@ import stasis.core.security.JwtNodeAuthenticator
 import stasis.core.security.exceptions.AuthenticationFailure
 import stasis.core.security.jwt.JwtAuthenticator
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.security.mocks.{MockJwksGenerators, MockJwtProvider, MockJwtsGenerators}
+import stasis.test.specs.unit.core.security.mocks.{MockJwkProvider, MockJwksGenerators, MockJwtGenerators}
 
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
@@ -23,7 +23,7 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
 
     val node = Node.Remote.Http(id = Node.generateId(), address = HttpEndpointAddress("http://some-address:9000"))
 
-    val nodeToken: String = MockJwtsGenerators.generateJwt(
+    val nodeToken: String = MockJwtGenerators.generateJwt(
       issuer = "self",
       audience = "self",
       subject = node.id.toString,
@@ -44,7 +44,7 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
 
     val node = Node.Remote.Http(id = Node.generateId(), address = HttpEndpointAddress("http://some-address:9000"))
 
-    val nodeToken: String = MockJwtsGenerators.generateJwt(
+    val nodeToken: String = MockJwtGenerators.generateJwt(
       issuer = "self",
       audience = "self",
       subject = node.id.toString,
@@ -68,7 +68,7 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
     val node = Node.Remote.Http(id = Node.generateId(), address = HttpEndpointAddress("http://some-address:9000"))
 
     val otherNode = "some-node"
-    val nodeToken: String = MockJwtsGenerators.generateJwt(
+    val nodeToken: String = MockJwtGenerators.generateJwt(
       issuer = "self",
       audience = "self",
       subject = otherNode,
@@ -113,7 +113,7 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
     )
 
     val underlying = new JwtAuthenticator(
-      provider = MockJwtProvider(jwk),
+      provider = MockJwkProvider(jwk),
       audience = "self",
       expirationTolerance = 10.seconds
     )

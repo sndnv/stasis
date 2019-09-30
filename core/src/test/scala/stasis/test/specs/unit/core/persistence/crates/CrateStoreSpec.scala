@@ -7,6 +7,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
+import com.typesafe.config.ConfigFactory
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.backends.StreamingBackend
 import stasis.core.persistence.backends.file.{ContainerBackend, FileBackend}
@@ -20,7 +21,41 @@ import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
 import scala.concurrent.Future
 
 class CrateStoreSpec extends AsyncUnitSpec {
-  "A CrateStore" should "create store from descriptors" in {
+  "A CrateStore" should "create descriptors from config" in {
+    val config = ConfigFactory.load().getConfig("stasis.test.core.persistence")
+
+    val expectedMemoryDescriptor = CrateStore.Descriptor.ForStreamingMemoryBackend(
+      maxSize = 1000,
+      name = "test-memory-store"
+    )
+    val actualMemoryDescriptor = CrateStore.Descriptor(
+      config = config.getConfig("crate-store-memory")
+    )
+
+    actualMemoryDescriptor should be(expectedMemoryDescriptor)
+
+    val expectedContainerDescriptor = CrateStore.Descriptor.ForContainerBackend(
+      path = "target/some-container",
+      maxChunkSize = 1,
+      maxChunks = 10
+    )
+    val actualContainerDescriptor = CrateStore.Descriptor(
+      config = config.getConfig("crate-store-container")
+    )
+
+    actualContainerDescriptor should be(expectedContainerDescriptor)
+
+    val expectedFileDescriptor = CrateStore.Descriptor.ForFileBackend(
+      parentDirectory = "target/some-directory"
+    )
+    val actualFileDescriptor = CrateStore.Descriptor(
+      config = config.getConfig("crate-store-file")
+    )
+
+    actualFileDescriptor should be(expectedFileDescriptor)
+  }
+
+  it should "create store from descriptors" in {
     val memoryBackedStore = CrateStore.fromDescriptor(
       descriptor = CrateStore.Descriptor.ForStreamingMemoryBackend(
         maxSize = 1,

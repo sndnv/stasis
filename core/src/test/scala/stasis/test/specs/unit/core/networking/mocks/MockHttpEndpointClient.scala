@@ -22,7 +22,8 @@ class MockHttpEndpointClient(
   pullEmptyAddresses: Seq[HttpEndpointAddress] = Seq.empty
 )(implicit system: ActorSystem[SpawnProtocol])
     extends HttpEndpointClient(
-      (_: HttpEndpointAddress) => Future.failed(new RuntimeException("No credentials available"))
+      (_: HttpEndpointAddress) => Future.failed(new RuntimeException("No credentials available")),
+      context = None
     ) {
 
   import MockHttpEndpointClient._

@@ -3,7 +3,7 @@ package stasis.test.specs.unit.core.security.jwt
 import org.jose4j.jwk.JsonWebKey
 import stasis.core.security.jwt.JwtAuthenticator
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.security.mocks.{MockJwtProvider, MockJwtsGenerators}
+import stasis.test.specs.unit.core.security.mocks.{MockJwkProvider, MockJwtGenerators}
 
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
@@ -13,13 +13,13 @@ trait JwtAuthenticatorBehaviour {
   def authenticator(withKeyType: String, withJwk: JsonWebKey): Unit = {
     it should s"successfully authenticate valid tokens ($withKeyType)" in {
       val authenticator = new JwtAuthenticator(
-        provider = MockJwtProvider(withJwk),
+        provider = MockJwkProvider(withJwk),
         audience = "self",
         expirationTolerance = 10.seconds
       )
 
       val expectedSubject = "some-subject"
-      val token: String = MockJwtsGenerators.generateJwt(
+      val token: String = MockJwtGenerators.generateJwt(
         issuer = "self",
         audience = "self",
         subject = expectedSubject,
@@ -35,13 +35,13 @@ trait JwtAuthenticatorBehaviour {
 
     it should s"refuse authentication attempts with invalid tokens ($withKeyType)" in {
       val authenticator = new JwtAuthenticator(
-        provider = MockJwtProvider(withJwk),
+        provider = MockJwkProvider(withJwk),
         audience = "self",
         expirationTolerance = 10.seconds
       )
 
       val expectedSubject = "some-subject"
-      val token: String = MockJwtsGenerators.generateJwt(
+      val token: String = MockJwtGenerators.generateJwt(
         issuer = "self",
         audience = "some-audience",
         subject = expectedSubject,

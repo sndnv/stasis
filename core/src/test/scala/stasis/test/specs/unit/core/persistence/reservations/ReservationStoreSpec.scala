@@ -127,7 +127,7 @@ class ReservationStoreSpec extends AsyncUnitSpec {
       )
     )
 
-    val _ = init.await
+    val _ = init().await
 
     store
   }
