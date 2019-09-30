@@ -8,6 +8,10 @@ import akka.Done
 import akka.event.LoggingAdapter
 import com.typesafe.config.ConfigFactory
 import com.typesafe.{config => typesafe}
+import stasis.core.networking.grpc.GrpcEndpointAddress
+import stasis.core.networking.http.HttpEndpointAddress
+import stasis.core.persistence.crates.CrateStore
+import stasis.core.routing.Node
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
@@ -25,12 +29,14 @@ object Bootstrap {
     definitions: Seq[DatasetDefinition],
     devices: Seq[Device],
     schedules: Seq[Schedule],
-    users: Seq[User]
+    users: Seq[User],
+    nodes: Seq[Node]
   )
 
   def run(
     bootstrapConfig: typesafe.Config,
-    persistence: ApiPersistence
+    apiPersistence: ApiPersistence,
+    corePersistence: CorePersistence
   )(
     implicit ec: ExecutionContext,
     log: LoggingAdapter,
@@ -52,25 +58,34 @@ object Bootstrap {
         definitions = config.getConfigList("dataset-definitions").asScala.map(definitionFromConfig),
         devices = config.getConfigList("devices").asScala.map(deviceFromConfig),
         schedules = config.getConfigList("schedules").asScala.map(scheduleFromConfig),
-        users = config.getConfigList("users").asScala.map(userFromConfig)
+        users = config.getConfigList("users").asScala.map(userFromConfig),
+        nodes = config.getConfigList("nodes").asScala.map(nodeFromConfig)
       )
 
-      run(entities, persistence)
+      for {
+        _ <- run(entities, apiPersistence, corePersistence)
+        _ <- corePersistence.startup()
+      } yield {
+        Done
+      }
     } else {
-      Future.successful(Done)
+      corePersistence.startup()
     }
   }
 
   def run(
     entities: Entities,
-    persistence: ApiPersistence
+    apiPersistence: ApiPersistence,
+    corePersistence: CorePersistence
   )(implicit ec: ExecutionContext, log: LoggingAdapter): Future[Done] =
     for {
-      _ <- persistence.init()
-      _ <- Future.sequence(entities.definitions.map(e => logged(persistence.datasetDefinitions.manage().create, e)))
-      _ <- Future.sequence(entities.devices.map(e => logged(persistence.devices.manage().create, e)))
-      _ <- Future.sequence(entities.schedules.map(e => logged(persistence.schedules.manage().create, e)))
-      _ <- Future.sequence(entities.users.map(e => logged(persistence.users.manage().create, e)))
+      _ <- apiPersistence.init()
+      _ <- corePersistence.init()
+      _ <- Future.sequence(entities.definitions.map(e => logged(apiPersistence.datasetDefinitions.manage().create, e)))
+      _ <- Future.sequence(entities.devices.map(e => logged(apiPersistence.devices.manage().create, e)))
+      _ <- Future.sequence(entities.schedules.map(e => logged(apiPersistence.schedules.manage().create, e)))
+      _ <- Future.sequence(entities.users.map(e => logged(apiPersistence.users.manage().create, e)))
+      _ <- Future.sequence(entities.nodes.map(e => logged(corePersistence.nodes.put, e)))
     } yield {
       Done
     }
@@ -168,6 +183,32 @@ object Bootstrap {
       }
       .toSet
 
+  private def nodeFromConfig(config: typesafe.Config): Node =
+    config.getString("type").toLowerCase match {
+      case "local" =>
+        Node.Local(
+          id = UUID.fromString(config.getString("id")),
+          storeDescriptor = CrateStore.Descriptor(config.getConfig("store"))
+        )
+
+      case "remote-http" =>
+        Node.Remote.Http(
+          id = UUID.fromString(config.getString("id")),
+          address = HttpEndpointAddress(config.getString("address"))
+        )
+
+      case "remote-grpc" =>
+        Node.Remote.Grpc(
+          id = UUID.fromString(config.getString("id")),
+          address = GrpcEndpointAddress(
+            host = config.getString("address.host"),
+            port = config.getInt("address.port"),
+            tlsEnabled = config.getBoolean("address.tls-enabled")
+          )
+        )
+
+    }
+
   private def logged[T](
     create: T => Future[Done],
     entity: T
@@ -179,6 +220,7 @@ object Bootstrap {
           case device: Device                => log.info("Device [{}] added", device.id)
           case schedule: Schedule            => log.info("Schedule [{}] added", schedule.id)
           case user: User                    => log.info("User [{}] added", user.id)
+          case node: Node                    => log.info("Node [{}] added", node.id)
         }
 
         result
