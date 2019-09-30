@@ -21,7 +21,6 @@ import scala.util.control.NonFatal
 
 class StagingStore(
   crateStore: CrateStore,
-  nodeProxy: NodeProxy,
   destagingDelay: FiniteDuration
 )(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout) {
 
@@ -37,7 +36,8 @@ class StagingStore(
   def stage(
     manifest: Manifest,
     destinations: Map[Node, Int],
-    content: Source[ByteString, NotUsed]
+    content: Source[ByteString, NotUsed],
+    viaProxy: NodeProxy
   ): Future[Done] =
     if (destinations.nonEmpty) {
       log.debug("Staging crate [{}] with manifest [{}]", manifest.crate, manifest)
@@ -56,7 +56,7 @@ class StagingStore(
             schedule(
               destagingDelay,
               manifest.crate,
-              () => destage(manifest, destinations)
+              () => destage(manifest, destinations, viaProxy)
             )
           }
 
@@ -110,7 +110,8 @@ class StagingStore(
 
   private def destage(
     manifest: Manifest,
-    destinations: Map[Node, Int]
+    destinations: Map[Node, Int],
+    viaProxy: NodeProxy
   ): Future[Done] = {
     log.debug(
       "Destaging crate [{}] to [{}] destinations: [{}]",
@@ -128,7 +129,7 @@ class StagingStore(
               Future.sequence(
                 destinations.map {
                   case (node, copies) =>
-                    nodeProxy.sink(node, manifest.copy(copies = copies))
+                    viaProxy.sink(node, manifest.copy(copies = copies))
                 }
               )
 

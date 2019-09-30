@@ -56,7 +56,7 @@ class MockJwtEndpoint(
   )
 
   private def generateJwt(): String =
-    MockJwtsGenerators.generateJwt(
+    MockJwtGenerators.generateJwt(
       issuer = "some-issuer",
       audience = "some-audience",
       subject = subject,

@@ -7,6 +7,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.{ByteString, Timeout}
 import akka.{Done, NotUsed}
+import com.typesafe.config.Config
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.backends.StreamingBackend
@@ -82,6 +83,27 @@ object CrateStore {
     final case class ForStreamingMemoryBackend(maxSize: Long, name: String) extends Descriptor
     final case class ForContainerBackend(path: String, maxChunkSize: Int, maxChunks: Int) extends Descriptor
     final case class ForFileBackend(parentDirectory: String) extends Descriptor
+
+    def apply(config: Config): Descriptor =
+      config.getString("type").toLowerCase match {
+        case "memory" =>
+          ForStreamingMemoryBackend(
+            maxSize = config.getBytes("memory.max-size"),
+            name = config.getString("memory.name")
+          )
+
+        case "container" =>
+          ForContainerBackend(
+            path = config.getString("container.path"),
+            maxChunkSize = Math.toIntExact(config.getBytes("container.max-chunk-size")),
+            maxChunks = config.getInt("container.max-chunks")
+          )
+
+        case "file" =>
+          ForFileBackend(
+            parentDirectory = config.getString("file.parent-directory")
+          )
+      }
   }
 
   def fromDescriptor(

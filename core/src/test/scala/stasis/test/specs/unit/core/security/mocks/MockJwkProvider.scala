@@ -8,7 +8,7 @@ import stasis.core.security.keys.KeyProvider
 
 import scala.concurrent.Future
 
-object MockJwtProvider {
+object MockJwkProvider {
   def apply(jwk: JsonWebKey): KeyProvider = new KeyProvider {
     override def key(id: Option[String]): Future[Key] = Future.successful(jwk.getKey)
 

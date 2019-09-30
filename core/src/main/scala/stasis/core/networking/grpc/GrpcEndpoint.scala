@@ -11,7 +11,7 @@ import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.model.Uri.Path.Segment
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
-import akka.http.scaladsl.{Http, Http2, HttpConnectionContext}
+import akka.http.scaladsl.{ConnectionContext, Http, Http2}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import stasis.core.networking.Endpoint
@@ -38,7 +38,7 @@ class GrpcEndpoint(
 
   private val log = Logging(system, this.getClass.getName)
 
-  def start(interface: String, port: Int, connectionContext: HttpConnectionContext): Future[Http.ServerBinding] =
+  def start(interface: String, port: Int, connectionContext: ConnectionContext): Future[Http.ServerBinding] =
     Http2().bindAndHandleAsync(
       handler = authenticated(grpcHandler),
       interface = interface,

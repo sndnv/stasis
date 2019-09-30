@@ -21,12 +21,9 @@ import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 class DefaultRouter(
-  nodeProxy: NodeProxy,
-  manifestStore: ManifestStore,
-  nodeStore: NodeStoreView,
-  reservationStore: ReservationStore,
-  stagingStore: Option[StagingStore],
-  val routerId: Node.Id
+  routerId: Node.Id,
+  persistence: DefaultRouter.Persistence,
+  nodeProxy: NodeProxy
 )(implicit system: ActorSystem[SpawnProtocol])
     extends Router {
 
@@ -40,18 +37,23 @@ class DefaultRouter(
     manifest: Manifest,
     content: Source[ByteString, NotUsed]
   ): Future[Done] =
-    nodeStore.nodes.flatMap { availableNodes =>
+    persistence.nodes.nodes.flatMap { availableNodes =>
       DefaultRouter.distributeCopies(availableNodes.values.toSeq, manifest) match {
         case Success(distribution) =>
-          reservationStore.delete(manifest.crate, routerId).flatMap { reservationRemoved =>
+          persistence.reservations.delete(manifest.crate, routerId).flatMap { reservationRemoved =>
             if (reservationRemoved) {
               log.debug("Reservation for crate [{}] removed", manifest.crate)
 
-              stagingStore match {
+              persistence.staging match {
                 case Some(store) =>
                   for {
-                    _ <- store.stage(manifest, destinations = distribution, content)
-                    _ <- manifestStore.put(manifest.copy(destinations = distribution.keys.map(_.id).toSeq))
+                    _ <- store.stage(
+                      manifest = manifest,
+                      destinations = distribution,
+                      content = content,
+                      viaProxy = nodeProxy
+                    )
+                    _ <- persistence.manifests.put(manifest.copy(destinations = distribution.keys.map(_.id).toSeq))
                   } yield {
                     log.debug("Initiated staging for crate [{}]", manifest.crate)
                     Done
@@ -69,7 +71,7 @@ class DefaultRouter(
                             node.id
                           )
 
-                          reservationStore.delete(manifest.crate, node.id).flatMap { _ =>
+                          persistence.reservations.delete(manifest.crate, node.id).flatMap { _ =>
                             nodeProxy
                               .sink(node, manifest.copy(copies = copies))
                               .map { sink =>
@@ -117,7 +119,7 @@ class DefaultRouter(
                                   manifest.crate,
                                   destinations.size,
                                   destinations)
-                        manifestStore.put(manifest.copy(destinations = destinations.map(_.id).toSeq))
+                        persistence.manifests.put(manifest.copy(destinations = destinations.map(_.id).toSeq))
                       }
                     }
               }
@@ -199,7 +201,7 @@ class DefaultRouter(
           Future.successful(None)
       }
 
-    manifestStore.get(crate).flatMap {
+    persistence.manifests.get(crate).flatMap {
       case Some(manifest) =>
         if (manifest.destinations.nonEmpty) {
           log.debug(
@@ -209,7 +211,7 @@ class DefaultRouter(
             manifest.destinations
           )
 
-          nodeStore.nodes.flatMap { availableNodes =>
+          persistence.nodes.nodes.flatMap { availableNodes =>
             val (local, remote) = manifest.destinations
               .map { destination =>
                 (destination, availableNodes.get(destination))
@@ -238,9 +240,9 @@ class DefaultRouter(
   }
 
   override def discard(crate: Crate.Id): Future[Done] =
-    manifestStore.get(crate).flatMap {
+    persistence.manifests.get(crate).flatMap {
       case Some(manifest) =>
-        stagingStore
+        persistence.staging
           .fold(Future.successful(false))(_.drop(crate))
           .flatMap { droppedFromStaging =>
             if (droppedFromStaging) {
@@ -262,7 +264,7 @@ class DefaultRouter(
                 )
 
                 for {
-                  availableNodes <- nodeStore.nodes
+                  availableNodes <- persistence.nodes.nodes
                   results <- discardFromNodes(manifest, availableNodes)
                   _ <- processDiscardResults(manifest, results)
                 } yield {
@@ -283,7 +285,7 @@ class DefaultRouter(
     }
 
   override def reserve(request: CrateStorageRequest): Future[Option[CrateStorageReservation]] =
-    nodeStore.nodes.flatMap { availableNodes =>
+    persistence.nodes.nodes.flatMap { availableNodes =>
       val distributionResult =
         DefaultRouter.distributeCopies(availableNodes.values.toSeq, request) match {
           case Success(distribution) =>
@@ -291,13 +293,13 @@ class DefaultRouter(
               .sequence(
                 distribution.map {
                   case (node, copies) =>
-                    reservationStore.existsFor(request.crate, node.id).flatMap {
+                    persistence.reservations.existsFor(request.crate, node.id).flatMap {
                       exists =>
                         if (!exists) {
                           nodeProxy.canStore(node, request.copy(copies = copies)).flatMap { storageAvailable =>
                             if (storageAvailable) {
                               val reservation = CrateStorageReservation(request, target = node.id)
-                              reservationStore.put(reservation).map { _ =>
+                              persistence.reservations.put(reservation).map { _ =>
                                 Some(reservation)
                               }
                             } else {
@@ -333,7 +335,7 @@ class DefaultRouter(
                     target = routerId
                   )
 
-                  reservationStore.put(reservation).map { _ =>
+                  persistence.reservations.put(reservation).map { _ =>
                     Some(reservation)
                   }
                 } else {
@@ -407,11 +409,11 @@ class DefaultRouter(
     destinationsCount: Int
   ): Future[Done] =
     if (successful.nonEmpty) {
-      manifestStore.delete(manifest.crate).flatMap { _ =>
+      persistence.manifests.delete(manifest.crate).flatMap { _ =>
         if (successful.lengthCompare(destinationsCount) == 0) {
           Future.successful(Done)
         } else {
-          manifestStore.put(
+          persistence.manifests.put(
             manifest.copy(destinations = manifest.destinations.filterNot(successful.contains(_)))
           )
         }
@@ -422,6 +424,13 @@ class DefaultRouter(
 }
 
 object DefaultRouter {
+  final case class Persistence(
+    manifests: ManifestStore,
+    nodes: NodeStoreView,
+    reservations: ReservationStore,
+    staging: Option[StagingStore],
+  )
+
   def distributeCopies(
     availableNodes: Seq[Node],
     request: CrateStorageRequest

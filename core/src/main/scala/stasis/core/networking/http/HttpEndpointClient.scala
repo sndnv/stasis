@@ -3,7 +3,7 @@ package stasis.core.networking.http
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.event.Logging
-import akka.http.scaladsl.Http
+import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.HttpCredentials
@@ -23,7 +23,8 @@ import scala.util.control.NonFatal
 
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
 class HttpEndpointClient(
-  override protected val credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials]
+  override protected val credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
+  context: Option[HttpsConnectionContext]
 )(implicit system: ActorSystem[SpawnProtocol])
     extends EndpointClient[HttpEndpointAddress, HttpCredentials] {
 
@@ -35,6 +36,13 @@ class HttpEndpointClient(
   private implicit val ec: ExecutionContext = system.executionContext
 
   private val log = Logging(untypedSystem, this.getClass.getName)
+
+  private val http = Http()
+
+  private val clientContext: HttpsConnectionContext = context match {
+    case Some(context) => context
+    case None          => http.defaultClientHttpsContext
+  }
 
   override def push(
     address: HttpEndpointAddress,
@@ -143,13 +151,14 @@ class HttpEndpointClient(
     val storageRequest = CrateStorageRequest(manifest)
 
     Marshal(storageRequest).to[RequestEntity].flatMap { requestEntity =>
-      Http()
+      http
         .singleRequest(
           request = HttpRequest(
             method = HttpMethods.PUT,
             uri = s"${address.uri}/reservations",
             entity = requestEntity
-          ).addCredentials(endpointCredentials)
+          ).addCredentials(endpointCredentials),
+          connectionContext = clientContext
         )
         .flatMap {
           case HttpResponse(status, _, entity, _) =>
@@ -189,13 +198,14 @@ class HttpEndpointClient(
     reservation: CrateStorageReservation,
     endpointCredentials: HttpCredentials
   ): Future[Done] =
-    Http()
+    http
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.PUT,
           uri = s"${address.uri}/crates/${manifest.crate}?reservation=${reservation.id}",
           entity = HttpEntity(ContentTypes.`application/octet-stream`, content)
-        ).addCredentials(endpointCredentials)
+        ).addCredentials(endpointCredentials),
+        connectionContext = clientContext
       )
       .flatMap { response =>
         response.status match {
@@ -216,12 +226,13 @@ class HttpEndpointClient(
     crate: Crate.Id,
     endpointCredentials: HttpCredentials
   ): Future[Option[Source[ByteString, NotUsed]]] =
-    Http()
+    http
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.GET,
           uri = s"${address.uri}/crates/$crate"
-        ).addCredentials(endpointCredentials)
+        ).addCredentials(endpointCredentials),
+        connectionContext = clientContext
       )
       .flatMap {
         case HttpResponse(status, _, entity, _) =>
@@ -248,12 +259,13 @@ class HttpEndpointClient(
     crate: Crate.Id,
     endpointCredentials: HttpCredentials
   ): Future[Boolean] =
-    Http()
+    http
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.DELETE,
           uri = s"${address.uri}/crates/$crate"
-        ).addCredentials(endpointCredentials)
+        ).addCredentials(endpointCredentials),
+        connectionContext = clientContext
       )
       .flatMap {
         case HttpResponse(status, _, entity, _) =>
@@ -273,4 +285,23 @@ class HttpEndpointClient(
               Future.failed(EndpointFailure(message))
           }
       }
+}
+
+object HttpEndpointClient {
+  def apply(
+    credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials]
+  )(implicit system: ActorSystem[SpawnProtocol]): HttpEndpointClient =
+    new HttpEndpointClient(
+      credentials = credentials,
+      context = None
+    )
+
+  def apply(
+    credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
+    context: HttpsConnectionContext
+  )(implicit system: ActorSystem[SpawnProtocol]): HttpEndpointClient =
+    new HttpEndpointClient(
+      credentials = credentials,
+      context = Some(context)
+    )
 }

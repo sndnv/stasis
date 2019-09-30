@@ -4,6 +4,7 @@ import java.util.concurrent.ThreadLocalRandom
 
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.util.Timeout
+import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.crates.CrateStore
@@ -58,5 +59,15 @@ object Generators {
     Node.Remote.Http(
       id = Node.generateId(),
       address = HttpEndpointAddress(generateUri)
+    )
+
+  def generateRemoteGrpcNode(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Node.Remote.Grpc =
+    Node.Remote.Grpc(
+      id = Node.generateId(),
+      address = GrpcEndpointAddress(
+        host = generateString(withSize = 10),
+        port = rnd.nextInt(50000, 60000),
+        tlsEnabled = rnd.nextBoolean()
+      )
     )
 }

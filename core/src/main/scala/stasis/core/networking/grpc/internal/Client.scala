@@ -3,6 +3,7 @@ package stasis.core.networking.grpc.internal
 import akka.actor.ActorSystem
 import akka.grpc.GrpcClientSettings
 import akka.grpc.scaladsl.{SingleResponseRequestBuilder, StreamResponseRequestBuilder}
+import akka.http.scaladsl.HttpsConnectionContext
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.stream.ActorMaterializer
 import stasis.core.networking.grpc.{proto, GrpcEndpointAddress}
@@ -10,7 +11,8 @@ import stasis.core.networking.grpc.{proto, GrpcEndpointAddress}
 import scala.concurrent.ExecutionContext
 
 private[grpc] class Client(
-  address: GrpcEndpointAddress
+  address: GrpcEndpointAddress,
+  context: Option[HttpsConnectionContext]
 )(implicit system: ActorSystem, mat: ActorMaterializer) {
   implicit val ec: ExecutionContext = system.dispatcher
 
@@ -19,7 +21,12 @@ private[grpc] class Client(
       .connectToServiceAt(address.host, address.port)
       .withTls(address.tlsEnabled)
 
-    proto.StasisEndpointClient(baseSettings)
+    proto.StasisEndpointClient(
+      settings = context match {
+        case Some(context) => baseSettings.withSSLContext(context.sslContext)
+        case None          => baseSettings
+      }
+    )
   }
 
   def requestWithCredentials[Req, Res](
@@ -36,6 +43,9 @@ private[grpc] class Client(
 }
 
 object Client {
-  def apply(address: GrpcEndpointAddress)(implicit system: ActorSystem, mat: ActorMaterializer): Client =
-    new Client(address)
+  def apply(
+    address: GrpcEndpointAddress,
+    context: Option[HttpsConnectionContext]
+  )(implicit system: ActorSystem, mat: ActorMaterializer): Client =
+    new Client(address, context)
 }

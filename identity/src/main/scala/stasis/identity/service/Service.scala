@@ -176,7 +176,7 @@ object Service {
     interface: String,
     port: Int,
     internalQueryTimeout: FiniteDuration,
-    context: EndpointContext.Config
+    context: EndpointContext.ContextConfig
   )
 
   object Config {
@@ -185,7 +185,7 @@ object Service {
         interface = config.getString("interface"),
         port = config.getInt("port"),
         internalQueryTimeout = config.getDuration("internal-query-timeout").toMillis.millis,
-        context = EndpointContext.Config(config.getConfig("context"))
+        context = EndpointContext.ContextConfig(config.getConfig("context"))
       )
   }
 }

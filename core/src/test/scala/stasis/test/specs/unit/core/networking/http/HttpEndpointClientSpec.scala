@@ -7,11 +7,13 @@ import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.concurrent.Eventually
 import stasis.core.networking.http.{HttpEndpoint, HttpEndpointAddress, HttpEndpointClient}
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.routing.Node
 import stasis.core.security.NodeAuthenticator
+import stasis.core.security.tls.EndpointContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.MockHttpNodeCredentialsProvider
 import stasis.test.specs.unit.core.persistence.mocks.{MockCrateStore, MockReservationStore}
@@ -28,7 +30,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val endpoint = new TestHttpEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
+    val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword)
     )
 
@@ -44,7 +46,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val endpoint = new TestHttpEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
+    val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword)
     )
 
@@ -69,7 +71,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val endpoint = new TestHttpEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
+    val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword)
     )
 
@@ -99,7 +101,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
     )
 
-    val client = new HttpEndpointClient(
+    val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword)
     )
 
@@ -124,7 +126,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val endpoint = new TestHttpEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
+    val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword)
     )
 
@@ -147,7 +149,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val endpoint = new TestHttpEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
+    val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword)
     )
 
@@ -180,7 +182,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val _ = new TestHttpEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
+    val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword)
     )
 
@@ -195,7 +197,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val _ = new TestHttpEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
+    val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, "invalid-user", testPassword)
     )
 
@@ -233,7 +235,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       port = secondaryEndpointPort
     )
 
-    val client = new HttpEndpointClient(
+    val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(
         Map(
           primaryEndpointAddress -> (primaryEndpointUser, primaryEndpointPassword),
@@ -256,7 +258,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val _ = new TestHttpEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
+    val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(Map.empty)
     )
 
@@ -280,7 +282,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val _ = new TestHttpEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
+    val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(Map.empty)
     )
 
@@ -304,7 +306,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val _ = new TestHttpEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
+    val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(Map.empty)
     )
 
@@ -330,7 +332,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val endpoint = new TestHttpEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
+    val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword)
     )
 
@@ -351,7 +353,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val _ = new TestHttpEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
+    val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(Map.empty)
     )
 
@@ -377,7 +379,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val _ = new TestHttpEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
+    val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword)
     )
 
@@ -392,7 +394,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val _ = new TestHttpEndpoint(port = endpointPort)
 
-    val client = new HttpEndpointClient(
+    val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, "invalid-user", testPassword)
     )
 
@@ -407,6 +409,33 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
             s"Endpoint [${endpointAddress.uri}] responded to discard with unexpected status: [401 Unauthorized]"
           )
       }
+  }
+
+  it should "support custom connection contexts" in {
+    val endpointPort = ports.dequeue()
+    val endpointAddress = HttpEndpointAddress(s"https://localhost:$endpointPort")
+
+    val config: Config = ConfigFactory.load().getConfig("stasis.test.core.security.tls")
+
+    val endpointContext = EndpointContext.create(
+      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-server"))
+    )
+
+    val clientContext = EndpointContext.create(
+      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-client"))
+    )
+
+    val endpoint = new TestHttpEndpoint(port = endpointPort, context = endpointContext)
+
+    val client = HttpEndpointClient(
+      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
+      context = clientContext
+    )
+
+    client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).map { _ =>
+      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+    }
   }
 
   private implicit val untypedSystem: akka.actor.ActorSystem =
@@ -441,13 +470,14 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
   private class TestHttpEndpoint(
     val testAuthenticator: NodeAuthenticator[HttpCredentials] = new MockHttpAuthenticator(testUser, testPassword),
     val fixtures: TestFixtures = new TestFixtures {},
+    context: ConnectionContext = ConnectionContext.noEncryption(),
     port: Int
   ) extends HttpEndpoint(
         router = fixtures.router,
         authenticator = testAuthenticator,
         reservationStore = fixtures.reservationStore.view
       ) {
-    private val _ = start(interface = "localhost", port = port, context = ConnectionContext.noEncryption())
+    private val _ = start(interface = "localhost", port = port, context = context)
   }
 
   private val ports: mutable.Queue[Int] = (19000 to 19100).to[mutable.Queue]

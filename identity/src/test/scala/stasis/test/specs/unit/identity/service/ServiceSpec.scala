@@ -31,7 +31,7 @@ class ServiceSpec extends RouteTest with Eventually {
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
   "Identity Service" should "authenticate and authorize actions" in {
-    implicit val trustedContext: HttpsConnectionContext = createTrustedContext()
+    implicit val clientContext: HttpsConnectionContext = createTrustedContext()
 
     val service = new Service {}
     val serviceInterface = "localhost"
@@ -127,7 +127,7 @@ class ServiceSpec extends RouteTest with Eventually {
     serviceUrl: String,
     owner: ResourceOwnerCredentials,
     client: ClientCredentials
-  )(implicit trustedContext: HttpsConnectionContext): Future[String] =
+  )(implicit clientContext: HttpsConnectionContext): Future[String] =
     for {
       response <- Http()
         .singleRequest(
@@ -139,7 +139,7 @@ class ServiceSpec extends RouteTest with Eventually {
               s"&password=${owner.password}" +
               s"&scope=${owner.scope}"
           ).addCredentials(BasicHttpCredentials(client.username, client.password)),
-          connectionContext = trustedContext
+          connectionContext = clientContext
         )
       entity <- response.entity.dataBytes.runFold(ByteString.empty)(_ concat _)
     } yield {
@@ -151,7 +151,7 @@ class ServiceSpec extends RouteTest with Eventually {
     entities: String,
     request: RequestEntity,
     accessToken: String
-  )(implicit trustedContext: HttpsConnectionContext): Future[Done] =
+  )(implicit clientContext: HttpsConnectionContext): Future[Done] =
     Http()
       .singleRequest(
         request = HttpRequest(
@@ -159,7 +159,7 @@ class ServiceSpec extends RouteTest with Eventually {
           uri = s"$serviceUrl/manage/$entities",
           entity = request
         ).addCredentials(OAuth2BearerToken(token = accessToken)),
-        connectionContext = trustedContext
+        connectionContext = clientContext
       )
       .flatMap {
         case HttpResponse(StatusCodes.OK, _, _, _) => Future.successful(Done)
@@ -168,7 +168,7 @@ class ServiceSpec extends RouteTest with Eventually {
 
   private def getJwk(
     serviceUrl: String
-  )(implicit trustedContext: HttpsConnectionContext): Future[JsonWebKey] =
+  )(implicit clientContext: HttpsConnectionContext): Future[JsonWebKey] =
     for {
       response <- Http()
         .singleRequest(
@@ -176,7 +176,7 @@ class ServiceSpec extends RouteTest with Eventually {
             method = HttpMethods.GET,
             uri = s"$serviceUrl/jwks/jwks.json"
           ),
-          connectionContext = trustedContext
+          connectionContext = clientContext
         )
       entity <- response.entity.dataBytes.runFold(ByteString.empty)(_ concat _)
     } yield {
@@ -194,14 +194,14 @@ class ServiceSpec extends RouteTest with Eventually {
 
   private def createTrustedContext(): HttpsConnectionContext = {
     val config = ConfigFactory.load().getConfig("stasis.test.identity.service.context")
-    val contextConfig = EndpointContext.Config(config)
+    val storeConfig = EndpointContext.StoreConfig(config.getConfig("keystore"))
 
-    val keyStore = EndpointContext.loadKeyStore(contextConfig)
+    val keyStore = EndpointContext.loadStore(storeConfig)
 
     val factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm)
     factory.init(keyStore)
 
-    val sslContext = SSLContext.getInstance(contextConfig.protocol)
+    val sslContext = SSLContext.getInstance(config.getString("protocol"))
     sslContext.init(None.orNull, factory.getTrustManagers, new SecureRandom())
 
     new HttpsConnectionContext(sslContext)

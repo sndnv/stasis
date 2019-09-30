@@ -128,20 +128,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     val fixtures = new TestFixtures { parent =>
       override lazy val stagingStore: Option[StagingStore] =
-        Some(
-          new StagingStore(
-            crateStore = stagingCrateStore,
-            nodeProxy = new NodeProxy(
-              httpClient = testClient,
-              grpcClient = new MockGrpcEndpointClient()
-            ) {
-              override protected def crateStore(id: Node.Id,
-                                                storeDescriptor: CrateStore.Descriptor): Future[CrateStore] =
-                Future.successful(parent.crateStore)
-            },
-            destagingDelay = 100.milliseconds
-          )
-        )
+        Some(new StagingStore(crateStore = stagingCrateStore, destagingDelay = 100.milliseconds))
     }
 
     val router = new TestRouter(fixtures, testClient)
@@ -581,16 +568,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     val fixtures = new TestFixtures {
       override lazy val stagingStore: Option[StagingStore] =
-        Some(
-          new StagingStore(
-            crateStore = stagingCrateStore,
-            nodeProxy = new NodeProxy(
-              httpClient = testClient,
-              grpcClient = new MockGrpcEndpointClient()
-            ),
-            destagingDelay = 10.seconds
-          )
-        )
+        Some(new StagingStore(crateStore = stagingCrateStore, destagingDelay = 10.seconds))
     }
 
     val router = new TestRouter(fixtures, testClient)
@@ -944,18 +922,20 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     val testClient: MockHttpEndpointClient = new MockHttpEndpointClient()
   )(implicit untypedSystem: akka.actor.ActorSystem = system.toUntyped)
       extends DefaultRouter(
+        routerId = Node.generateId(),
+        persistence = DefaultRouter.Persistence(
+          manifests = fixtures.manifestStore,
+          nodes = fixtures.nodeStore.view,
+          reservations = fixtures.reservationStore,
+          staging = fixtures.stagingStore
+        ),
         nodeProxy = new NodeProxy(
           httpClient = testClient,
           grpcClient = new MockGrpcEndpointClient()
         ) {
           override protected def crateStore(id: Node.Id, storeDescriptor: CrateStore.Descriptor): Future[CrateStore] =
             Future.successful(fixtures.crateStore)
-        },
-        manifestStore = fixtures.manifestStore,
-        nodeStore = fixtures.nodeStore.view,
-        reservationStore = fixtures.reservationStore,
-        stagingStore = fixtures.stagingStore,
-        routerId = Node.generateId()
+        }
       )
 
   private val testContent = ByteString("some value")

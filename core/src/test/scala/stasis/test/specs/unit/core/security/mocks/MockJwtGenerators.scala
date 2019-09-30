@@ -4,7 +4,7 @@ import org.jose4j.jwk.{EllipticCurveJsonWebKey, JsonWebKey, OctetSequenceJsonWeb
 import org.jose4j.jws.JsonWebSignature
 import org.jose4j.jwt.JwtClaims
 
-object MockJwtsGenerators {
+object MockJwtGenerators {
   def generateJwt(
     issuer: String,
     audience: String,
