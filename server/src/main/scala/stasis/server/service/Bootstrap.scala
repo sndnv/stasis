@@ -35,7 +35,7 @@ object Bootstrap {
 
   def run(
     bootstrapConfig: typesafe.Config,
-    apiPersistence: ApiPersistence,
+    serverPersistence: ServerPersistence,
     corePersistence: CorePersistence
   )(
     implicit ec: ExecutionContext,
@@ -63,7 +63,7 @@ object Bootstrap {
       )
 
       for {
-        _ <- run(entities, apiPersistence, corePersistence)
+        _ <- run(entities, serverPersistence, corePersistence)
         _ <- corePersistence.startup()
       } yield {
         Done
@@ -75,16 +75,17 @@ object Bootstrap {
 
   def run(
     entities: Entities,
-    apiPersistence: ApiPersistence,
+    serverPersistence: ServerPersistence,
     corePersistence: CorePersistence
   )(implicit ec: ExecutionContext, log: LoggingAdapter): Future[Done] =
     for {
-      _ <- apiPersistence.init()
+      _ <- serverPersistence.init()
       _ <- corePersistence.init()
-      _ <- Future.sequence(entities.definitions.map(e => logged(apiPersistence.datasetDefinitions.manage().create, e)))
-      _ <- Future.sequence(entities.devices.map(e => logged(apiPersistence.devices.manage().create, e)))
-      _ <- Future.sequence(entities.schedules.map(e => logged(apiPersistence.schedules.manage().create, e)))
-      _ <- Future.sequence(entities.users.map(e => logged(apiPersistence.users.manage().create, e)))
+      _ <- Future.sequence(
+        entities.definitions.map(e => logged(serverPersistence.datasetDefinitions.manage().create, e)))
+      _ <- Future.sequence(entities.devices.map(e => logged(serverPersistence.devices.manage().create, e)))
+      _ <- Future.sequence(entities.schedules.map(e => logged(serverPersistence.schedules.manage().create, e)))
+      _ <- Future.sequence(entities.users.map(e => logged(serverPersistence.users.manage().create, e)))
       _ <- Future.sequence(entities.nodes.map(e => logged(corePersistence.nodes.put, e)))
     } yield {
       Done

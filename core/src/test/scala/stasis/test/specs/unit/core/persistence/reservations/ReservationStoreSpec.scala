@@ -29,11 +29,15 @@ class ReservationStoreSpec extends AsyncUnitSpec {
     for {
       _ <- store.put(expectedReservation)
       actualReservation <- store.get(expectedReservation.id)
+      someReservations <- store.reservations
       _ <- store.delete(expectedReservation.crate, expectedReservation.target)
       missingReservation <- store.get(expectedReservation.id)
+      noReservations <- store.reservations
     } yield {
       actualReservation should be(Some(expectedReservation))
+      someReservations should be(Map(expectedReservation.id -> expectedReservation))
       missingReservation should be(None)
+      noReservations should be(Map.empty)
     }
   }
 
@@ -102,12 +106,16 @@ class ReservationStoreSpec extends AsyncUnitSpec {
       _ <- store.put(expectedReservation)
       actualReservation <- storeView.get(expectedReservation.id)
       reservationExists <- storeView.existsFor(expectedReservation.crate, expectedReservation.target)
+      someReservations <- storeView.reservations
       _ <- store.delete(expectedReservation.crate, expectedReservation.target)
       missingReservation <- storeView.get(expectedReservation.id)
       reservationMissing <- storeView.existsFor(expectedReservation.crate, expectedReservation.target)
+      noReservations <- storeView.reservations
     } yield {
       actualReservation should be(Some(expectedReservation))
+      someReservations should be(Map(expectedReservation.id -> expectedReservation))
       missingReservation should be(None)
+      noReservations should be(Map.empty)
       reservationExists should be(true)
       reservationMissing should be(false)
       a[ClassCastException] should be thrownBy { val _ = storeView.asInstanceOf[ReservationStore] }

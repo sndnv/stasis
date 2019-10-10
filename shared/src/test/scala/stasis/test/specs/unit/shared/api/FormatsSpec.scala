@@ -1,11 +1,21 @@
 package stasis.test.specs.unit.shared.api
 
-import play.api.libs.json.{JsString, Json}
-import stasis.shared.security.Permission
-import stasis.test.specs.unit.UnitSpec
+import java.time.Instant
+
+import akka.actor.Cancellable
+import play.api.libs.json.Json
+import stasis.core.networking.grpc.GrpcEndpointAddress
+import stasis.core.networking.http.HttpEndpointAddress
+import stasis.core.packaging.Crate
+import stasis.core.persistence.crates.CrateStore
+import stasis.core.persistence.staging.StagingStore.PendingDestaging
 import stasis.shared.api.Formats._
+import stasis.shared.api.requests.CreateNode.{CreateLocalNode, CreateRemoteGrpcNode, CreateRemoteHttpNode}
+import stasis.shared.api.requests.UpdateNode.{UpdateLocalNode, UpdateRemoteGrpcNode, UpdateRemoteHttpNode}
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.schedules.Schedule
+import stasis.shared.security.Permission
+import stasis.test.specs.unit.UnitSpec
 
 class FormatsSpec extends UnitSpec {
   "Formats" should "convert permissions to/from JSON" in {
@@ -77,5 +87,71 @@ class FormatsSpec extends UnitSpec {
         retentionPolicyFormat.writes(policy).toString should be(json)
         retentionPolicyFormat.reads(Json.parse(json)).asOpt should be(Some(policy))
     }
+  }
+
+  they should "convert node creation requests to/from JSON" in {
+    val requests = Map(
+      "local" -> (
+        CreateLocalNode(storeDescriptor = CrateStore.Descriptor.ForFileBackend(parentDirectory = "/tmp")),
+        "{\"node-type\":\"local\",\"storeDescriptor\":{\"backend-type\":\"file\",\"parent-directory\":\"/tmp\"}}"
+      ),
+      "remote-http" -> (
+        CreateRemoteHttpNode(address = HttpEndpointAddress(uri = "http://example.com")),
+        "{\"node-type\":\"remote-http\",\"address\":{\"uri\":\"http://example.com\"}}"
+      ),
+      "remote-grpc" -> (
+        CreateRemoteGrpcNode(address = GrpcEndpointAddress(host = "example.com", port = 443, tlsEnabled = true)),
+        "{\"node-type\":\"remote-grpc\",\"address\":{\"host\":\"example.com\",\"port\":443,\"tlsEnabled\":true}}"
+      )
+    )
+
+    requests.foreach {
+      case (_, (request, json)) =>
+        createNodeFormat.writes(request).toString should be(json)
+        createNodeFormat.reads(Json.parse(json)).asOpt should be(Some(request))
+    }
+  }
+
+  they should "convert node update requests to/from JSON" in {
+    val requests = Map(
+      "local" -> (
+        UpdateLocalNode(storeDescriptor = CrateStore.Descriptor.ForFileBackend(parentDirectory = "/tmp")),
+        "{\"node-type\":\"local\",\"storeDescriptor\":{\"backend-type\":\"file\",\"parent-directory\":\"/tmp\"}}"
+      ),
+      "remote-http" -> (
+        UpdateRemoteHttpNode(address = HttpEndpointAddress(uri = "http://example.com")),
+        "{\"node-type\":\"remote-http\",\"address\":{\"uri\":\"http://example.com\"}}"
+      ),
+      "remote-grpc" -> (
+        UpdateRemoteGrpcNode(address = GrpcEndpointAddress(host = "example.com", port = 443, tlsEnabled = true)),
+        "{\"node-type\":\"remote-grpc\",\"address\":{\"host\":\"example.com\",\"port\":443,\"tlsEnabled\":true}}"
+      )
+    )
+
+    requests.foreach {
+      case (_, (request, json)) =>
+        updateNodeFormat.writes(request).toString should be(json)
+        updateNodeFormat.reads(Json.parse(json)).asOpt should be(Some(request))
+    }
+  }
+
+  they should "convert pending destaging operations to JSON" in {
+    val now = Instant.now()
+
+    val pending = PendingDestaging(
+      crate = Crate.generateId(),
+      staged = now.minusSeconds(5),
+      destaged = now.plusSeconds(1),
+      cancellable = new Cancellable {
+        override def cancel(): Boolean = false
+        override def isCancelled: Boolean = false
+      }
+    )
+
+    val json = "{\"crate\":\"" + pending.crate +
+      "\",\"staged\":\"" + pending.staged +
+      "\",\"destaged\":\"" + pending.destaged + "\"}"
+
+    pendingDestagingWrites.writes(pending).toString should be(json)
   }
 }

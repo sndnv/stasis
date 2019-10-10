@@ -5,9 +5,9 @@ import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.event.Logging
 import akka.http.scaladsl.model.headers.HttpCredentials
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.{ExceptionHandler, Route}
+import akka.http.scaladsl.server._
 import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Sink
@@ -63,13 +63,48 @@ class HttpEndpoint(
           )
 
           complete(
-            HttpResponse(
-              status = StatusCodes.InternalServerError,
-              entity = s"Failed to process request; failure reference is [$failureReference]"
+            StatusCodes.InternalServerError,
+            HttpEntity(
+              ContentTypes.`text/plain(UTF-8)`,
+              s"Failed to process request; failure reference is [$failureReference]"
             )
           )
         }
     }
+
+  private implicit def rejectionHandler: RejectionHandler =
+    RejectionHandler
+      .newBuilder()
+      .handle {
+        case MissingQueryParamRejection(parameterName) =>
+          extractRequestEntity { entity =>
+            val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
+
+            val message = s"Parameter [$parameterName] is missing, invalid or malformed"
+            log.warning(message)
+
+            complete(
+              StatusCodes.BadRequest,
+              HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
+            )
+          }
+      }
+      .handle {
+        case ValidationRejection(_, _) =>
+          extractRequestEntity { entity =>
+            val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
+
+            val message = "Provided data is invalid or malformed"
+            log.warning(message)
+
+            complete(
+              StatusCodes.BadRequest,
+              HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
+            )
+          }
+      }
+      .result()
+      .seal
 
   val routes: Route =
     (extractMethod & extractUri & extractClientIP & extractRequest) { (method, uri, remoteAddress, request) =>

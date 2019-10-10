@@ -72,6 +72,8 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     Put(s"/${schedules.head.id}")
       .withEntity(updateRequest) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+
       fixtures.scheduleStore
         .view()
         .get(schedules.head.id)

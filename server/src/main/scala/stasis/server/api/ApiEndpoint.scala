@@ -2,14 +2,14 @@ package stasis.server.api
 
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
-import akka.http.scaladsl.{ConnectionContext, Http}
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.{ExceptionHandler, Route}
+import akka.http.scaladsl.server._
+import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
-import stasis.server.api.routes.{DatasetDefinitions, DatasetEntries, Devices, RoutesContext, Schedules, Users}
+import stasis.server.api.routes._
 import stasis.server.security.exceptions.AuthorizationFailure
 import stasis.server.security.{ResourceProvider, UserAuthenticator}
 
@@ -34,6 +34,9 @@ class ApiEndpoint(
   private val users = new Users()
   private val devices = new Devices()
   private val schedules = new Schedules()
+  private val nodes = new Nodes()
+  private val reservations = new Reservations()
+  private val staging = new Staging()
 
   private implicit def sanitizingExceptionHandler: ExceptionHandler =
     ExceptionHandler {
@@ -57,13 +60,34 @@ class ApiEndpoint(
           )
 
           complete(
-            HttpResponse(
-              status = StatusCodes.InternalServerError,
-              entity = s"Failed to process request; failure reference is [$failureReference]"
+            StatusCodes.InternalServerError,
+            HttpEntity(
+              ContentTypes.`text/plain(UTF-8)`,
+              s"Failed to process request; failure reference is [$failureReference]"
             )
           )
         }
     }
+
+  private implicit def rejectionHandler: RejectionHandler =
+    RejectionHandler
+      .newBuilder()
+      .handle {
+        case ValidationRejection(_, _) =>
+          extractRequestEntity { entity =>
+            val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
+
+            val message = "Provided data is invalid or malformed"
+            log.warning(message)
+
+            complete(
+              StatusCodes.BadRequest,
+              HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
+            )
+          }
+      }
+      .result()
+      .seal
 
   val endpointRoutes: Route =
     (extractMethod & extractUri & extractClientIP & extractRequest) { (method, uri, remoteAddress, request) =>
@@ -80,7 +104,10 @@ class ApiEndpoint(
                 },
                 pathPrefix("users") { users.routes(currentUser = user) },
                 pathPrefix("devices") { devices.routes(currentUser = user) },
-                pathPrefix("schedules") { schedules.routes(currentUser = user) }
+                pathPrefix("schedules") { schedules.routes(currentUser = user) },
+                pathPrefix("nodes") { nodes.routes(currentUser = user) },
+                pathPrefix("reservations") { reservations.routes(currentUser = user) },
+                pathPrefix("staging") { staging.routes(currentUser = user) }
               )
 
             case Failure(e) =>
