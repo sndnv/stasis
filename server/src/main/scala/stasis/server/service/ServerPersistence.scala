@@ -9,10 +9,11 @@ import stasis.server.model.datasets._
 import stasis.server.model.devices.{DeviceStore, DeviceStoreSerdes}
 import stasis.server.model.schedules.{ScheduleStore, ScheduleStoreSerdes}
 import stasis.server.model.users.{UserStore, UserStoreSerdes}
+import stasis.server.security.Resource
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ApiPersistence(
+class ServerPersistence(
   persistenceConfig: typesafe.Config,
 )(implicit system: ActorSystem[SpawnProtocol]) {
   private implicit val ec: ExecutionContext = system.executionContext
@@ -60,6 +61,27 @@ class ApiPersistence(
     } yield {
       Done
     }
+
+  def resources: Set[Resource] = Set(
+    datasetDefinitions.manage(),
+    datasetDefinitions.manageSelf(),
+    datasetDefinitions.view(),
+    datasetDefinitions.viewSelf(),
+    datasetEntries.manage(),
+    datasetEntries.manageSelf(),
+    datasetEntries.view(),
+    datasetEntries.viewSelf(),
+    devices.manage(),
+    devices.manageSelf(),
+    devices.view(),
+    devices.viewSelf(),
+    schedules.manage(),
+    schedules.view(),
+    users.manage(),
+    users.manageSelf(),
+    users.view(),
+    users.viewSelf()
+  )
 
   private object backends {
     val definitions = new SlickBackend(

@@ -56,7 +56,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     val corePort = 39999
     val coreUrl = s"https://$interface:$corePort"
 
-    val (apiPersistence, corePersistence) = eventually {
+    val (serverPersistence, corePersistence) = eventually {
       service.state match {
         case Service.State.Started(apiServices, coreServices) => (apiServices.persistence, coreServices.persistence)
         case state                                            => fail(s"Unexpected service state encountered: [$state]")
@@ -85,13 +85,13 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
 
     for {
       jwt <- getJwt(subject = existingUser.toString, signatureKey = defaultJwk)
-      usersBefore <- apiPersistence.users.view().list().map(_.values.toSeq)
+      usersBefore <- serverPersistence.users.view().list().map(_.values.toSeq)
       apiUsersBefore <- getUsers(serviceUrl, jwt)
       _ <- createUser(serviceUrl, createUserRequest, jwt)
-      usersAfter <- apiPersistence.users.view().list().map(_.values.toSeq)
+      usersAfter <- serverPersistence.users.view().list().map(_.values.toSeq)
       apiUsersAfter <- getUsers(serviceUrl, jwt)
       crateDiscarded <- coreClient.discard(address = coreAddress, crate = Crate.generateId())
-      _ <- apiPersistence.drop()
+      _ <- serverPersistence.drop()
       _ <- corePersistence.drop()
       _ = service.stop()
       _ = jwksEndpoint.stop()

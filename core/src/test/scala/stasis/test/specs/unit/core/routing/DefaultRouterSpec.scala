@@ -158,18 +158,18 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       }
     )
 
-    testReservationStore.reservations().await.size should be(0)
+    testReservationStore.reservations.await.size should be(0)
 
     router.reserve(request = CrateStorageRequest(testManifest)).await
 
-    testReservationStore.reservations().await match {
+    testReservationStore.reservations.await.values.toList match {
       case reservation :: _ => reservation.crate should be(testManifest.crate)
       case Nil              => fail("Unexpected empty reservations list returned")
     }
 
     router.push(testManifest, Source.single(testContent)).await
 
-    testReservationStore.reservations().await.size should be(0)
+    testReservationStore.reservations.await.size should be(0)
 
     eventually {
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
@@ -187,7 +187,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       }
     )
 
-    testReservationStore.reservations().await.size should be(0)
+    testReservationStore.reservations.await.size should be(0)
 
     router
       .push(testManifest, Source.single(testContent))

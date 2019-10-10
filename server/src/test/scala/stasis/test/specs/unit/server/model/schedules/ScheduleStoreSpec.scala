@@ -12,12 +12,12 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.MockScheduleStore
 
 class ScheduleStoreSpec extends AsyncUnitSpec {
-  "A ScheduleStore" should "provide a view resource (privileged)" in {
+  "A ScheduleStore" should "provide a view resource (service)" in {
     val store = MockScheduleStore()
     store.view().requiredPermission should be(Permission.View.Service)
   }
 
-  it should "return existing schedules via view resource (privileged)" in {
+  it should "return existing schedules via view resource (service)" in {
     val store = MockScheduleStore()
 
     store.manage().create(mockSchedule).await
@@ -25,7 +25,7 @@ class ScheduleStoreSpec extends AsyncUnitSpec {
     store.view().get(mockSchedule.id).map(result => result should be(Some(mockSchedule)))
   }
 
-  it should "return a list of schedules via view resource (privileged)" in {
+  it should "return a list of schedules via view resource (service)" in {
     val store = MockScheduleStore()
 
     store.manage().create(mockSchedule).await
@@ -38,12 +38,12 @@ class ScheduleStoreSpec extends AsyncUnitSpec {
     }
   }
 
-  it should "provide management resource (privileged)" in {
+  it should "provide management resource (service)" in {
     val store = MockScheduleStore()
     store.manage().requiredPermission should be(Permission.Manage.Service)
   }
 
-  it should "allow creating schedules via management resource (privileged)" in {
+  it should "allow creating schedules via management resource (service)" in {
     val store = MockScheduleStore()
 
     for {
@@ -55,7 +55,7 @@ class ScheduleStoreSpec extends AsyncUnitSpec {
     }
   }
 
-  it should "allow updating schedules via management resource (privileged)" in {
+  it should "allow updating schedules via management resource (service)" in {
     val store = MockScheduleStore()
 
     val updatedInterval = 10.hours
@@ -73,7 +73,7 @@ class ScheduleStoreSpec extends AsyncUnitSpec {
     }
   }
 
-  it should "allow deleting schedules via management resource (privileged)" in {
+  it should "allow deleting schedules via management resource (service)" in {
     val store = MockScheduleStore()
 
     for {

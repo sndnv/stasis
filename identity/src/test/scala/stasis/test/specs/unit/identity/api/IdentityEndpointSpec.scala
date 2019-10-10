@@ -2,7 +2,7 @@ package stasis.test.specs.unit.identity.api
 
 import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest, StatusCodes}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import play.api.libs.json._
 import stasis.identity.api.{IdentityEndpoint, Manage}
@@ -179,6 +179,48 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
         response.status should be(StatusCodes.InternalServerError)
         Unmarshal(response.entity).to[String].await should startWith(
           "Failed to process request; failure reference is"
+        )
+      }
+  }
+
+  it should "reject requests with invalid entities" in {
+    val endpointPort = ports.dequeue()
+
+    val (_, _, oauthConfig, oauthProviders) = createOAuthFixtures()
+    val manageProviders = createManageProviders(withOwnerScopes = Seq(Manage.Scopes.ManageApis))
+
+    val endpoint = new IdentityEndpoint(
+      keys = Seq(
+        MockJwksGenerators.generateRandomRsaKey(
+          keyId = Some(stasis.test.Generators.generateString(withSize = 16))
+        )
+      ),
+      oauthConfig = oauthConfig,
+      oauthProviders = oauthProviders,
+      manageConfig = manageConfig,
+      manageProviders = manageProviders
+    )
+
+    endpoint.start(
+      interface = "localhost",
+      port = endpointPort,
+      context = ConnectionContext.noEncryption()
+    )
+
+    val credentials = OAuth2BearerToken("some-token")
+
+    Http()
+      .singleRequest(
+        request = HttpRequest(
+          method = HttpMethods.POST,
+          uri = s"http://localhost:$endpointPort/manage/apis",
+          entity = HttpEntity(ContentTypes.`application/json`, "{\"a\":1}")
+        ).addCredentials(credentials)
+      )
+      .map { response =>
+        response.status should be(StatusCodes.BadRequest)
+        Unmarshal(response.entity).to[String].await should be(
+          "Provided data is invalid or malformed"
         )
       }
   }

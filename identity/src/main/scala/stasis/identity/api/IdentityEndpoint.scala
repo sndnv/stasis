@@ -3,7 +3,7 @@ package stasis.identity.api
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.{ConnectionContext, Http}
-import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.ActorMaterializer
@@ -47,7 +47,10 @@ class IdentityEndpoint(
 
           complete(
             StatusCodes.InternalServerError,
-            s"Failed to process request; failure reference is [$failureReference]"
+            HttpEntity(
+              ContentTypes.`text/plain(UTF-8)`,
+              s"Failed to process request; failure reference is [$failureReference]"
+            )
           )
         }
     }
@@ -62,7 +65,25 @@ class IdentityEndpoint(
 
             val message = s"Parameter [$parameterName] is missing, invalid or malformed"
             log.warning(message)
-            complete(StatusCodes.BadRequest, message)
+
+            complete(
+              StatusCodes.BadRequest,
+              HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
+            )
+          }
+      }
+      .handle {
+        case ValidationRejection(_, _) =>
+          extractRequestEntity { entity =>
+            val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
+
+            val message = "Provided data is invalid or malformed"
+            log.warning(message)
+
+            complete(
+              StatusCodes.BadRequest,
+              HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
+            )
           }
       }
       .result()

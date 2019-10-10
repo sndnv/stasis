@@ -13,13 +13,17 @@ import stasis.core.persistence.manifests.{ManifestStore, ManifestStoreSerdes}
 import stasis.core.persistence.nodes.{NodeStore, NodeStoreSerdes}
 import stasis.core.persistence.reservations.{ReservationStore, ReservationStoreSerdes}
 import stasis.core.persistence.staging.StagingStore
+import stasis.server.model.nodes.ServerNodeStore
+import stasis.server.model.reservations.ServerReservationStore
+import stasis.server.model.staging.ServerStagingStore
+import stasis.server.security.Resource
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class CorePersistence(
   persistenceConfig: typesafe.Config,
-)(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout) {
+)(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout) { persistence =>
   private implicit val ec: ExecutionContext = system.executionContext
   private implicit val untyped: akka.actor.ActorSystem = system.toUntyped
 
@@ -92,6 +96,20 @@ class CorePersistence(
     } yield {
       Done
     }
+
+  def resources: Set[Resource] =
+    Set(
+      serverNodes.manage(),
+      serverNodes.view(),
+      serverReservations.view()
+    ) ++ Set(
+      serverStaging.map(_.manage()),
+      serverStaging.map(_.view())
+    ).flatten
+
+  private val serverNodes: ServerNodeStore = ServerNodeStore(nodes)
+  private val serverReservations: ServerReservationStore = ServerReservationStore(reservations)
+  private val serverStaging: Option[ServerStagingStore] = staging.map(ServerStagingStore.apply)
 
   private object backends {
     val manifests = new SlickBackend(

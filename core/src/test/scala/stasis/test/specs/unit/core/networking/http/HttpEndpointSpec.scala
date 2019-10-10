@@ -3,12 +3,13 @@ package stasis.test.specs.unit.core.networking.http
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{Behavior, SpawnProtocol}
 import akka.http.scaladsl.marshalling.Marshal
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
-import akka.http.scaladsl.model.{RequestEntity, StatusCodes}
 import akka.http.scaladsl.server.MissingQueryParamRejection
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.util.ByteString
-import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 import stasis.core.api.Formats._
 import stasis.core.networking.http.HttpEndpoint
 import stasis.core.packaging.Crate
@@ -18,6 +19,8 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.mocks.{MockCrateStore, MockReservationStore}
 import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockHttpAuthenticator
+
+import scala.collection.mutable
 
 class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   "An HTTP Endpoint" should "successfully authenticate a client" in {
@@ -67,6 +70,8 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "successfully process reservation requests" in {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+
     val endpoint = new TestHttpEndpoint()
 
     val storageRequest = CrateStorageRequest(
@@ -97,6 +102,8 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "reject reservation requests that cannot be fulfilled" in {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+
     val endpoint = new TestHttpEndpoint(
       testCrateStore = Some(new MockCrateStore(maxStorageSize = Some(99)))
     )
@@ -201,6 +208,72 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
+  it should "handle generic failures reported by routes" in {
+    val endpoint = new TestHttpEndpoint(
+      testCrateStore = Some(new MockCrateStore(persistDisabled = true))
+    )
+    val endpointPort = ports.dequeue()
+    val _ = endpoint.start(interface = "localhost", port = endpointPort, context = ConnectionContext.noEncryption())
+
+    endpoint.testReservationStore.put(testReservation).await
+
+    Http()
+      .singleRequest(
+        request = HttpRequest(
+          method = HttpMethods.PUT,
+          uri = s"http://localhost:$endpointPort/crates/${testReservation.crate}?reservation=${testReservation.id}"
+        ).addCredentials(testCredentials).withEntity(crateContent)
+      )
+      .map { response =>
+        response.status should be(StatusCodes.InternalServerError)
+        Unmarshal(response.entity).to[String].await should startWith(
+          "Failed to process request; failure reference is"
+        )
+      }
+  }
+
+  it should "reject requests with invalid query parameters" in {
+    val endpoint = new TestHttpEndpoint()
+    val endpointPort = ports.dequeue()
+    val _ = endpoint.start(interface = "localhost", port = endpointPort, context = ConnectionContext.noEncryption())
+
+    Http()
+      .singleRequest(
+        request = HttpRequest(
+          method = HttpMethods.PUT,
+          uri = s"http://localhost:$endpointPort/crates/${Crate.generateId()}",
+          entity = HttpEntity(ContentTypes.`application/json`, "{\"a\":1}")
+        ).addCredentials(testCredentials)
+      )
+      .map { response =>
+        response.status should be(StatusCodes.BadRequest)
+        Unmarshal(response.entity).to[String].await should be(
+          "Parameter [reservation] is missing, invalid or malformed"
+        )
+      }
+  }
+
+  it should "reject requests with invalid entities" in {
+    val endpoint = new TestHttpEndpoint()
+    val endpointPort = ports.dequeue()
+    val _ = endpoint.start(interface = "localhost", port = endpointPort, context = ConnectionContext.noEncryption())
+
+    Http()
+      .singleRequest(
+        request = HttpRequest(
+          method = HttpMethods.PUT,
+          uri = s"http://localhost:$endpointPort/reservations",
+          entity = HttpEntity(ContentTypes.`application/json`, "{\"a\":1}")
+        ).addCredentials(testCredentials)
+      )
+      .map { response =>
+        response.status should be(StatusCodes.BadRequest)
+        Unmarshal(response.entity).to[String].await should be(
+          "Provided data is invalid or malformed"
+        )
+      }
+  }
+
   private implicit val typedSystem: akka.actor.typed.ActorSystem[SpawnProtocol] = akka.actor.typed.ActorSystem(
     Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
     "HttpEndpointSpec_Untyped"
@@ -231,4 +304,6 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     origin = Node.generateId(),
     target = Node.generateId()
   )
+
+  private val ports: mutable.Queue[Int] = (27000 to 27100).to[mutable.Queue]
 }

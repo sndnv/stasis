@@ -206,6 +206,29 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
     }
   }
 
+  it should "provide a list of currently pending destaging operations" in {
+    val fixtures = new TestFixtures {}
+    val store = new TestStagingStore(fixtures)
+    val destinations: Map[Node, Int] = fixtures.remoteNodes ++ fixtures.localNodes
+
+    store
+      .stage(
+        manifest = testManifest,
+        destinations = destinations,
+        content = Source.single(testContent),
+        viaProxy = fixtures.proxy
+      )
+      .await
+
+    fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+    fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+
+    store.pending.map { result =>
+      result.size should be(1)
+      result.contains(testManifest.crate) should be(true)
+    }
+  }
+
   private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
     "StagingStoreSpec"

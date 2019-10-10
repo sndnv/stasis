@@ -14,7 +14,7 @@ import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.routing.Node
 import stasis.server.service.Bootstrap.Entities
-import stasis.server.service.{ApiPersistence, Bootstrap, CorePersistence}
+import stasis.server.service.{Bootstrap, CorePersistence, ServerPersistence}
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
@@ -36,7 +36,7 @@ class BootstrapSpec extends AsyncUnitSpec {
       nodes = stasis.test.Generators.generateSeq(min = 1, g = CoreGenerators.generateLocalNode)
     )
 
-    val apiPersistence = new ApiPersistence(
+    val serverPersistence = new ServerPersistence(
       persistenceConfig = config.getConfig("persistence")
     )
 
@@ -47,17 +47,17 @@ class BootstrapSpec extends AsyncUnitSpec {
     Bootstrap
       .run(
         entities = expectedEntities,
-        apiPersistence = apiPersistence,
+        serverPersistence = serverPersistence,
         corePersistence = corePersistence
       )
       .flatMap { _ =>
         for {
-          actualDefinitions <- apiPersistence.datasetDefinitions.view().list()
-          actualDevices <- apiPersistence.devices.view().list()
-          actualSchedules <- apiPersistence.schedules.view().list()
-          actualUsers <- apiPersistence.users.view().list()
+          actualDefinitions <- serverPersistence.datasetDefinitions.view().list()
+          actualDevices <- serverPersistence.devices.view().list()
+          actualSchedules <- serverPersistence.schedules.view().list()
+          actualUsers <- serverPersistence.users.view().list()
           actualNodes <- corePersistence.nodes.nodes
-          _ <- apiPersistence.drop()
+          _ <- serverPersistence.drop()
           _ <- corePersistence.drop()
         } yield {
           actualDefinitions.values.toSeq.sortBy(_.id) should be(expectedEntities.definitions.sortBy(_.id))
@@ -70,7 +70,7 @@ class BootstrapSpec extends AsyncUnitSpec {
   }
 
   it should "setup the service with configured entities" in {
-    val apiPersistence = new ApiPersistence(
+    val serverPersistence = new ServerPersistence(
       persistenceConfig = config.getConfig("persistence")
     )
 
@@ -84,17 +84,17 @@ class BootstrapSpec extends AsyncUnitSpec {
     Bootstrap
       .run(
         bootstrapConfig = config.getConfig("bootstrap-enabled"),
-        apiPersistence = apiPersistence,
+        serverPersistence = serverPersistence,
         corePersistence = corePersistence
       )
       .flatMap { _ =>
         for {
-          actualDefinitions <- apiPersistence.datasetDefinitions.view().list()
-          actualDevices <- apiPersistence.devices.view().list()
-          actualSchedules <- apiPersistence.schedules.view().list()
-          actualUsers <- apiPersistence.users.view().list()
+          actualDefinitions <- serverPersistence.datasetDefinitions.view().list()
+          actualDevices <- serverPersistence.devices.view().list()
+          actualSchedules <- serverPersistence.schedules.view().list()
+          actualUsers <- serverPersistence.users.view().list()
           actualNodes <- corePersistence.nodes.nodes
-          _ <- apiPersistence.drop()
+          _ <- serverPersistence.drop()
           _ <- corePersistence.drop()
         } yield {
           actualDefinitions.values.toList.sortBy(_.id.toString) match {
@@ -240,7 +240,7 @@ class BootstrapSpec extends AsyncUnitSpec {
   }
 
   it should "not run if not enabled" in {
-    val apiPersistence = new ApiPersistence(
+    val serverPersistence = new ServerPersistence(
       persistenceConfig = config.getConfig("persistence")
     )
 
@@ -253,18 +253,18 @@ class BootstrapSpec extends AsyncUnitSpec {
     Bootstrap
       .run(
         bootstrapConfig = config.getConfig("bootstrap-disabled"),
-        apiPersistence = apiPersistence,
+        serverPersistence = serverPersistence,
         corePersistence = corePersistence
       )
       .flatMap { _ =>
         for {
-          _ <- apiPersistence.init()
-          actualDefinitions <- apiPersistence.datasetDefinitions.view().list()
-          actualDevices <- apiPersistence.devices.view().list()
-          actualSchedules <- apiPersistence.schedules.view().list()
-          actualUsers <- apiPersistence.users.view().list()
+          _ <- serverPersistence.init()
+          actualDefinitions <- serverPersistence.datasetDefinitions.view().list()
+          actualDevices <- serverPersistence.devices.view().list()
+          actualSchedules <- serverPersistence.schedules.view().list()
+          actualUsers <- serverPersistence.users.view().list()
           actualNodes <- corePersistence.nodes.nodes
-          _ <- apiPersistence.drop()
+          _ <- serverPersistence.drop()
           _ <- corePersistence.drop()
         } yield {
           actualDefinitions should be(Map.empty)

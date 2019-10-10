@@ -3,13 +3,13 @@ package stasis.test.specs.unit.server.service
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import com.typesafe.config.Config
-import stasis.server.service.ApiPersistence
+import stasis.server.service.ServerPersistence
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.Generators
 
-class ApiPersistenceSpec extends AsyncUnitSpec {
-  "ApiPersistence" should "setup service data stores based on config" in {
-    val persistence = new ApiPersistence(
+class ServerPersistenceSpec extends AsyncUnitSpec {
+  "ServerPersistence" should "setup service data stores based on config" in {
+    val persistence = new ServerPersistence(
       persistenceConfig = config.getConfig("persistence")
     )
 
@@ -41,9 +41,25 @@ class ApiPersistenceSpec extends AsyncUnitSpec {
     }
   }
 
+  it should "provide service data stores as resources" in {
+    val persistence = new ServerPersistence(
+      persistenceConfig = config.getConfig("persistence")
+    )
+
+    val datasetDefinitions = 4 // manage + manage-self + view + view-self
+    val datasetEntries = 4 // manage + manage-self + view + view-self
+    val devices = 4 // manage + manage-self + view + view-self
+    val schedules = 2 // manage + view
+    val users = 4 // manage + manage-self + view + view-self
+
+    persistence.resources.size should be(
+      datasetDefinitions + datasetEntries + devices + schedules + users
+    )
+  }
+
   private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
-    "ApiPersistenceSpec"
+    "ServerPersistenceSpec"
   )
 
   private val config: Config = system.settings.config.getConfig("stasis.test.server")

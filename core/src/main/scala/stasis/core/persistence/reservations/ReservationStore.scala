@@ -4,9 +4,9 @@ import akka.Done
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.util.Timeout
 import stasis.core.packaging.Crate
-import stasis.core.persistence.{CrateStorageReservation, StoreInitializationResult}
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.core.persistence.backends.memory.MemoryBackend
+import stasis.core.persistence.{CrateStorageReservation, StoreInitializationResult}
 import stasis.core.routing.Node
 
 import scala.concurrent.duration.FiniteDuration
@@ -17,6 +17,7 @@ trait ReservationStore { store =>
   def get(reservation: CrateStorageReservation.Id): Future[Option[CrateStorageReservation]]
   def delete(crate: Crate.Id, node: Node.Id): Future[Boolean]
   def existsFor(crate: Crate.Id, node: Node.Id): Future[Boolean]
+  def reservations: Future[Map[CrateStorageReservation.Id, CrateStorageReservation]]
 
   def view: ReservationStoreView = new ReservationStoreView {
     override def get(reservation: CrateStorageReservation.Id): Future[Option[CrateStorageReservation]] =
@@ -24,6 +25,9 @@ trait ReservationStore { store =>
 
     override def existsFor(crate: Crate.Id, node: Node.Id): Future[Boolean] =
       store.existsFor(crate, node)
+
+    override def reservations: Future[Map[CrateStorageReservation.Id, CrateStorageReservation]] =
+      store.reservations
   }
 }
 
@@ -79,6 +83,9 @@ object ReservationStore {
 
       override def existsFor(crate: Crate.Id, node: Node.Id): Future[Boolean] =
         cache.get((crate, node)).map(_.isDefined)
+
+      override def reservations: Future[Map[CrateStorageReservation.Id, CrateStorageReservation]] =
+        backend.entries
     }
 
     StoreInitializationResult(

@@ -7,8 +7,8 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.event.{Logging, LoggingAdapter}
-import akka.http.scaladsl.{ConnectionContext, HttpsConnectionContext}
 import akka.http.scaladsl.model.headers.HttpCredentials
+import akka.http.scaladsl.{ConnectionContext, HttpsConnectionContext}
 import akka.util.Timeout
 import com.typesafe.{config => typesafe}
 import stasis.core.networking.grpc.{GrpcEndpointAddress, GrpcEndpointClient}
@@ -60,42 +60,21 @@ trait Service {
 
     val persistenceConfig = rawConfig.getConfig("persistence")
 
-    val apiPersistence: ApiPersistence = new ApiPersistence(persistenceConfig)
+    val serverPersistence: ServerPersistence = new ServerPersistence(persistenceConfig)
     val corePersistence: CorePersistence = new CorePersistence(persistenceConfig)
 
-    val resources: Set[Resource] = Set(
-      apiPersistence.datasetDefinitions.manage(),
-      apiPersistence.datasetDefinitions.manageSelf(),
-      apiPersistence.datasetDefinitions.view(),
-      apiPersistence.datasetDefinitions.viewSelf(),
-      apiPersistence.datasetEntries.manage(),
-      apiPersistence.datasetEntries.manageSelf(),
-      apiPersistence.datasetEntries.view(),
-      apiPersistence.datasetEntries.viewSelf(),
-      apiPersistence.devices.manage(),
-      apiPersistence.devices.manageSelf(),
-      apiPersistence.devices.view(),
-      apiPersistence.devices.viewSelf(),
-      apiPersistence.schedules.manage(),
-      apiPersistence.schedules.view(),
-      apiPersistence.users.manage(),
-      apiPersistence.users.manageSelf(),
-      apiPersistence.users.view(),
-      apiPersistence.users.viewSelf()
-    )
-
     val resourceProvider: ResourceProvider = new DefaultResourceProvider(
-      resources = resources,
-      users = apiPersistence.users.view()
+      resources = serverPersistence.resources ++ corePersistence.resources,
+      users = serverPersistence.users.view()
     )
 
     val userAuthenticatorConfig = rawConfig.getConfig("authenticators.users")
     val userAuthenticator: UserAuthenticator = new DefaultUserAuthenticator(
-      store = apiPersistence.users.view(),
+      store = serverPersistence.users.view(),
       underlying = new JwtAuthenticator(
         provider = RemoteKeyProvider(
           jwksEndpoint = userAuthenticatorConfig.getString("jwks-endpoint"),
-          refreshInterval = userAuthenticatorConfig.getDuration("refresh-interval").getSeconds.seconds,
+          refreshInterval = userAuthenticatorConfig.getDuration("refresh-interval").toSeconds.seconds,
           issuer = userAuthenticatorConfig.getString("issuer")
         ),
         audience = userAuthenticatorConfig.getString("audience"),
@@ -109,7 +88,7 @@ trait Service {
       underlying = new JwtAuthenticator(
         provider = RemoteKeyProvider(
           jwksEndpoint = nodeAuthenticatorConfig.getString("jwks-endpoint"),
-          refreshInterval = nodeAuthenticatorConfig.getDuration("refresh-interval").getSeconds.seconds,
+          refreshInterval = nodeAuthenticatorConfig.getDuration("refresh-interval").toSeconds.seconds,
           issuer = nodeAuthenticatorConfig.getString("issuer")
         ),
         audience = nodeAuthenticatorConfig.getString("audience"),
@@ -157,7 +136,7 @@ trait Service {
     )
 
     val apiServices = ApiServices(
-      persistence = apiPersistence,
+      persistence = serverPersistence,
       endpoint = new ApiEndpoint(
         resourceProvider = resourceProvider,
         authenticator = userAuthenticator
@@ -224,7 +203,7 @@ trait Service {
 
 object Service {
   final case class ApiServices(
-    persistence: ApiPersistence,
+    persistence: ServerPersistence,
     endpoint: ApiEndpoint,
     context: ConnectionContext
   )

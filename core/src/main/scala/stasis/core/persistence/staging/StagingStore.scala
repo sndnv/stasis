@@ -1,5 +1,7 @@
 package stasis.core.persistence.staging
 
+import java.time.Instant
+
 import akka.actor.Cancellable
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
@@ -13,6 +15,7 @@ import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.exceptions.StagingFailure
+import stasis.core.persistence.staging.StagingStore.PendingDestaging
 import stasis.core.routing.{Node, NodeProxy}
 
 import scala.concurrent.duration.FiniteDuration
@@ -28,8 +31,8 @@ class StagingStore(
   private implicit val ec: ExecutionContext = system.executionContext
   private implicit val mat: ActorMaterializer = ActorMaterializer()
 
-  private val scheduleStore: MemoryBackend[Crate.Id, Cancellable] =
-    MemoryBackend[Crate.Id, Cancellable](name = "schedule-store")
+  private val pendingDestagingStore: MemoryBackend[Crate.Id, PendingDestaging] =
+    MemoryBackend[Crate.Id, PendingDestaging](name = "pending-destaging-store")
 
   private val log = Logging(untypedSystem, this.getClass.getName)
 
@@ -53,10 +56,25 @@ class StagingStore(
               destinations
             )
 
-            schedule(
-              destagingDelay,
+            val cancellable = system.scheduler.scheduleOnce(destagingDelay) {
+              val _ = destage(manifest, destinations, viaProxy)
+                .recover {
+                  case NonFatal(e) =>
+                    log.error(s"Scheduled action failed: [$e]")
+                    Done
+                }
+            }
+
+            val staged = Instant.now()
+
+            pendingDestagingStore.put(
               manifest.crate,
-              () => destage(manifest, destinations, viaProxy)
+              PendingDestaging(
+                crate = manifest.crate,
+                staged = staged,
+                destaged = staged.plusSeconds(destagingDelay.toSeconds),
+                cancellable = cancellable
+              )
             )
           }
 
@@ -73,11 +91,11 @@ class StagingStore(
 
   def drop(crate: Crate.Id): Future[Boolean] =
     for {
-      cancellableOpt <- scheduleStore.get(crate)
-      result <- scheduleStore.delete(crate)
+      stagedCrate <- pendingDestagingStore.get(crate)
+      result <- pendingDestagingStore.delete(crate)
     } yield {
-      cancellableOpt match {
-        case Some(cancellable) =>
+      stagedCrate match {
+        case Some(PendingDestaging(_, _, _, cancellable)) =>
           val cancelResult = cancellable.cancel()
           log.debug(
             "Cancelling destaging completed; schedule already cancelled: [{}]",
@@ -91,22 +109,8 @@ class StagingStore(
       result
     }
 
-  private def schedule(
-    delay: FiniteDuration,
-    crate: Crate.Id,
-    action: () => Future[Done]
-  ): Future[Done] = {
-    val cancellable = system.scheduler.scheduleOnce(delay) {
-      val _ = action()
-        .recover {
-          case NonFatal(e) =>
-            log.error(s"Scheduled action failed: [$e]")
-            Done
-        }
-    }
-
-    scheduleStore.put(crate, cancellable)
-  }
+  def pending: Future[Map[Crate.Id, PendingDestaging]] =
+    pendingDestagingStore.entries
 
   private def destage(
     manifest: Manifest,
@@ -120,7 +124,7 @@ class StagingStore(
       destinations
     )
 
-    scheduleStore.delete(manifest.crate).flatMap { _ =>
+    pendingDestagingStore.delete(manifest.crate).flatMap { _ =>
       crateStore
         .retrieve(manifest.crate)
         .flatMap {
@@ -164,4 +168,13 @@ class StagingStore(
         }
     }
   }
+}
+
+object StagingStore {
+  final case class PendingDestaging(
+    crate: Crate.Id,
+    staged: Instant,
+    destaged: Instant,
+    private val cancellable: Cancellable
+  )
 }

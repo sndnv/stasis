@@ -1,5 +1,11 @@
 package stasis.shared.api
 
+import stasis.core.networking.grpc.GrpcEndpointAddress
+import stasis.core.networking.http.HttpEndpointAddress
+import stasis.core.persistence.crates.CrateStore
+import stasis.core.persistence.staging.StagingStore.PendingDestaging
+import stasis.shared.api.requests.CreateNode.{CreateLocalNode, CreateRemoteGrpcNode, CreateRemoteHttpNode}
+import stasis.shared.api.requests.UpdateNode.{UpdateLocalNode, UpdateRemoteGrpcNode, UpdateRemoteHttpNode}
 import stasis.shared.api.requests._
 import stasis.shared.api.responses._
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
@@ -12,6 +18,12 @@ import scala.concurrent.duration._
 
 object Formats {
   import play.api.libs.json._
+  import stasis.core.api.Formats.{
+    crateStoreDescriptorReads,
+    crateStoreDescriptorWrites,
+    grpcEndpointAddressFormat,
+    httpEndpointAddressFormat
+  }
 
   implicit val finiteDurationFormat: Format[FiniteDuration] =
     stasis.core.api.Formats.finiteDurationFormat
@@ -153,6 +165,81 @@ object Formats {
 
   implicit val deletedUserFormat: Format[DeletedUser] =
     Json.format[DeletedUser]
+
+  implicit val createNodeFormat: Format[CreateNode] = Format(
+    fjs = _.validate[JsObject].flatMap { node =>
+      (node \ "node-type").validate[String].map {
+        case "local" =>
+          CreateLocalNode(storeDescriptor = (node \ "storeDescriptor").as[CrateStore.Descriptor])
+
+        case "remote-http" =>
+          CreateRemoteHttpNode(address = (node \ "address").as[HttpEndpointAddress])
+
+        case "remote-grpc" =>
+          CreateRemoteGrpcNode(address = (node \ "address").as[GrpcEndpointAddress])
+      }
+    },
+    tjs = {
+      case CreateLocalNode(storeDescriptor) =>
+        Json.obj(
+          "node-type" -> JsString("local"),
+          "storeDescriptor" -> Json.toJson(storeDescriptor)
+        )
+
+      case CreateRemoteHttpNode(address) =>
+        Json.obj(
+          "node-type" -> JsString("remote-http"),
+          "address" -> Json.toJson(address)
+        )
+
+      case CreateRemoteGrpcNode(address) =>
+        Json.obj(
+          "node-type" -> JsString("remote-grpc"),
+          "address" -> Json.toJson(address)
+        )
+    }
+  )
+
+  implicit val updateNodeFormat: Format[UpdateNode] = Format(
+    fjs = _.validate[JsObject].flatMap { node =>
+      (node \ "node-type").validate[String].map {
+        case "local" =>
+          UpdateLocalNode(storeDescriptor = (node \ "storeDescriptor").as[CrateStore.Descriptor])
+
+        case "remote-http" =>
+          UpdateRemoteHttpNode(address = (node \ "address").as[HttpEndpointAddress])
+
+        case "remote-grpc" =>
+          UpdateRemoteGrpcNode(address = (node \ "address").as[GrpcEndpointAddress])
+      }
+    },
+    tjs = {
+      case UpdateLocalNode(storeDescriptor) =>
+        Json.obj("node-type" -> JsString("local"), "storeDescriptor" -> Json.toJson(storeDescriptor))
+
+      case UpdateRemoteHttpNode(address) =>
+        Json.obj("node-type" -> JsString("remote-http"), "address" -> Json.toJson(address))
+
+      case UpdateRemoteGrpcNode(address) =>
+        Json.obj("node-type" -> JsString("remote-grpc"), "address" -> Json.toJson(address))
+    }
+  )
+
+  implicit val createdNodeFormat: Format[CreatedNode] = Json.format[CreatedNode]
+
+  implicit val deletedNodeFormat: Format[DeletedNode] = Json.format[DeletedNode]
+
+  implicit val deletedReservationFormat: Format[DeletedReservation] = Json.format[DeletedReservation]
+
+  implicit val pendingDestagingWrites: Writes[PendingDestaging] = Writes { destaging =>
+    Json.obj(
+      "crate" -> JsString(destaging.crate.toString),
+      "staged" -> JsString(destaging.staged.toString),
+      "destaged" -> JsString(destaging.destaged.toString)
+    )
+  }
+
+  implicit val deletedPendingDestagingFormat: Format[DeletedPendingDestaging] = Json.format[DeletedPendingDestaging]
 
   private def stringToPermission(string: String): Permission = string.toLowerCase match {
     case "view-self"         => Permission.View.Self

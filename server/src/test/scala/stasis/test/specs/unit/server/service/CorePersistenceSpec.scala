@@ -51,6 +51,28 @@ class CorePersistenceSpec extends AsyncUnitSpec {
     }
   }
 
+  it should "provide service data stores as resources" in {
+    val persistenceWithStagingStore = new CorePersistence(
+      persistenceConfig = config.getConfig("persistence-with-staging")
+    )
+
+    val persistenceWithoutStagingStore = new CorePersistence(
+      persistenceConfig = config.getConfig("persistence")
+    )
+
+    val nodes = 2 // manage + view
+    val reservations = 1 // view
+    val staging = 2 // manage + view
+
+    persistenceWithStagingStore.resources.size should be(
+      nodes + reservations + staging
+    )
+
+    persistenceWithoutStagingStore.resources.size should be(
+      nodes + reservations
+    )
+  }
+
   private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
     "CorePersistenceSpec"

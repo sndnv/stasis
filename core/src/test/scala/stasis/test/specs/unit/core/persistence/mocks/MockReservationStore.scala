@@ -29,9 +29,9 @@ class MockReservationStore(
   override def put(reservation: StoreValue): Future[Done] = store.put(reservation.id, reservation)
 
   override def delete(crate: CrateStorageReservation.Id, node: Node.Id): Future[Boolean] =
-    reservations().flatMap { reservations =>
-      reservations.find(r => r.crate == crate && r.target == node) match {
-        case Some(reservation) =>
+    reservations.flatMap { reservations =>
+      reservations.find(r => r._2.crate == crate && r._2.target == node) match {
+        case Some((_, reservation)) =>
           store.delete(reservation.id)
 
         case None =>
@@ -54,12 +54,15 @@ class MockReservationStore(
     if (missingReservations.map(_.crate).contains(crate)) {
       Future.successful(false)
     } else {
-      reservations().map(_.exists(r => r.crate == crate && r.target == node))
+      reservations.map(_.exists(r => r._2.crate == crate && r._2.target == node))
     }
 
-  def reservations(): Future[Seq[StoreValue]] =
+  override def reservations: Future[Map[StoreKey, StoreValue]] =
     storeData.map { result =>
-      (result.mapValues(value => Some(value)) ++ missingReservations.map(_.id -> None)).values.flatten.toSeq
+      (result.mapValues(value => Some(value)) ++ missingReservations.map(_.id -> None))
+        .collect {
+          case (k, Some(v)) => k -> v
+        }
     }
 
   private def storeData: Future[Map[StoreKey, StoreValue]] = store.entries
