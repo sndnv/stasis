@@ -2,7 +2,7 @@ package stasis.core.security.jwt
 
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.http.scaladsl.Http
+import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, Uri}
 import akka.http.scaladsl.unmarshalling.Unmarshal
@@ -12,7 +12,6 @@ import akka.util.{ByteString, Timeout}
 import play.api.libs.json.{Format, Json}
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.security.exceptions.ProviderFailure
-
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -21,7 +20,8 @@ class JwtProvider(
   tokenEndpoint: String,
   client: String,
   clientSecret: String,
-  expirationTolerance: FiniteDuration
+  expirationTolerance: FiniteDuration,
+  context: Option[HttpsConnectionContext]
 )(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout) {
   import JwtProvider._
 
@@ -30,6 +30,13 @@ class JwtProvider(
   private implicit val ec: ExecutionContext = system.executionContext
 
   private val credentials: BasicHttpCredentials = BasicHttpCredentials(username = client, password = clientSecret)
+
+  private val http = Http()
+
+  private val clientContext: HttpsConnectionContext = context match {
+    case Some(context) => context
+    case None          => http.defaultClientHttpsContext
+  }
 
   private val cache = MemoryBackend[String, AccessTokenResponse](name = "jwt-provider-cache")
 
@@ -53,12 +60,13 @@ class JwtProvider(
     }
 
   def request(scope: String): Future[AccessTokenResponse] =
-    Http()
+    http
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.POST,
           uri = Uri(tokenEndpoint).withQuery(Uri.Query("grant_type" -> GrantType, "scope" -> scope))
-        ).addCredentials(credentials)
+        ).addCredentials(credentials),
+        connectionContext = clientContext
       )
       .recoverWith {
         case NonFatal(e) =>

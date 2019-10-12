@@ -4,23 +4,43 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.jose4j.jwk.JsonWebKey
+import stasis.core.security.tls.EndpointContext
 
 class MockJwtEndpoint(
   port: Int,
   subject: String,
   secret: String,
   expirationSeconds: Long,
-  signatureKey: JsonWebKey
+  signatureKey: JsonWebKey,
+  withKeystoreConfig: Option[EndpointContext.StoreConfig]
 ) {
-  private val wireMockServer = new WireMockServer(new WireMockConfiguration().port(port))
+  private val config = withKeystoreConfig match {
+    case Some(keystoreConfig) =>
+      new WireMockConfiguration()
+        .httpsPort(port)
+        .keystorePath(keystoreConfig.storePath)
+        .keystoreType(keystoreConfig.storeType)
+        .keystorePassword(keystoreConfig.storePassword)
+
+    case None =>
+      new WireMockConfiguration()
+        .port(port)
+  }
+
+  private val wireMockServer = new WireMockServer(config)
 
   private val urlQuery = s"grant_type=client_credentials&scope=$subject"
+
+  private val scheme = withKeystoreConfig match {
+    case Some(_) => "https"
+    case None    => "http"
+  }
 
   def start(): Unit = wireMockServer.start()
 
   def stop(): Unit = wireMockServer.stop()
 
-  def url: String = s"http://localhost:$port"
+  def url: String = s"$scheme://localhost:$port"
 
   def count(path: String): Int =
     wireMockServer

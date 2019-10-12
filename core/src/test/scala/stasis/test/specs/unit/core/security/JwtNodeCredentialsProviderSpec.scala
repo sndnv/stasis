@@ -61,7 +61,8 @@ class JwtNodeCredentialsProviderSpec extends AsyncUnitSpec {
         tokenEndpoint = "some-endpoint",
         client = "some-client",
         clientSecret = "some-secret",
-        expirationTolerance = 1.second
+        expirationTolerance = 1.second,
+        context = None
       ) {
         override def provide(scope: String): Future[String] = Future.successful(token)
       }
