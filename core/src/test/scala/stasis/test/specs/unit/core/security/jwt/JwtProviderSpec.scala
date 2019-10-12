@@ -4,9 +4,12 @@ import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import akka.http.scaladsl.HttpsConnectionContext
 import akka.stream.ActorMaterializer
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.BeforeAndAfterAll
 import stasis.core.security.jwt.JwtProvider
+import stasis.core.security.tls.EndpointContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.security.mocks.{MockJwksGenerators, MockJwtEndpoint}
 
@@ -147,25 +150,63 @@ class JwtProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
     }
   }
 
+  it should "support custom connection contexts" in {
+    val config: Config = ConfigFactory.load().getConfig("stasis.test.core.security.tls")
+
+    val serverContextConfig = EndpointContext.ContextConfig(config.getConfig("context-server-jks"))
+
+    val clientContext = EndpointContext.create(
+      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-client"))
+    )
+
+    val expiration = 42
+
+    val endpoint = createEndpoint(
+      port = ports.dequeue(),
+      expirationSeconds = expiration,
+      keystoreConfig = serverContextConfig.keyStoreConfig
+    )
+
+    endpoint.start()
+
+    val provider = createProvider(endpoint = s"${endpoint.url}/token", context = Some(clientContext))
+
+    provider
+      .request(scope = client)
+      .map { response =>
+        endpoint.stop()
+
+        endpoint.count("/token") should be(1)
+
+        response.access_token should not be empty
+        response.expires_in should be(expiration)
+        response.scope should be(Some(client))
+      }
+  }
+
   private def createProvider(
     endpoint: String,
-    expirationTolerance: FiniteDuration = 3.seconds
+    expirationTolerance: FiniteDuration = 3.seconds,
+    context: Option[HttpsConnectionContext] = None
   ): JwtProvider = new JwtProvider(
     tokenEndpoint = endpoint,
     client = client,
     clientSecret = clientSecret,
-    expirationTolerance = expirationTolerance
+    expirationTolerance = expirationTolerance,
+    context = context
   )
 
   private def createEndpoint(
     port: Int,
-    expirationSeconds: Int = 6000
+    expirationSeconds: Int = 6000,
+    keystoreConfig: Option[EndpointContext.StoreConfig] = None
   ): MockJwtEndpoint = new MockJwtEndpoint(
     port = port,
     subject = client,
     secret = clientSecret,
     expirationSeconds = expirationSeconds,
-    signatureKey = MockJwksGenerators.generateRandomRsaKey(keyId = Some("rsa-0"))
+    signatureKey = MockJwksGenerators.generateRandomRsaKey(keyId = Some("rsa-0")),
+    withKeystoreConfig = keystoreConfig
   )
 
   private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(

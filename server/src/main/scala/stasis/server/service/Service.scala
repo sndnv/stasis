@@ -51,11 +51,19 @@ trait Service {
     val instanceAuthenticatorConfig = rawConfig.getConfig("authenticators.instance")
     val serverId = UUID.fromString(instanceAuthenticatorConfig.getString("client-id"))
 
+    val authenticationEndpointContext: Option[HttpsConnectionContext] =
+      if (rawConfig.getBoolean("clients.authentication.context.enabled")) {
+        Some(EndpointContext.fromConfig(rawConfig.getConfig("clients.core.context")))
+      } else {
+        None
+      }
+
     val jwtProvider: JwtProvider = new JwtProvider(
       tokenEndpoint = instanceAuthenticatorConfig.getString("token-endpoint"),
       client = serverId.toString,
       clientSecret = instanceAuthenticatorConfig.getString("client-secret"),
-      expirationTolerance = instanceAuthenticatorConfig.getDuration("expiration-tolerance").toMillis.millis
+      expirationTolerance = instanceAuthenticatorConfig.getDuration("expiration-tolerance").toMillis.millis,
+      context = authenticationEndpointContext
     )
 
     val persistenceConfig = rawConfig.getConfig("persistence")
@@ -74,6 +82,7 @@ trait Service {
       underlying = new JwtAuthenticator(
         provider = RemoteKeyProvider(
           jwksEndpoint = userAuthenticatorConfig.getString("jwks-endpoint"),
+          context = authenticationEndpointContext,
           refreshInterval = userAuthenticatorConfig.getDuration("refresh-interval").toSeconds.seconds,
           issuer = userAuthenticatorConfig.getString("issuer")
         ),
@@ -88,6 +97,7 @@ trait Service {
       underlying = new JwtAuthenticator(
         provider = RemoteKeyProvider(
           jwksEndpoint = nodeAuthenticatorConfig.getString("jwks-endpoint"),
+          context = authenticationEndpointContext,
           refreshInterval = nodeAuthenticatorConfig.getDuration("refresh-interval").toSeconds.seconds,
           issuer = nodeAuthenticatorConfig.getString("issuer")
         ),

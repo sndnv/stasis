@@ -6,7 +6,7 @@ import akka.Done
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.event.Logging
-import akka.http.scaladsl.Http
+import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, StatusCodes}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
@@ -16,7 +16,6 @@ import org.jose4j.jwk.JsonWebKeySet
 import org.jose4j.jws.AlgorithmIdentifiers
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.security.exceptions.ProviderFailure
-
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -25,6 +24,7 @@ import scala.util.control.NonFatal
 
 final class RemoteKeyProvider(
   jwksEndpoint: String,
+  context: Option[HttpsConnectionContext],
   refreshInterval: FiniteDuration,
   override val issuer: String,
   override val allowedAlgorithms: Seq[String]
@@ -56,7 +56,7 @@ final class RemoteKeyProvider(
 
   private def refreshKeys(): Future[Done] =
     RemoteKeyProvider
-      .getRawJwks(jwksEndpoint)
+      .getRawJwks(jwksEndpoint, context)
       .flatMap(loadKeys)
       .recover {
         case NonFatal(e) =>
@@ -101,13 +101,15 @@ final class RemoteKeyProvider(
 object RemoteKeyProvider {
   def apply(
     jwksEndpoint: String,
+    context: Option[HttpsConnectionContext],
     refreshInterval: FiniteDuration,
     issuer: String
   )(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout): RemoteKeyProvider =
     new RemoteKeyProvider(
-      jwksEndpoint,
-      refreshInterval,
-      issuer,
+      jwksEndpoint = jwksEndpoint,
+      context = context,
+      refreshInterval = refreshInterval,
+      issuer = issuer,
       allowedAlgorithms = Seq(
         AlgorithmIdentifiers.RSA_USING_SHA256,
         AlgorithmIdentifiers.RSA_USING_SHA384,
@@ -132,16 +134,25 @@ object RemoteKeyProvider {
     }
 
   def getRawJwks(
-    jwksEndpoint: String
+    jwksEndpoint: String,
+    context: Option[HttpsConnectionContext]
   )(implicit s: akka.actor.ActorSystem, m: ActorMaterializer): Future[String] = {
     import s.dispatcher
 
-    Http()
+    val http = Http()
+
+    val clientContext: HttpsConnectionContext = context match {
+      case Some(context) => context
+      case None          => http.defaultClientHttpsContext
+    }
+
+    http
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.GET,
           uri = jwksEndpoint
-        )
+        ),
+        connectionContext = clientContext
       )
       .flatMap {
         case HttpResponse(status, _, entity, _) =>

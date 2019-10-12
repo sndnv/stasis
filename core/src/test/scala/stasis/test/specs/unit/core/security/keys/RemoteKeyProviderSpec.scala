@@ -4,8 +4,10 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.ActorMaterializer
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.BeforeAndAfterAll
 import stasis.core.security.keys.RemoteKeyProvider
+import stasis.core.security.tls.EndpointContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.security.mocks.MockJwksEndpoint
 
@@ -21,6 +23,7 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
 
     val provider = RemoteKeyProvider(
       jwksEndpoint = s"${endpoint.url}/valid/jwks.json",
+      context = None,
       refreshInterval = 1.second,
       issuer = "self"
     )
@@ -42,6 +45,7 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
 
     val provider = RemoteKeyProvider(
       jwksEndpoint = s"${endpoint.url}/valid/jwks.json",
+      context = None,
       refreshInterval = 1.second,
       issuer = "self"
     )
@@ -62,6 +66,7 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
   it should "not provide keys with no IDs" in {
     val provider = RemoteKeyProvider(
       jwksEndpoint = "localhost",
+      context = None,
       refreshInterval = 1.second,
       issuer = "self"
     )
@@ -180,7 +185,7 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
     val expectedResult = endpoint.jwks.toJson
 
     RemoteKeyProvider
-      .getRawJwks(s"${endpoint.url}/valid/jwks.json")
+      .getRawJwks(s"${endpoint.url}/valid/jwks.json", context = None)
       .map { actualResult =>
         endpoint.stop()
         actualResult should be(expectedResult)
@@ -192,7 +197,7 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
     endpoint.start()
 
     RemoteKeyProvider
-      .getRawJwks(s"${endpoint.url}/invalid/jwks.json")
+      .getRawJwks(s"${endpoint.url}/invalid/jwks.json", context = None)
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
@@ -200,6 +205,40 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
         case NonFatal(e) =>
           endpoint.stop()
           e.getMessage should be("Endpoint responded with unexpected status: [500 Internal Server Error]")
+      }
+  }
+
+  it should "support custom connection contexts" in {
+    val config: Config = ConfigFactory.load().getConfig("stasis.test.core.security.tls")
+
+    val serverContextConfig = EndpointContext.ContextConfig(config.getConfig("context-server-jks"))
+
+    val clientContext = EndpointContext.create(
+      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-client"))
+    )
+
+    val endpoint = new MockJwksEndpoint(
+      port = ports.dequeue(),
+      withKeystoreConfig = serverContextConfig.keyStoreConfig
+    )
+
+    endpoint.start()
+
+    val provider = RemoteKeyProvider(
+      jwksEndpoint = s"${endpoint.url}/valid/jwks.json",
+      context = Some(clientContext),
+      refreshInterval = 1.second,
+      issuer = "self"
+    )
+
+    val expectedKeyId = "rsa-1"
+    val expectedKey = endpoint.keys(expectedKeyId)
+
+    provider
+      .key(id = Some(expectedKeyId))
+      .map { actualKey =>
+        endpoint.stop()
+        actualKey should be(expectedKey)
       }
   }
 
