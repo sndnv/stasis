@@ -15,8 +15,31 @@ trait JwtBearerAccessTokenGeneratorBehaviour { _: AsyncUnitSpec =>
     val jwtExpiration = 3.seconds
     val generator = new JwtBearerAccessTokenGenerator(issuer, withJwk, jwtExpiration)
 
-    it should s"generate JWTs for clients ($withKeyType)" in {
-      val client = Generators.generateClient
+    it should s"generate JWTs for clients with custom subject ($withKeyType)" in {
+      val client = Generators.generateClient.copy(subject = Some("some-subject"))
+      val audience = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateClient)
+      val token = generator.generate(client, audience)
+
+      val jws = new JsonWebSignature()
+      jws.setCompactSerialization(token.value)
+      jws.setKey(withJwk.getKey)
+
+      jws.verifySignature() should be(true)
+
+      val payload = Json.parse(jws.getPayload).as[JsObject]
+      payload.fields should contain("iss" -> JsString(issuer))
+      payload.fields should contain("sub" -> JsString(client.subject.getOrElse("invalid")))
+      payload.fields should (
+        contain(
+          "aud" -> JsArray(audience.map(aud => JsString(aud.id.toString)))
+        ) or contain(
+          "aud" -> JsString(audience.headOption.map(_.id.toString).getOrElse(""))
+        )
+      )
+    }
+
+    it should s"generate JWTs for clients without custom subject ($withKeyType)" in {
+      val client = Generators.generateClient.copy(subject = None)
       val audience = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateClient)
       val token = generator.generate(client, audience)
 
@@ -38,8 +61,31 @@ trait JwtBearerAccessTokenGeneratorBehaviour { _: AsyncUnitSpec =>
       )
     }
 
-    it should s"generate JWTs for resource owners ($withKeyType)" in {
-      val owner = Generators.generateResourceOwner
+    it should s"generate JWTs for resource owners with custom subject ($withKeyType)" in {
+      val owner = Generators.generateResourceOwner.copy(subject = Some("some-subject"))
+      val audience = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateApi)
+      val token = generator.generate(owner, audience)
+
+      val jws = new JsonWebSignature()
+      jws.setCompactSerialization(token.value)
+      jws.setKey(withJwk.getKey)
+
+      jws.verifySignature() should be(true)
+
+      val payload = Json.parse(jws.getPayload).as[JsObject]
+      payload.fields should contain("iss" -> JsString(issuer))
+      payload.fields should contain("sub" -> JsString(owner.subject.getOrElse("invalid")))
+      payload.fields should (
+        contain(
+          "aud" -> JsArray(audience.map(aud => JsString(aud.id.toString)))
+        ) or contain(
+          "aud" -> JsString(audience.headOption.map(_.id.toString).getOrElse(""))
+        )
+      )
+    }
+
+    it should s"generate JWTs for resource owners without custom subject ($withKeyType)" in {
+      val owner = Generators.generateResourceOwner.copy(subject = None)
       val audience = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateApi)
       val token = generator.generate(owner, audience)
 

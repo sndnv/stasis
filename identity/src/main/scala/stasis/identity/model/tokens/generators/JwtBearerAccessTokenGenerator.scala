@@ -18,14 +18,20 @@ class JwtBearerAccessTokenGenerator(
 
   override def generate(client: Client, audience: Seq[Client]): AccessToken =
     generateToken(
-      subject = client.id.toString,
+      subject = client.subject match {
+        case Some(subject) => subject
+        case None          => client.id.toString
+      },
       audience = audience.map(_.id.toString)
     )
 
   override def generate(owner: ResourceOwner, audience: Seq[Api]): AccessToken =
     generateToken(
-      subject = owner.username,
-      audience = audience.map(_.id.toString)
+      subject = owner.subject match {
+        case Some(subject) => subject
+        case None          => owner.username
+      },
+      audience = audience.map(_.id)
     )
 
   private def generateToken(subject: String, audience: Seq[String]): AccessToken = {

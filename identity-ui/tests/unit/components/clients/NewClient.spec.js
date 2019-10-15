@@ -7,6 +7,7 @@ describe('NewClient', () => {
     const new_client_redirect_uri = "some-redirect-uri"
     const new_client_token_expiration = "1200"
     const new_client_secret = "some-secret"
+    const new_client_subject = "some-subject"
 
     test('should validate client redirect URIs', () => {
         const new_client = shallowMount(NewClient);
@@ -86,7 +87,37 @@ describe('NewClient', () => {
         expect(new_client.html()).toContain(error_title);
     })
 
-    test('should successfully create new clients', () => {
+    test('should successfully create new clients (with custom subject)', () => {
+        const new_client_id = 'some-client'
+
+        const spy = jest.spyOn(requests, 'post_client').mockImplementation(
+            () => { return Promise.resolve({ success: true, data: { client: new_client_id } }); }
+        );
+
+        const new_client = shallowMount(NewClient);
+
+        set_input_value(new_client, '#new-client-token-expiration', new_client_token_expiration);
+        set_input_value(new_client, '#new-client-redirect-uri', new_client_redirect_uri);
+        set_input_value(new_client, '#new-client-secret', new_client_secret);
+        set_input_value(new_client, '#new-client-secret-confirm', new_client_secret);
+        set_input_value(new_client, '#new-client-subject', new_client_subject);
+
+        new_client.find('.create-button').trigger('click');
+
+        return Vue.nextTick().then(function () {
+            const client_created = new_client.emitted()['client-created'][0][0];
+            expect(client_created.id).toBe(new_client_id);
+            expect(client_created.redirectUri).toBe(new_client_redirect_uri);
+            expect(`${client_created.tokenExpiration}`).toBe(new_client_token_expiration);
+            expect(client_created.active).toBe(true);
+            expect(client_created.is_new).toBe(true);
+            expect(client_created.subject).toBe(new_client_subject);
+
+            spy.mockRestore();
+        })
+    })
+
+    test('should successfully create new clients (without custom subject)', () => {
         const new_client_id = 'some-client'
 
         const spy = jest.spyOn(requests, 'post_client').mockImplementation(
@@ -109,6 +140,7 @@ describe('NewClient', () => {
             expect(`${client_created.tokenExpiration}`).toBe(new_client_token_expiration);
             expect(client_created.active).toBe(true);
             expect(client_created.is_new).toBe(true);
+            expect(client_created.subject).toBe('');
 
             spy.mockRestore();
         })

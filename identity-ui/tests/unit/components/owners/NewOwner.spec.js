@@ -7,6 +7,7 @@ describe('NewOwner', () => {
     const new_owner_username = "some-user"
     const new_owner_allowed_scopes = "a,b,c"
     const new_owner_password = "some-password"
+    const new_owner_subject = "some-subject"
 
     test('should validate resource owner usernames', () => {
         const new_owner = shallowMount(NewOwner);
@@ -88,7 +89,35 @@ describe('NewOwner', () => {
         expect(new_owner.html()).toContain(error_title);
     })
 
-    test('should successfully create new resource owners', () => {
+    test('should successfully create new resource owners (with custom subject)', () => {
+        const spy = jest.spyOn(requests, 'post_owner').mockImplementation(
+            () => { return Promise.resolve({ success: true }); }
+        );
+
+        const new_owner = shallowMount(NewOwner);
+
+        set_input_value(new_owner, '#new-owner-username', new_owner_username);
+        set_input_value(new_owner, '#new-owner-allowed-scopes', new_owner_allowed_scopes);
+        set_input_value(new_owner, '#new-owner-password', new_owner_password);
+        set_input_value(new_owner, '#new-owner-password-confirm', new_owner_password);
+        set_input_value(new_owner, '#new-owner-subject', new_owner_subject);
+
+        new_owner.find('.create-button').trigger('click');
+
+        return Vue.nextTick().then(function () {
+            return Vue.nextTick().then(function () {
+                const owner_created = new_owner.emitted()['owner-created'][0][0];
+                expect(owner_created.username).toBe(new_owner_username);
+                expect(owner_created.allowedScopes).toBe(new_owner_allowed_scopes);
+                expect(owner_created.active).toBe(true);
+                expect(owner_created.is_new).toBe(true);
+                expect(owner_created.subject).toBe(new_owner_subject);
+                spy.mockRestore();
+            })
+        })
+    })
+
+    test('should successfully create new resource owners (without custom subject)', () => {
         const spy = jest.spyOn(requests, 'post_owner').mockImplementation(
             () => { return Promise.resolve({ success: true }); }
         );
@@ -109,6 +138,7 @@ describe('NewOwner', () => {
                 expect(owner_created.allowedScopes).toBe(new_owner_allowed_scopes);
                 expect(owner_created.active).toBe(true);
                 expect(owner_created.is_new).toBe(true);
+                expect(owner_created.subject).toBe('');
                 spy.mockRestore();
             })
         })

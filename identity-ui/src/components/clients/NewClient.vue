@@ -75,6 +75,18 @@
             />
           </div>
         </div>
+        <div class="row">
+          <div class="input-field col s12">
+            <input
+              class="black-text"
+              id="new-client-subject"
+              type="text"
+              v-model.trim="input.new_client.subject"
+              placeholder="<default is client identifier>"
+            />
+            <label class="active">Subject</label>
+          </div>
+        </div>
       </div>
       <div class="card-action">
         <a
@@ -104,7 +116,8 @@ export default {
           redirectUri: "",
           tokenExpiration: "",
           rawSecret: "",
-          secretConfirm: ""
+          secretConfirm: "",
+          subject: ""
         }
       },
       errors: {
@@ -166,12 +179,14 @@ export default {
                 redirectUri: this.input.new_client.redirectUri,
                 tokenExpiration: this.input.new_client.tokenExpiration,
                 active: true,
-                is_new: true
+                is_new: true,
+                subject: this.input.new_client.subject
               });
               this.input.new_client.redirectUri = "";
               this.input.new_client.tokenExpiration = "";
               this.input.new_client.rawSecret = "";
               this.input.new_client.secretConfirm = "";
+              this.input.new_client.subject = "";
             } else {
               const icon = '<i class="material-icons red-text">close</i>';
               const message = `${icon} ${response.error}`;
@@ -185,7 +200,10 @@ export default {
   }
 };
 
-function extract_request_fields({ redirectUri, tokenExpiration, rawSecret }) {
-  return { redirectUri, tokenExpiration, rawSecret };
+function extract_request_fields({ redirectUri, tokenExpiration, rawSecret, subject }) {
+  return {
+    ...{ redirectUri, tokenExpiration, rawSecret },
+    ...(subject === "" ? {} : {subject})
+  };
 }
 </script>

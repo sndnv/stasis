@@ -85,11 +85,14 @@ class BootstrapSpec extends AsyncUnitSpec {
                 rawSecret = "example-client-secret",
                 salt = client1.salt
               )(clientSecretsConfig) should be(true)
+              client1.subject should be(Some("example-subject"))
 
               client2.id should be(java.util.UUID.fromString("2c4311a6-f9a8-4c9f-8634-98afd90753e0"))
               client2.redirectUri should be("http://localhost:8080/example/uri2")
+              client2.subject should be(None)
 
               client3.redirectUri should be("http://localhost:8080/example/uri3")
+              client3.subject should be(Some("example-subject"))
 
             case unexpectedResult =>
               fail(s"Unexpected result received: [$unexpectedResult]")
@@ -104,6 +107,7 @@ class BootstrapSpec extends AsyncUnitSpec {
                 rawSecret = "example-user-password",
                 salt = owner.salt
               )(ownerSecretsConfig) should be(true)
+              owner.subject should be(Some("example-subject"))
 
             case unexpectedResult =>
               fail(s"Unexpected result received: [$unexpectedResult]")

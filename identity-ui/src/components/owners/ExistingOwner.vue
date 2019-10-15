@@ -15,6 +15,12 @@
             <label class="active">Username</label>
           </div>
         </div>
+        <div class="row">
+          <div class="input-field col s12">
+            <input class="black-text owner-subject" type="text" :value="owner.subject || owner.username" readonly />
+            <label class="active">Subject</label>
+          </div>
+        </div>
         <div v-if="editing_password">
           <div class="row">
             <div class="input-field col s12">

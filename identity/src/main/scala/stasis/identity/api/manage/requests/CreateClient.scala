@@ -7,11 +7,13 @@ import stasis.identity.model.secrets.Secret
 final case class CreateClient(
   redirectUri: String,
   tokenExpiration: Seconds,
-  rawSecret: String
+  rawSecret: String,
+  subject: Option[String]
 ) {
   require(redirectUri.nonEmpty, "redirect URI must not be empty")
   require(tokenExpiration.value > 0, "token expiration must be a positive number")
   require(rawSecret.nonEmpty, "secret must not be empty")
+  require(subject.forall(_.nonEmpty), "subject must not be empty")
 
   def toClient(implicit config: Secret.ClientConfig): Client = {
     val salt = Secret.generateSalt()
@@ -22,7 +24,8 @@ final case class CreateClient(
       tokenExpiration = tokenExpiration,
       secret = Secret.derive(rawSecret = rawSecret, salt = salt),
       salt = salt,
-      active = true
+      active = true,
+      subject = subject
     )
   }
 }

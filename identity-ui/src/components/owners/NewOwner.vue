@@ -74,6 +74,18 @@
             />
           </div>
         </div>
+        <div class="row">
+          <div class="input-field col s12">
+            <input
+              class="black-text"
+              id="new-owner-subject"
+              type="text"
+              v-model.trim="input.new_owner.subject"
+              placeholder="<default is username>"
+            />
+            <label class="active">Subject</label>
+          </div>
+        </div>
       </div>
       <div class="card-action">
         <a
@@ -104,7 +116,8 @@ export default {
           username: "",
           allowedScopes: "",
           rawPassword: "",
-          passwordConfirm: ""
+          passwordConfirm: "",
+          subject: ""
         }
       },
       errors: {
@@ -162,12 +175,14 @@ export default {
                   username: this.input.new_owner.username,
                   allowedScopes: this.input.new_owner.allowedScopes,
                   active: true,
-                  is_new: true
+                  is_new: true,
+                  subject: this.input.new_owner.subject
                 });
                 this.input.new_owner.username = "";
                 this.input.new_owner.allowedScopes = "";
                 this.input.new_owner.rawPassword = "";
                 this.input.new_owner.passwordConfirm = "";
+                this.input.new_owner.subject = "";
               } else {
                 const icon = '<i class="material-icons red-text">close</i>';
                 const message = `${icon} ${response.error}`;
@@ -188,7 +203,7 @@ export default {
   }
 };
 
-function process_request_data({ username, allowedScopes, rawPassword }) {
+function process_request_data({ username, allowedScopes, rawPassword, subject }) {
   return oauth
     .derive_password(rawPassword, oauth.derive_salt(username))
     .then(derived_password => {
@@ -199,12 +214,14 @@ function process_request_data({ username, allowedScopes, rawPassword }) {
           .filter(String);
 
         return {
-          username,
-          allowedScopes: split_scopes,
-          rawPassword: derived_password
+          ...{ username, allowedScopes: split_scopes, rawPassword: derived_password },
+          ...(subject === "" ? {} : {subject})
         };
       } else {
-        return { username, allowedScopes, rawPassword: derived_password };
+        return {
+          ...{ username, allowedScopes, rawPassword: derived_password },
+          ...(subject === "" ? {} : {subject})
+        };
       }
     });
 }

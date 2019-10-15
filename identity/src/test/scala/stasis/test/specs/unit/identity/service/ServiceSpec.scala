@@ -76,7 +76,12 @@ class ServiceSpec extends RouteTest with Eventually {
       _ <- createEntity(
         serviceUrl = serviceUrl,
         entities = "owners",
-        request = CreateOwner(username = newUser, rawPassword = newUserPassword, allowedScopes = Seq(newUserScope)),
+        request = CreateOwner(
+          username = newUser,
+          rawPassword = newUserPassword,
+          allowedScopes = Seq(newUserScope),
+          subject = Some("some-subject")
+        ),
         accessToken = accessToken
       )
       newAccessToken <- getAccessToken(

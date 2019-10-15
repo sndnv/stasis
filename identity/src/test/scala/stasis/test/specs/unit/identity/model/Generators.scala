@@ -50,7 +50,8 @@ object Generators {
       tokenExpiration = generateFiniteDuration,
       secret = generateSecret(Defaults.Clients.SecretSize),
       salt = generateString(Defaults.Clients.SaltSize),
-      active = true
+      active = true,
+      subject = if (rnd.nextBoolean()) Some(generateString(withSize = 10)) else None
     )
 
   def generateAuthorizationCode(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): AuthorizationCode =
@@ -62,7 +63,8 @@ object Generators {
       password = generateSecret(withSize = Defaults.Owners.SecretSize),
       salt = generateString(withSize = Defaults.Owners.SaltSize),
       allowedScopes = generateSeq(min = 1, g = generateString(withSize = 10)),
-      active = true
+      active = true,
+      subject = if (rnd.nextBoolean()) Some(generateString(withSize = 10)) else None
     )
 
   def generateSecret(withSize: Int)(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Secret =
