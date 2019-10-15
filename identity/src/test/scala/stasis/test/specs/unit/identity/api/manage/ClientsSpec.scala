@@ -44,7 +44,8 @@ class ClientsSpec extends RouteTest {
     val request = CreateClient(
       redirectUri = "some-uri",
       tokenExpiration = 3.seconds,
-      rawSecret = "some-secret"
+      rawSecret = "some-secret",
+      subject = Some("some-subject")
     )
 
     Post().withEntity(request) ~> clients.routes(user) ~> check {
@@ -163,7 +164,8 @@ object ClientsSpec {
     id: Client.Id,
     redirectUri: String,
     tokenExpiration: Seconds,
-    active: Boolean
+    active: Boolean,
+    subject: Option[String]
   ) {
     def toClient(secret: Secret, salt: String): Client = Client(
       id = id,
@@ -171,7 +173,8 @@ object ClientsSpec {
       tokenExpiration = tokenExpiration,
       secret = secret,
       salt = salt,
-      active = active
+      active = active,
+      subject = subject
     )
   }
 }

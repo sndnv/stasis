@@ -6,11 +6,13 @@ import stasis.identity.model.secrets.Secret
 final case class CreateOwner(
   username: ResourceOwner.Id,
   rawPassword: String,
-  allowedScopes: Seq[String]
+  allowedScopes: Seq[String],
+  subject: Option[String]
 ) {
   require(username.nonEmpty, "username must not be empty")
   require(allowedScopes.nonEmpty, "allowed scopes must not be empty")
   require(rawPassword.nonEmpty, "password must not be empty")
+  require(subject.forall(_.nonEmpty), "subject must not be empty")
 
   def toResourceOwner(implicit config: Secret.ResourceOwnerConfig): ResourceOwner = {
     val salt = Secret.generateSalt()
@@ -20,7 +22,8 @@ final case class CreateOwner(
       password = Secret.derive(rawSecret = rawPassword, salt = salt),
       salt = salt,
       allowedScopes = allowedScopes,
-      active = true
+      active = true,
+      subject = subject
     )
   }
 }

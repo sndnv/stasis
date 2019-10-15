@@ -25,7 +25,7 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
   "A DefaultResourceOwnerAuthenticator" should "authenticate resource owners with valid JWTs" in {
     val store = createStore()
 
-    val expectedOwner = Generators.generateResourceOwner
+    val expectedOwner = Generators.generateResourceOwner.copy(subject = None)
     val targetApi = Generators.generateApi
 
     val authenticator = new DefaultResourceOwnerAuthenticator(
@@ -50,7 +50,7 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
   it should "fail to authenticate inactive resource owners" in {
     val store = createStore()
 
-    val expectedOwner = Generators.generateResourceOwner.copy(active = false)
+    val expectedOwner = Generators.generateResourceOwner.copy(active = false, subject = None)
     val targetApi = Generators.generateApi
 
     val authenticator = new DefaultResourceOwnerAuthenticator(
@@ -80,7 +80,7 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
   it should "fail to authenticate resource owners with invalid JWTs" in {
     val store = createStore()
 
-    val expectedOwner = Generators.generateResourceOwner
+    val expectedOwner = Generators.generateResourceOwner.copy(subject = None)
     val targetApi = Generators.generateApi
 
     val invalidAudience = "some-audience"
@@ -112,7 +112,7 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
   it should "fail to authenticate missing resource owners" in {
     val store = createStore()
 
-    val expectedOwner = Generators.generateResourceOwner
+    val expectedOwner = Generators.generateResourceOwner.copy(subject = None)
     val targetApi = Generators.generateApi
 
     val authenticator = new DefaultResourceOwnerAuthenticator(

@@ -11,13 +11,15 @@ class CreateOwnerSpec extends UnitSpec {
   private val request = CreateOwner(
     username = "some-username",
     rawPassword = "some-password",
-    allowedScopes = Seq("some-scope")
+    allowedScopes = Seq("some-scope"),
+    subject = None
   )
 
   "A CreateOwner request" should "validate its content" in {
     an[IllegalArgumentException] should be thrownBy request.copy(username = "")
     an[IllegalArgumentException] should be thrownBy request.copy(allowedScopes = Seq.empty)
     an[IllegalArgumentException] should be thrownBy request.copy(rawPassword = "")
+    an[IllegalArgumentException] should be thrownBy request.copy(subject = Some(""))
   }
 
   it should "be convertible to ResourceOwner" in {
@@ -31,7 +33,8 @@ class CreateOwnerSpec extends UnitSpec {
 
     val expectedOwner = Generators.generateResourceOwner.copy(
       username = request.username,
-      allowedScopes = request.allowedScopes
+      allowedScopes = request.allowedScopes,
+      subject = request.subject
     )
 
     val actualOwner = request.toResourceOwner

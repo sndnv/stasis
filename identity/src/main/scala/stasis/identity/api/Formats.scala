@@ -84,7 +84,8 @@ object Formats {
           "id" -> Json.toJson(client.id),
           "redirectUri" -> Json.toJson(client.redirectUri),
           "tokenExpiration" -> Json.toJson(client.tokenExpiration),
-          "active" -> Json.toJson(client.active)
+          "active" -> Json.toJson(client.active),
+          "subject" -> Json.toJson(client.subject)
       )
     )
 
@@ -106,7 +107,8 @@ object Formats {
         Json.obj(
           "username" -> Json.toJson(owner.username),
           "allowedScopes" -> Json.toJson(owner.allowedScopes),
-          "active" -> Json.toJson(owner.active)
+          "active" -> Json.toJson(owner.active),
+          "subject" -> Json.toJson(owner.subject)
       )
     )
 

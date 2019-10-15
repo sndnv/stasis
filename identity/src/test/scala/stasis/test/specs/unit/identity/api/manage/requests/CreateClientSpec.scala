@@ -11,13 +11,15 @@ class CreateClientSpec extends UnitSpec {
   private val request = CreateClient(
     redirectUri = "some-uri",
     tokenExpiration = 5.seconds,
-    rawSecret = "some-secret"
+    rawSecret = "some-secret",
+    subject = None
   )
 
   "A CreateClient request" should "validate its content" in {
     an[IllegalArgumentException] should be thrownBy request.copy(redirectUri = "")
     an[IllegalArgumentException] should be thrownBy request.copy(tokenExpiration = 0.seconds)
     an[IllegalArgumentException] should be thrownBy request.copy(rawSecret = "")
+    an[IllegalArgumentException] should be thrownBy request.copy(subject = Some(""))
   }
 
   it should "be convertible to Client" in {
@@ -31,7 +33,8 @@ class CreateClientSpec extends UnitSpec {
 
     val expectedClient = Generators.generateClient.copy(
       redirectUri = request.redirectUri,
-      tokenExpiration = request.tokenExpiration
+      tokenExpiration = request.tokenExpiration,
+      subject = request.subject
     )
 
     val actualClient = request.toClient

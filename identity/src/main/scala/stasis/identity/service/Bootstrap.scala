@@ -93,7 +93,8 @@ object Bootstrap {
       tokenExpiration = Seconds(config.getDuration("token-expiration").getSeconds),
       secret = Secret.derive(rawSecret = config.getString("raw-secret"), salt),
       salt = salt,
-      active = config.getBoolean("active")
+      active = config.getBoolean("active"),
+      subject = Try(config.getString("subject")).toOption
     )
   }
 
@@ -107,7 +108,8 @@ object Bootstrap {
       password = Secret.derive(rawSecret = config.getString("raw-password"), salt),
       salt = salt,
       allowedScopes = config.getStringList("allowed-scopes").asScala,
-      active = config.getBoolean("active")
+      active = config.getBoolean("active"),
+      subject = Try(config.getString("subject")).toOption
     )
   }
 

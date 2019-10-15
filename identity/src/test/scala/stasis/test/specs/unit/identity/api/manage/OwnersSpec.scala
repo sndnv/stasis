@@ -2,6 +2,7 @@ package stasis.test.specs.unit.identity.api.manage
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.util.ByteString
+import play.api.libs.json.JsArray
 import stasis.identity.api.Formats._
 import stasis.identity.api.manage.Owners
 import stasis.identity.api.manage.requests.{CreateOwner, UpdateOwner, UpdateOwnerCredentials}
@@ -43,14 +44,15 @@ class OwnersSpec extends RouteTest {
     val request = CreateOwner(
       username = "some-user",
       rawPassword = "some-password",
-      allowedScopes = Seq("some-scope")
+      allowedScopes = Seq("some-scope"),
+      subject = Some("some-subject")
     )
 
     Post().withEntity(request) ~> owners.routes(user) ~> check {
       status should be(StatusCodes.OK)
       val createdOwner = store.owners.await.values.toList match {
         case owner :: Nil => owner
-        case other        => fail(s"Unexpected response recieved; [$other]")
+        case other        => fail(s"Unexpected response received; [$other]")
       }
 
       createdOwner.username should be(request.username)
@@ -64,7 +66,8 @@ class OwnersSpec extends RouteTest {
     val request = CreateOwner(
       username = "some-user",
       rawPassword = "some-password",
-      allowedScopes = Seq("some-scope")
+      allowedScopes = Seq("some-scope"),
+      subject = Some("some-subject")
     )
 
     Post().withEntity(request) ~> owners.routes(user) ~> check {
@@ -178,7 +181,8 @@ object OwnersSpec {
   final case class PartialResourceOwner(
     username: ResourceOwner.Id,
     allowedScopes: Seq[String],
-    active: Boolean
+    active: Boolean,
+    subject: Option[String]
   ) {
     def toOwner(secret: Secret, salt: String): ResourceOwner =
       ResourceOwner(
@@ -186,7 +190,8 @@ object OwnersSpec {
         password = secret,
         salt = salt,
         allowedScopes = allowedScopes,
-        active = active
+        active = active,
+        subject = subject
       )
   }
 }

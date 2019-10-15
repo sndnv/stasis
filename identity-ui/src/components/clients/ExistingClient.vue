@@ -21,6 +21,12 @@
             <label class="active">Redirect URI</label>
           </div>
         </div>
+        <div class="row">
+          <div class="input-field col s12">
+            <input class="black-text" type="text" :value="client.subject || client.id" readonly />
+            <label class="active">Subject</label>
+          </div>
+        </div>
         <div v-if="editing_secret">
           <div class="row">
             <div class="input-field col s12">

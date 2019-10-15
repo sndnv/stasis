@@ -7,7 +7,8 @@ final case class ResourceOwner(
   password: Secret,
   salt: String,
   allowedScopes: Seq[String],
-  active: Boolean
+  active: Boolean,
+  subject: Option[String]
 )
 
 object ResourceOwner {

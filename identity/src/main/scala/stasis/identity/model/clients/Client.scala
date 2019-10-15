@@ -9,7 +9,8 @@ final case class Client(
   tokenExpiration: Seconds,
   secret: Secret,
   salt: String,
-  active: Boolean
+  active: Boolean,
+  subject: Option[String]
 )
 
 object Client {
