@@ -100,7 +100,7 @@ class DefaultRouter(
                     .flatMap { results =>
                       val (sinks, destinations) = results.flatten.unzip
 
-                      val result = sinks match {
+                      val result = sinks.toList match {
                         case first :: second :: remaining =>
                           val _ = content.runWith(Sink.combine(first, second, remaining: _*)(Broadcast[ByteString](_)))
                           Future.successful(Done)
@@ -141,7 +141,7 @@ class DefaultRouter(
     crate: Crate.Id
   ): Future[Option[Source[ByteString, NotUsed]]] = {
     def pullFromNodes(
-      nodes: Seq[(Node.Id, Option[Node])],
+      nodes: List[(Node.Id, Option[Node])],
       crate: Crate.Id
     ): Future[Option[Source[ByteString, NotUsed]]] =
       nodes match {
@@ -224,7 +224,7 @@ class DefaultRouter(
                   }
               }
 
-            pullFromNodes(local ++ remote, crate)
+            pullFromNodes((local ++ remote).toList, crate)
           }
         } else {
           val message = s"Crate [$crate] was not pulled; no destinations found"

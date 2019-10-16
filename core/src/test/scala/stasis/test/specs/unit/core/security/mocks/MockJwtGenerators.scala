@@ -9,7 +9,8 @@ object MockJwtGenerators {
     issuer: String,
     audience: String,
     subject: String,
-    signatureKey: JsonWebKey
+    signatureKey: JsonWebKey,
+    customClaims: Map[String, String] = Map.empty
   ): String = {
 
     val jwt = new JwtClaims
@@ -19,6 +20,10 @@ object MockJwtGenerators {
     jwt.setGeneratedJwtId()
     jwt.setIssuedAtToNow()
     jwt.setSubject(subject)
+
+    customClaims.foreach {
+      case (name, value) => jwt.setStringClaim(name, value)
+    }
 
     val jws = new JsonWebSignature
     jws.setPayload(jwt.toJson)

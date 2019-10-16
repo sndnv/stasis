@@ -115,6 +115,7 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
     val underlying = new JwtAuthenticator(
       provider = MockJwkProvider(jwk),
       audience = "self",
+      identityClaim = "sub",
       expirationTolerance = 10.seconds
     )
 

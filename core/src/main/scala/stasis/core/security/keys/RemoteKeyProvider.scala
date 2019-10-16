@@ -60,7 +60,7 @@ final class RemoteKeyProvider(
       .flatMap(loadKeys)
       .recover {
         case NonFatal(e) =>
-          log.error(s"Failed to load keys from JWKS endpoint [$jwksEndpoint]: [$e]")
+          log.error(s"Failed to load keys from JWKs endpoint [$jwksEndpoint]: [$e]")
           Done
       }
       .map { result =>
@@ -86,11 +86,11 @@ final class RemoteKeyProvider(
             jwks.map {
               case Right(jwk) =>
                 log.debug(
-                  s"JWKS endpoint [$jwksEndpoint] provided key [${jwk.id}] with algorithm [${jwk.key.getAlgorithm}]")
+                  s"JWKs endpoint [$jwksEndpoint] provided key [${jwk.id}] with algorithm [${jwk.key.getAlgorithm}]")
                 cache.put(jwk.id, jwk.key)
 
               case Left(failure) =>
-                log.warning(s"JWKS endpoint provided key that could not be handled: [$failure]")
+                log.warning(s"JWKs endpoint provided key that could not be handled: [$failure]")
                 Future.successful(Done)
             }
           )

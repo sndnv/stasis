@@ -122,7 +122,7 @@ object Bootstrap {
         entity match {
           case api: Api             => log.info("API [{}] added", api.id)
           case client: Client       => log.info("Client [{}] added", client.id)
-          case owner: ResourceOwner => log.info("Resource owner [{}]", owner.username)
+          case owner: ResourceOwner => log.info("Resource owner [{}] added", owner.username)
         }
 
         result

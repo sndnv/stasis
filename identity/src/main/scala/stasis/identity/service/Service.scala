@@ -87,24 +87,27 @@ trait Service {
       )
     )
 
+    val ownerAuthenticatorConfig = rawConfig.getConfig("authenticators.resource-owner")
+    val ownerAuthenticator = new manage.DefaultResourceOwnerAuthenticator(
+      store = persistence.resourceOwners.view,
+      underlying = new JwtAuthenticator(
+        provider = new LocalKeyProvider(
+          jwk = accessTokenSignatureKey,
+          issuer = accessTokenIssuer
+        ),
+        audience = Api.ManageIdentity,
+        identityClaim = ownerAuthenticatorConfig.getString("identity-claim"),
+        expirationTolerance = ownerAuthenticatorConfig.getDuration("expiration-tolerance").toMillis.millis
+      )
+    )
+
     val manageProviders = manageApi.setup.Providers(
       apiStore = persistence.apis,
       clientStore = persistence.clients,
       codeStore = persistence.authorizationCodes,
       ownerStore = persistence.resourceOwners,
       tokenStore = persistence.refreshTokens,
-      ownerAuthenticator = new manage.DefaultResourceOwnerAuthenticator(
-        store = persistence.resourceOwners.view,
-        underlying = new JwtAuthenticator(
-          provider = new LocalKeyProvider(
-            jwk = accessTokenSignatureKey,
-            issuer = accessTokenIssuer
-          ),
-          audience = Api.ManageIdentity,
-          expirationTolerance =
-            rawConfig.getDuration("authenticators.resource-owner.expiration-tolerance").toMillis.millis
-        )
-      )
+      ownerAuthenticator = ownerAuthenticator
     )
 
     val realm: String = rawConfig.getString("realm")
