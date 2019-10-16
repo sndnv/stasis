@@ -33,6 +33,7 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
       underlying = new JwtAuthenticator(
         provider = provider,
         audience = targetApi.id.toString,
+        identityClaim = "sub",
         expirationTolerance = 10.seconds
       )
     )
@@ -58,6 +59,7 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
       underlying = new JwtAuthenticator(
         provider = provider,
         audience = targetApi.id.toString,
+        identityClaim = "sub",
         expirationTolerance = 10.seconds
       )
     )
@@ -90,6 +92,7 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
       underlying = new JwtAuthenticator(
         provider = provider,
         audience = invalidAudience,
+        identityClaim = "sub",
         expirationTolerance = 10.seconds
       )
     )
@@ -120,6 +123,7 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
       underlying = new JwtAuthenticator(
         provider = provider,
         audience = targetApi.id.toString,
+        identityClaim = "sub",
         expirationTolerance = 10.seconds
       )
     )

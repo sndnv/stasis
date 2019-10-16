@@ -19,6 +19,7 @@ import scala.util.control.NonFatal
 class JwtAuthenticator(
   provider: KeyProvider,
   audience: String,
+  val identityClaim: String,
   expirationTolerance: FiniteDuration
 )(implicit ec: ExecutionContext) {
 
@@ -74,6 +75,10 @@ class JwtAuthenticator(
         .build()
 
       val _ = consumer.processContext(context)
-      context.getJwtClaims
+      val claims = context.getJwtClaims
+
+      require(claims.hasClaim(identityClaim), s"Required identity claim [$identityClaim] was not found in [$claims]")
+
+      claims
     }
 }

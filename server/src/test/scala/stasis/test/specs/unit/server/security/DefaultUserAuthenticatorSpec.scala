@@ -32,6 +32,7 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
       underlying = new JwtAuthenticator(
         provider = provider,
         audience = audience,
+        identityClaim = "sub",
         expirationTolerance = 10.seconds
       )
     )
@@ -58,6 +59,7 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
       underlying = new JwtAuthenticator(
         provider = provider,
         audience = audience,
+        identityClaim = "sub",
         expirationTolerance = 10.seconds
       )
     )
@@ -87,6 +89,7 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
       underlying = new JwtAuthenticator(
         provider = provider,
         audience = audience,
+        identityClaim = "sub",
         expirationTolerance = 10.seconds
       )
     )
@@ -120,6 +123,7 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
       underlying = new JwtAuthenticator(
         provider = provider,
         audience = invalidAudience,
+        identityClaim = "sub",
         expirationTolerance = 10.seconds
       )
     )
@@ -153,6 +157,7 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
       underlying = new JwtAuthenticator(
         provider = provider,
         audience = audience,
+        identityClaim = "sub",
         expirationTolerance = 10.seconds
       )
     )
@@ -184,6 +189,7 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
       underlying = new JwtAuthenticator(
         provider = provider,
         audience = audience,
+        identityClaim = "sub",
         expirationTolerance = 10.seconds
       )
     )

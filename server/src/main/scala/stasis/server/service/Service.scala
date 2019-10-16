@@ -53,7 +53,7 @@ trait Service {
 
     val authenticationEndpointContext: Option[HttpsConnectionContext] =
       if (rawConfig.getBoolean("clients.authentication.context.enabled")) {
-        Some(EndpointContext.fromConfig(rawConfig.getConfig("clients.core.context")))
+        Some(EndpointContext.fromConfig(rawConfig.getConfig("clients.authentication.context")))
       } else {
         None
       }
@@ -87,6 +87,7 @@ trait Service {
           issuer = userAuthenticatorConfig.getString("issuer")
         ),
         audience = userAuthenticatorConfig.getString("audience"),
+        identityClaim = userAuthenticatorConfig.getString("identity-claim"),
         expirationTolerance = userAuthenticatorConfig.getDuration("expiration-tolerance").toMillis.millis
       )
     )
@@ -102,6 +103,7 @@ trait Service {
           issuer = nodeAuthenticatorConfig.getString("issuer")
         ),
         audience = nodeAuthenticatorConfig.getString("audience"),
+        identityClaim = nodeAuthenticatorConfig.getString("identity-claim"),
         expirationTolerance = nodeAuthenticatorConfig.getDuration("expiration-tolerance").toMillis.millis
       )
     )

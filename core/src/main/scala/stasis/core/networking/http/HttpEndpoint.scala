@@ -146,7 +146,7 @@ class HttpEndpoint(
                               }
 
                             case Some(reservation) =>
-                              val _ = request.discardEntityBytes()
+                              val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
                               log.error(
                                 "Node [{}] failed to push crate with ID [{}]; reservation [{}] is for crate [{}]",
@@ -159,7 +159,7 @@ class HttpEndpoint(
                               complete(StatusCodes.BadRequest)
 
                             case None =>
-                              val _ = request.discardEntityBytes()
+                              val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
                               log.error(
                                 "Node [{}] failed to push crate with ID [{}]; reservation [{}] not found",
@@ -194,7 +194,7 @@ class HttpEndpoint(
               )
 
             case Failure(e) =>
-              val _ = request.discardEntityBytes()
+              val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
               log.warning(
                 "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{}]",
@@ -209,7 +209,7 @@ class HttpEndpoint(
           }
 
         case None =>
-          val _ = request.discardEntityBytes()
+          val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
           log.warning(
             "Rejecting [{}] request for [{}] with no credentials from [{}]",

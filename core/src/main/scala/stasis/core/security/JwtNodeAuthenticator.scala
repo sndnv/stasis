@@ -40,10 +40,10 @@ class JwtNodeAuthenticator(
   private def extractNodeFromClaims(claims: JwtClaims): Future[Node.Id] =
     Future.fromTry(
       for {
-        subject <- Try(claims.getSubject)
-        node <- Try(UUID.fromString(subject)).recoverWith {
+        identity <- Try(claims.getClaimValue(underlying.identityClaim, classOf[String]))
+        node <- Try(UUID.fromString(identity)).recoverWith {
           case _: IllegalArgumentException =>
-            Failure(AuthenticationFailure(s"Invalid node ID encountered: [$subject]"))
+            Failure(AuthenticationFailure(s"Invalid node ID encountered: [$identity]"))
         }
       } yield {
         node
