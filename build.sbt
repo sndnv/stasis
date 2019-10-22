@@ -20,7 +20,8 @@ lazy val server = (project in file("./server"))
     libraryDependencies ++= Seq(
       "com.typesafe.slick" %% "slick" % slickVersion,
       "com.h2database"     %  "h2"    % h2Version
-    )
+    ),
+    dockerBaseImage := "openjdk:11"
   )
   .enablePlugins(JavaAppPackaging)
   .dependsOn(shared % "compile->compile;test->test")
@@ -45,7 +46,8 @@ lazy val identity = (project in file("./identity"))
     libraryDependencies ++= Seq(
       "com.typesafe.slick" %% "slick" % slickVersion,
       "com.h2database"     %  "h2"    % h2Version
-    )
+    ),
+    dockerBaseImage := "openjdk:11"
   )
   .dependsOn(core % "compile->compile;test->test")
   .enablePlugins(JavaAppPackaging)
