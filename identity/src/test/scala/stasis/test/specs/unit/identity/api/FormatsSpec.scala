@@ -141,8 +141,8 @@ class FormatsSpec extends UnitSpec {
     val parsedKeys = parsedFields.map(_._1)
 
     parsedFields should contain("id" -> JsString(client.id.toString))
-    parsedFields should contain("redirectUri" -> JsString(client.redirectUri))
-    parsedFields should contain("tokenExpiration" -> JsNumber(client.tokenExpiration.value))
+    parsedFields should contain("redirect_uri" -> JsString(client.redirectUri))
+    parsedFields should contain("token_expiration" -> JsNumber(client.tokenExpiration.value))
     parsedFields should contain("active" -> JsBoolean(client.active))
     parsedKeys should not contain "secret"
     parsedKeys should not contain "salt"
@@ -179,7 +179,7 @@ class FormatsSpec extends UnitSpec {
     val parsedKeys = parsedFields.map(_._1)
 
     parsedFields should contain("username" -> JsString(owner.username))
-    parsedFields should contain("allowedScopes" -> JsArray(owner.allowedScopes.map(JsString)))
+    parsedFields should contain("allowed_scopes" -> JsArray(owner.allowedScopes.map(JsString)))
     parsedFields should contain("active" -> JsBoolean(owner.active))
     parsedKeys should not contain "secret"
     parsedKeys should not contain "salt"

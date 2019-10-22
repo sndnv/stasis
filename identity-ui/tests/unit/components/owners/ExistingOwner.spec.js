@@ -23,7 +23,7 @@ describe('ExistingOwner', () => {
         window.confirm = default_window_confirm;
     })
 
-    const owner = { username: 'some-owner', allowedScopes: 'a,b,c', active: true }
+    const owner = { username: 'some-owner', allowed_scopes: 'a,b,c', active: true }
     const some_owner_props = { owner: owner };
     const current_owner_props = { owner: { ...owner, ...{ username: 'test-owner' } } };
 

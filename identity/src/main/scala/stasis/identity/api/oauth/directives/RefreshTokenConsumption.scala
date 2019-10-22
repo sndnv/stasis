@@ -53,7 +53,7 @@ trait RefreshTokenConsumption extends EntityDiscardingDirectives {
         case Success(Some(StoredRefreshToken(storedToken, storedClient, owner, _, _))) =>
           log.warning(
             "Refresh token [{}] stored for client [{}] and owner [{}] did not have expected client [{}]",
-            storedToken,
+            storedToken.value,
             client,
             owner.username,
             storedClient

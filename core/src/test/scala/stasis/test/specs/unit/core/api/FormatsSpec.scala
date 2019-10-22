@@ -37,15 +37,15 @@ class FormatsSpec extends UnitSpec {
     val descriptors = Map(
       "memory" -> (
         CrateStore.Descriptor.ForStreamingMemoryBackend(maxSize = 42, name = "backend-format-test"),
-        """{"backend-type":"memory","max-size":42,"name":"backend-format-test"}"""
+        """{"backend_type":"memory","max_size":42,"name":"backend-format-test"}"""
       ),
       "container" -> (
         CrateStore.Descriptor.ForContainerBackend(path = "/some/path", maxChunkSize = 1, maxChunks = 2),
-        """{"backend-type":"container","path":"/some/path","max-chunk-size":1,"max-chunks":2}"""
+        """{"backend_type":"container","path":"/some/path","max_chunk_size":1,"max_chunks":2}"""
       ),
       "file" -> (
         CrateStore.Descriptor.ForFileBackend(parentDirectory = "/some/path"),
-        """{"backend-type":"file","parent-directory":"/some/path"}"""
+        """{"backend_type":"file","parent_directory":"/some/path"}"""
       )
     )
 
@@ -68,19 +68,19 @@ class FormatsSpec extends UnitSpec {
     val nodes = Map(
       "local" -> (
         Node.Local(id = nodeId, storeDescriptor = storeDescriptor),
-        s"""{"node-type":"local","id":"$nodeId","storeDescriptor":${Json.toJson(storeDescriptor).toString}}"""
+        s"""{"node_type":"local","id":"$nodeId","store_descriptor":${Json.toJson(storeDescriptor).toString}}"""
       ),
       "remote-http" -> (
         Node.Remote.Http(id = nodeId, address = httpAddress),
-        s"""{"node-type":"remote-http","id":"$nodeId","address":{"uri":"${httpAddress.uri}"}}"""
+        s"""{"node_type":"remote-http","id":"$nodeId","address":{"uri":"${httpAddress.uri}"}}"""
       ),
       "remote-grpc" -> (
         Node.Remote.Grpc(id = nodeId, address = grpcAddress),
         s"""
            |{
-           |"node-type":"remote-grpc",
+           |"node_type":"remote-grpc",
            |"id":"$nodeId",
-           |"address":{"host":"${grpcAddress.host}","port":${grpcAddress.port},"tlsEnabled":${grpcAddress.tlsEnabled}}
+           |"address":{"host":"${grpcAddress.host}","port":${grpcAddress.port},"tls_enabled":${grpcAddress.tlsEnabled}}
            |}""".stripMargin.replaceAll("\n", "").trim
       )
     )

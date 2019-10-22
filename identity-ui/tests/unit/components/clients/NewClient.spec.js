@@ -107,8 +107,8 @@ describe('NewClient', () => {
         return Vue.nextTick().then(function () {
             const client_created = new_client.emitted()['client-created'][0][0];
             expect(client_created.id).toBe(new_client_id);
-            expect(client_created.redirectUri).toBe(new_client_redirect_uri);
-            expect(`${client_created.tokenExpiration}`).toBe(new_client_token_expiration);
+            expect(client_created.redirect_uri).toBe(new_client_redirect_uri);
+            expect(`${client_created.token_expiration}`).toBe(new_client_token_expiration);
             expect(client_created.active).toBe(true);
             expect(client_created.is_new).toBe(true);
             expect(client_created.subject).toBe(new_client_subject);
@@ -136,8 +136,8 @@ describe('NewClient', () => {
         return Vue.nextTick().then(function () {
             const client_created = new_client.emitted()['client-created'][0][0];
             expect(client_created.id).toBe(new_client_id);
-            expect(client_created.redirectUri).toBe(new_client_redirect_uri);
-            expect(`${client_created.tokenExpiration}`).toBe(new_client_token_expiration);
+            expect(client_created.redirect_uri).toBe(new_client_redirect_uri);
+            expect(`${client_created.token_expiration}`).toBe(new_client_token_expiration);
             expect(client_created.active).toBe(true);
             expect(client_created.is_new).toBe(true);
             expect(client_created.subject).toBe('');

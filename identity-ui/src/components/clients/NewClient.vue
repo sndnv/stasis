@@ -8,15 +8,15 @@
               class="black-text"
               id="new-client-redirect-uri"
               type="text"
-              v-bind:class="{ 'invalid': errors.new_client.redirectUri }"
-              v-model.trim="input.new_client.redirectUri"
-              :title="errors.new_client.redirectUri"
+              v-bind:class="{ 'invalid': errors.new_client.redirect_uri }"
+              v-model.trim="input.new_client.redirect_uri"
+              :title="errors.new_client.redirect_uri"
             />
             <label class="active">Redirect URI</label>
             <span
-              v-if="errors.new_client.redirectUri"
+              v-if="errors.new_client.redirect_uri"
               class="helper-text"
-              :data-error="errors.new_client.redirectUri"
+              :data-error="errors.new_client.redirect_uri"
             />
           </div>
         </div>
@@ -27,15 +27,15 @@
               id="new-client-token-expiration"
               type="number"
               min="1"
-              v-bind:class="{ 'invalid': errors.new_client.tokenExpiration }"
-              v-model.number="input.new_client.tokenExpiration"
-              :title="errors.new_client.tokenExpiration"
+              v-bind:class="{ 'invalid': errors.new_client.token_expiration }"
+              v-model.number="input.new_client.token_expiration"
+              :title="errors.new_client.token_expiration"
             />
             <label class="active">Token Expiration (seconds)</label>
             <span
-              v-if="errors.new_client.tokenExpiration"
+              v-if="errors.new_client.token_expiration"
               class="helper-text"
-              :data-error="errors.new_client.tokenExpiration"
+              :data-error="errors.new_client.token_expiration"
             />
           </div>
         </div>
@@ -45,15 +45,15 @@
               class="black-text"
               id="new-client-secret"
               type="password"
-              v-bind:class="{ 'invalid': errors.new_client.rawSecret }"
-              v-model.trim="input.new_client.rawSecret"
-              :title="errors.new_client.rawSecret"
+              v-bind:class="{ 'invalid': errors.new_client.raw_secret }"
+              v-model.trim="input.new_client.raw_secret"
+              :title="errors.new_client.raw_secret"
             />
             <label class="active">Secret</label>
             <span
-              v-if="errors.new_client.rawSecret"
+              v-if="errors.new_client.raw_secret"
               class="helper-text"
-              :data-error="errors.new_client.rawSecret"
+              :data-error="errors.new_client.raw_secret"
             />
           </div>
         </div>
@@ -63,15 +63,15 @@
               class="black-text"
               id="new-client-secret-confirm"
               type="password"
-              v-bind:class="{ 'invalid': errors.new_client.secretConfirm }"
-              v-model.trim="input.new_client.secretConfirm"
-              :title="errors.new_client.secretConfirm"
+              v-bind:class="{ 'invalid': errors.new_client.secret_confirm }"
+              v-model.trim="input.new_client.secret_confirm"
+              :title="errors.new_client.secret_confirm"
             />
             <label class="active">Secret (confirm)</label>
             <span
-              v-if="errors.new_client.secretConfirm"
+              v-if="errors.new_client.secret_confirm"
               class="helper-text"
-              :data-error="errors.new_client.secretConfirm"
+              :data-error="errors.new_client.secret_confirm"
             />
           </div>
         </div>
@@ -113,19 +113,19 @@ export default {
       creating: false,
       input: {
         new_client: {
-          redirectUri: "",
-          tokenExpiration: "",
-          rawSecret: "",
-          secretConfirm: "",
+          redirect_uri: "",
+          token_expiration: "",
+          raw_secret: "",
+          secret_confirm: "",
           subject: ""
         }
       },
       errors: {
         new_client: {
-          redirectUri: "",
-          tokenExpiration: "",
-          rawSecret: "",
-          secretConfirm: ""
+          redirect_uri: "",
+          token_expiration: "",
+          raw_secret: "",
+          secret_confirm: ""
         }
       }
     };
@@ -136,38 +136,38 @@ export default {
 
       const errors = this.errors.new_client;
 
-      errors.redirectUri = "";
-      errors.tokenExpiration = "";
-      errors.rawSecret = "";
-      errors.secretConfirm = "";
+      errors.redirect_uri = "";
+      errors.token_expiration = "";
+      errors.raw_secret = "";
+      errors.secret_confirm = "";
 
-      if (!this.input.new_client.redirectUri) {
-        errors.redirectUri = "Redirect URI cannot be empty";
+      if (!this.input.new_client.redirect_uri) {
+        errors.redirect_uri = "Redirect URI cannot be empty";
       }
 
       if (
-        !this.input.new_client.tokenExpiration ||
-        this.input.new_client.tokenExpiration <= 0
+        !this.input.new_client.token_expiration ||
+        this.input.new_client.token_expiration <= 0
       ) {
-        errors.tokenExpiration = "Token expiration must be a positive number";
+        errors.token_expiration = "Token expiration must be a positive number";
       }
 
-      if (!this.input.new_client.rawSecret) {
-        errors.rawSecret = "Secret cannot be empty";
+      if (!this.input.new_client.raw_secret) {
+        errors.raw_secret = "Secret cannot be empty";
       }
 
       if (
-        !this.input.new_client.secretConfirm ||
-        this.input.new_client.rawSecret != this.input.new_client.secretConfirm
+        !this.input.new_client.secret_confirm ||
+        this.input.new_client.raw_secret != this.input.new_client.secret_confirm
       ) {
-        errors.secretConfirm = "Secrets must be provided and must match";
+        errors.secret_confirm = "Secrets must be provided and must match";
       }
 
       if (
-        !errors.redirectUri &&
-        !errors.tokenExpiration &&
-        !errors.rawSecret &&
-        !errors.secretConfirm
+        !errors.redirect_uri &&
+        !errors.token_expiration &&
+        !errors.raw_secret &&
+        !errors.secret_confirm
       ) {
         requests
           .post_client(extract_request_fields(this.input.new_client))
@@ -176,16 +176,16 @@ export default {
             if (response.success) {
               this.$emit("client-created", {
                 id: response.data.client,
-                redirectUri: this.input.new_client.redirectUri,
-                tokenExpiration: this.input.new_client.tokenExpiration,
+                redirect_uri: this.input.new_client.redirect_uri,
+                token_expiration: this.input.new_client.token_expiration,
                 active: true,
                 is_new: true,
                 subject: this.input.new_client.subject
               });
-              this.input.new_client.redirectUri = "";
-              this.input.new_client.tokenExpiration = "";
-              this.input.new_client.rawSecret = "";
-              this.input.new_client.secretConfirm = "";
+              this.input.new_client.redirect_uri = "";
+              this.input.new_client.token_expiration = "";
+              this.input.new_client.raw_secret = "";
+              this.input.new_client.secret_confirm = "";
               this.input.new_client.subject = "";
             } else {
               const icon = '<i class="material-icons red-text">close</i>';
@@ -200,9 +200,9 @@ export default {
   }
 };
 
-function extract_request_fields({ redirectUri, tokenExpiration, rawSecret, subject }) {
+function extract_request_fields({ redirect_uri, token_expiration, raw_secret, subject }) {
   return {
-    ...{ redirectUri, tokenExpiration, rawSecret },
+    ...{ redirect_uri, token_expiration, raw_secret },
     ...(subject === "" ? {} : {subject})
   };
 }

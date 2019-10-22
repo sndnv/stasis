@@ -26,15 +26,15 @@
               class="black-text"
               id="new-owner-allowed-scopes"
               type="text"
-              v-bind:class="{ 'invalid': errors.new_owner.allowedScopes }"
-              v-model.trim="input.new_owner.allowedScopes"
-              :title="errors.new_owner.allowedScopes"
+              v-bind:class="{ 'invalid': errors.new_owner.allowed_scopes }"
+              v-model.trim="input.new_owner.allowed_scopes"
+              :title="errors.new_owner.allowed_scopes"
             />
             <label class="active">Allowed Scopes</label>
             <span
-              v-if="errors.new_owner.allowedScopes"
+              v-if="errors.new_owner.allowed_scopes"
               class="helper-text"
-              :data-error="errors.new_owner.allowedScopes"
+              :data-error="errors.new_owner.allowed_scopes"
             />
           </div>
         </div>
@@ -44,15 +44,15 @@
               class="black-text"
               id="new-owner-password"
               type="password"
-              v-bind:class="{ 'invalid': errors.new_owner.rawPassword }"
-              v-model.trim="input.new_owner.rawPassword"
-              :title="errors.new_owner.rawPassword"
+              v-bind:class="{ 'invalid': errors.new_owner.raw_password }"
+              v-model.trim="input.new_owner.raw_password"
+              :title="errors.new_owner.raw_password"
             />
             <label class="active">Password</label>
             <span
-              v-if="errors.new_owner.rawPassword"
+              v-if="errors.new_owner.raw_password"
               class="helper-text"
-              :data-error="errors.new_owner.rawPassword"
+              :data-error="errors.new_owner.raw_password"
             />
           </div>
         </div>
@@ -62,15 +62,15 @@
               class="black-text"
               id="new-owner-password-confirm"
               type="password"
-              v-bind:class="{ 'invalid': errors.new_owner.passwordConfirm }"
-              v-model.trim="input.new_owner.passwordConfirm"
-              :title="errors.new_owner.passwordConfirm"
+              v-bind:class="{ 'invalid': errors.new_owner.password_confirm }"
+              v-model.trim="input.new_owner.password_confirm"
+              :title="errors.new_owner.password_confirm"
             />
             <label class="active">Password (confirm)</label>
             <span
-              v-if="errors.new_owner.passwordConfirm"
+              v-if="errors.new_owner.password_confirm"
               class="helper-text"
-              :data-error="errors.new_owner.passwordConfirm"
+              :data-error="errors.new_owner.password_confirm"
             />
           </div>
         </div>
@@ -114,18 +114,18 @@ export default {
       input: {
         new_owner: {
           username: "",
-          allowedScopes: "",
-          rawPassword: "",
-          passwordConfirm: "",
+          allowed_scopes: "",
+          raw_password: "",
+          password_confirm: "",
           subject: ""
         }
       },
       errors: {
         new_owner: {
           username: "",
-          allowedScopes: "",
-          rawPassword: "",
-          passwordConfirm: ""
+          allowed_scopes: "",
+          raw_password: "",
+          password_confirm: ""
         }
       }
     };
@@ -137,34 +137,34 @@ export default {
       const errors = this.errors.new_owner;
 
       errors.username = "";
-      errors.allowedScopes = "";
-      errors.rawPassword = "";
-      errors.passwordConfirm = "";
+      errors.allowed_scopes = "";
+      errors.raw_password = "";
+      errors.password_confirm = "";
 
       if (!this.input.new_owner.username) {
         errors.username = "Username cannot be empty";
       }
 
-      if (!this.input.new_owner.allowedScopes) {
-        errors.allowedScopes = "Allowed scopes cannot be empty";
+      if (!this.input.new_owner.allowed_scopes) {
+        errors.allowed_scopes = "Allowed scopes cannot be empty";
       }
 
-      if (!this.input.new_owner.rawPassword) {
-        errors.rawPassword = "Password cannot be empty";
+      if (!this.input.new_owner.raw_password) {
+        errors.raw_password = "Password cannot be empty";
       }
 
       if (
-        !this.input.new_owner.passwordConfirm ||
-        this.input.new_owner.rawPassword != this.input.new_owner.passwordConfirm
+        !this.input.new_owner.password_confirm ||
+        this.input.new_owner.raw_password != this.input.new_owner.password_confirm
       ) {
-        errors.passwordConfirm = "Passwords must be provided and must match";
+        errors.password_confirm = "Passwords must be provided and must match";
       }
 
       if (
         !errors.username &&
-        !errors.allowedScopes &&
-        !errors.rawPassword &&
-        !errors.passwordConfirm
+        !errors.allowed_scopes &&
+        !errors.raw_password &&
+        !errors.password_confirm
       ) {
         process_request_data(this.input.new_owner).then(
           new_owner_request => {
@@ -173,15 +173,15 @@ export default {
               if (response.success) {
                 this.$emit("owner-created", {
                   username: this.input.new_owner.username,
-                  allowedScopes: this.input.new_owner.allowedScopes,
+                  allowed_scopes: this.input.new_owner.allowed_scopes,
                   active: true,
                   is_new: true,
                   subject: this.input.new_owner.subject
                 });
                 this.input.new_owner.username = "";
-                this.input.new_owner.allowedScopes = "";
-                this.input.new_owner.rawPassword = "";
-                this.input.new_owner.passwordConfirm = "";
+                this.input.new_owner.allowed_scopes = "";
+                this.input.new_owner.raw_password = "";
+                this.input.new_owner.password_confirm = "";
                 this.input.new_owner.subject = "";
               } else {
                 const icon = '<i class="material-icons red-text">close</i>';
@@ -203,23 +203,23 @@ export default {
   }
 };
 
-function process_request_data({ username, allowedScopes, rawPassword, subject }) {
+function process_request_data({ username, allowed_scopes, raw_password, subject }) {
   return oauth
-    .derive_password(rawPassword, oauth.derive_salt(username))
+    .derive_password(raw_password, oauth.derive_salt(username))
     .then(derived_password => {
-      if (Object.prototype.toString.call(allowedScopes) === "[object String]") {
-        const split_scopes = allowedScopes
+      if (Object.prototype.toString.call(allowed_scopes) === "[object String]") {
+        const split_scopes = allowed_scopes
           .split(",")
           .map(s => s.trim())
           .filter(String);
 
         return {
-          ...{ username, allowedScopes: split_scopes, rawPassword: derived_password },
+          ...{ username, allowed_scopes: split_scopes, raw_password: derived_password },
           ...(subject === "" ? {} : {subject})
         };
       } else {
         return {
-          ...{ username, allowedScopes, rawPassword: derived_password },
+          ...{ username, allowed_scopes, raw_password: derived_password },
           ...(subject === "" ? {} : {subject})
         };
       }

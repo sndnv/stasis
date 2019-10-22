@@ -22,7 +22,8 @@ object Formats {
     crateStoreDescriptorReads,
     crateStoreDescriptorWrites,
     grpcEndpointAddressFormat,
-    httpEndpointAddressFormat
+    httpEndpointAddressFormat,
+    jsonConfig
   }
 
   implicit val finiteDurationFormat: Format[FiniteDuration] =
@@ -50,7 +51,7 @@ object Formats {
 
   implicit val retentionPolicyFormat: Format[DatasetDefinition.Retention.Policy] = Format(
     fjs = _.validate[JsObject].flatMap { policy =>
-      (policy \ "policy-type").validate[String].map {
+      (policy \ "policy_type").validate[String].map {
         case "at-most" =>
           DatasetDefinition.Retention.Policy.AtMost((policy \ "versions").as[Int])
 
@@ -63,13 +64,13 @@ object Formats {
     },
     tjs = {
       case DatasetDefinition.Retention.Policy.AtMost(versions) =>
-        Json.obj("policy-type" -> JsString("at-most"), "versions" -> JsNumber(versions))
+        Json.obj("policy_type" -> JsString("at-most"), "versions" -> JsNumber(versions))
 
       case DatasetDefinition.Retention.Policy.LatestOnly =>
-        Json.obj("policy-type" -> JsString("latest-only"))
+        Json.obj("policy_type" -> JsString("latest-only"))
 
       case DatasetDefinition.Retention.Policy.All =>
-        Json.obj("policy-type" -> JsString("all"))
+        Json.obj("policy_type" -> JsString("all"))
     }
   )
 
@@ -168,9 +169,9 @@ object Formats {
 
   implicit val createNodeFormat: Format[CreateNode] = Format(
     fjs = _.validate[JsObject].flatMap { node =>
-      (node \ "node-type").validate[String].map {
+      (node \ "node_type").validate[String].map {
         case "local" =>
-          CreateLocalNode(storeDescriptor = (node \ "storeDescriptor").as[CrateStore.Descriptor])
+          CreateLocalNode(storeDescriptor = (node \ "store_descriptor").as[CrateStore.Descriptor])
 
         case "remote-http" =>
           CreateRemoteHttpNode(address = (node \ "address").as[HttpEndpointAddress])
@@ -182,19 +183,19 @@ object Formats {
     tjs = {
       case CreateLocalNode(storeDescriptor) =>
         Json.obj(
-          "node-type" -> JsString("local"),
-          "storeDescriptor" -> Json.toJson(storeDescriptor)
+          "node_type" -> JsString("local"),
+          "store_descriptor" -> Json.toJson(storeDescriptor)
         )
 
       case CreateRemoteHttpNode(address) =>
         Json.obj(
-          "node-type" -> JsString("remote-http"),
+          "node_type" -> JsString("remote-http"),
           "address" -> Json.toJson(address)
         )
 
       case CreateRemoteGrpcNode(address) =>
         Json.obj(
-          "node-type" -> JsString("remote-grpc"),
+          "node_type" -> JsString("remote-grpc"),
           "address" -> Json.toJson(address)
         )
     }
@@ -202,9 +203,9 @@ object Formats {
 
   implicit val updateNodeFormat: Format[UpdateNode] = Format(
     fjs = _.validate[JsObject].flatMap { node =>
-      (node \ "node-type").validate[String].map {
+      (node \ "node_type").validate[String].map {
         case "local" =>
-          UpdateLocalNode(storeDescriptor = (node \ "storeDescriptor").as[CrateStore.Descriptor])
+          UpdateLocalNode(storeDescriptor = (node \ "store_descriptor").as[CrateStore.Descriptor])
 
         case "remote-http" =>
           UpdateRemoteHttpNode(address = (node \ "address").as[HttpEndpointAddress])
@@ -215,13 +216,13 @@ object Formats {
     },
     tjs = {
       case UpdateLocalNode(storeDescriptor) =>
-        Json.obj("node-type" -> JsString("local"), "storeDescriptor" -> Json.toJson(storeDescriptor))
+        Json.obj("node_type" -> JsString("local"), "store_descriptor" -> Json.toJson(storeDescriptor))
 
       case UpdateRemoteHttpNode(address) =>
-        Json.obj("node-type" -> JsString("remote-http"), "address" -> Json.toJson(address))
+        Json.obj("node_type" -> JsString("remote-http"), "address" -> Json.toJson(address))
 
       case UpdateRemoteGrpcNode(address) =>
-        Json.obj("node-type" -> JsString("remote-grpc"), "address" -> Json.toJson(address))
+        Json.obj("node_type" -> JsString("remote-grpc"), "address" -> Json.toJson(address))
     }
   )
 

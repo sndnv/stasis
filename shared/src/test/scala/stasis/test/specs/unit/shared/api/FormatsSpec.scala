@@ -77,9 +77,9 @@ class FormatsSpec extends UnitSpec {
 
   they should "convert retention policies to/from JSON" in {
     val policies = Map(
-      "at-most" -> (DatasetDefinition.Retention.Policy.AtMost(3), "{\"policy-type\":\"at-most\",\"versions\":3}"),
-      "latest-only" -> (DatasetDefinition.Retention.Policy.LatestOnly, "{\"policy-type\":\"latest-only\"}"),
-      "all" -> (DatasetDefinition.Retention.Policy.All, "{\"policy-type\":\"all\"}"),
+      "at-most" -> (DatasetDefinition.Retention.Policy.AtMost(3), "{\"policy_type\":\"at-most\",\"versions\":3}"),
+      "latest-only" -> (DatasetDefinition.Retention.Policy.LatestOnly, "{\"policy_type\":\"latest-only\"}"),
+      "all" -> (DatasetDefinition.Retention.Policy.All, "{\"policy_type\":\"all\"}"),
     )
 
     policies.foreach {
@@ -93,15 +93,15 @@ class FormatsSpec extends UnitSpec {
     val requests = Map(
       "local" -> (
         CreateLocalNode(storeDescriptor = CrateStore.Descriptor.ForFileBackend(parentDirectory = "/tmp")),
-        "{\"node-type\":\"local\",\"storeDescriptor\":{\"backend-type\":\"file\",\"parent-directory\":\"/tmp\"}}"
+        "{\"node_type\":\"local\",\"store_descriptor\":{\"backend_type\":\"file\",\"parent_directory\":\"/tmp\"}}"
       ),
       "remote-http" -> (
         CreateRemoteHttpNode(address = HttpEndpointAddress(uri = "http://example.com")),
-        "{\"node-type\":\"remote-http\",\"address\":{\"uri\":\"http://example.com\"}}"
+        "{\"node_type\":\"remote-http\",\"address\":{\"uri\":\"http://example.com\"}}"
       ),
       "remote-grpc" -> (
         CreateRemoteGrpcNode(address = GrpcEndpointAddress(host = "example.com", port = 443, tlsEnabled = true)),
-        "{\"node-type\":\"remote-grpc\",\"address\":{\"host\":\"example.com\",\"port\":443,\"tlsEnabled\":true}}"
+        "{\"node_type\":\"remote-grpc\",\"address\":{\"host\":\"example.com\",\"port\":443,\"tls_enabled\":true}}"
       )
     )
 
@@ -116,15 +116,15 @@ class FormatsSpec extends UnitSpec {
     val requests = Map(
       "local" -> (
         UpdateLocalNode(storeDescriptor = CrateStore.Descriptor.ForFileBackend(parentDirectory = "/tmp")),
-        "{\"node-type\":\"local\",\"storeDescriptor\":{\"backend-type\":\"file\",\"parent-directory\":\"/tmp\"}}"
+        "{\"node_type\":\"local\",\"store_descriptor\":{\"backend_type\":\"file\",\"parent_directory\":\"/tmp\"}}"
       ),
       "remote-http" -> (
         UpdateRemoteHttpNode(address = HttpEndpointAddress(uri = "http://example.com")),
-        "{\"node-type\":\"remote-http\",\"address\":{\"uri\":\"http://example.com\"}}"
+        "{\"node_type\":\"remote-http\",\"address\":{\"uri\":\"http://example.com\"}}"
       ),
       "remote-grpc" -> (
         UpdateRemoteGrpcNode(address = GrpcEndpointAddress(host = "example.com", port = 443, tlsEnabled = true)),
-        "{\"node-type\":\"remote-grpc\",\"address\":{\"host\":\"example.com\",\"port\":443,\"tlsEnabled\":true}}"
+        "{\"node_type\":\"remote-grpc\",\"address\":{\"host\":\"example.com\",\"port\":443,\"tls_enabled\":true}}"
       )
     )
 

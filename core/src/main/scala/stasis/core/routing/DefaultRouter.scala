@@ -233,9 +233,8 @@ class DefaultRouter(
         }
 
       case None =>
-        val message = s"Crate [$crate] was not pulled; failed to retrieve manifest"
-        log.error(message)
-        Future.failed(PullFailure(message))
+        log.warning("Crate [{}] was not pulled; failed to retrieve manifest", crate)
+        Future.successful(None)
     }
   }
 
