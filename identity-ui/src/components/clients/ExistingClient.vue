@@ -17,7 +17,7 @@
         </div>
         <div class="row">
           <div class="input-field col s12">
-            <input class="black-text" type="text" :value="client.redirectUri" readonly />
+            <input class="black-text" type="text" :value="client.redirect_uri" readonly />
             <label class="active">Redirect URI</label>
           </div>
         </div>
@@ -33,15 +33,15 @@
               <input
                 class="black-text secret"
                 type="password"
-                v-bind:class="{ 'invalid': errors.existing_client.rawSecret }"
-                v-model.trim="input.existing_client.rawSecret"
-                :title="errors.existing_client.rawSecret"
+                v-bind:class="{ 'invalid': errors.existing_client.raw_secret }"
+                v-model.trim="input.existing_client.raw_secret"
+                :title="errors.existing_client.raw_secret"
               />
               <label class="active">Secret</label>
               <span
-                v-if="errors.existing_client.rawSecret"
+                v-if="errors.existing_client.raw_secret"
                 class="helper-text"
-                :data-error="errors.existing_client.rawSecret"
+                :data-error="errors.existing_client.raw_secret"
               />
             </div>
           </div>
@@ -50,15 +50,15 @@
               <input
                 class="black-text secret-confirm"
                 type="password"
-                v-bind:class="{ 'invalid': errors.existing_client.secretConfirm }"
-                v-model.trim="input.existing_client.secretConfirm"
-                :title="errors.existing_client.secretConfirm"
+                v-bind:class="{ 'invalid': errors.existing_client.secret_confirm }"
+                v-model.trim="input.existing_client.secret_confirm"
+                :title="errors.existing_client.secret_confirm"
               />
               <label class="active">Secret (confirm)</label>
               <span
-                v-if="errors.existing_client.secretConfirm"
+                v-if="errors.existing_client.secret_confirm"
                 class="helper-text"
-                :data-error="errors.existing_client.secretConfirm"
+                :data-error="errors.existing_client.secret_confirm"
               />
             </div>
           </div>
@@ -70,16 +70,16 @@
                 class="black-text token-expiration"
                 type="number"
                 min="1"
-                v-model.number="client.tokenExpiration"
+                v-model.number="client.token_expiration"
                 :readonly="!editing"
-                v-bind:class="{ 'invalid': errors.editing.tokenExpiration }"
-                :title="errors.editing.tokenExpiration"
+                v-bind:class="{ 'invalid': errors.editing.token_expiration }"
+                :title="errors.editing.token_expiration"
               />
               <label class="active">Token Expiration (seconds)</label>
               <span
-                v-if="errors.editing.tokenExpiration"
+                v-if="errors.editing.token_expiration"
                 class="helper-text"
-                :data-error="errors.editing.tokenExpiration"
+                :data-error="errors.editing.token_expiration"
               />
             </div>
           </div>
@@ -163,17 +163,17 @@ export default {
       editing_secret: false,
       input: {
         existing_client: {
-          rawSecret: "",
-          secretConfirm: ""
+          raw_secret: "",
+          secret_confirm: ""
         }
       },
       errors: {
         editing: {
-          tokenExpiration: ""
+          token_expiration: ""
         },
         existing_client: {
-          rawSecret: "",
-          secretConfirm: ""
+          raw_secret: "",
+          secret_confirm: ""
         }
       },
       original: Object.assign({}, this.client)
@@ -220,18 +220,18 @@ export default {
         this.client[attr] = this.original[attr];
       }
 
-      this.input.existing_client.rawSecret = "";
-      this.input.existing_client.secretConfirm = "";
+      this.input.existing_client.raw_secret = "";
+      this.input.existing_client.secret_confirm = "";
 
-      this.errors.editing.tokenExpiration = "";
-      this.errors.existing_client.rawSecret = "";
-      this.errors.existing_client.secretConfirm = "";
+      this.errors.editing.token_expiration = "";
+      this.errors.existing_client.raw_secret = "";
+      this.errors.existing_client.secret_confirm = "";
 
       this.editing = false;
       this.editing_secret = false;
     },
     update_client: function() {
-      this.errors.editing.tokenExpiration = "";
+      this.errors.editing.token_expiration = "";
 
       const updatable = extract_updatable_fields(this.client);
       const original = extract_updatable_fields(this.original);
@@ -240,12 +240,12 @@ export default {
         JSON.stringify(updatable) !== JSON.stringify(original);
 
       if (client_changed) {
-        if (!updatable.tokenExpiration || updatable.tokenExpiration <= 0) {
-          this.errors.editing.tokenExpiration =
+        if (!updatable.token_expiration || updatable.token_expiration <= 0) {
+          this.errors.editing.token_expiration =
             "Token expiration must be a positive number";
         }
 
-        if (!this.errors.editing.tokenExpiration) {
+        if (!this.errors.editing.token_expiration) {
           requests.put_client(this.client.id, updatable).then(response => {
             if (response.success) {
               this.original = Object.assign({}, this.client);
@@ -262,34 +262,34 @@ export default {
       }
     },
     update_client_credentials: function() {
-      this.errors.existing_client.rawSecret = "";
-      this.errors.existing_client.secretConfirm = "";
+      this.errors.existing_client.raw_secret = "";
+      this.errors.existing_client.secret_confirm = "";
 
-      if (!this.input.existing_client.rawSecret) {
-        this.errors.existing_client.rawSecret = "Secret cannot be empty";
+      if (!this.input.existing_client.raw_secret) {
+        this.errors.existing_client.raw_secret = "Secret cannot be empty";
       }
 
       if (
-        !this.input.existing_client.secretConfirm ||
-        this.input.existing_client.rawSecret !=
-          this.input.existing_client.secretConfirm
+        !this.input.existing_client.secret_confirm ||
+        this.input.existing_client.raw_secret !=
+          this.input.existing_client.secret_confirm
       ) {
-        this.errors.existing_client.secretConfirm =
+        this.errors.existing_client.secret_confirm =
           "Secrets must be provided and must match";
       }
 
       if (
-        !this.errors.existing_client.rawSecret &&
-        !this.errors.existing_client.secretConfirm
+        !this.errors.existing_client.raw_secret &&
+        !this.errors.existing_client.secret_confirm
       ) {
         requests
           .put_client_credentials(this.client.id, {
-            rawSecret: this.input.existing_client.rawSecret
+            raw_secret: this.input.existing_client.raw_secret
           })
           .then(response => {
             if (response.success) {
-              this.input.existing_client.rawSecret = "";
-              this.input.existing_client.secretConfirm = "";
+              this.input.existing_client.raw_secret = "";
+              this.input.existing_client.secret_confirm = "";
               this.editing = false;
               this.editing_secret = false;
             } else {
@@ -303,7 +303,7 @@ export default {
   }
 };
 
-function extract_updatable_fields({ tokenExpiration, active }) {
-  return { tokenExpiration, active };
+function extract_updatable_fields({ token_expiration, active }) {
+  return { token_expiration, active };
 }
 </script>

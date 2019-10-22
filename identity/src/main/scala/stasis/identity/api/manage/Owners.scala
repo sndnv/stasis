@@ -22,7 +22,7 @@ class Owners(
   import stasis.identity.api.Formats._
 
   private implicit val ec: ExecutionContext = system.dispatcher
-  protected def log: LoggingAdapter = Logging(system, this.getClass.getName)
+  private val log: LoggingAdapter = Logging(system, this.getClass.getName)
 
   private implicit val secretConfig: Secret.ResourceOwnerConfig = ownerSecretConfig
 

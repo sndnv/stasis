@@ -108,7 +108,7 @@ describe('NewOwner', () => {
             return Vue.nextTick().then(function () {
                 const owner_created = new_owner.emitted()['owner-created'][0][0];
                 expect(owner_created.username).toBe(new_owner_username);
-                expect(owner_created.allowedScopes).toBe(new_owner_allowed_scopes);
+                expect(owner_created.allowed_scopes).toBe(new_owner_allowed_scopes);
                 expect(owner_created.active).toBe(true);
                 expect(owner_created.is_new).toBe(true);
                 expect(owner_created.subject).toBe(new_owner_subject);
@@ -135,7 +135,7 @@ describe('NewOwner', () => {
             return Vue.nextTick().then(function () {
                 const owner_created = new_owner.emitted()['owner-created'][0][0];
                 expect(owner_created.username).toBe(new_owner_username);
-                expect(owner_created.allowedScopes).toBe(new_owner_allowed_scopes);
+                expect(owner_created.allowed_scopes).toBe(new_owner_allowed_scopes);
                 expect(owner_created.active).toBe(true);
                 expect(owner_created.is_new).toBe(true);
                 expect(owner_created.subject).toBe('');

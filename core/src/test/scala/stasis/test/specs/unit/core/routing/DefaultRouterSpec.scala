@@ -381,17 +381,13 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router
       .pull(missingCrateId)
       .map { response =>
-        fail(s"Received unexpected pull response from router: [$response]")
-      }
-      .recover {
-        case PullFailure(message) =>
-          message should be(s"Crate [$missingCrateId] was not pulled; failed to retrieve manifest")
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(0)
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(0)
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedWithData) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedEmpty) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.PullFailed) should be(0)
+        response should be(None)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedWithData) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedEmpty) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.PullFailed) should be(0)
       }
   }
 

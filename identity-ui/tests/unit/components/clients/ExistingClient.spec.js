@@ -21,7 +21,7 @@ describe('ExistingClient', () => {
         window.confirm = default_window_confirm;
     })
 
-    const client = { id: 'some-client', redirectUri: 'some-uri', tokenExpiration: 4200, active: true }
+    const client = { id: 'some-client', redirect_uri: 'some-uri', token_expiration: 4200, active: true }
     const some_client_props = { client: client };
     const current_client_props = { client: { ...client, ...{ id: 'test-client' } } };
 

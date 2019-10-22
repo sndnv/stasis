@@ -13,6 +13,8 @@ import stasis.identity.model.tokens.{AccessToken, RefreshToken, StoredRefreshTok
 import stasis.identity.model.{ChallengeMethod, GrantType, ResponseType, Seconds}
 
 object Formats {
+  implicit val jsonConfig: JsonConfiguration = JsonConfiguration(JsonNaming.SnakeCase)
+
   implicit val authorizationErrorWrites: Writes[AuthorizationError] = Writes[AuthorizationError] { error =>
     Json.obj(
       "error" -> JsString(error.error),
@@ -82,8 +84,8 @@ object Formats {
       client =>
         Json.obj(
           "id" -> Json.toJson(client.id),
-          "redirectUri" -> Json.toJson(client.redirectUri),
-          "tokenExpiration" -> Json.toJson(client.tokenExpiration),
+          "redirect_uri" -> Json.toJson(client.redirectUri),
+          "token_expiration" -> Json.toJson(client.tokenExpiration),
           "active" -> Json.toJson(client.active),
           "subject" -> Json.toJson(client.subject)
       )
@@ -106,7 +108,7 @@ object Formats {
       owner =>
         Json.obj(
           "username" -> Json.toJson(owner.username),
-          "allowedScopes" -> Json.toJson(owner.allowedScopes),
+          "allowed_scopes" -> Json.toJson(owner.allowedScopes),
           "active" -> Json.toJson(owner.active),
           "subject" -> Json.toJson(owner.subject)
       )

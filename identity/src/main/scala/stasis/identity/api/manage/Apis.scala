@@ -19,7 +19,7 @@ class Apis(store: ApiStore)(implicit system: ActorSystem, override val mat: Mate
   import stasis.identity.api.Formats._
 
   private implicit val ec: ExecutionContext = system.dispatcher
-  protected def log: LoggingAdapter = Logging(system, this.getClass.getName)
+  private val log: LoggingAdapter = Logging(system, this.getClass.getName)
 
   def routes(user: ResourceOwner.Id): Route =
     concat(
