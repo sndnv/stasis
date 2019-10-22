@@ -13,7 +13,7 @@ parser = argparse.ArgumentParser(description='Generate new self-signed x509 cert
 parser.add_argument('common_name', type=str, help='Server name associated with certificate')
 parser.add_argument('-c', '--country', type=str, required=True, help='Certificate country')
 parser.add_argument('-l', '--location', type=str, required=True, help='Certificate location')
-parser.add_argument('-o', '--organization', type=str, default='stasis', help='Certificate country')
+parser.add_argument('-o', '--organization', type=str, default='stasis', help='Certificate organization')
 parser.add_argument('-v', '--validity', type=int, default=365, help='Certificate validity, in days')
 parser.add_argument('-k', '--key-size', type=int, default=4096, help='Private key size, in bits')
 parser.add_argument('-p', '--output-path', type=str, default='.', help='Path to use for generated files')
