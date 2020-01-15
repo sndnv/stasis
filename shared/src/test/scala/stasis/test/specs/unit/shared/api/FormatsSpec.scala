@@ -13,15 +13,17 @@ import stasis.shared.api.Formats._
 import stasis.shared.api.requests.CreateNode.{CreateLocalNode, CreateRemoteGrpcNode, CreateRemoteHttpNode}
 import stasis.shared.api.requests.UpdateNode.{UpdateLocalNode, UpdateRemoteGrpcNode, UpdateRemoteHttpNode}
 import stasis.shared.model.datasets.DatasetDefinition
-import stasis.shared.model.schedules.Schedule
+import stasis.shared.ops.Operation
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.UnitSpec
+import stasis.test.specs.unit.shared.model.Generators
 
 class FormatsSpec extends UnitSpec {
   "Formats" should "convert permissions to/from JSON" in {
     val permissions = Map(
       Permission.View.Self -> "\"view-self\"",
       Permission.View.Privileged -> "\"view-privileged\"",
+      Permission.View.Public -> "\"view-public\"",
       Permission.View.Service -> "\"view-service\"",
       Permission.Manage.Self -> "\"manage-self\"",
       Permission.Manage.Privileged -> "\"manage-privileged\"",
@@ -32,46 +34,6 @@ class FormatsSpec extends UnitSpec {
       case (permission, json) =>
         permissionFormat.writes(permission).toString should be(json)
         permissionFormat.reads(Json.parse(json)).asOpt should be(Some(permission))
-    }
-  }
-
-  they should "convert scheduling processes to/from JSON" in {
-    val processes = Map(
-      Schedule.Process.Backup -> "\"backup\"",
-      Schedule.Process.Expiration -> "\"expiration\""
-    )
-
-    processes.foreach {
-      case (process, json) =>
-        processFormat.writes(process).toString should be(json)
-        processFormat.reads(Json.parse(json)).asOpt should be(Some(process))
-    }
-  }
-
-  they should "convert missed scheduling actions to/from JSON" in {
-    val actions = Map(
-      Schedule.MissedAction.ExecuteImmediately -> "\"execute-immediately\"",
-      Schedule.MissedAction.ExecuteNext -> "\"execute-next\""
-    )
-
-    actions.foreach {
-      case (action, json) =>
-        missedActionFormat.writes(action).toString should be(json)
-        missedActionFormat.reads(Json.parse(json)).asOpt should be(Some(action))
-    }
-  }
-
-  they should "convert overlapping scheduling actions to/from JSON" in {
-    val actions = Map(
-      Schedule.OverlapAction.CancelExisting -> "\"cancel-existing\"",
-      Schedule.OverlapAction.CancelNew -> "\"cancel-new\"",
-      Schedule.OverlapAction.ExecuteAnyway -> "\"execute-anyway\""
-    )
-
-    actions.foreach {
-      case (action, json) =>
-        overlapActionFormat.writes(action).toString should be(json)
-        overlapActionFormat.reads(Json.parse(json)).asOpt should be(Some(action))
     }
   }
 
@@ -87,6 +49,24 @@ class FormatsSpec extends UnitSpec {
         retentionPolicyFormat.writes(policy).toString should be(json)
         retentionPolicyFormat.reads(Json.parse(json)).asOpt should be(Some(policy))
     }
+  }
+
+  they should "convert schedules to/from JSON with 'next_invocation' field" in {
+    val schedule = Generators.generateSchedule
+    val json =
+      s"""
+         |{
+         |"is_public":${schedule.isPublic},
+         |"start":"${schedule.start}",
+         |"interval":${schedule.interval.toSeconds},
+         |"id":"${schedule.id}",
+         |"next_invocation":"${schedule.nextInvocation}",
+         |"info":"${schedule.info}"
+         |}
+      """.stripMargin.replaceAll("\n", "").trim
+
+    scheduleFormat.writes(schedule).toString should be(json)
+    scheduleFormat.reads(Json.parse(json)).asOpt should be(Some(schedule))
   }
 
   they should "convert node creation requests to/from JSON" in {
@@ -153,5 +133,22 @@ class FormatsSpec extends UnitSpec {
       "\",\"destaged\":\"" + pending.destaged + "\"}"
 
     pendingDestagingWrites.writes(pending).toString should be(json)
+  }
+
+  they should "convert operation types to/from JSON" in {
+    val operationTypes = Map(
+      Operation.Type.Backup -> "\"client-backup\"",
+      Operation.Type.Recovery -> "\"client-recovery\"",
+      Operation.Type.Expiration -> "\"client-expiration\"",
+      Operation.Type.Validation -> "\"client-validation\"",
+      Operation.Type.KeyRotation -> "\"client-key-rotation\"",
+      Operation.Type.GarbageCollection -> "\"server-garbage-collection\""
+    )
+
+    operationTypes.foreach {
+      case (operationType, json) =>
+        operationTypeFormat.writes(operationType).toString should be(json)
+        operationTypeFormat.reads(Json.parse(json)).asOpt should be(Some(operationType))
+    }
   }
 }

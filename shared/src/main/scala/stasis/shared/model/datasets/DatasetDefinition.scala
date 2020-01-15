@@ -1,14 +1,13 @@
 package stasis.shared.model.datasets
 
-import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.devices.Device
 
 import scala.concurrent.duration.FiniteDuration
 
 final case class DatasetDefinition(
   id: DatasetDefinition.Id,
+  info: String,
   device: Device.Id,
-  schedule: Option[Schedule.Id],
   redundantCopies: Int,
   existingVersions: DatasetDefinition.Retention,
   removedVersions: DatasetDefinition.Retention

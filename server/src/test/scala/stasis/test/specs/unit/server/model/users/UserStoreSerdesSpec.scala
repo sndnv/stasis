@@ -3,7 +3,7 @@ package stasis.test.specs.unit.server.model.users
 import stasis.server.model.users.UserStoreSerdes
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.UnitSpec
-import stasis.test.specs.unit.server.model.Generators
+import stasis.test.specs.unit.shared.model.Generators
 
 class UserStoreSerdesSpec extends UnitSpec {
   "UserStoreSerdes" should "serialize and deserialize keys" in {

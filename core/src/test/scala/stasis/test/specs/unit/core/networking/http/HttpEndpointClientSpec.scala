@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.core.networking.http
 
-import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.ConnectionContext
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.stream.ActorMaterializer
@@ -21,6 +21,7 @@ import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockHttpAuthenticator
 
 import scala.collection.mutable
+import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
 class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
@@ -437,6 +438,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
     }
   }
+
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
   private implicit val untypedSystem: akka.actor.ActorSystem =
     akka.actor.ActorSystem(name = "HttpEndpointClientSpec_Untyped")

@@ -5,6 +5,12 @@ option java_package = "stasis.client.model.proto";
 
 package stasis.client;
 
+message DatasetMetadata {
+    map<string, FileMetadata> contentChanged = 1;
+    map<string, FileMetadata> metadataChanged = 2;
+    FilesystemMetadata filesystem = 3;
+}
+
 message FileMetadata {
     string path = 1;
     int64 size = 2;
@@ -16,15 +22,26 @@ message FileMetadata {
     string group = 8;
     string permissions = 9;
     bytes checksum = 10;
-    CrateId crate = 11;
+    Uuid crate = 11;
 }
 
-message DatasetMetadata {
-    repeated FileMetadata contentChanged = 1;
-    repeated FileMetadata metadataChanged = 2;
+message FilesystemMetadata {
+    map<string, FileState> files = 1;
 }
 
-message CrateId {
+message FileState {
+    message PresentNew {}
+    message PresentExisting { Uuid entry = 1; }
+    message PresentUpdated {}
+
+    oneof state {
+        PresentNew present_new = 1;
+        PresentExisting present_existing = 2;
+        PresentUpdated present_updated = 3;
+    }
+}
+
+message Uuid {
     int64 mostSignificantBits = 1;
     int64 leastSignificantBits = 2;
 }

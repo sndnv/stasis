@@ -3,7 +3,7 @@ package stasis.test.specs.unit.server.model.datasets
 import stasis.server.model.datasets.DatasetEntryStoreSerdes
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.test.specs.unit.UnitSpec
-import stasis.test.specs.unit.server.model.Generators
+import stasis.test.specs.unit.shared.model.Generators
 
 class DatasetEntryStoreSerdesSpec extends UnitSpec {
   "DatasetEntryStoreSerdes" should "serialize and deserialize keys" in {

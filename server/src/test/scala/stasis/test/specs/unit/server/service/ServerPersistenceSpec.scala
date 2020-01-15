@@ -5,7 +5,7 @@ import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import com.typesafe.config.Config
 import stasis.server.service.ServerPersistence
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.server.model.Generators
+import stasis.test.specs.unit.shared.model.Generators
 
 class ServerPersistenceSpec extends AsyncUnitSpec {
   "ServerPersistence" should "setup service data stores based on config" in {
@@ -49,7 +49,7 @@ class ServerPersistenceSpec extends AsyncUnitSpec {
     val datasetDefinitions = 4 // manage + manage-self + view + view-self
     val datasetEntries = 4 // manage + manage-self + view + view-self
     val devices = 4 // manage + manage-self + view + view-self
-    val schedules = 2 // manage + view
+    val schedules = 3 // manage + view + view-public
     val users = 4 // manage + manage-self + view + view-self
 
     persistence.resources.size should be(

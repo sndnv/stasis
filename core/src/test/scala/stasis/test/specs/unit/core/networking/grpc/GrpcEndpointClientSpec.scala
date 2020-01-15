@@ -19,6 +19,7 @@ import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockGrpcAuthenticator
 
 import scala.collection.mutable
+import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
 class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
@@ -404,6 +405,8 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
     }
   }
+
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
   private implicit val untypedSystem: akka.actor.ActorSystem =
     akka.actor.ActorSystem(name = "GrpcEndpointClientSpec_Untyped")

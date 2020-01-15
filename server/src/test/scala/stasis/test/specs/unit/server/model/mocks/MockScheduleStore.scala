@@ -13,6 +13,6 @@ object MockScheduleStore {
         s"mock-schedule-store-${java.util.UUID.randomUUID()}"
       )
 
-    ScheduleStore(backend)
+    ScheduleStore(backend)(system.dispatcher)
   }
 }

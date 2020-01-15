@@ -1,17 +1,16 @@
 package stasis.shared.api.requests
 
-import java.time.LocalTime
-
-import scala.concurrent.duration.FiniteDuration
+import java.time.LocalDateTime
 
 import stasis.shared.model.schedules.Schedule
 
+import scala.concurrent.duration.FiniteDuration
+
 final case class CreateSchedule(
-  process: Schedule.Process,
-  instant: LocalTime,
-  interval: FiniteDuration,
-  missed: Schedule.MissedAction,
-  overlap: Schedule.OverlapAction
+  info: String,
+  isPublic: Boolean,
+  start: LocalDateTime,
+  interval: FiniteDuration
 )
 
 object CreateSchedule {
@@ -19,11 +18,10 @@ object CreateSchedule {
     def toSchedule: Schedule =
       Schedule(
         id = Schedule.generateId(),
-        process = request.process,
-        instant = request.instant,
-        interval = request.interval,
-        missed = request.missed,
-        overlap = request.overlap
+        info = request.info,
+        isPublic = request.isPublic,
+        start = request.start,
+        interval = request.interval
       )
   }
 }

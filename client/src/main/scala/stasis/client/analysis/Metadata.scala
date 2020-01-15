@@ -6,46 +6,36 @@ import java.time.Instant
 
 import akka.Done
 import akka.stream.Materializer
-import stasis.client.model.{DatasetMetadata, FileMetadata, SourceFile}
+import stasis.client.model.{FileMetadata, SourceFile}
 import stasis.core.packaging.Crate
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait Metadata {
-  def collect(file: Path): Future[SourceFile]
-  def collect(file: Path, existingMetadata: Option[FileMetadata]): Future[SourceFile]
-}
-
 object Metadata {
-  class Default(checksum: Checksum, lastDatasetMetadata: DatasetMetadata)(implicit mat: Materializer) extends Metadata {
-    private implicit val ec: ExecutionContext = mat.executionContext
+  def collect(
+    checksum: Checksum,
+    file: Path,
+    existingMetadata: Option[FileMetadata]
+  )(implicit mat: Materializer): Future[SourceFile] = {
+    implicit val ec: ExecutionContext = mat.executionContext
 
-    private val existingFilesMetadata: Map[Path, FileMetadata] =
-      (lastDatasetMetadata.contentChanged ++ lastDatasetMetadata.metadataChanged).map { fileMetadata =>
-        fileMetadata.path -> fileMetadata
-      }.toMap
-
-    override def collect(file: Path): Future[SourceFile] =
-      collect(file = file, existingMetadata = existingFilesMetadata.get(file))
-
-    override def collect(file: Path, existingMetadata: Option[FileMetadata]): Future[SourceFile] =
-      for {
-        currentChecksum <- checksum.calculate(file)
-        currentMetadata <- extractFileMetadata(
-          file = file,
-          withChecksum = currentChecksum,
-          withCrate = existingMetadata match {
-            case Some(metadata) if metadata.checksum == currentChecksum => metadata.crate
-            case _                                                      => Crate.generateId()
-          }
-        )
-      } yield {
-        SourceFile(
-          path = file,
-          existingMetadata = existingMetadata,
-          currentMetadata = currentMetadata
-        )
-      }
+    for {
+      currentChecksum <- checksum.calculate(file)
+      currentMetadata <- extractFileMetadata(
+        file = file,
+        withChecksum = currentChecksum,
+        withCrate = existingMetadata match {
+          case Some(metadata) if metadata.checksum == currentChecksum => metadata.crate
+          case _                                                      => Crate.generateId()
+        }
+      )
+    } yield {
+      SourceFile(
+        path = file,
+        existingMetadata = existingMetadata,
+        currentMetadata = currentMetadata
+      )
+    }
   }
 
   def extractFileMetadata(

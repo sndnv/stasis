@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.core.api
 
+import java.util.UUID
+
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.model.Uri
@@ -22,6 +24,34 @@ class FormatsSpec extends UnitSpec {
 
     finiteDurationFormat.writes(duration).toString should be(json)
     finiteDurationFormat.reads(Json.parse(json)).asOpt should be(Some(duration))
+  }
+
+  they should "convert UUID maps to/from JSON" in {
+    val uuid1 = UUID.randomUUID()
+    val uuid2 = UUID.randomUUID()
+    val uuid3 = UUID.randomUUID()
+
+    val uuids = Map[UUID, Int](
+      uuid1 -> 1,
+      uuid2 -> 2,
+      uuid3 -> 3,
+    )
+
+    val json = s"""{"$uuid1":1,"$uuid2":2,"$uuid3":3}"""
+
+    uuidMapFormat[Int].writes(uuids).toString should be(json)
+    uuidMapFormat[Int].reads(Json.parse(json)).asOpt should be(Some(uuids))
+  }
+
+  they should "convert options to/from JSON" in {
+    val existingValue: Option[String] = Some("test-value")
+    val existingJson = "\"test-value\""
+
+    optionFormat[String].writes(existingValue).toString should be(existingJson)
+    optionFormat[String].reads(Json.parse(existingJson)).asOpt.flatten should be(existingValue)
+
+    optionFormat[String].writes(None).toString should be("null")
+    optionFormat[String].reads(Json.parse("null")).asOpt.flatten should be(None)
   }
 
   they should "convert URIs to/from JSON" in {

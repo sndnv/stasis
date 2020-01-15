@@ -1,16 +1,40 @@
 package stasis.client.model
 
-import scala.util.Try
+import java.nio.file.{Path, Paths}
 
-final case class DatasetMetadata(contentChanged: Seq[FileMetadata], metadataChanged: Seq[FileMetadata])
+import akka.NotUsed
+import akka.stream.Materializer
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
+import stasis.client.encryption.{Decoder, Encoder}
+import stasis.client.encryption.secrets.DeviceMetadataSecret
+import stasis.core.packaging.Crate
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
+
+final case class DatasetMetadata(
+  contentChanged: Map[Path, FileMetadata],
+  metadataChanged: Map[Path, FileMetadata],
+  filesystem: FilesystemMetadata
+)
 
 object DatasetMetadata {
-  def empty: DatasetMetadata = DatasetMetadata(contentChanged = Seq.empty, metadataChanged = Seq.empty)
+  def empty: DatasetMetadata = DatasetMetadata(
+    contentChanged = Map.empty,
+    metadataChanged = Map.empty,
+    filesystem = FilesystemMetadata.empty
+  )
 
   def toByteString(metadata: DatasetMetadata): akka.util.ByteString = {
     val data = proto.metadata.DatasetMetadata(
-      contentChanged = metadata.contentChanged.map(FileMetadata.toProto),
-      metadataChanged = metadata.metadataChanged.map(FileMetadata.toProto)
+      contentChanged = metadata.contentChanged.map {
+        case (file, metadata) => file.toAbsolutePath.toString -> FileMetadata.toProto(metadata)
+      },
+      metadataChanged = metadata.metadataChanged.map {
+        case (file, metadata) => file.toAbsolutePath.toString -> FileMetadata.toProto(metadata)
+      },
+      filesystem = Some(FilesystemMetadata.toProto(metadata.filesystem))
     )
 
     akka.util.ByteString(data.toByteArray)
@@ -21,21 +45,67 @@ object DatasetMetadata {
       proto.metadata.DatasetMetadata.parseFrom(bytes.toArray)
     }.flatMap { data =>
       for {
-        contentChanged <- foldTry(data.contentChanged.map(FileMetadata.fromProto))
-        metadataChanged <- foldTry(data.metadataChanged.map(FileMetadata.fromProto))
+        contentChanged <- foldTryMap(
+          source = data.contentChanged.map {
+            case (file, metadata) => Paths.get(file) -> FileMetadata.fromProto(metadata)
+          }
+        )
+        metadataChanged <- foldTryMap(
+          source = data.metadataChanged.map {
+            case (file, metadata) => Paths.get(file) -> FileMetadata.fromProto(metadata)
+          }
+        )
+        filesystem <- FilesystemMetadata.fromProto(data.filesystem)
       } yield {
         DatasetMetadata(
-          contentChanged = contentChanged.toSeq,
-          metadataChanged = metadataChanged.toSeq
+          contentChanged = contentChanged,
+          metadataChanged = metadataChanged,
+          filesystem = filesystem
         )
       }
     }
 
-  private def foldTry[T](source: Iterable[Try[T]]): Try[Iterable[T]] =
-    source.foldLeft(Try(Seq.empty[T])) {
-      case (tryCollected, tryCurrent) =>
+  def encrypt(
+    metadataCrate: Crate.Id,
+    metadataSecret: DeviceMetadataSecret,
+    metadata: DatasetMetadata,
+    encoder: Encoder
+  )(implicit mat: Materializer): Future[ByteString] =
+    Source
+      .single(metadata)
+      .map(DatasetMetadata.toByteString)
+      .via(encoder.encrypt(metadataSecret))
+      .runFold(ByteString.empty)(_ concat _)
+
+  def decrypt(
+    metadataCrate: Crate.Id,
+    metadataSecret: DeviceMetadataSecret,
+    metadata: Option[Source[ByteString, NotUsed]],
+    decoder: Decoder
+  )(implicit ec: ExecutionContext, mat: Materializer): Future[DatasetMetadata] =
+    metadata match {
+      case Some(metadata) =>
+        metadata
+          .via(decoder.decrypt(metadataSecret))
+          .runFold(ByteString.empty)(_ concat _)
+          .flatMap { metadata =>
+            DatasetMetadata.fromByteString(metadata) match {
+              case Success(metadata) => Future.successful(metadata)
+              case Failure(e)        => Future.failed(e)
+            }
+          }
+
+      case None =>
+        Future.failed(
+          new IllegalArgumentException(s"Cannot decrypt metadata crate [$metadataCrate]; no data provided")
+        )
+    }
+
+  private def foldTryMap[K, V](source: Map[K, Try[V]]): Try[Map[K, V]] =
+    source.foldLeft(Try(Map.empty[K, V])) {
+      case (tryCollected, (key, tryCurrent)) =>
         tryCollected.flatMap { collected =>
-          tryCurrent.map(current => collected :+ current)
+          tryCurrent.map(current => collected + (key -> current))
         }
     }
 }

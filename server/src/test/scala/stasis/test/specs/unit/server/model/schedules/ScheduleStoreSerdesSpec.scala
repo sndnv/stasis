@@ -3,7 +3,7 @@ package stasis.test.specs.unit.server.model.schedules
 import stasis.server.model.schedules.ScheduleStoreSerdes
 import stasis.shared.model.schedules.Schedule
 import stasis.test.specs.unit.UnitSpec
-import stasis.test.specs.unit.server.model.Generators
+import stasis.test.specs.unit.shared.model.Generators
 
 class ScheduleStoreSerdesSpec extends UnitSpec {
   "ScheduleStoreSerdes" should "serialize and deserialize keys" in {

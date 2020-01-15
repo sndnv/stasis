@@ -1,28 +1,27 @@
 package stasis.test.specs.unit.server.service
 
-import java.time.LocalTime
+import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit.MINUTES
 import java.util.UUID
 
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter._
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.event.{Logging, LoggingAdapter}
 import com.typesafe.config.Config
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.routing.Node
-import stasis.server.service.Bootstrap.Entities
 import stasis.server.service.{Bootstrap, CorePersistence, ServerPersistence}
+import stasis.server.service.Bootstrap.Entities
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.devices.Device
-import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.{Generators => CoreGenerators}
-import stasis.test.specs.unit.server.model.Generators
+import stasis.test.specs.unit.shared.model.Generators
 
 import scala.concurrent.duration._
 
@@ -160,23 +159,17 @@ class BootstrapSpec extends AsyncUnitSpec {
 
           actualSchedules.values.toList.sortBy(_.id.toString) match {
             case schedule1 :: schedule2 :: schedule3 :: Nil =>
-              schedule1.process should be(Schedule.Process.Expiration)
-              schedule1.instant.truncatedTo(MINUTES) should be(LocalTime.now().truncatedTo(MINUTES))
+              schedule1.info should be("test-schedule-01")
+              schedule1.start.truncatedTo(MINUTES) should be(LocalDateTime.now().truncatedTo(MINUTES))
               schedule1.interval should be(30.minutes)
-              schedule1.missed should be(Schedule.MissedAction.ExecuteNext)
-              schedule1.overlap should be(Schedule.OverlapAction.CancelExisting)
 
-              schedule2.process should be(Schedule.Process.Backup)
-              schedule2.instant should be(LocalTime.parse("10:30"))
+              schedule2.info should be("test-schedule-02")
+              schedule2.start should be(LocalDateTime.parse("2000-12-31T10:30:00"))
               schedule2.interval should be(12.hours)
-              schedule2.missed should be(Schedule.MissedAction.ExecuteImmediately)
-              schedule2.overlap should be(Schedule.OverlapAction.CancelNew)
 
-              schedule3.process should be(Schedule.Process.Backup)
-              schedule3.instant should be(LocalTime.parse("12:00"))
+              schedule3.info should be("test-schedule-03")
+              schedule3.start should be(LocalDateTime.parse("2000-12-31T12:00:00"))
               schedule3.interval should be(1.hour)
-              schedule3.missed should be(Schedule.MissedAction.ExecuteImmediately)
-              schedule3.overlap should be(Schedule.OverlapAction.ExecuteAnyway)
 
             case unexpectedResult =>
               fail(s"Unexpected result received: [$unexpectedResult]")
@@ -185,7 +178,7 @@ class BootstrapSpec extends AsyncUnitSpec {
           actualUsers.values.toList.sortBy(_.id.toString) match {
             case user1 :: user2 :: Nil =>
               user1.active should be(true)
-              user1.permissions should be(Set(Permission.View.Self, Permission.Manage.Self))
+              user1.permissions should be(Set(Permission.View.Self, Permission.View.Public, Permission.Manage.Self))
               user1.limits should be(None)
 
               user2.id should be(expectedUserId)
@@ -194,6 +187,7 @@ class BootstrapSpec extends AsyncUnitSpec {
                 Set(
                   Permission.View.Self,
                   Permission.View.Privileged,
+                  Permission.View.Public,
                   Permission.View.Service,
                   Permission.Manage.Self,
                   Permission.Manage.Privileged,

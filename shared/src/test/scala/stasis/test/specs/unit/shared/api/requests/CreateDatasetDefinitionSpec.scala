@@ -11,16 +11,16 @@ class CreateDatasetDefinitionSpec extends UnitSpec {
   it should "convert requests to definitions" in {
     val expectedDefinition = DatasetDefinition(
       id = DatasetDefinition.generateId(),
+      info = "test-definition",
       device = Device.generateId(),
-      schedule = None,
       redundantCopies = 1,
       existingVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.All, duration = 1.second),
       removedVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.LatestOnly, duration = 1.second)
     )
 
     val request = CreateDatasetDefinition(
+      info = expectedDefinition.info,
       device = expectedDefinition.device,
-      schedule = expectedDefinition.schedule,
       redundantCopies = expectedDefinition.redundantCopies,
       existingVersions = expectedDefinition.existingVersions,
       removedVersions = expectedDefinition.removedVersions

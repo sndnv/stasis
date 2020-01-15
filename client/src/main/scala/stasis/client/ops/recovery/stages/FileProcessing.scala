@@ -1,27 +1,27 @@
 package stasis.client.ops.recovery.stages
 
+import akka.{Done, NotUsed}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Flow, Source}
 import akka.util.ByteString
-import akka.{Done, NotUsed}
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.{FileMetadata, SourceFile}
+import stasis.client.ops.recovery.Providers
 import stasis.client.ops.ParallelismConfig
-import stasis.client.ops.recovery.{Clients, Providers}
 import stasis.core.routing.exceptions.PullFailure
+import stasis.shared.ops.Operation
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait FileProcessing {
   protected def deviceSecret: DeviceSecret
   protected def providers: Providers
-  protected def clients: Clients
   protected def parallelism: ParallelismConfig
 
   protected implicit def mat: Materializer
   protected implicit def ec: ExecutionContext
 
-  def fileProcessing: Flow[SourceFile, FileMetadata, NotUsed] =
+  def fileProcessing(implicit operation: Operation.Id): Flow[SourceFile, FileMetadata, NotUsed] =
     Flow[SourceFile]
       .mapAsync(parallelism.value) { sourceFile =>
         sourceFile.existingMetadata match {
@@ -49,9 +49,10 @@ trait FileProcessing {
         name = "File Processing",
         extract = metadata => s"Processed file [${metadata.path}]"
       )
+      .wireTap(metadata => providers.track.fileProcessed(file = metadata.path))
 
   private def pull(fileMetadata: FileMetadata): Future[Source[ByteString, NotUsed]] =
-    clients.core
+    providers.clients.core
       .pull(fileMetadata.crate)
       .flatMap {
         case Some(source) =>

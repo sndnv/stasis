@@ -2,14 +2,14 @@ package stasis.core.persistence.backends.memory
 
 import java.util.UUID
 
-import scala.concurrent.{ExecutionContext, Future}
+import akka.{Done, NotUsed}
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.util.{ByteString, Timeout}
-import akka.{Done, NotUsed}
 import stasis.core.persistence.backends.StreamingBackend
 
-@SuppressWarnings(Array("org.wartremover.warts.Any"))
+import scala.concurrent.{ExecutionContext, Future}
+
 class StreamingMemoryBackend private (
   backend: MemoryBackend[UUID, ByteString],
   val maxSize: Long,
@@ -30,7 +30,7 @@ class StreamingMemoryBackend private (
         .mapAsyncUnordered(parallelism = 1) { data =>
           backend.put(key, data)
         }
-        .toMat(Sink.ignore)(Keep.right)
+        .toMat(Sink.ignore)(Keep.right[NotUsed, Future[Done]])
     )
 
   override def source(key: UUID): Future[Option[Source[ByteString, NotUsed]]] =

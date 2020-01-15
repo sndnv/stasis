@@ -24,6 +24,7 @@ import stasis.test.specs.unit.server.model.mocks.{MockDatasetEntryStore, MockDev
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
@@ -89,6 +90,43 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get(s"/own/for-definition/$definition") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[DatasetEntry]] should contain theSameElementsAs entries.take(1)
+    }
+  }
+
+  they should "respond with the latest entry for a definition" in {
+    val fixtures = new TestFixtures {}
+
+    val ownEntries = entries.map(_.copy(device = userDevice.id))
+
+    Future.sequence(ownEntries.map(fixtures.entryStore.manage().create)).await
+    fixtures.deviceStore.manage().create(userDevice).await
+
+    Get(s"/own/for-definition/$definition/latest") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[DatasetEntry] should be(latestEntry.copy(device = userDevice.id))
+    }
+  }
+
+  they should "fail to retrieve latest entry if none could be found" in {
+    val fixtures = new TestFixtures {}
+    Get(s"/own/for-definition/$definition/latest") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.NotFound)
+    }
+  }
+
+  they should "respond with the latest entry for a definition up to a timestamp" in {
+    val fixtures = new TestFixtures {}
+
+    val ownEntries = entries.map(_.copy(device = userDevice.id))
+
+    Future.sequence(ownEntries.map(fixtures.entryStore.manage().create)).await
+    fixtures.deviceStore.manage().create(userDevice).await
+
+    val until = latestEntry.created.minusSeconds((entryCreationDifference / 2).toSeconds)
+
+    Get(s"/own/for-definition/$definition/latest?until=$until") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[DatasetEntry] should be(earliestEntry.copy(device = userDevice.id))
     }
   }
 
@@ -199,23 +237,29 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       limits = None
     )
 
+  private val entryCreationDifference = 30.seconds
+
+  private val earliestEntry = DatasetEntry(
+    id = DatasetEntry.generateId(),
+    definition = definition,
+    device = userDevice.id,
+    data = Set.empty,
+    metadata = Crate.generateId(),
+    created = Instant.now().minusSeconds(entryCreationDifference.toSeconds)
+  )
+
+  private val latestEntry = DatasetEntry(
+    id = DatasetEntry.generateId(),
+    definition = definition,
+    device = Device.generateId(),
+    data = Set.empty,
+    metadata = Crate.generateId(),
+    created = Instant.now()
+  )
+
   private val entries = Seq(
-    DatasetEntry(
-      id = DatasetEntry.generateId(),
-      definition = definition,
-      device = userDevice.id,
-      data = Set.empty,
-      metadata = Crate.generateId(),
-      created = Instant.now()
-    ),
-    DatasetEntry(
-      id = DatasetEntry.generateId(),
-      definition = definition,
-      device = Device.generateId(),
-      data = Set.empty,
-      metadata = Crate.generateId(),
-      created = Instant.now()
-    )
+    earliestEntry,
+    latestEntry
   )
 
   private val createRequest = CreateDatasetEntry(
