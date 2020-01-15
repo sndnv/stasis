@@ -77,6 +77,7 @@ class ServerPersistence(
     devices.viewSelf(),
     schedules.manage(),
     schedules.view(),
+    schedules.viewPublic(),
     users.manage(),
     users.manageSelf(),
     users.view(),

@@ -8,7 +8,7 @@ import java.time.temporal.ChronoUnit
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import stasis.client.analysis.{Checksum, Metadata}
-import stasis.client.model.{DatasetMetadata, FileMetadata}
+import stasis.client.model.FileMetadata
 import stasis.core.packaging.Crate
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
@@ -107,16 +107,12 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       crate = Crate.generateId()
     )
 
-    val collector = new Metadata.Default(
-      checksum = Checksum.MD5,
-      lastDatasetMetadata = DatasetMetadata(
-        contentChanged = Seq.empty,
-        metadataChanged = Seq(existingFileMetadata)
+    Metadata
+      .collect(
+        checksum = Checksum.MD5,
+        file = sourceFile,
+        existingMetadata = Some(existingFileMetadata)
       )
-    )
-
-    collector
-      .collect(file = sourceFile)
       .map { actualSourceFile =>
         actualSourceFile.existingMetadata should not be empty
 
@@ -153,16 +149,12 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
 
     val expectedChecksum = BigInt("338496524657487844672953225842489206917")
 
-    val collector = new Metadata.Default(
-      checksum = Checksum.MD5,
-      lastDatasetMetadata = DatasetMetadata(
-        contentChanged = Seq.empty,
-        metadataChanged = Seq(existingFileMetadata)
+    Metadata
+      .collect(
+        checksum = Checksum.MD5,
+        file = sourceFile,
+        existingMetadata = Some(existingFileMetadata)
       )
-    )
-
-    collector
-      .collect(file = sourceFile)
       .map { actualSourceFile =>
         actualSourceFile.existingMetadata should not be empty
 

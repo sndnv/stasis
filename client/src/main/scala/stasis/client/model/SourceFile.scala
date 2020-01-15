@@ -2,7 +2,11 @@ package stasis.client.model
 
 import java.nio.file.Path
 
-final case class SourceFile(path: Path, existingMetadata: Option[FileMetadata], currentMetadata: FileMetadata) {
+final case class SourceFile(
+  path: Path,
+  existingMetadata: Option[FileMetadata],
+  currentMetadata: FileMetadata
+) {
   def hasChanged: Boolean =
     existingMetadata match {
       case Some(existing) => existing != currentMetadata

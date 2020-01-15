@@ -3,7 +3,7 @@ package stasis.test.specs.unit.server.model.devices
 import stasis.server.model.devices.DeviceStoreSerdes
 import stasis.shared.model.devices.Device
 import stasis.test.specs.unit.UnitSpec
-import stasis.test.specs.unit.server.model.Generators
+import stasis.test.specs.unit.shared.model.Generators
 
 class DeviceStoreSerdesSpec extends UnitSpec {
   "DeviceStoreSerdes" should "serialize and deserialize keys" in {

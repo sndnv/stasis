@@ -7,7 +7,8 @@ import java.time.temporal.ChronoUnit
 import akka.util.ByteString
 import stasis.client.encryption.secrets.{DeviceSecret, Secret}
 import stasis.client.model.FileMetadata
-import stasis.shared.model.datasets.DatasetDefinition
+import stasis.core.packaging.Crate
+import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
 
@@ -15,7 +16,7 @@ import scala.concurrent.duration._
 
 object Fixtures {
   object Metadata {
-    final val FileOneMetadata = FileMetadata(
+    final lazy val FileOneMetadata = FileMetadata(
       path = Paths.get("/tmp/file/one"),
       size = 1,
       link = None,
@@ -29,7 +30,7 @@ object Fixtures {
       crate = java.util.UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
     )
 
-    final val FileTwoMetadata = FileMetadata(
+    final lazy val FileTwoMetadata = FileMetadata(
       path = Paths.get("/tmp/file/two"),
       size = 2,
       link = Some(Paths.get("/tmp/file/three")),
@@ -43,7 +44,7 @@ object Fixtures {
       crate = java.util.UUID.fromString("e672a956-1a95-4304-8af0-9418f0e43cba")
     )
 
-    final val FileThreeMetadata = FileMetadata(
+    final lazy val FileThreeMetadata = FileMetadata(
       path = Paths.get("/tmp/file/four"),
       size = 2,
       link = None,
@@ -59,10 +60,10 @@ object Fixtures {
   }
 
   object Datasets {
-    final val Default = DatasetDefinition(
+    final lazy val Default = DatasetDefinition(
       id = DatasetDefinition.generateId(),
+      info = "default-test-definition",
       device = Device.generateId(),
-      schedule = None,
       redundantCopies = 1,
       existingVersions = DatasetDefinition.Retention(
         policy = DatasetDefinition.Retention.Policy.All,
@@ -75,8 +76,23 @@ object Fixtures {
     )
   }
 
+  object Entries {
+    final lazy val Default = DatasetEntry(
+      id = DatasetEntry.generateId(),
+      definition = Datasets.Default.id,
+      device = Datasets.Default.device,
+      data = Set(
+        Metadata.FileOneMetadata.crate,
+        Metadata.FileTwoMetadata.crate,
+        Metadata.FileThreeMetadata.crate
+      ),
+      metadata = Crate.generateId(),
+      created = Instant.now()
+    )
+  }
+
   object Secrets {
-    final val DefaultConfig = Secret.Config(
+    final lazy val DefaultConfig = Secret.Config(
       derivation = Secret.DerivationConfig(
         encryption = Secret.KeyDerivationConfig(secretSize = 1, iterations = 1, saltPrefix = ""),
         authentication = Secret.KeyDerivationConfig(secretSize = 1, iterations = 1, saltPrefix = "")
@@ -88,7 +104,7 @@ object Fixtures {
       )
     )
 
-    final val Default = DeviceSecret(
+    final lazy val Default = DeviceSecret(
       user = User.generateId(),
       device = Device.generateId(),
       secret = ByteString("some-secret")

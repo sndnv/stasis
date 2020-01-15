@@ -282,8 +282,8 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
 
   private val mockDefinition = DatasetDefinition(
     id = DatasetDefinition.generateId(),
+    info = "test-definition",
     device = Device.generateId(),
-    schedule = None,
     redundantCopies = 1,
     existingVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.LatestOnly, 1.second),
     removedVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.LatestOnly, 1.second)

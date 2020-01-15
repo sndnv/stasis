@@ -1,13 +1,13 @@
 package stasis.server.service
 
 import java.io.File
-import java.time.LocalTime
+import java.time.LocalDateTime
 import java.util.UUID
 
 import akka.Done
 import akka.event.LoggingAdapter
-import com.typesafe.config.ConfigFactory
 import com.typesafe.{config => typesafe}
+import com.typesafe.config.ConfigFactory
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.crates.CrateStore
@@ -19,8 +19,8 @@ import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 
 import scala.collection.JavaConverters._
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration._
 import scala.util.Try
 import scala.util.control.NonFatal
 
@@ -94,8 +94,8 @@ object Bootstrap {
   private def definitionFromConfig(config: typesafe.Config): DatasetDefinition =
     DatasetDefinition(
       id = UUID.fromString(config.getString("id")),
+      info = config.getString("info"),
       device = UUID.fromString(config.getString("device")),
-      schedule = Try(config.getString("schedule")).filter(_.trim.nonEmpty).toOption.map(UUID.fromString),
       redundantCopies = config.getInt("redundant-copies"),
       existingVersions = retentionFromConfig(config.getConfig("existing-versions")),
       removedVersions = retentionFromConfig(config.getConfig("removed-versions"))
@@ -132,25 +132,14 @@ object Bootstrap {
   private def scheduleFromConfig(config: typesafe.Config): Schedule =
     Schedule(
       id = UUID.fromString(config.getString("id")),
-      process = config.getString("process").toLowerCase match {
-        case "backup"     => Schedule.Process.Backup
-        case "expiration" => Schedule.Process.Expiration
-      },
-      instant = Try(config.getString("instant"))
+      info = config.getString("info"),
+      isPublic = config.getBoolean("public"),
+      start = Try(config.getString("start"))
         .filter(_.trim.nonEmpty)
         .toOption
-        .map(LocalTime.parse)
-        .getOrElse(LocalTime.now()),
-      interval = config.getDuration("interval").toSeconds.seconds,
-      missed = config.getString("missed").toLowerCase match {
-        case "execute-immediately" => Schedule.MissedAction.ExecuteImmediately
-        case "execute-next"        => Schedule.MissedAction.ExecuteNext
-      },
-      overlap = config.getString("overlap").toLowerCase match {
-        case "cancel-existing" => Schedule.OverlapAction.CancelExisting
-        case "cancel-new"      => Schedule.OverlapAction.CancelNew
-        case "execute-anyway"  => Schedule.OverlapAction.ExecuteAnyway
-      }
+        .map(LocalDateTime.parse)
+        .getOrElse(LocalDateTime.now()),
+      interval = config.getDuration("interval").toSeconds.seconds
     )
 
   private def userFromConfig(config: typesafe.Config): User =
@@ -177,6 +166,7 @@ object Bootstrap {
       .collect {
         case "view" :: "self" :: Nil         => Permission.View.Self: Permission
         case "view" :: "privileged" :: Nil   => Permission.View.Privileged: Permission
+        case "view" :: "public" :: Nil       => Permission.View.Public: Permission
         case "view" :: "service" :: Nil      => Permission.View.Service: Permission
         case "manage" :: "self" :: Nil       => Permission.Manage.Self: Permission
         case "manage" :: "privileged" :: Nil => Permission.Manage.Privileged: Permission

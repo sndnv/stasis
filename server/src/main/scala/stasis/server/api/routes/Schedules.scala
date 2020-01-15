@@ -43,6 +43,36 @@ class Schedules()(implicit ctx: RoutesContext) extends ApiRoutes {
           }
         )
       },
+      pathPrefix("public") {
+        concat(
+          pathEndOrSingleSlash {
+            get {
+              resource[ScheduleStore.View.Public] { view =>
+                view.list().map { schedules =>
+                  log.info("User [{}] successfully retrieved [{}] public schedules", currentUser, schedules.size)
+                  discardEntity & complete(schedules.values)
+                }
+              }
+            }
+          },
+          path(JavaUUID) {
+            scheduleId =>
+              get {
+                resource[ScheduleStore.View.Public] { view =>
+                  view.get(scheduleId).map {
+                    case Some(schedule) =>
+                      log.info("User [{}] successfully retrieved public schedule [{}]", currentUser, scheduleId)
+                      discardEntity & complete(schedule)
+
+                    case None =>
+                      log.warning("User [{}] failed to retrieve public schedule [{}]", currentUser, scheduleId)
+                      discardEntity & complete(StatusCodes.NotFound)
+                  }
+                }
+              }
+          }
+        )
+      },
       path(JavaUUID) { scheduleId =>
         concat(
           get {

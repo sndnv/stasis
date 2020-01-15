@@ -7,25 +7,6 @@ import stasis.test.specs.unit.client.Fixtures
 import scala.util.{Failure, Success}
 
 class FileMetadataSpec extends UnitSpec {
-  private val fileMetadataProto = proto.metadata.FileMetadata(
-    path = Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath.toString,
-    size = Fixtures.Metadata.FileOneMetadata.size,
-    link = Fixtures.Metadata.FileOneMetadata.link.fold("")(_.toAbsolutePath.toString),
-    isHidden = Fixtures.Metadata.FileOneMetadata.isHidden,
-    created = Fixtures.Metadata.FileOneMetadata.created.getEpochSecond,
-    updated = Fixtures.Metadata.FileOneMetadata.updated.getEpochSecond,
-    owner = Fixtures.Metadata.FileOneMetadata.owner,
-    group = Fixtures.Metadata.FileOneMetadata.group,
-    permissions = Fixtures.Metadata.FileOneMetadata.permissions,
-    checksum = com.google.protobuf.ByteString.copyFrom(Fixtures.Metadata.FileOneMetadata.checksum.toByteArray),
-    crate = Some(
-      proto.metadata.CrateId(
-        mostSignificantBits = Fixtures.Metadata.FileOneMetadata.crate.getMostSignificantBits,
-        leastSignificantBits = Fixtures.Metadata.FileOneMetadata.crate.getLeastSignificantBits
-      )
-    )
-  )
-
   "A FileMetadata" should "be serializable to protobuf data" in {
     FileMetadata.toProto(fileMetadata = Fixtures.Metadata.FileOneMetadata) should be(fileMetadataProto)
   }
@@ -40,4 +21,23 @@ class FileMetadataSpec extends UnitSpec {
       case Failure(e)        => e shouldBe a[IllegalArgumentException]
     }
   }
+
+  private val fileMetadataProto = proto.metadata.FileMetadata(
+    path = Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath.toString,
+    size = Fixtures.Metadata.FileOneMetadata.size,
+    link = Fixtures.Metadata.FileOneMetadata.link.fold("")(_.toAbsolutePath.toString),
+    isHidden = Fixtures.Metadata.FileOneMetadata.isHidden,
+    created = Fixtures.Metadata.FileOneMetadata.created.getEpochSecond,
+    updated = Fixtures.Metadata.FileOneMetadata.updated.getEpochSecond,
+    owner = Fixtures.Metadata.FileOneMetadata.owner,
+    group = Fixtures.Metadata.FileOneMetadata.group,
+    permissions = Fixtures.Metadata.FileOneMetadata.permissions,
+    checksum = com.google.protobuf.ByteString.copyFrom(Fixtures.Metadata.FileOneMetadata.checksum.toByteArray),
+    crate = Some(
+      proto.metadata.Uuid(
+        mostSignificantBits = Fixtures.Metadata.FileOneMetadata.crate.getMostSignificantBits,
+        leastSignificantBits = Fixtures.Metadata.FileOneMetadata.crate.getLeastSignificantBits
+      )
+    )
+  )
 }

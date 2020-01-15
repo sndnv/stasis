@@ -2,8 +2,6 @@ package stasis.test.specs.unit.server.model.datasets
 
 import java.time.Instant
 
-import scala.util.control.NonFatal
-
 import akka.Done
 import akka.actor.ActorSystem
 import stasis.core.packaging.Crate
@@ -12,6 +10,9 @@ import stasis.shared.model.devices.Device
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.MockDatasetEntryStore
+
+import scala.concurrent.duration._
+import scala.util.control.NonFatal
 
 class DatasetEntryStoreSpec extends AsyncUnitSpec {
   "A DatasetEntryStore" should "provide a view resource (privileged)" in {
@@ -46,6 +47,39 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
       result.size should be(2)
       result.get(mockEntry.id) should be(Some(mockEntry))
     }
+  }
+
+  it should "return the latest entry for a definition via view resource (privileged)" in {
+    val store = MockDatasetEntryStore()
+
+    store.manage().create(earliestEntry).await
+    store.manage().create(otherEntry).await
+    store.manage().create(latestEntry).await
+
+    store
+      .view()
+      .latest(definition = earliestEntry.definition, until = None)
+      .map { result =>
+        result should be(Some(latestEntry))
+      }
+  }
+
+  it should "return the latest entry for a definition up to a timestamp via view resource (privileged)" in {
+    val store = MockDatasetEntryStore()
+
+    store.manage().create(earliestEntry).await
+    store.manage().create(otherEntry).await
+    store.manage().create(latestEntry).await
+
+    store
+      .view()
+      .latest(
+        definition = earliestEntry.definition,
+        until = Some(earliestEntry.created.plusSeconds((entryCreationDifference / 2).toSeconds))
+      )
+      .map { result =>
+        result should be(Some(earliestEntry))
+      }
   }
 
   it should "provide a view resource (self)" in {
@@ -92,13 +126,77 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
 
     val ownEntry = mockEntry.copy(device = ownDevices.head)
     store.manage().create(ownEntry).await
-    store.manage().create(mockEntry.copy(id = DatasetDefinition.generateId())).await
-    store.manage().create(mockEntry.copy(id = DatasetDefinition.generateId())).await
+    store.manage().create(mockEntry.copy(id = DatasetEntry.generateId())).await
+    store.manage().create(mockEntry.copy(id = DatasetEntry.generateId())).await
 
     store.viewSelf().list(ownDevices, ownEntry.definition).map { result =>
       result.size should be(1)
       result.get(ownEntry.id) should be(Some(ownEntry))
     }
+  }
+
+  it should "return the latest entry for a definition via view resource (self)" in {
+    val store = MockDatasetEntryStore()
+
+    val earliestOwnEntry = earliestEntry.copy(device = ownDevices.head)
+    val otherOwnEntry = otherEntry.copy(device = ownDevices.head)
+
+    store.manage().create(earliestOwnEntry).await
+    store.manage().create(otherOwnEntry).await
+    store.manage().create(latestEntry).await
+
+    store
+      .viewSelf()
+      .latest(ownDevices = ownDevices, definition = earliestOwnEntry.definition, until = None)
+      .map { result =>
+        result should be(Some(otherOwnEntry))
+      }
+  }
+
+  it should "return the latest entry for a definition up to a timestamp via view resource (self)" in {
+    val store = MockDatasetEntryStore()
+
+    val earliestOwnEntry = earliestEntry.copy(device = ownDevices.head)
+    val otherOwnEntry = otherEntry.copy(device = ownDevices.head)
+
+    store.manage().create(earliestOwnEntry).await
+    store.manage().create(otherOwnEntry).await
+    store.manage().create(latestEntry).await
+
+    store
+      .viewSelf()
+      .latest(
+        ownDevices = ownDevices,
+        definition = earliestOwnEntry.definition,
+        until = Some(earliestOwnEntry.created.plusSeconds((entryCreationDifference / 2).toSeconds))
+      )
+      .map { result =>
+        result should be(Some(earliestOwnEntry))
+      }
+  }
+
+  it should "fail to return a latest entry for a definition not for current user via view resource (self)" in {
+    val store = MockDatasetEntryStore()
+
+    store.manage().create(mockEntry).await
+
+    store
+      .viewSelf()
+      .latest(ownDevices = ownDevices, definition = mockEntry.definition, until = None)
+      .map { result =>
+        result should be(None)
+      }
+  }
+
+  it should "fail to return a latest entry for a definition when none is found via view resource (self)" in {
+    val store = MockDatasetEntryStore()
+
+    store
+      .viewSelf()
+      .latest(ownDevices = ownDevices, definition = mockEntry.definition, until = None)
+      .map { result =>
+        result should be(None)
+      }
   }
 
   it should "provide management resource (privileged)" in {
@@ -242,5 +340,19 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
     data = Set.empty,
     metadata = Crate.generateId(),
     created = Instant.now()
+  )
+
+  private val entryCreationDifference = 30.seconds
+
+  private val earliestEntry = mockEntry
+
+  private val otherEntry = mockEntry.copy(
+    id = DatasetEntry.generateId(),
+    created = earliestEntry.created.plusSeconds(entryCreationDifference.toSeconds)
+  )
+
+  private val latestEntry = mockEntry.copy(
+    id = DatasetEntry.generateId(),
+    created = earliestEntry.created.plusSeconds((entryCreationDifference * 2).toSeconds)
   )
 }

@@ -1,16 +1,16 @@
 package stasis.test.specs.unit.server.api
 
-import java.time.{Instant, LocalTime}
+import java.time.{Instant, LocalDateTime}
 import java.util.UUID
 
-import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{Behavior, SpawnProtocol}
+import akka.actor.typed.scaladsl.Behaviors
 import akka.event.{Logging, LoggingAdapter}
-import akka.http.scaladsl.model.headers.BasicHttpCredentials
+import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import play.api.libs.json.JsArray
@@ -31,6 +31,7 @@ import stasis.server.model.schedules.ScheduleStore
 import stasis.server.model.staging.ServerStagingStore
 import stasis.server.model.users.UserStore
 import stasis.server.security.{ResourceProvider, UserAuthenticator}
+import stasis.shared.api.responses.Ping
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
@@ -50,7 +51,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import stasis.core.api.Formats._
   import stasis.shared.api.Formats._
 
-  "A ApiEndpoint" should "successfully authenticate a user" in {
+  "An ApiEndpoint" should "successfully authenticate users" in {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
@@ -70,7 +71,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "fail to authenticate a user with no credentials" in {
+  it should "fail to authenticate users with no credentials" in {
     val fixtures = new TestFixtures {}
 
     Get("/users") ~> fixtures.endpoint.endpointRoutes ~> check {
@@ -78,7 +79,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "fail to authenticate a user with invalid username" in {
+  it should "fail to authenticate users with invalid credentials" in {
     val fixtures = new TestFixtures {}
 
     Get("/users")
@@ -103,8 +104,8 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     val definition = DatasetDefinition(
       id = DatasetDefinition.generateId(),
+      info = "test-definition",
       device = Device.generateId(),
-      schedule = None,
       redundantCopies = 1,
       existingVersions = DatasetDefinition.Retention(
         DatasetDefinition.Retention.Policy.All,
@@ -197,11 +198,10 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     val schedule = Schedule(
       id = Schedule.generateId(),
-      process = Schedule.Process.Backup,
-      instant = LocalTime.now(),
-      interval = 3.seconds,
-      missed = Schedule.MissedAction.ExecuteImmediately,
-      overlap = Schedule.OverlapAction.ExecuteAnyway
+      info = "test-schedule",
+      isPublic = true,
+      start = LocalDateTime.now(),
+      interval = 3.seconds
     )
 
     fixtures.scheduleStore.manage().create(schedule).await
@@ -281,6 +281,17 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get("/staging").addCredentials(testCredentials) ~> fixtures.endpoint.endpointRoutes ~> check {
       status should be(StatusCodes.OK)
       responseAs[JsArray].value.map(_ \ "crate").map(_.as[UUID]) should be(Seq(testManifest.crate))
+    }
+  }
+
+  it should "provide service routes" in {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+
+    val fixtures = new TestFixtures {}
+
+    Get("/service/ping").addCredentials(testCredentials) ~> fixtures.endpoint.endpointRoutes ~> check {
+      status should be(StatusCodes.OK)
+      noException should be thrownBy responseAs[Ping]
     }
   }
 

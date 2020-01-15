@@ -1,28 +1,27 @@
 package stasis.test.specs.unit.client.ops.backup.stages
 
 import akka.actor.ActorSystem
-import akka.stream.scaladsl.Source
 import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.scaladsl.Source
+import stasis.client.analysis.Checksum
+import stasis.client.api.clients.Clients
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.{FileMetadata, SourceFile}
 import stasis.client.ops.ParallelismConfig
+import stasis.client.ops.backup.Providers
 import stasis.client.ops.backup.stages.FileProcessing
-import stasis.client.ops.backup.{Clients, Providers}
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
 import stasis.shared.model.datasets.DatasetDefinition
-import stasis.shared.model.devices.Device
+import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.mocks._
 import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
+import stasis.test.specs.unit.client.mocks.{MockBackupTracker, _}
 
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
 
 class FileProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
-  private implicit val system: ActorSystem = ActorSystem(name = "FileProcessingSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
-
   "A Backup FileProcessing stage" should "process files with changed content and metadata" in {
     val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractMetadata(
       withChecksum = 1,
@@ -60,20 +59,25 @@ class FileProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
     val mockStaging = new MockFileStaging()
     val mockCompression = new MockCompression()
     val mockEncryption = new MockEncryption()
-    val mockCoreClient = new MockServerCoreEndpointClient(self = Node.generateId(), crates = Map.empty)
+    val mockCoreClient = MockServerCoreEndpointClient()
+    val mockTracker = new MockBackupTracker
+
+    implicit val operationId: Operation.Id = Operation.generateId()
 
     val stage = new FileProcessing {
       override protected def targetDataset: DatasetDefinition = Fixtures.Datasets.Default
       override protected def deviceSecret: DeviceSecret = Fixtures.Secrets.Default
       override protected def providers: Providers = Providers(
-        collector = new MockBackupCollector(List.empty),
+        checksum = Checksum.MD5,
         staging = mockStaging,
         compressor = mockCompression,
-        encryptor = mockEncryption
-      )
-      override protected def clients: Clients = Clients(
-        api = new MockServerApiEndpointClient(self = Device.generateId()),
-        core = mockCoreClient
+        encryptor = mockEncryption,
+        decryptor = mockEncryption,
+        clients = Clients(
+          api = MockServerApiEndpointClient(),
+          core = mockCoreClient
+        ),
+        track = mockTracker
       )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
       override implicit protected def mat: Materializer = spec.mat
@@ -106,6 +110,13 @@ class FileProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
 
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(2)
+
+        mockTracker.statistics(MockBackupTracker.Statistic.FileCollected) should be(0)
+        mockTracker.statistics(MockBackupTracker.Statistic.FileProcessed) should be(3)
+        mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
+        mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
+        mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
+        mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
       }
   }
 
@@ -129,19 +140,24 @@ class FileProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
       crates = Map.empty,
       pushDisabled = true
     )
+    val mockTracker = new MockBackupTracker
+
+    implicit val operationId: Operation.Id = Operation.generateId()
 
     val stage = new FileProcessing {
       override protected def targetDataset: DatasetDefinition = Fixtures.Datasets.Default
       override protected def deviceSecret: DeviceSecret = Fixtures.Secrets.Default
       override protected def providers: Providers = Providers(
-        collector = new MockBackupCollector(List.empty),
+        checksum = Checksum.MD5,
         staging = mockStaging,
         compressor = mockCompression,
-        encryptor = mockEncryption
-      )
-      override protected def clients: Clients = Clients(
-        api = new MockServerApiEndpointClient(self = Device.generateId()),
-        core = mockCoreClient
+        encryptor = mockEncryption,
+        decryptor = mockEncryption,
+        clients = Clients(
+          api = MockServerApiEndpointClient(),
+          core = mockCoreClient
+        ),
+        track = mockTracker
       )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
       override implicit protected def mat: Materializer = spec.mat
@@ -173,6 +189,16 @@ class FileProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
 
           mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
           mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
+
+          mockTracker.statistics(MockBackupTracker.Statistic.FileCollected) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.FileProcessed) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
       }
   }
+
+  private implicit val system: ActorSystem = ActorSystem(name = "FileProcessingSpec")
+  private implicit val mat: ActorMaterializer = ActorMaterializer()
 }

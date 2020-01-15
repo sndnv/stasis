@@ -129,6 +129,8 @@ class RefreshTokenStoreSpec extends AsyncUnitSpec with Eventually {
     }
   }
 
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
+
   private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
     "RefreshTokenStoreSpec"

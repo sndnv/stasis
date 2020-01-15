@@ -1,30 +1,28 @@
 package stasis.test.specs.unit.shared.api.requests
 
-import java.time.LocalTime
-
-import scala.concurrent.duration._
+import java.time.LocalDateTime
 
 import stasis.shared.api.requests.CreateSchedule
 import stasis.shared.model.schedules.Schedule
 import stasis.test.specs.unit.UnitSpec
 
+import scala.concurrent.duration._
+
 class CreateScheduleSpec extends UnitSpec {
   it should "convert requests to schedules" in {
     val expectedSchedule = Schedule(
       id = Schedule.generateId(),
-      process = Schedule.Process.Backup,
-      instant = LocalTime.now(),
-      interval = 3.seconds,
-      missed = Schedule.MissedAction.ExecuteImmediately,
-      overlap = Schedule.OverlapAction.ExecuteAnyway
+      info = "test-info",
+      isPublic = true,
+      start = LocalDateTime.now(),
+      interval = 3.seconds
     )
 
     val request = CreateSchedule(
-      process = expectedSchedule.process,
-      instant = expectedSchedule.instant,
-      interval = expectedSchedule.interval,
-      missed = expectedSchedule.missed,
-      overlap = expectedSchedule.overlap
+      info = expectedSchedule.info,
+      isPublic = expectedSchedule.isPublic,
+      start = expectedSchedule.start,
+      interval = expectedSchedule.interval
     )
 
     request.toSchedule.copy(id = expectedSchedule.id) should be(expectedSchedule)

@@ -7,6 +7,7 @@ object Permission {
   object View {
     case object Self extends View
     case object Privileged extends View
+    case object Public extends View
     case object Service extends View
   }
 

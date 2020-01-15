@@ -37,6 +37,7 @@ class ApiEndpoint(
   private val nodes = new Nodes()
   private val reservations = new Reservations()
   private val staging = new Staging()
+  private val service = new Service()
 
   private implicit def sanitizingExceptionHandler: ExceptionHandler =
     ExceptionHandler {
@@ -107,7 +108,8 @@ class ApiEndpoint(
                 pathPrefix("schedules") { schedules.routes(currentUser = user) },
                 pathPrefix("nodes") { nodes.routes(currentUser = user) },
                 pathPrefix("reservations") { reservations.routes(currentUser = user) },
-                pathPrefix("staging") { staging.routes(currentUser = user) }
+                pathPrefix("staging") { staging.routes(currentUser = user) },
+                pathPrefix("service") { service.routes(currentUser = user) }
               )
 
             case Failure(e) =>

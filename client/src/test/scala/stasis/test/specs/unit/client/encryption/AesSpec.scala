@@ -6,7 +6,7 @@ import akka.stream.scaladsl.{FileIO, Source}
 import akka.util.ByteString
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceMetadataSecret}
-import stasis.client.model.DatasetMetadata
+import stasis.client.model.{DatasetMetadata, FilesystemMetadata}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.{EncodingHelpers, Fixtures, ResourceHelpers}
 
@@ -29,18 +29,26 @@ class AesSpec extends AsyncUnitSpec with EncodingHelpers with ResourceHelpers {
   )
 
   private val datasetMetadata = DatasetMetadata(
-    contentChanged = Seq(Fixtures.Metadata.FileOneMetadata),
-    metadataChanged = Seq(Fixtures.Metadata.FileTwoMetadata)
+    contentChanged = Map(Fixtures.Metadata.FileOneMetadata.path -> Fixtures.Metadata.FileOneMetadata),
+    metadataChanged = Map(Fixtures.Metadata.FileTwoMetadata.path -> Fixtures.Metadata.FileTwoMetadata),
+    filesystem = FilesystemMetadata(
+      files = Map(
+        Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.New,
+        Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Updated
+      )
+    )
   )
 
   private val encryptedDatasetMetadata =
-    "C73jzIPdVWcrNdsnv2CON8fnkRkRkC3M5IUlmp609/6r" +
-      "6aurkP7/UvrkMwSc3Cw0xvURhpfaMVFvv9ZErYeFmz" +
-      "ichDns60Uxn2jIXYwq09A3m8YVQlQKpiZW9gaI+c24" +
-      "EaESMOij+vIXr7j5kSB447xS23iU/UutONXR64A6xj" +
-      "kbBDhi0D26OQhovDRNu5VOjVxepQlV3zeOllvMI0kL" +
-      "/5l9m94etXYETkbWKPLFTRnOpMhTt5xj2zbU/373oX" +
-      "1NA5iRu13U"
+    "C4zjzIPdVWcrNdsnv2CON8flwDucF8kCFUi7NA3Q6G40" +
+      "WW8FIvlv+F0XvpMvYSl2VmuwGDsywREHuqVx1/t/Gs" +
+      "d2U7AYJwVWLc1goxaIRYYDF1HPtefq4FvsLskeVR8J" +
+      "i2d8Mpmz+PIXr7j5kSB447xSxGXj+mlf5nRoNDXbl2" +
+      "X+g9y2Ps9A5PhG8l1P+5xToz0Dvg5T8FHeHthL9szL" +
+      "bqnJnaNa911MD2coOXI4r/EuUy+vT/Ja7yMYCIqcbP" +
+      "iVaIddDMhZdX8VY213Psygdw3TlY5vxBssHQDumMiM" +
+      "Svto6D43KGjsI1pmJrD6+GWP6xQoJq84TYMkQe9f8o" +
+      "2dY/mIIsBwZkZYQ0YzBINvC2L3NnUy"
 
   private val metadataSecret = DeviceMetadataSecret(
     iv = encryptionIv.decodeFromBase64,
@@ -77,7 +85,7 @@ class AesSpec extends AsyncUnitSpec with EncodingHelpers with ResourceHelpers {
     }
   }
 
-  it should "encrypt files metadata" in {
+  it should "encrypt dataset metadata" in {
     Source
       .single(DatasetMetadata.toByteString(datasetMetadata))
       .via(aes.encrypt(metadataSecret = metadataSecret))
@@ -87,7 +95,7 @@ class AesSpec extends AsyncUnitSpec with EncodingHelpers with ResourceHelpers {
       }
   }
 
-  it should "decrypt files metadata" in {
+  it should "decrypt dataset metadata" in {
     Source
       .single(encryptedDatasetMetadata.decodeFromBase64)
       .via(aes.decrypt(metadataSecret = metadataSecret))

@@ -1,28 +1,52 @@
 package stasis.client.ops.backup.stages
 
+import java.nio.file.Path
+
 import akka.NotUsed
 import akka.stream.scaladsl.Flow
-import stasis.client.model.{DatasetMetadata, FileMetadata}
-import stasis.shared.model.datasets.DatasetDefinition
+import stasis.client.model.{DatasetMetadata, FileMetadata, FilesystemMetadata}
+import stasis.client.ops.backup.Providers
+import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.ops.Operation
 
 trait MetadataCollection {
   protected def targetDataset: DatasetDefinition
+  protected def latestEntry: Option[DatasetEntry]
+  protected def latestMetadata: Option[DatasetMetadata]
+  protected def providers: Providers
 
-  def metadataCollection: Flow[Either[FileMetadata, FileMetadata], DatasetMetadata, NotUsed] =
+  def metadataCollection(
+    implicit operation: Operation.Id
+  ): Flow[Either[FileMetadata, FileMetadata], DatasetMetadata, NotUsed] =
     Flow[Either[FileMetadata, FileMetadata]]
-      .fold((Seq.empty[FileMetadata], Seq.empty[FileMetadata])) {
+      .fold((Map.empty[Path, FileMetadata], Map.empty[Path, FileMetadata])) {
         case ((contentChanged, metadataChanged), currentMetadata) =>
           currentMetadata match {
-            case Left(metadata)  => (contentChanged :+ metadata, metadataChanged)
-            case Right(metadata) => (contentChanged, metadataChanged :+ metadata)
+            case Left(metadata)  => (contentChanged + (metadata.path -> metadata), metadataChanged)
+            case Right(metadata) => (contentChanged, metadataChanged + (metadata.path -> metadata))
           }
       }
       .map {
         case (contentChanged, metadataChanged) =>
-          DatasetMetadata(contentChanged, metadataChanged)
+          DatasetMetadata(
+            contentChanged = contentChanged,
+            metadataChanged = metadataChanged,
+            filesystem = (latestMetadata, latestEntry) match {
+              case (Some(metadata), Some(entry)) =>
+                metadata.filesystem
+                  .updated(
+                    changes = contentChanged.keys ++ metadataChanged.keys,
+                    latestEntry = entry.id
+                  )
+
+              case _ =>
+                FilesystemMetadata(contentChanged.keys ++ metadataChanged.keys)
+            }
+          )
       }
       .log(
         name = "Metadata Collection",
         extract = metadata => s"Metadata generated for dataset [${targetDataset.id}]: [$metadata]"
       )
+      .wireTap(_ => providers.track.metadataCollected())
 }

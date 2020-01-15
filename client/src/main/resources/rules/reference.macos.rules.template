@@ -1,0 +1,10 @@
++ /Users/$USER          **                  # include all files for the current user
+- /Users/$USER/.m2      repository/**       # exclude maven artifacts
+- /Users/$USER/.ivy2    {cache|local}/**    # exclude ivy artifacts
+
+# exclude logs, temporary and cache files
+- /Users/$USER          **/*.{class|obj}
+- /Users/$USER          **/lost+found/*
+- /Users/$USER          **/*cache*/*
+- /Users/$USER          **/*log*/*
+- /Users/$USER          **/*.{tmp|temp|part|bak|~}

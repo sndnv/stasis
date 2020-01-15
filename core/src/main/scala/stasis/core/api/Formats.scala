@@ -1,5 +1,7 @@
 package stasis.core.api
 
+import java.util.UUID
+
 import akka.http.scaladsl.model.Uri
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
@@ -18,6 +20,16 @@ object Formats {
   implicit val finiteDurationFormat: Format[FiniteDuration] = Format(
     fjs = js => js.validate[Long].map(seconds => seconds.seconds),
     tjs = duration => JsNumber(duration.toSeconds)
+  )
+
+  implicit def uuidMapFormat[V](implicit format: Format[V]): Format[Map[UUID, V]] = Format(
+    fjs = _.validate[Map[String, V]].map(_.map { case (k, v) => UUID.fromString(k) -> v }),
+    tjs = map => JsObject(map.map { case (k, v) => k.toString -> format.writes(v) })
+  )
+
+  implicit def optionFormat[V](implicit format: Format[V]): Format[Option[V]] = Format(
+    fjs = _.validateOpt[V],
+    tjs = _.map(Json.toJson(_)).getOrElse(JsNull)
   )
 
   implicit val uriFormat: Format[Uri] = Format(

@@ -9,9 +9,6 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 
 class DefaultFileStagingSpec extends AsyncUnitSpec with ResourceHelpers {
-  private implicit val system: ActorSystem = ActorSystem(name = "DefaultFileStagingSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
-
   "A DefaultFileStaging implementation" should "create temporary staging files" in {
     val staging = new DefaultFileStaging(
       storeDirectory = None,
@@ -98,4 +95,7 @@ class DefaultFileStagingSpec extends AsyncUnitSpec with ResourceHelpers {
       targetContent should be(sourceFileContent)
     }
   }
+
+  private implicit val system: ActorSystem = ActorSystem(name = "DefaultFileStagingSpec")
+  private implicit val mat: ActorMaterializer = ActorMaterializer()
 }

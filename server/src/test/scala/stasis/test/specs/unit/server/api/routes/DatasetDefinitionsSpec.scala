@@ -245,8 +245,8 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   private val definitions = Seq(
     DatasetDefinition(
       id = DatasetDefinition.generateId(),
+      info = "test-definition-01",
       device = userDevice.id,
-      schedule = None,
       redundantCopies = 1,
       existingVersions = DatasetDefinition.Retention(
         DatasetDefinition.Retention.Policy.All,
@@ -259,8 +259,8 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     ),
     DatasetDefinition(
       id = DatasetDefinition.generateId(),
+      info = "test-definition-02",
       device = Device.generateId(),
-      schedule = None,
       redundantCopies = 2,
       existingVersions = DatasetDefinition.Retention(
         DatasetDefinition.Retention.Policy.AtMost(versions = 5),
@@ -274,15 +274,15 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   )
 
   private val createRequest = CreateDatasetDefinition(
+    info = "new-test-definition",
     device = Device.generateId(),
-    schedule = None,
     redundantCopies = 1,
     existingVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.All, duration = 1.second),
     removedVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.All, duration = 1.second)
   )
 
   private val updateRequest = UpdateDatasetDefinition(
-    schedule = None,
+    info = "updated-test-definition",
     redundantCopies = 1,
     existingVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.All, duration = 1.second),
     removedVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.All, duration = 1.second)

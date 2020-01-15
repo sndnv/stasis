@@ -35,7 +35,7 @@ object FileMetadata {
       permissions = fileMetadata.permissions,
       checksum = com.google.protobuf.ByteString.copyFrom(fileMetadata.checksum.toByteArray),
       crate = Some(
-        proto.metadata.CrateId(
+        proto.metadata.Uuid(
           mostSignificantBits = fileMetadata.crate.getMostSignificantBits,
           leastSignificantBits = fileMetadata.crate.getLeastSignificantBits
         )

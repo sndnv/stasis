@@ -1,5 +1,7 @@
 package stasis.server.api.routes
 
+import java.time.Instant
+
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
@@ -12,6 +14,7 @@ import stasis.shared.api.responses.{CreatedDatasetEntry, DeletedDatasetEntry}
 
 class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import stasis.core.api.Matchers._
   import stasis.shared.api.Formats._
 
   override implicit protected def mat: Materializer = ctx.mat
@@ -65,47 +68,82 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
       },
       pathPrefix("own") {
         concat(
-          path("for-definition" / JavaUUID) {
+          pathPrefix("for-definition" / JavaUUID) {
             definitionId =>
               concat(
-                get {
-                  resources[DeviceStore.View.Self, DatasetEntryStore.View.Self] { (deviceView, entryView) =>
-                    deviceView
-                      .list(currentUser)
-                      .flatMap(devices => entryView.list(devices.keys.toSeq, definitionId))
-                      .map { entries =>
-                        log.info(
-                          "User [{}] successfully retrieved [{}] entries for definition [{}]",
-                          currentUser,
-                          entries.size,
-                          definitionId
-                        )
-                        discardEntity & complete(entries.values)
-                      }
-                  }
-                },
-                post {
-                  entity(as[CreateDatasetEntry]) {
-                    case createRequest if createRequest.definition == definitionId =>
-                      resources[DeviceStore.View.Self, DatasetEntryStore.Manage.Self] { (deviceView, entryManage) =>
-                        val entry = createRequest.toEntry
+                pathEndOrSingleSlash {
+                  concat(
+                    get {
+                      resources[DeviceStore.View.Self, DatasetEntryStore.View.Self] { (deviceView, entryView) =>
                         deviceView
                           .list(currentUser)
-                          .flatMap(devices => entryManage.create(devices.keys.toSeq, entry))
-                          .map { _ =>
-                            log.info("User [{}] successfully created entry [{}]", currentUser, entry.id)
-                            complete(CreatedDatasetEntry(entry.id))
+                          .flatMap(devices => entryView.list(devices.keys.toSeq, definitionId))
+                          .map { entries =>
+                            log.info(
+                              "User [{}] successfully retrieved [{}] entries for definition [{}]",
+                              currentUser,
+                              entries.size,
+                              definitionId
+                            )
+                            discardEntity & complete(entries.values)
                           }
                       }
+                    },
+                    post {
+                      entity(as[CreateDatasetEntry]) {
+                        case createRequest if createRequest.definition == definitionId =>
+                          resources[DeviceStore.View.Self, DatasetEntryStore.Manage.Self] { (deviceView, entryManage) =>
+                            val entry = createRequest.toEntry
+                            deviceView
+                              .list(currentUser)
+                              .flatMap(devices => entryManage.create(devices.keys.toSeq, entry))
+                              .map { _ =>
+                                log.info("User [{}] successfully created entry [{}]", currentUser, entry.id)
+                                complete(CreatedDatasetEntry(entry.id))
+                              }
+                          }
 
-                    case createRequest =>
-                      log.warning(
-                        "User [{}] attempted to create entry for definition [{}] but definition [{}] expected",
-                        currentUser,
-                        createRequest.definition,
-                        definitionId
-                      )
-                      complete(StatusCodes.BadRequest)
+                        case createRequest =>
+                          log.warning(
+                            "User [{}] attempted to create entry for definition [{}] but definition [{}] expected",
+                            currentUser,
+                            createRequest.definition,
+                            definitionId
+                          )
+                          complete(StatusCodes.BadRequest)
+                      }
+                    }
+                  )
+                },
+                path("latest") {
+                  get {
+                    parameter("until".as[Instant].?) {
+                      until =>
+                        resources[DeviceStore.View.Self, DatasetEntryStore.View.Self] {
+                          (deviceView, entryView) =>
+                            deviceView
+                              .list(currentUser)
+                              .flatMap(devices => entryView.latest(devices.keys.toSeq, definitionId, until))
+                              .map {
+                                case Some(entry) =>
+                                  log.info(
+                                    "User [{}] successfully retrieved latest entry [{}] for definition [{}]",
+                                    currentUser,
+                                    entry.id,
+                                    definitionId
+                                  )
+                                  discardEntity & complete(entry)
+
+                                case None =>
+                                  log.warning(
+                                    "User [{}] failed to retrieve latest entry for definition [{}]",
+                                    currentUser,
+                                    definitionId
+                                  )
+                                  discardEntity & complete(StatusCodes.NotFound)
+                              }
+                        }
+                    }
                   }
                 }
               )

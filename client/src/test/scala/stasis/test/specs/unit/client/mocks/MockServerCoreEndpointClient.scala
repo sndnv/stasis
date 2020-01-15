@@ -6,13 +6,13 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import akka.{Done, NotUsed}
-import stasis.client.api.ServerCoreEndpointClient
 import stasis.core.packaging
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
 import stasis.test.specs.unit.client.mocks.MockServerCoreEndpointClient.Statistic
-
 import scala.concurrent.{ExecutionContext, Future}
+
+import stasis.client.api.clients.ServerCoreEndpointClient
 
 class MockServerCoreEndpointClient(
   override val self: Node.Id,
@@ -27,6 +27,8 @@ class MockServerCoreEndpointClient(
     Statistic.CratePushed -> new AtomicInteger(0),
     Statistic.CratePulled -> new AtomicInteger(0)
   )
+
+  override val server: String = "mock-core-server"
 
   override def push(manifest: packaging.Manifest, content: Source[ByteString, NotUsed]): Future[Done] =
     if (!pushDisabled) {
@@ -58,6 +60,11 @@ class MockServerCoreEndpointClient(
 }
 
 object MockServerCoreEndpointClient {
+  def apply()(implicit mat: Materializer): MockServerCoreEndpointClient = new MockServerCoreEndpointClient(
+    self = Node.generateId(),
+    crates = Map.empty
+  )
+
   sealed trait Statistic
   object Statistic {
     case object CratePushed extends Statistic

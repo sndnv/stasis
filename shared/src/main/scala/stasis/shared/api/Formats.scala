@@ -12,6 +12,7 @@ import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
+import stasis.shared.ops.Operation
 import stasis.shared.security.Permission
 
 import scala.concurrent.duration._
@@ -32,21 +33,6 @@ object Formats {
   implicit val permissionFormat: Format[Permission] = Format(
     fjs = _.validate[String].map(stringToPermission),
     tjs = permission => JsString(permissionToString(permission))
-  )
-
-  implicit val processFormat: Format[Schedule.Process] = Format(
-    fjs = _.validate[String].map(stringToProcess),
-    tjs = process => JsString(process.toString.toLowerCase)
-  )
-
-  implicit val missedActionFormat: Format[Schedule.MissedAction] = Format(
-    fjs = _.validate[String].map(stringToMissedAction),
-    tjs = action => JsString(missedActionStoString(action))
-  )
-
-  implicit val overlapActionFormat: Format[Schedule.OverlapAction] = Format(
-    fjs = _.validate[String].map(stringToOverlapAction),
-    tjs = action => JsString(overlapActionToString(action))
   )
 
   implicit val retentionPolicyFormat: Format[DatasetDefinition.Retention.Policy] = Format(
@@ -86,8 +72,18 @@ object Formats {
   implicit val deviceFormat: Format[Device] =
     Json.format[Device]
 
-  implicit val scheduleFormat: Format[Schedule] =
-    Json.format[Schedule]
+  implicit val scheduleFormat: Format[Schedule] = {
+    val reader = Json.reads[Schedule]
+    val writer = Json.writes[Schedule]
+
+    Format(
+      fjs = reader,
+      tjs = schedule =>
+        writer.writes(schedule) ++ Json.obj(
+          "next_invocation" -> Json.toJson(schedule.nextInvocation)
+      )
+    )
+  }
 
   implicit val retentionFormat: Format[DatasetDefinition.Retention] =
     Json.format[DatasetDefinition.Retention]
@@ -136,6 +132,9 @@ object Formats {
 
   implicit val createDatasetEntryRequestFormat: Format[CreateDatasetEntry] =
     Json.format[CreateDatasetEntry]
+
+  implicit val pingResponseFormat: Format[Ping] =
+    Json.format[Ping]
 
   implicit val createdDatasetDefinitionFormat: Format[CreatedDatasetDefinition] =
     Json.format[CreatedDatasetDefinition]
@@ -242,9 +241,24 @@ object Formats {
 
   implicit val deletedPendingDestagingFormat: Format[DeletedPendingDestaging] = Json.format[DeletedPendingDestaging]
 
+  implicit val operationTypeFormat: Format[Operation.Type] = Format(
+    fjs = _.validate[String].map(stringToOperationType),
+    tjs = operationType => JsString(operationTypeToString(operationType))
+  )
+
+  implicit val operationProgressStageStepFormat: Format[Operation.Progress.Stage.Step] =
+    Json.format[Operation.Progress.Stage.Step]
+
+  implicit val operationProgressStageFormat: Format[Operation.Progress.Stage] =
+    Json.format[Operation.Progress.Stage]
+
+  implicit val operationProgressFormat: Format[Operation.Progress] =
+    Json.format[Operation.Progress]
+
   private def stringToPermission(string: String): Permission = string.toLowerCase match {
     case "view-self"         => Permission.View.Self
     case "view-privileged"   => Permission.View.Privileged
+    case "view-public"       => Permission.View.Public
     case "view-service"      => Permission.View.Service
     case "manage-self"       => Permission.Manage.Self
     case "manage-privileged" => Permission.Manage.Privileged
@@ -254,36 +268,28 @@ object Formats {
   private def permissionToString(permission: Permission): String = permission match {
     case Permission.View.Self         => "view-self"
     case Permission.View.Privileged   => "view-privileged"
+    case Permission.View.Public       => "view-public"
     case Permission.View.Service      => "view-service"
     case Permission.Manage.Self       => "manage-self"
     case Permission.Manage.Privileged => "manage-privileged"
     case Permission.Manage.Service    => "manage-service"
   }
 
-  private def stringToProcess(string: String): Schedule.Process = string.toLowerCase match {
-    case "backup"     => Schedule.Process.Backup
-    case "expiration" => Schedule.Process.Expiration
+  private def stringToOperationType(string: String): Operation.Type = string.toLowerCase match {
+    case "client-backup"             => Operation.Type.Backup
+    case "client-recovery"           => Operation.Type.Recovery
+    case "client-expiration"         => Operation.Type.Expiration
+    case "client-validation"         => Operation.Type.Validation
+    case "client-key-rotation"       => Operation.Type.KeyRotation
+    case "server-garbage-collection" => Operation.Type.GarbageCollection
   }
 
-  private def stringToMissedAction(string: String): Schedule.MissedAction = string.toLowerCase match {
-    case "execute-immediately" => Schedule.MissedAction.ExecuteImmediately
-    case "execute-next"        => Schedule.MissedAction.ExecuteNext
-  }
-
-  private def missedActionStoString(action: Schedule.MissedAction): String = action match {
-    case Schedule.MissedAction.ExecuteImmediately => "execute-immediately"
-    case Schedule.MissedAction.ExecuteNext        => "execute-next"
-  }
-
-  private def stringToOverlapAction(string: String): Schedule.OverlapAction = string.toLowerCase match {
-    case "cancel-existing" => Schedule.OverlapAction.CancelExisting
-    case "cancel-new"      => Schedule.OverlapAction.CancelNew
-    case "execute-anyway"  => Schedule.OverlapAction.ExecuteAnyway
-  }
-
-  private def overlapActionToString(action: Schedule.OverlapAction): String = action match {
-    case Schedule.OverlapAction.CancelExisting => "cancel-existing"
-    case Schedule.OverlapAction.CancelNew      => "cancel-new"
-    case Schedule.OverlapAction.ExecuteAnyway  => "execute-anyway"
+  private def operationTypeToString(operationType: Operation.Type): String = operationType match {
+    case Operation.Type.Backup            => "client-backup"
+    case Operation.Type.Recovery          => "client-recovery"
+    case Operation.Type.Expiration        => "client-expiration"
+    case Operation.Type.Validation        => "client-validation"
+    case Operation.Type.KeyRotation       => "client-key-rotation"
+    case Operation.Type.GarbageCollection => "server-garbage-collection"
   }
 }

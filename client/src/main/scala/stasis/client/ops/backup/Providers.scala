@@ -1,12 +1,17 @@
 package stasis.client.ops.backup
 
-import stasis.client.collection.BackupCollector
-import stasis.client.{compression, encryption}
+import stasis.client.analysis.Checksum
 import stasis.client.staging.FileStaging
+import stasis.client.tracking.BackupTracker
+import stasis.client.{compression, encryption}
+import stasis.client.api.clients.Clients
 
 final case class Providers(
-  collector: BackupCollector,
+  checksum: Checksum,
   staging: FileStaging,
   compressor: compression.Encoder,
-  encryptor: encryption.Encoder
+  encryptor: encryption.Encoder,
+  decryptor: encryption.Decoder,
+  clients: Clients,
+  track: BackupTracker
 )

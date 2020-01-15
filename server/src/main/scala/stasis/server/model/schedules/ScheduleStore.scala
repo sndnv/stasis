@@ -1,6 +1,6 @@
 package stasis.server.model.schedules
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import akka.Done
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.server.security.Resource
@@ -8,6 +8,8 @@ import stasis.shared.model.schedules.Schedule
 import stasis.shared.security.Permission
 
 trait ScheduleStore { store =>
+  protected implicit def ec: ExecutionContext
+
   protected def create(schedule: Schedule): Future[Done]
   protected def update(schedule: Schedule): Future[Done]
   protected def delete(schedule: Schedule.Id): Future[Boolean]
@@ -21,6 +23,24 @@ trait ScheduleStore { store =>
 
       override def list(): Future[Map[Schedule.Id, Schedule]] =
         store.list()
+    }
+
+  final def viewPublic(): ScheduleStore.View.Public =
+    new ScheduleStore.View.Public {
+      override def get(schedule: Schedule.Id): Future[Option[Schedule]] =
+        store.get(schedule).flatMap {
+          case Some(schedule) if schedule.isPublic =>
+            Future.successful(Some(schedule))
+
+          case Some(schedule) =>
+            Future.failed(new IllegalArgumentException(s"Schedule [${schedule.id}] is not public"))
+
+          case None =>
+            Future.successful(None)
+        }
+
+      override def list(): Future[Map[Schedule.Id, Schedule]] =
+        store.list().map(_.filter(_._2.isPublic))
     }
 
   final def manage(): ScheduleStore.Manage.Service =
@@ -43,6 +63,12 @@ object ScheduleStore {
       def list(): Future[Map[Schedule.Id, Schedule]]
       override def requiredPermission: Permission = Permission.View.Service
     }
+
+    sealed trait Public extends Resource {
+      def get(schedule: Schedule.Id): Future[Option[Schedule]]
+      def list(): Future[Map[Schedule.Id, Schedule]]
+      override def requiredPermission: Permission = Permission.View.Public
+    }
   }
 
   object Manage {
@@ -56,8 +82,9 @@ object ScheduleStore {
 
   def apply(
     backend: KeyValueBackend[Schedule.Id, Schedule]
-  ): ScheduleStore =
+  )(implicit ctx: ExecutionContext): ScheduleStore =
     new ScheduleStore {
+      override implicit protected def ec: ExecutionContext = ctx
       override protected def create(schedule: Schedule): Future[Done] = backend.put(schedule.id, schedule)
       override protected def update(schedule: Schedule): Future[Done] = backend.put(schedule.id, schedule)
       override protected def delete(schedule: Schedule.Id): Future[Boolean] = backend.delete(schedule)

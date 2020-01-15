@@ -1,12 +1,15 @@
 package stasis.server.model.datasets
 
-import scala.concurrent.{ExecutionContext, Future}
+import java.time.Instant
+
 import akka.Done
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.server.security.Resource
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.model.devices.Device
 import stasis.shared.security.Permission
+
+import scala.concurrent.{ExecutionContext, Future}
 
 trait DatasetEntryStore { store =>
   protected implicit def ec: ExecutionContext
@@ -16,6 +19,12 @@ trait DatasetEntryStore { store =>
   protected def get(entry: DatasetEntry.Id): Future[Option[DatasetEntry]]
   protected def list(definition: DatasetDefinition.Id): Future[Map[DatasetEntry.Id, DatasetEntry]]
 
+  protected def latest(
+    definition: DatasetDefinition.Id,
+    devices: Seq[Device.Id],
+    until: Option[Instant]
+  ): Future[Option[DatasetEntry]]
+
   final def view(): DatasetEntryStore.View.Privileged =
     new DatasetEntryStore.View.Privileged {
       override def get(entry: DatasetEntry.Id): Future[Option[DatasetEntry]] =
@@ -23,6 +32,9 @@ trait DatasetEntryStore { store =>
 
       override def list(definition: DatasetDefinition.Id): Future[Map[DatasetEntry.Id, DatasetEntry]] =
         store.list(definition)
+
+      override def latest(definition: DatasetDefinition.Id, until: Option[Instant]): Future[Option[DatasetEntry]] =
+        store.latest(definition = definition, devices = Seq.empty, until = until)
     }
 
   final def viewSelf(): DatasetEntryStore.View.Self =
@@ -51,6 +63,13 @@ trait DatasetEntryStore { store =>
         definition: DatasetDefinition.Id
       ): Future[Map[DatasetEntry.Id, DatasetEntry]] =
         store.list(definition).map(_.filter(e => ownDevices.contains(e._2.device)))
+
+      override def latest(
+        ownDevices: Seq[Device.Id],
+        definition: DatasetDefinition.Id,
+        until: Option[Instant]
+      ): Future[Option[DatasetEntry]] =
+        store.latest(definition, ownDevices, until)
     }
 
   final def manage(): DatasetEntryStore.Manage.Privileged =
@@ -99,12 +118,27 @@ object DatasetEntryStore {
     sealed trait Privileged extends Resource {
       def get(entry: DatasetEntry.Id): Future[Option[DatasetEntry]]
       def list(definition: DatasetDefinition.Id): Future[Map[DatasetEntry.Id, DatasetEntry]]
+      def latest(definition: DatasetDefinition.Id, until: Option[Instant]): Future[Option[DatasetEntry]]
       override def requiredPermission: Permission = Permission.View.Privileged
     }
 
     sealed trait Self extends Resource {
-      def get(ownDevices: Seq[Device.Id], entry: DatasetEntry.Id): Future[Option[DatasetEntry]]
-      def list(ownDevices: Seq[Device.Id], definition: DatasetDefinition.Id): Future[Map[DatasetEntry.Id, DatasetEntry]]
+      def get(
+        ownDevices: Seq[Device.Id],
+        entry: DatasetEntry.Id
+      ): Future[Option[DatasetEntry]]
+
+      def list(
+        ownDevices: Seq[Device.Id],
+        definition: DatasetDefinition.Id
+      ): Future[Map[DatasetEntry.Id, DatasetEntry]]
+
+      def latest(
+        ownDevices: Seq[Device.Id],
+        definition: DatasetDefinition.Id,
+        until: Option[Instant]
+      ): Future[Option[DatasetEntry]]
+
       override def requiredPermission: Permission = Permission.View.Self
     }
   }
@@ -140,5 +174,24 @@ object DatasetEntryStore {
 
       override protected def list(definition: DatasetEntry.Id): Future[Map[DatasetEntry.Id, DatasetEntry]] =
         backend.entries.map(_.filter(_._2.definition == definition))(ctx)
+
+      override protected def latest(
+        definition: DatasetDefinition.Id,
+        devices: Seq[Device.Id],
+        until: Option[Instant]
+      ): Future[Option[DatasetEntry]] =
+        backend.entries.map { entries =>
+          entries.values
+            .filter { entry =>
+              (
+                entry.definition == definition
+                && (devices.isEmpty || devices.contains(entry.device))
+                && until.forall(entry.created.isBefore)
+              )
+            }
+            .toSeq
+            .sortBy(_.created)
+            .lastOption
+        }(ctx)
     }
 }

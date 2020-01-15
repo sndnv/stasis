@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.server.api.routes
 
-import java.time.LocalTime
+import java.time.LocalDateTime
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -45,6 +45,37 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
         .view()
         .get(entityAs[CreatedSchedule].schedule)
         .map(_.isDefined should be(true))
+    }
+  }
+
+  they should "respond with all public schedules" in {
+    val fixtures = new TestFixtures {}
+    Future.sequence(schedules.map(fixtures.scheduleStore.manage().create)).await
+
+    Get("/public") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[List[Schedule]] match {
+        case publicSchedule :: Nil => publicSchedule should be(schedules.head)
+        case other                 => fail(s"Unexpected response received: [$other]")
+      }
+    }
+  }
+
+  they should "respond with existing public schedules" in {
+    val fixtures = new TestFixtures {}
+
+    fixtures.scheduleStore.manage().create(schedules.head).await
+
+    Get(s"/public/${schedules.head.id}") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[Schedule] should be(schedules.head)
+    }
+  }
+
+  they should "fail if a public schedule is missing" in {
+    val fixtures = new TestFixtures {}
+    Get(s"/public/${Schedule.generateId()}") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.NotFound)
     }
   }
 
@@ -122,6 +153,7 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     lazy implicit val provider: ResourceProvider = new MockResourceProvider(
       resources = Set(
         scheduleStore.view(),
+        scheduleStore.viewPublic(),
         scheduleStore.manage()
       )
     )
@@ -136,36 +168,31 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   private val schedules = Seq(
     Schedule(
       id = Schedule.generateId(),
-      process = Schedule.Process.Backup,
-      instant = LocalTime.now(),
-      interval = 3.seconds,
-      missed = Schedule.MissedAction.ExecuteImmediately,
-      overlap = Schedule.OverlapAction.ExecuteAnyway
+      info = "test-schedule-01",
+      isPublic = true,
+      start = LocalDateTime.now(),
+      interval = 3.seconds
     ),
     Schedule(
       id = Schedule.generateId(),
-      process = Schedule.Process.Expiration,
-      instant = LocalTime.now(),
-      interval = 3.hours,
-      missed = Schedule.MissedAction.ExecuteNext,
-      overlap = Schedule.OverlapAction.CancelNew
+      info = "test-schedule-02",
+      isPublic = false,
+      start = LocalDateTime.now(),
+      interval = 3.hours
     )
   )
 
   private val createRequest = CreateSchedule(
-    process = Schedule.Process.Backup,
-    instant = LocalTime.now(),
-    interval = 3.seconds,
-    missed = Schedule.MissedAction.ExecuteImmediately,
-    overlap = Schedule.OverlapAction.ExecuteAnyway
+    isPublic = true,
+    info = "test-schedule",
+    start = LocalDateTime.now(),
+    interval = 3.seconds
   )
 
   private val updateRequest = UpdateSchedule(
-    process = Schedule.Process.Backup,
-    instant = LocalTime.now(),
-    interval = 5.hours,
-    missed = Schedule.MissedAction.ExecuteImmediately,
-    overlap = Schedule.OverlapAction.ExecuteAnyway
+    info = "updated-test-schedule",
+    start = LocalDateTime.now(),
+    interval = 5.hours
   )
 
   import scala.language.implicitConversions

@@ -30,8 +30,8 @@ lazy val client = (project in file("./client"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.github.pathikrit"  %%  "better-files"  % "3.8.0",
-      "at.favre.lib"          %   "hkdf"          % "1.1.0"
+      "at.favre.lib"      % "hkdf"  % "1.1.0",
+      "com.google.jimfs"  % "jimfs" % "1.1"     % Test
     ),
     PB.targets in Compile := Seq(
       scalapb.gen() -> (sourceManaged in Compile).value
