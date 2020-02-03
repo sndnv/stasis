@@ -14,10 +14,11 @@ import com.typesafe.{config => typesafe}
 import stasis.core.networking.grpc.{GrpcEndpointAddress, GrpcEndpointClient}
 import stasis.core.networking.http.{HttpEndpoint, HttpEndpointAddress, HttpEndpointClient}
 import stasis.core.routing.{DefaultRouter, NodeProxy, Router}
-import stasis.core.security.jwt.{JwtAuthenticator, JwtProvider}
+import stasis.core.security.jwt.{DefaultJwtAuthenticator, DefaultJwtProvider, JwtProvider}
 import stasis.core.security.keys.RemoteKeyProvider
 import stasis.core.security.tls.EndpointContext
 import stasis.core.security.{JwtNodeAuthenticator, JwtNodeCredentialsProvider, NodeAuthenticator}
+import stasis.core.security.oauth.DefaultOAuthClient
 import stasis.server.api.ApiEndpoint
 import stasis.server.security._
 
@@ -58,12 +59,15 @@ trait Service {
         None
       }
 
-    val jwtProvider: JwtProvider = new JwtProvider(
-      tokenEndpoint = instanceAuthenticatorConfig.getString("token-endpoint"),
-      client = serverId.toString,
-      clientSecret = instanceAuthenticatorConfig.getString("client-secret"),
-      expirationTolerance = instanceAuthenticatorConfig.getDuration("expiration-tolerance").toMillis.millis,
-      context = authenticationEndpointContext
+    val jwtProvider: JwtProvider = new DefaultJwtProvider(
+      client = new DefaultOAuthClient(
+        tokenEndpoint = instanceAuthenticatorConfig.getString("token-endpoint"),
+        client = serverId.toString,
+        clientSecret = instanceAuthenticatorConfig.getString("client-secret"),
+        useQueryString = instanceAuthenticatorConfig.getBoolean("use-query-string"),
+        context = authenticationEndpointContext
+      ),
+      expirationTolerance = instanceAuthenticatorConfig.getDuration("expiration-tolerance").toMillis.millis
     )
 
     val persistenceConfig = rawConfig.getConfig("persistence")
@@ -79,7 +83,7 @@ trait Service {
     val userAuthenticatorConfig = rawConfig.getConfig("authenticators.users")
     val userAuthenticator: UserAuthenticator = new DefaultUserAuthenticator(
       store = serverPersistence.users.view(),
-      underlying = new JwtAuthenticator(
+      underlying = new DefaultJwtAuthenticator(
         provider = RemoteKeyProvider(
           jwksEndpoint = userAuthenticatorConfig.getString("jwks-endpoint"),
           context = authenticationEndpointContext,
@@ -95,7 +99,7 @@ trait Service {
     val nodeAuthenticatorConfig = rawConfig.getConfig("authenticators.nodes")
     val nodeAuthenticator: NodeAuthenticator[HttpCredentials] = new JwtNodeAuthenticator(
       nodeStore = corePersistence.nodes.view,
-      underlying = new JwtAuthenticator(
+      underlying = new DefaultJwtAuthenticator(
         provider = RemoteKeyProvider(
           jwksEndpoint = nodeAuthenticatorConfig.getString("jwks-endpoint"),
           context = authenticationEndpointContext,

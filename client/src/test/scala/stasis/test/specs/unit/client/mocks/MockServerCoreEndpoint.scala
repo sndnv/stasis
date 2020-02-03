@@ -1,12 +1,12 @@
 package stasis.test.specs.unit.client.mocks
 
-import akka.actor.typed.scaladsl.adapter._
+import akka.{Done, NotUsed}
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.http.scaladsl.{ConnectionContext, Http}
+import akka.actor.typed.scaladsl.adapter._
+import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import akka.{Done, NotUsed}
 import stasis.core.networking.http.HttpEndpoint
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.routing.Node
@@ -38,10 +38,10 @@ class MockServerCoreEndpoint(
   def crateExists(entry: Crate.Id): Future[Boolean] =
     crateStore.retrieve(entry).map(_.isDefined)
 
-  def start(port: Int): Future[Http.ServerBinding] =
+  def start(port: Int, context: Option[HttpsConnectionContext] = None): Future[Http.ServerBinding] =
     endpoint.start(
       interface = "localhost",
       port = port,
-      context = ConnectionContext.noEncryption()
+      context = context.getOrElse(ConnectionContext.noEncryption())
     )
 }

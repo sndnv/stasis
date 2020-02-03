@@ -102,6 +102,14 @@ class UserStoreSpec extends AsyncUnitSpec {
     }
   }
 
+  it should "allow generating salt values for users (privileged)" in {
+    val expectedSaltSize = 12
+    val store = MockUserStore(userSaltSize = expectedSaltSize)
+
+    val salt = store.manage().generateSalt()
+    salt should have length expectedSaltSize
+  }
+
   it should "provide management resource (self)" in {
     val store = MockUserStore()
     store.manageSelf().requiredPermission should be(Permission.Manage.Self)
@@ -146,6 +154,7 @@ class UserStoreSpec extends AsyncUnitSpec {
 
   private val mockUser = User(
     id = User.generateId(),
+    salt = "test-salt",
     active = true,
     limits = None,
     permissions = Set.empty

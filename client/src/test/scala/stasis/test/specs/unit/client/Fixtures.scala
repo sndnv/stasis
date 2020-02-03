@@ -94,13 +94,13 @@ object Fixtures {
   object Secrets {
     final lazy val DefaultConfig = Secret.Config(
       derivation = Secret.DerivationConfig(
-        encryption = Secret.KeyDerivationConfig(secretSize = 1, iterations = 1, saltPrefix = ""),
-        authentication = Secret.KeyDerivationConfig(secretSize = 1, iterations = 1, saltPrefix = "")
+        encryption = Secret.KeyDerivationConfig(secretSize = 16, iterations = 100000, saltPrefix = ""),
+        authentication = Secret.KeyDerivationConfig(secretSize = 16, iterations = 100000, saltPrefix = "")
       ),
       encryption = Secret.EncryptionConfig(
-        file = Secret.EncryptionSecretConfig(keySize = 1, ivSize = 1),
-        metadata = Secret.EncryptionSecretConfig(keySize = 1, ivSize = 1),
-        deviceSecret = Secret.EncryptionSecretConfig(keySize = 1, ivSize = 1)
+        file = Secret.EncryptionSecretConfig(keySize = 16, ivSize = 12),
+        metadata = Secret.EncryptionSecretConfig(keySize = 16, ivSize = 12),
+        deviceSecret = Secret.EncryptionSecretConfig(keySize = 16, ivSize = 12)
       )
     )
 

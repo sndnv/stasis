@@ -8,8 +8,10 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import javax.crypto.Cipher
-import javax.crypto.spec.SecretKeySpec
+import javax.crypto.spec.{GCMParameterSpec, SecretKeySpec}
+
 import stasis.client.encryption.stream.CipherStage
+import stasis.client.encryption.Aes.TagSize
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.EncodingHelpers
 
@@ -46,10 +48,14 @@ class CipherStageSpec extends AsyncUnitSpec with EncodingHelpers {
   private val rsaEncryptedData =
     "OJznDc2ETEv873roPfgZBt1Z+JiDhiluvzzxo9SWSC4uTbIMIFf1qR4j9J2zaRX8UWNmv+bFjhkIPIp7++Lx7w=="
 
-  "A CipherStage" should "encrypt streaming data (AES / default)" in {
-    val stage = CipherStage.aesEncryption(
-      key = aesEncryptionKey.decodeFromBase64,
-      iv = aesEncryptionIv.decodeFromBase64
+  "A CipherStage" should "encrypt streaming data (AES)" in {
+    val stage = new CipherStage(
+      algorithm = "AES",
+      cipherMode = "GCM",
+      padding = "NoPadding",
+      operationMode = Cipher.ENCRYPT_MODE,
+      key = new SecretKeySpec(aesEncryptionKey.decodeFromBase64.toArray, "AES"),
+      spec = Some(new GCMParameterSpec(TagSize, aesEncryptionIv.decodeFromBase64.toArray))
     )
 
     Source
@@ -61,10 +67,14 @@ class CipherStageSpec extends AsyncUnitSpec with EncodingHelpers {
       }
   }
 
-  it should "decrypt streaming data (AES / default)" in {
-    val stage = CipherStage.aesDecryption(
-      key = aesEncryptionKey.decodeFromBase64,
-      iv = aesEncryptionIv.decodeFromBase64
+  it should "decrypt streaming data (AES)" in {
+    val stage = new CipherStage(
+      algorithm = "AES",
+      cipherMode = "GCM",
+      padding = "NoPadding",
+      operationMode = Cipher.DECRYPT_MODE,
+      key = new SecretKeySpec(aesEncryptionKey.decodeFromBase64.toArray, "AES"),
+      spec = Some(new GCMParameterSpec(TagSize, aesEncryptionIv.decodeFromBase64.toArray))
     )
 
     Source
@@ -77,9 +87,13 @@ class CipherStageSpec extends AsyncUnitSpec with EncodingHelpers {
   }
 
   it should "handle empty stream elements (AES / default)" in {
-    val stage = CipherStage.aesEncryption(
-      key = aesEncryptionKey.decodeFromBase64,
-      iv = aesEncryptionIv.decodeFromBase64
+    val stage = new CipherStage(
+      algorithm = "AES",
+      cipherMode = "GCM",
+      padding = "NoPadding",
+      operationMode = Cipher.ENCRYPT_MODE,
+      key = new SecretKeySpec(aesEncryptionKey.decodeFromBase64.toArray, "AES"),
+      spec = Some(new GCMParameterSpec(TagSize, aesEncryptionIv.decodeFromBase64.toArray))
     )
 
     Source(List(ByteString(""), ByteString(plaintextData), ByteString("")))

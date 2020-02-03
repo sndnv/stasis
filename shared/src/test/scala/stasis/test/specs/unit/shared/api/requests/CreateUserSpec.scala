@@ -6,8 +6,11 @@ import stasis.test.specs.unit.UnitSpec
 
 class CreateUserSpec extends UnitSpec {
   it should "convert requests to users" in {
+    val salt = "test-salt"
+
     val expectedUser = User(
       id = User.generateId(),
+      salt = salt,
       active = true,
       limits = None,
       permissions = Set.empty
@@ -18,6 +21,6 @@ class CreateUserSpec extends UnitSpec {
       permissions = expectedUser.permissions
     )
 
-    request.toUser.copy(id = expectedUser.id) should be(expectedUser)
+    request.toUser(withSalt = salt).copy(id = expectedUser.id) should be(expectedUser)
   }
 }

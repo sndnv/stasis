@@ -38,7 +38,10 @@ class ServerPersistence(
 
   val schedules: ScheduleStore = ScheduleStore(backend = backends.schedules)
 
-  val users: UserStore = UserStore(backend = backends.users)
+  val users: UserStore = UserStore(
+    userSaltSize = persistenceConfig.getInt("users.salt-size"),
+    backend = backends.users
+  )
 
   def init(): Future[Done] =
     for {

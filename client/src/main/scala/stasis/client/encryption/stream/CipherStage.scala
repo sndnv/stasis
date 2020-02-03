@@ -2,12 +2,11 @@ package stasis.client.encryption.stream
 
 import java.security.Key
 import java.security.spec.AlgorithmParameterSpec
-
-import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
-import akka.stream.{Attributes, FlowShape, Inlet, Outlet}
-import akka.util.ByteString
 import javax.crypto.Cipher
-import javax.crypto.spec.{GCMParameterSpec, SecretKeySpec}
+
+import akka.stream.{Attributes, FlowShape, Inlet, Outlet}
+import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
+import akka.util.ByteString
 
 class CipherStage(
   algorithm: String,
@@ -57,26 +56,4 @@ class CipherStage(
       }
     )
   }
-}
-
-object CipherStage {
-  def aesEncryption(key: ByteString, iv: ByteString): CipherStage =
-    new CipherStage(
-      algorithm = "AES",
-      cipherMode = "GCM",
-      padding = "NoPadding",
-      operationMode = Cipher.ENCRYPT_MODE,
-      key = new SecretKeySpec(key.toArray, "AES"),
-      spec = Some(new GCMParameterSpec(128, iv.toArray))
-    )
-
-  def aesDecryption(key: ByteString, iv: ByteString): CipherStage =
-    new CipherStage(
-      algorithm = "AES",
-      cipherMode = "GCM",
-      padding = "NoPadding",
-      operationMode = Cipher.DECRYPT_MODE,
-      key = new SecretKeySpec(key.toArray, "AES"),
-      spec = Some(new GCMParameterSpec(128, iv.toArray))
-    )
 }

@@ -18,6 +18,8 @@ import stasis.shared.security.Permission
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.shared.model.Generators
 
+import scala.concurrent.duration._
+
 class FormatsSpec extends UnitSpec {
   "Formats" should "convert permissions to/from JSON" in {
     val permissions = Map(
@@ -52,7 +54,7 @@ class FormatsSpec extends UnitSpec {
   }
 
   they should "convert schedules to/from JSON with 'next_invocation' field" in {
-    val schedule = Generators.generateSchedule
+    val schedule = Generators.generateSchedule.copy(interval = 30.seconds)
     val json =
       s"""
          |{

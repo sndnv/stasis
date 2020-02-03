@@ -42,7 +42,7 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
         metadataCrate = metadataCrate,
         metadataSecret = deviceSecret.toMetadataSecret(metadataCrate),
         metadata = datasetMetadata,
-        encoder = new Aes
+        encoder = Aes
       )
       .map { encrypted =>
         encrypted should be(encryptedDatasetMetadata.decodeFromBase64)
@@ -55,7 +55,7 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
         metadataCrate = metadataCrate,
         metadataSecret = deviceSecret.toMetadataSecret(metadataCrate),
         metadata = Some(Source.single(encryptedDatasetMetadata.decodeFromBase64)),
-        decoder = new Aes
+        decoder = Aes
       )
       .map { decrypted =>
         decrypted should be(datasetMetadata)
@@ -68,7 +68,7 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
         metadataCrate = metadataCrate,
         metadataSecret = deviceSecret.toMetadataSecret(metadataCrate),
         metadata = None,
-        decoder = new Aes
+        decoder = Aes
       )
       .map { other =>
         fail(s"Unexpected result received: [$other]")
@@ -84,8 +84,8 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
 
   private implicit val secretsConfig: Secret.Config = Secret.Config(
     derivation = Secret.DerivationConfig(
-      encryption = Secret.KeyDerivationConfig(secretSize = 64, iterations = 10000, saltPrefix = "unit-test"),
-      authentication = Secret.KeyDerivationConfig(secretSize = 64, iterations = 10000, saltPrefix = "unit-test")
+      encryption = Secret.KeyDerivationConfig(secretSize = 64, iterations = 100000, saltPrefix = "unit-test"),
+      authentication = Secret.KeyDerivationConfig(secretSize = 64, iterations = 100000, saltPrefix = "unit-test")
     ),
     encryption = Secret.EncryptionConfig(
       file = Secret.EncryptionSecretConfig(keySize = 16, ivSize = 16),

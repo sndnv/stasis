@@ -1,12 +1,14 @@
 package stasis.test.specs.unit.client.api.http
 
 import akka.Done
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import akka.actor.typed.scaladsl.Behaviors
 import akka.event.Logging
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.{ConnectionContext, Http}
-import stasis.client.api.http.{ApiEndpoint, Context}
+import stasis.client.api.http.{Context, HttpApiEndpoint}
 import stasis.client.model.DatasetMetadata
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.model.devices.Device
@@ -19,12 +21,12 @@ import stasis.test.specs.unit.client.mocks._
 import scala.collection.mutable
 import scala.concurrent.Future
 
-class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
+class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.client.api.http.Formats._
   import stasis.shared.api.Formats._
 
-  "An ApiEndpoint" should "successfully authenticate users" in {
+  "An HttpApiEndpoint" should "successfully authenticate users" in {
     val endpoint = createEndpoint()
 
     Get(s"/user")
@@ -152,7 +154,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
   private def createEndpoint(
     api: MockServerApiEndpointClient = MockServerApiEndpointClient()
-  ): ApiEndpoint = {
+  ): HttpApiEndpoint = {
     implicit val context: Context = Context(
       api = api,
       executor = MockOperationExecutor(),
@@ -162,7 +164,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       log = Logging(system, this.getClass.getName)
     )
 
-    new ApiEndpoint(
+    new HttpApiEndpoint(
       authenticator = {
         case BasicHttpCredentials(`testUser`, `testPassword`) =>
           Future.successful(Done)
@@ -172,6 +174,11 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
     )
   }
+
+  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+    "HttpApiEndpointSpec"
+  )
 
   private val testUser = "test-user"
   private val testPassword = "test-password"

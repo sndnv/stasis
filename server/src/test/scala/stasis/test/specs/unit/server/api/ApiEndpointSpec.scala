@@ -58,6 +58,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     val user = User(
       id = testUser,
+      salt = "test-salt",
       active = true,
       limits = None,
       permissions = Set.empty
@@ -157,6 +158,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     val user = User(
       id = testUser,
+      salt = "test-salt",
       active = true,
       limits = None,
       permissions = Set.empty

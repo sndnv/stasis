@@ -35,7 +35,7 @@ then
   exit
 fi
 
-SCRIPTS_DIR=$(dirname "$(readlink -f "$0")")
+SCRIPTS_DIR=$(unset CDPATH && cd "$(dirname "$0")" && echo ${PWD})
 CERTS_DIR="$(dirname "${SCRIPTS_DIR}")/certs"
 
 IDENTITY_NAME=${4:-identity}

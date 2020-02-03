@@ -3,17 +3,16 @@ package stasis.client.encryption.secrets
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 
-import scala.concurrent.{ExecutionContext, Future}
-
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import at.favre.lib.crypto.HKDF
-import stasis.client.encryption.Aes
 import stasis.client.encryption.stream.CipherStage
 import stasis.core.packaging.Crate
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
+
+import scala.concurrent.{ExecutionContext, Future}
 
 // doc - never stored or sent unencrypted
 final case class DeviceSecret(

@@ -5,7 +5,7 @@ import java.nio.file.Paths
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceMetadataSecret, DeviceSecret}
-import stasis.client.encryption.stream.CipherStage
+import stasis.client.encryption.Aes
 import stasis.core.packaging.Crate
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.EncodingHelpers
@@ -27,7 +27,7 @@ class DeviceSecretSpec extends AsyncUnitSpec with SecretsConfig with EncodingHel
   private val encryptedDeviceSecret = "z+pus9Glc/HssFVWozd+T2iuw4OOM4aeqcdDY+gvG8M=".decodeFromBase64
 
   "A DeviceSecret" should "support encryption" in {
-    val encryptionStage = CipherStage.aesEncryption(
+    val encryptionStage = Aes.encryption(
       key = encryptionKey.decodeFromBase64,
       iv = encryptionIv.decodeFromBase64
     )
@@ -40,7 +40,7 @@ class DeviceSecretSpec extends AsyncUnitSpec with SecretsConfig with EncodingHel
   }
 
   it should "support decryption" in {
-    val decryptionStage = CipherStage.aesDecryption(
+    val decryptionStage = Aes.decryption(
       key = encryptionKey.decodeFromBase64,
       iv = encryptionIv.decodeFromBase64
     )

@@ -330,6 +330,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
   private val user = User(
     id = User.generateId(),
+    salt = "test-salt",
     active = true,
     limits = None,
     permissions = Set.empty

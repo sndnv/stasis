@@ -8,7 +8,7 @@ import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import org.jose4j.jws.AlgorithmIdentifiers
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.security.exceptions.AuthenticationFailure
-import stasis.core.security.jwt.JwtAuthenticator
+import stasis.core.security.jwt.DefaultJwtAuthenticator
 import stasis.core.security.keys.KeyProvider
 import stasis.identity.authentication.manage.DefaultResourceOwnerAuthenticator
 import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore}
@@ -30,7 +30,7 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
 
     val authenticator = new DefaultResourceOwnerAuthenticator(
       store = store.view,
-      underlying = new JwtAuthenticator(
+      underlying = new DefaultJwtAuthenticator(
         provider = provider,
         audience = targetApi.id.toString,
         identityClaim = "sub",
@@ -56,7 +56,7 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
 
     val authenticator = new DefaultResourceOwnerAuthenticator(
       store = store.view,
-      underlying = new JwtAuthenticator(
+      underlying = new DefaultJwtAuthenticator(
         provider = provider,
         audience = targetApi.id.toString,
         identityClaim = "sub",
@@ -89,7 +89,7 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
 
     val authenticator = new DefaultResourceOwnerAuthenticator(
       store = store.view,
-      underlying = new JwtAuthenticator(
+      underlying = new DefaultJwtAuthenticator(
         provider = provider,
         audience = invalidAudience,
         identityClaim = "sub",
@@ -120,7 +120,7 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
 
     val authenticator = new DefaultResourceOwnerAuthenticator(
       store = store.view,
-      underlying = new JwtAuthenticator(
+      underlying = new DefaultJwtAuthenticator(
         provider = provider,
         audience = targetApi.id.toString,
         identityClaim = "sub",

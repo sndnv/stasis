@@ -10,9 +10,10 @@ final case class CreateUser(
 
 object CreateUser {
   implicit class RequestToUser(request: CreateUser) {
-    def toUser: User =
+    def toUser(withSalt: String): User =
       User(
         id = User.generateId(),
+        salt = withSalt,
         active = true,
         limits = request.limits,
         permissions = request.permissions

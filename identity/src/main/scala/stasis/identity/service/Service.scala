@@ -9,7 +9,7 @@ import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.ConnectionContext
 import com.typesafe.{config => typesafe}
 import org.jose4j.jwk.JsonWebKey
-import stasis.core.security.jwt.JwtAuthenticator
+import stasis.core.security.jwt.DefaultJwtAuthenticator
 import stasis.core.security.keys.LocalKeyProvider
 import stasis.core.security.tls.EndpointContext
 import stasis.identity.api.{IdentityEndpoint, manage => manageApi, oauth => oauthApi}
@@ -90,7 +90,7 @@ trait Service {
     val ownerAuthenticatorConfig = rawConfig.getConfig("authenticators.resource-owner")
     val ownerAuthenticator = new manage.DefaultResourceOwnerAuthenticator(
       store = persistence.resourceOwners.view,
-      underlying = new JwtAuthenticator(
+      underlying = new DefaultJwtAuthenticator(
         provider = new LocalKeyProvider(
           jwk = accessTokenSignatureKey,
           issuer = accessTokenIssuer

@@ -8,7 +8,7 @@ class UserPasswordSpec extends UnitSpec with SecretsConfig with EncodingHelpers 
   private val userPassword = UserPassword(user = testUser, salt = "some-user-salt", password = "some-user-password")
 
   "A UserPassword" should "support generating a hashed authentication password" in {
-    val hashedPassword = "7iEgN9fcoXyR2epaaALDHoRdzcJzkvip1e16sInvsUrYm6+cJZi55Y23T86zDt1wQWx/ua42lHtV+VqBLl3ppg=="
+    val hashedPassword = "ssDIJULJGAzYLLHS7zPNteKz5jAEDb2Dmz8Ym/TZByR41BZ8nLol4OZlQvtkeAPG+CqB0hx56etnggKMKccH5Q=="
 
     userPassword.toHashedAuthenticationPassword should be(
       UserHashedAuthenticationPassword(
@@ -19,7 +19,7 @@ class UserPasswordSpec extends UnitSpec with SecretsConfig with EncodingHelpers 
   }
 
   it should "support generating a hashed encryption password" in {
-    val hashedPassword = "GweSVUo/thLertEyWKS3y8N0THvkNJ9fFpdvjaLCnyz93ZHmZRgudJ4Wm5AZ8yF1xAFHZNtxsaYNXl5+o8RKzg=="
+    val hashedPassword = "IrTm/MALVpPlroD3yTH2gPdMEj1sT2G5oQ3zx6NGyBSqWzSc+2o0vkD0LhYtbP5V8PvJ6JiZWsDk8h7rWfS3zA=="
 
     userPassword.toHashedEncryptionPassword should be(
       UserHashedEncryptionPassword(

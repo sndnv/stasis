@@ -10,7 +10,7 @@ import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
 import stasis.core.security.JwtNodeAuthenticator
 import stasis.core.security.exceptions.AuthenticationFailure
-import stasis.core.security.jwt.JwtAuthenticator
+import stasis.core.security.jwt.DefaultJwtAuthenticator
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.security.mocks.{MockJwkProvider, MockJwksGenerators, MockJwtGenerators}
 
@@ -112,7 +112,7 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
       cachingEnabled = false
     )
 
-    val underlying = new JwtAuthenticator(
+    val underlying = new DefaultJwtAuthenticator(
       provider = MockJwkProvider(jwk),
       audience = "self",
       identityClaim = "sub",

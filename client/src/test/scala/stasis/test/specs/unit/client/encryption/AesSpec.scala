@@ -55,13 +55,11 @@ class AesSpec extends AsyncUnitSpec with EncodingHelpers with ResourceHelpers {
     key = encryptionKey.decodeFromBase64
   )
 
-  private val aes = new Aes()
-
   "An AES encoder/decoder implementation" should "encrypt files" in {
     for {
       actualEncryptedContent <- FileIO
         .fromPath(plaintextFile)
-        .via(aes.encrypt(fileSecret = fileSecret))
+        .via(Aes.encrypt(fileSecret = fileSecret))
         .runFold(ByteString.empty)(_ concat _)
       expectedEncryptedContent <- FileIO
         .fromPath(encryptedFile)
@@ -75,7 +73,7 @@ class AesSpec extends AsyncUnitSpec with EncodingHelpers with ResourceHelpers {
     for {
       actualDecryptedContent <- FileIO
         .fromPath(encryptedFile)
-        .via(aes.decrypt(fileSecret = fileSecret))
+        .via(Aes.decrypt(fileSecret = fileSecret))
         .runFold(ByteString.empty)(_ concat _)
       expectedDecryptedContent <- FileIO
         .fromPath(plaintextFile)
@@ -88,7 +86,7 @@ class AesSpec extends AsyncUnitSpec with EncodingHelpers with ResourceHelpers {
   it should "encrypt dataset metadata" in {
     Source
       .single(DatasetMetadata.toByteString(datasetMetadata))
-      .via(aes.encrypt(metadataSecret = metadataSecret))
+      .via(Aes.encrypt(metadataSecret = metadataSecret))
       .runFold(ByteString.empty)(_ concat _)
       .map { actualEncryptedDatasetMetadata =>
         actualEncryptedDatasetMetadata should be(encryptedDatasetMetadata.decodeFromBase64)
@@ -98,7 +96,7 @@ class AesSpec extends AsyncUnitSpec with EncodingHelpers with ResourceHelpers {
   it should "decrypt dataset metadata" in {
     Source
       .single(encryptedDatasetMetadata.decodeFromBase64)
-      .via(aes.decrypt(metadataSecret = metadataSecret))
+      .via(Aes.decrypt(metadataSecret = metadataSecret))
       .runFold(ByteString.empty)(_ concat _)
       .flatMap(rawMetadata => Future.fromTry(DatasetMetadata.fromByteString(rawMetadata)))
       .map { expectedDatasetMetadata =>

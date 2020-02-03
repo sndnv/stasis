@@ -15,6 +15,7 @@ object Generators {
   def generateUser(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): User =
     User(
       id = User.generateId(),
+      salt = generateString(withSize = 16),
       active = true,
       limits = None,
       permissions = Set.empty

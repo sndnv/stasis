@@ -1,11 +1,15 @@
 package stasis.server.model.users
 
+import java.util.concurrent.ThreadLocalRandom
+
 import scala.concurrent.{ExecutionContext, Future}
 import akka.Done
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.server.security.{CurrentUser, Resource}
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
+
+import scala.util.Random
 
 trait UserStore { store =>
   protected implicit def ec: ExecutionContext
@@ -15,6 +19,7 @@ trait UserStore { store =>
   protected def delete(user: User.Id): Future[Boolean]
   protected def get(user: User.Id): Future[Option[User]]
   protected def list(): Future[Map[User.Id, User]]
+  protected def generateSalt(): String
 
   final def view(): UserStore.View.Privileged =
     new UserStore.View.Privileged {
@@ -41,6 +46,9 @@ trait UserStore { store =>
 
       override def delete(user: User.Id): Future[Boolean] =
         store.delete(user)
+
+      override def generateSalt(): String =
+        store.generateSalt()
     }
 
   final def manageSelf(): UserStore.Manage.Self =
@@ -72,6 +80,7 @@ object UserStore {
       def create(user: User): Future[Done]
       def update(user: User): Future[Done]
       def delete(user: User.Id): Future[Boolean]
+      def generateSalt(): String
       override def requiredPermission: Permission = Permission.Manage.Privileged
     }
 
@@ -82,6 +91,7 @@ object UserStore {
   }
 
   def apply(
+    userSaltSize: Int,
     backend: KeyValueBackend[User.Id, User]
   )(implicit ctx: ExecutionContext): UserStore =
     new UserStore {
@@ -91,5 +101,10 @@ object UserStore {
       override protected def delete(user: User.Id): Future[Boolean] = backend.delete(user)
       override protected def get(user: User.Id): Future[Option[User]] = backend.get(user)
       override protected def list(): Future[Map[User.Id, User]] = backend.entries
+
+      override protected def generateSalt(): String = {
+        val rnd: Random = ThreadLocalRandom.current()
+        rnd.alphanumeric.take(userSaltSize).mkString
+      }
     }
 }

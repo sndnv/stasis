@@ -15,12 +15,10 @@ class GzipSpec extends AsyncUnitSpec with EncodingHelpers {
   private val decompressedData = "some-decompressed-data"
   private val compressedData = "H4sIAAAAAAAAACrOz03VTUlNzs8tKEotLk5N0U1JLEkEAAAA//8DAG894xUWAAAA"
 
-  private val gzip = new Gzip()
-
   "A Gzip encoder/decoder implementation" should "compress data" in {
     Source
       .single(ByteString(decompressedData))
-      .via(gzip.compress)
+      .via(Gzip.compress)
       .runFold(ByteString.empty)(_ concat _)
       .map { actualCompressedData =>
         actualCompressedData should be(compressedData.decodeFromBase64)
@@ -30,7 +28,7 @@ class GzipSpec extends AsyncUnitSpec with EncodingHelpers {
   it should "decompress data" in {
     Source
       .single(compressedData.decodeFromBase64)
-      .via(gzip.decompress)
+      .via(Gzip.decompress)
       .runFold(ByteString.empty)(_ concat _)
       .map { actualDecompressedData =>
         actualDecompressedData.utf8String should be(decompressedData)

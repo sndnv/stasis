@@ -338,7 +338,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         prefix = "staged-",
         suffix = ".tmp"
       ),
-      compressor = new Gzip,
+      compressor = Gzip,
       encryptor = new MockEncryption(),
       decryptor = new MockEncryption() {
         override def decrypt(metadataSecret: DeviceMetadataSecret): Flow[ByteString, ByteString, NotUsed] =
@@ -409,7 +409,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         prefix = "staged-",
         suffix = ".tmp"
       ),
-      compressor = new Gzip,
+      compressor = Gzip,
       encryptor = new MockEncryption(),
       decryptor = new MockEncryption(),
       clients = Clients(
@@ -455,8 +455,8 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
 
   private implicit val secretsConfig: Secret.Config = Secret.Config(
     derivation = Secret.DerivationConfig(
-      encryption = Secret.KeyDerivationConfig(secretSize = 64, iterations = 10000, saltPrefix = "unit-test"),
-      authentication = Secret.KeyDerivationConfig(secretSize = 64, iterations = 10000, saltPrefix = "unit-test")
+      encryption = Secret.KeyDerivationConfig(secretSize = 64, iterations = 100000, saltPrefix = "unit-test"),
+      authentication = Secret.KeyDerivationConfig(secretSize = 64, iterations = 100000, saltPrefix = "unit-test")
     ),
     encryption = Secret.EncryptionConfig(
       file = Secret.EncryptionSecretConfig(keySize = 16, ivSize = 16),
@@ -479,7 +479,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     clients: Clients,
     tracker: MockBackupTracker
   ): Backup = {
-    val encryption = new Aes
+    val encryption = Aes
 
     implicit val providers: Providers = Providers(
       checksum = checksum,
@@ -488,7 +488,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         prefix = "staged-",
         suffix = ".tmp"
       ),
-      compressor = new Gzip,
+      compressor = Gzip,
       encryptor = encryption,
       decryptor = encryption,
       clients = clients,
