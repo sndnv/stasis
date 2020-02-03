@@ -42,7 +42,7 @@ object DefaultOperationScheduler {
   final case class Config(
     schedulesFile: Path,
     minDelay: FiniteDuration,
-    maxAdditionalDelay: FiniteDuration
+    maxExtraDelay: FiniteDuration
   )
 
   def apply(
@@ -157,7 +157,7 @@ object DefaultOperationScheduler {
                 config.minDelay.toMillis
               )
 
-              val randomDelay = ThreadLocalRandom.current().nextLong(0, config.maxAdditionalDelay.toMillis)
+              val randomDelay = ThreadLocalRandom.current().nextLong(0, config.maxExtraDelay.toMillis)
 
               val actualDelay = (executionDelay + randomDelay).millis
 

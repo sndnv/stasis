@@ -272,7 +272,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
         scheduler.schedules.await should not be empty
       }
 
-      await(delay = maxDelay * 2, withSystem = typedSystem)
+      await(delay = maxDelay * 2 + maxDelay / 2, withSystem = typedSystem)
 
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be >= 2
@@ -556,7 +556,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
       config = DefaultOperationScheduler.Config(
         schedulesFile = "/ops/scheduling/test.schedules".asTestResource,
         minDelay = minDelay,
-        maxAdditionalDelay = maxAdditionalDelay
+        maxExtraDelay = maxAdditionalDelay
       ),
       api = api,
       executor = executor

@@ -64,6 +64,7 @@ class DefaultResourceProviderSpec extends AsyncUnitSpec {
   private implicit val system: ActorSystem = ActorSystem(name = "DefaultResourceProviderSpec")
 
   private val userStore: UserStore = UserStore(
+    userSaltSize = 8,
     backend = MemoryBackend.untyped[User.Id, User](s"mock-user-store-${java.util.UUID.randomUUID()}")
   )
 
@@ -77,6 +78,7 @@ class DefaultResourceProviderSpec extends AsyncUnitSpec {
 
   private val testUser = User(
     id = User.generateId(),
+    salt = "test-salt",
     active = true,
     limits = None,
     permissions = Set(Permission.Manage.Self)

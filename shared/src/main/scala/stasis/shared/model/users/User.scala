@@ -6,6 +6,7 @@ import scala.concurrent.duration.FiniteDuration
 
 final case class User(
   id: User.Id,
+  salt: String,
   active: Boolean,
   limits: Option[User.Limits],
   permissions: Set[Permission]

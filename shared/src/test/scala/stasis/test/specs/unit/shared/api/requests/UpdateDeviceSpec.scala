@@ -12,6 +12,7 @@ class UpdateDeviceSpec extends UnitSpec {
   it should "convert requests to updated devices" in {
     val owner = User(
       id = User.generateId(),
+      salt = "test-salt",
       active = true,
       limits = None,
       permissions = Set.empty

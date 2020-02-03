@@ -11,6 +11,7 @@ class UpdateUserSpec extends UnitSpec {
   it should "convert requests to updated users" in {
     val initialUser = User(
       id = User.generateId(),
+      salt = "test-salt",
       active = true,
       limits = None,
       permissions = Set.empty

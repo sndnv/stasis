@@ -1,7 +1,7 @@
 package stasis.client.api.http
 
-import akka.actor.ActorSystem
-import akka.event.{Logging, LoggingAdapter}
+import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
@@ -16,14 +16,13 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
-class ApiEndpoint(
+class HttpApiEndpoint(
   authenticator: FrontendAuthenticator
-)(implicit system: ActorSystem, providers: Context) {
+)(implicit system: ActorSystem[SpawnProtocol], context: Context) {
 
+  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
   private implicit val mat: ActorMaterializer = ActorMaterializer()
-  private implicit val ec: ExecutionContextExecutor = system.dispatcher
-
-  private val log: LoggingAdapter = Logging(system, this.getClass.getName)
+  private implicit val ec: ExecutionContextExecutor = system.executionContext
 
   private val definitions = new DatasetDefinitions()
   private val entries = new DatasetEntries()
@@ -42,7 +41,7 @@ class ApiEndpoint(
 
           val message = s"Unhandled exception encountered: [${e.getMessage}]; failure reference is [$failureReference]"
 
-          log.error(e, message)
+          context.log.error(e, message)
 
           complete(
             StatusCodes.InternalServerError,
@@ -74,7 +73,7 @@ class ApiEndpoint(
             case Failure(e) =>
               val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
-              log.warning(
+              context.log.warning(
                 "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{}]",
                 method.value,
                 uri,
@@ -88,7 +87,7 @@ class ApiEndpoint(
         case None =>
           val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
-          log.warning(
+          context.log.warning(
             "Rejecting [{}] request for [{}] with no credentials from [{}]",
             method.value,
             uri,

@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.core.security.jwt
 
 import org.jose4j.jwk.JsonWebKey
-import stasis.core.security.jwt.JwtAuthenticator
+import stasis.core.security.jwt.DefaultJwtAuthenticator
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.security.mocks.{MockJwkProvider, MockJwtGenerators}
 
@@ -12,7 +12,7 @@ trait JwtAuthenticatorBehaviour {
   _: AsyncUnitSpec =>
   def authenticator(withKeyType: String, withJwk: JsonWebKey): Unit = {
     it should s"successfully authenticate valid tokens ($withKeyType)" in {
-      val authenticator = new JwtAuthenticator(
+      val authenticator = new DefaultJwtAuthenticator(
         provider = MockJwkProvider(withJwk),
         audience = "self",
         identityClaim = "sub",
@@ -35,7 +35,7 @@ trait JwtAuthenticatorBehaviour {
     }
 
     it should s"refuse authentication attempts with invalid tokens ($withKeyType)" in {
-      val authenticator = new JwtAuthenticator(
+      val authenticator = new DefaultJwtAuthenticator(
         provider = MockJwkProvider(withJwk),
         audience = "self",
         identityClaim = "sub",
@@ -68,7 +68,7 @@ trait JwtAuthenticatorBehaviour {
     it should s"successfully authenticate valid tokens with custom identity claims ($withKeyType)" in {
       val customIdentityClaim = "identity"
 
-      val authenticator = new JwtAuthenticator(
+      val authenticator = new DefaultJwtAuthenticator(
         provider = MockJwkProvider(withJwk),
         audience = "self",
         identityClaim = "sub",
@@ -96,7 +96,7 @@ trait JwtAuthenticatorBehaviour {
     it should s"refuse authentication attempts when tokens have missing custom identity claims ($withKeyType)" in {
       val customIdentityClaim = "identity"
 
-      val authenticator = new JwtAuthenticator(
+      val authenticator = new DefaultJwtAuthenticator(
         provider = MockJwkProvider(withJwk),
         audience = "self",
         identityClaim = customIdentityClaim,

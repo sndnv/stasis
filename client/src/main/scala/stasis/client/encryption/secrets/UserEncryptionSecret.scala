@@ -1,12 +1,12 @@
 package stasis.client.encryption.secrets
 
-import scala.concurrent.Future
-
 import akka.stream.Materializer
 import akka.util.ByteString
-import stasis.client.encryption.stream.CipherStage
+import stasis.client.encryption.Aes
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
+
+import scala.concurrent.Future
 
 // doc - never stored or sent externally
 final case class UserEncryptionSecret(
@@ -19,7 +19,7 @@ final case class UserEncryptionSecret(
   def encryptDeviceSecret(
     secret: DeviceSecret
   )(implicit mat: Materializer): Future[ByteString] =
-    secret.encrypted(CipherStage.aesEncryption(key, iv))
+    secret.encrypted(Aes.encryption(key, iv))
 
   def decryptDeviceSecret(
     device: Device.Id,
@@ -29,7 +29,7 @@ final case class UserEncryptionSecret(
       user = user,
       device = device,
       encryptedSecret = encryptedSecret,
-      CipherStage.aesDecryption(key, iv)
+      Aes.decryption(key, iv)
     )
 }
 

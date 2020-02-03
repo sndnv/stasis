@@ -7,11 +7,13 @@ import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import com.typesafe.config.{Config, ConfigFactory}
 import stasis.client.api.clients.DefaultServerCoreEndpointClient
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.routing.Node
 import stasis.core.routing.exceptions.PullFailure
+import stasis.core.security.tls.EndpointContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks.MockServerCoreEndpoint
 
@@ -19,17 +21,6 @@ import scala.collection.mutable
 import scala.concurrent.Future
 
 class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec {
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
-    "DefaultServerCoreEndpointClientSpec"
-  )
-
-  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.toUntyped
-
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
-
-  private val ports: mutable.Queue[Int] = (23000 to 23100).to[mutable.Queue]
-
   "A DefaultServerCoreEndpointClient" should "push crates" in {
     val coreCredentials = BasicHttpCredentials(username = "some-user", password = "some-password")
     val corePort = ports.dequeue()
@@ -37,9 +28,10 @@ class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec {
     core.start(port = corePort)
 
     val coreClient = new DefaultServerCoreEndpointClient(
-      coreAddress = HttpEndpointAddress(uri = s"http://localhost:$corePort"),
-      coreCredentials = coreCredentials,
-      self = Node.generateId()
+      address = HttpEndpointAddress(uri = s"http://localhost:$corePort"),
+      credentials = Future.successful(coreCredentials),
+      self = Node.generateId(),
+      context = None
     )
 
     val crateId = Crate.generateId()
@@ -69,9 +61,10 @@ class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec {
     core.start(port = corePort)
 
     val coreClient = new DefaultServerCoreEndpointClient(
-      coreAddress = HttpEndpointAddress(uri = s"http://localhost:$corePort"),
-      coreCredentials = coreCredentials,
-      self = Node.generateId()
+      address = HttpEndpointAddress(uri = s"http://localhost:$corePort"),
+      credentials = Future.successful(coreCredentials),
+      self = Node.generateId(),
+      context = None
     )
 
     val crateId = Crate.generateId()
@@ -97,4 +90,61 @@ class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec {
       actualContent should be(crateContent)
     }
   }
+
+  it should "support custom connection contexts" in {
+    val coreCredentials = BasicHttpCredentials(username = "some-user", password = "some-password")
+    val corePort = ports.dequeue()
+
+    val config: Config = ConfigFactory.load().getConfig("stasis.test.client.security.tls")
+
+    val endpointContext = EndpointContext.create(
+      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-server"))
+    )
+
+    val clientContext = EndpointContext.create(
+      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-client"))
+    )
+
+    val core = new MockServerCoreEndpoint(expectedCredentials = coreCredentials)
+
+    val coreClient = new DefaultServerCoreEndpointClient(
+      address = HttpEndpointAddress(uri = s"https://localhost:$corePort"),
+      credentials = Future.successful(coreCredentials),
+      self = Node.generateId(),
+      context = Some(clientContext)
+    )
+
+    core.start(port = corePort, context = Some(endpointContext))
+
+    val crateId = Crate.generateId()
+    val crateContent = ByteString("some-crate")
+
+    for {
+      _ <- coreClient.push(
+        manifest = Manifest(
+          crate = crateId,
+          origin = Node.generateId(),
+          source = Node.generateId(),
+          size = crateContent.size,
+          copies = 1
+        ),
+        content = Source.single(crateContent)
+      )
+      crateExists <- core.crateExists(crateId)
+    } yield {
+      crateExists should be(true)
+    }
+  }
+
+  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+    "DefaultServerCoreEndpointClientSpec"
+  )
+
+  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.toUntyped
+
+  private implicit val mat: ActorMaterializer = ActorMaterializer()
+
+  private val ports: mutable.Queue[Int] = (23000 to 23100).to[mutable.Queue]
+
 }

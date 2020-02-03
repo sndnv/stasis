@@ -2,32 +2,37 @@ package stasis.test.specs.unit.client.api.clients
 
 import java.time.Instant
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
-import akka.http.scaladsl.model.headers.BasicHttpCredentials
-import akka.stream.{ActorMaterializer, Materializer}
-import akka.stream.scaladsl.{Flow, Source}
 import akka.NotUsed
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import akka.http.scaladsl.HttpsConnectionContext
+import akka.http.scaladsl.model.headers.BasicHttpCredentials
+import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
+import akka.stream.scaladsl.{Flow, Source}
+import akka.stream.{ActorMaterializer, Materializer}
 import akka.util.ByteString
+import com.typesafe.config.{Config, ConfigFactory}
 import stasis.client.api.clients.DefaultServerApiEndpointClient
 import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.encryption.secrets.DeviceMetadataSecret
 import stasis.client.model.DatasetMetadata
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
+import stasis.core.security.tls.EndpointContext
 import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}
 import stasis.shared.api.responses.CreatedDatasetDefinition
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.mocks.{MockEncryption, MockServerApiEndpoint, MockServerCoreEndpointClient}
 import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.mocks.{MockEncryption, MockServerApiEndpoint, MockServerCoreEndpointClient}
 import stasis.test.specs.unit.shared.model.Generators
 
 import scala.collection.mutable
-import scala.concurrent.duration._
 import scala.concurrent.Future
+import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
 class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec {
@@ -285,9 +290,7 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec {
 
     val apiClient = createClient(apiPort)
 
-    apiClient.ping().map { _ =>
-      succeed
-    }
+    noException should be thrownBy apiClient.ping().await
   }
 
   it should "handle unexpected responses" in {
@@ -330,10 +333,34 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec {
       }
   }
 
-  private def createClient(apiPort: Int) =
+  it should "support custom connection contexts" in {
+    val apiPort = ports.dequeue()
+    val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials)
+
+    val config: Config = ConfigFactory.load().getConfig("stasis.test.client.security.tls")
+
+    val endpointContext = EndpointContext.create(
+      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-server"))
+    )
+
+    val clientContext = EndpointContext.create(
+      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-client"))
+    )
+
+    api.start(port = apiPort, context = Some(endpointContext))
+
+    val apiClient = createClient(apiPort, context = Some(clientContext))
+
+    noException should be thrownBy apiClient.ping().await
+  }
+
+  private def createClient(apiPort: Int, context: Option[HttpsConnectionContext] = None) =
     new DefaultServerApiEndpointClient(
-      apiUrl = s"http://localhost:$apiPort",
-      apiCredentials = apiCredentials,
+      apiUrl = context match {
+        case Some(_) => s"https://localhost:$apiPort"
+        case None    => s"http://localhost:$apiPort"
+      },
+      credentials = Future.successful(apiCredentials),
       self = Device.generateId(),
       decryption = DefaultServerApiEndpointClient.DecryptionContext(
         core = new MockServerCoreEndpointClient(self = Node.generateId(), crates = Map.empty) {
@@ -345,10 +372,17 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec {
           override def decrypt(metadataSecret: DeviceMetadataSecret): Flow[ByteString, ByteString, NotUsed] =
             Flow[ByteString].map(_ => DatasetMetadata.toByteString(DatasetMetadata.empty))
         }
-      )
+      ),
+      context = context
     )
 
-  private implicit val system: ActorSystem = ActorSystem(name = "DefaultServerApiEndpointClientSpec")
+  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+    "DefaultServerApiEndpointClientSpec"
+  )
+
+  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.toUntyped
+
   private implicit val mat: Materializer = ActorMaterializer()
 
   private val ports: mutable.Queue[Int] = (22000 to 22100).to[mutable.Queue]

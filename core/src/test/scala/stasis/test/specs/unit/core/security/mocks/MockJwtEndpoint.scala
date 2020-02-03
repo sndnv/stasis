@@ -8,8 +8,7 @@ import stasis.core.security.tls.EndpointContext
 
 class MockJwtEndpoint(
   port: Int,
-  subject: String,
-  secret: String,
+  credentials: MockJwtEndpoint.ExpectedCredentials,
   expirationSeconds: Long,
   signatureKey: JsonWebKey,
   withKeystoreConfig: Option[EndpointContext.StoreConfig]
@@ -29,7 +28,17 @@ class MockJwtEndpoint(
 
   private val wireMockServer = new WireMockServer(config)
 
-  private val urlQuery = s"grant_type=client_credentials&scope=$subject"
+  private val clientCredentialsQuery =
+    s"scope=${credentials.subject}&grant_type=client_credentials"
+
+  private val clientCredentialsQueryWithoutScope =
+    s"grant_type=client_credentials"
+
+  private val resourceOwnerPasswordCredentialsQuery =
+    s"scope=${credentials.subject}&grant_type=password&username=${credentials.user}&password=${credentials.userPassword}"
+
+  private val refreshQuery =
+    s"scope=${credentials.subject}&grant_type=refresh_token&refresh_token=${credentials.refreshToken}"
 
   private val scheme = withKeystoreConfig match {
     case Some(_) => "https"
@@ -44,19 +53,21 @@ class MockJwtEndpoint(
 
   def count(path: String): Int =
     wireMockServer
-      .findAll(postRequestedFor(urlEqualTo(s"$path?$urlQuery")))
+      .findAll(postRequestedFor(urlPathMatching(path)))
       .size
 
   wireMockServer.stubFor(
-    post(urlEqualTo(s"/token?$urlQuery"))
-      .withBasicAuth(subject, secret)
+    post(urlEqualTo("/token"))
+      .withBasicAuth(credentials.subject, credentials.secret)
+      .withRequestBody(containing("grant_type=client_credentials"))
+      .withRequestBody(containing(s"scope=${credentials.subject}"))
       .willReturn(
         okJson(
           s"""
              |{
              |  "access_token": "${generateJwt()}",
              |  "expires_in": $expirationSeconds,
-             |  "scope": "$subject"
+             |  "scope": "${credentials.subject}"
              |}
            """.stripMargin
         )
@@ -64,22 +75,95 @@ class MockJwtEndpoint(
   )
 
   wireMockServer.stubFor(
-    post(urlEqualTo(s"/token/invalid?$urlQuery"))
-      .willReturn(okXml("<test>data</test>"))
-      .withBasicAuth(subject, secret)
+    post(urlEqualTo(s"/token?$clientCredentialsQuery"))
+      .withBasicAuth(credentials.subject, credentials.secret)
+      .willReturn(
+        okJson(
+          s"""
+             |{
+             |  "access_token": "${generateJwt()}",
+             |  "expires_in": $expirationSeconds,
+             |  "scope": "${credentials.subject}"
+             |}
+           """.stripMargin
+        )
+      )
   )
 
   wireMockServer.stubFor(
-    post(urlEqualTo(s"/token/error?$urlQuery"))
+    post(urlEqualTo(s"/token?$clientCredentialsQueryWithoutScope"))
+      .withBasicAuth(credentials.subject, credentials.secret)
+      .willReturn(
+        okJson(
+          s"""
+             |{
+             |  "access_token": "${generateJwt()}",
+             |  "expires_in": $expirationSeconds
+             |}
+           """.stripMargin
+        )
+      )
+  )
+
+  wireMockServer.stubFor(
+    post(urlEqualTo(s"/token?$resourceOwnerPasswordCredentialsQuery"))
+      .withBasicAuth(credentials.subject, credentials.secret)
+      .willReturn(
+        okJson(
+          s"""
+             |{
+             |  "access_token": "${generateJwt()}",
+             |  "expires_in": $expirationSeconds,
+             |  "scope": "${credentials.subject}"
+             |}
+           """.stripMargin
+        )
+      )
+  )
+
+  wireMockServer.stubFor(
+    post(urlEqualTo(s"/token?$refreshQuery"))
+      .withBasicAuth(credentials.subject, credentials.secret)
+      .willReturn(
+        okJson(
+          s"""
+             |{
+             |  "access_token": "${generateJwt()}",
+             |  "expires_in": $expirationSeconds,
+             |  "scope": "${credentials.subject}"
+             |}
+           """.stripMargin
+        )
+      )
+  )
+
+  wireMockServer.stubFor(
+    post(urlEqualTo(s"/token/invalid?$clientCredentialsQuery"))
+      .willReturn(okXml("<test>data</test>"))
+      .withBasicAuth(credentials.subject, credentials.secret)
+  )
+
+  wireMockServer.stubFor(
+    post(urlEqualTo(s"/token/error?$clientCredentialsQuery"))
       .willReturn(serverError())
-      .withBasicAuth(subject, secret)
+      .withBasicAuth(credentials.subject, credentials.secret)
   )
 
   private def generateJwt(): String =
     MockJwtGenerators.generateJwt(
       issuer = "some-issuer",
       audience = "some-audience",
-      subject = subject,
+      subject = credentials.subject,
       signatureKey = signatureKey
     )
+}
+
+object MockJwtEndpoint {
+  final case class ExpectedCredentials(
+    subject: String,
+    secret: String,
+    refreshToken: String,
+    user: String,
+    userPassword: String
+  )
 }

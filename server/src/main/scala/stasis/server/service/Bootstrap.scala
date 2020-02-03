@@ -145,6 +145,7 @@ object Bootstrap {
   private def userFromConfig(config: typesafe.Config): User =
     User(
       id = UUID.fromString(config.getString("id")),
+      salt = config.getString("salt"),
       active = config.getBoolean("active"),
       limits = Try(config.getConfig("limits")).toOption.map(userLimitsFromConfig),
       permissions = userPermissionsFromConfig(config.getStringList("permissions").asScala)

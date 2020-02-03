@@ -33,7 +33,7 @@ class Users()(implicit ctx: RoutesContext) extends ApiRoutes {
           post {
             entity(as[CreateUser]) { createRequest =>
               resource[UserStore.Manage.Privileged] { manage =>
-                val user = createRequest.toUser
+                val user = createRequest.toUser(withSalt = manage.generateSalt())
                 manage.create(user).map { _ =>
                   log.info("User [{}] successfully created user [{}]", currentUser, user.id)
                   complete(CreatedUser(user.id))

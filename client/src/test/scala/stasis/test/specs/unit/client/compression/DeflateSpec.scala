@@ -15,12 +15,10 @@ class DeflateSpec extends AsyncUnitSpec with EncodingHelpers {
   private val decompressedData = "some-decompressed-data"
   private val compressedData = "eNoqzs9N1U1JTc7PLShKLS5OTdFNSSxJBAAAAP//AwBkTwin"
 
-  private val deflate = new Deflate()
-
   "A Deflate encoder/decoder implementation" should "compress data" in {
     Source
       .single(ByteString(decompressedData))
-      .via(deflate.compress)
+      .via(Deflate.compress)
       .runFold(ByteString.empty)(_ concat _)
       .map { actualCompressedData =>
         actualCompressedData should be(compressedData.decodeFromBase64)
@@ -30,7 +28,7 @@ class DeflateSpec extends AsyncUnitSpec with EncodingHelpers {
   it should "decompress data" in {
     Source
       .single(compressedData.decodeFromBase64)
-      .via(deflate.decompress)
+      .via(Deflate.decompress)
       .runFold(ByteString.empty)(_ concat _)
       .map { actualDecompressedData =>
         actualDecompressedData.utf8String should be(decompressedData)

@@ -10,6 +10,7 @@ class CreateDeviceOwnSpec extends UnitSpec {
   it should "convert requests to devices" in {
     val owner = User(
       id = User.generateId(),
+      salt = "test-salt",
       active = true,
       limits = None,
       permissions = Set.empty

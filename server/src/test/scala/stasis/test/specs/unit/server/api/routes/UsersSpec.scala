@@ -207,12 +207,14 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest {
   private val users = Seq(
     User(
       id = user.id,
+      salt = "test-salt-01",
       active = true,
       limits = None,
       permissions = Set.empty
     ),
     User(
       id = User.generateId(),
+      salt = "test-salt-02",
       active = true,
       limits = None,
       permissions = Set.empty

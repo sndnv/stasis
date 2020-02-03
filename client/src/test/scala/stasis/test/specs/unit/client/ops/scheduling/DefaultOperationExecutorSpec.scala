@@ -204,7 +204,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
   }
 
   it should "provide a list of active operations" in {
-    val executor = createExecutor()
+    val executor = createExecutor(slowEncryption = true)
 
     executor.operations.await should be(empty)
 

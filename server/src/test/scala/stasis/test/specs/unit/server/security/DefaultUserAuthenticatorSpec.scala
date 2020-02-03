@@ -8,7 +8,7 @@ import akka.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken
 import org.jose4j.jws.AlgorithmIdentifiers
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.security.exceptions.AuthenticationFailure
-import stasis.core.security.jwt.JwtAuthenticator
+import stasis.core.security.jwt.DefaultJwtAuthenticator
 import stasis.core.security.keys.KeyProvider
 import stasis.server.model.users.UserStore
 import stasis.server.security.DefaultUserAuthenticator
@@ -29,7 +29,7 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
 
     val authenticator = new DefaultUserAuthenticator(
       store = store.view(),
-      underlying = new JwtAuthenticator(
+      underlying = new DefaultJwtAuthenticator(
         provider = provider,
         audience = audience,
         identityClaim = "sub",
@@ -56,7 +56,7 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
 
     val authenticator = new DefaultUserAuthenticator(
       store = store.view(),
-      underlying = new JwtAuthenticator(
+      underlying = new DefaultJwtAuthenticator(
         provider = provider,
         audience = audience,
         identityClaim = "sub",
@@ -86,7 +86,7 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
 
     val authenticator = new DefaultUserAuthenticator(
       store = store.view(),
-      underlying = new JwtAuthenticator(
+      underlying = new DefaultJwtAuthenticator(
         provider = provider,
         audience = audience,
         identityClaim = "sub",
@@ -120,7 +120,7 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
 
     val authenticator = new DefaultUserAuthenticator(
       store = store.view(),
-      underlying = new JwtAuthenticator(
+      underlying = new DefaultJwtAuthenticator(
         provider = provider,
         audience = invalidAudience,
         identityClaim = "sub",
@@ -154,7 +154,7 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
 
     val authenticator = new DefaultUserAuthenticator(
       store = store.view(),
-      underlying = new JwtAuthenticator(
+      underlying = new DefaultJwtAuthenticator(
         provider = provider,
         audience = audience,
         identityClaim = "sub",
@@ -186,7 +186,7 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
 
     val authenticator = new DefaultUserAuthenticator(
       store = store.view(),
-      underlying = new JwtAuthenticator(
+      underlying = new DefaultJwtAuthenticator(
         provider = provider,
         audience = audience,
         identityClaim = "sub",
@@ -238,6 +238,7 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
   )
 
   private def createStore() = UserStore(
-    MemoryBackend[User.Id, User](name = s"user-store-${java.util.UUID.randomUUID()}")
+    userSaltSize = 8,
+    backend = MemoryBackend[User.Id, User](name = s"user-store-${java.util.UUID.randomUUID()}")
   )
 }

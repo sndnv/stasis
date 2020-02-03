@@ -2,14 +2,15 @@ package stasis.client.encryption.secrets
 
 import akka.util.ByteString
 import stasis.client.encryption.stream.CipherStage
+import stasis.client.encryption.Aes
 
 // doc - never stored or sent externally
 final case class DeviceMetadataSecret(
   iv: ByteString,
   private val key: ByteString
 ) extends Secret {
-  def encryption: CipherStage = CipherStage.aesEncryption(key, iv)
-  def decryption: CipherStage = CipherStage.aesDecryption(key, iv)
+  def encryption: CipherStage = Aes.encryption(key, iv)
+  def decryption: CipherStage = Aes.decryption(key, iv)
 }
 
 object DeviceMetadataSecret {

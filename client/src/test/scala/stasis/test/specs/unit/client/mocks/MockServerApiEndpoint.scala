@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.client.mocks
 
-import akka.actor.ActorSystem
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.event.{Logging, LoggingAdapter}
-import akka.http.scaladsl.Http
+import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.server.Directives._
@@ -13,33 +13,37 @@ import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}
 import stasis.shared.api.responses.{CreatedDatasetDefinition, CreatedDatasetEntry, Ping}
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
-
-import scala.concurrent.{ExecutionContextExecutor, Future}
-import scala.util.{Failure, Success}
 import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.shared.model.Generators
 
+import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.util.{Failure, Success}
+
 class MockServerApiEndpoint(
   expectedCredentials: BasicHttpCredentials,
   definitionsWithoutEntries: Seq[DatasetDefinition.Id] = Seq.empty
-)(implicit system: ActorSystem, timeout: Timeout) {
+)(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout) {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
-  private val log: LoggingAdapter = Logging(system, this.getClass.getName)
+  private implicit val untypedSystem: akka.actor.ActorSystem = akka.actor.ActorSystem(name = "MockServerApiEndpoint")
+
+  private val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)
 
   private implicit val mat: ActorMaterializer = ActorMaterializer()
-  private implicit val ec: ExecutionContextExecutor = system.dispatcher
+  private implicit val ec: ExecutionContextExecutor = system.executionContext
+
+  private val http = Http()
 
   private val entriesStore: MemoryBackend[DatasetEntry.Id, DatasetEntry] =
-    MemoryBackend.untyped[DatasetDefinition.Id, DatasetEntry](
+    MemoryBackend[DatasetDefinition.Id, DatasetEntry](
       s"mock-server-api-entries-store-${java.util.UUID.randomUUID()}"
     )
 
   private val definitionsStore: MemoryBackend[DatasetDefinition.Id, DatasetDefinition] =
-    MemoryBackend.untyped[DatasetDefinition.Id, DatasetDefinition](
+    MemoryBackend[DatasetDefinition.Id, DatasetDefinition](
       s"mock-server-api-definitions-store-${java.util.UUID.randomUUID()}"
     )
 
@@ -200,7 +204,9 @@ class MockServerApiEndpoint(
 
   private val service: Route =
     path("ping") {
-      complete(Ping())
+      val ping = Ping()
+      log.info("Responding to ping request with ping ID [{}]", ping.id)
+      complete(ping)
     }
 
   private val routes: Route =
@@ -219,7 +225,7 @@ class MockServerApiEndpoint(
           val _ = request.discardEntityBytes()
 
           log.warning(
-            "Rejecting [{}] request for [{}] with no/invalid credentials from [{}]",
+            "Rejecting [{}] request for [{}] with no/invalid credentials",
             method.value,
             uri
           )
@@ -234,6 +240,11 @@ class MockServerApiEndpoint(
   def definitionExists(definition: DatasetDefinition.Id): Future[Boolean] =
     definitionsStore.contains(definition)
 
-  def start(port: Int): Future[Http.ServerBinding] =
-    Http().bindAndHandle(handler = routes, interface = "localhost", port = port)
+  def start(port: Int, context: Option[HttpsConnectionContext] = None): Future[Http.ServerBinding] =
+    http.bindAndHandle(
+      handler = routes,
+      interface = "localhost",
+      port = port,
+      connectionContext = context.getOrElse(ConnectionContext.noEncryption())
+    )
 }

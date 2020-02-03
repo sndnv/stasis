@@ -3,8 +3,8 @@ package stasis.test.specs.unit.core.security.jwt
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.security.mocks.MockJwksGenerators
 
-class JwtAuthenticatorSpec extends AsyncUnitSpec with JwtAuthenticatorBehaviour {
-  "A JwtAuthenticator" should behave like authenticator(
+class DefaultJwtAuthenticatorSpec extends AsyncUnitSpec with JwtAuthenticatorBehaviour {
+  "A DefaultJwtAuthenticator" should behave like authenticator(
     withKeyType = "RSA",
     withJwk = MockJwksGenerators.generateRandomRsaKey(Some("rsa-0"))
   )

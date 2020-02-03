@@ -9,10 +9,8 @@ import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
 import stasis.core.security.JwtNodeCredentialsProvider
 import stasis.core.security.exceptions.ProviderFailure
-import stasis.core.security.jwt.JwtProvider
 import stasis.test.specs.unit.AsyncUnitSpec
 
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -57,15 +55,7 @@ class JwtNodeCredentialsProviderSpec extends AsyncUnitSpec {
 
     val provider = new JwtNodeCredentialsProvider[HttpEndpointAddress](
       nodeStore = storeInit.store.view,
-      underlying = new JwtProvider(
-        tokenEndpoint = "some-endpoint",
-        client = "some-client",
-        clientSecret = "some-secret",
-        expirationTolerance = 1.second,
-        context = None
-      ) {
-        override def provide(scope: String): Future[String] = Future.successful(token)
-      }
+      underlying = (_: String) => Future.successful(token)
     )
 
     (provider, storeInit.store)
