@@ -1,15 +1,16 @@
 package stasis.test.specs.unit.client.api.http
 
 import akka.Done
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.event.Logging
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.{ConnectionContext, Http}
 import stasis.client.api.http.{Context, HttpApiEndpoint}
 import stasis.client.model.DatasetMetadata
+import stasis.shared.api.responses.Ping
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
@@ -50,6 +51,16 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get(s"/user")
       .addCredentials(testCredentials.copy(password = "invalid")) ~> endpoint.endpointRoutes ~> check {
       status should be(StatusCodes.Unauthorized)
+    }
+  }
+
+  it should "provide routes for service management" in {
+    val endpoint = createEndpoint()
+
+    Get("/service/ping")
+      .addCredentials(testCredentials) ~> endpoint.endpointRoutes ~> check {
+      status should be(StatusCodes.OK)
+      noException should be thrownBy responseAs[Ping]
     }
   }
 
@@ -133,7 +144,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val _ = endpoint.start(
       interface = "localhost",
       port = endpointPort,
-      context = ConnectionContext.noEncryption()
+      context = None
     )
 
     Http()
@@ -161,6 +172,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       scheduler = MockOperationScheduler(),
       tracker = MockTrackerView(),
       search = MockSearch(),
+      terminateService = () => (),
       log = Logging(system, this.getClass.getName)
     )
 

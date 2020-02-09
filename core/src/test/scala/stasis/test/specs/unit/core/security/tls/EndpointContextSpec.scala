@@ -140,8 +140,8 @@ class EndpointContextSpec extends AsyncUnitSpec {
     val interface = "localhost"
     val port = ports.dequeue()
 
-    val serverContext = EndpointContext.fromConfig(config = config.getConfig("context-mutual"))
-    val clientContext = EndpointContext.fromConfig(config = config.getConfig("context-mutual"))
+    val serverContext = EndpointContext.fromConfig(config = config.getConfig("context-mutual")).get
+    val clientContext = EndpointContext.fromConfig(config = config.getConfig("context-mutual")).get
 
     implicit val system: ActorSystem = ActorSystem(name = "EndpointContextSpec")
     implicit val mat: ActorMaterializer = ActorMaterializer()
@@ -178,6 +178,10 @@ class EndpointContextSpec extends AsyncUnitSpec {
       }
 
     actualException.getMessage should be(expectedMessage)
+  }
+
+  it should "not create contexts if not enabled" in {
+    EndpointContext.fromConfig(config = config.getConfig("context-disabled")) should be(None)
   }
 
   private val config: Config = ConfigFactory.load().getConfig("stasis.test.core.security.tls")

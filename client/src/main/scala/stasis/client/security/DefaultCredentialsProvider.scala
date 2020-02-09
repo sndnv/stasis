@@ -11,6 +11,7 @@ import stasis.core.security.oauth.OAuthClient.AccessTokenResponse
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
 
 class DefaultCredentialsProvider private (
@@ -135,10 +136,9 @@ object DefaultCredentialsProvider {
                 scope = tokens.core.scope,
                 parameters = OAuthClient.GrantParameters.RefreshToken(token)
               )
-              .map(self ! UpdateCoreToken(_))
-              .recover {
-                case NonFatal(e) =>
-                  log.error(e, "Failed to refresh core token: [{}]", e.getMessage)
+              .onComplete {
+                case Success(token) => self ! UpdateCoreToken(token)
+                case Failure(e)     => log.error(e, "Failed to refresh core token: [{}]", e.getMessage)
               }
 
           case None =>
@@ -148,10 +148,9 @@ object DefaultCredentialsProvider {
                 scope = tokens.core.scope,
                 parameters = OAuthClient.GrantParameters.ClientCredentials()
               )
-              .map(self ! UpdateCoreToken(_))
-              .recover {
-                case NonFatal(e) =>
-                  log.error(e, "Failed to retrieve new core token: [{}]", e.getMessage)
+              .onComplete {
+                case Success(token) => self ! UpdateCoreToken(token)
+                case Failure(e)     => log.error(e, "Failed to retrieve new core token: [{}]", e.getMessage)
               }
         }
 
@@ -169,10 +168,9 @@ object DefaultCredentialsProvider {
                 scope = tokens.api.scope,
                 parameters = OAuthClient.GrantParameters.RefreshToken(token)
               )
-              .map(self ! UpdateApiToken(_))
-              .recover {
-                case NonFatal(e) =>
-                  log.error(e, "Failed to refresh API token: [{}]", e.getMessage)
+              .onComplete {
+                case Success(token) => self ! UpdateApiToken(token)
+                case Failure(e)     => log.error(e, "Failed to refresh API token: [{}]", e.getMessage)
               }
 
           case None =>

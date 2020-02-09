@@ -9,6 +9,7 @@ import akka.util.{ByteString, Timeout}
 import com.google.common.jimfs.{Configuration, Jimfs}
 import stasis.client.analysis.{Checksum, Metadata}
 import stasis.client.model.FileMetadata
+import stasis.client.service.ApplicationDirectory
 import stasis.core.packaging.Crate
 
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -131,6 +132,20 @@ trait ResourceHelpers {
         nestedDirs = nestedDirectories.size
       )
     )
+  }
+
+  def createApplicationDirectory(init: ApplicationDirectory.Default => Unit): ApplicationDirectory.Default = {
+    val configuration = Configuration.unix().toBuilder.setAttributeViews("basic", "posix").build()
+    val filesystem = Jimfs.newFileSystem(configuration)
+
+    val dir = ApplicationDirectory.Default(
+      applicationName = "test-app",
+      filesystem = filesystem
+    )
+
+    init(dir)
+
+    dir
   }
 }
 

@@ -8,9 +8,15 @@ import akka.stream.TLSClientAuth
 import com.typesafe.{config => typesafe}
 import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 
+import scala.util.Try
+
 object EndpointContext {
-  def fromConfig(config: typesafe.Config): HttpsConnectionContext =
-    create(contextConfig = EndpointContext.ContextConfig(config))
+  def fromConfig(config: typesafe.Config): Option[HttpsConnectionContext] =
+    if (Try(config.getBoolean("enabled")).getOrElse(true)) {
+      Some(create(contextConfig = EndpointContext.ContextConfig(config)))
+    } else {
+      None
+    }
 
   @SuppressWarnings(Array("org.wartremover.warts.Null"))
   def create(

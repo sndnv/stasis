@@ -65,4 +65,11 @@ class ChecksumSpec extends AsyncUnitSpec with ResourceHelpers {
         actualChecksum should be(expectedChecksum)
       }
   }
+
+  "Checksum" should "provide checksum implementations based on config" in {
+    Checksum(checksum = "crc32") should be(Checksum.CRC32)
+    Checksum(checksum = "md5") should be(Checksum.MD5)
+    Checksum(checksum = "sha1") should be(Checksum.SHA1)
+    Checksum(checksum = "sha256") should be(Checksum.SHA256)
+  }
 }

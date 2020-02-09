@@ -53,11 +53,7 @@ trait Service {
     val serverId = UUID.fromString(instanceAuthenticatorConfig.getString("client-id"))
 
     val authenticationEndpointContext: Option[HttpsConnectionContext] =
-      if (rawConfig.getBoolean("clients.authentication.context.enabled")) {
-        Some(EndpointContext.fromConfig(rawConfig.getConfig("clients.authentication.context")))
-      } else {
-        None
-      }
+      EndpointContext.fromConfig(rawConfig.getConfig("clients.authentication.context"))
 
     val jwtProvider: JwtProvider = new DefaultJwtProvider(
       client = new DefaultOAuthClient(
@@ -113,11 +109,7 @@ trait Service {
     )
 
     val clientEndpointContext: Option[HttpsConnectionContext] =
-      if (rawConfig.getBoolean("clients.core.context.enabled")) {
-        Some(EndpointContext.fromConfig(rawConfig.getConfig("clients.core.context")))
-      } else {
-        None
-      }
+      EndpointContext.fromConfig(rawConfig.getConfig("clients.core.context"))
 
     val coreHttpEndpointClient = new HttpEndpointClient(
       credentials = new JwtNodeCredentialsProvider[HttpEndpointAddress](

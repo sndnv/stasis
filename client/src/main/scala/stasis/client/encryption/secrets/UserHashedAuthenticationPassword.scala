@@ -12,6 +12,7 @@ final case class UserHashedAuthenticationPassword(
 ) extends Secret {
   private val extracted: AtomicBoolean = new AtomicBoolean(false)
 
+  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def extract(): String = {
     val alreadyExtracted = extracted.getAndSet(true)
 
