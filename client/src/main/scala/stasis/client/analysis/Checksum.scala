@@ -15,6 +15,14 @@ trait Checksum {
 
 object Checksum {
 
+  def apply(checksum: String): Checksum =
+    checksum.toLowerCase match {
+      case "crc32"  => Checksum.CRC32
+      case "md5"    => Checksum.MD5
+      case "sha1"   => Checksum.SHA1
+      case "sha256" => Checksum.SHA256
+    }
+
   object CRC32 extends Checksum {
     override def calculate(file: Path)(implicit mat: Materializer): Future[BigInt] = crc32(file)
   }

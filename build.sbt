@@ -30,9 +30,12 @@ lazy val client = (project in file("./client"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "at.favre.lib"      % "hkdf"    % "1.1.0",
-      "net.harawata"      % "appdirs" % "1.0.3",
-      "com.google.jimfs"  % "jimfs"   % "1.1"     % Test
+      "at.favre.lib"      %   "hkdf"                    % "1.1.0",
+      "net.harawata"      %   "appdirs"                 % "1.0.3",
+      "com.google.jimfs"  %   "jimfs"                   % "1.1"     % Test,
+      "org.mockito"       %%  "mockito-scala"           % "1.11.2"  % Test,
+      "org.mockito"       %%  "mockito-scala-scalatest" % "1.11.2"  % Test,
+      "org.mockito"       %   "mockito-inline"          % "3.2.4"   % Test
     ),
     PB.targets in Compile := Seq(
       scalapb.gen() -> (sourceManaged in Compile).value

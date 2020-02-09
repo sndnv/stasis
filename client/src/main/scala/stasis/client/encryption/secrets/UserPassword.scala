@@ -11,7 +11,7 @@ import stasis.shared.model.users.User
 final case class UserPassword(
   user: User.Id,
   salt: String,
-  private val password: String
+  private val password: Array[Char]
 )(implicit target: Secret.Config)
     extends Secret {
   def toHashedAuthenticationPassword: UserHashedAuthenticationPassword =
@@ -46,18 +46,18 @@ object UserPassword {
   def apply(
     user: User.Id,
     salt: String,
-    password: String
+    password: Array[Char]
   )(implicit target: Secret.Config): UserPassword =
     new UserPassword(user, salt, password)
 
   def derivePassword(
-    password: String,
+    password: Array[Char],
     salt: String,
     iterations: Int,
     derivedKeySize: Int
   ): ByteString = {
     val spec = new PBEKeySpec(
-      password.toCharArray,
+      password,
       salt.getBytes(Defaults.Charset),
       iterations,
       derivedKeySize * 8

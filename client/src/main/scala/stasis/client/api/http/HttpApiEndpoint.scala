@@ -29,6 +29,7 @@ class HttpApiEndpoint(
   private val metadata = new DatasetMetadata()
   private val user = new User()
   private val device = new Device()
+  private val service = new Service()
   private val schedules = new Schedules()
   private val operations = new Operations()
 
@@ -66,6 +67,7 @@ class HttpApiEndpoint(
                 },
                 pathPrefix("user") { user.routes() },
                 pathPrefix("device") { device.routes() },
+                pathPrefix("service") { service.routes() },
                 pathPrefix("schedules") { schedules.routes() },
                 pathPrefix("operations") { operations.routes() }
               )
@@ -98,11 +100,14 @@ class HttpApiEndpoint(
       }
     }
 
-  def start(interface: String, port: Int, context: ConnectionContext): Future[Http.ServerBinding] =
-    Http().bindAndHandle(
+  def start(interface: String, port: Int, context: Option[ConnectionContext]): Future[Http.ServerBinding] = {
+    val http = Http()
+
+    http.bindAndHandle(
       handler = endpointRoutes,
       interface = interface,
       port = port,
-      connectionContext = context
+      connectionContext = context.getOrElse(http.defaultServerHttpContext)
     )
+  }
 }

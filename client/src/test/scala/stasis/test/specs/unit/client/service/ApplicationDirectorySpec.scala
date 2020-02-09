@@ -3,13 +3,13 @@ package stasis.test.specs.unit.client.service
 import java.io.FileNotFoundException
 import java.nio.file.Files
 
-import com.google.common.jimfs.{Configuration, Jimfs}
-import stasis.client.service.ApplicationDirectory
+import akka.util.ByteString
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.client.ResourceHelpers
 
-class ApplicationDirectorySpec extends AsyncUnitSpec {
+class ApplicationDirectorySpec extends AsyncUnitSpec with ResourceHelpers {
   "An ApplicationDirectory" should "find files in any configuration location (config)" in {
-    val directory = createDirectory(
+    val directory = createApplicationDirectory(
       init = dir => {
         val path = dir.config.get
         Files.createDirectories(path)
@@ -23,7 +23,7 @@ class ApplicationDirectorySpec extends AsyncUnitSpec {
   }
 
   it should "find files in any configuration location (current)" in {
-    val directory = createDirectory(
+    val directory = createApplicationDirectory(
       init = dir => {
         val path = dir.current.get
         Files.createDirectories(path)
@@ -37,7 +37,7 @@ class ApplicationDirectorySpec extends AsyncUnitSpec {
   }
 
   it should "find files in any configuration location (user)" in {
-    val directory = createDirectory(
+    val directory = createApplicationDirectory(
       init = dir => {
         val path = dir.user.get
         Files.createDirectories(path)
@@ -51,7 +51,7 @@ class ApplicationDirectorySpec extends AsyncUnitSpec {
   }
 
   it should "find required files in any configuration location" in {
-    val directory = createDirectory(
+    val directory = createApplicationDirectory(
       init = dir => {
         val path = dir.config.get
         Files.createDirectories(path)
@@ -67,7 +67,7 @@ class ApplicationDirectorySpec extends AsyncUnitSpec {
   }
 
   it should "fail if a required file is not found" in {
-    val directory = createDirectory(init = dir => Files.createDirectories(dir.config.get))
+    val directory = createApplicationDirectory(init = dir => Files.createDirectories(dir.config.get))
 
     directory
       .requireFile(file = targetFile)
@@ -81,7 +81,7 @@ class ApplicationDirectorySpec extends AsyncUnitSpec {
   }
 
   it should "handle missing configuration locations" in {
-    val directory = createDirectory(init = _ => ())
+    val directory = createApplicationDirectory(init = _ => ())
 
     directory
       .requireFile(file = targetFile)
@@ -95,7 +95,7 @@ class ApplicationDirectorySpec extends AsyncUnitSpec {
   }
 
   it should "pull data from files" in {
-    val directory = createDirectory(
+    val directory = createApplicationDirectory(
       init = dir => {
         val path = dir.config.get
         val file = path.resolve(targetFile)
@@ -113,7 +113,7 @@ class ApplicationDirectorySpec extends AsyncUnitSpec {
   }
 
   it should "push data to files (permanent / file does not exist)" in {
-    val directory = createDirectory(
+    val directory = createApplicationDirectory(
       init = dir => {
         val path = dir.config.get
         Files.createDirectories(path)
@@ -130,7 +130,7 @@ class ApplicationDirectorySpec extends AsyncUnitSpec {
   }
 
   it should "push data to files (permanent / file exists)" in {
-    val directory = createDirectory(init = dir => Files.createDirectories(dir.config.get))
+    val directory = createApplicationDirectory(init = dir => Files.createDirectories(dir.config.get))
 
     directory
       .pushFile[String](file = targetFile, content = targetFileContent, isTransient = false)
@@ -141,21 +141,20 @@ class ApplicationDirectorySpec extends AsyncUnitSpec {
   }
 
   it should "push data to files (transient)" in {
-    val directory = createDirectory(init = dir => Files.createDirectories(dir.runtime.get))
+    val directory = createApplicationDirectory(init = dir => Files.createDirectories(dir.config.get))
 
     directory
       .pushFile[String](file = targetFile, content = targetFileContent, isTransient = true)
       .map { path =>
         val fileInConfig = directory.config.map(_.resolve(targetFile).toAbsolutePath)
-        val fileInRuntime = directory.runtime.map(_.resolve(targetFile).toAbsolutePath)
 
-        Some(path) should (be(fileInConfig) or be(fileInRuntime))
+        Some(path) should be(fileInConfig)
         Files.readString(path) should be(targetFileContent)
       }
   }
 
   it should "fail to push data if no configuration location is available" in {
-    val directory = createDirectory(init = _ => ())
+    val directory = createApplicationDirectory(init = _ => ())
 
     directory
       .pushFile[String](file = targetFile, content = targetFileContent, isTransient = true)
@@ -168,22 +167,12 @@ class ApplicationDirectorySpec extends AsyncUnitSpec {
       }
   }
 
-  private def createDirectory(
-    init: ApplicationDirectory.Default => Unit
-  ): ApplicationDirectory.Default = {
-    val configuration = Configuration.unix().toBuilder.setAttributeViews("basic", "posix").build()
-    val filesystem = Jimfs.newFileSystem(configuration)
-
-    val dir = ApplicationDirectory.Default(
-      applicationName = "test-app",
-      filesystem = filesystem
-    )
-
-    init(dir)
-
-    dir
-  }
-
   private val targetFile = "test-file"
   private val targetFileContent = "test-content-line-01\ntest-content-line-02"
+
+  private implicit val stringToByteString: String => ByteString =
+    (content: String) => ByteString.fromString(content)
+
+  private implicit val byteStringToString: ByteString => String =
+    (content: ByteString) => content.utf8String
 }

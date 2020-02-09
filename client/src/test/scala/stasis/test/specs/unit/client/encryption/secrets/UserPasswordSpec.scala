@@ -5,7 +5,11 @@ import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.EncodingHelpers
 
 class UserPasswordSpec extends UnitSpec with SecretsConfig with EncodingHelpers {
-  private val userPassword = UserPassword(user = testUser, salt = "some-user-salt", password = "some-user-password")
+  private val userPassword = UserPassword(
+    user = testUser,
+    salt = "some-user-salt",
+    password = "some-user-password".toCharArray
+  )
 
   "A UserPassword" should "support generating a hashed authentication password" in {
     val hashedPassword = "ssDIJULJGAzYLLHS7zPNteKz5jAEDb2Dmz8Ym/TZByR41BZ8nLol4OZlQvtkeAPG+CqB0hx56etnggKMKccH5Q=="

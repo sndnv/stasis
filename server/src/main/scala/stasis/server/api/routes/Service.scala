@@ -16,7 +16,7 @@ class Service()(implicit ctx: RoutesContext) extends ApiRoutes {
     path("ping") {
       get {
         val response = Ping()
-        log.info("Received ping request from user [{}]; responding with [{}]", currentUser, response.id)
+        log.debug("Received ping request from user [{}]; responding with [{}]", currentUser, response.id)
         discardEntity & complete(response)
       }
     }

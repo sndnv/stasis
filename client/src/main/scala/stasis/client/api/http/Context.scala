@@ -12,5 +12,6 @@ final case class Context(
   scheduler: OperationScheduler,
   tracker: TrackerView,
   search: Search,
+  terminateService: () => Unit,
   log: LoggingAdapter
 )

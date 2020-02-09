@@ -208,9 +208,8 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
 
     executor.operations.await should be(empty)
 
-    val backup = executor.startBackupWithRules(definition = DatasetDefinition.generateId()).await
-
     eventually {
+      val backup = executor.startBackupWithRules(definition = DatasetDefinition.generateId()).await
       executor.operations.await.get(backup) should be(Some(Operation.Type.Backup))
     }
 
@@ -230,28 +229,28 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     val encryption = new MockEncryption() {
       override def encrypt(fileSecret: DeviceFileSecret): Flow[ByteString, ByteString, NotUsed] =
         if (slowEncryption) {
-          super.encrypt(fileSecret).throttle(elements = 1, per = 1.second)
+          super.encrypt(fileSecret).throttle(elements = 1, per = 10.seconds)
         } else {
           super.encrypt(fileSecret)
         }
 
       override def encrypt(metadataSecret: DeviceMetadataSecret): Flow[ByteString, ByteString, NotUsed] =
         if (slowEncryption) {
-          super.encrypt(metadataSecret).throttle(elements = 1, per = 1.second)
+          super.encrypt(metadataSecret).throttle(elements = 1, per = 10.seconds)
         } else {
           super.encrypt(metadataSecret)
         }
 
       override def decrypt(fileSecret: DeviceFileSecret): Flow[ByteString, ByteString, NotUsed] =
         if (slowEncryption) {
-          super.decrypt(fileSecret).throttle(elements = 1, per = 1.second)
+          super.decrypt(fileSecret).throttle(elements = 1, per = 10.seconds)
         } else {
           super.decrypt(fileSecret)
         }
 
       override def decrypt(metadataSecret: DeviceMetadataSecret): Flow[ByteString, ByteString, NotUsed] =
         if (slowEncryption) {
-          super.decrypt(metadataSecret).throttle(elements = 1, per = 1.second)
+          super.decrypt(metadataSecret).throttle(elements = 1, per = 10.seconds)
         } else {
           super.decrypt(metadataSecret)
         }

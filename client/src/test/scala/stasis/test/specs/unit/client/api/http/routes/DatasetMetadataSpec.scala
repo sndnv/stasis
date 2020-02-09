@@ -67,6 +67,7 @@ class DatasetMetadataSpec extends AsyncUnitSpec with ScalatestRouteTest {
       scheduler = scheduler,
       tracker = MockTrackerView(),
       search = search,
+      terminateService = () => (),
       log = Logging(system, this.getClass.getName)
     )
 

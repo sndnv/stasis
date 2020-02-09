@@ -193,6 +193,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       scheduler = scheduler,
       tracker = tracker,
       search = MockSearch(),
+      terminateService = () => (),
       log = Logging(system, this.getClass.getName)
     )
 

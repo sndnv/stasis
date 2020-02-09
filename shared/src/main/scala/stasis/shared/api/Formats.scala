@@ -1,5 +1,7 @@
 package stasis.shared.api
 
+import java.time.temporal.ChronoUnit
+
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.crates.CrateStore
@@ -80,7 +82,7 @@ object Formats {
       fjs = reader,
       tjs = schedule =>
         writer.writes(schedule) ++ Json.obj(
-          "next_invocation" -> Json.toJson(schedule.nextInvocation)
+          "next_invocation" -> Json.toJson(schedule.nextInvocation.truncatedTo(ChronoUnit.SECONDS))
       )
     )
   }
