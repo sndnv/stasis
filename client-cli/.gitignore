@@ -1,0 +1,14 @@
+.idea
+.idea_modules
+.classpath
+.project
+.settings
+venv
+*.log
+__pycache__
+.coverage
+cover
+htmlcov
+*.iml
+*.db
+*.egg-info
