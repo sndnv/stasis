@@ -9,6 +9,9 @@ lazy val akkaVersion = "2.5.23"
 lazy val akkaHttpVersion = "10.1.9"
 lazy val slickVersion = "3.3.1"
 lazy val h2Version = "1.4.199"
+lazy val logbackVersion = "1.2.3"
+
+lazy val jdkDockerImage = "openjdk:11"
 
 lazy val crossVersions = Seq(defaultScalaVersion)
 
@@ -18,10 +21,12 @@ lazy val server = (project in file("./server"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.typesafe.slick" %% "slick" % slickVersion,
-      "com.h2database"     %  "h2"    % h2Version
+      "com.typesafe.akka"   %% "akka-slf4j"       % akkaVersion,
+      "ch.qos.logback"      %  "logback-classic"  % logbackVersion,
+      "com.typesafe.slick"  %% "slick"            % slickVersion,
+      "com.h2database"      %  "h2"               % h2Version
     ),
-    dockerBaseImage := "openjdk:11"
+    dockerBaseImage := jdkDockerImage
   )
   .enablePlugins(JavaAppPackaging)
   .dependsOn(shared % "compile->compile;test->test")
@@ -32,26 +37,32 @@ lazy val client = (project in file("./client"))
     libraryDependencies ++= Seq(
       "at.favre.lib"      %   "hkdf"                    % "1.1.0",
       "net.harawata"      %   "appdirs"                 % "1.0.3",
+      "com.typesafe.akka" %%  "akka-slf4j"              % akkaVersion,
+      "ch.qos.logback"    %   "logback-classic"         % logbackVersion,
       "com.google.jimfs"  %   "jimfs"                   % "1.1"     % Test,
       "org.mockito"       %%  "mockito-scala"           % "1.11.2"  % Test,
       "org.mockito"       %%  "mockito-scala-scalatest" % "1.11.2"  % Test,
       "org.mockito"       %   "mockito-inline"          % "3.2.4"   % Test
     ),
+    dockerBaseImage := jdkDockerImage,
     PB.targets in Compile := Seq(
       scalapb.gen() -> (sourceManaged in Compile).value
     ),
     coverageExcludedPackages := "stasis.client.model.proto.metadata.*"
   )
+  .enablePlugins(JavaAppPackaging)
   .dependsOn(shared % "compile->compile;test->test")
 
 lazy val identity = (project in file("./identity"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.typesafe.slick" %% "slick" % slickVersion,
-      "com.h2database"     %  "h2"    % h2Version
+      "com.typesafe.akka"   %% "akka-slf4j"       % akkaVersion,
+      "ch.qos.logback"      %  "logback-classic"  % logbackVersion,
+      "com.typesafe.slick"  %% "slick"            % slickVersion,
+      "com.h2database"      %  "h2"               % h2Version
     ),
-    dockerBaseImage := "openjdk:11"
+    dockerBaseImage := jdkDockerImage
   )
   .dependsOn(core % "compile->compile;test->test")
   .enablePlugins(JavaAppPackaging)
