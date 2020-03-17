@@ -30,7 +30,6 @@ def cli(ctx, verbose, insecure, json):
         urllib3.disable_warnings(urllib3.exceptions.SubjectAltNameWarning)
 
     application_name = 'stasis-client'
-    background_service = '{}-service'.format(application_name)
     config_file_name = 'client.conf'
     api_token_file_name = 'api-token'
 
@@ -39,7 +38,7 @@ def cli(ctx, verbose, insecure, json):
 
     context = ctx.ensure_object(Context)
     context.api = create_api(config=config, api_token=api_token, insecure=insecure)
-    context.service_binary = background_service
+    context.service_binary = application_name
     context.rendering = JsonWriter() if json else DefaultWriter()
 
 

@@ -2,7 +2,7 @@ version: '3'
 
 services:
   identity:
-    image: identity:0.0.1-SNAPSHOT
+    image: stasis-identity:dev-latest
     ports:
       - '9090:9090'
     environment:
@@ -22,7 +22,7 @@ services:
       - ./certs/localhost.p12:/opt/docker/certs/localhost.p12
 
   identity-ui:
-    image: identity-ui:dev-latest
+    image: stasis-identity-ui:dev-latest
     command: /bin/sh -c "yarn serve"
     ports:
       - '8080:8080'
@@ -31,4 +31,4 @@ services:
       - IDENTITY_UI_AUTH_CLIENT_ID=a928359a-e2ee-4db7-9307-8071b2a1c756
       - IDENTITY_UI_AUTH_REDIRECT_URI=https://localhost:8080/manage/login/callback
     volumes:
-      - '../:/opt/identity-ui'
+      - '../:/opt/stasis-identity-ui'

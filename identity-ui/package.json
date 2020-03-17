@@ -1,6 +1,6 @@
 {
-  "name": "identity-ui",
-  "version": "1.0.0",
+  "name": "stasis-identity-ui",
+  "version": "0.0.1",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",

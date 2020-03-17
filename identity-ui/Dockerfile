@@ -1,4 +1,4 @@
-ARG SERVICE_PATH=/opt/identity-ui
+ARG SERVICE_PATH=/opt/stasis-identity-ui
 
 FROM node:12.6-alpine as dev-stage
 ARG SERVICE_PATH

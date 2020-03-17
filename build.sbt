@@ -1,6 +1,8 @@
 import sbt.Keys._
 
-name in ThisBuild := "stasis"
+lazy val projectName = "stasis"
+
+name in ThisBuild := projectName
 licenses in ThisBuild := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
 homepage in ThisBuild := Some(url("https://github.com/sndnv/stasis"))
 
@@ -116,6 +118,12 @@ lazy val commonSettings = Seq(
   parallelExecution in Test := false,
   wartremoverWarnings in(Compile, compile) ++= Warts.unsafe,
   wartremoverExcluded in(Compile, compile) += sourceManaged.value,
+  packageName := s"$projectName-${name.value}",
+  executableScriptName := s"$projectName-${name.value}",
+  artifact := {
+    val previous: Artifact = artifact.value
+    previous.withName(name = s"$projectName-${previous.name}")
+  },
   scalacOptions := Seq("-unchecked", "-deprecation", "-feature")
 )
 

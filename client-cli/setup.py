@@ -17,14 +17,14 @@ tests_require = [
 ]
 
 setup(
-    name='client_cli',
+    name='stasis-client-cli',
     version='0.0.1',
     install_requires=install_requires,
     tests_require=tests_require,
     packages=find_packages(),
     entry_points={
         'console_scripts': [
-            'client_cli = client_cli.__main__:main'
+            'stasis-client-cli = client_cli.__main__:main'
         ]
     }
 )
