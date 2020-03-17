@@ -48,7 +48,7 @@ class MainSpec(unittest.TestCase):
                 'Expected [{}] but [{}] found'.format(DefaultWriter, type(ctx.obj.rendering))
             )
 
-            self.assertEqual(ctx.obj.service_binary, 'stasis-client-service')
+            self.assertEqual(ctx.obj.service_binary, 'stasis-client')
             self.assertIsInstance(ctx.obj.api.context.verify, str)
 
         cli.add_command(assert_valid_context)
