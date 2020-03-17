@@ -21,7 +21,7 @@ class DefaultClientApi(ClientApi):
     def is_active(self):
         try:
             return bool(self.get(url='/service/ping').get('id', None))
-        except click.Abort:
+        except (click.Abort, requests.exceptions.ConnectionError):
             return False
 
     def stop(self):
