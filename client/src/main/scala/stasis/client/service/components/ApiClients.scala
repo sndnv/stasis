@@ -21,7 +21,7 @@ object ApiClients {
       val coreClient: ServerCoreEndpointClient = new DefaultServerCoreEndpointClient(
         address = HttpEndpointAddress(rawConfig.getString("server.core.address")),
         credentials = credentialsProvider.core,
-        self = UUID.fromString(rawConfig.getString("server.core.node")),
+        self = UUID.fromString(rawConfig.getString("server.authentication.client-id")),
         context = EndpointContext.fromConfig(rawConfig.getConfig("server.core.context"))
       )
 

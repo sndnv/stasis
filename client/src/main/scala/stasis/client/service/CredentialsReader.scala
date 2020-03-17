@@ -13,8 +13,8 @@ object CredentialsReader {
     override def retrieve(): Try[(String, Array[Char])] =
       console match {
         case Some(console) =>
-          val username = console.readLine("Username:").trim
-          val password = console.readPassword("Password:")
+          val username = console.readLine("Username: ").trim
+          val password = console.readPassword("Password: ")
 
           if (username.nonEmpty && password.nonEmpty) {
             Success((username, password))

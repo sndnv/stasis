@@ -150,14 +150,18 @@ class DefaultServerApiEndpointClient(
       entry
     }
 
-  override def latestEntry(definition: DatasetDefinition.Id, until: Option[Instant]): Future[Option[DatasetEntry]] =
+  override def latestEntry(definition: DatasetDefinition.Id, until: Option[Instant]): Future[Option[DatasetEntry]] = {
+    val baseUrl = s"$apiUrl/datasets/entries/own/for-definition/$definition/latest"
     for {
       credentials <- credentials
       response <- http
         .singleRequest(
           request = HttpRequest(
             method = HttpMethods.GET,
-            uri = s"$apiUrl/datasets/entries/own/for-definition/$definition/latest?until=$until"
+            uri = until match {
+              case Some(until) => s"$baseUrl?until=$until"
+              case None        => baseUrl
+            }
           ).addCredentials(credentials = credentials),
           connectionContext = clientContext
         )
@@ -168,6 +172,7 @@ class DefaultServerApiEndpointClient(
     } yield {
       entry
     }
+  }
 
   def publicSchedules(): Future[Seq[Schedule]] =
     for {

@@ -12,7 +12,6 @@ import stasis.core.security.oauth.OAuthClient.AccessTokenResponse
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
-import scala.util.control.NonFatal
 
 class DefaultCredentialsProvider private (
   providerRef: Future[ActorRef[DefaultCredentialsProvider.Message]]

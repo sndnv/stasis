@@ -6,17 +6,17 @@ services:
     ports:
       - '9090:9090'
     environment:
-      - IDENTITY_BOOTSTRAP_ENABLED=true
-      - IDENTITY_BOOTSTRAP_CONFIG=/opt/docker/config/bootstrap.conf
-      - IDENTITY_LOGLEVEL=DEBUG
-      - IDENTITY_SERVICE_INTERFACE=0.0.0.0
-      - IDENTITY_SERVICE_PORT=9090
-      - IDENTITY_SERVICE_CONTEXT_KEYSTORE_PATH=/opt/docker/certs/localhost.p12
-      - IDENTITY_TOKENS_REFRESH_ALLOWED=true
-      - IDENTITY_UI_DEV_CLIENT_ID=a928359a-e2ee-4db7-9307-8071b2a1c756
-      - IDENTITY_UI_DEV_REDIRECT_URI=https://localhost:8080/manage/login/callback
-      - IDENTITY_UI_DEV_CLIENT_SECRET=test-secret
-      - IDENTITY_UI_DEV_OWNER_PASSWORD=passw0rd
+      - STASIS_IDENTITY_BOOTSTRAP_ENABLED=true
+      - STASIS_IDENTITY_BOOTSTRAP_CONFIG=/opt/docker/config/bootstrap.conf
+      - STASIS_IDENTITY_LOGLEVEL=DEBUG
+      - STASIS_IDENTITY_SERVICE_INTERFACE=0.0.0.0
+      - STASIS_IDENTITY_SERVICE_PORT=9090
+      - STASIS_IDENTITY_SERVICE_CONTEXT_KEYSTORE_PATH=/opt/docker/certs/localhost.p12
+      - STASIS_IDENTITY_TOKENS_REFRESH_ALLOWED=true
+      - STASIS_IDENTITY_UI_DEV_CLIENT_ID=a928359a-e2ee-4db7-9307-8071b2a1c756
+      - STASIS_IDENTITY_UI_DEV_REDIRECT_URI=https://localhost:8080/manage/login/callback
+      - STASIS_IDENTITY_UI_DEV_CLIENT_SECRET=test-secret
+      - STASIS_IDENTITY_UI_DEV_OWNER_PASSWORD=passw0rd
     volumes:
       - ./bootstrap.conf:/opt/docker/config/bootstrap.conf
       - ./certs/localhost.p12:/opt/docker/certs/localhost.p12
@@ -27,8 +27,8 @@ services:
     ports:
       - '8080:8080'
     environment:
-      - IDENTITY_UI_API_URL=https://localhost:8080
-      - IDENTITY_UI_AUTH_CLIENT_ID=a928359a-e2ee-4db7-9307-8071b2a1c756
-      - IDENTITY_UI_AUTH_REDIRECT_URI=https://localhost:8080/manage/login/callback
+      - STASIS_IDENTITY_UI_API_URL=https://localhost:8080
+      - STASIS_IDENTITY_UI_AUTH_CLIENT_ID=a928359a-e2ee-4db7-9307-8071b2a1c756
+      - STASIS_IDENTITY_UI_AUTH_REDIRECT_URI=https://localhost:8080/manage/login/callback
     volumes:
       - '../:/opt/stasis-identity-ui'
