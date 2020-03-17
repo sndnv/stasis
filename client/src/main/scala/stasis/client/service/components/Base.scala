@@ -76,7 +76,7 @@ object Base {
             loadConfigOverride(directory)
 
           override val rawConfig: typesafe.Config =
-            configOverride.withFallback(system.settings.config).getConfig("stasis.client")
+            configOverride.withFallback(system.settings.config).getConfig("stasis.client").resolve()
 
           override implicit val timeout: Timeout =
             rawConfig.getDuration("service.internal-query-timeout").toMillis.millis

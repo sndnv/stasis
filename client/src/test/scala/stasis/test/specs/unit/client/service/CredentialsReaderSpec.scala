@@ -12,8 +12,8 @@ class CredentialsReaderSpec extends UnitSpec with MockitoSugar {
     val expectedPassword = "test-password"
 
     val console = mock[java.io.Console]
-    when(console.readLine("Username:")).thenReturn(expectedUsername)
-    when(console.readPassword("Password:")).thenReturn(expectedPassword.toCharArray)
+    when(console.readLine("Username: ")).thenReturn(expectedUsername)
+    when(console.readPassword("Password: ")).thenReturn(expectedPassword.toCharArray)
 
     val reader = CredentialsReader.UsernameAndPassword(console = Some(console))
 
@@ -29,8 +29,8 @@ class CredentialsReaderSpec extends UnitSpec with MockitoSugar {
 
   it should "reject credentials with an empty username" in {
     val console = mock[java.io.Console]
-    when(console.readLine("Username:")).thenReturn("")
-    when(console.readPassword("Password:")).thenReturn("test-password".toCharArray)
+    when(console.readLine("Username: ")).thenReturn("")
+    when(console.readPassword("Password: ")).thenReturn("test-password".toCharArray)
 
     val reader = CredentialsReader.UsernameAndPassword(console = Some(console))
 
@@ -45,8 +45,8 @@ class CredentialsReaderSpec extends UnitSpec with MockitoSugar {
 
   it should "reject credentials with an empty password" in {
     val console = mock[java.io.Console]
-    when(console.readLine("Username:")).thenReturn("test-username")
-    when(console.readPassword("Password:")).thenReturn("".toCharArray)
+    when(console.readLine("Username: ")).thenReturn("test-username")
+    when(console.readPassword("Password: ")).thenReturn("".toCharArray)
 
     val reader = CredentialsReader.UsernameAndPassword(console = Some(console))
 

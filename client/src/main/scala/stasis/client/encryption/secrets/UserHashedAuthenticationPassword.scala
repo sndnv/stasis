@@ -2,6 +2,7 @@ package stasis.client.encryption.secrets
 
 import java.util.concurrent.atomic.AtomicBoolean
 
+import java.util.Base64
 import akka.util.ByteString
 import stasis.shared.model.users.User
 
@@ -19,7 +20,7 @@ final case class UserHashedAuthenticationPassword(
     if (alreadyExtracted) {
       throw new IllegalStateException("Password already extracted")
     } else {
-      hashedPassword.utf8String
+      Base64.getUrlEncoder.withoutPadding.encodeToString(hashedPassword.toArray)
     }
   }
 }
