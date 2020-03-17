@@ -46,11 +46,16 @@ def create_api(config, api_token, insecure) -> ClientApi:
         else:
             api_context = DefaultHttpsContext(verify=not insecure)
 
-        api = DefaultClientApi(
+        default_client = DefaultClientApi(
             api_url=api_url,
             api_token=api_token,
             context=api_context
         )
+
+        if default_client.is_active():
+            api = default_client
+        else:
+            api = InactiveClientApi()
     else:
         api = InactiveClientApi()
 

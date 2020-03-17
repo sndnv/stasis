@@ -13,6 +13,7 @@ from tests.cli.cli_runner import Runner
 
 class MainSpec(unittest.TestCase):
 
+    @patch('client_cli.api.default_client_api.DefaultClientApi.is_active')
     @patch('client_cli.api.endpoint_context.CustomHttpsContext._create_context_pem_file')
     @patch('logging.basicConfig')
     @patch('client_cli.__main__.load_api_token')
@@ -22,10 +23,12 @@ class MainSpec(unittest.TestCase):
             mock_load_config,
             mock_load_api_token,
             mock_logging_config,
-            mock_create_pem
+            mock_create_pem,
+            mock_is_active
     ):
         mock_load_config.return_value = MockConfig()
         mock_load_api_token.return_value = 'test-token'
+        mock_is_active.return_value = True
 
         @click.command(name='assert')
         @click.pass_context
@@ -83,11 +86,13 @@ class MainSpec(unittest.TestCase):
             level='DEBUG'
         )
 
+    @patch('client_cli.api.default_client_api.DefaultClientApi.is_active')
     @patch('client_cli.__main__.load_api_token')
     @patch('client_cli.__main__.load_client_config')
-    def test_should_support_insecure_tls_connections(self, mock_load_config, mock_load_api_token):
+    def test_should_support_insecure_tls_connections(self, mock_load_config, mock_load_api_token, mock_is_active):
         mock_load_config.return_value = MockConfig(context_enabled=False)
         mock_load_api_token.return_value = 'test-token'
+        mock_is_active.return_value = True
 
         @click.command(name='assert')
         @click.pass_context

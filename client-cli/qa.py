@@ -17,7 +17,7 @@ print('>: Code linting finished with exit code [{}]'.format(code_lint_result))
 tests_lint_result = subprocess.run(
     [
         'pylint',
-        '--disable=missing-function-docstring,missing-class-docstring,missing-module-docstring,',
+        '--disable=missing-function-docstring,missing-class-docstring,missing-module-docstring,too-many-arguments,',
         '{}/tests'.format(client_cli_path)
     ]
 ).returncode
