@@ -112,7 +112,7 @@ class ApplicationDirectorySpec extends AsyncUnitSpec with ResourceHelpers {
       }
   }
 
-  it should "push data to files (permanent / file does not exist)" in {
+  it should "push data to files (file does not exist)" in {
     val directory = createApplicationDirectory(
       init = dir => {
         val path = dir.config.get
@@ -122,33 +122,20 @@ class ApplicationDirectorySpec extends AsyncUnitSpec with ResourceHelpers {
     )
 
     directory
-      .pushFile[String](file = targetFile, content = targetFileContent, isTransient = false)
+      .pushFile[String](file = targetFile, content = targetFileContent)
       .map { path =>
         Some(path) should be(directory.config.map(_.resolve(targetFile).toAbsolutePath))
         Files.readString(path) should be(targetFileContent)
       }
   }
 
-  it should "push data to files (permanent / file exists)" in {
+  it should "push data to files (file exists)" in {
     val directory = createApplicationDirectory(init = dir => Files.createDirectories(dir.config.get))
 
     directory
-      .pushFile[String](file = targetFile, content = targetFileContent, isTransient = false)
+      .pushFile[String](file = targetFile, content = targetFileContent)
       .map { path =>
         Some(path) should be(directory.config.map(_.resolve(targetFile).toAbsolutePath))
-        Files.readString(path) should be(targetFileContent)
-      }
-  }
-
-  it should "push data to files (transient)" in {
-    val directory = createApplicationDirectory(init = dir => Files.createDirectories(dir.config.get))
-
-    directory
-      .pushFile[String](file = targetFile, content = targetFileContent, isTransient = true)
-      .map { path =>
-        val fileInConfig = directory.config.map(_.resolve(targetFile).toAbsolutePath)
-
-        Some(path) should be(fileInConfig)
         Files.readString(path) should be(targetFileContent)
       }
   }
@@ -157,7 +144,7 @@ class ApplicationDirectorySpec extends AsyncUnitSpec with ResourceHelpers {
     val directory = createApplicationDirectory(init = _ => ())
 
     directory
-      .pushFile[String](file = targetFile, content = targetFileContent, isTransient = true)
+      .pushFile[String](file = targetFile, content = targetFileContent)
       .map { result =>
         fail(s"Unexpected result received [$result]")
       }

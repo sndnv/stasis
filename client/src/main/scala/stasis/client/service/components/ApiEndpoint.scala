@@ -33,8 +33,7 @@ object ApiEndpoint {
       frontendAuthenticator = DefaultFrontendAuthenticator(tokenSize)
       tokenFile <- directory.pushFile(
         file = Files.ApiToken,
-        content = frontendAuthenticator.token,
-        isTransient = true
+        content = frontendAuthenticator.token
       )
     } yield {
       implicit val context: http.Context = http.Context(
