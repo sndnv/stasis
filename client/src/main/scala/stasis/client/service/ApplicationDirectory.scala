@@ -18,8 +18,7 @@ trait ApplicationDirectory {
 
   def pushFile[T](
     file: String,
-    content: T,
-    isTransient: Boolean
+    content: T
   )(implicit ec: ExecutionContext, m: T => ByteString): Future[Path]
 }
 
@@ -67,8 +66,7 @@ object ApplicationDirectory {
 
     override def pushFile[T](
       file: String,
-      content: T,
-      isTransient: Boolean
+      content: T
     )(implicit ec: ExecutionContext, m: T => ByteString): Future[Path] = {
       val path = configLocations.headOption.find(Files.exists(_)).map(_.resolve(file).toAbsolutePath)
 
@@ -82,14 +80,12 @@ object ApplicationDirectory {
               StandardOpenOption.TRUNCATE_EXISTING
             )
 
-            val deleteOnExit = if (isTransient) { Seq(StandardOpenOption.DELETE_ON_CLOSE) } else { Seq.empty }
-
             val _ = Files.deleteIfExists(path)
 
             Files.write(
               Files.createFile(path, PosixFilePermissions.asFileAttribute(permissions)),
               content.toArray,
-              defaultOptions ++ deleteOnExit: _*
+              defaultOptions: _*
             )
           }
 
