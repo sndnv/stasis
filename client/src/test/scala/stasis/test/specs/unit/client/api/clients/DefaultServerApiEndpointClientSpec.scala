@@ -306,6 +306,8 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec {
       }
       .recover {
         case NonFatal(e: ServerApiFailure) =>
+          e.status should be(StatusCodes.InternalServerError)
+
           e.getMessage should be(
             "Server API request unmarshalling failed with: [Unsupported Content-Type, supported: application/json]"
           )
@@ -327,6 +329,8 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec {
       }
       .recover {
         case NonFatal(e: ServerApiFailure) =>
+          e.status should be(status)
+
           e.getMessage should be(
             s"Server API request failed with [$status]: [$message]"
           )
