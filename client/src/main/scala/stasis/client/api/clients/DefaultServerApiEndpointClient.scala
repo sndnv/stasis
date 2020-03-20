@@ -304,6 +304,7 @@ object DefaultServerApiEndpointClient {
               val _ = response.entity.dataBytes.runWith(Sink.cancelled[ByteString])
               Future.failed(
                 new ServerApiFailure(
+                  status = StatusCodes.InternalServerError,
                   message = s"Server API request unmarshalling failed with: [${e.getMessage}]"
                 )
               )
@@ -314,6 +315,7 @@ object DefaultServerApiEndpointClient {
           .flatMap { responseContent =>
             Future.failed(
               new ServerApiFailure(
+                status = response.status,
                 message = s"Server API request failed with [${response.status}]: [$responseContent]"
               )
             )

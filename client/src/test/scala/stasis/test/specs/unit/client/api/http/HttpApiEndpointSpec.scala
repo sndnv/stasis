@@ -8,6 +8,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.api.http.{Context, HttpApiEndpoint}
 import stasis.client.model.DatasetMetadata
 import stasis.shared.api.responses.Ping
@@ -131,6 +132,38 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       .addCredentials(testCredentials) ~> endpoint.endpointRoutes ~> check {
       status should be(StatusCodes.OK)
     }
+  }
+
+  it should "handle server API failures reported by routes" in {
+    val expectedStatus = StatusCodes.Forbidden
+    val expectedMessage = "test failure"
+
+    val mockApiClient = new MockServerApiEndpointClient(self = Device.generateId()) {
+      override def user(): Future[User] = Future.failed(
+        new ServerApiFailure(status = expectedStatus, message = expectedMessage)
+      )
+    }
+
+    val endpoint = createEndpoint(api = mockApiClient)
+
+    val endpointPort = ports.dequeue()
+    val _ = endpoint.start(
+      interface = "localhost",
+      port = endpointPort,
+      context = None
+    )
+
+    Http()
+      .singleRequest(
+        request = HttpRequest(
+          method = HttpMethods.GET,
+          uri = s"http://localhost:$endpointPort/user"
+        ).addCredentials(testCredentials)
+      )
+      .map { response =>
+        response.status should be(expectedStatus)
+        response.entity.toStrict(timeout = timeout.duration).await.data.utf8String should be(expectedMessage)
+      }
   }
 
   it should "handle generic failures reported by routes" in {

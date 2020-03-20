@@ -1,3 +1,5 @@
 package stasis.client.api.clients.exceptions
 
-class ServerApiFailure(val message: String) extends Exception(message)
+import akka.http.scaladsl.model.StatusCode
+
+class ServerApiFailure(val status: StatusCode, val message: String) extends Exception(message)

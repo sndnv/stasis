@@ -9,6 +9,7 @@ import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
+import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.api.http.routes._
 import stasis.client.security.FrontendAuthenticator
 
@@ -35,12 +36,22 @@ class HttpApiEndpoint(
 
   private implicit def exceptionHandler: ExceptionHandler =
     ExceptionHandler {
+      case e: ServerApiFailure =>
+        extractRequestEntity { entity =>
+          val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
+
+          context.log.error(e, e.message)
+
+          complete(
+            e.status,
+            HttpEntity(ContentTypes.`text/plain(UTF-8)`, e.message)
+          )
+        }
+
       case NonFatal(e) =>
         extractRequestEntity { entity =>
           val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
-          val failureReference = java.util.UUID.randomUUID()
-
-          val message = s"Unhandled exception encountered: [${e.getMessage}]; failure reference is [$failureReference]"
+          val message = s"Unhandled exception encountered: [${e.getMessage}]"
 
           context.log.error(e, message)
 
