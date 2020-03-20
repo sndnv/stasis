@@ -5,6 +5,7 @@ import akka.http.scaladsl.model.headers.{BasicHttpCredentials, CacheDirectives}
 import akka.http.scaladsl.model.{StatusCodes, Uri}
 import stasis.identity.api.OAuth
 import stasis.identity.api.oauth.directives.AudienceExtraction
+import stasis.identity.model.Seconds
 import stasis.identity.model.codes.StoredAuthorizationCode
 import stasis.identity.model.errors.AuthorizationError
 import stasis.identity.model.secrets.Secret
@@ -156,7 +157,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
           val headerValue = header.value()
           headerValue.contains("access_token") should be(true)
           headerValue.contains("token_type=bearer") should be(true)
-          headerValue.contains(s"expires_in=${client.tokenExpiration.value}") should be(true)
+          headerValue.contains("expires_in=30") should be(true)
           headerValue.contains(s"state=$state") should be(true)
           headerValue.contains(s"scope=$scope") should be(true)
 

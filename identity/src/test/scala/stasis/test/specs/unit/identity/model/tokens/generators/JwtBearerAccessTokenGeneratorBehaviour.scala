@@ -3,6 +3,7 @@ package stasis.test.specs.unit.identity.model.tokens.generators
 import org.jose4j.jwk.JsonWebKey
 import org.jose4j.jws.JsonWebSignature
 import play.api.libs.json.{JsArray, JsObject, JsString, Json}
+import stasis.identity.model.Seconds
 import stasis.identity.model.tokens.generators.JwtBearerAccessTokenGenerator
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.identity.model.Generators
@@ -12,16 +13,22 @@ import scala.concurrent.duration._
 trait JwtBearerAccessTokenGeneratorBehaviour { _: AsyncUnitSpec =>
   def jwtBearerAccessTokenGenerator(withKeyType: String, withJwk: JsonWebKey): Unit = {
     val issuer = "some-issuer"
-    val jwtExpiration = 3.seconds
+    val jwtExpiration = 30.seconds
+    val clientTokenExpiration = 15.seconds
     val generator = new JwtBearerAccessTokenGenerator(issuer, withJwk, jwtExpiration)
 
     it should s"generate JWTs for clients with custom subject ($withKeyType)" in {
-      val client = Generators.generateClient.copy(subject = Some("some-subject"))
+      val client = Generators.generateClient.copy(
+        subject = Some("some-subject"),
+        tokenExpiration = clientTokenExpiration
+      )
       val audience = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateClient)
-      val token = generator.generate(client, audience)
+      val accessToken = generator.generate(client, audience)
+
+      accessToken.expiration should be(clientTokenExpiration: Seconds)
 
       val jws = new JsonWebSignature()
-      jws.setCompactSerialization(token.value)
+      jws.setCompactSerialization(accessToken.token.value)
       jws.setKey(withJwk.getKey)
 
       jws.verifySignature() should be(true)
@@ -39,12 +46,17 @@ trait JwtBearerAccessTokenGeneratorBehaviour { _: AsyncUnitSpec =>
     }
 
     it should s"generate JWTs for clients without custom subject ($withKeyType)" in {
-      val client = Generators.generateClient.copy(subject = None)
+      val client = Generators.generateClient.copy(
+        subject = None,
+        tokenExpiration = clientTokenExpiration
+      )
       val audience = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateClient)
-      val token = generator.generate(client, audience)
+      val accessToken = generator.generate(client, audience)
+
+      accessToken.expiration should be(clientTokenExpiration: Seconds)
 
       val jws = new JsonWebSignature()
-      jws.setCompactSerialization(token.value)
+      jws.setCompactSerialization(accessToken.token.value)
       jws.setKey(withJwk.getKey)
 
       jws.verifySignature() should be(true)
@@ -64,10 +76,12 @@ trait JwtBearerAccessTokenGeneratorBehaviour { _: AsyncUnitSpec =>
     it should s"generate JWTs for resource owners with custom subject ($withKeyType)" in {
       val owner = Generators.generateResourceOwner.copy(subject = Some("some-subject"))
       val audience = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateApi)
-      val token = generator.generate(owner, audience)
+      val accessToken = generator.generate(owner, audience)
+
+      accessToken.expiration should be(jwtExpiration: Seconds)
 
       val jws = new JsonWebSignature()
-      jws.setCompactSerialization(token.value)
+      jws.setCompactSerialization(accessToken.token.value)
       jws.setKey(withJwk.getKey)
 
       jws.verifySignature() should be(true)
@@ -87,10 +101,10 @@ trait JwtBearerAccessTokenGeneratorBehaviour { _: AsyncUnitSpec =>
     it should s"generate JWTs for resource owners without custom subject ($withKeyType)" in {
       val owner = Generators.generateResourceOwner.copy(subject = None)
       val audience = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateApi)
-      val token = generator.generate(owner, audience)
+      val accessToken = generator.generate(owner, audience)
 
       val jws = new JsonWebSignature()
-      jws.setCompactSerialization(token.value)
+      jws.setCompactSerialization(accessToken.token.value)
       jws.setKey(withJwk.getKey)
 
       jws.verifySignature() should be(true)

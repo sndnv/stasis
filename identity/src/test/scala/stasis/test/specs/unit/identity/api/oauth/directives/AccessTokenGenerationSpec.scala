@@ -5,10 +5,11 @@ import akka.http.scaladsl.server.Directives
 import akka.stream.{ActorMaterializer, Materializer}
 import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.AccessTokenGeneration
+import stasis.identity.model.Seconds
 import stasis.identity.model.apis.Api
 import stasis.identity.model.clients.Client
 import stasis.identity.model.owners.ResourceOwner
-import stasis.identity.model.tokens.AccessToken
+import stasis.identity.model.tokens.{AccessToken, AccessTokenWithExpiration}
 import stasis.identity.model.tokens.generators.AccessTokenGenerator
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
@@ -22,8 +23,9 @@ class AccessTokenGenerationSpec extends RouteTest {
       override protected def accessTokenGenerator: AccessTokenGenerator = createGenerator(expectedToken)
     }
 
-    val routes = directive.generateAccessToken(client = Generators.generateClient, audience = Seq.empty) { token =>
-      Directives.complete(StatusCodes.OK, token.value)
+    val routes = directive.generateAccessToken(client = Generators.generateClient, audience = Seq.empty) {
+      accessToken =>
+        Directives.complete(StatusCodes.OK, accessToken.token.value)
     }
 
     Get() ~> routes ~> check {
@@ -41,8 +43,8 @@ class AccessTokenGenerationSpec extends RouteTest {
     }
 
     val routes = directive.generateAccessToken(owner = Generators.generateResourceOwner, audience = Seq.empty) {
-      token =>
-        Directives.complete(StatusCodes.OK, token.value)
+      accessToken =>
+        Directives.complete(StatusCodes.OK, accessToken.token.value)
     }
 
     Get() ~> routes ~> check {
@@ -52,7 +54,10 @@ class AccessTokenGenerationSpec extends RouteTest {
   }
 
   private def createGenerator(token: String) = new AccessTokenGenerator {
-    override def generate(client: Client, audience: Seq[Client]): AccessToken = AccessToken(value = token)
-    override def generate(owner: ResourceOwner, audience: Seq[Api]): AccessToken = AccessToken(value = token)
+    override def generate(client: Client, audience: Seq[Client]): AccessTokenWithExpiration =
+      AccessTokenWithExpiration(token = AccessToken(value = token), expiration = Seconds(42))
+
+    override def generate(owner: ResourceOwner, audience: Seq[Api]): AccessTokenWithExpiration =
+      AccessTokenWithExpiration(token = AccessToken(value = token), expiration = Seconds(42))
   }
 }

@@ -47,9 +47,9 @@ class ImplicitGrant(
                     val scope = apiAudienceToScope(audience)
 
                     val response = AccessTokenResponse(
-                      access_token = accessToken,
+                      access_token = accessToken.token,
                       token_type = TokenType.Bearer,
-                      expires_in = client.tokenExpiration,
+                      expires_in = accessToken.expiration,
                       state = request.state,
                       scope = scope
                     )

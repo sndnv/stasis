@@ -56,9 +56,9 @@ class RefreshTokenGrant(
                         headers.`Cache-Control`(headers.CacheDirectives.`no-store`)
                       ),
                       AccessTokenResponse(
-                        access_token = accessToken,
+                        access_token = accessToken.token,
                         token_type = TokenType.Bearer,
-                        expires_in = client.tokenExpiration,
+                        expires_in = accessToken.expiration,
                         refresh_token = refreshToken,
                         scope = scope
                       )
