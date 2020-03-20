@@ -38,11 +38,11 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
       )
     )
 
-    val token = tokenGenerator.generate(expectedOwner, audience = Seq(targetApi))
+    val accessToken = tokenGenerator.generate(expectedOwner, audience = Seq(targetApi))
 
     for {
       _ <- store.put(expectedOwner)
-      actualOwner <- authenticator.authenticate(credentials = OAuth2BearerToken(token.value))
+      actualOwner <- authenticator.authenticate(credentials = OAuth2BearerToken(accessToken.token.value))
     } yield {
       actualOwner should be(expectedOwner)
     }
@@ -64,12 +64,12 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
       )
     )
 
-    val token = tokenGenerator.generate(expectedOwner, audience = Seq(targetApi))
+    val accessToken = tokenGenerator.generate(expectedOwner, audience = Seq(targetApi))
 
     store
       .put(expectedOwner)
       .flatMap { _ =>
-        authenticator.authenticate(credentials = OAuth2BearerToken(token.value))
+        authenticator.authenticate(credentials = OAuth2BearerToken(accessToken.token.value))
       }
       .map(result => fail(s"Unexpected result received: [$result]"))
       .recoverWith {
@@ -97,12 +97,12 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
       )
     )
 
-    val token = tokenGenerator.generate(expectedOwner, audience = Seq(targetApi))
+    val accessToken = tokenGenerator.generate(expectedOwner, audience = Seq(targetApi))
 
     store
       .put(expectedOwner)
       .flatMap { _ =>
-        authenticator.authenticate(credentials = OAuth2BearerToken(token.value))
+        authenticator.authenticate(credentials = OAuth2BearerToken(accessToken.token.value))
       }
       .map(result => fail(s"Unexpected result received: [$result]"))
       .recoverWith {
@@ -128,10 +128,10 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
       )
     )
 
-    val token = tokenGenerator.generate(expectedOwner, audience = Seq(targetApi))
+    val accessToken = tokenGenerator.generate(expectedOwner, audience = Seq(targetApi))
 
     authenticator
-      .authenticate(credentials = OAuth2BearerToken(token.value))
+      .authenticate(credentials = OAuth2BearerToken(accessToken.token.value))
       .map(result => fail(s"Unexpected result received: [$result]"))
       .recoverWith {
         case NonFatal(e) =>

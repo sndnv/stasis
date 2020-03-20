@@ -109,7 +109,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
           val headerValue = header.value()
           headerValue.contains("access_token") should be(true)
           headerValue.contains("token_type=bearer") should be(true)
-          headerValue.contains(s"expires_in=${client.tokenExpiration.value}") should be(true)
+          headerValue.contains("expires_in=30") should be(true)
           headerValue.contains(s"state=${request.state}") should be(true)
           headerValue.contains(s"scope=${request.scope.getOrElse("invalid")}") should be(true)
 

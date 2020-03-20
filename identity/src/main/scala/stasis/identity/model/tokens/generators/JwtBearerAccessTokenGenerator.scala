@@ -2,13 +2,14 @@ package stasis.identity.model.tokens.generators
 
 import org.jose4j.jwk._
 import org.jose4j.jws.JsonWebSignature
-import org.jose4j.jwt.JwtClaims
+import org.jose4j.jwt.{JwtClaims, NumericDate}
+import stasis.identity.model.Seconds
 import stasis.identity.model.apis.Api
 import stasis.identity.model.clients.Client
 import stasis.identity.model.owners.ResourceOwner
-import stasis.identity.model.tokens.AccessToken
+import stasis.identity.model.tokens.{AccessToken, AccessTokenWithExpiration}
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 
 class JwtBearerAccessTokenGenerator(
   issuer: String,
@@ -16,25 +17,31 @@ class JwtBearerAccessTokenGenerator(
   jwtExpiration: FiniteDuration
 ) extends AccessTokenGenerator {
 
-  override def generate(client: Client, audience: Seq[Client]): AccessToken =
+  override def generate(client: Client, audience: Seq[Client]): AccessTokenWithExpiration =
     generateToken(
       subject = client.subject match {
         case Some(subject) => subject
         case None          => client.id.toString
       },
-      audience = audience.map(_.id.toString)
+      audience = audience.map(_.id.toString),
+      expiration = jwtExpiration.min(client.tokenExpiration.value.seconds)
     )
 
-  override def generate(owner: ResourceOwner, audience: Seq[Api]): AccessToken =
+  override def generate(owner: ResourceOwner, audience: Seq[Api]): AccessTokenWithExpiration =
     generateToken(
       subject = owner.subject match {
         case Some(subject) => subject
         case None          => owner.username
       },
-      audience = audience.map(_.id)
+      audience = audience.map(_.id),
+      expiration = jwtExpiration
     )
 
-  private def generateToken(subject: String, audience: Seq[String]): AccessToken = {
+  private def generateToken(
+    subject: String,
+    audience: Seq[String],
+    expiration: FiniteDuration
+  ): AccessTokenWithExpiration = {
     val claims = new JwtClaims()
 
     claims.setGeneratedJwtId()
@@ -43,7 +50,9 @@ class JwtBearerAccessTokenGenerator(
     claims.setSubject(subject)
     claims.setAudience(audience: _*)
 
-    claims.setExpirationTimeMinutesInTheFuture(jwtExpiration.toMinutes)
+    val expirationTime = NumericDate.now()
+    expirationTime.addSeconds(expiration.toSeconds)
+    claims.setExpirationTime(expirationTime)
     claims.setIssuedAtToNow()
 
     val jws = new JsonWebSignature
@@ -59,6 +68,9 @@ class JwtBearerAccessTokenGenerator(
 
     val jwt = jws.getCompactSerialization
 
-    AccessToken(value = jwt)
+    AccessTokenWithExpiration(
+      token = AccessToken(value = jwt),
+      expiration = Seconds(expiration.toSeconds)
+    )
   }
 }
