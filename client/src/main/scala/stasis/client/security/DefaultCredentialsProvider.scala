@@ -31,23 +31,40 @@ object DefaultCredentialsProvider {
     implicit val scheduler: Scheduler = system.scheduler
     implicit val ec: ExecutionContext = system.executionContext
 
-    val behaviour = Behaviors.withTimers[Message] { timers =>
-      implicit val jwtClient: OAuthClient = client
-      implicit val akkaTimers: TimerScheduler[Message] = timers
+    val behaviour = Behaviors.setup[Message] { ctx =>
+      Behaviors.withTimers[Message] { timers =>
+        implicit val jwtClient: OAuthClient = client
+        implicit val akkaTimers: TimerScheduler[Message] = timers
 
-      timers.startSingleTimer(
-        key = RefreshCoreTokenKey,
-        msg = RefreshCoreToken,
-        delay = tokens.core.expires_in.seconds - tokens.expirationTolerance
-      )
+        val coreTokenExpiration = tokens.core.expires_in.seconds
+        val apiTokenExpiration = tokens.api.expires_in.seconds
 
-      timers.startSingleTimer(
-        key = RefreshApiTokenKey,
-        msg = RefreshApiToken,
-        delay = tokens.api.expires_in.seconds - tokens.expirationTolerance
-      )
+        ctx.log.debug(
+          "Core token with scope [{}] received; expires in [{}] second(s)",
+          tokens.core.scope.getOrElse("none"),
+          coreTokenExpiration
+        )
 
-      provider(tokens = tokens)
+        timers.startSingleTimer(
+          key = RefreshCoreTokenKey,
+          msg = RefreshCoreToken,
+          delay = tokens.core.expires_in.seconds - tokens.expirationTolerance
+        )
+
+        ctx.log.debug(
+          "API token with scope [{}] received; expires in [{}] second(s)",
+          tokens.api.scope.getOrElse("none"),
+          apiTokenExpiration
+        )
+
+        timers.startSingleTimer(
+          key = RefreshApiTokenKey,
+          msg = RefreshApiToken,
+          delay = tokens.api.expires_in.seconds - tokens.expirationTolerance
+        )
+
+        provider(tokens = tokens)
+      }
     }
 
     new DefaultCredentialsProvider(
