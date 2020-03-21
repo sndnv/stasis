@@ -6,8 +6,9 @@ import akka.NotUsed
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import stasis.client.encryption.{Decoder, Encoder}
+import stasis.client.api.clients.ServerApiEndpointClient
 import stasis.client.encryption.secrets.DeviceMetadataSecret
+import stasis.client.encryption.{Decoder, Encoder}
 import stasis.core.packaging.Crate
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -17,7 +18,68 @@ final case class DatasetMetadata(
   contentChanged: Map[Path, FileMetadata],
   metadataChanged: Map[Path, FileMetadata],
   filesystem: FilesystemMetadata
-)
+) {
+  def collect(
+    file: Path,
+    api: ServerApiEndpointClient
+  )(implicit ec: ExecutionContext): Future[Option[FileMetadata]] = {
+    val existingMetadata = filesystem.files.get(file).map {
+      case FilesystemMetadata.FileState.New | FilesystemMetadata.FileState.Updated =>
+        contentChanged.get(file).orElse(metadataChanged.get(file)) match {
+          case Some(metadata) =>
+            Future.successful(metadata)
+
+          case None =>
+            Future.failed(
+              new IllegalArgumentException(
+                s"Metadata for file [${file.toAbsolutePath}] not found"
+              )
+            )
+        }
+
+      case FilesystemMetadata.FileState.Existing(entry) =>
+        for {
+          entryMetadata <- api.datasetMetadata(entry)
+          fileMetadata <- entryMetadata.contentChanged
+            .get(file)
+            .orElse(entryMetadata.metadataChanged.get(file)) match {
+            case Some(fileMetadata) =>
+              Future.successful(fileMetadata)
+
+            case None =>
+              Future.failed(
+                new IllegalArgumentException(
+                  s"Expected metadata for file [${file.toAbsolutePath}] but none was found in metadata for entry [$entry]"
+                )
+              )
+          }
+        } yield {
+          fileMetadata
+        }
+    }
+
+    existingMetadata match {
+      case Some(future) => future.map(Some.apply)
+      case None         => Future.successful(None)
+    }
+  }
+
+  def require(
+    file: Path,
+    api: ServerApiEndpointClient
+  )(implicit ec: ExecutionContext): Future[FileMetadata] =
+    collect(file = file, api = api).flatMap {
+      case Some(metadata) =>
+        Future.successful(metadata)
+
+      case None =>
+        Future.failed(
+          new IllegalArgumentException(
+            s"Required metadata for file [${file.toAbsolutePath}] not found"
+          )
+        )
+    }
+}
 
 object DatasetMetadata {
   def empty: DatasetMetadata = DatasetMetadata(

@@ -84,24 +84,27 @@ object Backup {
   ) {
     def toBackupCollector(
       checksum: Checksum
-    )(implicit mat: Materializer, parallelism: ParallelismConfig): BackupCollector =
+    )(
+      implicit mat: Materializer,
+      ec: ExecutionContext,
+      parallelism: ParallelismConfig,
+      providers: Providers
+    ): BackupCollector =
       collector match {
         case Descriptor.Collector.WithRules(spec) =>
           new BackupCollector.Default(
             files = spec.included.toList,
-            metadataCollector = new BackupMetadataCollector.Default(
-              checksum = checksum,
-              latestMetadata = latestMetadata
-            )
+            latestMetadata = latestMetadata,
+            metadataCollector = new BackupMetadataCollector.Default(checksum = checksum),
+            api = providers.clients.api
           )
 
         case Descriptor.Collector.WithFiles(files) =>
           new BackupCollector.Default(
             files = files.toList,
-            metadataCollector = new BackupMetadataCollector.Default(
-              checksum = checksum,
-              latestMetadata = latestMetadata
-            )
+            latestMetadata = latestMetadata,
+            metadataCollector = new BackupMetadataCollector.Default(checksum = checksum),
+            api = providers.clients.api
           )
       }
   }

@@ -86,7 +86,7 @@ object Recovery {
         targetMetadata = targetMetadata,
         keep = (file, _) => query.forall(_.matches(file.toAbsolutePath)),
         metadataCollector = new RecoveryMetadataCollector.Default(checksum = providers.checksum),
-        getMetadataForEntry = providers.clients.api.datasetMetadata
+        api = providers.clients.api
       )
   }
 
