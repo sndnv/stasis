@@ -14,7 +14,7 @@ class MockBackupMetadataCollector(metadata: Map[Path, FileMetadata]) extends Bac
     Statistic.FileCollected -> new AtomicInteger(0),
   )
 
-  override def collect(file: Path): Future[SourceFile] = {
+  override def collect(file: Path, existingMetadata: Option[FileMetadata]): Future[SourceFile] = {
     stats(Statistic.FileCollected).incrementAndGet()
     metadata.get(file) match {
       case Some(fileMetadata) =>

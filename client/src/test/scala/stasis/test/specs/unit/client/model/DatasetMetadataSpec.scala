@@ -7,17 +7,247 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.google.protobuf.InvalidProtocolBufferException
-import stasis.client.encryption.secrets.{DeviceSecret, Secret}
 import stasis.client.encryption.Aes
+import stasis.client.encryption.secrets.{DeviceSecret, Secret}
 import stasis.client.model.{DatasetMetadata, FilesystemMetadata}
+import stasis.shared.model.datasets.DatasetEntry
+import stasis.shared.model.devices.Device
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.client.mocks.MockServerApiEndpointClient
 import stasis.test.specs.unit.client.{EncodingHelpers, Fixtures}
 
-import scala.util.{Failure, Success}
+import scala.concurrent.Future
 import scala.util.control.NonFatal
+import scala.util.{Failure, Success}
 
 class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
-  "A DatasetMetadata" should "be serializable to byte string" in {
+  "A DatasetMetadata" should "retrieve metadata for individual files (new and updated)" in {
+    val mockApiClient = MockServerApiEndpointClient()
+
+    val metadata = DatasetMetadata(
+      contentChanged = Map(
+        Fixtures.Metadata.FileOneMetadata.path -> Fixtures.Metadata.FileOneMetadata
+      ),
+      metadataChanged = Map(
+        Fixtures.Metadata.FileTwoMetadata.path -> Fixtures.Metadata.FileTwoMetadata
+      ),
+      filesystem = FilesystemMetadata(
+        files = Map(
+          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.New,
+          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Updated
+        )
+      )
+    )
+
+    for {
+      fileOneMetadata <- metadata.collect(file = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
+      fileTwoMetadata <- metadata.collect(file = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+    } yield {
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved) should be(0)
+
+      fileOneMetadata should be(Some(Fixtures.Metadata.FileOneMetadata))
+      fileTwoMetadata should be(Some(Fixtures.Metadata.FileTwoMetadata))
+    }
+  }
+
+  it should "handle missing metadata when collecting data for individual files (new and updated)" in {
+    val mockApiClient = MockServerApiEndpointClient()
+
+    val metadata = DatasetMetadata(
+      contentChanged = Map.empty,
+      metadataChanged = Map.empty,
+      filesystem = FilesystemMetadata(
+        files = Map(
+          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.New,
+          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Updated
+        )
+      )
+    )
+
+    for {
+      _ <- metadata
+        .collect(file = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
+        .map { result =>
+          fail(s"Unexpected result received: [$result]")
+        }
+        .recover {
+          case NonFatal(e: IllegalArgumentException) =>
+            e.getMessage should be(
+              s"Metadata for file [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] not found"
+            )
+        }
+      _ <- metadata
+        .collect(file = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+        .map { result =>
+          fail(s"Unexpected result received: [$result]")
+        }
+        .recover {
+          case NonFatal(e: IllegalArgumentException) =>
+            e.getMessage should be(
+              s"Metadata for file [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] not found"
+            )
+        }
+    } yield {
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved) should be(0)
+    }
+  }
+
+  it should "collect metadata for individual files (existing)" in {
+    val previousEntry = DatasetEntry.generateId()
+
+    val currentMetadata = DatasetMetadata(
+      contentChanged = Map.empty,
+      metadataChanged = Map.empty,
+      filesystem = FilesystemMetadata(
+        files = Map(
+          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.Existing(entry = previousEntry),
+          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Existing(entry = previousEntry)
+        )
+      )
+    )
+
+    val previousMetadata = DatasetMetadata(
+      contentChanged = Map(
+        Fixtures.Metadata.FileOneMetadata.path -> Fixtures.Metadata.FileOneMetadata
+      ),
+      metadataChanged = Map(
+        Fixtures.Metadata.FileTwoMetadata.path -> Fixtures.Metadata.FileTwoMetadata
+      ),
+      filesystem = FilesystemMetadata(
+        files = Map(
+          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.New,
+          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Updated
+        )
+      )
+    )
+
+    val mockApiClient = new MockServerApiEndpointClient(self = Device.generateId()) {
+      override def datasetMetadata(entry: DatasetEntry.Id): Future[DatasetMetadata] =
+        super.datasetMetadata(entry).map { defaultMetadata =>
+          if (entry == previousEntry) {
+            previousMetadata
+          } else {
+            defaultMetadata
+          }
+        }
+    }
+
+    for {
+      fileOneMetadata <- currentMetadata.collect(file = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
+      fileTwoMetadata <- currentMetadata.collect(file = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+    } yield {
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved) should be(2)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved) should be(0)
+
+      fileOneMetadata should be(Some(Fixtures.Metadata.FileOneMetadata))
+      fileTwoMetadata should be(Some(Fixtures.Metadata.FileTwoMetadata))
+    }
+  }
+
+  it should "handle missing metadata when collecting data for individual files (existing)" in {
+    val mockApiClient = MockServerApiEndpointClient()
+
+    val previousEntry = DatasetEntry.generateId()
+
+    val currentMetadata = DatasetMetadata(
+      contentChanged = Map.empty,
+      metadataChanged = Map.empty,
+      filesystem = FilesystemMetadata(
+        files = Map(
+          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.Existing(entry = previousEntry),
+          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Existing(entry = previousEntry)
+        )
+      )
+    )
+
+    for {
+      _ <- currentMetadata.collect(file = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient).recover {
+        case NonFatal(e: IllegalArgumentException) =>
+          e.getMessage should be(
+            s"Expected metadata for file [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] " +
+              s"but none was found in metadata for entry [$previousEntry]"
+          )
+      }
+      _ <- currentMetadata.collect(file = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient).recover {
+        case NonFatal(e: IllegalArgumentException) =>
+          e.getMessage should be(
+            s"Expected metadata for file [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] " +
+              s"but none was found in metadata for entry [$previousEntry]"
+          )
+      }
+    } yield {
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved) should be(2)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved) should be(0)
+    }
+  }
+
+  it should "retrieve required metadata for individual files" in {
+    val mockApiClient = MockServerApiEndpointClient()
+
+    val metadata = DatasetMetadata(
+      contentChanged = Map(
+        Fixtures.Metadata.FileOneMetadata.path -> Fixtures.Metadata.FileOneMetadata
+      ),
+      metadataChanged = Map(
+        Fixtures.Metadata.FileTwoMetadata.path -> Fixtures.Metadata.FileTwoMetadata
+      ),
+      filesystem = FilesystemMetadata(
+        files = Map(
+          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.New,
+          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Updated
+        )
+      )
+    )
+
+    for {
+      fileOneMetadata <- metadata.require(file = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
+      fileTwoMetadata <- metadata.require(file = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+    } yield {
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved) should be(0)
+
+      fileOneMetadata should be(Fixtures.Metadata.FileOneMetadata)
+      fileTwoMetadata should be(Fixtures.Metadata.FileTwoMetadata)
+    }
+  }
+
+  it should "fail if required metadata is missing for individual files" in {
+    val mockApiClient = MockServerApiEndpointClient()
+
+    val metadata = DatasetMetadata.empty
+
+    for {
+      _ <- metadata
+        .require(file = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
+        .map { result =>
+          fail(s"Unexpected result received: [$result]")
+        }
+        .recover {
+          case NonFatal(e: IllegalArgumentException) =>
+            e.getMessage should be(
+              s"Required metadata for file [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] not found"
+            )
+        }
+      _ <- metadata
+        .require(file = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+        .map { result =>
+          fail(s"Unexpected result received: [$result]")
+        }
+        .recover {
+          case NonFatal(e: IllegalArgumentException) =>
+            e.getMessage should be(
+              s"Required metadata for file [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] not found"
+            )
+        }
+    } yield {
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved) should be(0)
+    }
+  }
+
+  it should "be serializable to byte string" in {
     DatasetMetadata.toByteString(metadata = datasetMetadata) should be(
       serializedDatasetMetadata.decodeFromBase64
     )

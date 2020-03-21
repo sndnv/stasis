@@ -8,10 +8,9 @@ import stasis.client.collection.RecoveryCollector
 import stasis.client.model.{DatasetMetadata, FileMetadata, FilesystemMetadata, SourceFile}
 import stasis.client.ops.ParallelismConfig
 import stasis.core.packaging.Crate
-import stasis.shared.model.datasets.DatasetEntry
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.client.mocks.{MockRecoveryMetadataCollector, MockServerApiEndpointClient}
 import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
-import stasis.test.specs.unit.client.mocks.MockRecoveryMetadataCollector
 
 import scala.concurrent.Future
 
@@ -67,7 +66,7 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
           file3Metadata.path -> file3Metadata
         )
       ),
-      getMetadataForEntry = _ => Future.failed(new IllegalStateException("Not available"))
+      api = MockServerApiEndpointClient()
     )
 
     collector
@@ -87,201 +86,37 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
       }
   }
 
-  it should "collect metadata for individual files (new and updated)" in {
+  it should "collect metadata for individual files" in {
     val targetMetadata = DatasetMetadata(
       contentChanged = Map(
         Fixtures.Metadata.FileOneMetadata.path -> Fixtures.Metadata.FileOneMetadata
       ),
       metadataChanged = Map(
-        Fixtures.Metadata.FileTwoMetadata.path -> Fixtures.Metadata.FileTwoMetadata
+        Fixtures.Metadata.FileTwoMetadata.path -> Fixtures.Metadata.FileTwoMetadata,
+        Fixtures.Metadata.FileThreeMetadata.path -> Fixtures.Metadata.FileThreeMetadata
       ),
       filesystem = FilesystemMetadata(
         files = Map(
           Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.New,
-          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Updated
+          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.New,
+          Fixtures.Metadata.FileThreeMetadata.path -> FilesystemMetadata.FileState.Updated,
         )
       )
     )
 
     Future
       .sequence(
-        RecoveryCollector
-          .collectFileMetadata(
-            targetMetadata = targetMetadata,
-            keep = (_, _) => true,
-            getMetadataForEntry = _ => Future.failed(new IllegalStateException("Not available"))
-          )
+        RecoveryCollector.collectFileMetadata(
+          targetMetadata = targetMetadata,
+          keep = (_, state) => state == FilesystemMetadata.FileState.New,
+          api = MockServerApiEndpointClient()
+        )
       )
       .map { actualMetadata =>
         actualMetadata should be(
           Seq(
             Fixtures.Metadata.FileOneMetadata,
             Fixtures.Metadata.FileTwoMetadata
-          )
-        )
-      }
-  }
-
-  it should "handle missing metadata when collecting data for individual files (new and updated)" in {
-    val targetMetadata = DatasetMetadata(
-      contentChanged = Map.empty,
-      metadataChanged = Map.empty,
-      filesystem = FilesystemMetadata(
-        files = Map(
-          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.New,
-          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Updated
-        )
-      )
-    )
-
-    Future
-      .sequence(
-        RecoveryCollector
-          .collectFileMetadata(
-            targetMetadata = targetMetadata,
-            keep = (_, _) => true,
-            getMetadataForEntry = _ => Future.failed(new IllegalStateException("Not available"))
-          )
-          .map(_.failed)
-      )
-      .map { result =>
-        result.map(_.getMessage) should be(
-          Seq(
-            s"Metadata for file [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] not found",
-            s"Metadata for file [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] not found"
-          )
-        )
-      }
-  }
-
-  it should "collect metadata for individual files (existing)" in {
-    val entry = DatasetEntry.generateId()
-
-    val targetMetadata = DatasetMetadata(
-      contentChanged = Map.empty,
-      metadataChanged = Map.empty,
-      filesystem = FilesystemMetadata(
-        files = Map(
-          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.Existing(entry = entry),
-          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Existing(entry = entry)
-        )
-      )
-    )
-
-    val entryMetadata = DatasetMetadata(
-      contentChanged = Map(
-        Fixtures.Metadata.FileOneMetadata.path -> Fixtures.Metadata.FileOneMetadata
-      ),
-      metadataChanged = Map(
-        Fixtures.Metadata.FileTwoMetadata.path -> Fixtures.Metadata.FileTwoMetadata
-      ),
-      filesystem = FilesystemMetadata(
-        files = Map(
-          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.New,
-          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Updated
-        )
-      )
-    )
-
-    Future
-      .sequence(
-        RecoveryCollector
-          .collectFileMetadata(
-            targetMetadata = targetMetadata,
-            keep = (_, _) => true,
-            getMetadataForEntry = {
-              case `entry` => Future.successful(entryMetadata)
-              case other   => Future.failed(new IllegalArgumentException(s"Unexpected entry provided: [$other]"))
-            }
-          )
-      )
-      .map { actualMetadata =>
-        actualMetadata should be(
-          Seq(
-            Fixtures.Metadata.FileOneMetadata,
-            Fixtures.Metadata.FileTwoMetadata
-          )
-        )
-      }
-  }
-
-  it should "handle missing metadata when collecting data for individual files (existing)" in {
-    val entry = DatasetEntry.generateId()
-
-    val targetMetadata = DatasetMetadata(
-      contentChanged = Map.empty,
-      metadataChanged = Map.empty,
-      filesystem = FilesystemMetadata(
-        files = Map(
-          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.Existing(entry = entry),
-          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Existing(entry = entry)
-        )
-      )
-    )
-
-    val entryMetadata = DatasetMetadata(
-      contentChanged = Map.empty,
-      metadataChanged = Map.empty,
-      filesystem = FilesystemMetadata(
-        files = Map(
-          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.New,
-          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Updated
-        )
-      )
-    )
-
-    Future
-      .sequence(
-        RecoveryCollector
-          .collectFileMetadata(
-            targetMetadata = targetMetadata,
-            keep = (_, _) => true,
-            getMetadataForEntry = {
-              case `entry` => Future.successful(entryMetadata)
-              case other   => Future.failed(new IllegalArgumentException(s"Unexpected entry provided: [$other]"))
-            }
-          )
-          .map(_.failed)
-      )
-      .map { result =>
-        result.map(_.getMessage) should be(
-          Seq(
-            s"Expected metadata for file [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] but none was found in metadata for entry [$entry]",
-            s"Expected metadata for file [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] but none was found in metadata for entry [$entry]"
-          )
-        )
-      }
-  }
-
-  it should "support filtering when collecting data for individual files" in {
-    val targetMetadata = DatasetMetadata(
-      contentChanged = Map(
-        Fixtures.Metadata.FileOneMetadata.path -> Fixtures.Metadata.FileOneMetadata
-      ),
-      metadataChanged = Map(
-        Fixtures.Metadata.FileTwoMetadata.path -> Fixtures.Metadata.FileTwoMetadata
-      ),
-      filesystem = FilesystemMetadata(
-        files = Map(
-          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.New,
-          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Updated
-        )
-      )
-    )
-
-    Future
-      .sequence(
-        RecoveryCollector
-          .collectFileMetadata(
-            targetMetadata = targetMetadata,
-            keep = (_, state) => state == FilesystemMetadata.FileState.New,
-            getMetadataForEntry = _ => Future.failed(new IllegalStateException("Not available"))
-          )
-      )
-      .map { actualMetadata =>
-        actualMetadata should be(
-          Seq(
-            Fixtures.Metadata.FileOneMetadata
           )
         )
       }

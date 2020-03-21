@@ -3,6 +3,7 @@ package stasis.client.analysis
 import java.nio.file.attribute.{FileTime, PosixFileAttributeView, PosixFileAttributes, PosixFilePermissions}
 import java.nio.file.{Files, LinkOption, Path}
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 import akka.Done
 import akka.stream.Materializer
@@ -51,8 +52,8 @@ object Metadata {
         size = attributes.size,
         link = if (Files.isSymbolicLink(file)) Some(Files.readSymbolicLink(file)) else None,
         isHidden = Files.isHidden(file),
-        created = attributes.creationTime.toInstant,
-        updated = attributes.lastModifiedTime.toInstant,
+        created = attributes.creationTime.toInstant.truncatedTo(ChronoUnit.SECONDS),
+        updated = attributes.lastModifiedTime.toInstant.truncatedTo(ChronoUnit.SECONDS),
         owner = attributes.owner.getName,
         group = attributes.group.getName,
         permissions = PosixFilePermissions.toString(attributes.permissions()),

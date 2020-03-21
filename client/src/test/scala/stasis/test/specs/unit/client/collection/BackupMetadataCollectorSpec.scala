@@ -4,7 +4,6 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import stasis.client.analysis.Checksum
 import stasis.client.collection.BackupMetadataCollector
-import stasis.client.model.{DatasetMetadata, FilesystemMetadata}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 
@@ -17,21 +16,12 @@ class BackupMetadataCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
     val file2Metadata = Fixtures.Metadata.FileTwoMetadata.copy(path = file2)
     val file3Metadata = Fixtures.Metadata.FileThreeMetadata.copy(path = file3)
 
-    val collector = new BackupMetadataCollector.Default(
-      checksum = Checksum.MD5,
-      latestMetadata = Some(
-        DatasetMetadata(
-          contentChanged = Map(file2 -> file2Metadata),
-          metadataChanged = Map(file3 -> file3Metadata),
-          filesystem = FilesystemMetadata.empty
-        )
-      )
-    )
+    val collector = new BackupMetadataCollector.Default(checksum = Checksum.MD5)
 
     for {
-      sourceFile1 <- collector.collect(file = file1)
-      sourceFile2 <- collector.collect(file = file2)
-      sourceFile3 <- collector.collect(file = file3)
+      sourceFile1 <- collector.collect(file = file1, existingMetadata = None)
+      sourceFile2 <- collector.collect(file = file2, existingMetadata = Some(file2Metadata))
+      sourceFile3 <- collector.collect(file = file3, existingMetadata = Some(file3Metadata))
     } yield {
       sourceFile1.path should be(file1)
       sourceFile1.existingMetadata should be(None)
