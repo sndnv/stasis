@@ -5,6 +5,7 @@ import java.nio.file.Path
 import stasis.shared.ops.Operation
 
 trait RecoveryTracker {
+  def fileExamined(file: Path, metadataChanged: Boolean, contentChanged: Boolean)(implicit operation: Operation.Id): Unit
   def fileCollected(file: Path)(implicit operation: Operation.Id): Unit
   def fileProcessed(file: Path)(implicit operation: Operation.Id): Unit
   def metadataApplied(file: Path)(implicit operation: Operation.Id): Unit

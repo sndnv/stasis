@@ -8,6 +8,7 @@ import stasis.client.ops.ParallelismConfig
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.Try
 
 trait Ops {
   def executor: OperationExecutor
@@ -23,8 +24,12 @@ object Ops {
     import secrets._
 
     for {
-      rulesFile <- directory.requireFile(rawConfig.getString("ops.backup.rules-file"))
-      schedulesFile <- directory.requireFile(rawConfig.getString("ops.scheduling.schedules-file"))
+      rulesFile <- rawConfig.getString("ops.backup.rules-file").future
+      schedulesFile <- rawConfig.getString("ops.scheduling.schedules-file").future
+      _ = log.debug("Loading rules file [{}]...", rulesFile)
+      rulesFile <- directory.requireFile(rulesFile)
+      _ = log.debug("Loading schedules file [{}]...", schedulesFile)
+      schedulesFile <- directory.requireFile(schedulesFile)
     } yield {
       implicit val parallelismConfig: ParallelismConfig =
         ParallelismConfig(value = rawConfig.getInt("service.parallelism"))

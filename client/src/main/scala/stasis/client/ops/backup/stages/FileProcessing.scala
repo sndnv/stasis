@@ -32,17 +32,13 @@ trait FileProcessing {
         case file if file.hasContentChanged => processContentChanged(file).map(Left.apply)
         case file                           => processMetadataChanged(file).map(Right.apply)
       }
-      .log(
-        name = "File Processing",
-        extract = {
-          case Left(metadata: FileMetadata) =>
-            s"Processed file [${metadata.path}] - Dataset: [${targetDataset.id}]; Changed: [content]"
-
-          case Right(metadata: FileMetadata) =>
-            s"Processed file [${metadata.path}] - Dataset: [${targetDataset.id}]; Changed: [metadata]"
-        }: Either[FileMetadata, FileMetadata] => String
+      .wireTap(
+        metadata =>
+          providers.track.fileProcessed(
+            file = metadata.fold(_.path, _.path),
+            contentChanged = metadata.isLeft
+        )
       )
-      .wireTap(metadata => providers.track.fileProcessed(file = metadata.fold(_.path, _.path)))
 
   private def processContentChanged(file: SourceFile): Future[FileMetadata] =
     for {

@@ -31,6 +31,7 @@ object ApiEndpoint {
       terminationDelay <- rawConfig.getDuration("api.termination-delay").toMillis.millis.future
       tokenSize <- rawConfig.getInt("api.authentication.token-size").future
       frontendAuthenticator = DefaultFrontendAuthenticator(tokenSize)
+      _ = log.debug("Creating API token file [{}]...", Files.ApiToken)
       tokenFile <- directory.pushFile(
         file = Files.ApiToken,
         content = frontendAuthenticator.token

@@ -2,18 +2,25 @@ package stasis.client.tracking.trackers
 
 import java.nio.file.Path
 
+import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
+import akka.event.{Logging, LoggingAdapter}
 import stasis.client.tracking.{BackupTracker, RecoveryTracker, ServerTracker, TrackerView}
 import stasis.core.persistence.backends.EventLogBackend
 import stasis.core.persistence.events.EventLog
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation
 
 import scala.concurrent.Future
 
 class DefaultTracker private (
   backend: EventLogBackend[DefaultTracker.Event, TrackerView.State]
-) extends TrackerView {
+)(implicit system: ActorSystem[SpawnProtocol])
+    extends TrackerView {
   import DefaultTracker._
   import TrackerView._
+
+  private val log: LoggingAdapter = Logging(system.toUntyped, this.getClass.getName)
 
   private val events: EventLog[Event, State] = EventLog(
     backend = backend,
@@ -62,7 +69,31 @@ class DefaultTracker private (
   }
 
   object backup extends BackupTracker {
+    override def fileExamined(
+      file: Path,
+      metadataChanged: Boolean,
+      contentChanged: Boolean
+    )(implicit operation: Operation.Id): Unit = {
+      log.debug(
+        "[{}] (backup) - File [{}] examined; metadata changed: [{}]; content changed: [{}]",
+        operation,
+        file,
+        metadataChanged,
+        contentChanged
+      )
+
+      val _ = events.store(
+        event = Event.OperationStepCompleted(
+          operationId = operation,
+          stage = "examination",
+          step = file.toAbsolutePath.toString
+        )
+      )
+    }
+
     override def fileCollected(file: Path)(implicit operation: Operation.Id): Unit = {
+      log.debug("[{}] (backup) - File [{}] collected", operation, file)
+
       val _ = events.store(
         event = Event.OperationStepCompleted(
           operationId = operation,
@@ -72,7 +103,9 @@ class DefaultTracker private (
       )
     }
 
-    override def fileProcessed(file: Path)(implicit operation: Operation.Id): Unit = {
+    override def fileProcessed(file: Path, contentChanged: Boolean)(implicit operation: Operation.Id): Unit = {
+      log.debug("[{}] (backup) - File [{}] processed; content changed: [{}]", operation, file, contentChanged)
+
       val _ = events.store(
         event = Event.OperationStepCompleted(
           operationId = operation,
@@ -83,6 +116,8 @@ class DefaultTracker private (
     }
 
     override def metadataCollected()(implicit operation: Operation.Id): Unit = {
+      log.debug("[{}] (backup) - Metadata collected", operation)
+
       val _ = events.store(
         event = Event.OperationStepCompleted(
           operationId = operation,
@@ -92,7 +127,9 @@ class DefaultTracker private (
       )
     }
 
-    override def metadataPushed()(implicit operation: Operation.Id): Unit = {
+    override def metadataPushed(entry: DatasetEntry.Id)(implicit operation: Operation.Id): Unit = {
+      log.debug("[{}] (backup) - Metadata pushed; entry [{}] created", operation, entry)
+
       val _ = events.store(
         event = Event.OperationStepCompleted(
           operationId = operation,
@@ -103,6 +140,8 @@ class DefaultTracker private (
     }
 
     override def failureEncountered(failure: Throwable)(implicit operation: Operation.Id): Unit = {
+      log.debug("[{}] (backup) - Failure encountered: [{}]", operation, failure.getMessage)
+
       val _ = events.store(
         event = Event.OperationStepFailed(
           operationId = operation,
@@ -112,6 +151,8 @@ class DefaultTracker private (
     }
 
     override def completed()(implicit operation: Operation.Id): Unit = {
+      log.debug("[{}] (backup) - Operation completed", operation)
+
       val _ = events.store(
         event = Event.OperationCompleted(operationId = operation)
       )
@@ -119,7 +160,31 @@ class DefaultTracker private (
   }
 
   object recovery extends RecoveryTracker {
+    override def fileExamined(
+      file: Path,
+      metadataChanged: Boolean,
+      contentChanged: Boolean
+    )(implicit operation: Operation.Id): Unit = {
+      log.debug(
+        "[{}] (recovery) - File [{}] examined; metadata changed: [{}]; content changed: [{}]",
+        operation,
+        file,
+        metadataChanged,
+        contentChanged
+      )
+
+      val _ = events.store(
+        event = Event.OperationStepCompleted(
+          operationId = operation,
+          stage = "examination",
+          step = file.toAbsolutePath.toString
+        )
+      )
+    }
+
     override def fileCollected(file: Path)(implicit operation: Operation.Id): Unit = {
+      log.debug("[{}] (recovery) - File [{}] collected", operation, file)
+
       val _ = events.store(
         event = Event.OperationStepCompleted(
           operationId = operation,
@@ -130,6 +195,8 @@ class DefaultTracker private (
     }
 
     override def fileProcessed(file: Path)(implicit operation: Operation.Id): Unit = {
+      log.debug("[{}] (recovery) - File [{}] processed", operation, file)
+
       val _ = events.store(
         event = Event.OperationStepCompleted(
           operationId = operation,
@@ -140,6 +207,8 @@ class DefaultTracker private (
     }
 
     override def metadataApplied(file: Path)(implicit operation: Operation.Id): Unit = {
+      log.debug("[{}] (recovery) - Metadata applied to file [{}]", operation, file)
+
       val _ = events.store(
         event = Event.OperationStepCompleted(
           operationId = operation,
@@ -150,6 +219,8 @@ class DefaultTracker private (
     }
 
     override def failureEncountered(failure: Throwable)(implicit operation: Operation.Id): Unit = {
+      log.debug("[{}] (recovery) - Failure encountered: [{}]", operation, failure.getMessage)
+
       val _ = events.store(
         event = Event.OperationStepFailed(
           operationId = operation,
@@ -159,6 +230,8 @@ class DefaultTracker private (
     }
 
     override def completed()(implicit operation: Operation.Id): Unit = {
+      log.debug("[{}] (recovery) - Operation completed", operation)
+
       val _ = events.store(
         event = Event.OperationCompleted(operationId = operation)
       )
@@ -169,7 +242,7 @@ class DefaultTracker private (
 object DefaultTracker {
   def apply(
     createBackend: TrackerView.State => EventLogBackend[DefaultTracker.Event, TrackerView.State]
-  ): DefaultTracker =
+  )(implicit system: ActorSystem[SpawnProtocol]): DefaultTracker =
     new DefaultTracker(
       backend = createBackend(TrackerView.State.empty)
     )

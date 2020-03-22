@@ -19,10 +19,6 @@ trait MetadataApplication {
   def metadataApplication(implicit operation: Operation.Id): Flow[FileMetadata, Done, NotUsed] =
     Flow[FileMetadata]
       .mapAsync(parallelism.value)(metadata => Metadata.applyFileMetadata(metadata).map(_ => metadata))
-      .log(
-        name = "Metadata Application",
-        extract = metadata => s"Applied metadata to file: [${metadata.path}]"
-      )
       .wireTap(metadata => providers.track.metadataApplied(file = metadata.path))
       .map(_ => Done)
 }

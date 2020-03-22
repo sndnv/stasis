@@ -86,6 +86,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(1)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
 
+        mockTracker.statistics(MockRecoveryTracker.Statistic.FileExamined) should be(3)
         mockTracker.statistics(MockRecoveryTracker.Statistic.FileCollected) should be(2)
         mockTracker.statistics(MockRecoveryTracker.Statistic.FileProcessed) should be(2)
         mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(2)
@@ -145,6 +146,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(2)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
 
+        mockTracker.statistics(MockRecoveryTracker.Statistic.FileExamined) should be(3)
         mockTracker.statistics(MockRecoveryTracker.Statistic.FileCollected) should be(3)
         mockTracker.statistics(MockRecoveryTracker.Statistic.FileProcessed) should be(2)
         mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(2)
@@ -168,6 +170,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
         result should be(Done)
 
         eventually {
+          mockTracker.statistics(MockRecoveryTracker.Statistic.FileExamined) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.FileCollected) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.FileProcessed) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
@@ -195,6 +198,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
           e shouldBe a[RuntimeException]
 
           eventually {
+            mockTracker.statistics(MockRecoveryTracker.Statistic.FileExamined) should be(0)
             mockTracker.statistics(MockRecoveryTracker.Statistic.FileCollected) should be(0)
             mockTracker.statistics(MockRecoveryTracker.Statistic.FileProcessed) should be(0)
             mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)

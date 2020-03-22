@@ -9,6 +9,7 @@ import org.scalatest.BeforeAndAfterAll
 import stasis.client.tracking.trackers.DefaultTracker
 import stasis.client.tracking.TrackerView
 import stasis.core.persistence.backends.memory.EventLogMemoryBackend
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
 
@@ -28,10 +29,12 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
       TrackerView.State.empty
     )
 
+    tracker.backup.fileExamined(file, metadataChanged = true, contentChanged = false)
+    tracker.backup.fileExamined(file, metadataChanged = true, contentChanged = true)
     tracker.backup.fileCollected(file)
-    tracker.backup.fileProcessed(file)
+    tracker.backup.fileProcessed(file, contentChanged = true)
     tracker.backup.metadataCollected()
-    tracker.backup.metadataPushed()
+    tracker.backup.metadataPushed(entry = DatasetEntry.generateId())
     tracker.backup.failureEncountered(failure = new RuntimeException("test failure"))
     tracker.backup.completed()
 
@@ -39,6 +42,9 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
       val completedState = tracker.state.await.operations(operation)
 
       completedState.completed should not be empty
+
+      completedState.stages.contains("examination") should be(true)
+      completedState.stages("examination").steps.size should be(2)
 
       completedState.stages.contains("collection") should be(true)
       completedState.stages("collection").steps.size should be(1)
@@ -65,6 +71,8 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
       TrackerView.State.empty
     )
 
+    tracker.recovery.fileExamined(file, metadataChanged = true, contentChanged = false)
+    tracker.recovery.fileExamined(file, metadataChanged = true, contentChanged = true)
     tracker.recovery.fileCollected(file)
     tracker.recovery.fileProcessed(file)
     tracker.recovery.metadataApplied(file)
@@ -75,6 +83,9 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
       val completedState = tracker.state.await.operations(operation)
 
       completedState.completed should not be empty
+
+      completedState.stages.contains("examination") should be(true)
+      completedState.stages("examination").steps.size should be(2)
 
       completedState.stages.contains("collection") should be(true)
       completedState.stages("collection").steps.size should be(1)

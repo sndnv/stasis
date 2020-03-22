@@ -102,6 +102,7 @@ class FileProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(1)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
 
+        mockTracker.statistics(MockRecoveryTracker.Statistic.FileExamined) should be(0)
         mockTracker.statistics(MockRecoveryTracker.Statistic.FileCollected) should be(0)
         mockTracker.statistics(MockRecoveryTracker.Statistic.FileProcessed) should be(2)
         mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
@@ -171,6 +172,7 @@ class FileProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
           mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
           mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
 
+          mockTracker.statistics(MockRecoveryTracker.Statistic.FileExamined) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.FileCollected) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.FileProcessed) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
@@ -240,6 +242,7 @@ class FileProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
           mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
           mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
 
+          mockTracker.statistics(MockRecoveryTracker.Statistic.FileExamined) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.FileCollected) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.FileProcessed) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)

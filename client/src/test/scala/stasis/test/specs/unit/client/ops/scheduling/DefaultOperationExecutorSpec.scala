@@ -39,6 +39,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       .await
 
     eventually {
+      mockTracker.statistics(MockBackupTracker.Statistic.FileExamined) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.FileCollected) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.FileProcessed) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(1)
@@ -60,6 +61,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       .await
 
     eventually {
+      mockTracker.statistics(MockBackupTracker.Statistic.FileExamined) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.FileCollected) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.FileProcessed) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(1)
@@ -82,6 +84,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       .await
 
     eventually {
+      mockTracker.statistics(MockRecoveryTracker.Statistic.FileExamined) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.FileCollected) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.FileProcessed) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
@@ -102,6 +105,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       .await
 
     eventually {
+      mockTracker.statistics(MockRecoveryTracker.Statistic.FileExamined) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.FileCollected) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.FileProcessed) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
