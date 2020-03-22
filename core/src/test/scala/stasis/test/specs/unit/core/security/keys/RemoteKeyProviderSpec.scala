@@ -21,10 +21,13 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
     val endpoint = new MockJwksEndpoint(port = ports.dequeue())
     endpoint.start()
 
+    val jwksPath = "/valid/jwks.json"
+
     val provider = RemoteKeyProvider(
-      jwksEndpoint = s"${endpoint.url}/valid/jwks.json",
+      jwksEndpoint = s"${endpoint.url}$jwksPath",
       context = None,
       refreshInterval = 1.second,
+      refreshRetryInterval = 100.millis,
       issuer = "self"
     )
 
@@ -35,6 +38,8 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
       .key(id = Some(expectedKeyId))
       .map { actualKey =>
         endpoint.stop()
+
+        endpoint.count(path = jwksPath) should be(1)
         actualKey should be(expectedKey)
       }
   }
@@ -43,10 +48,13 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
     val endpoint = new MockJwksEndpoint(port = ports.dequeue())
     endpoint.start()
 
+    val jwksPath = "/valid/jwks.json"
+
     val provider = RemoteKeyProvider(
-      jwksEndpoint = s"${endpoint.url}/valid/jwks.json",
+      jwksEndpoint = s"${endpoint.url}$jwksPath",
       context = None,
       refreshInterval = 1.second,
+      refreshRetryInterval = 100.millis,
       issuer = "self"
     )
 
@@ -59,6 +67,9 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
       }
       .recover {
         case NonFatal(e) =>
+          endpoint.stop()
+
+          endpoint.count(path = jwksPath) should be(1)
           e.getMessage should be(s"Key [$expectedKeyId] was not found")
       }
   }
@@ -68,6 +79,7 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
       jwksEndpoint = "localhost",
       context = None,
       refreshInterval = 1.second,
+      refreshRetryInterval = 100.millis,
       issuer = "self"
     )
 
@@ -196,15 +208,52 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
     val endpoint = new MockJwksEndpoint(port = ports.dequeue())
     endpoint.start()
 
+    val jwksPath = "/invalid/jwks.json"
+
     RemoteKeyProvider
-      .getRawJwks(s"${endpoint.url}/invalid/jwks.json", context = None)
+      .getRawJwks(s"${endpoint.url}$jwksPath", context = None)
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
       .recover {
         case NonFatal(e) =>
           endpoint.stop()
+
+          endpoint.count(path = jwksPath) should be(1)
           e.getMessage should be("Endpoint responded with unexpected status: [500 Internal Server Error]")
+      }
+  }
+
+  it should "support faster key refresh on failure" in {
+    val endpoint = new MockJwksEndpoint(port = ports.dequeue())
+    endpoint.start()
+
+    val jwksPath = "/invalid/jwks.json"
+    val refreshRetryInterval = 50.millis
+
+    val provider = RemoteKeyProvider(
+      jwksEndpoint = s"${endpoint.url}$jwksPath",
+      context = None,
+      refreshInterval = 3.seconds,
+      refreshRetryInterval = refreshRetryInterval,
+      issuer = "self"
+    )
+
+    val expectedKeyId = "rsa-1"
+
+    await(delay = refreshRetryInterval * 2, withSystem = system)
+
+    provider
+      .key(id = Some(expectedKeyId))
+      .map { response =>
+        fail(s"Received unexpected response from provider: [$response]")
+      }
+      .recover {
+        case NonFatal(e) =>
+          endpoint.stop()
+
+          endpoint.count(path = jwksPath) should be >= 2
+          e.getMessage should be(s"Key [$expectedKeyId] was not found")
       }
   }
 
@@ -228,6 +277,7 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
       jwksEndpoint = s"${endpoint.url}/valid/jwks.json",
       context = Some(clientContext),
       refreshInterval = 1.second,
+      refreshRetryInterval = 100.millis,
       issuer = "self"
     )
 

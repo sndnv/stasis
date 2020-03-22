@@ -43,6 +43,11 @@ class MockJwksEndpoint(
 
   def url: String = s"$scheme://localhost:$port"
 
+  def count(path: String): Int =
+    wireMockServer
+      .findAll(getRequestedFor(urlEqualTo(path)))
+      .size
+
   val jwks: JsonWebKeySet = MockJwksGenerators.generateKeySet(rsaKeysCount, ecKeysCount, secretKeysCount)
 
   val keys: Map[String, PublicKey] = {

@@ -84,6 +84,7 @@ trait Service {
           jwksEndpoint = userAuthenticatorConfig.getString("jwks-endpoint"),
           context = authenticationEndpointContext,
           refreshInterval = userAuthenticatorConfig.getDuration("refresh-interval").toSeconds.seconds,
+          refreshRetryInterval = userAuthenticatorConfig.getDuration("refresh-retry-interval").toSeconds.seconds,
           issuer = userAuthenticatorConfig.getString("issuer")
         ),
         audience = userAuthenticatorConfig.getString("audience"),
@@ -100,6 +101,7 @@ trait Service {
           jwksEndpoint = nodeAuthenticatorConfig.getString("jwks-endpoint"),
           context = authenticationEndpointContext,
           refreshInterval = nodeAuthenticatorConfig.getDuration("refresh-interval").toSeconds.seconds,
+          refreshRetryInterval = userAuthenticatorConfig.getDuration("refresh-retry-interval").toSeconds.seconds,
           issuer = nodeAuthenticatorConfig.getString("issuer")
         ),
         audience = nodeAuthenticatorConfig.getString("audience"),
