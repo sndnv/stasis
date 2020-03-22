@@ -26,6 +26,7 @@ final class RemoteKeyProvider(
   jwksEndpoint: String,
   context: Option[HttpsConnectionContext],
   refreshInterval: FiniteDuration,
+  refreshRetryInterval: FiniteDuration,
   override val issuer: String,
   override val allowedAlgorithms: Seq[String]
 )(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout)
@@ -58,20 +59,22 @@ final class RemoteKeyProvider(
     RemoteKeyProvider
       .getRawJwks(jwksEndpoint, context)
       .flatMap(loadKeys)
+      .map { _ =>
+        scheduleKeysRefresh(delay = refreshInterval)
+        Done
+      }
       .recover {
         case NonFatal(e) =>
-          log.error(s"Failed to load keys from JWKs endpoint [$jwksEndpoint]: [$e]")
+          log.error(e, "Failed to load keys from JWKs endpoint [{}]: [{}]", jwksEndpoint, e.getMessage)
+          scheduleKeysRefresh(delay = refreshRetryInterval)
           Done
       }
-      .map { result =>
-        scheduleKeysRefresh()
-        result
-      }
 
-  private def scheduleKeysRefresh(): Unit = {
+  private def scheduleKeysRefresh(delay: FiniteDuration): Unit = {
+    log.debug("Scheduling loading of keys from JWKs endpoint [{}] in [{}] second(s)", jwksEndpoint, delay.toSeconds)
     val _ = system.scheduler.scheduleOnce(
-      refreshInterval,
-      () => {
+      delay = delay,
+      runnable = () => {
         val _ = refreshKeys()
       }
     )
@@ -86,11 +89,15 @@ final class RemoteKeyProvider(
             jwks.map {
               case Right(jwk) =>
                 log.debug(
-                  s"JWKs endpoint [$jwksEndpoint] provided key [${jwk.id}] with algorithm [${jwk.key.getAlgorithm}]")
+                  "JWKs endpoint [{}] provided key [{}] with algorithm [{}}]",
+                  jwksEndpoint,
+                  jwk.id,
+                  jwk.key.getAlgorithm
+                )
                 cache.put(jwk.id, jwk.key)
 
               case Left(failure) =>
-                log.warning(s"JWKs endpoint provided key that could not be handled: [$failure]")
+                log.warning("JWKs endpoint [{}] provided key that could not be handled: [{}]", jwksEndpoint, failure)
                 Future.successful(Done)
             }
           )
@@ -103,12 +110,14 @@ object RemoteKeyProvider {
     jwksEndpoint: String,
     context: Option[HttpsConnectionContext],
     refreshInterval: FiniteDuration,
+    refreshRetryInterval: FiniteDuration,
     issuer: String
   )(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout): RemoteKeyProvider =
     new RemoteKeyProvider(
       jwksEndpoint = jwksEndpoint,
       context = context,
       refreshInterval = refreshInterval,
+      refreshRetryInterval = refreshRetryInterval,
       issuer = issuer,
       allowedAlgorithms = Seq(
         AlgorithmIdentifiers.RSA_USING_SHA256,
