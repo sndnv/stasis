@@ -14,13 +14,13 @@ trait FileCollection {
   def fileCollection(implicit operation: Operation.Id): Source[SourceFile, NotUsed] =
     collector
       .collect()
-      .log(
-        name = "File Collection",
-        extract = { file =>
-          val metadata = if (file.hasChanged) "changed" else "not changed"
-          val content = if (file.hasContentChanged) "changed" else "not changed"
-          s"[${file.path}] - Metadata: [$metadata]; Content: [$content]"
-        }
+      .wireTap(
+        file =>
+          providers.track.fileExamined(
+            file = file.path,
+            metadataChanged = file.hasChanged,
+            contentChanged = file.hasContentChanged
+        )
       )
       .filter(_.hasChanged)
       .wireTap(file => providers.track.fileCollected(file = file.path))

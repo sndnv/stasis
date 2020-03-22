@@ -44,17 +44,21 @@ object Secrets {
         salt = userSalt,
         password = password
       )(secretsConfig)
+      _ = log.debug("Loading encrypted device secret from [{}]...", Files.DeviceSecret)
       encryptedDeviceSecret <- directory.pullFile[ByteString](file = Files.DeviceSecret)
+      _ = log.debug("Decrypting device secret...")
       decryptedDeviceSecret <- userPassword.toHashedEncryptionPassword.toEncryptionSecret
         .decryptDeviceSecret(
           device = device,
           encryptedSecret = encryptedDeviceSecret
         )
       oauthClient <- oauthClient.future
+      _ = log.debug("Retrieving core token...")
       coreToken <- oauthClient.token(
         scope = Try(rawConfig.getString("server.authentication.scopes.core")).toOption,
         parameters = OAuthClient.GrantParameters.ClientCredentials()
       )
+      _ = log.debug("Retrieving API token...")
       apiToken <- oauthClient.token(
         scope = Try(rawConfig.getString("server.authentication.scopes.api")).toOption,
         parameters = OAuthClient.GrantParameters.ResourceOwnerPasswordCredentials(

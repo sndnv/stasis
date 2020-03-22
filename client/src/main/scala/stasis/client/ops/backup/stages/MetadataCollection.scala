@@ -44,9 +44,5 @@ trait MetadataCollection {
             }
           )
       }
-      .log(
-        name = "Metadata Collection",
-        extract = metadata => s"Metadata generated for dataset [${targetDataset.id}]: [$metadata]"
-      )
       .wireTap(_ => providers.track.metadataCollected())
 }

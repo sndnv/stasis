@@ -56,6 +56,7 @@ class FileCollectionSpec extends AsyncUnitSpec {
       .map { collectedFiles =>
         collectedFiles should be(Seq(sourceFile1, sourceFile3))
 
+        mockTracker.statistics(MockRecoveryTracker.Statistic.FileExamined) should be(3)
         mockTracker.statistics(MockRecoveryTracker.Statistic.FileCollected) should be(2)
         mockTracker.statistics(MockRecoveryTracker.Statistic.FileProcessed) should be(0)
         mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)

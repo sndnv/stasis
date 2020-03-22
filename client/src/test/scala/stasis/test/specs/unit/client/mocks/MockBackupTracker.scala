@@ -4,11 +4,13 @@ import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 
 import stasis.client.tracking.BackupTracker
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.client.mocks.MockBackupTracker.Statistic
 
 class MockBackupTracker extends BackupTracker {
   private val stats: Map[Statistic, AtomicInteger] = Map(
+    Statistic.FileExamined -> new AtomicInteger(0),
     Statistic.FileCollected -> new AtomicInteger(0),
     Statistic.FileProcessed -> new AtomicInteger(0),
     Statistic.MetadataCollected -> new AtomicInteger(0),
@@ -17,16 +19,23 @@ class MockBackupTracker extends BackupTracker {
     Statistic.Completed -> new AtomicInteger(0)
   )
 
+  override def fileExamined(
+    file: Path,
+    metadataChanged: Boolean,
+    contentChanged: Boolean
+  )(implicit operation: Operation.Id): Unit =
+    stats(Statistic.FileExamined).incrementAndGet()
+
   override def fileCollected(file: Path)(implicit operation: Operation.Id): Unit =
     stats(Statistic.FileCollected).incrementAndGet()
 
-  override def fileProcessed(file: Path)(implicit operation: Operation.Id): Unit =
+  override def fileProcessed(file: Path, contentChanged: Boolean)(implicit operation: Operation.Id): Unit =
     stats(Statistic.FileProcessed).incrementAndGet()
 
   override def metadataCollected()(implicit operation: Operation.Id): Unit =
     stats(Statistic.MetadataCollected).incrementAndGet()
 
-  override def metadataPushed()(implicit operation: Operation.Id): Unit =
+  override def metadataPushed(entry: DatasetEntry.Id)(implicit operation: Operation.Id): Unit =
     stats(Statistic.MetadataPushed).incrementAndGet()
 
   override def failureEncountered(failure: Throwable)(implicit operation: Operation.Id): Unit =
@@ -41,6 +50,7 @@ class MockBackupTracker extends BackupTracker {
 object MockBackupTracker {
   sealed trait Statistic
   object Statistic {
+    case object FileExamined extends Statistic
     case object FileCollected extends Statistic
     case object FileProcessed extends Statistic
     case object MetadataCollected extends Statistic

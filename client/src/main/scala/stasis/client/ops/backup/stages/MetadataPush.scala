@@ -27,12 +27,8 @@ trait MetadataPush {
   def metadataPush(implicit operation: Operation.Id): Flow[DatasetMetadata, Done, NotUsed] =
     Flow[DatasetMetadata]
       .mapAsyncUnordered(parallelism.value)(pushMetadata)
-      .log(
-        name = "Metadata Push",
-        extract = entry => s"Metadata pushed for dataset [${targetDataset.id}]; entry created: [$entry]"
-      )
+      .wireTap(entry => providers.track.metadataPushed(entry))
       .map(_ => Done)
-      .wireTap(_ => providers.track.metadataPushed())
 
   private def pushMetadata(metadata: DatasetMetadata): Future[DatasetEntry.Id] = {
     val metadataCrate = Crate.generateId()

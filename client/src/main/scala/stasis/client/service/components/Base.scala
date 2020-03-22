@@ -104,7 +104,7 @@ object Base {
                   name = s"tracker-${java.util.UUID.randomUUID()}",
                   initialState = state
                 )(typedSystem, timeout)
-            )
+            )(typedSystem)
 
           override val terminateService: () => Unit = terminate
         }

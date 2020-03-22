@@ -45,10 +45,6 @@ trait FileProcessing {
             )
         }
       }
-      .log(
-        name = "File Processing",
-        extract = metadata => s"Processed file [${metadata.path}]"
-      )
       .wireTap(metadata => providers.track.fileProcessed(file = metadata.path))
 
   private def pull(fileMetadata: FileMetadata): Future[Source[ByteString, NotUsed]] =
