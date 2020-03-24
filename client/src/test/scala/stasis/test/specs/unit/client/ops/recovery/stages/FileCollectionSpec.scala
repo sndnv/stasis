@@ -5,7 +5,7 @@ import akka.stream.ActorMaterializer
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.collection.RecoveryCollector
-import stasis.client.model.SourceFile
+import stasis.client.model.TargetFile
 import stasis.client.ops.recovery.stages.FileCollection
 import stasis.client.ops.recovery.Providers
 import stasis.shared.ops.Operation
@@ -15,29 +15,29 @@ import stasis.test.specs.unit.client.mocks._
 
 class FileCollectionSpec extends AsyncUnitSpec {
   "A Recovery FileCollection stage" should "collect and filter files" in {
-    val sourceFile1 = SourceFile(
+    val targetFile1 = TargetFile(
       path = Fixtures.Metadata.FileOneMetadata.path,
-      existingMetadata = None,
-      currentMetadata = Fixtures.Metadata.FileOneMetadata
+      existingMetadata = Fixtures.Metadata.FileOneMetadata,
+      currentMetadata = None
     )
 
-    val sourceFile2 = SourceFile(
+    val targetFile2 = TargetFile(
       path = Fixtures.Metadata.FileTwoMetadata.path,
-      existingMetadata = Some(Fixtures.Metadata.FileTwoMetadata),
-      currentMetadata = Fixtures.Metadata.FileTwoMetadata
+      existingMetadata = Fixtures.Metadata.FileTwoMetadata,
+      currentMetadata = Some(Fixtures.Metadata.FileTwoMetadata)
     )
 
-    val sourceFile3 = SourceFile(
+    val targetFile3 = TargetFile(
       path = Fixtures.Metadata.FileThreeMetadata.path,
-      existingMetadata = Some(Fixtures.Metadata.FileThreeMetadata.copy(isHidden = true)),
-      currentMetadata = Fixtures.Metadata.FileThreeMetadata
+      existingMetadata = Fixtures.Metadata.FileThreeMetadata,
+      currentMetadata = Some(Fixtures.Metadata.FileThreeMetadata.copy(isHidden = true))
     )
 
     val mockTracker = new MockRecoveryTracker
 
     val stage = new FileCollection {
       override protected def collector: RecoveryCollector =
-        new MockRecoveryCollector(List(sourceFile1, sourceFile2, sourceFile3))
+        new MockRecoveryCollector(List(targetFile1, targetFile2, targetFile3))
 
       override protected def providers: Providers = Providers(
         checksum = Checksum.MD5,
@@ -52,9 +52,9 @@ class FileCollectionSpec extends AsyncUnitSpec {
     implicit val operationId: Operation.Id = Operation.generateId()
 
     stage.fileCollection
-      .runFold(Seq.empty[SourceFile])(_ :+ _)
+      .runFold(Seq.empty[TargetFile])(_ :+ _)
       .map { collectedFiles =>
-        collectedFiles should be(Seq(sourceFile1, sourceFile3))
+        collectedFiles should be(Seq(targetFile1, targetFile3))
 
         mockTracker.statistics(MockRecoveryTracker.Statistic.FileExamined) should be(3)
         mockTracker.statistics(MockRecoveryTracker.Statistic.FileCollected) should be(2)

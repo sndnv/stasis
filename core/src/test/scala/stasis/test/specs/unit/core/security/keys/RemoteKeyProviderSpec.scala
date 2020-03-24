@@ -241,7 +241,7 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
 
     val expectedKeyId = "rsa-1"
 
-    await(delay = refreshRetryInterval * 2, withSystem = system)
+    await(delay = refreshRetryInterval * 3, withSystem = system)
 
     provider
       .key(id = Some(expectedKeyId))

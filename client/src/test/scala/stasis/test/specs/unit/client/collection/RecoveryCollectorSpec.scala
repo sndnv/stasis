@@ -5,7 +5,7 @@ import java.time.Instant
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import stasis.client.collection.RecoveryCollector
-import stasis.client.model.{DatasetMetadata, FileMetadata, FilesystemMetadata, SourceFile}
+import stasis.client.model.{DatasetMetadata, FileMetadata, FilesystemMetadata, TargetFile}
 import stasis.client.ops.ParallelismConfig
 import stasis.core.packaging.Crate
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -71,18 +71,20 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
 
     collector
       .collect()
-      .runFold(Seq.empty[SourceFile])(_ :+ _)
+      .runFold(Seq.empty[TargetFile])(_ :+ _)
       .map(_.sortBy(_.path.toAbsolutePath.toString))
       .map {
-        case sourceFile2 :: sourceFile3 :: Nil =>
-          sourceFile2.path should be(file2Metadata.path)
-          sourceFile2.existingMetadata should be(Some(file2Metadata))
+        case targetFile2 :: targetFile3 :: Nil =>
+          targetFile2.path should be(file2Metadata.path)
+          targetFile2.existingMetadata should be(file2Metadata)
+          targetFile2.currentMetadata should not be empty
 
-          sourceFile3.path should be(file3Metadata.path)
-          sourceFile3.existingMetadata should be(Some(file3Metadata))
+          targetFile3.path should be(file3Metadata.path)
+          targetFile3.existingMetadata should be(file3Metadata)
+          targetFile3.currentMetadata should not be empty
 
-        case sourceFiles =>
-          fail(s"Unexpected number of entries received: [${sourceFiles.size}]")
+        case targetFiles =>
+          fail(s"Unexpected number of entries received: [${targetFiles.size}]")
       }
   }
 

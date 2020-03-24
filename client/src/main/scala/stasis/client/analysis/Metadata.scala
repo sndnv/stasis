@@ -7,13 +7,13 @@ import java.time.temporal.ChronoUnit
 
 import akka.Done
 import akka.stream.Materializer
-import stasis.client.model.{FileMetadata, SourceFile}
+import stasis.client.model.{FileMetadata, SourceFile, TargetFile}
 import stasis.core.packaging.Crate
 
 import scala.concurrent.{ExecutionContext, Future}
 
 object Metadata {
-  def collect(
+  def collectSource(
     checksum: Checksum,
     file: Path,
     existingMetadata: Option[FileMetadata]
@@ -35,6 +35,39 @@ object Metadata {
         path = file,
         existingMetadata = existingMetadata,
         currentMetadata = currentMetadata
+      )
+    }
+  }
+
+  def collectTarget(
+    checksum: Checksum,
+    file: Path,
+    existingMetadata: FileMetadata
+  )(implicit mat: Materializer): Future[TargetFile] = {
+    implicit val ec: ExecutionContext = mat.executionContext
+
+    if (Files.exists(file)) {
+      for {
+        currentChecksum <- checksum.calculate(file)
+        currentMetadata <- extractFileMetadata(
+          file = file,
+          withChecksum = currentChecksum,
+          withCrate = existingMetadata.crate
+        )
+      } yield {
+        TargetFile(
+          path = file,
+          existingMetadata = existingMetadata,
+          currentMetadata = Some(currentMetadata)
+        )
+      }
+    } else {
+      Future.successful(
+        TargetFile(
+          path = file,
+          existingMetadata = existingMetadata,
+          currentMetadata = None
+        )
       )
     }
   }

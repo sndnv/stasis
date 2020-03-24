@@ -5,7 +5,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Flow, Source}
 import akka.util.ByteString
 import stasis.client.encryption.secrets.DeviceSecret
-import stasis.client.model.{FileMetadata, SourceFile}
+import stasis.client.model.{FileMetadata, TargetFile}
 import stasis.client.ops.recovery.Providers
 import stasis.client.ops.ParallelismConfig
 import stasis.core.routing.exceptions.PullFailure
@@ -21,28 +21,18 @@ trait FileProcessing {
   protected implicit def mat: Materializer
   protected implicit def ec: ExecutionContext
 
-  def fileProcessing(implicit operation: Operation.Id): Flow[SourceFile, FileMetadata, NotUsed] =
-    Flow[SourceFile]
-      .mapAsync(parallelism.value) { sourceFile =>
-        sourceFile.existingMetadata match {
-          case Some(fileMetadata) =>
-            if (sourceFile.hasContentChanged) {
-              for {
-                source <- pull(fileMetadata)
-                _ <- destage(source, fileMetadata)
-              } yield {
-                fileMetadata
-              }
-            } else {
-              Future.successful(fileMetadata)
-            }
-
-          case None =>
-            Future.failed(
-              new IllegalStateException(
-                s"Expected existing metadata for file [${sourceFile.path}] but none was provided"
-              )
-            )
+  def fileProcessing(implicit operation: Operation.Id): Flow[TargetFile, FileMetadata, NotUsed] =
+    Flow[TargetFile]
+      .mapAsync(parallelism.value) { targetFile =>
+        if (targetFile.hasContentChanged) {
+          for {
+            source <- pull(targetFile.existingMetadata)
+            _ <- destage(source, targetFile.existingMetadata)
+          } yield {
+            targetFile.existingMetadata
+          }
+        } else {
+          Future.successful(targetFile.existingMetadata)
         }
       }
       .wireTap(metadata => providers.track.fileProcessed(file = metadata.path))

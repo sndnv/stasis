@@ -20,16 +20,16 @@ class RecoveryMetadataCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
     val file3Metadata = Fixtures.Metadata.FileThreeMetadata.copy(path = file3)
 
     for {
-      sourceFile2 <- collector.collect(file = file2, existingMetadata = file2Metadata)
-      sourceFile3 <- collector.collect(file = file3, existingMetadata = file3Metadata)
+      targetFile2 <- collector.collect(file = file2, existingMetadata = file2Metadata)
+      targetFile3 <- collector.collect(file = file3, existingMetadata = file3Metadata)
     } yield {
-      sourceFile2.path should be(file2)
-      sourceFile2.existingMetadata should be(Some(file2Metadata))
-      sourceFile2.currentMetadata.size should be(2)
+      targetFile2.path should be(file2)
+      targetFile2.existingMetadata should be(file2Metadata)
+      targetFile2.currentMetadata.map(_.size) should be(Some(2))
 
-      sourceFile3.path should be(file3)
-      sourceFile3.existingMetadata should be(Some(file3Metadata))
-      sourceFile3.currentMetadata.size should be(3)
+      targetFile3.path should be(file3)
+      targetFile3.existingMetadata should be(file3Metadata)
+      targetFile3.currentMetadata.map(_.size) should be(Some(3))
     }
   }
 

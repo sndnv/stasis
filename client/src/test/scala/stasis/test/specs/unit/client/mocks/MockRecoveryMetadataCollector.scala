@@ -4,7 +4,7 @@ import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 
 import stasis.client.collection.RecoveryMetadataCollector
-import stasis.client.model.{FileMetadata, SourceFile}
+import stasis.client.model.{FileMetadata, TargetFile}
 import stasis.test.specs.unit.client.mocks.MockRecoveryMetadataCollector.Statistic
 
 import scala.concurrent.Future
@@ -14,15 +14,15 @@ class MockRecoveryMetadataCollector(metadata: Map[Path, FileMetadata]) extends R
     Statistic.FileCollectedWithExistingMetadata -> new AtomicInteger(0)
   )
 
-  override def collect(file: Path, existingMetadata: FileMetadata): Future[SourceFile] = {
+  override def collect(file: Path, existingMetadata: FileMetadata): Future[TargetFile] = {
     stats(Statistic.FileCollectedWithExistingMetadata).incrementAndGet()
     metadata.get(file) match {
       case Some(fileMetadata) =>
         Future.successful(
-          SourceFile(
+          TargetFile(
             path = file,
-            existingMetadata = Some(existingMetadata),
-            currentMetadata = fileMetadata
+            existingMetadata = existingMetadata,
+            currentMetadata = Some(fileMetadata)
           )
         )
 

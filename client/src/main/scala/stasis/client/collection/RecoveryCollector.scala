@@ -5,13 +5,13 @@ import java.nio.file.Path
 import akka.NotUsed
 import akka.stream.scaladsl.Source
 import stasis.client.api.clients.ServerApiEndpointClient
-import stasis.client.model.{DatasetMetadata, FileMetadata, FilesystemMetadata, SourceFile}
+import stasis.client.model.{DatasetMetadata, FileMetadata, FilesystemMetadata, TargetFile}
 import stasis.client.ops.ParallelismConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait RecoveryCollector {
-  def collect(): Source[SourceFile, NotUsed]
+  def collect(): Source[TargetFile, NotUsed]
 }
 
 object RecoveryCollector {
@@ -22,7 +22,7 @@ object RecoveryCollector {
     api: ServerApiEndpointClient
   )(implicit ec: ExecutionContext, parallelism: ParallelismConfig)
       extends RecoveryCollector {
-    override def collect(): Source[SourceFile, NotUsed] =
+    override def collect(): Source[TargetFile, NotUsed] =
       Source(
         collectFileMetadata(
           targetMetadata = targetMetadata,
@@ -32,9 +32,9 @@ object RecoveryCollector {
       ).mapAsync(parallelism.value) { fileMetadataFuture =>
         for {
           fileMetadata <- fileMetadataFuture
-          sourceFile <- metadataCollector.collect(file = fileMetadata.path, existingMetadata = fileMetadata)
+          targetFile <- metadataCollector.collect(file = fileMetadata.path, existingMetadata = fileMetadata)
         } yield {
-          sourceFile
+          targetFile
         }
       }
   }
