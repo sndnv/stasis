@@ -15,6 +15,6 @@ trait BackupMetadataCollector {
 object BackupMetadataCollector {
   class Default(checksum: Checksum)(implicit mat: Materializer) extends BackupMetadataCollector {
     override def collect(file: Path, existingMetadata: Option[FileMetadata]): Future[SourceFile] =
-      Metadata.collect(checksum = checksum, file = file, existingMetadata = existingMetadata)
+      Metadata.collectSource(checksum = checksum, file = file, existingMetadata = existingMetadata)
   }
 }

@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.client.analysis
 
 import java.nio.file.attribute.PosixFileAttributes
-import java.nio.file.{Files, LinkOption}
+import java.nio.file.{Files, LinkOption, Paths}
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
@@ -89,7 +89,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
     }
   }
 
-  it should "collect metadata for files with same content" in {
+  it should "collect metadata for source files with same content" in {
     val sourceFileResourcesPath = "analysis/metadata-source-file"
     val sourceFile = s"/$sourceFileResourcesPath".asTestResource
 
@@ -108,7 +108,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
     )
 
     Metadata
-      .collect(
+      .collectSource(
         checksum = Checksum.MD5,
         file = sourceFile,
         existingMetadata = Some(existingFileMetadata)
@@ -129,7 +129,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       }
   }
 
-  it should "collect metadata for files with updated content" in {
+  it should "collect metadata for source files with updated content" in {
     val sourceFileResourcesPath = "analysis/metadata-source-file"
     val sourceFile = s"/$sourceFileResourcesPath".asTestResource
 
@@ -150,7 +150,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
     val expectedChecksum = BigInt("338496524657487844672953225842489206917")
 
     Metadata
-      .collect(
+      .collectSource(
         checksum = Checksum.MD5,
         file = sourceFile,
         existingMetadata = Some(existingFileMetadata)
@@ -168,6 +168,84 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
         actualSourceFile.currentMetadata.permissions should not be empty
         actualSourceFile.currentMetadata.checksum should be(expectedChecksum)
         actualSourceFile.currentMetadata.crate should not be existingFileMetadata.crate
+      }
+  }
+
+  it should "collect metadata for existing target files" in {
+    val targetFileResourcesPath = "analysis/metadata-source-file"
+    val targetFile = s"/$targetFileResourcesPath".asTestResource
+
+    val existingFileMetadata = FileMetadata(
+      path = targetFile,
+      size = 1,
+      link = None,
+      isHidden = false,
+      created = Instant.MIN.truncatedTo(ChronoUnit.SECONDS),
+      updated = Instant.MAX.truncatedTo(ChronoUnit.SECONDS),
+      owner = "root",
+      group = "root",
+      permissions = "rwxrwxrwx",
+      checksum = BigInt(1),
+      crate = Crate.generateId()
+    )
+
+    val expectedChecksum = BigInt("338496524657487844672953225842489206917")
+
+    Metadata
+      .collectTarget(
+        checksum = Checksum.MD5,
+        file = targetFile,
+        existingMetadata = existingFileMetadata
+      )
+      .map { actualTargetFile =>
+        actualTargetFile.existingMetadata should be(existingFileMetadata)
+
+        actualTargetFile.currentMetadata match {
+          case Some(currentMetadata) =>
+            currentMetadata.path.endsWith(targetFileResourcesPath) should be(true)
+            currentMetadata.size should be(26)
+            currentMetadata.link should be(None)
+            currentMetadata.isHidden should be(false)
+            currentMetadata.updated should be > Instant.MIN
+            currentMetadata.owner should not be empty
+            currentMetadata.group should not be empty
+            currentMetadata.permissions should not be empty
+            currentMetadata.checksum should be(expectedChecksum)
+            currentMetadata.crate should be(existingFileMetadata.crate)
+
+          case None =>
+            fail("Expected current target file metadata but none was found")
+        }
+      }
+  }
+
+  it should "collect metadata for missing target files" in {
+    val targetFileResourcesPath = "analysis/metadata-missing-file"
+    val targetFile = Paths.get(s"/tmp/$targetFileResourcesPath")
+
+    val existingFileMetadata = FileMetadata(
+      path = targetFile,
+      size = 1,
+      link = None,
+      isHidden = false,
+      created = Instant.MIN.truncatedTo(ChronoUnit.SECONDS),
+      updated = Instant.MAX.truncatedTo(ChronoUnit.SECONDS),
+      owner = "root",
+      group = "root",
+      permissions = "rwxrwxrwx",
+      checksum = BigInt(1),
+      crate = Crate.generateId()
+    )
+
+    Metadata
+      .collectTarget(
+        checksum = Checksum.MD5,
+        file = targetFile,
+        existingMetadata = existingFileMetadata
+      )
+      .map { actualTargetFile =>
+        actualTargetFile.existingMetadata should be(existingFileMetadata)
+        actualTargetFile.currentMetadata should be(None)
       }
   }
 }

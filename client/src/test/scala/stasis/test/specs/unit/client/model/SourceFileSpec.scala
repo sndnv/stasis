@@ -5,6 +5,19 @@ import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.Fixtures
 
 class SourceFileSpec extends UnitSpec {
+  "A SourceFile" should "determine if its metadata has changed" in {
+    sourceFileWithoutExistingMetadata.hasChanged should be(true)
+    sourceFileWithExistingMetadata.hasChanged should be(false)
+    sourceFileWithUpdatedExistingGroup.hasChanged should be(true)
+  }
+
+  it should "determine if its content has changed" in {
+    sourceFileWithoutExistingMetadata.hasContentChanged should be(true)
+    sourceFileWithExistingMetadata.hasContentChanged should be(false)
+    sourceFileWithUpdatedExistingSize.hasContentChanged should be(true)
+    sourceFileWithUpdatedExistingChecksum.hasContentChanged should be(true)
+  }
+
   private val sourceFileWithoutExistingMetadata =
     SourceFile(
       path = Fixtures.Metadata.FileOneMetadata.path,
@@ -23,17 +36,4 @@ class SourceFileSpec extends UnitSpec {
 
   private val sourceFileWithUpdatedExistingChecksum =
     sourceFileWithExistingMetadata.copy(existingMetadata = Some(Fixtures.Metadata.FileOneMetadata.copy(checksum = 0)))
-
-  "A SourceFile" should "determine if its metadata has changed" in {
-    sourceFileWithoutExistingMetadata.hasChanged should be(true)
-    sourceFileWithExistingMetadata.hasChanged should be(false)
-    sourceFileWithUpdatedExistingGroup.hasChanged should be(true)
-  }
-
-  it should "determine if its content has changed" in {
-    sourceFileWithoutExistingMetadata.hasContentChanged should be(true)
-    sourceFileWithExistingMetadata.hasContentChanged should be(false)
-    sourceFileWithUpdatedExistingSize.hasContentChanged should be(true)
-    sourceFileWithUpdatedExistingChecksum.hasContentChanged should be(true)
-  }
 }
