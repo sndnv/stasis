@@ -1,23 +1,23 @@
 package stasis.test.specs.unit.client.ops.recovery.stages
 
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, Materializer}
 import akka.stream.scaladsl.Source
+import akka.stream.{ActorMaterializer, Materializer}
 import akka.util.ByteString
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.encryption.secrets.DeviceSecret
-import stasis.client.model.{FileMetadata, TargetFile}
+import stasis.client.model.TargetFile
 import stasis.client.ops.ParallelismConfig
-import stasis.client.ops.recovery.stages.FileProcessing
 import stasis.client.ops.recovery.Providers
+import stasis.client.ops.recovery.stages.FileProcessing
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
 import stasis.core.routing.exceptions.PullFailure
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 import stasis.test.specs.unit.client.mocks._
+import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
@@ -36,12 +36,14 @@ class FileProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
 
     val targetFile2 = TargetFile(
       path = targetFile2Metadata.path,
+      destination = TargetFile.Destination.Default,
       existingMetadata = targetFile2Metadata,
       currentMetadata = Some(targetFile2Metadata.copy(isHidden = true))
     )
 
     val targetFile3 = TargetFile(
       path = targetFile3Metadata.path,
+      destination = TargetFile.Destination.Default,
       existingMetadata = targetFile3Metadata,
       currentMetadata = Some(targetFile3Metadata.copy(checksum = BigInt(9999)))
     )
@@ -78,12 +80,12 @@ class FileProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
 
     Source(List(targetFile2, targetFile3))
       .via(stage.fileProcessing)
-      .runFold(Seq.empty[FileMetadata])(_ :+ _)
+      .runFold(Seq.empty[TargetFile])(_ :+ _)
       .map { stageOutput =>
         stageOutput should be(
           Seq(
-            targetFile2.existingMetadata,
-            targetFile3.existingMetadata
+            targetFile2,
+            targetFile3
           )
         )
 
@@ -119,6 +121,7 @@ class FileProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
 
     val targetFile1 = TargetFile(
       path = targetFile1Metadata.path,
+      destination = TargetFile.Destination.Default,
       existingMetadata = targetFile1Metadata,
       currentMetadata = Some(targetFile1Metadata.copy(checksum = BigInt(9999)))
     )
@@ -149,7 +152,7 @@ class FileProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
 
     Source(List(targetFile1))
       .via(stage.fileProcessing)
-      .runFold(Seq.empty[FileMetadata])(_ :+ _)
+      .runFold(Seq.empty[TargetFile])(_ :+ _)
       .map { stageOutput =>
         fail(s"Unexpected result received: [$stageOutput]")
       }

@@ -14,13 +14,18 @@ class MockRecoveryMetadataCollector(metadata: Map[Path, FileMetadata]) extends R
     Statistic.FileCollectedWithExistingMetadata -> new AtomicInteger(0)
   )
 
-  override def collect(file: Path, existingMetadata: FileMetadata): Future[TargetFile] = {
+  override def collect(
+    file: Path,
+    destination: TargetFile.Destination,
+    existingMetadata: FileMetadata
+  ): Future[TargetFile] = {
     stats(Statistic.FileCollectedWithExistingMetadata).incrementAndGet()
     metadata.get(file) match {
       case Some(fileMetadata) =>
         Future.successful(
           TargetFile(
             path = file,
+            destination = destination,
             existingMetadata = existingMetadata,
             currentMetadata = Some(fileMetadata)
           )

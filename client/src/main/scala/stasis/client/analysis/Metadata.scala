@@ -42,33 +42,33 @@ object Metadata {
   def collectTarget(
     checksum: Checksum,
     file: Path,
+    destination: TargetFile.Destination,
     existingMetadata: FileMetadata
   )(implicit mat: Materializer): Future[TargetFile] = {
     implicit val ec: ExecutionContext = mat.executionContext
 
-    if (Files.exists(file)) {
+    val targetFile = TargetFile(
+      path = file,
+      destination = destination,
+      existingMetadata = existingMetadata,
+      currentMetadata = None
+    )
+
+    val destinationPath = targetFile.destinationPath
+
+    if (Files.exists(destinationPath)) {
       for {
-        currentChecksum <- checksum.calculate(file)
+        currentChecksum <- checksum.calculate(destinationPath)
         currentMetadata <- extractFileMetadata(
-          file = file,
+          file = destinationPath,
           withChecksum = currentChecksum,
           withCrate = existingMetadata.crate
         )
       } yield {
-        TargetFile(
-          path = file,
-          existingMetadata = existingMetadata,
-          currentMetadata = Some(currentMetadata)
-        )
+        targetFile.copy(currentMetadata = Some(currentMetadata))
       }
     } else {
-      Future.successful(
-        TargetFile(
-          path = file,
-          existingMetadata = existingMetadata,
-          currentMetadata = None
-        )
-      )
+      Future.successful(targetFile)
     }
   }
 
@@ -94,9 +94,6 @@ object Metadata {
         crate = withCrate
       )
     }
-
-  def applyFileMetadata(metadata: FileMetadata)(implicit ec: ExecutionContext): Future[Done] =
-    applyFileMetadataTo(metadata, metadata.path)
 
   def applyFileMetadataTo(metadata: FileMetadata, file: Path)(implicit ec: ExecutionContext): Future[Done] = Future {
     val attributes = Files.getFileAttributeView(file, classOf[PosixFileAttributeView], LinkOption.NOFOLLOW_LINKS)

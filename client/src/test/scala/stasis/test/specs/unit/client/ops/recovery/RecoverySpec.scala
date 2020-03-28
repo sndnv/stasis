@@ -289,6 +289,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     for {
       descriptorWithDefinition <- Recovery.Descriptor(
         query = None,
+        destination = None,
         collector = Recovery.Descriptor.Collector.WithDefinition(
           definition = dataset.id,
           until = Some(Instant.now())
@@ -297,6 +298,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
       )
       descriptorWithEntry <- Recovery.Descriptor(
         query = None,
+        destination = None,
         collector = Recovery.Descriptor.Collector.WithEntry(
           entry = entry.id
         ),
@@ -339,6 +341,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     Recovery
       .Descriptor(
         query = None,
+        destination = None,
         collector = Recovery.Descriptor.Collector.WithDefinition(
           definition = dataset.id,
           until = Some(Instant.now())
@@ -374,6 +377,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     val descriptor = Recovery.Descriptor(
       targetMetadata = DatasetMetadata.empty,
       query = None,
+      destination = None,
       deviceSecret = secret
     )
 
@@ -412,6 +416,28 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
   they should "create path queries from regex strings" in {
     PathQuery("/tmp/some-file.txt") shouldBe a[PathQuery.ForAbsolutePath]
     PathQuery("some-file.txt") shouldBe a[PathQuery.ForFileName]
+  }
+
+  "A Recovery destination" should "be convertible to TargetFile destination" in {
+    import Recovery._
+    import stasis.client.model.TargetFile
+
+    val recoveryDestination = Destination(path = "/tmp/test/path", keepStructure = false)
+
+    val (filesystem, _) = createMockFileSystem(
+      setup = ResourceHelpers.FileSystemSetup.Unix
+    )
+
+    Some(recoveryDestination).toTargetFileDestination(filesystem = filesystem) should be(
+      TargetFile.Destination.Directory(
+        path = filesystem.getPath(recoveryDestination.path),
+        keepDefaultStructure = recoveryDestination.keepStructure
+      )
+    )
+
+    Option.empty[Destination].toTargetFileDestination(filesystem = filesystem) should be(
+      TargetFile.Destination.Default
+    )
   }
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
@@ -488,6 +514,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
       descriptor = Recovery.Descriptor(
         targetMetadata = metadata,
         query = None,
+        destination = None,
         deviceSecret = secret
       )
     )

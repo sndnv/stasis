@@ -170,6 +170,34 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     succeed
   }
 
+  they should "extract recovery destination parameters" in {
+    import stasis.client.api.http.routes.Operations._
+
+    val expectedPath = "/tmp/some/path"
+
+    val route = Route.seal(
+      pathEndOrSingleSlash {
+        extractDestination(destinationParam = "dest", keepStructureParam = "keep") {
+          case Some(destination) =>
+            destination.path should be(expectedPath)
+            destination.keepStructure should be(false)
+            Directives.complete(StatusCodes.Accepted)
+
+          case None =>
+            Directives.complete(StatusCodes.OK)
+        }
+      }
+    )
+
+    Get("/") ~> route ~> check {
+      status should be(StatusCodes.OK)
+    }
+
+    Get(s"/?dest=$expectedPath&keep=false") ~> route ~> check {
+      status should be(StatusCodes.Accepted)
+    }
+  }
+
   private val matchingFileNameRegexes = Seq(
     """test-file""",
     """test-file\.json""",

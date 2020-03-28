@@ -1,6 +1,6 @@
 package stasis.client.ops.recovery
 
-import java.nio.file.Path
+import java.nio.file.{FileSystem, FileSystems, Path}
 import java.time.Instant
 
 import akka.{Done, NotUsed}
@@ -10,7 +10,7 @@ import akka.stream._
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import stasis.client.collection.{RecoveryCollector, RecoveryMetadataCollector}
 import stasis.client.encryption.secrets.DeviceSecret
-import stasis.client.model.DatasetMetadata
+import stasis.client.model.{DatasetMetadata, TargetFile}
 import stasis.client.ops.recovery.stages.{FileCollection, FileProcessing, MetadataApplication}
 import stasis.client.ops.ParallelismConfig
 import stasis.client.tracking.RecoveryTracker
@@ -74,6 +74,7 @@ object Recovery {
   final case class Descriptor(
     targetMetadata: DatasetMetadata,
     query: Option[PathQuery],
+    destination: Option[Destination],
     deviceSecret: DeviceSecret
   ) {
     def toRecoveryCollector()(
@@ -85,6 +86,7 @@ object Recovery {
       new RecoveryCollector.Default(
         targetMetadata = targetMetadata,
         keep = (file, _) => query.forall(_.matches(file.toAbsolutePath)),
+        destination = destination.toTargetFileDestination,
         metadataCollector = new RecoveryMetadataCollector.Default(checksum = providers.checksum),
         api = providers.clients.api
       )
@@ -99,6 +101,7 @@ object Recovery {
 
     def apply(
       query: Option[PathQuery],
+      destination: Option[Destination],
       collector: Descriptor.Collector,
       deviceSecret: DeviceSecret
     )(implicit ec: ExecutionContext, mat: Materializer, providers: Providers): Future[Descriptor] =
@@ -125,6 +128,7 @@ object Recovery {
         Descriptor(
           targetMetadata = metadata,
           query = query,
+          destination = destination,
           deviceSecret = deviceSecret
         )
       }
@@ -151,6 +155,28 @@ object Recovery {
       override def matches(path: Path): Boolean =
         query.pattern.matcher(path.getFileName.toString).find()
     }
+  }
+
+  final case class Destination(
+    path: String,
+    keepStructure: Boolean
+  )
+
+  implicit class RecoveryToTargetFileDestination(destination: Option[Destination]) {
+    def toTargetFileDestination: TargetFile.Destination =
+      toTargetFileDestination(filesystem = FileSystems.getDefault)
+
+    def toTargetFileDestination(filesystem: FileSystem): TargetFile.Destination =
+      destination match {
+        case Some(destination) =>
+          TargetFile.Destination.Directory(
+            path = filesystem.getPath(destination.path),
+            keepDefaultStructure = destination.keepStructure
+          )
+
+        case None =>
+          TargetFile.Destination.Default
+      }
   }
 
   implicit class TrackedOperation(operation: Future[Done]) {

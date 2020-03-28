@@ -56,7 +56,8 @@ class MockOperationExecutor extends OperationExecutor {
   override def startRecoveryWithDefinition(
     definition: DatasetDefinition.Id,
     until: Option[Instant],
-    query: Option[Recovery.PathQuery]
+    query: Option[Recovery.PathQuery],
+    destination: Option[Recovery.Destination]
   ): Future[Operation.Id] = {
     stats(Statistic.StartRecoveryWithDefinition).incrementAndGet()
     Future.successful(Operation.generateId())
@@ -64,7 +65,8 @@ class MockOperationExecutor extends OperationExecutor {
 
   override def startRecoveryWithEntry(
     entry: DatasetEntry.Id,
-    query: Option[Recovery.PathQuery]
+    query: Option[Recovery.PathQuery],
+    destination: Option[Recovery.Destination]
   ): Future[Operation.Id] = {
     stats(Statistic.StartRecoveryWithEntry).incrementAndGet()
     Future.successful(Operation.generateId())

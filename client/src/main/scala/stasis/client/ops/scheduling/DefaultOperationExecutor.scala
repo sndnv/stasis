@@ -80,12 +80,14 @@ class DefaultOperationExecutor(
   override def startRecoveryWithDefinition(
     definition: DatasetDefinition.Id,
     until: Option[Instant],
-    query: Option[recovery.Recovery.PathQuery]
+    query: Option[recovery.Recovery.PathQuery],
+    destination: Option[recovery.Recovery.Destination]
   ): Future[Operation.Id] =
     for {
       descriptor <- recovery.Recovery.Descriptor(
         collector = recovery.Recovery.Descriptor.Collector.WithDefinition(definition, until),
         query = query,
+        destination = destination,
         deviceSecret = secret
       )
       operation = new recovery.Recovery(descriptor = descriptor)
@@ -97,11 +99,13 @@ class DefaultOperationExecutor(
 
   override def startRecoveryWithEntry(
     entry: DatasetEntry.Id,
-    query: Option[recovery.Recovery.PathQuery]
+    query: Option[recovery.Recovery.PathQuery],
+    destination: Option[recovery.Recovery.Destination]
   ): Future[Operation.Id] =
     for {
       descriptor <- recovery.Recovery.Descriptor(
         query = query,
+        destination = destination,
         collector = recovery.Recovery.Descriptor.Collector.WithEntry(entry),
         deviceSecret = secret
       )
