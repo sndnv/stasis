@@ -218,8 +218,17 @@ class DefaultClientApiSpec(unittest.TestCase):
         query = 'test.*'
         until = '2020-02-02T02:02:02'
         definition = uuid4()
+        destination = '/tmp/some/path/01'
+        discard_paths = True
+
         self.assertEqual(
-            client.recover_until(definition=definition, until=until, path_query=query),
+            client.recover_until(
+                definition=definition,
+                until=until,
+                path_query=query,
+                destination=destination,
+                discard_paths=discard_paths
+            ),
             {'successful': True, 'operation': operation}
         )
 
@@ -227,7 +236,7 @@ class DefaultClientApiSpec(unittest.TestCase):
             mock=mock_request,
             expected_method='put',
             expected_url='/operations/recover/{}/until/{}'.format(definition, until),
-            expected_request_params={'query': query}
+            expected_request_params={'query': query, 'destination': destination, 'keep_structure': not discard_paths}
         )
 
     @patch('requests.request')
@@ -240,8 +249,17 @@ class DefaultClientApiSpec(unittest.TestCase):
         query = 'test.*'
         definition = uuid4()
         entry = uuid4()
+        destination = '/tmp/some/path/02'
+        discard_paths = False
+
         self.assertEqual(
-            client.recover_from(definition=definition, entry=entry, path_query=query),
+            client.recover_from(
+                definition=definition,
+                entry=entry,
+                path_query=query,
+                destination=destination,
+                discard_paths=discard_paths
+            ),
             {'successful': True, 'operation': operation}
         )
 
@@ -249,7 +267,7 @@ class DefaultClientApiSpec(unittest.TestCase):
             mock=mock_request,
             expected_method='put',
             expected_url='/operations/recover/{}/from/{}'.format(definition, entry),
-            expected_request_params={'query': query}
+            expected_request_params={'query': query, 'destination': destination, 'keep_structure': not discard_paths}
         )
 
     @patch('requests.request')
@@ -261,8 +279,16 @@ class DefaultClientApiSpec(unittest.TestCase):
 
         query = 'test.*'
         definition = uuid4()
+        destination = '/tmp/some/path/03'
+        discard_paths = True
+
         self.assertEqual(
-            client.recover_from_latest(definition=definition, path_query=query),
+            client.recover_from_latest(
+                definition=definition,
+                path_query=query,
+                destination=destination,
+                discard_paths=discard_paths
+            ),
             {'successful': True, 'operation': operation}
         )
 
@@ -270,7 +296,7 @@ class DefaultClientApiSpec(unittest.TestCase):
             mock=mock_request,
             expected_method='put',
             expected_url='/operations/recover/{}/latest'.format(definition),
-            expected_request_params={'query': query}
+            expected_request_params={'query': query, 'destination': destination, 'keep_structure': not discard_paths}
         )
 
     @patch('requests.request')

@@ -56,13 +56,13 @@ class InactiveClientApiSpec(unittest.TestCase):
             api.backup_define(request=definition_request)
 
         with self.assertRaises(Abort):
-            api.recover_until(definition=definition, until=until, path_query=query)
+            api.recover_until(definition=definition, until=until, path_query=query, destination='', discard_paths=True)
 
         with self.assertRaises(Abort):
-            api.recover_from(definition=definition, entry=entry, path_query=query)
+            api.recover_from(definition=definition, entry=entry, path_query=query, destination='', discard_paths=True)
 
         with self.assertRaises(Abort):
-            api.recover_from_latest(definition=definition, path_query=query)
+            api.recover_from_latest(definition=definition, path_query=query, destination='', discard_paths=True)
 
         with self.assertRaises(Abort):
             api.schedules_public()

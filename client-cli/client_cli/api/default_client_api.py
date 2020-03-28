@@ -63,14 +63,17 @@ class DefaultClientApi(ClientApi):
     def backup_define(self, request):
         return self.post(url='/datasets/definitions', data=request)
 
-    def recover_until(self, definition, until, path_query):
-        return self.put(url='/operations/recover/{}/until/{}'.format(definition, until), params={'query': path_query})
+    def recover_until(self, definition, until, path_query, destination, discard_paths):
+        params = {'query': path_query, 'destination': destination, 'keep_structure': not discard_paths}
+        return self.put(url='/operations/recover/{}/until/{}'.format(definition, until), params=params)
 
-    def recover_from(self, definition, entry, path_query):
-        return self.put(url='/operations/recover/{}/from/{}'.format(definition, entry), params={'query': path_query})
+    def recover_from(self, definition, entry, path_query, destination, discard_paths):
+        params = {'query': path_query, 'destination': destination, 'keep_structure': not discard_paths}
+        return self.put(url='/operations/recover/{}/from/{}'.format(definition, entry), params=params)
 
-    def recover_from_latest(self, definition, path_query):
-        return self.put(url='/operations/recover/{}/latest'.format(definition), params={'query': path_query})
+    def recover_from_latest(self, definition, path_query, destination, discard_paths):
+        params = {'query': path_query, 'destination': destination, 'keep_structure': not discard_paths}
+        return self.put(url='/operations/recover/{}/latest'.format(definition), params=params)
 
     def schedules_public(self):
         return self.get(url='/schedules/public')
