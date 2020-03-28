@@ -17,18 +17,21 @@ class FileCollectionSpec extends AsyncUnitSpec {
   "A Recovery FileCollection stage" should "collect and filter files" in {
     val targetFile1 = TargetFile(
       path = Fixtures.Metadata.FileOneMetadata.path,
+      destination = TargetFile.Destination.Default,
       existingMetadata = Fixtures.Metadata.FileOneMetadata,
       currentMetadata = None
     )
 
     val targetFile2 = TargetFile(
       path = Fixtures.Metadata.FileTwoMetadata.path,
+      destination = TargetFile.Destination.Default,
       existingMetadata = Fixtures.Metadata.FileTwoMetadata,
       currentMetadata = Some(Fixtures.Metadata.FileTwoMetadata)
     )
 
     val targetFile3 = TargetFile(
       path = Fixtures.Metadata.FileThreeMetadata.path,
+      destination = TargetFile.Destination.Default,
       existingMetadata = Fixtures.Metadata.FileThreeMetadata,
       currentMetadata = Some(Fixtures.Metadata.FileThreeMetadata.copy(isHidden = true))
     )

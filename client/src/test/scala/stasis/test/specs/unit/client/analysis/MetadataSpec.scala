@@ -8,7 +8,7 @@ import java.time.temporal.ChronoUnit
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import stasis.client.analysis.{Checksum, Metadata}
-import stasis.client.model.FileMetadata
+import stasis.client.model.{FileMetadata, TargetFile}
 import stasis.core.packaging.Crate
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
@@ -71,7 +71,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
           withChecksum = BigInt(1),
           withCrate = Crate.generateId()
         )
-      _ <- Metadata.applyFileMetadata(metadata)
+      _ <- Metadata.applyFileMetadataTo(metadata = metadata, file = metadata.path)
       metadataAfterApplication <- Metadata
         .extractFileMetadata(
           file = targetFile,
@@ -195,6 +195,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       .collectTarget(
         checksum = Checksum.MD5,
         file = targetFile,
+        destination = TargetFile.Destination.Default,
         existingMetadata = existingFileMetadata
       )
       .map { actualTargetFile =>
@@ -241,6 +242,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       .collectTarget(
         checksum = Checksum.MD5,
         file = targetFile,
+        destination = TargetFile.Destination.Default,
         existingMetadata = existingFileMetadata
       )
       .map { actualTargetFile =>

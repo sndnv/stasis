@@ -11,9 +11,9 @@ import stasis.client.ops.recovery.Recovery
 import stasis.shared.ops.Operation
 
 class Operations()(implicit override val mat: Materializer, context: Context) extends ApiRoutes {
+  import Operations._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.core.api.Matchers._
-  import Operations._
 
   def routes(): Route =
     concat(
@@ -56,64 +56,68 @@ class Operations()(implicit override val mat: Materializer, context: Context) ex
       },
       pathPrefix("recover" / JavaUUID) { definition =>
         put {
-          concat(
-            path("latest") {
-              parameter("query".as[Recovery.PathQuery].?) { query =>
-                val result = context.executor.startRecoveryWithDefinition(
-                  definition = definition,
-                  until = None,
-                  query = query
-                )
+          parameter("query".as[Recovery.PathQuery].?) {
+            query =>
+              extractDestination(destinationParam = "destination", keepStructureParam = "keep_structure") {
+                destination =>
+                  concat(
+                    path("latest") {
+                      val result = context.executor.startRecoveryWithDefinition(
+                        definition = definition,
+                        until = None,
+                        query = query,
+                        destination = destination
+                      )
 
-                onSuccess(result) { operation =>
-                  log.debug(
-                    "API started recovery operation [{}] for definition [{}] with latest entry",
-                    operation,
-                    definition
+                      onSuccess(result) { operation =>
+                        log.debug(
+                          "API started recovery operation [{}] for definition [{}] with latest entry",
+                          operation,
+                          definition
+                        )
+                        discardEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
+                      }
+
+                    },
+                    path("until" / IsoInstant) { until =>
+                      val result = context.executor.startRecoveryWithDefinition(
+                        definition = definition,
+                        until = Some(until),
+                        query = query,
+                        destination = destination
+                      )
+
+                      onSuccess(result) { operation =>
+                        log.debug(
+                          "API started recovery operation [{}] for definition [{}] until [{}]",
+                          operation,
+                          definition,
+                          until
+                        )
+                        discardEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
+                      }
+
+                    },
+                    path("from" / JavaUUID) { entry =>
+                      val result = context.executor.startRecoveryWithEntry(
+                        entry = entry,
+                        query = query,
+                        destination = destination
+                      )
+
+                      onSuccess(result) { operation =>
+                        log.debug(
+                          "API started recovery operation [{}] for definition [{}] with entry [{}]",
+                          operation,
+                          definition,
+                          entry
+                        )
+                        discardEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
+                      }
+                    }
                   )
-                  discardEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
-                }
               }
-            },
-            path("until" / IsoInstant) {
-              until =>
-                parameter("query".as[Recovery.PathQuery].?) { query =>
-                  val result = context.executor.startRecoveryWithDefinition(
-                    definition = definition,
-                    until = Some(until),
-                    query = query
-                  )
-
-                  onSuccess(result) { operation =>
-                    log.debug(
-                      "API started recovery operation [{}] for definition [{}] until [{}]",
-                      operation,
-                      definition,
-                      until
-                    )
-                    discardEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
-                  }
-                }
-            },
-            path("from" / JavaUUID) { entry =>
-              parameter("query".as[Recovery.PathQuery].?) { query =>
-                val result = context.executor.startRecoveryWithEntry(
-                  entry = entry,
-                  query = query
-                )
-
-                onSuccess(result) { operation =>
-                  log.debug(
-                    "API started recovery operation [{}] for definition [{}] with entry [{}]",
-                    operation,
-                    definition,
-                    entry
-                  )
-                  discardEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
-                }
-              }
-            }
-          )
+          }
         }
       },
       path(JavaUUID / "stop") { operation =>
@@ -128,6 +132,7 @@ class Operations()(implicit override val mat: Materializer, context: Context) ex
 }
 
 object Operations {
+  import akka.http.scaladsl.server.{Directive, Directive1}
   import stasis.shared.api.Formats._
 
   final case class OperationStarted(operation: Operation.Id)
@@ -142,4 +147,21 @@ object Operations {
 
   implicit val stringToRegexQuery: Unmarshaller[String, Recovery.PathQuery] =
     Unmarshaller.strict(Recovery.PathQuery.apply)
+
+  def extractDestination(
+    destinationParam: String,
+    keepStructureParam: String
+  ): Directive1[Option[Recovery.Destination]] = Directive { inner =>
+    parameters(destinationParam.as[String].?, keepStructureParam.as[Boolean].?) {
+      case (Some(destination), keepStructure) =>
+        val recoveryDestination = Recovery.Destination(
+          path = destination,
+          keepStructure = keepStructure.getOrElse(true)
+        )
+        inner(Tuple1(Some(recoveryDestination)))
+
+      case (None, _) =>
+        inner(Tuple1(None))
+    }
+  }
 }

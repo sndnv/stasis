@@ -79,7 +79,8 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       .startRecoveryWithDefinition(
         definition = DatasetDefinition.generateId(),
         until = None,
-        query = None
+        query = None,
+        destination = None
       )
       .await
 
@@ -100,7 +101,8 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     val _ = executor
       .startRecoveryWithEntry(
         entry = DatasetEntry.generateId(),
-        query = None
+        query = None,
+        destination = None
       )
       .await
 

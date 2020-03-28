@@ -18,6 +18,7 @@ object RecoveryCollector {
   class Default(
     targetMetadata: DatasetMetadata,
     keep: (Path, FilesystemMetadata.FileState) => Boolean,
+    destination: TargetFile.Destination,
     metadataCollector: RecoveryMetadataCollector,
     api: ServerApiEndpointClient
   )(implicit ec: ExecutionContext, parallelism: ParallelismConfig)
@@ -32,7 +33,11 @@ object RecoveryCollector {
       ).mapAsync(parallelism.value) { fileMetadataFuture =>
         for {
           fileMetadata <- fileMetadataFuture
-          targetFile <- metadataCollector.collect(file = fileMetadata.path, existingMetadata = fileMetadata)
+          targetFile <- metadataCollector.collect(
+            file = fileMetadata.path,
+            destination = destination,
+            existingMetadata = fileMetadata
+          )
         } yield {
           targetFile
         }

@@ -9,7 +9,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import stasis.client.analysis.{Checksum, Metadata}
 import stasis.client.api.clients.Clients
-import stasis.client.model.FileMetadata
+import stasis.client.model.{FileMetadata, TargetFile}
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.recovery.Providers
 import stasis.client.ops.recovery.stages.MetadataApplication
@@ -68,7 +68,14 @@ class MetadataApplicationSpec extends AsyncUnitSpec { spec =>
           withCrate = Crate.generateId()
         )
       _ <- Source
-        .single(metadata)
+        .single(
+          TargetFile(
+            path = metadata.path,
+            destination = TargetFile.Destination.Default,
+            existingMetadata = metadata,
+            currentMetadata = None
+          )
+        )
         .via(stage.metadataApplication)
         .runWith(Sink.ignore)
       metadataAfterApplication <- Metadata

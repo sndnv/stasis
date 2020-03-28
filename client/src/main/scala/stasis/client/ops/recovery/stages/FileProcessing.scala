@@ -1,13 +1,13 @@
 package stasis.client.ops.recovery.stages
 
-import akka.{Done, NotUsed}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Flow, Source}
 import akka.util.ByteString
+import akka.{Done, NotUsed}
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.{FileMetadata, TargetFile}
-import stasis.client.ops.recovery.Providers
 import stasis.client.ops.ParallelismConfig
+import stasis.client.ops.recovery.Providers
 import stasis.core.routing.exceptions.PullFailure
 import stasis.shared.ops.Operation
 
@@ -21,21 +21,21 @@ trait FileProcessing {
   protected implicit def mat: Materializer
   protected implicit def ec: ExecutionContext
 
-  def fileProcessing(implicit operation: Operation.Id): Flow[TargetFile, FileMetadata, NotUsed] =
+  def fileProcessing(implicit operation: Operation.Id): Flow[TargetFile, TargetFile, NotUsed] =
     Flow[TargetFile]
       .mapAsync(parallelism.value) { targetFile =>
         if (targetFile.hasContentChanged) {
           for {
-            source <- pull(targetFile.existingMetadata)
-            _ <- destage(source, targetFile.existingMetadata)
+            source <- pull(fileMetadata = targetFile.existingMetadata)
+            _ <- destage(source, targetFile)
           } yield {
-            targetFile.existingMetadata
+            targetFile
           }
         } else {
-          Future.successful(targetFile.existingMetadata)
+          Future.successful(targetFile)
         }
       }
-      .wireTap(metadata => providers.track.fileProcessed(file = metadata.path))
+      .wireTap(targetFile => providers.track.fileProcessed(file = targetFile.destinationPath))
 
   private def pull(fileMetadata: FileMetadata): Future[Source[ByteString, NotUsed]] =
     providers.clients.core
@@ -50,15 +50,18 @@ trait FileProcessing {
           )
       }
 
-  private def destage(source: Source[ByteString, NotUsed], fileMetadata: FileMetadata): Future[Done] =
+  private def destage(
+    source: Source[ByteString, NotUsed],
+    file: TargetFile
+  ): Future[Done] =
     providers.staging
       .temporary()
       .flatMap { staged =>
         source
-          .via(providers.decryptor.decrypt(deviceSecret.toFileSecret(fileMetadata.path)))
+          .via(providers.decryptor.decrypt(deviceSecret.toFileSecret(file.originalPath)))
           .via(providers.decompressor.decompress)
           .runWith(FileIO.toPath(staged))
           .flatMap(result => Future.fromTry(result.status))
-          .flatMap(_ => providers.staging.destage(from = staged, to = fileMetadata.path))
+          .flatMap(_ => providers.staging.destage(from = staged, to = file.destinationPath))
       }
 }

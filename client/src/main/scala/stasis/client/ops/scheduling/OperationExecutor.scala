@@ -26,12 +26,14 @@ trait OperationExecutor {
   def startRecoveryWithDefinition(
     definition: DatasetDefinition.Id,
     until: Option[Instant],
-    query: Option[recovery.Recovery.PathQuery]
+    query: Option[recovery.Recovery.PathQuery],
+    destination: Option[recovery.Recovery.Destination]
   ): Future[Operation.Id]
 
   def startRecoveryWithEntry(
     entry: DatasetEntry.Id,
-    query: Option[recovery.Recovery.PathQuery]
+    query: Option[recovery.Recovery.PathQuery],
+    destination: Option[recovery.Recovery.Destination]
   ): Future[Operation.Id]
 
   def startExpiration(): Future[Operation.Id]

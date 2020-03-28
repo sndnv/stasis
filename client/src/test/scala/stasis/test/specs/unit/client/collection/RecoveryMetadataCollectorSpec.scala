@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import stasis.client.analysis.Checksum
 import stasis.client.collection.RecoveryMetadataCollector
+import stasis.client.model.TargetFile
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 
@@ -20,8 +21,16 @@ class RecoveryMetadataCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
     val file3Metadata = Fixtures.Metadata.FileThreeMetadata.copy(path = file3)
 
     for {
-      targetFile2 <- collector.collect(file = file2, existingMetadata = file2Metadata)
-      targetFile3 <- collector.collect(file = file3, existingMetadata = file3Metadata)
+      targetFile2 <- collector.collect(
+        file = file2,
+        destination = TargetFile.Destination.Default,
+        existingMetadata = file2Metadata
+      )
+      targetFile3 <- collector.collect(
+        file = file3,
+        destination = TargetFile.Destination.Default,
+        existingMetadata = file3Metadata
+      )
     } yield {
       targetFile2.path should be(file2)
       targetFile2.existingMetadata should be(file2Metadata)

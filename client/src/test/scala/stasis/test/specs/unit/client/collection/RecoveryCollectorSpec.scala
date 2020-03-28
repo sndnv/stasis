@@ -60,6 +60,7 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
         )
       ),
       keep = (_, _) => true,
+      destination = TargetFile.Destination.Default,
       metadataCollector = new MockRecoveryMetadataCollector(
         metadata = Map(
           file2Metadata.path -> file2Metadata,
