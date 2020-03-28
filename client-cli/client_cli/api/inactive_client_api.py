@@ -50,13 +50,13 @@ class InactiveClientApi(ClientApi):
     def backup_define(self, request):
         InactiveClientApi._abort()
 
-    def recover_until(self, definition, until, path_query):
+    def recover_until(self, definition, until, path_query, destination, discard_paths):
         InactiveClientApi._abort()
 
-    def recover_from(self, definition, entry, path_query):
+    def recover_from(self, definition, entry, path_query, destination, discard_paths):
         InactiveClientApi._abort()
 
-    def recover_from_latest(self, definition, path_query):
+    def recover_from_latest(self, definition, path_query, destination, discard_paths):
         InactiveClientApi._abort()
 
     def schedules_public(self):

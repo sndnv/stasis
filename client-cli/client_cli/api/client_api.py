@@ -117,34 +117,40 @@ class ClientApi(ABC):
         """
 
     @abstractmethod
-    def recover_until(self, definition, until, path_query):
+    def recover_until(self, definition, until, path_query, destination, discard_paths):
         """
         Starts a recovery for the specified dataset definition, restricted by the provided timestamp and query.
 
         :param definition: definition for which to start a recovery
         :param until: timestamp to use for limiting recovery
         :param path_query: file/path query to use for limiting recovery
+        :param destination: recovery directory path override
+        :param discard_paths: set to True to discard original file directory structure
         :return: dict with result of action
         """
 
     @abstractmethod
-    def recover_from(self, definition, entry, path_query):
+    def recover_from(self, definition, entry, path_query, destination, discard_paths):
         """
         Starts a recovery for the specified dataset definition and entry, restricted by the provided query.
 
         :param definition: definition for which to start a recovery
         :param entry: entry for which to use for recovery
         :param path_query: file/path query to use for limiting recovery
+        :param destination: recovery directory path override
+        :param discard_paths: set to True to discard original file directory structure
         :return: dict with result of action
         """
 
     @abstractmethod
-    def recover_from_latest(self, definition, path_query):
+    def recover_from_latest(self, definition, path_query, destination, discard_paths):
         """
         Starts a recovery for the specified dataset definition and latest entry, restricted by the provided query.
 
         :param definition: definition for which to start a recovery
         :param path_query: file/path query to use for limiting recovery
+        :param destination: recovery directory path override
+        :param discard_paths: set to True to discard original file directory structure
         :return: dict with result of action
         """
 

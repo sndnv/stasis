@@ -17,7 +17,14 @@ class RecoverSpec(unittest.TestCase):
         context.rendering = JsonWriter()
 
         runner = Runner(cli)
-        result = runner.invoke(args=['until', str(uuid4()), '2020-02-02 02:02:02', '-q', 'test.*'], obj=context)
+        result = runner.invoke(
+            args=[
+                'until', str(uuid4()), '2020-02-02 02:02:02',
+                '-q', 'test.*',
+                '-d', '/tmp/some/path/01', '--discard-paths',
+            ],
+            obj=context
+        )
 
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertTrue(json.loads(result.output))
@@ -29,7 +36,14 @@ class RecoverSpec(unittest.TestCase):
         context.rendering = JsonWriter()
 
         runner = Runner(cli)
-        result = runner.invoke(args=['from', str(uuid4()), str(uuid4()), '-q', 'test.*'], obj=context)
+        result = runner.invoke(
+            args=[
+                'from', str(uuid4()), str(uuid4()),
+                '-q', 'test.*',
+                '--destination', '/tmp/some/path/02',
+            ],
+            obj=context
+        )
 
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertTrue(json.loads(result.output))
@@ -41,7 +55,13 @@ class RecoverSpec(unittest.TestCase):
         context.rendering = JsonWriter()
 
         runner = Runner(cli)
-        result = runner.invoke(args=['from', str(uuid4()), 'latest', '-q', 'test.*'], obj=context)
+        result = runner.invoke(
+            args=[
+                'from', str(uuid4()), 'latest',
+                '-q', 'test.*'
+            ],
+            obj=context
+        )
 
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertTrue(json.loads(result.output))

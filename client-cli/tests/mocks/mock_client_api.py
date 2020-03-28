@@ -80,15 +80,15 @@ class MockClientApi(ClientApi):
         self.stats['backup_define'] += 1
         return {'successful': True}
 
-    def recover_until(self, definition, until, path_query):
+    def recover_until(self, definition, until, path_query, destination, discard_paths):
         self.stats['recover_until'] += 1
         return {'successful': True, 'operation': str(uuid4())}
 
-    def recover_from(self, definition, entry, path_query):
+    def recover_from(self, definition, entry, path_query, destination, discard_paths):
         self.stats['recover_from'] += 1
         return {'successful': True, 'operation': str(uuid4())}
 
-    def recover_from_latest(self, definition, path_query):
+    def recover_from_latest(self, definition, path_query, destination, discard_paths):
         self.stats['recover_from_latest'] += 1
         return {'successful': True, 'operation': str(uuid4())}
 
