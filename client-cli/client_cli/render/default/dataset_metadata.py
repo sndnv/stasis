@@ -5,7 +5,7 @@ from terminaltables import AsciiTable
 
 def render_changes_as_table(metadata):
     """
-    Renders the provided, flattened file changes metadata as a table.
+    Renders the provided, flattened entity changes metadata as a table.
 
     :param metadata: metadata to render
     :return: rendered table string
@@ -15,7 +15,8 @@ def render_changes_as_table(metadata):
         header = [
             [
                 'Changed',
-                'File',
+                'Type',
+                'Entity',
                 'Size',
                 'Link',
                 'Hidden?',
@@ -32,19 +33,20 @@ def render_changes_as_table(metadata):
         table = AsciiTable(
             header + list(
                 map(
-                    lambda file_metadata: [
-                        file_metadata['changed'],
-                        file_metadata['file'],
-                        file_metadata['size'],
-                        file_metadata['link'],
-                        file_metadata['hidden'],
-                        file_metadata['created'],
-                        file_metadata['updated'],
-                        file_metadata['owner'],
-                        file_metadata['group'],
-                        file_metadata['permissions'],
-                        file_metadata['checksum'],
-                        file_metadata['crate'],
+                    lambda entity_metadata: [
+                        entity_metadata['changed'],
+                        entity_metadata['type'],
+                        entity_metadata['entity'],
+                        entity_metadata['size'],
+                        entity_metadata['link'],
+                        entity_metadata['hidden'],
+                        entity_metadata['created'],
+                        entity_metadata['updated'],
+                        entity_metadata['owner'],
+                        entity_metadata['group'],
+                        entity_metadata['permissions'],
+                        entity_metadata['checksum'],
+                        entity_metadata['crate'],
                     ],
                     metadata
                 )
@@ -65,14 +67,14 @@ def render_filesystem_as_table(metadata):
     """
 
     if metadata:
-        header = [['File', 'State', 'Entry']]
+        header = [['Entity', 'State', 'Entry']]
         table = AsciiTable(
             header + list(
                 map(
-                    lambda file_entry: [
-                        file_entry['file'],
-                        file_entry['state'],
-                        file_entry['entry'],
+                    lambda entity: [
+                        entity['entity'],
+                        entity['state'],
+                        entity['entry'],
                     ],
                     metadata
                 )
@@ -93,14 +95,14 @@ def render_search_result_as_table(search_result):
     """
 
     if search_result:
-        header = [['Definition', 'Info', 'Matched File', 'File State', 'Entry (Created)']]
+        header = [['Definition', 'Info', 'Matched Entity', 'Entity State', 'Entry (Created)']]
         table = AsciiTable(
             header + list(
                 map(
                     lambda result_entry: [
                         result_entry['definition'],
                         result_entry['info'],
-                        result_entry['file'],
+                        result_entry['entity'],
                         result_entry['state'],
                         result_entry['entry']
                     ],

@@ -8,7 +8,7 @@ from client_cli.render import memory_size_to_str
 def flatten_changes(metadata):
     """
     Converts all nested objects from the provided metadata into non-nested `field->field-value` dicts
-    representing file content and metadata changes.
+    representing file content and entity metadata changes.
 
     Raw values (such as memory size, timestamps and durations) are transformed into easy-to-read values.
 
@@ -20,19 +20,20 @@ def flatten_changes(metadata):
 
     return list(
         map(
-            lambda file_metadata: {
-                'changed': file_metadata['changed'],
-                'file': file_metadata['path'],
-                'size': memory_size_to_str(file_metadata['size']),
-                'link': file_metadata.get('link', 'none'),
-                'hidden': 'yes' if file_metadata['is_hidden'] else 'no',
-                'created': file_metadata['created'],
-                'updated': file_metadata['updated'],
-                'owner': file_metadata['owner'],
-                'group': file_metadata['group'],
-                'permissions': file_metadata['permissions'],
-                'checksum': file_metadata['checksum'],
-                'crate': file_metadata['crate'],
+            lambda entity_metadata: {
+                'changed': entity_metadata['changed'],
+                'type': entity_metadata['entity_type'],
+                'entity': entity_metadata['path'],
+                'size': memory_size_to_str(entity_metadata.get('size', 0)),
+                'link': entity_metadata.get('link', 'none'),
+                'hidden': 'yes' if entity_metadata['is_hidden'] else 'no',
+                'created': entity_metadata['created'],
+                'updated': entity_metadata['updated'],
+                'owner': entity_metadata['owner'],
+                'group': entity_metadata['group'],
+                'permissions': entity_metadata['permissions'],
+                'checksum': entity_metadata.get('checksum', 0),
+                'crate': entity_metadata.get('crate', '-'),
             },
             content_changed + metadata_changed
         )
@@ -52,12 +53,12 @@ def flatten_filesystem(entry, metadata):
     """
     return list(
         map(
-            lambda file_entry: {
-                'file': file_entry[0],
-                'state': file_entry[1]['file_state'],
-                'entry': file_entry[1].get('entry', '{} <current>'.format(entry)),
+            lambda entity: {
+                'entity': entity[0],
+                'state': entity[1]['entity_state'],
+                'entry': entity[1].get('entry', '{} <current>'.format(entry)),
             },
-            metadata['filesystem']['files'].items()
+            metadata['filesystem']['entities'].items()
         )
     )
 
@@ -108,7 +109,7 @@ def transform_definition_result(definition_id, definition_result):
         return [{
             'definition': definition_id,
             'info': '*no matches*',
-            'file': '-',
+            'entity': '-',
             'state': '-',
             'entry': '-',
         }]
@@ -120,19 +121,19 @@ def transform_search_result_match(definition_id, definition_result, path, state)
 
     :param definition_id: associated dataset definition
     :param definition_result: search result
-    :param path: associated file path
-    :param state: associated file state
+    :param path: associated entity path
+    :param state: associated entity state
     :return: the flattened result
     """
     entry = '{} ({})'.format(
         definition_result['entry_id'],
         definition_result['entry_created']
-    ) if state['file_state'] != 'existing' else state['entry']
+    ) if state['entity_state'] != 'existing' else state['entry']
 
     return {
         'definition': definition_id,
         'info': definition_result['definition_info'],
-        'file': path,
-        'state': state['file_state'],
+        'entity': path,
+        'state': state['entity_state'],
         'entry': entry,
     }
