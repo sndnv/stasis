@@ -4,7 +4,7 @@ import akka.{Done, NotUsed}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Source}
 import stasis.client.encryption.secrets.DeviceSecret
-import stasis.client.model.DatasetMetadata
+import stasis.client.model.{DatasetMetadata, EntityMetadata}
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.ParallelismConfig
 import stasis.core.packaging.{Crate, Manifest}
@@ -54,7 +54,9 @@ trait MetadataPush {
         val request = CreateDatasetEntry(
           definition = targetDataset.id,
           device = providers.clients.api.self,
-          data = metadata.contentChanged.values.map(_.crate).toSet,
+          data = metadata.contentChanged.values.collect {
+            case metadata: EntityMetadata.File => metadata.crate
+          }.toSet,
           metadata = metadataManifest.crate
         )
 

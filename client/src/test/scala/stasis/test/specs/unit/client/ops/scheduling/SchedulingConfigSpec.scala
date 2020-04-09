@@ -137,12 +137,12 @@ class SchedulingConfigSpec extends AsyncUnitSpec with ResourceHelpers {
       OperationScheduleAssignment.Backup(
         schedule = schedule1,
         definition = definition1,
-        files = Seq.empty
+        entities = Seq.empty
       ),
       OperationScheduleAssignment.Backup(
         schedule = schedule2,
         definition = definition2,
-        files = Seq(Paths.get("/work/file-01"), Paths.get("/work/file-02"))
+        entities = Seq(Paths.get("/work/file-01"), Paths.get("/work/file-02"))
       ),
       OperationScheduleAssignment.Expiration(schedule = schedule3),
       OperationScheduleAssignment.Validation(schedule = schedule4),

@@ -69,15 +69,15 @@ class DefaultTracker private (
   }
 
   object backup extends BackupTracker {
-    override def fileExamined(
-      file: Path,
+    override def entityExamined(
+      entity: Path,
       metadataChanged: Boolean,
       contentChanged: Boolean
     )(implicit operation: Operation.Id): Unit = {
       log.debug(
-        "[{}] (backup) - File [{}] examined; metadata changed: [{}]; content changed: [{}]",
+        "[{}] (backup) - Entity [{}] examined; metadata changed: [{}]; content changed: [{}]",
         operation,
-        file,
+        entity,
         metadataChanged,
         contentChanged
       )
@@ -86,31 +86,31 @@ class DefaultTracker private (
         event = Event.OperationStepCompleted(
           operationId = operation,
           stage = "examination",
-          step = file.toAbsolutePath.toString
+          step = entity.toAbsolutePath.toString
         )
       )
     }
 
-    override def fileCollected(file: Path)(implicit operation: Operation.Id): Unit = {
-      log.debug("[{}] (backup) - File [{}] collected", operation, file)
+    override def entityCollected(entity: Path)(implicit operation: Operation.Id): Unit = {
+      log.debug("[{}] (backup) - Entity [{}] collected", operation, entity)
 
       val _ = events.store(
         event = Event.OperationStepCompleted(
           operationId = operation,
           stage = "collection",
-          step = file.toAbsolutePath.toString
+          step = entity.toAbsolutePath.toString
         )
       )
     }
 
-    override def fileProcessed(file: Path, contentChanged: Boolean)(implicit operation: Operation.Id): Unit = {
-      log.debug("[{}] (backup) - File [{}] processed; content changed: [{}]", operation, file, contentChanged)
+    override def entityProcessed(entity: Path, contentChanged: Boolean)(implicit operation: Operation.Id): Unit = {
+      log.debug("[{}] (backup) - Entity [{}] processed; content changed: [{}]", operation, entity, contentChanged)
 
       val _ = events.store(
         event = Event.OperationStepCompleted(
           operationId = operation,
           stage = "processing",
-          step = file.toAbsolutePath.toString
+          step = entity.toAbsolutePath.toString
         )
       )
     }
@@ -160,15 +160,15 @@ class DefaultTracker private (
   }
 
   object recovery extends RecoveryTracker {
-    override def fileExamined(
-      file: Path,
+    override def entityExamined(
+      entity: Path,
       metadataChanged: Boolean,
       contentChanged: Boolean
     )(implicit operation: Operation.Id): Unit = {
       log.debug(
-        "[{}] (recovery) - File [{}] examined; metadata changed: [{}]; content changed: [{}]",
+        "[{}] (recovery) - Entity [{}] examined; metadata changed: [{}]; content changed: [{}]",
         operation,
-        file,
+        entity,
         metadataChanged,
         contentChanged
       )
@@ -177,43 +177,43 @@ class DefaultTracker private (
         event = Event.OperationStepCompleted(
           operationId = operation,
           stage = "examination",
-          step = file.toAbsolutePath.toString
+          step = entity.toAbsolutePath.toString
         )
       )
     }
 
-    override def fileCollected(file: Path)(implicit operation: Operation.Id): Unit = {
-      log.debug("[{}] (recovery) - File [{}] collected", operation, file)
+    override def entityCollected(entity: Path)(implicit operation: Operation.Id): Unit = {
+      log.debug("[{}] (recovery) - Entity [{}] collected", operation, entity)
 
       val _ = events.store(
         event = Event.OperationStepCompleted(
           operationId = operation,
           stage = "collection",
-          step = file.toAbsolutePath.toString
+          step = entity.toAbsolutePath.toString
         )
       )
     }
 
-    override def fileProcessed(file: Path)(implicit operation: Operation.Id): Unit = {
-      log.debug("[{}] (recovery) - File [{}] processed", operation, file)
+    override def entityProcessed(entity: Path)(implicit operation: Operation.Id): Unit = {
+      log.debug("[{}] (recovery) - Entity [{}] processed", operation, entity)
 
       val _ = events.store(
         event = Event.OperationStepCompleted(
           operationId = operation,
           stage = "processing",
-          step = file.toAbsolutePath.toString
+          step = entity.toAbsolutePath.toString
         )
       )
     }
 
-    override def metadataApplied(file: Path)(implicit operation: Operation.Id): Unit = {
-      log.debug("[{}] (recovery) - Metadata applied to file [{}]", operation, file)
+    override def metadataApplied(entity: Path)(implicit operation: Operation.Id): Unit = {
+      log.debug("[{}] (recovery) - Metadata applied to entity [{}]", operation, entity)
 
       val _ = events.store(
         event = Event.OperationStepCompleted(
           operationId = operation,
           stage = "metadata-applied",
-          step = file.toAbsolutePath.toString
+          step = entity.toAbsolutePath.toString
         )
       )
     }

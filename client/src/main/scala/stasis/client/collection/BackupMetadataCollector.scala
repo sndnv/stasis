@@ -4,17 +4,17 @@ import java.nio.file.Path
 
 import akka.stream.Materializer
 import stasis.client.analysis.{Checksum, Metadata}
-import stasis.client.model.{DatasetMetadata, FileMetadata, SourceFile}
+import stasis.client.model.{EntityMetadata, SourceEntity}
 
 import scala.concurrent.Future
 
 trait BackupMetadataCollector {
-  def collect(file: Path, existingMetadata: Option[FileMetadata]): Future[SourceFile]
+  def collect(entity: Path, existingMetadata: Option[EntityMetadata]): Future[SourceEntity]
 }
 
 object BackupMetadataCollector {
   class Default(checksum: Checksum)(implicit mat: Materializer) extends BackupMetadataCollector {
-    override def collect(file: Path, existingMetadata: Option[FileMetadata]): Future[SourceFile] =
-      Metadata.collectSource(checksum = checksum, file = file, existingMetadata = existingMetadata)
+    override def collect(entity: Path, existingMetadata: Option[EntityMetadata]): Future[SourceEntity] =
+      Metadata.collectSource(checksum = checksum, entity = entity, existingMetadata = existingMetadata)
   }
 }

@@ -61,18 +61,18 @@ class MetadataCollectionSpec extends AsyncUnitSpec {
                 Fixtures.Metadata.FileThreeMetadata.path -> Fixtures.Metadata.FileThreeMetadata
               ),
               filesystem = FilesystemMetadata(
-                files = Map(
-                  Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.Updated,
-                  Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.New,
-                  Fixtures.Metadata.FileThreeMetadata.path -> FilesystemMetadata.FileState.New
+                entities = Map(
+                  Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.Updated,
+                  Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.New,
+                  Fixtures.Metadata.FileThreeMetadata.path -> FilesystemMetadata.EntityState.New
                 )
               )
             )
           )
 
-          mockTracker.statistics(MockBackupTracker.Statistic.FileExamined) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.FileCollected) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.FileProcessed) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(1)
           mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
@@ -125,9 +125,9 @@ class MetadataCollectionSpec extends AsyncUnitSpec {
             )
           )
 
-          mockTracker.statistics(MockBackupTracker.Statistic.FileExamined) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.FileCollected) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.FileProcessed) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(1)
           mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)

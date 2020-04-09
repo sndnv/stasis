@@ -10,27 +10,27 @@ import stasis.test.specs.unit.client.mocks.MockBackupTracker.Statistic
 
 class MockBackupTracker extends BackupTracker {
   private val stats: Map[Statistic, AtomicInteger] = Map(
-    Statistic.FileExamined -> new AtomicInteger(0),
-    Statistic.FileCollected -> new AtomicInteger(0),
-    Statistic.FileProcessed -> new AtomicInteger(0),
+    Statistic.EntityExamined -> new AtomicInteger(0),
+    Statistic.EntityCollected -> new AtomicInteger(0),
+    Statistic.EntityProcessed -> new AtomicInteger(0),
     Statistic.MetadataCollected -> new AtomicInteger(0),
     Statistic.MetadataPushed -> new AtomicInteger(0),
     Statistic.FailureEncountered -> new AtomicInteger(0),
     Statistic.Completed -> new AtomicInteger(0)
   )
 
-  override def fileExamined(
-    file: Path,
+  override def entityExamined(
+    entity: Path,
     metadataChanged: Boolean,
     contentChanged: Boolean
   )(implicit operation: Operation.Id): Unit =
-    stats(Statistic.FileExamined).incrementAndGet()
+    stats(Statistic.EntityExamined).incrementAndGet()
 
-  override def fileCollected(file: Path)(implicit operation: Operation.Id): Unit =
-    stats(Statistic.FileCollected).incrementAndGet()
+  override def entityCollected(entity: Path)(implicit operation: Operation.Id): Unit =
+    stats(Statistic.EntityCollected).incrementAndGet()
 
-  override def fileProcessed(file: Path, contentChanged: Boolean)(implicit operation: Operation.Id): Unit =
-    stats(Statistic.FileProcessed).incrementAndGet()
+  override def entityProcessed(entity: Path, contentChanged: Boolean)(implicit operation: Operation.Id): Unit =
+    stats(Statistic.EntityProcessed).incrementAndGet()
 
   override def metadataCollected()(implicit operation: Operation.Id): Unit =
     stats(Statistic.MetadataCollected).incrementAndGet()
@@ -50,9 +50,9 @@ class MockBackupTracker extends BackupTracker {
 object MockBackupTracker {
   sealed trait Statistic
   object Statistic {
-    case object FileExamined extends Statistic
-    case object FileCollected extends Statistic
-    case object FileProcessed extends Statistic
+    case object EntityExamined extends Statistic
+    case object EntityCollected extends Statistic
+    case object EntityProcessed extends Statistic
     case object MetadataCollected extends Statistic
     case object MetadataPushed extends Statistic
     case object FailureEncountered extends Statistic

@@ -5,48 +5,48 @@ import java.nio.file.Path
 import akka.NotUsed
 import akka.stream.scaladsl.Source
 import stasis.client.api.clients.ServerApiEndpointClient
-import stasis.client.model.{DatasetMetadata, FileMetadata, SourceFile}
+import stasis.client.model.{DatasetMetadata, EntityMetadata, SourceEntity}
 import stasis.client.ops.ParallelismConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait BackupCollector {
-  def collect(): Source[SourceFile, NotUsed]
+  def collect(): Source[SourceEntity, NotUsed]
 }
 
 object BackupCollector {
   class Default(
-    files: List[Path],
+    entities: List[Path],
     latestMetadata: Option[DatasetMetadata],
     metadataCollector: BackupMetadataCollector,
     api: ServerApiEndpointClient
   )(implicit ec: ExecutionContext, parallelism: ParallelismConfig)
       extends BackupCollector {
-    override def collect(): Source[SourceFile, NotUsed] =
+    override def collect(): Source[SourceEntity, NotUsed] =
       Source(
-        collectFileMetadata(
-          files = files,
+        collectEntityMetadata(
+          entities = entities,
           latestMetadata = latestMetadata,
           api = api
         ).toList
       ).mapAsyncUnordered(parallelism.value) {
-        case (file, fileMetadataFuture) =>
+        case (entity, entityMetadataFuture) =>
           for {
-            fileMetadata <- fileMetadataFuture
-            sourceFile <- metadataCollector.collect(file = file, existingMetadata = fileMetadata)
+            entityMetadata <- entityMetadataFuture
+            sourceEntity <- metadataCollector.collect(entity = entity, existingMetadata = entityMetadata)
           } yield {
-            sourceFile
+            sourceEntity
           }
       }
   }
 
-  def collectFileMetadata(
-    files: List[Path],
+  def collectEntityMetadata(
+    entities: List[Path],
     latestMetadata: Option[DatasetMetadata],
     api: ServerApiEndpointClient
-  )(implicit ec: ExecutionContext): Seq[(Path, Future[Option[FileMetadata]])] =
+  )(implicit ec: ExecutionContext): Seq[(Path, Future[Option[EntityMetadata]])] =
     latestMetadata match {
-      case Some(metadata) => files.map(file => (file, metadata.collect(file = file, api = api)))
-      case None           => files.map(file => (file, Future.successful(None)))
+      case Some(metadata) => entities.map(entity => (entity, metadata.collect(entity = entity, api = api)))
+      case None           => entities.map(entity => (entity, Future.successful(None)))
     }
 }

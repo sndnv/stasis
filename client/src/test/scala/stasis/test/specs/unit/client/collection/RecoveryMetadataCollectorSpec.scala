@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import stasis.client.analysis.Checksum
 import stasis.client.collection.RecoveryMetadataCollector
-import stasis.client.model.TargetFile
+import stasis.client.model.{EntityMetadata, TargetEntity}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 
@@ -22,23 +22,31 @@ class RecoveryMetadataCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
 
     for {
       targetFile2 <- collector.collect(
-        file = file2,
-        destination = TargetFile.Destination.Default,
+        entity = file2,
+        destination = TargetEntity.Destination.Default,
         existingMetadata = file2Metadata
       )
       targetFile3 <- collector.collect(
-        file = file3,
-        destination = TargetFile.Destination.Default,
+        entity = file3,
+        destination = TargetEntity.Destination.Default,
         existingMetadata = file3Metadata
       )
     } yield {
       targetFile2.path should be(file2)
       targetFile2.existingMetadata should be(file2Metadata)
-      targetFile2.currentMetadata.map(_.size) should be(Some(2))
+      targetFile2.currentMetadata match {
+        case Some(metadata: EntityMetadata.File) => metadata.size should be(2)
+        case Some(_: EntityMetadata.Directory)   => fail("Expected file but received directory metadata")
+        case None                                => fail("Expected metadata but not received")
+      }
 
       targetFile3.path should be(file3)
       targetFile3.existingMetadata should be(file3Metadata)
-      targetFile3.currentMetadata.map(_.size) should be(Some(3))
+      targetFile3.currentMetadata match {
+        case Some(metadata: EntityMetadata.File) => metadata.size should be(3)
+        case Some(_: EntityMetadata.Directory)   => fail("Expected file but received directory metadata")
+        case None                                => fail("Expected metadata but not received")
+      }
     }
   }
 

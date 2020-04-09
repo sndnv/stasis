@@ -39,9 +39,9 @@ class FilesystemMetadataSpec extends UnitSpec {
 
     created should be(
       FilesystemMetadata(
-        files = Map(
-          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.New,
-          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.New
+        entities = Map(
+          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.New,
+          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.New
         )
       )
     )
@@ -62,11 +62,11 @@ class FilesystemMetadataSpec extends UnitSpec {
 
     updated should be(
       FilesystemMetadata(
-        files = Map(
-          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.Updated,
-          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Existing(newEntry),
-          Fixtures.Metadata.FileThreeMetadata.path -> FilesystemMetadata.FileState.Existing(entry),
-          newFile -> FilesystemMetadata.FileState.New
+        entities = Map(
+          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.Updated,
+          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.Existing(newEntry),
+          Fixtures.Metadata.FileThreeMetadata.path -> FilesystemMetadata.EntityState.Existing(entry),
+          newFile -> FilesystemMetadata.EntityState.New
         )
       )
     )
@@ -75,53 +75,53 @@ class FilesystemMetadataSpec extends UnitSpec {
 
     updated.updated(changes = Seq.empty, latestEntry = latestEntry) should be(
       FilesystemMetadata(
-        files = Map(
-          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.Existing(latestEntry),
-          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Existing(newEntry),
-          Fixtures.Metadata.FileThreeMetadata.path -> FilesystemMetadata.FileState.Existing(entry),
-          newFile -> FilesystemMetadata.FileState.Existing(latestEntry)
+        entities = Map(
+          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.Existing(latestEntry),
+          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.Existing(newEntry),
+          Fixtures.Metadata.FileThreeMetadata.path -> FilesystemMetadata.EntityState.Existing(entry),
+          newFile -> FilesystemMetadata.EntityState.Existing(latestEntry)
         )
       )
     )
   }
 
-  "A Filesystem metadata FileState" should "be serializable to protobuf data" in {
-    FilesystemMetadata.FileState.toProto(
-      state = FilesystemMetadata.FileState.New
-    ) should be(protoFileStateNew())
+  "A Filesystem metadata EntityState" should "be serializable to protobuf data" in {
+    FilesystemMetadata.EntityState.toProto(
+      state = FilesystemMetadata.EntityState.New
+    ) should be(protoEntityStateNew())
 
-    FilesystemMetadata.FileState.toProto(
-      state = FilesystemMetadata.FileState.Existing(entry)
-    ) should be(protoFileStateExisting(Some(entry)))
+    FilesystemMetadata.EntityState.toProto(
+      state = FilesystemMetadata.EntityState.Existing(entry)
+    ) should be(protoEntityStateExisting(Some(entry)))
 
-    FilesystemMetadata.FileState.toProto(
-      state = FilesystemMetadata.FileState.Updated
-    ) should be(protoFileStateUpdated())
+    FilesystemMetadata.EntityState.toProto(
+      state = FilesystemMetadata.EntityState.Updated
+    ) should be(protoEntityStateUpdated())
   }
 
   it should "be deserializable from valid protobuf data" in {
-    FilesystemMetadata.FileState.fromProto(
-      state = protoFileStateNew()
-    ) should be(Success(FilesystemMetadata.FileState.New))
+    FilesystemMetadata.EntityState.fromProto(
+      state = protoEntityStateNew()
+    ) should be(Success(FilesystemMetadata.EntityState.New))
 
-    FilesystemMetadata.FileState.fromProto(
-      state = protoFileStateExisting(Some(entry))
-    ) should be(Success(FilesystemMetadata.FileState.Existing(entry)))
+    FilesystemMetadata.EntityState.fromProto(
+      state = protoEntityStateExisting(Some(entry))
+    ) should be(Success(FilesystemMetadata.EntityState.Existing(entry)))
 
-    FilesystemMetadata.FileState.fromProto(
-      state = protoFileStateUpdated()
-    ) should be(Success(FilesystemMetadata.FileState.Updated))
+    FilesystemMetadata.EntityState.fromProto(
+      state = protoEntityStateUpdated()
+    ) should be(Success(FilesystemMetadata.EntityState.Updated))
   }
 
   it should "fail if no entry is provided for an existing file state" in {
-    FilesystemMetadata.FileState.fromProto(state = protoFileStateExisting(entry = None)) match {
+    FilesystemMetadata.EntityState.fromProto(state = protoEntityStateExisting(entry = None)) match {
       case Success(result) => fail(s"Unexpected result received: [$result]")
       case Failure(e)      => e.getMessage should be("No entry ID found for existing file")
     }
   }
 
   it should "fail if an empty file state is provided" in {
-    FilesystemMetadata.FileState.fromProto(state = protoFileStateEmpty()) match {
+    FilesystemMetadata.EntityState.fromProto(state = protoEntityStateEmpty()) match {
       case Success(result) => fail(s"Unexpected result received: [$result]")
       case Failure(e)      => e.getMessage should be("Unexpected empty file state encountered")
     }
@@ -130,30 +130,30 @@ class FilesystemMetadataSpec extends UnitSpec {
   private val entry = DatasetEntry.generateId()
 
   private val filesystemMetadata = FilesystemMetadata(
-    files = Map(
-      Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.New,
-      Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Updated,
-      Fixtures.Metadata.FileThreeMetadata.path -> FilesystemMetadata.FileState.Existing(entry)
+    entities = Map(
+      Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.New,
+      Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.Updated,
+      Fixtures.Metadata.FileThreeMetadata.path -> FilesystemMetadata.EntityState.Existing(entry)
     )
   )
 
   private val filesystemMetadataProto = proto.metadata.FilesystemMetadata(
-    files = Map(
-      Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath.toString -> protoFileStateNew(),
-      Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath.toString -> protoFileStateUpdated(),
-      Fixtures.Metadata.FileThreeMetadata.path.toAbsolutePath.toString -> protoFileStateExisting(Some(entry))
+    entities = Map(
+      Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath.toString -> protoEntityStateNew(),
+      Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath.toString -> protoEntityStateUpdated(),
+      Fixtures.Metadata.FileThreeMetadata.path.toAbsolutePath.toString -> protoEntityStateExisting(Some(entry))
     )
   )
 
-  private def protoFileStateNew(): proto.metadata.FileState = proto.metadata.FileState(
-    proto.metadata.FileState.State.PresentNew(proto.metadata.FileState.PresentNew())
+  private def protoEntityStateNew(): proto.metadata.EntityState = proto.metadata.EntityState(
+    proto.metadata.EntityState.State.PresentNew(proto.metadata.EntityState.PresentNew())
   )
 
-  private def protoFileStateExisting(entry: Option[DatasetEntry.Id]): proto.metadata.FileState =
-    proto.metadata.FileState(
-      proto.metadata.FileState.State
+  private def protoEntityStateExisting(entry: Option[DatasetEntry.Id]): proto.metadata.EntityState =
+    proto.metadata.EntityState(
+      proto.metadata.EntityState.State
         .PresentExisting(
-          proto.metadata.FileState.PresentExisting(
+          proto.metadata.EntityState.PresentExisting(
             entry = entry.map { entry =>
               proto.metadata.Uuid(
                 mostSignificantBits = entry.getMostSignificantBits,
@@ -164,11 +164,11 @@ class FilesystemMetadataSpec extends UnitSpec {
         )
     )
 
-  private def protoFileStateUpdated(): proto.metadata.FileState = proto.metadata.FileState(
-    proto.metadata.FileState.State.PresentUpdated(proto.metadata.FileState.PresentUpdated())
+  private def protoEntityStateUpdated(): proto.metadata.EntityState = proto.metadata.EntityState(
+    proto.metadata.EntityState.State.PresentUpdated(proto.metadata.EntityState.PresentUpdated())
   )
 
-  private def protoFileStateEmpty(): proto.metadata.FileState = proto.metadata.FileState(
-    proto.metadata.FileState.State.Empty
+  private def protoEntityStateEmpty(): proto.metadata.EntityState = proto.metadata.EntityState(
+    proto.metadata.EntityState.State.Empty
   )
 }

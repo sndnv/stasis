@@ -8,24 +8,37 @@ import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 
 final case class Specification(
-  files: Map[Path, Specification.Entry],
+  entries: Map[Path, Specification.Entry],
   unmatched: Seq[(Rule, Throwable)],
 ) {
   lazy val explanation: Map[Path, Seq[Specification.Entry.Explanation]] =
-    files.mapValues(_.reason)
+    entries.mapValues(_.reason)
 
-  lazy val (included: Seq[Path], excluded: Seq[Path]) =
-    files.values.partition(_.operation == Rule.Operation.Include) match {
-      case (included, excluded) => (included.map(_.file), excluded.map(_.file))
+  lazy val (includedEntries: Seq[Path], includedParents: Seq[Path], excludedEntries: Seq[Path]) =
+    entries.values.partition(_.operation == Rule.Operation.Include) match {
+      case (included, excluded) =>
+        val includedParents = included
+          .flatMap { entry =>
+            Specification.collectRelativeParents(from = entry.directory, to = entry.file)
+          }
+          .toSeq
+          .distinct
+
+        (included.map(_.file), includedParents, excluded.map(_.file))
     }
+
+  lazy val included: Seq[Path] = (includedEntries ++ includedParents).distinct
+
+  lazy val excluded: Seq[Path] = excludedEntries
 }
 
 object Specification {
 
-  def empty: Specification = Specification(files = Map.empty, unmatched = Seq.empty)
+  def empty: Specification = Specification(entries = Map.empty, unmatched = Seq.empty)
 
   final case class Entry(
     file: Path,
+    directory: Path,
     operation: Rule.Operation,
     reason: Seq[Entry.Explanation]
   )
@@ -56,7 +69,7 @@ object Specification {
         try {
           val matchesStream = Files
             .walk(directory, Seq.empty[FileVisitOption]: _*)
-            .filter(path => matcher.matches(path) && !Files.isDirectory(path))
+            .filter(path => matcher.matches(path))
 
           val matches = try {
             matchesStream.iterator.asScala.toList
@@ -69,7 +82,7 @@ object Specification {
           } else {
             val updatedFiles = matches
               .map { file =>
-                val entry = spec.files.get(file) match {
+                val entry = spec.entries.get(file) match {
                   case Some(existing) =>
                     existing.copy(
                       operation = rule.operation,
@@ -79,6 +92,7 @@ object Specification {
                   case None =>
                     Entry(
                       file = file,
+                      directory = directory,
                       operation = rule.operation,
                       reason = Seq(Entry.Explanation(rule.operation, rule.original))
                     )
@@ -87,11 +101,31 @@ object Specification {
                 file -> entry
               }
 
-            spec.copy(files = spec.files ++ updatedFiles)
+            spec.copy(entries = spec.entries ++ updatedFiles)
           }
         } catch {
           case NonFatal(e) =>
             spec.copy(unmatched = spec.unmatched :+ (rule, e))
         }
     }
+
+  def collectRelativeParents(from: Path, to: Path): Seq[Path] = {
+    @scala.annotation.tailrec
+    def collect(current: Path, collected: Seq[Path]): Seq[Path] =
+      if (current == from) {
+        collected
+      } else {
+        val parent = current.getParent
+        collect(
+          current = parent,
+          collected = collected :+ parent
+        )
+      }
+
+    if (to.startsWith(from)) {
+      collect(current = to, collected = Seq.empty)
+    } else {
+      Seq.empty
+    }
+  }
 }

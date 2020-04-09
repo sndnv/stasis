@@ -18,9 +18,9 @@ trait OperationExecutor {
     definition: DatasetDefinition.Id
   ): Future[Operation.Id]
 
-  def startBackupWithFiles(
+  def startBackupWithEntities(
     definition: DatasetDefinition.Id,
-    files: Seq[Path]
+    entities: Seq[Path]
   ): Future[Operation.Id]
 
   def startRecoveryWithDefinition(

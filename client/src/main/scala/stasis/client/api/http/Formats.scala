@@ -2,7 +2,7 @@ package stasis.client.api.http
 
 import java.nio.file.{Path, Paths}
 
-import stasis.client.model.{DatasetMetadata, FileMetadata, FilesystemMetadata}
+import stasis.client.model.{DatasetMetadata, EntityMetadata, FilesystemMetadata}
 import stasis.client.ops.exceptions.ScheduleRetrievalFailure
 import stasis.client.ops.scheduling.OperationScheduleAssignment
 import stasis.client.ops.scheduling.OperationScheduler.ActiveSchedule
@@ -23,28 +23,28 @@ object Formats {
     tjs = path => Json.toJson(path.toAbsolutePath.toString)
   )
 
-  implicit val fileStateFormat: Format[FilesystemMetadata.FileState] = Format(
+  implicit val entityStateFormat: Format[FilesystemMetadata.EntityState] = Format(
     fjs = _.validate[JsObject].flatMap { state =>
-      (state \ "file_state").validate[String].map {
+      (state \ "entity_state").validate[String].map {
         case "new" =>
-          FilesystemMetadata.FileState.New
+          FilesystemMetadata.EntityState.New
 
         case "existing" =>
-          FilesystemMetadata.FileState.Existing(entry = (state \ "entry").as[DatasetEntry.Id])
+          FilesystemMetadata.EntityState.Existing(entry = (state \ "entry").as[DatasetEntry.Id])
 
         case "updated" =>
-          FilesystemMetadata.FileState.Updated
+          FilesystemMetadata.EntityState.Updated
       }
     },
     tjs = {
-      case FilesystemMetadata.FileState.New =>
-        Json.obj("file_state" -> "new")
+      case FilesystemMetadata.EntityState.New =>
+        Json.obj("entity_state" -> "new")
 
-      case FilesystemMetadata.FileState.Existing(entry) =>
-        Json.obj("file_state" -> "existing", "entry" -> entry)
+      case FilesystemMetadata.EntityState.Existing(entry) =>
+        Json.obj("entity_state" -> "existing", "entry" -> entry)
 
-      case FilesystemMetadata.FileState.Updated =>
-        Json.obj("file_state" -> "updated")
+      case FilesystemMetadata.EntityState.Updated =>
+        Json.obj("entity_state" -> "updated")
     }
   )
 
@@ -118,7 +118,25 @@ object Formats {
     }
   )
 
-  implicit val fileMetadataFormat: Format[FileMetadata] = Json.format[FileMetadata]
+  implicit val fileEntityMetadataFormat: Format[EntityMetadata.File] = Json.format[EntityMetadata.File]
+  implicit val directoryEntityMetadataFormat: Format[EntityMetadata.Directory] = Json.format[EntityMetadata.Directory]
+
+  implicit val entityMetadataFormat: Format[EntityMetadata] = Format(
+    fjs = _.validate[JsObject].flatMap { entity =>
+      (entity \ "entity_type").validate[String].map {
+        case "file"      => entity.as[EntityMetadata.File]
+        case "directory" => entity.as[EntityMetadata.Directory]
+      }
+    },
+    tjs = {
+      case file: EntityMetadata.File =>
+        Json.toJson(file)(fileEntityMetadataFormat).as[JsObject] + ("entity_type" -> Json.toJson("file"))
+
+      case directory: EntityMetadata.Directory =>
+        Json.toJson(directory)(directoryEntityMetadataFormat).as[JsObject] + ("entity_type" -> Json.toJson("directory"))
+    }
+  )
+
   implicit val filesystemMetadata: Format[FilesystemMetadata] = Json.format[FilesystemMetadata]
   implicit val datasetMetadataFormat: Format[DatasetMetadata] = Json.format[DatasetMetadata]
 

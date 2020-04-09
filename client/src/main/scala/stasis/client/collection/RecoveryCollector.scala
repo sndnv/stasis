@@ -5,52 +5,52 @@ import java.nio.file.Path
 import akka.NotUsed
 import akka.stream.scaladsl.Source
 import stasis.client.api.clients.ServerApiEndpointClient
-import stasis.client.model.{DatasetMetadata, FileMetadata, FilesystemMetadata, TargetFile}
+import stasis.client.model.{DatasetMetadata, EntityMetadata, FilesystemMetadata, TargetEntity}
 import stasis.client.ops.ParallelismConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait RecoveryCollector {
-  def collect(): Source[TargetFile, NotUsed]
+  def collect(): Source[TargetEntity, NotUsed]
 }
 
 object RecoveryCollector {
   class Default(
     targetMetadata: DatasetMetadata,
-    keep: (Path, FilesystemMetadata.FileState) => Boolean,
-    destination: TargetFile.Destination,
+    keep: (Path, FilesystemMetadata.EntityState) => Boolean,
+    destination: TargetEntity.Destination,
     metadataCollector: RecoveryMetadataCollector,
     api: ServerApiEndpointClient
   )(implicit ec: ExecutionContext, parallelism: ParallelismConfig)
       extends RecoveryCollector {
-    override def collect(): Source[TargetFile, NotUsed] =
+    override def collect(): Source[TargetEntity, NotUsed] =
       Source(
-        collectFileMetadata(
+        collectEntityMetadata(
           targetMetadata = targetMetadata,
           keep = keep,
           api = api
         ).toList
-      ).mapAsync(parallelism.value) { fileMetadataFuture =>
+      ).mapAsync(parallelism.value) { entityMetadataFuture =>
         for {
-          fileMetadata <- fileMetadataFuture
-          targetFile <- metadataCollector.collect(
-            file = fileMetadata.path,
+          entityMetadata <- entityMetadataFuture
+          targetEntity <- metadataCollector.collect(
+            entity = entityMetadata.path,
             destination = destination,
-            existingMetadata = fileMetadata
+            existingMetadata = entityMetadata
           )
         } yield {
-          targetFile
+          targetEntity
         }
       }
   }
 
-  def collectFileMetadata(
+  def collectEntityMetadata(
     targetMetadata: DatasetMetadata,
-    keep: (Path, FilesystemMetadata.FileState) => Boolean,
+    keep: (Path, FilesystemMetadata.EntityState) => Boolean,
     api: ServerApiEndpointClient
-  )(implicit ec: ExecutionContext): Seq[Future[FileMetadata]] =
-    targetMetadata.filesystem.files.collect {
-      case (file, state) if keep(file, state) =>
-        targetMetadata.require(file = file, api = api)
+  )(implicit ec: ExecutionContext): Seq[Future[EntityMetadata]] =
+    targetMetadata.filesystem.entities.collect {
+      case (entity, state) if keep(entity, state) =>
+        targetMetadata.require(entity = entity, api = api)
     }.toSeq
 }

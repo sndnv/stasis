@@ -45,9 +45,9 @@ class MockOperationExecutor extends OperationExecutor {
     Future.successful(Operation.generateId())
   }
 
-  override def startBackupWithFiles(
+  override def startBackupWithEntities(
     definition: DatasetDefinition.Id,
-    files: Seq[Path]
+    entities: Seq[Path]
   ): Future[Operation.Id] = {
     stats(Statistic.StartBackupWithFiles).incrementAndGet()
     Future.successful(Operation.generateId())

@@ -18,18 +18,18 @@ object OperationScheduleAssignment {
   final case class Backup(
     override val schedule: Schedule.Id,
     definition: DatasetDefinition.Id,
-    files: Seq[Path]
+    entities: Seq[Path]
   ) extends OperationScheduleAssignment
 
   object Backup {
     def apply(schedule: Schedule.Id, parameters: Option[String], lineNumber: Int): Try[Backup] =
       parameters.fold(List.empty[String])(_.trim.split(" ").filter(_.nonEmpty).toList) match {
-        case definitionId :: files =>
+        case definitionId :: entities =>
           extractUuid(definitionId).map { definition =>
             Backup(
               schedule = schedule,
               definition = definition,
-              files = files.mkString(" ").split(",").map(_.trim).filter(_.nonEmpty).map(Paths.get(_))
+              entities = entities.mkString(" ").split(",").map(_.trim).filter(_.nonEmpty).map(Paths.get(_))
             )
           }
 

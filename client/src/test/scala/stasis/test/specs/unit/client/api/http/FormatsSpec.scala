@@ -1,10 +1,12 @@
 package stasis.test.specs.unit.client.api.http
 
 import java.nio.file.{Path, Paths}
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 import play.api.libs.json._
 import stasis.client.api.http.Formats._
-import stasis.client.model.FilesystemMetadata
+import stasis.client.model.{EntityMetadata, FilesystemMetadata}
 import stasis.client.ops.exceptions.ScheduleRetrievalFailure
 import stasis.client.ops.scheduling.OperationScheduleAssignment
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
@@ -22,19 +24,19 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
     pathFormat.reads(Json.parse(json)).asOpt should be(Some(path))
   }
 
-  they should "convert file state to/from JSON" in {
+  they should "convert entity state to/from JSON" in {
     val entry = DatasetEntry.generateId()
 
-    val fileStates = Map(
-      FilesystemMetadata.FileState.New -> """{"file_state":"new"}""",
-      FilesystemMetadata.FileState.Existing(entry) -> s"""{"file_state":"existing","entry":"$entry"}""",
-      FilesystemMetadata.FileState.Updated -> """{"file_state":"updated"}"""
+    val entityStates = Map(
+      FilesystemMetadata.EntityState.New -> """{"entity_state":"new"}""",
+      FilesystemMetadata.EntityState.Existing(entry) -> s"""{"entity_state":"existing","entry":"$entry"}""",
+      FilesystemMetadata.EntityState.Updated -> """{"entity_state":"updated"}"""
     )
 
-    fileStates.foreach {
+    entityStates.foreach {
       case (state, json) =>
-        fileStateFormat.writes(state).toString should be(json)
-        fileStateFormat.reads(Json.parse(json)).asOpt should be(Some(state))
+        entityStateFormat.writes(state).toString should be(json)
+        entityStateFormat.reads(Json.parse(json)).asOpt should be(Some(state))
     }
   }
 
@@ -63,8 +65,8 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
       OperationScheduleAssignment.Backup(
         schedule = schedule,
         definition = backupDefinition,
-        files = Seq.empty
-      ) -> s"""{"schedule":"$schedule","assignment_type":"backup","files":[],"definition":"$backupDefinition"}""",
+        entities = Seq.empty
+      ) -> s"""{"schedule":"$schedule","entities":[],"assignment_type":"backup","definition":"$backupDefinition"}""",
       OperationScheduleAssignment.Expiration(
         schedule = schedule
       ) -> s"""{"schedule":"$schedule","assignment_type":"expiration"}""",
@@ -97,6 +99,52 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
       case (result, json) =>
         activeScheduleRetrievalResultFormat.writes(result).toString should be(json)
         activeScheduleRetrievalResultFormat.reads(Json.parse(json)).asOpt should be(Some(result))
+    }
+  }
+
+  they should "convert entity metadata to/from JSON" in {
+    val fileMetadata = EntityMetadata.File(
+      path = Paths.get("/tmp/file/one"),
+      size = 1,
+      link = None,
+      isHidden = false,
+      created = Instant.now().truncatedTo(ChronoUnit.SECONDS),
+      updated = Instant.now().truncatedTo(ChronoUnit.SECONDS),
+      owner = "root",
+      group = "root",
+      permissions = "rwxrwxrwx",
+      checksum = 1,
+      crate = java.util.UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
+    )
+
+    val directoryMetadata = EntityMetadata.Directory(
+      path = Paths.get("/tmp/file/one"),
+      link = None,
+      isHidden = false,
+      created = Instant.now().truncatedTo(ChronoUnit.SECONDS),
+      updated = Instant.now().truncatedTo(ChronoUnit.SECONDS),
+      owner = "root",
+      group = "root",
+      permissions = "rwxrwxrwx"
+    )
+
+    val baseFileMetadataJson = fileEntityMetadataFormat
+      .writes(fileMetadata)
+      .as[JsObject] ++ Json.obj("entity_type" -> "file")
+
+    val baseDirectoryMetadataJson = directoryEntityMetadataFormat
+      .writes(directoryMetadata)
+      .as[JsObject] ++ Json.obj("entity_type" -> "directory")
+
+    val metadata = Map[EntityMetadata, String](
+      fileMetadata -> baseFileMetadataJson.toString,
+      directoryMetadata -> baseDirectoryMetadataJson.toString
+    )
+
+    metadata.foreach {
+      case (entity, json) =>
+        entityMetadataFormat.writes(entity).toString should be(json)
+        entityMetadataFormat.reads(Json.parse(json)).asOpt should be(Some(entity))
     }
   }
 }

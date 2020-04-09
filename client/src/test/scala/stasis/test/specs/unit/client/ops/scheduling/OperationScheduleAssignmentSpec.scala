@@ -23,12 +23,12 @@ class OperationScheduleAssignmentSpec extends UnitSpec {
       s"$definitionId  " -> OperationScheduleAssignment.Backup(
         schedule = scheduleId,
         definition = definitionId,
-        files = Seq.empty
+        entities = Seq.empty
       ),
       s"  $definitionId file-01,file-02 , file-03   " -> OperationScheduleAssignment.Backup(
         schedule = scheduleId,
         definition = definitionId,
-        files = Seq(Paths.get("file-01"), Paths.get("file-02"), Paths.get("file-03"))
+        entities = Seq(Paths.get("file-01"), Paths.get("file-02"), Paths.get("file-03"))
       )
     )
 
@@ -67,17 +67,17 @@ class OperationScheduleAssignmentSpec extends UnitSpec {
       s"backup $scheduleId $definitionId" -> OperationScheduleAssignment.Backup(
         schedule = scheduleId,
         definition = definitionId,
-        files = Seq.empty
+        entities = Seq.empty
       ),
       s"backup $scheduleId $definitionId # comment" -> OperationScheduleAssignment.Backup(
         schedule = scheduleId,
         definition = definitionId,
-        files = Seq.empty
+        entities = Seq.empty
       ),
       s"backup $scheduleId $definitionId file-01,file-02 , file-03  // comment" -> OperationScheduleAssignment.Backup(
         schedule = scheduleId,
         definition = definitionId,
-        files = Seq(Paths.get("file-01"), Paths.get("file-02"), Paths.get("file-03"))
+        entities = Seq(Paths.get("file-01"), Paths.get("file-02"), Paths.get("file-03"))
       ),
       s"expiration    $scheduleId # comment" -> OperationScheduleAssignment.Expiration(schedule = scheduleId),
       s"validation    $scheduleId // comment" -> OperationScheduleAssignment.Validation(schedule = scheduleId),

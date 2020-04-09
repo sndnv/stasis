@@ -4,7 +4,7 @@ import java.nio.file.Path
 
 import akka.NotUsed
 import akka.stream.scaladsl.Flow
-import stasis.client.model.{DatasetMetadata, FileMetadata, FilesystemMetadata}
+import stasis.client.model.{DatasetMetadata, EntityMetadata, FilesystemMetadata}
 import stasis.client.ops.backup.Providers
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.ops.Operation
@@ -17,9 +17,9 @@ trait MetadataCollection {
 
   def metadataCollection(
     implicit operation: Operation.Id
-  ): Flow[Either[FileMetadata, FileMetadata], DatasetMetadata, NotUsed] =
-    Flow[Either[FileMetadata, FileMetadata]]
-      .fold((Map.empty[Path, FileMetadata], Map.empty[Path, FileMetadata])) {
+  ): Flow[Either[EntityMetadata, EntityMetadata], DatasetMetadata, NotUsed] =
+    Flow[Either[EntityMetadata, EntityMetadata]]
+      .fold((Map.empty[Path, EntityMetadata], Map.empty[Path, EntityMetadata])) {
         case ((contentChanged, metadataChanged), currentMetadata) =>
           currentMetadata match {
             case Left(metadata)  => (contentChanged + (metadata.path -> metadata), metadataChanged)

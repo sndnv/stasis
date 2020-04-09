@@ -2,6 +2,7 @@ package stasis.test.specs.unit.client.collection.rules
 
 import java.nio.file.NoSuchFileException
 
+import stasis.client.collection.rules.exceptions.RuleMatchingFailure
 import stasis.client.collection.rules.{Rule, Specification}
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
@@ -32,14 +33,20 @@ trait SpecificationBehaviour { _: UnitSpec with ResourceHelpers =>
       val parent0Files = objects.nestedChildDirsPerParent * objects.filesPerDir
       val qFiles = objects.nestedDirs * Seq('q').size
 
+      val work = 1
+      val workRoot = 1
+      val rootDirs = objects.rootDirs
+      val acChildDirs = objects.nestedParentDirs * ('a' to 'c').size + objects.nestedParentDirs
+      val parent0Dirs = objects.nestedChildDirsPerParent
+
       val rules = Seq(
-        rule1 -> RuleExpectation(total = objects.filesPerDir, excluded = 0, included = objects.filesPerDir),
-        rule2 -> RuleExpectation(total = azRangeSize, excluded = azRangeSize, included = 0),
-        rule3 -> RuleExpectation(total = zeroOneListSize, excluded = zeroOneListSize, included = 0),
-        rule4 -> RuleExpectation(total = rootDirsFiles, excluded = 0, included = rootDirsFiles),
-        rule5 -> RuleExpectation(total = acChildFiles, excluded = 0, included = acChildFiles),
-        rule6 -> RuleExpectation(total = parent0Files, excluded = parent0Files, included = 0),
-        rule7 -> RuleExpectation(total = qFiles, excluded = qFiles, included = 0)
+        rule1 -> RuleExpectation(excluded = 0, included = objects.filesPerDir + work),
+        rule2 -> RuleExpectation(excluded = azRangeSize, included = 0),
+        rule3 -> RuleExpectation(excluded = zeroOneListSize, included = 0),
+        rule4 -> RuleExpectation(excluded = 0, included = rootDirsFiles + rootDirs + workRoot),
+        rule5 -> RuleExpectation(excluded = 0, included = acChildFiles + acChildDirs + workRoot),
+        rule6 -> RuleExpectation(excluded = parent0Files + parent0Dirs, included = 0),
+        rule7 -> RuleExpectation(excluded = qFiles, included = 0)
       ).zipWithIndex.map {
         case ((rule, expectations), lineNumber) => (Rule(line = rule, lineNumber = lineNumber).get, expectations)
       }
@@ -48,7 +55,6 @@ trait SpecificationBehaviour { _: UnitSpec with ResourceHelpers =>
         case (rule, expectation) =>
           val spec = Specification(Seq(rule), filesystem)
           withClue(s"Specification for rule [${rule.original.line}] on line [${rule.original.lineNumber}]") {
-            spec.files.size should be(expectation.total)
             spec.excluded.size should be(expectation.excluded)
             spec.included.size should be(expectation.included)
           }
@@ -57,44 +63,51 @@ trait SpecificationBehaviour { _: UnitSpec with ResourceHelpers =>
       val spec = Specification(rules = rules.map(_._1), filesystem = filesystem)
 
       spec.unmatched should be(Seq.empty)
-      spec.files.size should be < objects.total
+      spec.entries.size should be < objects.total
 
       val includedFromRoot = objects.filesPerDir // rule 1
       val excludedFromRoot = azRangeSize + zeroOneListSize // rule 2 + rule 3
 
-      val includedUnderRootDirs = rootDirsFiles // rule 4
-      val includedUnderChildDirs = acChildFiles // rule 5
-      val excludedUnderParent0 = parent0Files // rule 6
+      val includedUnderRootDirs = rootDirsFiles + rootDirs // rule 4
+      val includedUnderChildDirs = acChildFiles + acChildDirs // rule 5
+      val excludedUnderParent0 = parent0Files + parent0Dirs // rule 6
       val excludedQFiles = qFiles // rule 7
 
       val overlappingQFilesInParent0 = objects.nestedChildDirsPerParent
       val overlappingAcChildFilesInParent0 = includedUnderChildDirs / objects.nestedParentDirs
       val overlappingEntriesInParent0 = overlappingQFilesInParent0 + overlappingAcChildFilesInParent0
 
-      val entriesUnderRoot = includedFromRoot
-      val entriesUnderRootDirs = includedUnderRootDirs
+      val entriesUnderRoot = includedFromRoot + work
+      val entriesUnderRootDirs = includedUnderRootDirs + workRoot
       val entriesUnderNestedDirs = includedUnderChildDirs + excludedUnderParent0 + excludedQFiles - overlappingEntriesInParent0
 
       val totalEntries = entriesUnderRoot + entriesUnderRootDirs + entriesUnderNestedDirs
-      val excludedFiles = excludedFromRoot + excludedUnderParent0 + excludedQFiles - overlappingQFilesInParent0
-      val includedFiles = totalEntries - excludedFiles
+      val excludedEntries = excludedFromRoot + excludedUnderParent0 + excludedQFiles - overlappingQFilesInParent0
+      val includedEntries = totalEntries - excludedEntries
 
-      spec.files.size should be(totalEntries)
-      spec.excluded.size should be(excludedFiles)
-      spec.included.size should be(includedFiles)
+      (spec.included ++ spec.excluded).distinct.size should be(totalEntries)
+      spec.excluded.size should be(excludedEntries)
+      spec.included.size should be(includedEntries)
     }
 
     it should "provide list of unmatched rules" in {
       val (filesystem, _) = createMockFileSystem(setup = FileSystemSetup.empty)
 
-      val rules = Seq(
-        Rule(line = "+ / ** # include all files", lineNumber = 0).get
-      )
+      val rule1 = Rule(line = "+ /test/ **                # include all files in directory", lineNumber = 0).get
+      val rule2 = Rule(line = "+ /work  missing-test-file # include specific file", lineNumber = 0).get
 
-      val spec = Specification(rules, filesystem)
+      val spec = Specification(Seq(rule1, rule2), filesystem)
 
-      spec.unmatched.map(_._1) should be(rules)
-      spec.files shouldBe empty
+      spec.unmatched.toList match {
+        case (`rule1`, e1) :: (`rule2`, e2) :: Nil =>
+          e1 shouldBe a[NoSuchFileException]
+          e2 shouldBe a[RuleMatchingFailure]
+
+        case other =>
+          fail(s"Unexpected result received: [$other]")
+      }
+
+      spec.entries shouldBe empty
     }
 
     it should "provide a reason for including/excluding each file" in {
@@ -113,15 +126,15 @@ trait SpecificationBehaviour { _: UnitSpec with ResourceHelpers =>
       val spec = Specification(rules = rules, filesystem = filesystem)
 
       spec.unmatched should be(Seq.empty)
-      spec.files.size should be(objects.filesPerDir)
+      spec.entries.size should be(objects.filesPerDir)
 
       val files = List(
-        spec.files.get(filesystem.getPath("/work/a")),
-        spec.files.get(filesystem.getPath("/work/b")),
-        spec.files.get(filesystem.getPath("/work/c")),
-        spec.files.get(filesystem.getPath("/work/d")),
-        spec.files.get(filesystem.getPath("/work/e")),
-        spec.files.get(filesystem.getPath("/work/f"))
+        spec.entries.get(filesystem.getPath("/work/a")),
+        spec.entries.get(filesystem.getPath("/work/b")),
+        spec.entries.get(filesystem.getPath("/work/c")),
+        spec.entries.get(filesystem.getPath("/work/d")),
+        spec.entries.get(filesystem.getPath("/work/e")),
+        spec.entries.get(filesystem.getPath("/work/f"))
       ).flatten
 
       files match {
@@ -195,7 +208,65 @@ trait SpecificationBehaviour { _: UnitSpec with ResourceHelpers =>
         case other               => fail(s"Unexpected result received: [$other]")
       }
 
-      spec.files shouldBe empty
+      spec.entries shouldBe empty
+    }
+
+    it should "support collecting parent directories" in {
+      val (filesystem, _) = createMockFileSystem(setup)
+
+      Specification
+        .collectRelativeParents(
+          from = filesystem.getPath("/"),
+          to = filesystem.getPath("/work/root/parent-0/child-dir-a/a")
+        )
+        .sorted should be(
+        Seq(
+          "/",
+          "/work",
+          "/work/root",
+          "/work/root/parent-0",
+          "/work/root/parent-0/child-dir-a"
+        ).map(filesystem.getPath(_))
+      )
+
+      Specification
+        .collectRelativeParents(
+          from = filesystem.getPath("/work/root/parent-0"),
+          to = filesystem.getPath("/work/root/parent-0/child-dir-a/a")
+        )
+        .sorted should be(
+        Seq(
+          "/work/root/parent-0",
+          "/work/root/parent-0/child-dir-a"
+        ).map(filesystem.getPath(_))
+      )
+
+      Specification
+        .collectRelativeParents(
+          from = filesystem.getPath("/work/root/parent-0/child-dir-a"),
+          to = filesystem.getPath("/work/root/parent-0/child-dir-a/a")
+        )
+        .sorted should be(
+        Seq(
+          "/work/root/parent-0/child-dir-a"
+        ).map(filesystem.getPath(_))
+      )
+
+      Specification
+        .collectRelativeParents(
+          from = filesystem.getPath("/work/root/parent-0/child-dir-a"),
+          to = filesystem.getPath("/work/root/parent-0/child-dir-a")
+        )
+        .sorted should be(Seq.empty)
+    }
+
+    it should "handle mismatched parent directories" in {
+      val (filesystem, _) = createMockFileSystem(setup)
+
+      Specification.collectRelativeParents(
+        from = filesystem.getPath("/work/root/parent-0"),
+        to = filesystem.getPath("/work/root/parent-1/child-dir-b/c")
+      ) should be(Seq.empty)
     }
   }
 }

@@ -38,9 +38,12 @@ import scala.util.control.NonFatal
 
 class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with BeforeAndAfterAll {
   "A Backup operation" should "process backups for entire configured file collection" in {
-    val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractMetadata(checksum)
-    val sourceFile2Metadata = "/ops/source-file-2".asTestResource.extractMetadata(checksum)
-    val sourceFile3Metadata = "/ops/source-file-3".asTestResource.extractMetadata(checksum)
+    val sourceDirectory1Metadata = "/ops".asTestResource.extractDirectoryMetadata()
+    val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(checksum)
+    val sourceFile2Metadata = "/ops/source-file-2".asTestResource.extractFileMetadata(checksum)
+    val sourceFile3Metadata = "/ops/source-file-3".asTestResource.extractFileMetadata(checksum)
+
+    val sourceDirectory2Metadata = "/ops/nested".asTestResource.extractDirectoryMetadata()
 
     val mockApiClient = MockServerApiEndpointClient()
     val mockCoreClient = MockServerCoreEndpointClient()
@@ -50,7 +53,8 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
       collector = Backup.Descriptor.Collector.WithRules(
         spec = Specification(
           rules = Seq(
-            Rule(line = s"+ ${"/ops".asTestResource.toAbsolutePath} source-file-*", lineNumber = 0).get
+            Rule(line = s"+ ${sourceDirectory1Metadata.path.toAbsolutePath} source-file-*", lineNumber = 0).get,
+            Rule(line = s"+ ${sourceDirectory2Metadata.path.toAbsolutePath} source-file-*", lineNumber = 0).get
           )
         )
       ),
@@ -60,12 +64,15 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
           sourceFile2Metadata.path -> sourceFile2Metadata,
           sourceFile3Metadata.path -> sourceFile3Metadata.copy(checksum = BigInt(0))
         ),
-        metadataChanged = Map.empty,
+        metadataChanged = Map(
+          sourceDirectory1Metadata.path -> sourceDirectory1Metadata
+        ),
         filesystem = FilesystemMetadata(
-          files = Map(
-            sourceFile1Metadata.path -> FilesystemMetadata.FileState.New,
-            sourceFile2Metadata.path -> FilesystemMetadata.FileState.New,
-            sourceFile3Metadata.path -> FilesystemMetadata.FileState.New
+          entities = Map(
+            sourceDirectory1Metadata.path -> FilesystemMetadata.EntityState.New,
+            sourceFile1Metadata.path -> FilesystemMetadata.EntityState.New,
+            sourceFile2Metadata.path -> FilesystemMetadata.EntityState.New,
+            sourceFile3Metadata.path -> FilesystemMetadata.EntityState.New
           )
         )
       ),
@@ -79,7 +86,10 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     backup.start().map { _ =>
       eventually {
         // dataset entry for backup created; metadata crate pushed
-        // source-file-1 has metadata changes only; source-file-2 is unchanged; crate for source-file-3 pushed;
+        // /ops directory is unchanged
+        // /ops/source-file-1 has metadata changes only; /ops/source-file-2 is unchanged; crate for /ops/source-file-3 pushed;
+        // /ops/nested directory is new
+        // /ops/nested/source-file-4 and /ops/nested/source-file-5 are new
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryCreated) should be(1)
@@ -96,11 +106,11 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
 
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
-        mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(2)
+        mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(4)
 
-        mockTracker.statistics(MockBackupTracker.Statistic.FileExamined) should be(3)
-        mockTracker.statistics(MockBackupTracker.Statistic.FileCollected) should be(2)
-        mockTracker.statistics(MockBackupTracker.Statistic.FileProcessed) should be(2)
+        mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(7) // 2 directories + 5 files
+        mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(5) // 2 unchanged + 5 changed entities
+        mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(5) // 2 unchanged + 5 changed entities
         mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(1)
         mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(1)
         mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
@@ -110,17 +120,17 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
   }
 
   it should "process backups for specific files" in {
-    val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractMetadata(checksum)
-    val sourceFile2Metadata = "/ops/source-file-2".asTestResource.extractMetadata(checksum)
-    val sourceFile3Metadata = "/ops/source-file-3".asTestResource.extractMetadata(checksum)
+    val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(checksum)
+    val sourceFile2Metadata = "/ops/source-file-2".asTestResource.extractFileMetadata(checksum)
+    val sourceFile3Metadata = "/ops/source-file-3".asTestResource.extractFileMetadata(checksum)
 
     val mockApiClient = MockServerApiEndpointClient()
     val mockCoreClient = MockServerCoreEndpointClient()
     val mockTracker = new MockBackupTracker
 
     val backup = createBackup(
-      collector = Backup.Descriptor.Collector.WithFiles(
-        files = List(
+      collector = Backup.Descriptor.Collector.WithEntities(
+        entities = List(
           sourceFile1Metadata.path,
           sourceFile2Metadata.path,
           sourceFile3Metadata.path
@@ -134,10 +144,10 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         ),
         metadataChanged = Map.empty,
         filesystem = FilesystemMetadata(
-          files = Map(
-            sourceFile1Metadata.path -> FilesystemMetadata.FileState.New,
-            sourceFile2Metadata.path -> FilesystemMetadata.FileState.New,
-            sourceFile3Metadata.path -> FilesystemMetadata.FileState.New
+          entities = Map(
+            sourceFile1Metadata.path -> FilesystemMetadata.EntityState.New,
+            sourceFile2Metadata.path -> FilesystemMetadata.EntityState.New,
+            sourceFile3Metadata.path -> FilesystemMetadata.EntityState.New
           )
         )
       ),
@@ -170,9 +180,9 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(2)
 
-        mockTracker.statistics(MockBackupTracker.Statistic.FileExamined) should be(3)
-        mockTracker.statistics(MockBackupTracker.Statistic.FileCollected) should be(2)
-        mockTracker.statistics(MockBackupTracker.Statistic.FileProcessed) should be(2)
+        mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(3)
+        mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(2)
+        mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(2)
         mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(1)
         mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(1)
         mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
@@ -182,16 +192,16 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
   }
 
   it should "handle failures of backups for individual files" in {
-    val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractMetadata(checksum)
-    val sourceFile2Metadata = "/ops/source-file-2".asTestResource.extractMetadata(checksum)
+    val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(checksum)
+    val sourceFile2Metadata = "/ops/source-file-2".asTestResource.extractFileMetadata(checksum)
 
     val mockApiClient = MockServerApiEndpointClient()
     val mockCoreClient = MockServerCoreEndpointClient()
     val mockTracker = new MockBackupTracker
 
     val backup = createBackup(
-      collector = Backup.Descriptor.Collector.WithFiles(
-        files = List(
+      collector = Backup.Descriptor.Collector.WithEntities(
+        entities = List(
           sourceFile1Metadata.path,
           sourceFile2Metadata.path,
           Paths.get("/ops/invalid-file")
@@ -204,9 +214,9 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         ),
         metadataChanged = Map.empty,
         filesystem = FilesystemMetadata(
-          files = Map(
-            sourceFile1Metadata.path -> FilesystemMetadata.FileState.New,
-            sourceFile2Metadata.path -> FilesystemMetadata.FileState.New
+          entities = Map(
+            sourceFile1Metadata.path -> FilesystemMetadata.EntityState.New,
+            sourceFile2Metadata.path -> FilesystemMetadata.EntityState.New
           )
         )
       ),
@@ -239,9 +249,9 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(1)
 
-        mockTracker.statistics(MockBackupTracker.Statistic.FileExamined) should be(2)
-        mockTracker.statistics(MockBackupTracker.Statistic.FileCollected) should be(1)
-        mockTracker.statistics(MockBackupTracker.Statistic.FileProcessed) should be(1)
+        mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(2)
+        mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(1)
+        mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(1)
         mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(1)
         mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(1)
         mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(1)
@@ -264,9 +274,9 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         result should be(Done)
 
         eventually {
-          mockTracker.statistics(MockBackupTracker.Statistic.FileExamined) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.FileCollected) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.FileProcessed) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
@@ -293,9 +303,9 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
           e shouldBe a[RuntimeException]
 
           eventually {
-            mockTracker.statistics(MockBackupTracker.Statistic.FileExamined) should be(0)
-            mockTracker.statistics(MockBackupTracker.Statistic.FileCollected) should be(0)
-            mockTracker.statistics(MockBackupTracker.Statistic.FileProcessed) should be(0)
+            mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+            mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+            mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
             mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
             mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
             mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(1)
@@ -305,13 +315,13 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
   }
 
   it should "allow stopping a running backup" in {
-    val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractMetadata(checksum)
+    val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(checksum)
 
     val mockTracker = new MockBackupTracker
 
     val backup = createBackup(
-      collector = Backup.Descriptor.Collector.WithFiles(
-        files = List(sourceFile1Metadata.path)
+      collector = Backup.Descriptor.Collector.WithEntities(
+        entities = List(sourceFile1Metadata.path)
       ),
       latestMetadata = DatasetMetadata.empty,
       clients = Clients(
@@ -378,7 +388,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
       track = new MockBackupTracker()
     )
 
-    val collectorDescriptor = Backup.Descriptor.Collector.WithFiles(files = Seq.empty)
+    val collectorDescriptor = Backup.Descriptor.Collector.WithEntities(entities = Seq.empty)
 
     for {
       descriptorWithLatestEntry <- Backup.Descriptor(
@@ -429,7 +439,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
       latestEntry = None,
       latestMetadata = None,
       deviceSecret = secret,
-      collector = Backup.Descriptor.Collector.WithFiles(files = Seq.empty)
+      collector = Backup.Descriptor.Collector.WithEntities(entities = Seq.empty)
     )
 
     val descriptorWithRules = Backup

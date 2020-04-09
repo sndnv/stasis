@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import stasis.client.analysis.Checksum
 import stasis.client.collection.{BackupCollector, BackupMetadataCollector}
-import stasis.client.model.{DatasetMetadata, FilesystemMetadata, SourceFile}
+import stasis.client.model.{DatasetMetadata, EntityMetadata, FilesystemMetadata, SourceEntity}
 import stasis.client.ops.ParallelismConfig
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
@@ -25,7 +25,7 @@ class BackupCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
     val file2 = "/collection/file-2".asTestResource
 
     val collector = new BackupCollector.Default(
-      files = List(file1, file2),
+      entities = List(file1, file2),
       latestMetadata = Some(DatasetMetadata.empty),
       metadataCollector = new BackupMetadataCollector.Default(checksum = Checksum.MD5),
       api = mockApiClient
@@ -33,17 +33,23 @@ class BackupCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
 
     collector
       .collect()
-      .runFold(Seq.empty[SourceFile])(_ :+ _)
+      .runFold(Seq.empty[SourceEntity])(_ :+ _)
       .map(_.sortBy(_.path.toAbsolutePath.toString))
       .map {
         case sourceFile1 :: sourceFile2 :: Nil =>
           sourceFile1.path should be(file1)
           sourceFile1.existingMetadata should be(None)
-          sourceFile1.currentMetadata.size should be(1)
+          sourceFile1.currentMetadata match {
+            case metadata: EntityMetadata.File => metadata.size should be(1)
+            case _: EntityMetadata.Directory   => fail("Expected file but received directory metadata")
+          }
 
           sourceFile2.path should be(file2)
           sourceFile2.existingMetadata should be(None)
-          sourceFile2.currentMetadata.size should be(2)
+          sourceFile2.currentMetadata match {
+            case metadata: EntityMetadata.File => metadata.size should be(2)
+            case _: EntityMetadata.Directory   => fail("Expected file but received directory metadata")
+          }
 
         case sourceFiles =>
           fail(s"Unexpected number of entries received: [${sourceFiles.size}]")
@@ -61,13 +67,13 @@ class BackupCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
     Future
       .traverse(
         BackupCollector
-          .collectFileMetadata(
-            files = List(file1, file2),
+          .collectEntityMetadata(
+            entities = List(file1, file2),
             latestMetadata = Some(
               DatasetMetadata(
                 contentChanged = Map(file1 -> file1Metadata),
                 metadataChanged = Map.empty,
-                filesystem = FilesystemMetadata(files = Map(file1 -> FilesystemMetadata.FileState.New))
+                filesystem = FilesystemMetadata(entities = Map(file1 -> FilesystemMetadata.EntityState.New))
               )
             ),
             api = mockApiClient
@@ -96,8 +102,8 @@ class BackupCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
     Future
       .traverse(
         BackupCollector
-          .collectFileMetadata(
-            files = List(file1, file2),
+          .collectEntityMetadata(
+            entities = List(file1, file2),
             latestMetadata = None,
             api = mockApiClient
           )

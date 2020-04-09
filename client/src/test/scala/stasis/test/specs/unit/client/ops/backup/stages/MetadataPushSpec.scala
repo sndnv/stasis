@@ -55,10 +55,10 @@ class MetadataPushSpec extends AsyncUnitSpec { spec =>
             Fixtures.Metadata.FileThreeMetadata.path -> Fixtures.Metadata.FileThreeMetadata
           ),
           filesystem = FilesystemMetadata(
-            files = Map(
-              Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.New,
-              Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Updated,
-              Fixtures.Metadata.FileThreeMetadata.path -> FilesystemMetadata.FileState.Updated
+            entities = Map(
+              Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.New,
+              Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.Updated,
+              Fixtures.Metadata.FileThreeMetadata.path -> FilesystemMetadata.EntityState.Updated
             )
           )
         )
@@ -89,9 +89,9 @@ class MetadataPushSpec extends AsyncUnitSpec { spec =>
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(1)
 
-        mockTracker.statistics(MockBackupTracker.Statistic.FileExamined) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.FileCollected) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.FileProcessed) should be(0)
+        mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+        mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+        mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(1)
         mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
