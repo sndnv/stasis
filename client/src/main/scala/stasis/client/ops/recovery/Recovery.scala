@@ -10,8 +10,8 @@ import akka.stream._
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import stasis.client.collection.{RecoveryCollector, RecoveryMetadataCollector}
 import stasis.client.encryption.secrets.DeviceSecret
-import stasis.client.model.{DatasetMetadata, TargetFile}
-import stasis.client.ops.recovery.stages.{FileCollection, FileProcessing, MetadataApplication}
+import stasis.client.model.{DatasetMetadata, TargetEntity}
+import stasis.client.ops.recovery.stages.{EntityCollection, EntityProcessing, MetadataApplication}
 import stasis.client.ops.ParallelismConfig
 import stasis.client.tracking.RecoveryTracker
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
@@ -46,8 +46,8 @@ class Recovery(
   private val collector: RecoveryCollector = parent.descriptor.toRecoveryCollector()
 
   private val (killSwitch: UniqueKillSwitch, stream: Source[Done, NotUsed]) =
-    stages.fileCollection
-      .via(stages.fileProcessing)
+    stages.entityCollection
+      .via(stages.entityProcessing)
       .via(stages.metadataApplication)
       .viaMat(KillSwitches.single)(Keep.right[NotUsed, UniqueKillSwitch])
       .preMaterialize()
@@ -60,7 +60,7 @@ class Recovery(
   override def stop(): Unit =
     killSwitch.shutdown()
 
-  private object stages extends FileCollection with FileProcessing with MetadataApplication {
+  private object stages extends EntityCollection with EntityProcessing with MetadataApplication {
     override protected lazy val deviceSecret: DeviceSecret = parent.descriptor.deviceSecret
     override protected lazy val providers: Providers = parent.providers
     override protected lazy val collector: RecoveryCollector = parent.collector
@@ -85,8 +85,8 @@ object Recovery {
     ): RecoveryCollector =
       new RecoveryCollector.Default(
         targetMetadata = targetMetadata,
-        keep = (file, _) => query.forall(_.matches(file.toAbsolutePath)),
-        destination = destination.toTargetFileDestination,
+        keep = (entity, _) => query.forall(_.matches(entity.toAbsolutePath)),
+        destination = destination.toTargetEntityDestination,
         metadataCollector = new RecoveryMetadataCollector.Default(checksum = providers.checksum),
         api = providers.clients.api
       )
@@ -159,23 +159,26 @@ object Recovery {
 
   final case class Destination(
     path: String,
-    keepStructure: Boolean
+    keepStructure: Boolean,
+    filesystem: FileSystem
   )
 
-  implicit class RecoveryToTargetFileDestination(destination: Option[Destination]) {
-    def toTargetFileDestination: TargetFile.Destination =
-      toTargetFileDestination(filesystem = FileSystems.getDefault)
+  object Destination {
+    def apply(path: String, keepStructure: Boolean): Destination =
+      Destination(path = path, keepStructure = keepStructure, filesystem = FileSystems.getDefault)
+  }
 
-    def toTargetFileDestination(filesystem: FileSystem): TargetFile.Destination =
+  implicit class RecoveryToTargetEntityDestination(destination: Option[Destination]) {
+    def toTargetEntityDestination: TargetEntity.Destination =
       destination match {
         case Some(destination) =>
-          TargetFile.Destination.Directory(
-            path = filesystem.getPath(destination.path),
+          TargetEntity.Destination.Directory(
+            path = destination.filesystem.getPath(destination.path),
             keepDefaultStructure = destination.keepStructure
           )
 
         case None =>
-          TargetFile.Destination.Default
+          TargetEntity.Destination.Default
       }
   }
 

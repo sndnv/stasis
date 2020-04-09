@@ -32,16 +32,16 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
         Fixtures.Metadata.FileTwoMetadata.path -> Fixtures.Metadata.FileTwoMetadata
       ),
       filesystem = FilesystemMetadata(
-        files = Map(
-          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.New,
-          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Updated
+        entities = Map(
+          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.New,
+          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.Updated
         )
       )
     )
 
     for {
-      fileOneMetadata <- metadata.collect(file = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
-      fileTwoMetadata <- metadata.collect(file = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+      fileOneMetadata <- metadata.collect(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
+      fileTwoMetadata <- metadata.collect(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
     } yield {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved) should be(0)
@@ -58,34 +58,34 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
       contentChanged = Map.empty,
       metadataChanged = Map.empty,
       filesystem = FilesystemMetadata(
-        files = Map(
-          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.New,
-          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Updated
+        entities = Map(
+          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.New,
+          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.Updated
         )
       )
     )
 
     for {
       _ <- metadata
-        .collect(file = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
+        .collect(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
         .map { result =>
           fail(s"Unexpected result received: [$result]")
         }
         .recover {
           case NonFatal(e: IllegalArgumentException) =>
             e.getMessage should be(
-              s"Metadata for file [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] not found"
+              s"Metadata for entity [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] not found"
             )
         }
       _ <- metadata
-        .collect(file = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+        .collect(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
         .map { result =>
           fail(s"Unexpected result received: [$result]")
         }
         .recover {
           case NonFatal(e: IllegalArgumentException) =>
             e.getMessage should be(
-              s"Metadata for file [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] not found"
+              s"Metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] not found"
             )
         }
     } yield {
@@ -101,9 +101,9 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
       contentChanged = Map.empty,
       metadataChanged = Map.empty,
       filesystem = FilesystemMetadata(
-        files = Map(
-          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.Existing(entry = previousEntry),
-          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Existing(entry = previousEntry)
+        entities = Map(
+          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.Existing(entry = previousEntry),
+          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.Existing(entry = previousEntry)
         )
       )
     )
@@ -116,9 +116,9 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
         Fixtures.Metadata.FileTwoMetadata.path -> Fixtures.Metadata.FileTwoMetadata
       ),
       filesystem = FilesystemMetadata(
-        files = Map(
-          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.New,
-          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Updated
+        entities = Map(
+          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.New,
+          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.Updated
         )
       )
     )
@@ -135,8 +135,8 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
     }
 
     for {
-      fileOneMetadata <- currentMetadata.collect(file = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
-      fileTwoMetadata <- currentMetadata.collect(file = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+      fileOneMetadata <- currentMetadata.collect(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
+      fileTwoMetadata <- currentMetadata.collect(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
     } yield {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved) should be(2)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved) should be(0)
@@ -155,25 +155,25 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
       contentChanged = Map.empty,
       metadataChanged = Map.empty,
       filesystem = FilesystemMetadata(
-        files = Map(
-          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.Existing(entry = previousEntry),
-          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Existing(entry = previousEntry)
+        entities = Map(
+          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.Existing(entry = previousEntry),
+          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.Existing(entry = previousEntry)
         )
       )
     )
 
     for {
-      _ <- currentMetadata.collect(file = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient).recover {
+      _ <- currentMetadata.collect(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient).recover {
         case NonFatal(e: IllegalArgumentException) =>
           e.getMessage should be(
-            s"Expected metadata for file [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] " +
+            s"Expected metadata for entity [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] " +
               s"but none was found in metadata for entry [$previousEntry]"
           )
       }
-      _ <- currentMetadata.collect(file = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient).recover {
+      _ <- currentMetadata.collect(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient).recover {
         case NonFatal(e: IllegalArgumentException) =>
           e.getMessage should be(
-            s"Expected metadata for file [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] " +
+            s"Expected metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] " +
               s"but none was found in metadata for entry [$previousEntry]"
           )
       }
@@ -194,16 +194,16 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
         Fixtures.Metadata.FileTwoMetadata.path -> Fixtures.Metadata.FileTwoMetadata
       ),
       filesystem = FilesystemMetadata(
-        files = Map(
-          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.New,
-          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.Updated
+        entities = Map(
+          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.New,
+          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.Updated
         )
       )
     )
 
     for {
-      fileOneMetadata <- metadata.require(file = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
-      fileTwoMetadata <- metadata.require(file = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+      fileOneMetadata <- metadata.require(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
+      fileTwoMetadata <- metadata.require(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
     } yield {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved) should be(0)
@@ -220,25 +220,25 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
 
     for {
       _ <- metadata
-        .require(file = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
+        .require(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
         .map { result =>
           fail(s"Unexpected result received: [$result]")
         }
         .recover {
           case NonFatal(e: IllegalArgumentException) =>
             e.getMessage should be(
-              s"Required metadata for file [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] not found"
+              s"Required metadata for entity [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] not found"
             )
         }
       _ <- metadata
-        .require(file = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+        .require(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
         .map { result =>
           fail(s"Unexpected result received: [$result]")
         }
         .recover {
           case NonFatal(e: IllegalArgumentException) =>
             e.getMessage should be(
-              s"Required metadata for file [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] not found"
+              s"Required metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] not found"
             )
         }
     } yield {
@@ -335,27 +335,60 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
   )
 
   private val datasetMetadata = DatasetMetadata(
-    contentChanged = Map(Fixtures.Metadata.FileOneMetadata.path -> Fixtures.Metadata.FileOneMetadata),
-    metadataChanged = Map(Fixtures.Metadata.FileTwoMetadata.path -> Fixtures.Metadata.FileTwoMetadata),
-    filesystem = FilesystemMetadata.empty
+    contentChanged = Map(
+      Fixtures.Metadata.FileOneMetadata.path -> Fixtures.Metadata.FileOneMetadata
+    ),
+    metadataChanged = Map(
+      Fixtures.Metadata.FileTwoMetadata.path -> Fixtures.Metadata.FileTwoMetadata,
+      Fixtures.Metadata.DirectoryOneMetadata.path -> Fixtures.Metadata.DirectoryOneMetadata,
+      Fixtures.Metadata.DirectoryTwoMetadata.path -> Fixtures.Metadata.DirectoryTwoMetadata
+    ),
+    filesystem = FilesystemMetadata(
+      entities = Map(
+        Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.New,
+        Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.Updated,
+        Fixtures.Metadata.DirectoryOneMetadata.path -> FilesystemMetadata.EntityState.New,
+        Fixtures.Metadata.DirectoryTwoMetadata.path -> FilesystemMetadata.EntityState.New
+      )
+    )
   )
 
   private val serializedDatasetMetadata =
-    "CmEKDS90bXAvZmlsZS9vbmUSUAoNL3RtcC9maWxlL29u" +
-      "ZRABKICokKOB4vjH/wEw//HV1K+ahzg6BHJvb3RCBH" +
-      "Jvb3RKA3J3eFIBAVoVCLiFjYW4/b7PMhDK96n/wLee" +
-      "7rEBEnMKDS90bXAvZmlsZS90d28SYgoNL3RtcC9maW" +
-      "xlL3R3bxACGg8vdG1wL2ZpbGUvdGhyZWUo//HV1K+a" +
-      "hzgwgKiQo4Hi+Mf/AToEcm9vdEIEcm9vdEoDeHdyUg" +
-      "EqWhYIhIbV1OGqqrnmARC6+ZCHj4Ol+IoBGgA="
+    "CmkKDS90bXAvZmlsZS9vbmUSWApWCg0vdG1wL2ZpbGUv" +
+      "b25lEAEogKiQo4Hi+Mf/ATD/8dXUr5qHODoEcm9vdE" +
+      "IEcm9vdEoJcnd4cnd4cnd4UgEBWhUIuIWNhbj9vs8y" +
+      "EMr3qf/At57usQESewoNL3RtcC9maWxlL3R3bxJqCm" +
+      "gKDS90bXAvZmlsZS90d28QAhoPL3RtcC9maWxlL3Ro" +
+      "cmVlKP/x1dSvmoc4MICokKOB4vjH/wE6BHJvb3RCBH" +
+      "Jvb3RKCXJ3eHJ3eHJ3eFIBKloWCISG1dThqqq55gEQ" +
+      "uvmQh4+DpfiKARJXChIvdG1wL2RpcmVjdG9yeS9vbm" +
+      "USQRI/ChIvdG1wL2RpcmVjdG9yeS9vbmUggKiQo4Hi" +
+      "+Mf/ASj/8dXUr5qHODIEcm9vdDoEcm9vdEIJcnd4cn" +
+      "d4cnd4EmgKEi90bXAvZGlyZWN0b3J5L3R3bxJSElAK" +
+      "Ei90bXAvZGlyZWN0b3J5L3R3bxIPL3RtcC9maWxlL3" +
+      "RocmVlIP/x1dSvmoc4KICokKOB4vjH/wEyBHJvb3Q6" +
+      "BHJvb3RCCXJ3eHJ3eHJ3eBpeChMKDS90bXAvZmlsZS" +
+      "9vbmUSAgoAChMKDS90bXAvZmlsZS90d28SAhoAChgK" +
+      "Ei90bXAvZGlyZWN0b3J5L29uZRICCgAKGAoSL3RtcC" +
+      "9kaXJlY3RvcnkvdHdvEgIKAA=="
 
   private val encryptedDatasetMetadata =
-    "qg3Lc95bEH10i52w4MHCXTqvEejqkyHe0yPIQBMu4smf" +
-      "HUI4unF6LNrF7NBDlaG/tCGlYITrQZGz2qvfwGE+Ol" +
-      "aAYw21Of9J02ydh1ApqKyTvIZokIdLyp2Ye16Hsi0Q" +
-      "dPTx0W1ifmdqBCFjQ4uGG+UH82PhdiLF2x6UMkZp31" +
-      "VVlAMiNIBeqY4gwniweTUiTUbbHPEF4pKY2Zy0ISDA" +
-      "PLfsVJNJC0iFgfD9oK5NKt/FVVwpPX1d8jQnyHPRkb" +
-      "AAyhupHBGqi2LsmPfu/XAKd1+r+PJkr//69foBc3oV" +
-      "QG6vCNeLHDgZGnZ+"
+    "qgXLc95bEH10i52w4MHCXTqvGeixtlic12HeBhkiocPe" +
+      "FzxcgvD6PNHUralmkmdwSuCPRf6laTMO5uO03XoTSm" +
+      "brfhaQTsc32Unk9H1E0mNuYwLRNyyMQAjfCU+FzFW8" +
+      "io8HauGoxNbw2FBeXujnUb4e9COVfUSt2x6OLXtlvF" +
+      "E6tlghNuBz1ehj0zq0ITxbIzn7R+0a99jWTwEE2vsy" +
+      "yeq5/MQofR3I47A6kRThyBMrw+bqsBMIggxL33Dhx8" +
+      "NF/3nrkeUIJ/ExSjx/hDKxpJU6f/VHgqEaRVCNgo7z" +
+      "0iJ1Z3rKP3wTM2jI+jyHgeIrf6+FtUF3E/IeFogck5" +
+      "l2EoKY/Ep4hTZJ82McX+zbjuSSghozqgsnHuSG54Tu" +
+      "bhUy9KP6N2W8r4roZLFQbSVzVJGl247W7Mqu0I6VYD" +
+      "CuYZNH4/lOUeKFBfudoPGpGoPmea8n0LCbjGywtxjM" +
+      "REJfo5ERKwQOrVB2vyQAdkS6QMUe5IWjYHIEsno4Pc" +
+      "AXawGzdzI/j+yCEm8MmDLMNZs2FycuO+rkn8yFvc/j" +
+      "oF0gDeumbz6M2lcL9WvupM28SXS64lnVi2GYqxDvDI" +
+      "wBslJIYULiISxRPmrV9pD7yLh3MHavxWud9FeqN2Ff" +
+      "AcsWzypeP9VAMiG1r3r0HUirM5R5SMrb6w1ii2Do8M" +
+      "kVOkudGUJxjIL5lFsk/7k+i6uvXjWeyRzAAyhuj1oa" +
+      "4iM="
 }

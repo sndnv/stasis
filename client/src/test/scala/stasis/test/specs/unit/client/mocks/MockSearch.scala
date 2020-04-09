@@ -28,9 +28,9 @@ class MockSearch() extends Search {
               entryId = DatasetEntry.generateId(),
               entryCreated = Instant.now(),
               matches = Map(
-                Paths.get("file-01") -> FilesystemMetadata.FileState.New,
-                Paths.get("file-02") -> FilesystemMetadata.FileState.Updated,
-                Paths.get("file-03") -> FilesystemMetadata.FileState.Existing(entry = DatasetEntry.generateId()),
+                Paths.get("file-01") -> FilesystemMetadata.EntityState.New,
+                Paths.get("file-02") -> FilesystemMetadata.EntityState.Updated,
+                Paths.get("file-03") -> FilesystemMetadata.EntityState.Existing(entry = DatasetEntry.generateId()),
               )
             )
           ),

@@ -9,7 +9,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import stasis.client.analysis.{Checksum, Metadata}
 import stasis.client.api.clients.Clients
-import stasis.client.model.{FileMetadata, TargetFile}
+import stasis.client.model.{EntityMetadata, TargetEntity}
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.recovery.Providers
 import stasis.client.ops.recovery.stages.MetadataApplication
@@ -27,7 +27,7 @@ class MetadataApplicationSpec extends AsyncUnitSpec { spec =>
 
     val attributes = Files.readAttributes(targetFile, classOf[PosixFileAttributes], LinkOption.NOFOLLOW_LINKS)
 
-    val metadata = FileMetadata(
+    val metadata = EntityMetadata.File(
       path = targetFile,
       size = 1,
       link = None,
@@ -60,30 +60,17 @@ class MetadataApplicationSpec extends AsyncUnitSpec { spec =>
 
     implicit val operationId: Operation.Id = Operation.generateId()
 
+    val target = TargetEntity(
+      path = metadata.path,
+      destination = TargetEntity.Destination.Default,
+      existingMetadata = metadata,
+      currentMetadata = None
+    )
+
     for {
-      metadataBeforeApplication <- Metadata
-        .extractFileMetadata(
-          file = targetFile,
-          withChecksum = BigInt(1),
-          withCrate = Crate.generateId()
-        )
-      _ <- Source
-        .single(
-          TargetFile(
-            path = metadata.path,
-            destination = TargetFile.Destination.Default,
-            existingMetadata = metadata,
-            currentMetadata = None
-          )
-        )
-        .via(stage.metadataApplication)
-        .runWith(Sink.ignore)
-      metadataAfterApplication <- Metadata
-        .extractFileMetadata(
-          file = targetFile,
-          withChecksum = BigInt(1),
-          withCrate = Crate.generateId()
-        )
+      metadataBeforeApplication <- Metadata.extractBaseEntityMetadata(entity = targetFile)
+      _ <- Source.single(target).via(stage.metadataApplication).runWith(Sink.ignore)
+      metadataAfterApplication <- Metadata.extractBaseEntityMetadata(entity = targetFile)
     } yield {
       metadataBeforeApplication.permissions should not be metadata.permissions
       metadataBeforeApplication.updated should not be metadata.updated
@@ -93,9 +80,9 @@ class MetadataApplicationSpec extends AsyncUnitSpec { spec =>
       metadataAfterApplication.permissions should be(metadata.permissions)
       metadataAfterApplication.updated should be(metadata.updated)
 
-      mockTracker.statistics(MockRecoveryTracker.Statistic.FileExamined) should be(0)
-      mockTracker.statistics(MockRecoveryTracker.Statistic.FileCollected) should be(0)
-      mockTracker.statistics(MockRecoveryTracker.Statistic.FileProcessed) should be(0)
+      mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(0)
+      mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(0)
+      mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(1)
       mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(0)

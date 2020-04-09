@@ -37,9 +37,9 @@ import scala.util.matching.Regex
 
 class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually with BeforeAndAfterAll {
   "A Recovery operation" should "process recovery of files" in {
-    val currentSourceFile1Metadata = "/ops/source-file-1".asTestResource.extractMetadata(checksum)
-    val currentSourceFile2Metadata = "/ops/source-file-2".asTestResource.extractMetadata(checksum)
-    val currentSourceFile3Metadata = "/ops/source-file-3".asTestResource.extractMetadata(checksum)
+    val currentSourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(checksum)
+    val currentSourceFile2Metadata = "/ops/source-file-2".asTestResource.extractFileMetadata(checksum)
+    val currentSourceFile3Metadata = "/ops/source-file-3".asTestResource.extractFileMetadata(checksum)
 
     // metadata represents file state during previous backup
     val originalSourceFile1Metadata = currentSourceFile1Metadata.copy(checksum = BigInt(0)) // file changed since backup
@@ -86,9 +86,9 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(1)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
 
-        mockTracker.statistics(MockRecoveryTracker.Statistic.FileExamined) should be(3)
-        mockTracker.statistics(MockRecoveryTracker.Statistic.FileCollected) should be(2)
-        mockTracker.statistics(MockRecoveryTracker.Statistic.FileProcessed) should be(2)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(3)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(2)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(2)
         mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(2)
         mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
         mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(1)
@@ -96,10 +96,88 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     }
   }
 
+  it should "support recovering to a different destination" in {
+    val targetDirectory = "/ops/recovery".asTestResource
+    targetDirectory.clear().await
+
+    val sourceDirectory1Metadata = "/ops".asTestResource.extractDirectoryMetadata().withRootAt("/ops")
+    val sourceDirectory2Metadata = "/ops/nested".asTestResource.extractDirectoryMetadata().withRootAt("/ops")
+
+    val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(checksum).withRootAt("/ops")
+    val sourceFile2Metadata = "/ops/source-file-2".asTestResource.extractFileMetadata(checksum).withRootAt("/ops")
+    val sourceFile3Metadata = "/ops/source-file-3".asTestResource.extractFileMetadata(checksum).withRootAt("/ops")
+    val sourceFile4Metadata = "/ops/nested/source-file-4".asTestResource.extractFileMetadata(checksum).withRootAt("/ops")
+    val sourceFile5Metadata = "/ops/nested/source-file-5".asTestResource.extractFileMetadata(checksum).withRootAt("/ops")
+
+    val metadata = DatasetMetadata(
+      contentChanged = Map(
+        sourceFile1Metadata.path -> sourceFile1Metadata,
+        sourceFile2Metadata.path -> sourceFile2Metadata,
+        sourceFile3Metadata.path -> sourceFile3Metadata,
+        sourceFile4Metadata.path -> sourceFile4Metadata,
+        sourceFile5Metadata.path -> sourceFile5Metadata
+      ),
+      metadataChanged = Map(
+        sourceDirectory1Metadata.path -> sourceDirectory1Metadata,
+        sourceDirectory2Metadata.path -> sourceDirectory2Metadata
+      ),
+      filesystem = FilesystemMetadata(
+        changes = Seq(
+          sourceDirectory1Metadata.path,
+          sourceDirectory2Metadata.path,
+          sourceFile1Metadata.path,
+          sourceFile2Metadata.path,
+          sourceFile3Metadata.path,
+          sourceFile4Metadata.path,
+          sourceFile5Metadata.path
+        )
+      )
+    )
+
+    val mockApiClient = MockServerApiEndpointClient()
+
+    val mockCoreClient = new MockServerCoreEndpointClient(
+      self = Node.generateId(),
+      crates = Map(
+        sourceFile1Metadata.crate -> ByteString("dummy-encrypted-data"),
+        sourceFile2Metadata.crate -> ByteString("dummy-encrypted-data"),
+        sourceFile3Metadata.crate -> ByteString("dummy-encrypted-data"),
+        sourceFile4Metadata.crate -> ByteString("dummy-encrypted-data"),
+        sourceFile5Metadata.crate -> ByteString("dummy-encrypted-data")
+      )
+    )
+
+    val mockTracker = new MockRecoveryTracker
+
+    val destination = Recovery.Destination(path = targetDirectory.toAbsolutePath.toString, keepStructure = true)
+
+    val recovery = createRecovery(
+      metadata = metadata,
+      clients = Clients(api = mockApiClient, core = mockCoreClient),
+      tracker = mockTracker,
+      destination = Some(destination)
+    )
+
+    recovery.start().map { _ =>
+      eventually {
+        // data pulled for all entities; 2 directories and 5 files
+        mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(5)
+        mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
+
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(7)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(7)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(7)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(7)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(1)
+      }
+    }
+  }
+
   it should "handle failures of specific files" in {
-    val currentSourceFile1Metadata = "/ops/source-file-1".asTestResource.extractMetadata(checksum)
-    val currentSourceFile2Metadata = "/ops/source-file-2".asTestResource.extractMetadata(checksum)
-    val currentSourceFile3Metadata = "/ops/source-file-3".asTestResource.extractMetadata(checksum)
+    val currentSourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(checksum)
+    val currentSourceFile2Metadata = "/ops/source-file-2".asTestResource.extractFileMetadata(checksum)
+    val currentSourceFile3Metadata = "/ops/source-file-3".asTestResource.extractFileMetadata(checksum)
 
     // metadata represents file state during previous backup
     val originalSourceFile1Metadata = currentSourceFile1Metadata.copy(checksum = BigInt(0)) // file changed since backup
@@ -146,9 +224,9 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(2)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
 
-        mockTracker.statistics(MockRecoveryTracker.Statistic.FileExamined) should be(3)
-        mockTracker.statistics(MockRecoveryTracker.Statistic.FileCollected) should be(3)
-        mockTracker.statistics(MockRecoveryTracker.Statistic.FileProcessed) should be(2)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(3)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(3)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(2)
         mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(2)
         mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(1)
         mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(1)
@@ -170,9 +248,9 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
         result should be(Done)
 
         eventually {
-          mockTracker.statistics(MockRecoveryTracker.Statistic.FileExamined) should be(0)
-          mockTracker.statistics(MockRecoveryTracker.Statistic.FileCollected) should be(0)
-          mockTracker.statistics(MockRecoveryTracker.Statistic.FileProcessed) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(1)
@@ -198,9 +276,9 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
           e shouldBe a[RuntimeException]
 
           eventually {
-            mockTracker.statistics(MockRecoveryTracker.Statistic.FileExamined) should be(0)
-            mockTracker.statistics(MockRecoveryTracker.Statistic.FileCollected) should be(0)
-            mockTracker.statistics(MockRecoveryTracker.Statistic.FileProcessed) should be(0)
+            mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(0)
+            mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(0)
+            mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(0)
             mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
             mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(1)
             mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(1)
@@ -209,7 +287,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
   }
 
   it should "allow stopping a running recovery" in {
-    val currentSourceFile1Metadata = "/ops/source-file-1".asTestResource.extractMetadata(checksum)
+    val currentSourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(checksum)
 
     // metadata represents file state during previous backup
     val originalSourceFile1Metadata = currentSourceFile1Metadata.copy(checksum = BigInt(0)) // file changed since backup
@@ -418,25 +496,29 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     PathQuery("some-file.txt") shouldBe a[PathQuery.ForFileName]
   }
 
-  "A Recovery destination" should "be convertible to TargetFile destination" in {
+  "A Recovery destination" should "be convertible to TargetEntity destination" in {
     import Recovery._
-    import stasis.client.model.TargetFile
-
-    val recoveryDestination = Destination(path = "/tmp/test/path", keepStructure = false)
+    import stasis.client.model.TargetEntity
 
     val (filesystem, _) = createMockFileSystem(
       setup = ResourceHelpers.FileSystemSetup.Unix
     )
 
-    Some(recoveryDestination).toTargetFileDestination(filesystem = filesystem) should be(
-      TargetFile.Destination.Directory(
+    val recoveryDestination = Destination(
+      path = "/tmp/test/path",
+      keepStructure = false,
+      filesystem = filesystem
+    )
+
+    Some(recoveryDestination).toTargetEntityDestination should be(
+      TargetEntity.Destination.Directory(
         path = filesystem.getPath(recoveryDestination.path),
         keepDefaultStructure = recoveryDestination.keepStructure
       )
     )
 
-    Option.empty[Destination].toTargetFileDestination(filesystem = filesystem) should be(
-      TargetFile.Destination.Default
+    Option.empty[Destination].toTargetEntityDestination should be(
+      TargetEntity.Destination.Default
     )
   }
 
@@ -495,7 +577,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
   private def createRecovery(
     metadata: DatasetMetadata,
     clients: Clients,
-    tracker: MockRecoveryTracker
+    tracker: MockRecoveryTracker,
+    destination: Option[Recovery.Destination] = None
   ): Recovery = {
     implicit val providers: Providers = Providers(
       checksum = checksum,
@@ -514,7 +597,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
       descriptor = Recovery.Descriptor(
         targetMetadata = metadata,
         query = None,
-        destination = None,
+        destination = destination,
         deviceSecret = secret
       )
     )

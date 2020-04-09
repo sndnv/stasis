@@ -2,15 +2,30 @@ package stasis.test.specs.unit.client.model
 
 import java.nio.file.Paths
 
-import stasis.client.model.TargetFile
+import stasis.client.model.TargetEntity
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.Fixtures
 
-class TargetFileSpec extends UnitSpec {
-  "A TargetFile" should "determine if its metadata has changed" in {
+class TargetEntitySpec extends UnitSpec {
+  "A TargetEntity" should "fail if different entity types provided for current and existing metadata" in {
+    an[IllegalArgumentException] should be thrownBy targetFile.copy(
+      existingMetadata = Fixtures.Metadata.DirectoryOneMetadata,
+      currentMetadata = Some(Fixtures.Metadata.FileOneMetadata)
+    )
+
+    an[IllegalArgumentException] should be thrownBy targetFile.copy(
+      existingMetadata = Fixtures.Metadata.FileOneMetadata,
+      currentMetadata = Some(Fixtures.Metadata.DirectoryOneMetadata)
+    )
+  }
+
+  it should "determine if its metadata has changed" in {
     targetFileWithoutCurrentMetadata.hasChanged should be(true)
     targetFileWithCurrentMetadata.hasChanged should be(false)
     targetFileWithUpdatedCurrentGroup.hasChanged should be(true)
+    targetDirectoryWithoutCurrentMetadata.hasChanged should be(true)
+    targetDirectoryWithCurrentMetadata.hasChanged should be(false)
+    targetDirectoryWithUpdatedCurrentGroup.hasChanged should be(true)
   }
 
   it should "determine if its content has changed" in {
@@ -18,6 +33,9 @@ class TargetFileSpec extends UnitSpec {
     targetFileWithCurrentMetadata.hasContentChanged should be(false)
     targetFileWithUpdatedCurrentSize.hasContentChanged should be(true)
     targetFileWithUpdatedCurrentChecksum.hasContentChanged should be(true)
+    targetDirectoryWithoutCurrentMetadata.hasContentChanged should be(false)
+    targetDirectoryWithCurrentMetadata.hasContentChanged should be(false)
+    targetDirectoryWithUpdatedCurrentGroup.hasContentChanged should be(false)
   }
 
   it should "provide its original file path" in {
@@ -35,20 +53,20 @@ class TargetFileSpec extends UnitSpec {
 
     targetFile
       .copy(
-        destination = TargetFile.Destination.Directory(path = testDestinationPath, keepDefaultStructure = true)
+        destination = TargetEntity.Destination.Directory(path = testDestinationPath, keepDefaultStructure = true)
       )
       .destinationPath should be(expectedPathWithDefaultStructure)
 
     targetFile
       .copy(
-        destination = TargetFile.Destination.Directory(path = testDestinationPath, keepDefaultStructure = false)
+        destination = TargetEntity.Destination.Directory(path = testDestinationPath, keepDefaultStructure = false)
       )
       .destinationPath should be(expectedPathWithoutDefaultStructure)
   }
 
-  private val targetFile = TargetFile(
+  private val targetFile = TargetEntity(
     path = Fixtures.Metadata.FileOneMetadata.path,
-    destination = TargetFile.Destination.Default,
+    destination = TargetEntity.Destination.Default,
     existingMetadata = Fixtures.Metadata.FileOneMetadata,
     currentMetadata = None
   )
@@ -67,4 +85,20 @@ class TargetFileSpec extends UnitSpec {
 
   private val targetFileWithUpdatedCurrentChecksum =
     targetFile.copy(currentMetadata = Some(Fixtures.Metadata.FileOneMetadata.copy(checksum = 0)))
+
+  private val targetDirectory = TargetEntity(
+    path = Fixtures.Metadata.DirectoryOneMetadata.path,
+    destination = TargetEntity.Destination.Default,
+    existingMetadata = Fixtures.Metadata.DirectoryOneMetadata,
+    currentMetadata = None
+  )
+
+  private val targetDirectoryWithoutCurrentMetadata =
+    targetDirectory
+
+  private val targetDirectoryWithCurrentMetadata =
+    targetDirectory.copy(currentMetadata = Some(Fixtures.Metadata.DirectoryOneMetadata))
+
+  private val targetDirectoryWithUpdatedCurrentGroup =
+    targetDirectory.copy(currentMetadata = Some(Fixtures.Metadata.DirectoryOneMetadata.copy(group = "none")))
 }

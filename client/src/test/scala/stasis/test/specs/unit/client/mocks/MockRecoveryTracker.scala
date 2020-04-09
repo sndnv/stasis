@@ -9,28 +9,28 @@ import stasis.test.specs.unit.client.mocks.MockRecoveryTracker.Statistic
 
 class MockRecoveryTracker extends RecoveryTracker {
   private val stats: Map[Statistic, AtomicInteger] = Map(
-    Statistic.FileExamined -> new AtomicInteger(0),
-    Statistic.FileCollected -> new AtomicInteger(0),
-    Statistic.FileProcessed -> new AtomicInteger(0),
+    Statistic.EntityExamined -> new AtomicInteger(0),
+    Statistic.EntityCollected -> new AtomicInteger(0),
+    Statistic.EntityProcessed -> new AtomicInteger(0),
     Statistic.MetadataApplied -> new AtomicInteger(0),
     Statistic.FailureEncountered -> new AtomicInteger(0),
     Statistic.Completed -> new AtomicInteger(0)
   )
 
-  override def fileExamined(
-    file: Path,
+  override def entityExamined(
+    entity: Path,
     metadataChanged: Boolean,
     contentChanged: Boolean
   )(implicit operation: Operation.Id): Unit =
-    stats(Statistic.FileExamined).incrementAndGet()
+    stats(Statistic.EntityExamined).incrementAndGet()
 
-  override def fileCollected(file: Path)(implicit operation: Operation.Id): Unit =
-    stats(Statistic.FileCollected).incrementAndGet()
+  override def entityCollected(entity: Path)(implicit operation: Operation.Id): Unit =
+    stats(Statistic.EntityCollected).incrementAndGet()
 
-  override def fileProcessed(file: Path)(implicit operation: Operation.Id): Unit =
-    stats(Statistic.FileProcessed).incrementAndGet()
+  override def entityProcessed(entity: Path)(implicit operation: Operation.Id): Unit =
+    stats(Statistic.EntityProcessed).incrementAndGet()
 
-  override def metadataApplied(file: Path)(implicit operation: Operation.Id): Unit =
+  override def metadataApplied(entity: Path)(implicit operation: Operation.Id): Unit =
     stats(Statistic.MetadataApplied).incrementAndGet()
 
   override def failureEncountered(failure: Throwable)(implicit operation: Operation.Id): Unit =
@@ -45,9 +45,9 @@ class MockRecoveryTracker extends RecoveryTracker {
 object MockRecoveryTracker {
   sealed trait Statistic
   object Statistic {
-    case object FileExamined extends Statistic
-    case object FileCollected extends Statistic
-    case object FileProcessed extends Statistic
+    case object EntityExamined extends Statistic
+    case object EntityCollected extends Statistic
+    case object EntityProcessed extends Statistic
     case object MetadataApplied extends Statistic
     case object FailureEncountered extends Statistic
     case object Completed extends Statistic

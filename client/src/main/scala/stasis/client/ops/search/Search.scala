@@ -22,6 +22,6 @@ object Search {
     definitionInfo: String,
     entryId: DatasetEntry.Id,
     entryCreated: Instant,
-    matches: Map[Path, FilesystemMetadata.FileState]
+    matches: Map[Path, FilesystemMetadata.EntityState]
   )
 }

@@ -5,40 +5,40 @@ import akka.stream.ActorMaterializer
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.collection.RecoveryCollector
-import stasis.client.model.TargetFile
-import stasis.client.ops.recovery.stages.FileCollection
+import stasis.client.model.TargetEntity
+import stasis.client.ops.recovery.stages.EntityCollection
 import stasis.client.ops.recovery.Providers
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
 import stasis.test.specs.unit.client.mocks._
 
-class FileCollectionSpec extends AsyncUnitSpec {
-  "A Recovery FileCollection stage" should "collect and filter files" in {
-    val targetFile1 = TargetFile(
+class EntityCollectionSpec extends AsyncUnitSpec {
+  "A Recovery EntityCollection stage" should "collect and filter files" in {
+    val targetFile1 = TargetEntity(
       path = Fixtures.Metadata.FileOneMetadata.path,
-      destination = TargetFile.Destination.Default,
+      destination = TargetEntity.Destination.Default,
       existingMetadata = Fixtures.Metadata.FileOneMetadata,
       currentMetadata = None
     )
 
-    val targetFile2 = TargetFile(
+    val targetFile2 = TargetEntity(
       path = Fixtures.Metadata.FileTwoMetadata.path,
-      destination = TargetFile.Destination.Default,
+      destination = TargetEntity.Destination.Default,
       existingMetadata = Fixtures.Metadata.FileTwoMetadata,
       currentMetadata = Some(Fixtures.Metadata.FileTwoMetadata)
     )
 
-    val targetFile3 = TargetFile(
+    val targetFile3 = TargetEntity(
       path = Fixtures.Metadata.FileThreeMetadata.path,
-      destination = TargetFile.Destination.Default,
+      destination = TargetEntity.Destination.Default,
       existingMetadata = Fixtures.Metadata.FileThreeMetadata,
       currentMetadata = Some(Fixtures.Metadata.FileThreeMetadata.copy(isHidden = true))
     )
 
     val mockTracker = new MockRecoveryTracker
 
-    val stage = new FileCollection {
+    val stage = new EntityCollection {
       override protected def collector: RecoveryCollector =
         new MockRecoveryCollector(List(targetFile1, targetFile2, targetFile3))
 
@@ -54,20 +54,20 @@ class FileCollectionSpec extends AsyncUnitSpec {
 
     implicit val operationId: Operation.Id = Operation.generateId()
 
-    stage.fileCollection
-      .runFold(Seq.empty[TargetFile])(_ :+ _)
+    stage.entityCollection
+      .runFold(Seq.empty[TargetEntity])(_ :+ _)
       .map { collectedFiles =>
         collectedFiles should be(Seq(targetFile1, targetFile3))
 
-        mockTracker.statistics(MockRecoveryTracker.Statistic.FileExamined) should be(3)
-        mockTracker.statistics(MockRecoveryTracker.Statistic.FileCollected) should be(2)
-        mockTracker.statistics(MockRecoveryTracker.Statistic.FileProcessed) should be(0)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(3)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(2)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(0)
         mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
         mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
         mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(0)
       }
   }
 
-  private implicit val system: ActorSystem = ActorSystem(name = "FileCollectionSpec")
+  private implicit val system: ActorSystem = ActorSystem(name = "EntityCollectionSpec")
   private implicit val mat: ActorMaterializer = ActorMaterializer()
 }

@@ -60,14 +60,14 @@ class DefaultOperationExecutor(
       operation.id
     }
 
-  override def startBackupWithFiles(
+  override def startBackupWithEntities(
     definition: DatasetDefinition.Id,
-    files: Seq[Path]
+    entities: Seq[Path]
   ): Future[Operation.Id] =
     for {
       descriptor <- backup.Backup.Descriptor(
         definition = definition,
-        collector = backup.Backup.Descriptor.Collector.WithFiles(files = files),
+        collector = backup.Backup.Descriptor.Collector.WithEntities(entities = entities),
         deviceSecret = secret
       )
       operation = new backup.Backup(descriptor = descriptor)

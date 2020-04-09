@@ -195,8 +195,8 @@ object DefaultOperationScheduler {
           )
 
           val result = assignment match {
-            case OperationScheduleAssignment.Backup(_, definition, files) if files.nonEmpty =>
-              executor.startBackupWithFiles(definition, files)
+            case OperationScheduleAssignment.Backup(_, definition, entities) if entities.nonEmpty =>
+              executor.startBackupWithEntities(definition, entities)
 
             case OperationScheduleAssignment.Backup(_, definition, _) =>
               executor.startBackupWithRules(definition)

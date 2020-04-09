@@ -3,7 +3,7 @@ package stasis.client.ops.recovery.stages
 import akka.stream.scaladsl.Flow
 import akka.{Done, NotUsed}
 import stasis.client.analysis.Metadata
-import stasis.client.model.TargetFile
+import stasis.client.model.TargetEntity
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.recovery.Providers
 import stasis.shared.ops.Operation
@@ -16,16 +16,16 @@ trait MetadataApplication {
 
   protected implicit def ec: ExecutionContext
 
-  def metadataApplication(implicit operation: Operation.Id): Flow[TargetFile, Done, NotUsed] =
-    Flow[TargetFile]
-      .mapAsync(parallelism.value) { targetFile =>
+  def metadataApplication(implicit operation: Operation.Id): Flow[TargetEntity, Done, NotUsed] =
+    Flow[TargetEntity]
+      .mapAsync(parallelism.value) { targetEntity =>
         Metadata
-          .applyFileMetadataTo(
-            metadata = targetFile.existingMetadata,
-            file = targetFile.destinationPath
+          .applyEntityMetadataTo(
+            metadata = targetEntity.existingMetadata,
+            entity = targetEntity.destinationPath
           )
-          .map(_ => targetFile)
+          .map(_ => targetEntity)
       }
-      .wireTap(targetFile => providers.track.metadataApplied(file = targetFile.destinationPath))
+      .wireTap(targetEntity => providers.track.metadataApplied(entity = targetEntity.destinationPath))
       .map(_ => Done)
 }

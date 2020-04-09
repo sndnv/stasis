@@ -2,77 +2,77 @@ package stasis.client.model
 
 import java.nio.file.{Path, Paths}
 
-import stasis.client.model.FilesystemMetadata.FileState
+import stasis.client.model.FilesystemMetadata.EntityState
 import stasis.shared.model.datasets.DatasetEntry
 
 import scala.util.{Failure, Success, Try}
 
 final case class FilesystemMetadata(
-  files: Map[Path, FileState]
+  entities: Map[Path, EntityState]
 ) {
   def updated(changes: Iterable[Path], latestEntry: DatasetEntry.Id): FilesystemMetadata = {
     val newAndUpdated = changes.map {
-      case file if files.contains(file) => file -> (FilesystemMetadata.FileState.Updated: FilesystemMetadata.FileState)
-      case file                         => file -> (FilesystemMetadata.FileState.New: FilesystemMetadata.FileState)
+      case entity if entities.contains(entity) => entity -> (EntityState.Updated: EntityState)
+      case entity                              => entity -> (EntityState.New: EntityState)
     }
 
-    val existing = files.mapValues {
-      case FilesystemMetadata.FileState.New                => FilesystemMetadata.FileState.Existing(entry = latestEntry)
-      case FilesystemMetadata.FileState.Updated            => FilesystemMetadata.FileState.Existing(entry = latestEntry)
-      case existing: FilesystemMetadata.FileState.Existing => existing
+    val existing = entities.mapValues {
+      case EntityState.New                => EntityState.Existing(entry = latestEntry)
+      case EntityState.Updated            => EntityState.Existing(entry = latestEntry)
+      case existing: EntityState.Existing => existing
     }
 
-    FilesystemMetadata(files = existing ++ newAndUpdated)
+    FilesystemMetadata(entities = existing ++ newAndUpdated)
   }
 }
 
 object FilesystemMetadata {
-  def empty: FilesystemMetadata = FilesystemMetadata(files = Map.empty)
+  def empty: FilesystemMetadata = FilesystemMetadata(entities = Map.empty)
 
   def apply(changes: Iterable[Path]): FilesystemMetadata =
     FilesystemMetadata(
-      files = changes.map(file => file -> FileState.New).toMap
+      entities = changes.map(entity => entity -> EntityState.New).toMap
     )
 
   def toProto(filesystem: FilesystemMetadata): proto.metadata.FilesystemMetadata =
     proto.metadata.FilesystemMetadata(
-      files = filesystem.files.map {
-        case (file, state) =>
-          file.toAbsolutePath.toString -> FileState.toProto(state)
+      entities = filesystem.entities.map {
+        case (entity, state) =>
+          entity.toAbsolutePath.toString -> EntityState.toProto(state)
       }
     )
 
   def fromProto(filesystem: Option[proto.metadata.FilesystemMetadata]): Try[FilesystemMetadata] =
     filesystem match {
       case Some(filesystem) =>
-        val files = foldTryMap(
-          filesystem.files.map {
-            case (file, state) => Paths.get(file) -> FileState.fromProto(state)
+        val entities = foldTryMap(
+          filesystem.entities.map {
+            case (entity, state) => Paths.get(entity) -> EntityState.fromProto(state)
           }
         )
 
-        files.map(FilesystemMetadata.apply)
+        entities.map(FilesystemMetadata.apply)
 
       case None =>
         Failure(new IllegalArgumentException("No filesystem metadata provided"))
     }
 
-  sealed trait FileState
+  sealed trait EntityState
 
-  object FileState {
-    case object New extends FileState
-    final case class Existing(entry: DatasetEntry.Id) extends FileState
-    case object Updated extends FileState
+  object EntityState {
+    case object New extends EntityState
+    final case class Existing(entry: DatasetEntry.Id) extends EntityState
+    case object Updated extends EntityState
 
-    def toProto(state: FileState): proto.metadata.FileState =
-      proto.metadata.FileState(
+    def toProto(state: EntityState): proto.metadata.EntityState =
+      proto.metadata.EntityState(
         state match {
-          case FileState.New =>
-            proto.metadata.FileState.State.PresentNew(proto.metadata.FileState.PresentNew())
+          case EntityState.New =>
+            proto.metadata.EntityState.State.PresentNew(proto.metadata.EntityState.PresentNew())
 
-          case FileState.Existing(entry) =>
-            proto.metadata.FileState.State.PresentExisting(
-              proto.metadata.FileState.PresentExisting(
+          case EntityState.Existing(entry) =>
+            proto.metadata.EntityState.State.PresentExisting(
+              proto.metadata.EntityState.PresentExisting(
                 entry = Some(
                   proto.metadata.Uuid(
                     mostSignificantBits = entry.getMostSignificantBits,
@@ -82,17 +82,17 @@ object FilesystemMetadata {
               )
             )
 
-          case FileState.Updated =>
-            proto.metadata.FileState.State.PresentUpdated(proto.metadata.FileState.PresentUpdated())
+          case EntityState.Updated =>
+            proto.metadata.EntityState.State.PresentUpdated(proto.metadata.EntityState.PresentUpdated())
         }
       )
 
-    def fromProto(state: proto.metadata.FileState): Try[FileState] =
+    def fromProto(state: proto.metadata.EntityState): Try[EntityState] =
       state.state match {
-        case _: proto.metadata.FileState.State.PresentNew =>
-          Success(FileState.New)
+        case _: proto.metadata.EntityState.State.PresentNew =>
+          Success(EntityState.New)
 
-        case existing: proto.metadata.FileState.State.PresentExisting =>
+        case existing: proto.metadata.EntityState.State.PresentExisting =>
           val tryEntry = existing.value.entry match {
             case Some(entryId) =>
               Success(
@@ -106,12 +106,12 @@ object FilesystemMetadata {
               Failure(new IllegalArgumentException("No entry ID found for existing file"))
           }
 
-          tryEntry.map(FileState.Existing)
+          tryEntry.map(EntityState.Existing)
 
-        case _: proto.metadata.FileState.State.PresentUpdated =>
-          Success(FileState.Updated)
+        case _: proto.metadata.EntityState.State.PresentUpdated =>
+          Success(EntityState.Updated)
 
-        case proto.metadata.FileState.State.Empty =>
+        case proto.metadata.EntityState.State.Empty =>
           Failure(new IllegalArgumentException("Unexpected empty file state encountered"))
       }
   }

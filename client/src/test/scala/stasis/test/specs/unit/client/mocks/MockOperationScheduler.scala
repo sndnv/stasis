@@ -28,7 +28,7 @@ class MockOperationScheduler extends OperationScheduler {
           assignment = OperationScheduleAssignment.Backup(
             schedule = Schedule.generateId(),
             definition = DatasetDefinition.generateId(),
-            files = Seq.empty
+            entities = Seq.empty
           ),
           schedule = Right(Generators.generateSchedule)
         ),

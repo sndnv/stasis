@@ -4,21 +4,21 @@ import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 
 import stasis.client.collection.BackupMetadataCollector
-import stasis.client.model.{FileMetadata, SourceFile}
+import stasis.client.model.{EntityMetadata, SourceEntity}
 import stasis.test.specs.unit.client.mocks.MockBackupMetadataCollector.Statistic
 
 import scala.concurrent.Future
 
-class MockBackupMetadataCollector(metadata: Map[Path, FileMetadata]) extends BackupMetadataCollector {
+class MockBackupMetadataCollector(metadata: Map[Path, EntityMetadata]) extends BackupMetadataCollector {
   private val stats: Map[Statistic, AtomicInteger] = Map(
     Statistic.FileCollected -> new AtomicInteger(0),
   )
 
-  override def collect(file: Path, existingMetadata: Option[FileMetadata]): Future[SourceFile] = {
+  override def collect(file: Path, existingMetadata: Option[EntityMetadata]): Future[SourceEntity] = {
     stats(Statistic.FileCollected).incrementAndGet()
     metadata.get(file) match {
       case Some(fileMetadata) =>
-        Future.successful(SourceFile(path = file, existingMetadata = None, currentMetadata = fileMetadata))
+        Future.successful(SourceEntity(path = file, existingMetadata = None, currentMetadata = fileMetadata))
 
       case None =>
         Future.failed(new IllegalArgumentException(s"No metadata found for file [$file]"))

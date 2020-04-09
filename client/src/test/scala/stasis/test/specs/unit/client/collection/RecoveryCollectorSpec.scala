@@ -5,7 +5,7 @@ import java.time.Instant
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import stasis.client.collection.RecoveryCollector
-import stasis.client.model.{DatasetMetadata, FileMetadata, FilesystemMetadata, TargetFile}
+import stasis.client.model.{DatasetMetadata, EntityMetadata, FilesystemMetadata, TargetEntity}
 import stasis.client.ops.ParallelismConfig
 import stasis.core.packaging.Crate
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -16,7 +16,7 @@ import scala.concurrent.Future
 
 class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
   "A default RecoveryCollector" should "collect recovery files based on dataset metadata" in {
-    val file2Metadata = FileMetadata(
+    val file2Metadata = EntityMetadata.File(
       path = "/collection/file-2".asTestResource,
       size = 0,
       link = None,
@@ -30,7 +30,7 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
       crate = Crate.generateId()
     )
 
-    val file3Metadata = FileMetadata(
+    val file3Metadata = EntityMetadata.File(
       path = "/collection/file-3".asTestResource,
       size = 0,
       link = None,
@@ -53,14 +53,14 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
           file3Metadata.path -> file3Metadata
         ),
         filesystem = FilesystemMetadata(
-          files = Map(
-            file2Metadata.path -> FilesystemMetadata.FileState.New,
-            file3Metadata.path -> FilesystemMetadata.FileState.Updated
+          entities = Map(
+            file2Metadata.path -> FilesystemMetadata.EntityState.New,
+            file3Metadata.path -> FilesystemMetadata.EntityState.Updated
           )
         )
       ),
       keep = (_, _) => true,
-      destination = TargetFile.Destination.Default,
+      destination = TargetEntity.Destination.Default,
       metadataCollector = new MockRecoveryMetadataCollector(
         metadata = Map(
           file2Metadata.path -> file2Metadata,
@@ -72,7 +72,7 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
 
     collector
       .collect()
-      .runFold(Seq.empty[TargetFile])(_ :+ _)
+      .runFold(Seq.empty[TargetEntity])(_ :+ _)
       .map(_.sortBy(_.path.toAbsolutePath.toString))
       .map {
         case targetFile2 :: targetFile3 :: Nil =>
@@ -99,19 +99,19 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
         Fixtures.Metadata.FileThreeMetadata.path -> Fixtures.Metadata.FileThreeMetadata
       ),
       filesystem = FilesystemMetadata(
-        files = Map(
-          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.FileState.New,
-          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.FileState.New,
-          Fixtures.Metadata.FileThreeMetadata.path -> FilesystemMetadata.FileState.Updated,
+        entities = Map(
+          Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.New,
+          Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.New,
+          Fixtures.Metadata.FileThreeMetadata.path -> FilesystemMetadata.EntityState.Updated,
         )
       )
     )
 
     Future
       .sequence(
-        RecoveryCollector.collectFileMetadata(
+        RecoveryCollector.collectEntityMetadata(
           targetMetadata = targetMetadata,
-          keep = (_, state) => state == FilesystemMetadata.FileState.New,
+          keep = (_, state) => state == FilesystemMetadata.EntityState.New,
           api = MockServerApiEndpointClient()
         )
       )

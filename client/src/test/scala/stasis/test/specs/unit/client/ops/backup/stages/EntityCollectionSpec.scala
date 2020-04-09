@@ -5,30 +5,30 @@ import akka.stream.ActorMaterializer
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.collection.BackupCollector
-import stasis.client.model.SourceFile
+import stasis.client.model.SourceEntity
 import stasis.client.ops.backup.Providers
-import stasis.client.ops.backup.stages.FileCollection
+import stasis.client.ops.backup.stages.EntityCollection
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
 import stasis.test.specs.unit.client.mocks._
 
-class FileCollectionSpec extends AsyncUnitSpec {
-  "A Backup FileCollection stage" should "collect and filter files" in {
-    val sourceFile1 = SourceFile(
+class EntityCollectionSpec extends AsyncUnitSpec {
+  "A Backup EntityCollection stage" should "collect and filter files" in {
+    val sourceFile1 = SourceEntity(
       path = Fixtures.Metadata.FileOneMetadata.path,
       existingMetadata = None,
       currentMetadata = Fixtures.Metadata.FileOneMetadata
     )
 
-    val sourceFile2 = SourceFile(
+    val sourceFile2 = SourceEntity(
       path = Fixtures.Metadata.FileTwoMetadata.path,
       existingMetadata = Some(Fixtures.Metadata.FileTwoMetadata),
       currentMetadata = Fixtures.Metadata.FileTwoMetadata
     )
 
-    val sourceFile3 = SourceFile(
+    val sourceFile3 = SourceEntity(
       path = Fixtures.Metadata.FileThreeMetadata.path,
       existingMetadata = Some(Fixtures.Metadata.FileThreeMetadata.copy(isHidden = true)),
       currentMetadata = Fixtures.Metadata.FileThreeMetadata
@@ -36,7 +36,7 @@ class FileCollectionSpec extends AsyncUnitSpec {
 
     val mockTracker = new MockBackupTracker
 
-    val stage = new FileCollection {
+    val stage = new EntityCollection {
       override protected def providers: Providers = Providers(
         checksum = Checksum.MD5,
         staging = new MockFileStaging(),
@@ -58,14 +58,14 @@ class FileCollectionSpec extends AsyncUnitSpec {
 
     implicit val operationId: Operation.Id = Operation.generateId()
 
-    stage.fileCollection
-      .runFold(Seq.empty[SourceFile])(_ :+ _)
+    stage.entityCollection
+      .runFold(Seq.empty[SourceEntity])(_ :+ _)
       .map { collectedFiles =>
         collectedFiles should be(Seq(sourceFile1, sourceFile3))
 
-        mockTracker.statistics(MockBackupTracker.Statistic.FileExamined) should be(3)
-        mockTracker.statistics(MockBackupTracker.Statistic.FileCollected) should be(2)
-        mockTracker.statistics(MockBackupTracker.Statistic.FileProcessed) should be(0)
+        mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(3)
+        mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(2)
+        mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
@@ -73,6 +73,6 @@ class FileCollectionSpec extends AsyncUnitSpec {
       }
   }
 
-  private implicit val system: ActorSystem = ActorSystem(name = "FileCollectionSpec")
+  private implicit val system: ActorSystem = ActorSystem(name = "EntityCollectionSpec")
   private implicit val mat: ActorMaterializer = ActorMaterializer()
 }

@@ -15,46 +15,46 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 final case class DatasetMetadata(
-  contentChanged: Map[Path, FileMetadata],
-  metadataChanged: Map[Path, FileMetadata],
+  contentChanged: Map[Path, EntityMetadata],
+  metadataChanged: Map[Path, EntityMetadata],
   filesystem: FilesystemMetadata
 ) {
   def collect(
-    file: Path,
+    entity: Path,
     api: ServerApiEndpointClient
-  )(implicit ec: ExecutionContext): Future[Option[FileMetadata]] = {
-    val existingMetadata = filesystem.files.get(file).map {
-      case FilesystemMetadata.FileState.New | FilesystemMetadata.FileState.Updated =>
-        contentChanged.get(file).orElse(metadataChanged.get(file)) match {
+  )(implicit ec: ExecutionContext): Future[Option[EntityMetadata]] = {
+    val existingMetadata = filesystem.entities.get(entity).map {
+      case FilesystemMetadata.EntityState.New | FilesystemMetadata.EntityState.Updated =>
+        contentChanged.get(entity).orElse(metadataChanged.get(entity)) match {
           case Some(metadata) =>
             Future.successful(metadata)
 
           case None =>
             Future.failed(
               new IllegalArgumentException(
-                s"Metadata for file [${file.toAbsolutePath}] not found"
+                s"Metadata for entity [${entity.toAbsolutePath}] not found"
               )
             )
         }
 
-      case FilesystemMetadata.FileState.Existing(entry) =>
+      case FilesystemMetadata.EntityState.Existing(entry) =>
         for {
           entryMetadata <- api.datasetMetadata(entry)
-          fileMetadata <- entryMetadata.contentChanged
-            .get(file)
-            .orElse(entryMetadata.metadataChanged.get(file)) match {
-            case Some(fileMetadata) =>
-              Future.successful(fileMetadata)
+          entityMetadata <- entryMetadata.contentChanged
+            .get(entity)
+            .orElse(entryMetadata.metadataChanged.get(entity)) match {
+            case Some(entityMetadata) =>
+              Future.successful(entityMetadata)
 
             case None =>
               Future.failed(
                 new IllegalArgumentException(
-                  s"Expected metadata for file [${file.toAbsolutePath}] but none was found in metadata for entry [$entry]"
+                  s"Expected metadata for entity [${entity.toAbsolutePath}] but none was found in metadata for entry [$entry]"
                 )
               )
           }
         } yield {
-          fileMetadata
+          entityMetadata
         }
     }
 
@@ -65,17 +65,17 @@ final case class DatasetMetadata(
   }
 
   def require(
-    file: Path,
+    entity: Path,
     api: ServerApiEndpointClient
-  )(implicit ec: ExecutionContext): Future[FileMetadata] =
-    collect(file = file, api = api).flatMap {
+  )(implicit ec: ExecutionContext): Future[EntityMetadata] =
+    collect(entity = entity, api = api).flatMap {
       case Some(metadata) =>
         Future.successful(metadata)
 
       case None =>
         Future.failed(
           new IllegalArgumentException(
-            s"Required metadata for file [${file.toAbsolutePath}] not found"
+            s"Required metadata for entity [${entity.toAbsolutePath}] not found"
           )
         )
     }
@@ -91,10 +91,10 @@ object DatasetMetadata {
   def toByteString(metadata: DatasetMetadata): akka.util.ByteString = {
     val data = proto.metadata.DatasetMetadata(
       contentChanged = metadata.contentChanged.map {
-        case (file, metadata) => file.toAbsolutePath.toString -> FileMetadata.toProto(metadata)
+        case (entity, metadata) => entity.toAbsolutePath.toString -> EntityMetadata.toProto(metadata)
       },
       metadataChanged = metadata.metadataChanged.map {
-        case (file, metadata) => file.toAbsolutePath.toString -> FileMetadata.toProto(metadata)
+        case (entity, metadata) => entity.toAbsolutePath.toString -> EntityMetadata.toProto(metadata)
       },
       filesystem = Some(FilesystemMetadata.toProto(metadata.filesystem))
     )
@@ -109,12 +109,12 @@ object DatasetMetadata {
       for {
         contentChanged <- foldTryMap(
           source = data.contentChanged.map {
-            case (file, metadata) => Paths.get(file) -> FileMetadata.fromProto(metadata)
+            case (entity, metadata) => Paths.get(entity) -> EntityMetadata.fromProto(metadata)
           }
         )
         metadataChanged <- foldTryMap(
           source = data.metadataChanged.map {
-            case (file, metadata) => Paths.get(file) -> FileMetadata.fromProto(metadata)
+            case (entity, metadata) => Paths.get(entity) -> EntityMetadata.fromProto(metadata)
           }
         )
         filesystem <- FilesystemMetadata.fromProto(data.filesystem)

@@ -13,7 +13,7 @@ import stasis.client.collection.rules.Specification
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.DatasetMetadata
 import stasis.client.ops.ParallelismConfig
-import stasis.client.ops.backup.stages.{FileCollection, FileProcessing, MetadataCollection, MetadataPush}
+import stasis.client.ops.backup.stages.{EntityCollection, EntityProcessing, MetadataCollection, MetadataPush}
 import stasis.client.tracking.BackupTracker
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.ops.Operation
@@ -46,8 +46,8 @@ class Backup(
   private val collector: BackupCollector = parent.descriptor.toBackupCollector(parent.providers.checksum)
 
   private val (killSwitch: UniqueKillSwitch, stream: Source[Done, NotUsed]) =
-    stages.fileCollection
-      .via(stages.fileProcessing)
+    stages.entityCollection
+      .via(stages.entityProcessing)
       .via(stages.metadataCollection)
       .via(stages.metadataPush)
       .viaMat(KillSwitches.single)(Keep.right[NotUsed, UniqueKillSwitch])
@@ -61,7 +61,7 @@ class Backup(
   override def stop(): Unit =
     killSwitch.shutdown()
 
-  private object stages extends FileCollection with FileProcessing with MetadataCollection with MetadataPush {
+  private object stages extends EntityCollection with EntityProcessing with MetadataCollection with MetadataPush {
     override protected lazy val targetDataset: DatasetDefinition = parent.descriptor.targetDataset
     override protected lazy val latestEntry: Option[DatasetEntry] = parent.descriptor.latestEntry
     override protected lazy val latestMetadata: Option[DatasetMetadata] = parent.descriptor.latestMetadata
@@ -93,15 +93,15 @@ object Backup {
       collector match {
         case Descriptor.Collector.WithRules(spec) =>
           new BackupCollector.Default(
-            files = spec.included.toList,
+            entities = spec.included.toList,
             latestMetadata = latestMetadata,
             metadataCollector = new BackupMetadataCollector.Default(checksum = checksum),
             api = providers.clients.api
           )
 
-        case Descriptor.Collector.WithFiles(files) =>
+        case Descriptor.Collector.WithEntities(entities) =>
           new BackupCollector.Default(
-            files = files.toList,
+            entities = entities.toList,
             latestMetadata = latestMetadata,
             metadataCollector = new BackupMetadataCollector.Default(checksum = checksum),
             api = providers.clients.api
@@ -113,7 +113,7 @@ object Backup {
     sealed trait Collector
     object Collector {
       final case class WithRules(spec: Specification) extends Collector
-      final case class WithFiles(files: Seq[Path]) extends Collector
+      final case class WithEntities(entities: Seq[Path]) extends Collector
     }
 
     def apply(

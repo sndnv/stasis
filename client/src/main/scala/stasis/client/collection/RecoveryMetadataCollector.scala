@@ -4,28 +4,28 @@ import java.nio.file.Path
 
 import akka.stream.Materializer
 import stasis.client.analysis.{Checksum, Metadata}
-import stasis.client.model.{FileMetadata, TargetFile}
+import stasis.client.model.{EntityMetadata, TargetEntity}
 
 import scala.concurrent.Future
 
 trait RecoveryMetadataCollector {
   def collect(
-    file: Path,
-    destination: TargetFile.Destination,
-    existingMetadata: FileMetadata
-  ): Future[TargetFile]
+    entity: Path,
+    destination: TargetEntity.Destination,
+    existingMetadata: EntityMetadata
+  ): Future[TargetEntity]
 }
 
 object RecoveryMetadataCollector {
   class Default(checksum: Checksum)(implicit mat: Materializer) extends RecoveryMetadataCollector {
     override def collect(
-      file: Path,
-      destination: TargetFile.Destination,
-      existingMetadata: FileMetadata
-    ): Future[TargetFile] =
+      entity: Path,
+      destination: TargetEntity.Destination,
+      existingMetadata: EntityMetadata
+    ): Future[TargetEntity] =
       Metadata.collectTarget(
         checksum = checksum,
-        file = file,
+        entity = entity,
         destination = destination,
         existingMetadata = existingMetadata
       )

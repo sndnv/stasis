@@ -6,7 +6,7 @@ import java.time.temporal.ChronoUnit
 
 import akka.util.ByteString
 import stasis.client.encryption.secrets.{DeviceSecret, Secret}
-import stasis.client.model.FileMetadata
+import stasis.client.model.EntityMetadata
 import stasis.core.packaging.Crate
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.model.devices.Device
@@ -16,7 +16,7 @@ import scala.concurrent.duration._
 
 object Fixtures {
   object Metadata {
-    final lazy val FileOneMetadata = FileMetadata(
+    final lazy val FileOneMetadata = EntityMetadata.File(
       path = Paths.get("/tmp/file/one"),
       size = 1,
       link = None,
@@ -25,12 +25,12 @@ object Fixtures {
       updated = Instant.MAX.truncatedTo(ChronoUnit.SECONDS),
       owner = "root",
       group = "root",
-      permissions = "rwx",
+      permissions = "rwxrwxrwx",
       checksum = 1,
       crate = java.util.UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
     )
 
-    final lazy val FileTwoMetadata = FileMetadata(
+    final lazy val FileTwoMetadata = EntityMetadata.File(
       path = Paths.get("/tmp/file/two"),
       size = 2,
       link = Some(Paths.get("/tmp/file/three")),
@@ -39,12 +39,12 @@ object Fixtures {
       updated = Instant.MIN.truncatedTo(ChronoUnit.SECONDS),
       owner = "root",
       group = "root",
-      permissions = "xwr",
+      permissions = "rwxrwxrwx",
       checksum = 42,
       crate = java.util.UUID.fromString("e672a956-1a95-4304-8af0-9418f0e43cba")
     )
 
-    final lazy val FileThreeMetadata = FileMetadata(
+    final lazy val FileThreeMetadata = EntityMetadata.File(
       path = Paths.get("/tmp/file/four"),
       size = 2,
       link = None,
@@ -53,9 +53,42 @@ object Fixtures {
       updated = Instant.MIN.truncatedTo(ChronoUnit.SECONDS),
       owner = "root",
       group = "root",
-      permissions = "xwr",
+      permissions = "rwxrwxrwx",
       checksum = 0,
       crate = java.util.UUID.fromString("7c98df29-a544-41e5-95ac-463987894fac")
+    )
+
+    final lazy val DirectoryOneMetadata = EntityMetadata.Directory(
+      path = Paths.get("/tmp/directory/one"),
+      link = None,
+      isHidden = false,
+      created = Instant.MIN.truncatedTo(ChronoUnit.SECONDS),
+      updated = Instant.MAX.truncatedTo(ChronoUnit.SECONDS),
+      owner = "root",
+      group = "root",
+      permissions = "rwxrwxrwx"
+    )
+
+    final lazy val DirectoryTwoMetadata = EntityMetadata.Directory(
+      path = Paths.get("/tmp/directory/two"),
+      link = Some(Paths.get("/tmp/file/three")),
+      isHidden = false,
+      created = Instant.MAX.truncatedTo(ChronoUnit.SECONDS),
+      updated = Instant.MIN.truncatedTo(ChronoUnit.SECONDS),
+      owner = "root",
+      group = "root",
+      permissions = "rwxrwxrwx"
+    )
+
+    final lazy val DirectoryThreeMetadata = EntityMetadata.Directory(
+      path = Paths.get("/tmp/directory/four"),
+      link = None,
+      isHidden = false,
+      created = Instant.MAX.truncatedTo(ChronoUnit.SECONDS),
+      updated = Instant.MIN.truncatedTo(ChronoUnit.SECONDS),
+      owner = "root",
+      group = "root",
+      permissions = "rwxrwxrwx"
     )
   }
 

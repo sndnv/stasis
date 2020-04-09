@@ -29,10 +29,10 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
       TrackerView.State.empty
     )
 
-    tracker.backup.fileExamined(file, metadataChanged = true, contentChanged = false)
-    tracker.backup.fileExamined(file, metadataChanged = true, contentChanged = true)
-    tracker.backup.fileCollected(file)
-    tracker.backup.fileProcessed(file, contentChanged = true)
+    tracker.backup.entityExamined(entity = file, metadataChanged = true, contentChanged = false)
+    tracker.backup.entityExamined(entity = file, metadataChanged = true, contentChanged = true)
+    tracker.backup.entityCollected(entity = file)
+    tracker.backup.entityProcessed(entity = file, contentChanged = true)
     tracker.backup.metadataCollected()
     tracker.backup.metadataPushed(entry = DatasetEntry.generateId())
     tracker.backup.failureEncountered(failure = new RuntimeException("test failure"))
@@ -71,11 +71,11 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
       TrackerView.State.empty
     )
 
-    tracker.recovery.fileExamined(file, metadataChanged = true, contentChanged = false)
-    tracker.recovery.fileExamined(file, metadataChanged = true, contentChanged = true)
-    tracker.recovery.fileCollected(file)
-    tracker.recovery.fileProcessed(file)
-    tracker.recovery.metadataApplied(file)
+    tracker.recovery.entityExamined(entity = file, metadataChanged = true, contentChanged = false)
+    tracker.recovery.entityExamined(entity = file, metadataChanged = true, contentChanged = true)
+    tracker.recovery.entityCollected(entity = file)
+    tracker.recovery.entityProcessed(entity = file)
+    tracker.recovery.metadataApplied(entity = file)
     tracker.recovery.failureEncountered(failure = new RuntimeException("test failure"))
     tracker.recovery.completed()
 

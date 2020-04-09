@@ -6,10 +6,10 @@ import akka.stream.scaladsl.Source
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.encryption.secrets.DeviceSecret
-import stasis.client.model.{FileMetadata, SourceFile}
+import stasis.client.model.{EntityMetadata, SourceEntity}
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.backup.Providers
-import stasis.client.ops.backup.stages.FileProcessing
+import stasis.client.ops.backup.stages.EntityProcessing
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
 import stasis.shared.model.datasets.DatasetDefinition
@@ -21,36 +21,36 @@ import stasis.test.specs.unit.client.mocks.{MockBackupTracker, _}
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
 
-class FileProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
-  "A Backup FileProcessing stage" should "process files with changed content and metadata" in {
-    val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractMetadata(
+class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
+  "A Backup EntityProcessing stage" should "process files with changed content and metadata" in {
+    val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(
       withChecksum = 1,
       withCrate = Crate.generateId()
     )
 
-    val sourceFile2Metadata = "/ops/source-file-2".asTestResource.extractMetadata(
+    val sourceFile2Metadata = "/ops/source-file-2".asTestResource.extractFileMetadata(
       withChecksum = 2,
       withCrate = Crate.generateId()
     )
 
-    val sourceFile3Metadata = "/ops/source-file-3".asTestResource.extractMetadata(
+    val sourceFile3Metadata = "/ops/source-file-3".asTestResource.extractFileMetadata(
       withChecksum = 3,
       withCrate = Crate.generateId()
     )
 
-    val sourceFile1 = SourceFile(
+    val sourceFile1 = SourceEntity(
       path = sourceFile1Metadata.path,
       existingMetadata = None,
       currentMetadata = sourceFile1Metadata
     )
 
-    val sourceFile2 = SourceFile(
+    val sourceFile2 = SourceEntity(
       path = sourceFile2Metadata.path,
       existingMetadata = Some(sourceFile2Metadata.copy(isHidden = true)),
       currentMetadata = sourceFile2Metadata
     )
 
-    val sourceFile3 = SourceFile(
+    val sourceFile3 = SourceEntity(
       path = sourceFile3Metadata.path,
       existingMetadata = Some(sourceFile3Metadata.copy(checksum = BigInt(9999))),
       currentMetadata = sourceFile3Metadata
@@ -64,7 +64,7 @@ class FileProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
 
     implicit val operationId: Operation.Id = Operation.generateId()
 
-    val stage = new FileProcessing {
+    val stage = new EntityProcessing {
       override protected def targetDataset: DatasetDefinition = Fixtures.Datasets.Default
       override protected def deviceSecret: DeviceSecret = Fixtures.Secrets.Default
       override protected def providers: Providers = Providers(
@@ -85,8 +85,8 @@ class FileProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
     }
 
     Source(List(sourceFile1, sourceFile2, sourceFile3))
-      .via(stage.fileProcessing)
-      .runFold(Seq.empty[Either[FileMetadata, FileMetadata]])(_ :+ _)
+      .via(stage.entityProcessing)
+      .runFold(Seq.empty[Either[EntityMetadata, EntityMetadata]])(_ :+ _)
       .map { stageOutput =>
         stageOutput should be(
           Seq(
@@ -111,9 +111,9 @@ class FileProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(2)
 
-        mockTracker.statistics(MockBackupTracker.Statistic.FileExamined) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.FileCollected) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.FileProcessed) should be(3)
+        mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+        mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+        mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(3)
         mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
@@ -122,12 +122,12 @@ class FileProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
   }
 
   it should "handle core push failures" in {
-    val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractMetadata(
+    val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(
       withChecksum = 1,
       withCrate = Crate.generateId()
     )
 
-    val sourceFile1 = SourceFile(
+    val sourceFile1 = SourceEntity(
       path = sourceFile1Metadata.path,
       existingMetadata = None,
       currentMetadata = sourceFile1Metadata
@@ -145,7 +145,7 @@ class FileProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
 
     implicit val operationId: Operation.Id = Operation.generateId()
 
-    val stage = new FileProcessing {
+    val stage = new EntityProcessing {
       override protected def targetDataset: DatasetDefinition = Fixtures.Datasets.Default
       override protected def deviceSecret: DeviceSecret = Fixtures.Secrets.Default
       override protected def providers: Providers = Providers(
@@ -166,8 +166,8 @@ class FileProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
     }
 
     Source(List(sourceFile1))
-      .via(stage.fileProcessing)
-      .runFold(Seq.empty[Either[FileMetadata, FileMetadata]])(_ :+ _)
+      .via(stage.entityProcessing)
+      .runFold(Seq.empty[Either[EntityMetadata, EntityMetadata]])(_ :+ _)
       .map { stageOutput =>
         fail(s"Unexpected result received: [$stageOutput]")
       }
@@ -191,9 +191,9 @@ class FileProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
           mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
           mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
 
-          mockTracker.statistics(MockBackupTracker.Statistic.FileExamined) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.FileCollected) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.FileProcessed) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
@@ -201,6 +201,6 @@ class FileProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
       }
   }
 
-  private implicit val system: ActorSystem = ActorSystem(name = "FileProcessingSpec")
+  private implicit val system: ActorSystem = ActorSystem(name = "EntityProcessingSpec")
   private implicit val mat: ActorMaterializer = ActorMaterializer()
 }
