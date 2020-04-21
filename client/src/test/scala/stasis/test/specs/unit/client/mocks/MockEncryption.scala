@@ -31,6 +31,8 @@ class MockEncryption() extends Encoder with Decoder {
         ByteString("metadata-encrypted")
       }
 
+  override def maxPlaintextSize: Long = 16 * 1024
+
   override def decrypt(fileSecret: DeviceFileSecret): Flow[ByteString, ByteString, NotUsed] =
     Flow[ByteString]
       .map { _ =>

@@ -390,16 +390,23 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
 
     val collectorDescriptor = Backup.Descriptor.Collector.WithEntities(entities = Seq.empty)
 
+    val limits = Backup.Limits(
+      maxChunkSize = 8192,
+      maxPartSize = 16384
+    )
+
     for {
       descriptorWithLatestEntry <- Backup.Descriptor(
         definition = datasetWithEntry.id,
         collector = collectorDescriptor,
-        deviceSecret = secret
+        deviceSecret = secret,
+        limits = limits
       )
       descriptorWithoutLatestEntry <- Backup.Descriptor(
         definition = datasetWithoutEntry.id,
         collector = collectorDescriptor,
-        deviceSecret = secret
+        deviceSecret = secret,
+        limits = limits
       )
     } yield {
       descriptorWithLatestEntry.targetDataset should be(datasetWithEntry)
@@ -407,12 +414,14 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
       descriptorWithLatestEntry.latestMetadata should be(Some(metadata))
       descriptorWithLatestEntry.deviceSecret should be(secret)
       descriptorWithLatestEntry.collector should be(collectorDescriptor)
+      descriptorWithLatestEntry.limits should be(limits)
 
       descriptorWithoutLatestEntry.targetDataset should be(datasetWithoutEntry)
       descriptorWithoutLatestEntry.latestEntry should be(None)
       descriptorWithoutLatestEntry.latestMetadata should be(None)
       descriptorWithoutLatestEntry.deviceSecret should be(secret)
       descriptorWithoutLatestEntry.collector should be(collectorDescriptor)
+      descriptorWithoutLatestEntry.limits should be(limits)
     }
   }
 
@@ -439,7 +448,11 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
       latestEntry = None,
       latestMetadata = None,
       deviceSecret = secret,
-      collector = Backup.Descriptor.Collector.WithEntities(entities = Seq.empty)
+      collector = Backup.Descriptor.Collector.WithEntities(entities = Seq.empty),
+      limits = Backup.Limits(
+        maxChunkSize = 8192,
+        maxPartSize = 16384
+      )
     )
 
     val descriptorWithRules = Backup
@@ -448,7 +461,11 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         latestEntry = None,
         latestMetadata = None,
         deviceSecret = secret,
-        collector = Backup.Descriptor.Collector.WithRules(spec = Specification.empty)
+        collector = Backup.Descriptor.Collector.WithRules(spec = Specification.empty),
+        limits = Backup.Limits(
+          maxChunkSize = 8192,
+          maxPartSize = 16384
+        )
       )
 
     descriptorWithFiles.toBackupCollector(checksum) shouldBe a[BackupCollector.Default]
@@ -516,7 +533,11 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         latestEntry = Some(Fixtures.Entries.Default),
         latestMetadata = Some(latestMetadata),
         deviceSecret = secret,
-        collector = collector
+        collector = collector,
+        limits = Backup.Limits(
+          maxChunkSize = 8192,
+          maxPartSize = 16384
+        )
       )
     )
   }

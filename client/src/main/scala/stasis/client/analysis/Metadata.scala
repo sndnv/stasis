@@ -24,7 +24,7 @@ object Metadata {
       baseMetadata <- extractBaseEntityMetadata(entity)
       entityMetadata <- collectEntityMetadata(
         currentMetadata = baseMetadata,
-        collectCrate = checksum => collectCrateForSourceFile(existingMetadata, checksum),
+        collectCrates = checksum => collectCratesForSourceFile(existingMetadata, checksum),
         checksum = checksum
       )
     } yield {
@@ -58,7 +58,7 @@ object Metadata {
         baseMetadata <- extractBaseEntityMetadata(destinationPath)
         entityMetadata <- collectEntityMetadata(
           currentMetadata = baseMetadata,
-          collectCrate = _ => collectCrateForTargetFile(existingMetadata),
+          collectCrates = _ => collectCratesForTargetFile(existingMetadata),
           checksum = checksum
         )
       } yield {
@@ -72,7 +72,7 @@ object Metadata {
   def collectEntityMetadata(
     currentMetadata: BaseEntityMetadata,
     checksum: Checksum,
-    collectCrate: BigInt => Future[Crate.Id]
+    collectCrates: BigInt => Future[Map[Path, Crate.Id]]
   )(implicit ec: ExecutionContext, mat: Materializer): Future[EntityMetadata] =
     if (currentMetadata.isDirectory) {
       Future.successful(
@@ -90,7 +90,7 @@ object Metadata {
     } else {
       for {
         currentChecksum <- checksum.calculate(currentMetadata.path)
-        crate <- collectCrate(currentChecksum)
+        crates <- collectCrates(currentChecksum)
       } yield {
         EntityMetadata.File(
           path = currentMetadata.path,
@@ -103,33 +103,33 @@ object Metadata {
           group = currentMetadata.group,
           permissions = currentMetadata.permissions,
           checksum = currentChecksum,
-          crate = crate
+          crates = crates
         )
       }
     }
 
-  def collectCrateForSourceFile(existingMetadata: Option[EntityMetadata], currentChecksum: BigInt): Future[Crate.Id] =
+  def collectCratesForSourceFile(existingMetadata: Option[EntityMetadata], currentChecksum: BigInt): Future[Map[Path, Crate.Id]] =
     existingMetadata match {
       case Some(file: EntityMetadata.File) if file.checksum == currentChecksum =>
-        Future.successful(file.crate)
+        Future.successful(file.crates)
 
       case Some(directory: EntityMetadata.Directory) =>
         Future.failed(
-          new IllegalArgumentException(s"Expected metadata for file but directory metadata [${directory.path}] provided")
+          new IllegalArgumentException(s"Expected metadata for file but directory metadata for [${directory.path}] provided")
         )
 
       case _ =>
-        Future.successful(Crate.generateId())
+        Future.successful(Map.empty)
     }
 
-  def collectCrateForTargetFile(existingMetadata: EntityMetadata): Future[Crate.Id] =
+  def collectCratesForTargetFile(existingMetadata: EntityMetadata): Future[Map[Path, Crate.Id]] =
     existingMetadata match {
       case file: EntityMetadata.File =>
-        Future.successful(file.crate)
+        Future.successful(file.crates)
 
       case directory: EntityMetadata.Directory =>
         Future.failed(
-          new IllegalArgumentException(s"Expected metadata for file but directory metadata [${directory.path}] provided")
+          new IllegalArgumentException(s"Expected metadata for file but directory metadata for [${directory.path}] provided")
         )
     }
 

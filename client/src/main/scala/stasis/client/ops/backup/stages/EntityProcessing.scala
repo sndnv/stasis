@@ -1,12 +1,12 @@
 package stasis.client.ops.backup.stages
 
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, Paths}
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.{FileIO, Flow, Source}
+import akka.stream.scaladsl.{FileIO, Flow, Source, SubFlow}
+import akka.stream.{IOResult, Materializer}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
-import stasis.client.encryption.secrets.DeviceSecret
+import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceSecret}
 import stasis.client.model.{EntityMetadata, SourceEntity}
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.backup.Providers
@@ -23,8 +23,13 @@ trait EntityProcessing {
   protected def providers: Providers
   protected def parallelism: ParallelismConfig
 
+  protected def maxChunkSize: Int
+  protected def maxPartSize: Long
+
   protected implicit def mat: Materializer
   protected implicit def ec: ExecutionContext
+
+  private val maximumPartSize = math.min(maxPartSize, providers.encryptor.maxPlaintextSize)
 
   def entityProcessing(implicit operation: Operation.Id): Flow[SourceEntity, Either[EntityMetadata, EntityMetadata], NotUsed] =
     Flow[SourceEntity]
@@ -42,49 +47,91 @@ trait EntityProcessing {
 
   private def processContentChanged(entity: SourceEntity): Future[EntityMetadata] =
     for {
-      crate <- Future.fromTry(entity.currentMetadata.collectCrate)
+      file <- EntityProcessing.expectFileMetadata(entity)
       staged <- stage(entity.path)
-      _ <- push(crate, staged).recoverWith { case NonFatal(failure) => discardOnFailure(staged, failure) }
+      crates <- push(staged)
       _ <- discard(staged)
     } yield {
-      entity.currentMetadata
+      file.copy(crates = crates.toMap)
     }
 
   private def processMetadataChanged(entity: SourceEntity): Future[EntityMetadata] =
     Future.successful(entity.currentMetadata)
 
-  private def stage(entity: Path): Future[Path] =
-    providers.staging
-      .temporary()
-      .flatMap { staged =>
-        FileIO
-          .fromPath(entity)
-          .via(providers.compressor.compress)
-          .via(providers.encryptor.encrypt(deviceSecret.toFileSecret(entity)))
-          .runWith(FileIO.toPath(staged))
-          .flatMap(result => Future.fromTry(result.status))
-          .map(_ => staged)
-      }
+  private def stage(entity: Path): Future[Seq[(Path, Path)]] = {
+    def createPartSecret(partId: Int): DeviceFileSecret = {
+      val partPath = Paths.get(s"${entity.toAbsolutePath}_$partId")
+      deviceSecret.toFileSecret(partPath)
+    }
 
-  private def push(crate: Crate.Id, staged: Path): Future[Done] = {
-    val content: Source[ByteString, NotUsed] = FileIO
-      .fromPath(staged)
-      .mapMaterializedValue(_ => NotUsed)
+    implicit val prv: Providers = providers
 
-    val manifest: Manifest = Manifest(
-      crate = crate,
-      origin = providers.clients.core.self,
-      source = providers.clients.core.self,
-      size = Files.size(staged),
-      copies = targetDataset.redundantCopies
-    )
-
-    providers.clients.core
-      .push(manifest, content)
+    FileIO
+      .fromPath(f = entity, chunkSize = maxChunkSize)
+      .compress()
+      .partition(withMaximumPartSize = maximumPartSize)
+      .stage(withPartSecret = createPartSecret)
   }
 
-  private def discardOnFailure(staged: Path, failure: Throwable): Future[Done] =
-    discard(staged).flatMap(_ => Future.failed(failure))
+  private def push(staged: Seq[(Path, Path)]): Future[Seq[(Path, Crate.Id)]] =
+    Future
+      .sequence(
+        staged.map {
+          case (partFile, staged) =>
+            val crate = Crate.generateId()
 
-  private def discard(staged: Path): Future[Done] = providers.staging.discard(staged)
+            val content: Source[ByteString, NotUsed] =
+              FileIO
+                .fromPath(staged)
+                .mapMaterializedValue(_ => NotUsed)
+
+            val manifest: Manifest = Manifest(
+              crate = crate,
+              origin = providers.clients.core.self,
+              source = providers.clients.core.self,
+              size = Files.size(staged),
+              copies = targetDataset.redundantCopies
+            )
+
+            providers.clients.core
+              .push(manifest, content)
+              .map(_ => (partFile, crate))
+        }
+      )
+      .recoverWith(discardOnPushFailure(staged))
+
+  private def discardOnPushFailure[T](staged: Seq[(Path, Path)]): PartialFunction[Throwable, Future[T]] = {
+    case NonFatal(e) =>
+      discard(staged).flatMap(_ => Future.failed(e))
+  }
+
+  private def discard(staged: Seq[(Path, Path)]): Future[Done] =
+    Future
+      .sequence(
+        staged.map {
+          case (_, staged) =>
+            providers.staging.discard(staged)
+        }
+      )
+      .map(_ => Done)
+
+  private type EntitySource = Source[ByteString, Future[IOResult]]
+  private type EntitySubFlow = SubFlow[ByteString, Future[IOResult], EntitySource#Repr, EntitySource#Closed]
+
+  private implicit class CompressedByteStringSource(source: EntitySource) extends internal.CompressedByteStringSource(source)
+  private implicit class PartitionedByteStringSource(source: EntitySource) extends internal.PartitionedByteStringSource(source)
+  private implicit class StagedSubFlow(subFlow: EntitySubFlow) extends internal.StagedSubFlow(subFlow)
+}
+
+object EntityProcessing {
+  def expectFileMetadata(entity: SourceEntity): Future[EntityMetadata.File] =
+    entity.currentMetadata match {
+      case file: EntityMetadata.File =>
+        Future.successful(file)
+
+      case directory: EntityMetadata.Directory =>
+        Future.failed(
+          new IllegalArgumentException(s"Expected metadata for file but directory metadata for [${directory.path}] provided")
+        )
+    }
 }

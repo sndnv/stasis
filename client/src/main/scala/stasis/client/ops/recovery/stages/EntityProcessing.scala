@@ -3,10 +3,10 @@ package stasis.client.ops.recovery.stages
 import java.nio.file.attribute.PosixFilePermissions
 import java.nio.file.{Files, Path}
 
+import akka.NotUsed
 import akka.stream.Materializer
-import akka.stream.scaladsl.{FileIO, Flow, Source}
+import akka.stream.scaladsl.{Flow, Source}
 import akka.util.ByteString
-import akka.{Done, NotUsed}
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.TargetEntity.Destination
 import stasis.client.model.{EntityMetadata, TargetEntity}
@@ -52,42 +52,61 @@ trait EntityProcessing {
   }
 
   private def processContentChanged(entity: TargetEntity): Future[TargetEntity] =
-    for {
-      crate <- Future.fromTry(entity.existingMetadata.collectCrate)
-      source <- pull(crate, entity.originalPath)
-      _ <- destage(source, entity)
-    } yield {
-      entity
+    EntityProcessing.expectFileMetadata(entity).flatMap { file =>
+      pull(file.crates, entity.originalPath)
+        .flatMap { crates =>
+          implicit val prv: Providers = providers
+
+          crates
+            .decrypt(withPartSecret = deviceSecret.toFileSecret)
+            .merge()
+            .decompress()
+            .destage(to = entity.destinationPath)
+        }
+        .map(_ => entity)
     }
 
   private def processMetadataChanged(entity: TargetEntity): Future[TargetEntity] =
     Future.successful(entity)
 
-  private def pull(crate: Crate.Id, entity: Path): Future[Source[ByteString, NotUsed]] =
-    providers.clients.core
-      .pull(crate)
-      .flatMap {
-        case Some(source) => Future.successful(source)
-        case None         => Future.failed(PullFailure(s"Failed to pull crate [$crate] for entity [$entity]"))
-      }
-
-  private def destage(
-    source: Source[ByteString, NotUsed],
-    entity: TargetEntity
-  ): Future[Done] =
-    providers.staging
-      .temporary()
-      .flatMap { staged =>
-        source
-          .via(providers.decryptor.decrypt(deviceSecret.toFileSecret(entity.originalPath)))
-          .via(providers.decompressor.decompress)
-          .runWith(FileIO.toPath(staged))
-          .flatMap(result => Future.fromTry(result.status))
-          .flatMap(_ => providers.staging.destage(from = staged, to = entity.destinationPath))
-      }
+  private def pull(crates: Map[Path, Crate.Id], entity: Path): Future[Iterable[(Path, Source[ByteString, NotUsed])]] =
+    Future
+      .sequence(
+        crates.map {
+          case (partPath, crate) =>
+            providers.clients.core
+              .pull(crate)
+              .flatMap {
+                case Some(source) => Future.successful((partPath, source))
+                case None         => Future.failed(PullFailure(s"Failed to pull crate [$crate] for entity [$entity]"))
+              }
+        }
+      )
 
   private val targetDirectoryPermissions = "rwx------"
 
   private val targetDirectoryAttributes =
     PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(targetDirectoryPermissions))
+
+  private type CrateIds = Map[Path, Crate.Id]
+  private type CratesSources = Iterable[(Path, Source[ByteString, NotUsed])]
+  private type EntitySource = Source[ByteString, NotUsed]
+
+  private implicit class DecryptedCrates(crates: CratesSources) extends internal.DecryptedCrates(crates)
+  private implicit class MergedCrates(crates: CratesSources) extends internal.MergedCrates(crates)
+  private implicit class DecompressedByteStringSource(source: EntitySource) extends internal.DecompressedByteStringSource(source)
+  private implicit class DestagedByteStringSource(source: EntitySource) extends internal.DestagedByteStringSource(source)
+}
+
+object EntityProcessing {
+  def expectFileMetadata(entity: TargetEntity): Future[EntityMetadata.File] =
+    entity.existingMetadata match {
+      case file: EntityMetadata.File =>
+        Future.successful(file)
+
+      case directory: EntityMetadata.Directory =>
+        Future.failed(
+          new IllegalArgumentException(s"Expected metadata for file but directory metadata for [${directory.path}] provided")
+        )
+    }
 }

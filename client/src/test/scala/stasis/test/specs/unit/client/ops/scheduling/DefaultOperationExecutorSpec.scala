@@ -287,7 +287,13 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
 
     new DefaultOperationExecutor(
       config = DefaultOperationExecutor.Config(
-        rulesFile = "/ops/scheduling/test.rules".asTestResource
+        backup = DefaultOperationExecutor.Config.Backup(
+          rulesFile = "/ops/scheduling/test.rules".asTestResource,
+          limits = backup.Backup.Limits(
+            maxChunkSize = 8192,
+            maxPartSize = 16384
+          )
+        )
       ),
       secret = Fixtures.Secrets.Default
     )

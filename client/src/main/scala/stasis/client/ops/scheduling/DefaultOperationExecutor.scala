@@ -47,11 +47,12 @@ class DefaultOperationExecutor(
     definition: DatasetDefinition.Id
   ): Future[Operation.Id] =
     for {
-      rules <- SchedulingConfig.rules(file = config.rulesFile)
+      rules <- SchedulingConfig.rules(file = config.backup.rulesFile)
       descriptor <- backup.Backup.Descriptor(
         definition = definition,
         collector = backup.Backup.Descriptor.Collector.WithRules(spec = Specification(rules = rules)),
-        deviceSecret = secret
+        deviceSecret = secret,
+        limits = config.backup.limits
       )
       operation = new backup.Backup(descriptor = descriptor)
       _ <- activeOperations.put(operation.id, operation)
@@ -68,7 +69,8 @@ class DefaultOperationExecutor(
       descriptor <- backup.Backup.Descriptor(
         definition = definition,
         collector = backup.Backup.Descriptor.Collector.WithEntities(entities = entities),
-        deviceSecret = secret
+        deviceSecret = secret,
+        limits = config.backup.limits
       )
       operation = new backup.Backup(descriptor = descriptor)
       _ <- activeOperations.put(operation.id, operation)
@@ -165,6 +167,13 @@ class DefaultOperationExecutor(
 
 object DefaultOperationExecutor {
   final case class Config(
-    rulesFile: Path
+    backup: Config.Backup
   )
+
+  object Config {
+    final case class Backup(
+      rulesFile: Path,
+      limits: backup.Backup.Limits
+    )
+  }
 }

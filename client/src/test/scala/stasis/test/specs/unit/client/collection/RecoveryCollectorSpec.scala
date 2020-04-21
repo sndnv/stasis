@@ -1,5 +1,6 @@
 package stasis.test.specs.unit.client.collection
 
+import java.nio.file.Paths
 import java.time.Instant
 
 import akka.actor.ActorSystem
@@ -16,8 +17,11 @@ import scala.concurrent.Future
 
 class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
   "A default RecoveryCollector" should "collect recovery files based on dataset metadata" in {
+    val file2 = "/collection/file-2".asTestResource
+    val file3 = "/collection/file-3".asTestResource
+
     val file2Metadata = EntityMetadata.File(
-      path = "/collection/file-2".asTestResource,
+      path = file2,
       size = 0,
       link = None,
       isHidden = false,
@@ -27,11 +31,13 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
       group = "some-group",
       permissions = "rwxrwxrwx",
       checksum = BigInt(1),
-      crate = Crate.generateId()
+      crates = Map(
+        Paths.get(s"${file2}_0") -> Crate.generateId()
+      )
     )
 
     val file3Metadata = EntityMetadata.File(
-      path = "/collection/file-3".asTestResource,
+      path = file3,
       size = 0,
       link = None,
       isHidden = false,
@@ -41,7 +47,9 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
       group = "some-group",
       permissions = "rwxrwxrwx",
       checksum = BigInt(1),
-      crate = Crate.generateId()
+      crates = Map(
+        Paths.get(s"${file3}_0") -> Crate.generateId()
+      )
     )
 
     val collector = new RecoveryCollector.Default(

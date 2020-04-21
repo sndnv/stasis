@@ -8,4 +8,5 @@ import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceMetadataSecret}
 trait Encoder {
   def encrypt(fileSecret: DeviceFileSecret): Flow[ByteString, ByteString, NotUsed]
   def encrypt(metadataSecret: DeviceMetadataSecret): Flow[ByteString, ByteString, NotUsed]
+  def maxPlaintextSize: Long
 }

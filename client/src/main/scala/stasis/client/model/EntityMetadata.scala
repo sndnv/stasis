@@ -5,7 +5,7 @@ import java.time.Instant
 
 import stasis.core.packaging.Crate
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Try}
 
 sealed trait EntityMetadata {
   def path: Path
@@ -16,8 +16,6 @@ sealed trait EntityMetadata {
   def owner: String
   def group: String
   def permissions: String
-
-  def collectCrate: Try[Crate.Id]
 }
 
 object EntityMetadata {
@@ -32,11 +30,8 @@ object EntityMetadata {
     override val permissions: String,
     size: Long,
     checksum: BigInt,
-    crate: Crate.Id
-  ) extends EntityMetadata {
-    override def collectCrate: Try[Crate.Id] =
-      Success(crate)
-  }
+    crates: Map[Path, Crate.Id]
+  ) extends EntityMetadata
 
   final case class Directory(
     override val path: Path,
@@ -47,10 +42,7 @@ object EntityMetadata {
     override val owner: String,
     override val group: String,
     override val permissions: String
-  ) extends EntityMetadata {
-    override def collectCrate: Try[Crate.Id] =
-      Failure(new IllegalStateException(s"Crate not available for directory entity [$path]"))
-  }
+  ) extends EntityMetadata
 
   def toProto(entityMetadata: EntityMetadata): proto.metadata.EntityMetadata =
     entityMetadata match {
@@ -66,12 +58,7 @@ object EntityMetadata {
           group = fileMetadata.group,
           permissions = fileMetadata.permissions,
           checksum = com.google.protobuf.ByteString.copyFrom(fileMetadata.checksum.toByteArray),
-          crate = Some(
-            proto.metadata.Uuid(
-              mostSignificantBits = fileMetadata.crate.getMostSignificantBits,
-              leastSignificantBits = fileMetadata.crate.getLeastSignificantBits
-            )
-          )
+          crates = fileMetadata.crates.map(toProtoCrateData)
         )
 
         proto.metadata.EntityMetadata(entity = proto.metadata.EntityMetadata.Entity.File(metadata))
@@ -94,35 +81,20 @@ object EntityMetadata {
   def fromProto(entityMetadata: proto.metadata.EntityMetadata): Try[EntityMetadata] =
     entityMetadata.entity match {
       case proto.metadata.EntityMetadata.Entity.File(fileMetadata) =>
-        val tryCrate = fileMetadata.crate match {
-          case Some(crateId) =>
-            Success(
-              new java.util.UUID(
-                crateId.mostSignificantBits,
-                crateId.leastSignificantBits
-              )
-            )
-
-          case None =>
-            Failure(new IllegalArgumentException(s"Metadata for file [${fileMetadata.path}] missing crate ID"))
-        }
-
-        tryCrate.flatMap { crate =>
-          Try {
-            File(
-              path = Paths.get(fileMetadata.path),
-              size = fileMetadata.size,
-              link = if (fileMetadata.link.nonEmpty) Some(Paths.get(fileMetadata.link)) else None,
-              isHidden = fileMetadata.isHidden,
-              created = Instant.ofEpochSecond(fileMetadata.created),
-              updated = Instant.ofEpochSecond(fileMetadata.updated),
-              owner = fileMetadata.owner,
-              group = fileMetadata.group,
-              permissions = fileMetadata.permissions,
-              checksum = BigInt(fileMetadata.checksum.toByteArray),
-              crate = crate
-            )
-          }
+        Try {
+          File(
+            path = Paths.get(fileMetadata.path),
+            size = fileMetadata.size,
+            link = if (fileMetadata.link.nonEmpty) Some(Paths.get(fileMetadata.link)) else None,
+            isHidden = fileMetadata.isHidden,
+            created = Instant.ofEpochSecond(fileMetadata.created),
+            updated = Instant.ofEpochSecond(fileMetadata.updated),
+            owner = fileMetadata.owner,
+            group = fileMetadata.group,
+            permissions = fileMetadata.permissions,
+            checksum = BigInt(fileMetadata.checksum.toByteArray),
+            crates = fileMetadata.crates.map(fromProtoCrateData)
+          )
         }
 
       case proto.metadata.EntityMetadata.Entity.Directory(directoryMetadata) =>
@@ -141,5 +113,29 @@ object EntityMetadata {
 
       case proto.metadata.EntityMetadata.Entity.Empty =>
         Failure(new IllegalArgumentException("Expected entity in metadata but none was found"))
+    }
+
+  private def fromProtoCrateData(crateData: (String, proto.metadata.Uuid)): (Path, java.util.UUID) =
+    crateData match {
+      case (path, uuid) =>
+        (
+          Paths.get(path),
+          new java.util.UUID(
+            uuid.mostSignificantBits,
+            uuid.leastSignificantBits
+          )
+        )
+    }
+
+  private def toProtoCrateData(crateData: (Path, java.util.UUID)): (String, proto.metadata.Uuid) =
+    crateData match {
+      case (path, uuid) =>
+        (
+          path.toAbsolutePath.toString,
+          proto.metadata.Uuid(
+            mostSignificantBits = uuid.getMostSignificantBits,
+            leastSignificantBits = uuid.getLeastSignificantBits
+          )
+        )
     }
 }

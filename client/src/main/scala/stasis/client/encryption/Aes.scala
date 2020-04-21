@@ -17,6 +17,11 @@ object Aes extends Encoder with Decoder {
   // maximum tag size; for more info see javax.crypto.spec.GCMParameterSpec
   final val TagSize: Int = 128 // bits
 
+  // various suggestions exist about the max plaintext size for GCM;
+  // the limit here is set as 4 GB, well below all suggested maximum sizes
+  // for more info see https://crypto.stackexchange.com/q/31793 and https://crypto.stackexchange.com/q/44113
+  final val MaximumPlaintextSize: Long = 4L * 1024 * 1024 * 1024
+
   def generateKey(): ByteString = {
     val generator = KeyGenerator.getInstance("AES")
     generator.init(new SecureRandom())
@@ -35,6 +40,8 @@ object Aes extends Encoder with Decoder {
 
   override def decrypt(metadataSecret: DeviceMetadataSecret): Flow[ByteString, ByteString, NotUsed] =
     Flow.fromGraph(metadataSecret.decryption)
+
+  override def maxPlaintextSize: Long = MaximumPlaintextSize
 
   def encryption(key: ByteString, iv: ByteString): CipherStage =
     new CipherStage(

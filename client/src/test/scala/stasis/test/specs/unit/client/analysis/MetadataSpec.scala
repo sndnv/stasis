@@ -62,40 +62,40 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
 
   it should "collect file crate ID (source file / existing metadata / matching checksum)" in {
     Metadata
-      .collectCrateForSourceFile(
+      .collectCratesForSourceFile(
         existingMetadata = Some(Fixtures.Metadata.FileOneMetadata),
         currentChecksum = Fixtures.Metadata.FileOneMetadata.checksum
       )
-      .map { crate =>
-        crate should be(Fixtures.Metadata.FileOneMetadata.crate)
+      .map { crates =>
+        crates should be(Fixtures.Metadata.FileOneMetadata.crates)
       }
   }
 
   it should "collect file crate ID (source file / existing metadata / mismatching checksum)" in {
     Metadata
-      .collectCrateForSourceFile(
+      .collectCratesForSourceFile(
         existingMetadata = Some(Fixtures.Metadata.FileOneMetadata),
         currentChecksum = BigInt(42)
       )
-      .map { crate =>
-        crate should not be Fixtures.Metadata.FileOneMetadata.crate
+      .map { crates =>
+        crates should not be Fixtures.Metadata.FileOneMetadata.crates
       }
   }
 
   it should "collect file crate ID (source file / missing metadata)" in {
     Metadata
-      .collectCrateForSourceFile(
+      .collectCratesForSourceFile(
         existingMetadata = None,
         currentChecksum = Fixtures.Metadata.FileOneMetadata.checksum
       )
-      .map { crate =>
-        crate should not be Fixtures.Metadata.FileOneMetadata.crate
+      .map { crates =>
+        crates should not be Fixtures.Metadata.FileOneMetadata.crates
       }
   }
 
   it should "fail to collect file crate ID with directory metadata (source file)" in {
     Metadata
-      .collectCrateForSourceFile(
+      .collectCratesForSourceFile(
         existingMetadata = Some(Fixtures.Metadata.DirectoryOneMetadata),
         currentChecksum = Fixtures.Metadata.FileOneMetadata.checksum
       )
@@ -105,24 +105,24 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       .recover {
         case NonFatal(e: IllegalArgumentException) =>
           e.getMessage should be(
-            s"Expected metadata for file but directory metadata [${Fixtures.Metadata.DirectoryOneMetadata.path}] provided"
+            s"Expected metadata for file but directory metadata for [${Fixtures.Metadata.DirectoryOneMetadata.path}] provided"
           )
       }
   }
 
   it should "collect file crate ID (target file)" in {
     Metadata
-      .collectCrateForTargetFile(
+      .collectCratesForTargetFile(
         existingMetadata = Fixtures.Metadata.FileOneMetadata
       )
-      .map { crate =>
-        crate should be(Fixtures.Metadata.FileOneMetadata.crate)
+      .map { crates =>
+        crates should be(Fixtures.Metadata.FileOneMetadata.crates)
       }
   }
 
   it should "fail to collect file crate ID with directory metadata (target file)" in {
     Metadata
-      .collectCrateForTargetFile(
+      .collectCratesForTargetFile(
         existingMetadata = Fixtures.Metadata.DirectoryOneMetadata,
       )
       .map { result =>
@@ -131,7 +131,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       .recover {
         case NonFatal(e: IllegalArgumentException) =>
           e.getMessage should be(
-            s"Expected metadata for file but directory metadata [${Fixtures.Metadata.DirectoryOneMetadata.path}] provided"
+            s"Expected metadata for file but directory metadata for [${Fixtures.Metadata.DirectoryOneMetadata.path}] provided"
           )
       }
   }
@@ -140,6 +140,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
     val sourceFileResourcesPath = "analysis/metadata-source-file"
     val sourceFile = s"/$sourceFileResourcesPath".asTestResource
 
+    val expectedCratePart = Paths.get(s"${sourceFile}_0")
     val expectedCrateId = java.util.UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
     val expectedChecksum = BigInt("338496524657487844672953225842489206917")
 
@@ -150,7 +151,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       actualFileMetadata <- Metadata.collectEntityMetadata(
         currentMetadata = baseMetadata,
         checksum = Checksum.MD5,
-        collectCrate = _ => Future.successful(expectedCrateId)
+        collectCrates = _ => Future.successful(Map(expectedCratePart -> expectedCrateId))
       )
     } yield {
       actualFileMetadata match {
@@ -165,7 +166,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
 
           metadata.size should be(26)
           metadata.checksum should be(expectedChecksum)
-          metadata.crate should be(expectedCrateId)
+          metadata.crates should be(Map(expectedCratePart -> expectedCrateId))
 
         case _: EntityMetadata.Directory =>
           fail("Expected file but received directory metadata")
@@ -184,7 +185,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       actualDirectoryMetadata <- Metadata.collectEntityMetadata(
         currentMetadata = baseMetadata,
         checksum = Checksum.MD5,
-        collectCrate = _ => Future.failed(new IllegalStateException("Not available"))
+        collectCrates = _ => Future.failed(new IllegalStateException("Not available"))
       )
     } yield {
       actualDirectoryMetadata match {
@@ -220,7 +221,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       group = attributes.group().getName,
       permissions = "rwxrwxrwx",
       checksum = BigInt(1),
-      crate = Crate.generateId()
+      crates = Map(Paths.get(s"${targetFile}_0") -> Crate.generateId())
     )
 
     for {
@@ -285,7 +286,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       group = "root",
       permissions = "rwxrwxrwx",
       checksum = BigInt("338496524657487844672953225842489206917"),
-      crate = Crate.generateId()
+      crates = Map(Paths.get(s"${sourceFile}_0") -> Crate.generateId())
     )
 
     Metadata
@@ -308,7 +309,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
             metadata.group should not be empty
             metadata.permissions should not be empty
             metadata.checksum should be(existingFileMetadata.checksum)
-            metadata.crate should be(existingFileMetadata.crate)
+            metadata.crates should be(existingFileMetadata.crates)
 
           case _: EntityMetadata.Directory =>
             fail("Expected file but received directory metadata")
@@ -331,7 +332,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       group = "root",
       permissions = "rwxrwxrwx",
       checksum = BigInt(1),
-      crate = Crate.generateId()
+      crates = Map(Paths.get(s"${sourceFile}_0") -> Crate.generateId())
     )
 
     val expectedChecksum = BigInt("338496524657487844672953225842489206917")
@@ -356,7 +357,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
             metadata.group should not be empty
             metadata.permissions should not be empty
             metadata.checksum should be(expectedChecksum)
-            metadata.crate should not be existingFileMetadata.crate
+            metadata.crates should not be existingFileMetadata.crates
 
           case _: EntityMetadata.Directory =>
             fail("Expected file but received directory metadata")
@@ -379,7 +380,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       group = "root",
       permissions = "rwxrwxrwx",
       checksum = BigInt(1),
-      crate = Crate.generateId()
+      crates = Map(Paths.get(s"${targetFile}_0") -> Crate.generateId())
     )
 
     val expectedChecksum = BigInt("338496524657487844672953225842489206917")
@@ -405,7 +406,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
             currentMetadata.group should not be empty
             currentMetadata.permissions should not be empty
             currentMetadata.checksum should be(expectedChecksum)
-            currentMetadata.crate should be(existingFileMetadata.crate)
+            currentMetadata.crates should be(existingFileMetadata.crates)
 
           case Some(_: EntityMetadata.Directory) =>
             fail("Expected file but received directory metadata")
@@ -431,7 +432,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       group = "root",
       permissions = "rwxrwxrwx",
       checksum = BigInt(1),
-      crate = Crate.generateId()
+      crates = Map(Paths.get(s"${targetFile}_0") -> Crate.generateId())
     )
 
     Metadata

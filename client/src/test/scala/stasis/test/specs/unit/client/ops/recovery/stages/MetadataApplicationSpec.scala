@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.client.ops.recovery.stages
 
-import java.nio.file.{Files, LinkOption}
+import java.nio.file.{Files, LinkOption, Paths}
 import java.nio.file.attribute.PosixFileAttributes
 import java.time.Instant
 
@@ -38,7 +38,7 @@ class MetadataApplicationSpec extends AsyncUnitSpec { spec =>
       group = attributes.group().getName,
       permissions = "rwxrwxrwx",
       checksum = BigInt(1),
-      crate = Crate.generateId()
+      crates = Map(Paths.get(s"${targetFile}_0") -> Crate.generateId())
     )
 
     val mockTracker = new MockRecoveryTracker

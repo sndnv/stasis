@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.client.ops.recovery.stages
 
+import java.nio.file.Paths
+
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
 import akka.stream.{ActorMaterializer, Materializer}
@@ -34,6 +36,21 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
       withCrate = Crate.generateId()
     )
 
+    val targetFile4Path = "/ops/nested/source-file-4".asTestResource
+    val targetFile4Metadata = targetFile4Path
+      .extractFileMetadata(
+        withChecksum = 3,
+        withCrate = Crate.generateId()
+      )
+      .copy(
+        crates = Map(
+          Paths.get(s"${targetFile4Path}_0") -> Crate.generateId(),
+          Paths.get(s"${targetFile4Path}_1") -> Crate.generateId(),
+          Paths.get(s"${targetFile4Path}_2") -> Crate.generateId(),
+          Paths.get(s"${targetFile4Path}_3") -> Crate.generateId()
+        )
+      )
+
     val targetDirectoryMetadata = "/ops/nested".asTestResource.extractDirectoryMetadata().withRootAt("/ops")
 
     val ignoredDirectoryMetadata = Fixtures.Metadata.DirectoryOneMetadata
@@ -53,6 +70,13 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
       destination = TargetEntity.Destination.Directory(path = targetDirectoryDestination, keepDefaultStructure = false),
       existingMetadata = targetFile3Metadata,
       currentMetadata = Some(targetFile3Metadata.copy(checksum = BigInt(9999)))
+    )
+
+    val targetFile4 = TargetEntity(
+      path = targetFile4Metadata.path,
+      destination = TargetEntity.Destination.Default,
+      existingMetadata = targetFile4Metadata,
+      currentMetadata = Some(targetFile4Metadata.copy(checksum = BigInt(9999)))
     )
 
     val targetDirectory = TargetEntity(
@@ -75,10 +99,11 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
     val mockApiClient = MockServerApiEndpointClient()
     val mockCoreClient = new MockServerCoreEndpointClient(
       self = Node.generateId(),
-      crates = Map(
-        targetFile2Metadata.crate -> ByteString("source-file-2"),
-        targetFile3Metadata.crate -> ByteString("source-file-3")
-      )
+      crates = (
+        targetFile2Metadata.crates.values.map((_, ByteString("source-file-2")))
+          ++ targetFile3Metadata.crates.values.map((_, ByteString("source-file-3")))
+          ++ targetFile4Metadata.crates.values.map((_, ByteString("source-file-4")))
+      ).toMap
     )
     val mockTracker = new MockRecoveryTracker
 
@@ -99,7 +124,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
 
     implicit val operationId: Operation.Id = Operation.generateId()
 
-    Source(List(targetFile2, targetFile3, targetDirectory, ignoredDirectory))
+    Source(List(targetFile2, targetFile3, targetFile4, targetDirectory, ignoredDirectory))
       .via(stage.entityProcessing)
       .runFold(Seq.empty[TargetEntity])(_ :+ _)
       .map { stageOutput =>
@@ -107,28 +132,35 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
           Seq(
             targetFile2,
             targetFile3,
+            targetFile4,
             targetDirectory
           )
         )
 
-        mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(1)
+        val metadataChanged = 2 // file2 + directory
+        val contentChanged = 2 // file3 + file4
+        val totalChanged = metadataChanged + contentChanged
+
+        val contentCrates = 5 // 1 crate for file3 + 4 crates for file4
+
+        mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(contentChanged)
         mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(0)
-        mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(1)
+        mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(contentChanged)
 
         mockCompression.statistics(MockCompression.Statistic.Compressed) should be(0)
-        mockCompression.statistics(MockCompression.Statistic.Decompressed) should be(1)
+        mockCompression.statistics(MockCompression.Statistic.Decompressed) should be(contentCrates)
 
         mockEncryption.statistics(MockEncryption.Statistic.FileEncrypted) should be(0)
-        mockEncryption.statistics(MockEncryption.Statistic.FileDecrypted) should be(1)
+        mockEncryption.statistics(MockEncryption.Statistic.FileDecrypted) should be(contentCrates)
         mockEncryption.statistics(MockEncryption.Statistic.MetadataEncrypted) should be(0)
         mockEncryption.statistics(MockEncryption.Statistic.MetadataDecrypted) should be(0)
 
-        mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(1)
+        mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(contentCrates)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
 
         mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(0)
         mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(0)
-        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(3)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(totalChanged)
         mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
         mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
         mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(0)
@@ -181,6 +213,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
       .recover {
         case NonFatal(e) =>
           e shouldBe an[PullFailure]
+          e.getMessage should startWith("Failed to pull crate")
 
           mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(0)
           mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(0)
@@ -203,6 +236,25 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
           mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(0)
+      }
+  }
+
+  it should "fail if unexpected target entity metadata is provided" in {
+    val entity = TargetEntity(
+      path = Fixtures.Metadata.DirectoryOneMetadata.path,
+      destination = TargetEntity.Destination.Default,
+      existingMetadata = Fixtures.Metadata.DirectoryOneMetadata,
+      currentMetadata = None
+    )
+
+    EntityProcessing
+      .expectFileMetadata(entity = entity)
+      .map { result =>
+        fail(s"Unexpected result received: [$result]")
+      }
+      .recover {
+        case NonFatal(e: IllegalArgumentException) =>
+          e.getMessage should be(s"Expected metadata for file but directory metadata for [${entity.path}] provided")
       }
   }
 
