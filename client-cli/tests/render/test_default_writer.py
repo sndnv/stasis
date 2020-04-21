@@ -29,6 +29,13 @@ class DefaultWriterSpec(unittest.TestCase):
             )
         )
 
+    def test_should_render_dataset_metadata_crates(self):
+        self.assertTrue(
+            DefaultWriter().render_dataset_metadata_crates(
+                metadata=dataset_metadata.flatten_crates(mock_data.METADATA)
+            )
+        )
+
     def test_should_render_dataset_metadata_filesystem(self):
         self.assertTrue(
             DefaultWriter().render_dataset_metadata_filesystem(

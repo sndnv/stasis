@@ -39,7 +39,7 @@ def show_entries(ctx, definition):
 
 @click.command(name='metadata', short_help='Show dataset metadata information.')
 @click.argument('entry', type=click.UUID)
-@click.argument('output', type=click.Choice(['changes', 'fs'], case_sensitive=False), default='changes')
+@click.argument('output', type=click.Choice(['changes', 'fs', 'crates'], case_sensitive=False), default='changes')
 @click.pass_context
 @with_filtering
 @with_sorting
@@ -60,6 +60,13 @@ def show_metadata(ctx, entry, output):
         metadata_filesystem = ctx.obj.sorting.apply(metadata_filesystem) if ctx.obj.sorting else metadata_filesystem
 
         click.echo(ctx.obj.rendering.render_dataset_metadata_filesystem(metadata_filesystem))
+
+    if output == 'crates':
+        metadata_crates = dataset_metadata.flatten_crates(metadata)
+        metadata_crates = ctx.obj.filtering.apply(metadata_crates) if ctx.obj.filtering else metadata_crates
+        metadata_crates = ctx.obj.sorting.apply(metadata_crates) if ctx.obj.sorting else metadata_crates
+
+        click.echo(ctx.obj.rendering.render_dataset_metadata_crates(metadata_crates))
 
 
 @click.group()

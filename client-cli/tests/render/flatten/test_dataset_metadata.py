@@ -1,7 +1,12 @@
 import unittest
 from uuid import uuid4
 
-from client_cli.render.flatten.dataset_metadata import flatten_changes, flatten_filesystem, flatten_search_result
+from client_cli.render.flatten.dataset_metadata import (
+    flatten_changes,
+    flatten_crates,
+    flatten_filesystem,
+    flatten_search_result
+)
 from tests.mocks import mock_data
 
 
@@ -10,7 +15,14 @@ class DatasetMetadataSpec(unittest.TestCase):
     def test_should_flatten_changes_metadata(self):
         for entry in flatten_changes(metadata=mock_data.METADATA):
             for key in ['changed', 'type', 'entity', 'size', 'link', 'hidden', 'created', 'updated',
-                        'owner', 'group', 'permissions', 'checksum', 'crate']:
+                        'owner', 'group', 'permissions', 'checksum', 'crates']:
+                self.assertIn(key, entry)
+                self.assertFalse(isinstance(entry[key], dict), 'for key [{}]'.format(key))
+                self.assertFalse(isinstance(entry[key], list), 'for key [{}]'.format(key))
+
+    def test_should_flatten_crates_metadata(self):
+        for entry in flatten_crates(metadata=mock_data.METADATA):
+            for key in ['entity', 'part', 'crate']:
                 self.assertIn(key, entry)
                 self.assertFalse(isinstance(entry[key], dict), 'for key [{}]'.format(key))
                 self.assertFalse(isinstance(entry[key], list), 'for key [{}]'.format(key))

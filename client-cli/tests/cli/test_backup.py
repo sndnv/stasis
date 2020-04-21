@@ -43,14 +43,17 @@ class BackupSpec(unittest.TestCase):
 
         runner = Runner(cli)
         result_changes = runner.invoke(args=['show', 'metadata', str(uuid4()), 'changes'], obj=context)
+        result_crates = runner.invoke(args=['show', 'metadata', str(uuid4()), 'crates'], obj=context)
         result_filesystem = runner.invoke(args=['show', 'metadata', str(uuid4()), 'fs'], obj=context)
 
         self.assertEqual(result_changes.exit_code, 0, result_changes.output)
         self.assertTrue(json.loads(result_changes.output))
+        self.assertEqual(result_crates.exit_code, 0, result_crates.output)
+        self.assertTrue(json.loads(result_crates.output))
         self.assertEqual(result_filesystem.exit_code, 0, result_filesystem.output)
         self.assertTrue(json.loads(result_filesystem.output))
 
-        self.assertEqual(context.api.stats['dataset_metadata'], 2)
+        self.assertEqual(context.api.stats['dataset_metadata'], 3)
 
     @patch('click.prompt')
     def test_should_define_backups(self, mock_prompt):

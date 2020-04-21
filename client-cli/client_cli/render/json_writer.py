@@ -17,6 +17,9 @@ class JsonWriter(Writer):
     def render_dataset_metadata_changes(self, metadata) -> str:
         return json.dumps(metadata, indent=4)
 
+    def render_dataset_metadata_crates(self, metadata) -> str:
+        return json.dumps(metadata, indent=4)
+
     def render_dataset_metadata_filesystem(self, metadata) -> str:
         return json.dumps(metadata, indent=4)
 
