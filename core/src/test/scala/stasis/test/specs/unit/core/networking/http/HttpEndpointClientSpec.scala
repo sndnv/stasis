@@ -114,7 +114,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Endpoint [http://localhost:$endpointPort] responded to push with unexpected status: [500 Internal Server Error]"
+            s"Endpoint [http://localhost:$endpointPort] responded to push for crate [${testManifest.crate}] " +
+              s"with unexpected status: [500 Internal Server Error]"
           )
           endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
           endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(1)
@@ -202,15 +203,18 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, "invalid-user", testPassword)
     )
 
+    val crate = Crate.generateId()
+
     client
-      .pull(endpointAddress, Crate.generateId())
+      .pull(endpointAddress, crate)
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Endpoint [http://localhost:$endpointPort] responded to pull with unexpected status: [401 Unauthorized]"
+            s"Endpoint [http://localhost:$endpointPort] responded to pull for crate [$crate] " +
+              s"with unexpected status: [401 Unauthorized]"
           )
       }
   }
@@ -399,15 +403,18 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, "invalid-user", testPassword)
     )
 
+    val crate = Crate.generateId()
+
     client
-      .discard(endpointAddress, Crate.generateId())
+      .discard(endpointAddress, crate)
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Endpoint [${endpointAddress.uri}] responded to discard with unexpected status: [401 Unauthorized]"
+            s"Endpoint [${endpointAddress.uri}] responded to discard for crate [$crate] " +
+              s"with unexpected status: [401 Unauthorized]"
           )
       }
   }
