@@ -24,6 +24,9 @@ class DefaultWriter(Writer):
     def render_dataset_metadata_changes(self, metadata) -> str:
         return dataset_metadata.render_changes_as_table(metadata)
 
+    def render_dataset_metadata_crates(self, metadata) -> str:
+        return dataset_metadata.render_crates_as_table(metadata)
+
     def render_dataset_metadata_filesystem(self, metadata) -> str:
         return dataset_metadata.render_filesystem_as_table(metadata)
 

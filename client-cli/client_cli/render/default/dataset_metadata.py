@@ -26,7 +26,7 @@ def render_changes_as_table(metadata):
                 'Group',
                 'Permissions',
                 'Checksum',
-                'Crate'
+                'Crates'
             ]
         ]
 
@@ -46,7 +46,7 @@ def render_changes_as_table(metadata):
                         entity_metadata['group'],
                         entity_metadata['permissions'],
                         entity_metadata['checksum'],
-                        entity_metadata['crate'],
+                        entity_metadata['crates'],
                     ],
                     metadata
                 )
@@ -75,6 +75,41 @@ def render_filesystem_as_table(metadata):
                         entity['entity'],
                         entity['state'],
                         entity['entry'],
+                    ],
+                    metadata
+                )
+            )
+        ).table
+
+        return table
+    else:
+        return 'No data'
+
+
+def render_crates_as_table(metadata):
+    """
+    Renders the provided, flattened crates metadata as a table.
+
+    :param metadata: metadata to render
+    :return: rendered table string
+    """
+
+    if metadata:
+        header = [
+            [
+                'Entity',
+                'Part',
+                'Crate'
+            ]
+        ]
+
+        table = AsciiTable(
+            header + list(
+                map(
+                    lambda crate_metadata: [
+                        crate_metadata['entity'],
+                        crate_metadata['part'],
+                        crate_metadata['crate'],
                     ],
                     metadata
                 )

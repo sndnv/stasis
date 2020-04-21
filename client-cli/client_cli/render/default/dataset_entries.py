@@ -12,7 +12,7 @@ def render_as_table(entries):
     """
 
     if entries:
-        header = [['Entry', 'Definition', 'Device', 'Crate(s)', 'Metadata', 'Created']]
+        header = [['Entry', 'Definition', 'Device', 'Crates', 'Metadata', 'Created']]
         table = AsciiTable(
             header + list(
                 map(

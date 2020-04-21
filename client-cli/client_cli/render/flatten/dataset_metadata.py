@@ -33,9 +33,38 @@ def flatten_changes(metadata):
                 'group': entity_metadata['group'],
                 'permissions': entity_metadata['permissions'],
                 'checksum': entity_metadata.get('checksum', 0),
-                'crate': entity_metadata.get('crate', '-'),
+                'crates': len(entity_metadata.get('crates', {})),
             },
             content_changed + metadata_changed
+        )
+    )
+
+
+def flatten_crates(metadata):
+    """
+    Converts all nested objects from the provided metadata into non-nested `field->field-value` dicts
+    representing entity crates metadata.
+
+    Raw values (such as memory size, timestamps and durations) are transformed into easy-to-read values.
+
+    :param metadata: metadata to flatten
+    :return: the flattened metadata
+    """
+    content_changed = list(metadata['content_changed'].values())
+
+    return list(
+        itertools.chain.from_iterable(
+            map(
+                lambda entity_metadata: map(
+                    lambda entry: {
+                        'entity': entity_metadata['path'],
+                        'part': entry[0],
+                        'crate': entry[1],
+                    },
+                    entity_metadata.get('crates', {}).items()
+                ),
+                content_changed
+            )
         )
     )
 

@@ -18,7 +18,9 @@ METADATA = {
             'group': 'test-group',
             'permissions': '446',
             'checksum': 42,
-            'crate': str(uuid4()),
+            'crates': {
+                '/some/path/01_0': str(uuid4()),
+            },
             'entity_type': 'file',
         },
         '/some/path/02': {
@@ -31,7 +33,10 @@ METADATA = {
             'group': 'test-group',
             'permissions': '456',
             'checksum': 43,
-            'crate': str(uuid4()),
+            'crates': {
+                '/some/path/02_0': str(uuid4()),
+                '/some/path/02_1': str(uuid4()),
+            },
             'entity_type': 'file',
         },
         '/some/path/03': {
@@ -44,7 +49,13 @@ METADATA = {
             'group': 'test-group',
             'permissions': '004',
             'checksum': 44,
-            'crate': str(uuid4()),
+            'crates': {
+                '/some/path/03_0': str(uuid4()),
+                '/some/path/03_1': str(uuid4()),
+                '/some/path/03_2': str(uuid4()),
+                '/some/path/03_3': str(uuid4()),
+                '/some/path/03_4': str(uuid4()),
+            },
             'entity_type': 'file',
         },
     },
@@ -60,7 +71,7 @@ METADATA = {
             'group': 'test-group',
             'permissions': '444',
             'checksum': 42,
-            'crate': str(uuid4()),
+            'crates': {},
             'entity_type': 'file',
         },
         '/some/path': {

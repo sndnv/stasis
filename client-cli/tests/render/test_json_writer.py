@@ -23,6 +23,13 @@ class JsonWriterSpec(unittest.TestCase):
             )
         )
 
+    def test_should_render_dataset_metadata_crates(self):
+        self.assertTrue(
+            JsonWriter().render_dataset_metadata_crates(
+                metadata=mock_data.METADATA
+            )
+        )
+
     def test_should_render_dataset_metadata_filesystem(self):
         self.assertTrue(
             JsonWriter().render_dataset_metadata_filesystem(metadata=mock_data.METADATA)

@@ -34,6 +34,15 @@ class Writer(ABC):
         """
 
     @abstractmethod
+    def render_dataset_metadata_crates(self, metadata) -> str:
+        """
+        Renders the provided crates metadata.
+
+        :param metadata: metadata to render
+        :return: render result, as a string
+        """
+
+    @abstractmethod
     def render_dataset_metadata_filesystem(self, metadata) -> str:
         """
         Renders the provided filesystem metadata.
