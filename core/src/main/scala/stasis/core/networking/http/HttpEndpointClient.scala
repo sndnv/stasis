@@ -210,12 +210,12 @@ class HttpEndpointClient(
       .flatMap { response =>
         response.status match {
           case StatusCodes.OK =>
-            log.info("Endpoint [{}] responded to push with OK", address.uri)
+            log.info("Endpoint [{}] responded to push for crate [{}] with OK", address.uri, manifest.crate)
             Future.successful(Done)
 
           case _ =>
             val message =
-              s"Endpoint [${address.uri}] responded to push with unexpected status: [${response.status.value}]"
+              s"Endpoint [${address.uri}] responded to push for crate [${manifest.crate}] with unexpected status: [${response.status.value}]"
             log.warning(message)
             Future.failed(EndpointFailure(message))
         }
@@ -238,17 +238,18 @@ class HttpEndpointClient(
         case HttpResponse(status, _, entity, _) =>
           status match {
             case StatusCodes.OK =>
-              log.info("Endpoint [{}] responded to pull with content", address.uri)
+              log.info("Endpoint [{}] responded to pull with content for crate [{}]", address.uri, crate)
               Future.successful(Some(entity.dataBytes.mapMaterializedValue(_ => NotUsed)))
 
             case StatusCodes.NotFound =>
               val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
-              log.warning("Endpoint [{}] responded to pull with no content", address.uri)
+              log.warning("Endpoint [{}] responded to pull with no content for crate [{}]", address.uri, crate)
               Future.successful(None)
 
             case _ =>
               val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
-              val message = s"Endpoint [${address.uri}] responded to pull with unexpected status: [${status.value}]"
+              val message =
+                s"Endpoint [${address.uri}] responded to pull for crate [$crate] with unexpected status: [${status.value}]"
               log.warning(message)
               Future.failed(EndpointFailure(message))
           }
@@ -272,7 +273,7 @@ class HttpEndpointClient(
           val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
           status match {
             case StatusCodes.OK =>
-              log.info("Endpoint [{}] responded to discard with OK", address.uri)
+              log.info("Endpoint [{}] responded to discard for crate [{}] with OK", address.uri, crate)
               Future.successful(true)
 
             case StatusCodes.InternalServerError =>
@@ -280,7 +281,8 @@ class HttpEndpointClient(
               Future.successful(false)
 
             case _ =>
-              val message = s"Endpoint [${address.uri}] responded to discard with unexpected status: [${status.value}]"
+              val message =
+                s"Endpoint [${address.uri}] responded to discard for crate [$crate] with unexpected status: [${status.value}]"
               log.warning(message)
               Future.failed(EndpointFailure(message))
           }
