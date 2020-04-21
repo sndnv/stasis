@@ -54,9 +54,10 @@ trait MetadataPush {
         val request = CreateDatasetEntry(
           definition = targetDataset.id,
           device = providers.clients.api.self,
-          data = metadata.contentChanged.values.collect {
-            case metadata: EntityMetadata.File => metadata.crate
-          }.toSet,
+          data = metadata.contentChanged.values
+            .collect { case metadata: EntityMetadata.File => metadata }
+            .flatMap(_.crates.values)
+            .toSet,
           metadata = metadataManifest.crate
         )
 

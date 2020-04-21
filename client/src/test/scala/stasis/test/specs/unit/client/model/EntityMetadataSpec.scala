@@ -7,20 +7,7 @@ import stasis.test.specs.unit.client.Fixtures
 import scala.util.{Failure, Success}
 
 class EntityMetadataSpec extends UnitSpec {
-  "A EntityMetadata" should "support retrieving crate IDs" in {
-    Fixtures.Metadata.FileOneMetadata.collectCrate match {
-      case Success(crate) => crate should be(Fixtures.Metadata.FileOneMetadata.crate)
-      case Failure(e)     => fail(e)
-    }
-
-    Fixtures.Metadata.DirectoryOneMetadata.collectCrate match {
-      case Success(crate)                    => fail(s"Unexpected successful result received: [$crate]")
-      case Failure(e: IllegalStateException) => e.getMessage should startWith("Crate not available for directory entity")
-      case Failure(e)                        => fail(e)
-    }
-  }
-
-  it should "be serializable to protobuf data" in {
+  "A EntityMetadata" should "be serializable to protobuf data" in {
     EntityMetadata.toProto(Fixtures.Metadata.FileOneMetadata) should be(fileOneMetadataProto)
     EntityMetadata.toProto(Fixtures.Metadata.DirectoryOneMetadata) should be(directoryOneMetadataProto)
     EntityMetadata.toProto(Fixtures.Metadata.FileTwoMetadata) should be(fileTwoMetadataProto)
@@ -41,13 +28,6 @@ class EntityMetadataSpec extends UnitSpec {
     }
   }
 
-  it should "fail to be deserialized from invalid protobuf data" in {
-    EntityMetadata.fromProto(entityMetadata = invalidFileMetadataProto) match {
-      case Success(metadata) => fail(s"Unexpected successful result received: [$metadata]")
-      case Failure(e)        => e shouldBe a[IllegalArgumentException]
-    }
-  }
-
   private val actualFileOneMetadata = proto.metadata.FileMetadata(
     path = Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath.toString,
     size = Fixtures.Metadata.FileOneMetadata.size,
@@ -59,12 +39,16 @@ class EntityMetadataSpec extends UnitSpec {
     group = Fixtures.Metadata.FileOneMetadata.group,
     permissions = Fixtures.Metadata.FileOneMetadata.permissions,
     checksum = com.google.protobuf.ByteString.copyFrom(Fixtures.Metadata.FileOneMetadata.checksum.toByteArray),
-    crate = Some(
-      proto.metadata.Uuid(
-        mostSignificantBits = Fixtures.Metadata.FileOneMetadata.crate.getMostSignificantBits,
-        leastSignificantBits = Fixtures.Metadata.FileOneMetadata.crate.getLeastSignificantBits
-      )
-    )
+    crates = Fixtures.Metadata.FileOneMetadata.crates.map {
+      case (path, uuid) =>
+        (
+          path.toString,
+          proto.metadata.Uuid(
+            mostSignificantBits = uuid.getMostSignificantBits,
+            leastSignificantBits = uuid.getLeastSignificantBits
+          )
+        )
+    }
   )
 
   private val actualFileTwoMetadata = proto.metadata.FileMetadata(
@@ -78,12 +62,16 @@ class EntityMetadataSpec extends UnitSpec {
     group = Fixtures.Metadata.FileTwoMetadata.group,
     permissions = Fixtures.Metadata.FileTwoMetadata.permissions,
     checksum = com.google.protobuf.ByteString.copyFrom(Fixtures.Metadata.FileTwoMetadata.checksum.toByteArray),
-    crate = Some(
-      proto.metadata.Uuid(
-        mostSignificantBits = Fixtures.Metadata.FileTwoMetadata.crate.getMostSignificantBits,
-        leastSignificantBits = Fixtures.Metadata.FileTwoMetadata.crate.getLeastSignificantBits
-      )
-    )
+    crates = Fixtures.Metadata.FileTwoMetadata.crates.map {
+      case (path, uuid) =>
+        (
+          path.toString,
+          proto.metadata.Uuid(
+            mostSignificantBits = uuid.getMostSignificantBits,
+            leastSignificantBits = uuid.getLeastSignificantBits
+          )
+        )
+    }
   )
 
   private val fileOneMetadataProto = proto.metadata.EntityMetadata(
@@ -126,10 +114,6 @@ class EntityMetadataSpec extends UnitSpec {
     entity = proto.metadata.EntityMetadata.Entity.Directory(
       value = actualDirectoryTwoMetadata
     )
-  )
-
-  private val invalidFileMetadataProto = proto.metadata.EntityMetadata(
-    entity = proto.metadata.EntityMetadata.Entity.File(value = actualFileOneMetadata.copy(crate = None))
   )
 
   private val emtpyMetadataProto = proto.metadata.EntityMetadata(

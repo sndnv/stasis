@@ -27,7 +27,9 @@ object Fixtures {
       group = "root",
       permissions = "rwxrwxrwx",
       checksum = 1,
-      crate = java.util.UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
+      crates = Map(
+        Paths.get("/tmp/file/one_0") -> java.util.UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
+      )
     )
 
     final lazy val FileTwoMetadata = EntityMetadata.File(
@@ -41,7 +43,9 @@ object Fixtures {
       group = "root",
       permissions = "rwxrwxrwx",
       checksum = 42,
-      crate = java.util.UUID.fromString("e672a956-1a95-4304-8af0-9418f0e43cba")
+      crates = Map(
+        Paths.get("/tmp/file/two_0") -> java.util.UUID.fromString("e672a956-1a95-4304-8af0-9418f0e43cba")
+      )
     )
 
     final lazy val FileThreeMetadata = EntityMetadata.File(
@@ -55,7 +59,9 @@ object Fixtures {
       group = "root",
       permissions = "rwxrwxrwx",
       checksum = 0,
-      crate = java.util.UUID.fromString("7c98df29-a544-41e5-95ac-463987894fac")
+      crates = Map(
+        Paths.get("/tmp/file/four_0") -> java.util.UUID.fromString("7c98df29-a544-41e5-95ac-463987894fac")
+      )
     )
 
     final lazy val DirectoryOneMetadata = EntityMetadata.Directory(
@@ -115,10 +121,10 @@ object Fixtures {
       definition = Datasets.Default.id,
       device = Datasets.Default.device,
       data = Set(
-        Metadata.FileOneMetadata.crate,
-        Metadata.FileTwoMetadata.crate,
-        Metadata.FileThreeMetadata.crate
-      ),
+        Metadata.FileOneMetadata.crates.values ++
+          Metadata.FileTwoMetadata.crates.values ++
+          Metadata.FileThreeMetadata.crates.values
+      ).flatten,
       metadata = Crate.generateId(),
       created = Instant.now()
     )

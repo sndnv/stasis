@@ -69,6 +69,8 @@ class Backup(
     override protected lazy val providers: Providers = parent.providers
     override protected lazy val collector: BackupCollector = parent.collector
     override protected lazy val parallelism: ParallelismConfig = parent.parallelism
+    override protected lazy val maxChunkSize: Int = parent.descriptor.limits.maxChunkSize
+    override protected lazy val maxPartSize: Long = parent.descriptor.limits.maxPartSize
     override implicit protected lazy val mat: Materializer = parent.mat
     override implicit protected lazy val ec: ExecutionContext = parent.system.executionContext
   }
@@ -80,7 +82,8 @@ object Backup {
     latestEntry: Option[DatasetEntry],
     latestMetadata: Option[DatasetMetadata],
     deviceSecret: DeviceSecret,
-    collector: Descriptor.Collector
+    collector: Descriptor.Collector,
+    limits: Limits
   ) {
     def toBackupCollector(
       checksum: Checksum
@@ -119,7 +122,8 @@ object Backup {
     def apply(
       definition: DatasetDefinition.Id,
       collector: Descriptor.Collector,
-      deviceSecret: DeviceSecret
+      deviceSecret: DeviceSecret,
+      limits: Limits
     )(implicit ec: ExecutionContext, mat: Materializer, providers: Providers): Future[Descriptor] =
       for {
         targetDataset <- providers.clients.api.datasetDefinition(definition = definition)
@@ -134,10 +138,16 @@ object Backup {
           latestEntry = latestEntry,
           latestMetadata = latestMetadata,
           deviceSecret = deviceSecret,
-          collector = collector
+          collector = collector,
+          limits = limits
         )
       }
   }
+
+  final case class Limits(
+    maxChunkSize: Int,
+    maxPartSize: Long
+  )
 
   implicit class TrackedOperation(operation: Future[Done]) {
     def trackWith(track: BackupTracker)(implicit id: Operation.Id, ec: ExecutionContext): Future[Done] = {

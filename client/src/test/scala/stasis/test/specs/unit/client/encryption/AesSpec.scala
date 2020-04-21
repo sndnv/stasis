@@ -101,24 +101,25 @@ class AesSpec extends AsyncUnitSpec with EncodingHelpers with ResourceHelpers {
   )
 
   private val encryptedDatasetMetadata =
-    "C4TjzIPdVWcrNdsnv2CON8flyDvHMrBAEQqtcgfcq2R1" +
+    "C5HjzIPdVWcrNdsnv2CON8fl+zv4MrBAEQqtcgfcq2R1" +
       "UxFhGnjv6FYG/+oKZu+5qKqaPUF86bO6hu0ayuBSav" +
-      "cdTqs9UD0oJ+gZ0DvlP0n+yNV2Ekwtas6rXNgcK2el" +
-      "dRyKiRV5QkONc8nEjEMZqedLwyWX8Q835nRyKwjX9G" +
-      "GRoYe1PK9tmJ4F4x9Lo5UqzUIj5RJM5RuQiEX7DRc5" +
-      "m/ScNfQ7gQgBbSfvCMiUTT3AxZVswpwPnxt0H4msOo" +
-      "vQXeUfgTz72ezIsabmR44bpMdCEolM6UXMrYBdbcOR" +
-      "33aVH57S5PwDDSdfSbDXhgj113pMe742ScMwUaxVs5" +
-      "z4Tfm1MtIrwSOK+kvG/ZF2tUdk2dKcZBqu4EA/pvLt" +
-      "GAzJRSxzThWc+/UvNvJzhS0yBvIdT3Jq0yr3/VTxmd" +
-      "DKFRNytHijJC+mILxxFjnoAWv3SpZtecIrs5KnDuHx" +
-      "VELvyyn1Qi7slrxM60zB6O1gsJhO2VOgb6fWtU6GvF" +
-      "ivGSA6ZQdKMuI5iqDeLETluuNs0obfFD6CCo61oDQq" +
-      "oyiWMrCLIioX7CZFPQLeFufcodXRmYlg2fLysWEUxf" +
-      "v30/1V+ux2KxZ6wuH0ncVvvDAxXpNoaEV2c2fDdZHm" +
-      "UQhSJz0+c5bmEJ6x27zPpBcVz/PeMVQbJuctWFxkc8" +
-      "nuGTs7q+rPJTlxoXk0hB6cyZ/6ioMgaV+j3U5Y2ooc" +
-      "ynk="
+      "cdTqs9UD0oJ+gZ0DvlP0n+yNV2EnEv3WRStBDO88H7" +
+      "APkSTo/mxc92ynBTesysey3pgRo7b8qtCbebqqu87I" +
+      "eapqXuJbIy0ZEA6lUQoI1V3SUmsWwsukCbkQb4Sw80" +
+      "xuWOchvITtOBg82nFy5VsftuUwXZWPgdZJjOpFJ0uc" +
+      "GPsjnFK89uWVlAyO6VTbN1+t9QaGKlSNskdV2c+bX5" +
+      "F/h9yhB7Gy2DAxp8LtLXlAzpnTFRfrQKDb5UIAe8CC" +
+      "0LpkEz3sEUD7dqUqAsKgyfwDpBqu/cfhL+T4zGdxZs" +
+      "lKREPSvj0aVaFX2XBNJYgy8tXaxwT3hm0weM9gzmhc" +
+      "KS58yaBZFLzsctTOShg4VOy5IEHdYQJNkzqLrxbt6U" +
+      "Mi+S1C6iVDDmgahAllay1bZjsvpukk6/euvEs1CavF" +
+      "iwBFcNV6ix9RnifVfJYK0/TyOZXwxhxEvHYe7V4DR9" +
+      "13WfNKisBCwI5jFXZY9YuyktMUHjvCa8JCFcNfC/X9" +
+      "Wqueool5JMJXcfoLrC+cc3oisqQ85rZzA6e27JcqaY" +
+      "LlcJLCR9ctD7G5jXtsS2gWtxp86oViQ+WIRTEgd9dI" +
+      "mYclNewoaqRW8quH508nXkrDzy/61riTYWSkvLO27P" +
+      "dzwoBJlrxvovla1SUeydWc5Gs2yK95hpU6Q152SZca" +
+      "MsRiJdYc37jFo="
 
   private val metadataSecret = DeviceMetadataSecret(
     iv = encryptionIv.decodeFromBase64,

@@ -17,9 +17,11 @@ class MockFileStaging() extends FileStaging with ResourceHelpers {
     Statistic.Destaged -> new AtomicInteger(0)
   )
 
+  val temporaryPath: Path = "/ops/temp-file-1".asTestResource
+
   override def temporary(): Future[Path] = {
     stats(Statistic.TemporaryCreated).incrementAndGet()
-    Future.successful("/ops/temp-file-1".asTestResource)
+    Future.successful(temporaryPath)
   }
 
   override def discard(file: Path): Future[Done] = {

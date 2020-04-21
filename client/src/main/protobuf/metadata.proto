@@ -29,7 +29,7 @@ message FileMetadata {
     string group = 8;
     string permissions = 9;
     bytes checksum = 10;
-    Uuid crate = 11;
+    map<string, Uuid> crates = 11;
 }
 
 message DirectoryMetadata {

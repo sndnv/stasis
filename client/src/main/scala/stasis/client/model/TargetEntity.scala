@@ -1,6 +1,6 @@
 package stasis.client.model
 
-import java.nio.file.{Path, Paths}
+import java.nio.file.Path
 
 final case class TargetEntity(
   path: Path,

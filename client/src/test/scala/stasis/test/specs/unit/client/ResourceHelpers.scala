@@ -106,7 +106,7 @@ trait ResourceHelpers {
             group = baseMetadata.group,
             permissions = baseMetadata.permissions,
             checksum = withChecksum,
-            crate = withCrate
+            crates = Map(baseMetadata.path -> withCrate)
           )
         }
 
@@ -162,7 +162,7 @@ trait ResourceHelpers {
           group = baseMetadata.group,
           permissions = baseMetadata.permissions,
           checksum = calculatedChecksum,
-          crate = Crate.generateId()
+          crates = Map(baseMetadata.path -> Crate.generateId())
         )
       }
 

@@ -66,11 +66,13 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
 
     val mockCoreClient = new MockServerCoreEndpointClient(
       self = Node.generateId(),
-      crates = Map(
-        originalSourceFile1Metadata.crate -> ByteString("dummy-encrypted-data"),
-        originalSourceFile2Metadata.crate -> ByteString("dummy-encrypted-data"),
-        originalSourceFile3Metadata.crate -> ByteString("dummy-encrypted-data")
-      )
+      crates = (
+        originalSourceFile1Metadata.crates
+          ++ originalSourceFile2Metadata.crates
+          ++ originalSourceFile3Metadata.crates
+      ).values
+        .map((_, ByteString("dummy-encrypted-data")))
+        .toMap
     )
     val mockTracker = new MockRecoveryTracker
 
@@ -138,13 +140,15 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
 
     val mockCoreClient = new MockServerCoreEndpointClient(
       self = Node.generateId(),
-      crates = Map(
-        sourceFile1Metadata.crate -> ByteString("dummy-encrypted-data"),
-        sourceFile2Metadata.crate -> ByteString("dummy-encrypted-data"),
-        sourceFile3Metadata.crate -> ByteString("dummy-encrypted-data"),
-        sourceFile4Metadata.crate -> ByteString("dummy-encrypted-data"),
-        sourceFile5Metadata.crate -> ByteString("dummy-encrypted-data")
-      )
+      crates = (
+        sourceFile1Metadata.crates
+          ++ sourceFile2Metadata.crates
+          ++ sourceFile3Metadata.crates
+          ++ sourceFile4Metadata.crates
+          ++ sourceFile5Metadata.crates
+      ).values
+        .map((_, ByteString("dummy-encrypted-data")))
+        .toMap
     )
 
     val mockTracker = new MockRecoveryTracker
@@ -204,11 +208,9 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
 
     val mockCoreClient = new MockServerCoreEndpointClient(
       self = Node.generateId(),
-      crates = Map(
-        originalSourceFile1Metadata.crate -> ByteString("dummy-encrypted-data"),
-        originalSourceFile2Metadata.crate -> ByteString("dummy-encrypted-data")
-        // recovery for originalSourceFile3 is expected to fail; content is missing
-      )
+      crates = (originalSourceFile1Metadata.crates ++ originalSourceFile2Metadata.crates).values
+        .map((_, ByteString("dummy-encrypted-data")))
+        .toMap
     )
     val mockTracker = new MockRecoveryTracker
 
@@ -302,7 +304,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
 
     val mockCoreClient = new MockServerCoreEndpointClient(
       self = Node.generateId(),
-      crates = Map(originalSourceFile1Metadata.crate -> ByteString("dummy-encrypted-data"))
+      crates = originalSourceFile1Metadata.crates.values.map((_, ByteString("dummy-encrypted-data"))).toMap
     )
     val mockTracker = new MockRecoveryTracker
 

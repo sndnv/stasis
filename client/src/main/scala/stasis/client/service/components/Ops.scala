@@ -1,14 +1,13 @@
 package stasis.client.service.components
 
 import stasis.client.ops
+import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.monitoring.{DefaultServerMonitor, ServerMonitor}
 import stasis.client.ops.scheduling._
 import stasis.client.ops.search.{DefaultSearch, Search}
-import stasis.client.ops.ParallelismConfig
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.Try
 
 trait Ops {
   def executor: OperationExecutor
@@ -34,6 +33,11 @@ object Ops {
       implicit val parallelismConfig: ParallelismConfig =
         ParallelismConfig(value = rawConfig.getInt("service.parallelism"))
 
+      val backupLimits = ops.backup.Backup.Limits(
+        maxChunkSize = rawConfig.getMemorySize("ops.backup.max-chunk-size").toBytes.toInt,
+        maxPartSize = rawConfig.getMemorySize("ops.backup.max-part-size").toBytes
+      )
+
       implicit val backupProviders: ops.backup.Providers = ops.backup.Providers(
         checksum = checksum,
         staging = staging,
@@ -56,7 +60,12 @@ object Ops {
       new Ops {
         override val executor: OperationExecutor =
           new DefaultOperationExecutor(
-            config = DefaultOperationExecutor.Config(rulesFile = rulesFile),
+            config = DefaultOperationExecutor.Config(
+              backup = DefaultOperationExecutor.Config.Backup(
+                rulesFile = rulesFile,
+                limits = backupLimits
+              )
+            ),
             secret = deviceSecret
           )
 

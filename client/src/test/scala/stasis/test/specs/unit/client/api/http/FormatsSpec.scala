@@ -114,7 +114,9 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
       group = "root",
       permissions = "rwxrwxrwx",
       checksum = 1,
-      crate = java.util.UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
+      crates = Map(
+        Paths.get("/tmp/file/one_0") -> java.util.UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
+      )
     )
 
     val directoryMetadata = EntityMetadata.Directory(

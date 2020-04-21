@@ -354,41 +354,43 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
   )
 
   private val serializedDatasetMetadata =
-    "CmkKDS90bXAvZmlsZS9vbmUSWApWCg0vdG1wL2ZpbGUv" +
+    "CnwKDS90bXAvZmlsZS9vbmUSawppCg0vdG1wL2ZpbGUv" +
       "b25lEAEogKiQo4Hi+Mf/ATD/8dXUr5qHODoEcm9vdE" +
-      "IEcm9vdEoJcnd4cnd4cnd4UgEBWhUIuIWNhbj9vs8y" +
-      "EMr3qf/At57usQESewoNL3RtcC9maWxlL3R3bxJqCm" +
-      "gKDS90bXAvZmlsZS90d28QAhoPL3RtcC9maWxlL3Ro" +
-      "cmVlKP/x1dSvmoc4MICokKOB4vjH/wE6BHJvb3RCBH" +
-      "Jvb3RKCXJ3eHJ3eHJ3eFIBKloWCISG1dThqqq55gEQ" +
-      "uvmQh4+DpfiKARJXChIvdG1wL2RpcmVjdG9yeS9vbm" +
-      "USQRI/ChIvdG1wL2RpcmVjdG9yeS9vbmUggKiQo4Hi" +
-      "+Mf/ASj/8dXUr5qHODIEcm9vdDoEcm9vdEIJcnd4cn" +
-      "d4cnd4EmgKEi90bXAvZGlyZWN0b3J5L3R3bxJSElAK" +
-      "Ei90bXAvZGlyZWN0b3J5L3R3bxIPL3RtcC9maWxlL3" +
-      "RocmVlIP/x1dSvmoc4KICokKOB4vjH/wEyBHJvb3Q6" +
-      "BHJvb3RCCXJ3eHJ3eHJ3eBpeChMKDS90bXAvZmlsZS" +
-      "9vbmUSAgoAChMKDS90bXAvZmlsZS90d28SAhoAChgK" +
-      "Ei90bXAvZGlyZWN0b3J5L29uZRICCgAKGAoSL3RtcC" +
-      "9kaXJlY3RvcnkvdHdvEgIKAA=="
+      "IEcm9vdEoJcnd4cnd4cnd4UgEBWigKDy90bXAvZmls" +
+      "ZS9vbmVfMBIVCLiFjYW4/b7PMhDK96n/wLee7rEBEo" +
+      "4BCg0vdG1wL2ZpbGUvdHdvEn0KewoNL3RtcC9maWxl" +
+      "L3R3bxACGg8vdG1wL2ZpbGUvdGhyZWUo//HV1K+ahz" +
+      "gwgKiQo4Hi+Mf/AToEcm9vdEIEcm9vdEoJcnd4cnd4" +
+      "cnd4UgEqWikKDy90bXAvZmlsZS90d29fMBIWCISG1d" +
+      "Thqqq55gEQuvmQh4+DpfiKARJXChIvdG1wL2RpcmVj" +
+      "dG9yeS9vbmUSQRI/ChIvdG1wL2RpcmVjdG9yeS9vbm" +
+      "UggKiQo4Hi+Mf/ASj/8dXUr5qHODIEcm9vdDoEcm9v" +
+      "dEIJcnd4cnd4cnd4EmgKEi90bXAvZGlyZWN0b3J5L3" +
+      "R3bxJSElAKEi90bXAvZGlyZWN0b3J5L3R3bxIPL3Rt" +
+      "cC9maWxlL3RocmVlIP/x1dSvmoc4KICokKOB4vjH/w" +
+      "EyBHJvb3Q6BHJvb3RCCXJ3eHJ3eHJ3eBpeChMKDS90" +
+      "bXAvZmlsZS9vbmUSAgoAChMKDS90bXAvZmlsZS90d2" +
+      "8SAhoAChgKEi90bXAvZGlyZWN0b3J5L29uZRICCgAK" +
+      "GAoSL3RtcC9kaXJlY3RvcnkvdHdvEgIKAA=="
 
   private val encryptedDatasetMetadata =
-    "qgXLc95bEH10i52w4MHCXTqvGeixtlic12HeBhkiocPe" +
+    "qhDLc95bEH10i52w4MHCXTqvKuiOtlic12HeBhkiocPe" +
       "FzxcgvD6PNHUralmkmdwSuCPRf6laTMO5uO03XoTSm" +
-      "brfhaQTsc32Unk9H1E0mNuYwLRNyyMQAjfCU+FzFW8" +
-      "io8HauGoxNbw2FBeXujnUb4e9COVfUSt2x6OLXtlvF" +
-      "E6tlghNuBz1ehj0zq0ITxbIzn7R+0a99jWTwEE2vsy" +
-      "yeq5/MQofR3I47A6kRThyBMrw+bqsBMIggxL33Dhx8" +
-      "NF/3nrkeUIJ/ExSjx/hDKxpJU6f/VHgqEaRVCNgo7z" +
-      "0iJ1Z3rKP3wTM2jI+jyHgeIrf6+FtUF3E/IeFogck5" +
-      "l2EoKY/Ep4hTZJ82McX+zbjuSSghozqgsnHuSG54Tu" +
-      "bhUy9KP6N2W8r4roZLFQbSVzVJGl247W7Mqu0I6VYD" +
-      "CuYZNH4/lOUeKFBfudoPGpGoPmea8n0LCbjGywtxjM" +
-      "REJfo5ERKwQOrVB2vyQAdkS6QMUe5IWjYHIEsno4Pc" +
-      "AXawGzdzI/j+yCEm8MmDLMNZs2FycuO+rkn8yFvc/j" +
-      "oF0gDeumbz6M2lcL9WvupM28SXS64lnVi2GYqxDvDI" +
-      "wBslJIYULiISxRPmrV9pD7yLh3MHavxWud9FeqN2Ff" +
-      "AcsWzypeP9VAMiG1r3r0HUirM5R5SMrb6w1ii2Do8M" +
-      "kVOkudGUJxjIL5lFsk/7k+i6uvXjWeyRzAAyhuj1oa" +
-      "4iM="
+      "brfhaQTsc32Unk9H1E0mNuYwLRNxGO96Im4YdXFPPi" +
+      "/2qfrXs3Q1oLYenJqGdSg3S8thw544E3NN1nrNgOpL" +
+      "cxsXp6L/0snOdm2nDvIiQkM17+E5N6qIPdVkIHnOM/" +
+      "lPuruyvbssZIDVpyjvIgNNWFVXZfKncaeY/xZKs5RI" +
+      "kaEKUxOxadp0S5M3QMjg/f+o0oBR6uIz/ynY1MFvib" +
+      "GqydsvRjwK2TPVXrnV6Hk+Y3NeSYsEtLV496ZyP1KC" +
+      "iF+ToeEFlHS6KpW4j2iHEy+5m38SdzsAN3sSh/NmBv" +
+      "4r2/jKRqqNV6QQJQVpF7aydsD8/I24Ta7OfV29aCfC" +
+      "L2k0yvUhCmuwoOaaNNNU0P0HoVLu9ajauDl0Tm1yep" +
+      "Ii8ivJZGPRoEukR6wj5zSx+5Qqc+r5i8dT4WtGQkPc" +
+      "AIdnaERZ3ESBdZ5Zgb1NsWwFvDmq2Q65+h9Kzl/c+0" +
+      "1AApC/OBSTiT0EAZreZoCQNN2eCIx/YJdrI2L4FElq" +
+      "Jc2EU1DDzYL000XDHjkpKj1qNsLSusyh7R/F6gMFYh" +
+      "fpRNxDMdPpNdOSfTwgKNODTPW6kPL7r+lW4cwTvx94" +
+      "ljUSP4cC4U7NSijVxkidJG7iF14GLt9vySrlEeGncs" +
+      "j7tE8O3OQpoO7jgT/miPLe8VIY1rQKNQyKbPsBHSI3" +
+      "V2c8BqNGNyUDA="
 }
