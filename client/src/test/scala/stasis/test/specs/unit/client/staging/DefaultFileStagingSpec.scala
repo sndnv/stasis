@@ -1,6 +1,7 @@
 package stasis.test.specs.unit.client.staging
 
-import java.nio.file.{Files, Paths}
+import java.nio.file.attribute.{PosixFileAttributes, PosixFilePermissions}
+import java.nio.file.{Files, LinkOption, Paths}
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
@@ -21,10 +22,13 @@ class DefaultFileStagingSpec extends AsyncUnitSpec with ResourceHelpers {
       .map { file =>
         file.toFile.deleteOnExit()
         val filename = file.getFileName.toString
+        val attributes = Files.readAttributes(file, classOf[PosixFileAttributes], LinkOption.NOFOLLOW_LINKS)
+        val permissions = PosixFilePermissions.toString(attributes.permissions())
 
         filename.startsWith("staging-test-") should be(true)
         filename.endsWith(".tmp") should be(true)
         Files.size(file) should be(0)
+        permissions should be("rw-------")
       }
   }
 
@@ -42,10 +46,14 @@ class DefaultFileStagingSpec extends AsyncUnitSpec with ResourceHelpers {
     staging
       .temporary()
       .map { file =>
+        val attributes = Files.readAttributes(file, classOf[PosixFileAttributes], LinkOption.NOFOLLOW_LINKS)
+        val permissions = PosixFilePermissions.toString(attributes.permissions())
+
         file.toFile.deleteOnExit()
         file.toString.startsWith(s"$directory/staging-test-") should be(true)
         file.toString.endsWith(".tmp") should be(true)
         Files.size(file) should be(0)
+        permissions should be("rw-------")
       }
   }
 
