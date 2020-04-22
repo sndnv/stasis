@@ -53,42 +53,22 @@ class FilterBinaryOperatorSpec(unittest.TestCase):
 class FilterSpec(unittest.TestCase):
 
     def test_should_filter_entries(self):
+        spec = {'test_field': int, 'other_field': int}
         filter_instance = Filter(tokens=['test_field', '>', '42'])
-        self.assertTrue(filter_instance.apply(entry={'test_field': 50, 'other_field': 40}))
-        self.assertFalse(filter_instance.apply(entry={'test_field': 40, 'other_field': 40}))
+        self.assertTrue(filter_instance.apply(entry={'test_field': 50, 'other_field': 40}, spec=spec))
+        self.assertFalse(filter_instance.apply(entry={'test_field': 40, 'other_field': 40}, spec=spec))
 
+        spec = {'test_field': str, 'other_field': int}
         filter_instance = Filter(tokens=['test_field', 'like', '-b-'])
-        self.assertTrue(filter_instance.apply(entry={'test_field': 'a-b-c', 'other_field': 40}))
-        self.assertFalse(filter_instance.apply(entry={'test_field': 'other', 'other_field': 40}))
+        self.assertTrue(filter_instance.apply(entry={'test_field': 'a-b-c', 'other_field': 40}, spec=spec))
+        self.assertFalse(filter_instance.apply(entry={'test_field': 'other', 'other_field': 40}, spec=spec))
 
     def test_should_fail_filtering_entries_when_invalid_field_is_provided(self):
+        spec = {'test_field': int, 'other_field': int}
+
         filter_instance = Filter(tokens=['missing-field', '>', '42'])
         with self.assertRaises(Abort):
-            self.assertTrue(filter_instance.apply(entry={'test_field': 50, 'other_field': 40}))
-
-    def test_should_coerce_provided_conditions_to_boolean_expected_values(self):
-        boolean = True
-        self.assertEqual(Filter.coerce(provided='true', expected=boolean), True)
-        self.assertEqual(Filter.coerce(provided='false', expected=boolean), False)
-
-        with self.assertRaises(Abort):
-            Filter.coerce(provided='?', expected=boolean)
-
-    def test_should_coerce_provided_conditions_to_int_expected_values(self):
-        integer = 0
-        self.assertEqual(Filter.coerce(provided='42', expected=integer), 42)
-
-    def test_should_coerce_provided_conditions_to_float_expected_values(self):
-        floating_point_number = 4.2
-        self.assertEqual(Filter.coerce(provided='4.2', expected=floating_point_number), 4.2)
-
-    def test_should_coerce_provided_conditions_to_string_expected_values(self):
-        string = 'test'
-        self.assertEqual(Filter.coerce(provided='test-string', expected=string), 'test-string')
-
-    def test_should_fail_to_coerce_provided_conditions_to_unknown_expected_values(self):
-        with self.assertRaises(Abort):
-            Filter.coerce(provided='other', expected=FilterBinaryOperator(operator='<'))
+            self.assertTrue(filter_instance.apply(entry={'test_field': 50, 'other_field': 40}, spec=spec))
 
     def test_should_be_representable_as_a_dict(self):
         filter_instance = Filter(tokens=['test_field', '>', 42])
@@ -108,16 +88,18 @@ class FilterSpec(unittest.TestCase):
 class FilterGroupSpec(unittest.TestCase):
 
     def test_should_filter_entries(self):
+        spec = {'test_field': int, 'other_field': str}
+
         or_group = FilterGroup(
             left=Filter(tokens=['test_field', '>', 42]),
             operator='or',
             right=Filter(tokens=['other_field', 'like', 'test'])
         )
 
-        self.assertTrue(or_group.apply(entry={'test_field': 50, 'other_field': 'some-test-value'}))
-        self.assertTrue(or_group.apply(entry={'test_field': 50, 'other_field': 'some-value'}))
-        self.assertTrue(or_group.apply(entry={'test_field': 40, 'other_field': 'some-test-value'}))
-        self.assertFalse(or_group.apply(entry={'test_field': 40, 'other_field': 'some-value'}))
+        self.assertTrue(or_group.apply(entry={'test_field': 50, 'other_field': 'some-test-value'}, spec=spec))
+        self.assertTrue(or_group.apply(entry={'test_field': 50, 'other_field': 'some-value'}, spec=spec))
+        self.assertTrue(or_group.apply(entry={'test_field': 40, 'other_field': 'some-test-value'}, spec=spec))
+        self.assertFalse(or_group.apply(entry={'test_field': 40, 'other_field': 'some-value'}, spec=spec))
 
         and_group = FilterGroup(
             left=Filter(tokens=['test_field', '>', 42]),
@@ -125,19 +107,22 @@ class FilterGroupSpec(unittest.TestCase):
             right=Filter(tokens=['other_field', 'like', 'test'])
         )
 
-        self.assertTrue(or_group.apply(entry={'test_field': 50, 'other_field': 'some-test-value'}))
-        self.assertFalse(and_group.apply(entry={'test_field': 50, 'other_field': 'some-value'}))
-        self.assertFalse(and_group.apply(entry={'test_field': 40, 'other_field': 'some-test-value'}))
-        self.assertFalse(and_group.apply(entry={'test_field': 40, 'other_field': 'some-value'}))
+        self.assertTrue(or_group.apply(entry={'test_field': 50, 'other_field': 'some-test-value'}, spec=spec))
+        self.assertFalse(and_group.apply(entry={'test_field': 50, 'other_field': 'some-value'}, spec=spec))
+        self.assertFalse(and_group.apply(entry={'test_field': 40, 'other_field': 'some-test-value'}, spec=spec))
+        self.assertFalse(and_group.apply(entry={'test_field': 40, 'other_field': 'some-value'}, spec=spec))
 
     def test_should_fail_to_filter_entries_when_invalid_group_operator_is_provided(self):
+        spec = {'test_field': int, 'other_field': str}
+
         group = FilterGroup(
             left=Filter(tokens=['test_field', '>', 42]),
             operator='?',
             right=Filter(tokens=['other_field', 'like', 'test'])
         )
+
         with self.assertRaises(Abort):
-            group.apply(entry={'test_field': 50, 'other_field': 'some-test-value'})
+            group.apply(entry={'test_field': 50, 'other_field': 'some-test-value'}, spec=spec)
 
     def test_should_be_representable_as_a_dict(self):
         group = FilterGroup(
@@ -176,6 +161,8 @@ class FilterGroupSpec(unittest.TestCase):
 class FilterParserSpec(unittest.TestCase):
 
     def test_should_parse_raw_filter_strings(self):
+        spec = {'test_field': int, 'other_field': str, 'third_field': bool}
+
         single_filter = 'test_field > 42'
         or_filter = 'test_field > 42 OR other_field like test'
         and_filter = 'test_field > 42 AND other_field like test'
@@ -186,25 +173,27 @@ class FilterParserSpec(unittest.TestCase):
         entry2 = {'test_field': 40, 'other_field': 'some-test-value', 'third_field': False}
         entry3 = {'test_field': 40, 'other_field': 'some-value', 'third_field': True}
 
-        self.assertTrue(parser.parse(raw_filter=single_filter).apply(entry=entry1))
-        self.assertTrue(parser.parse(raw_filter=or_filter).apply(entry=entry1))
-        self.assertTrue(parser.parse(raw_filter=and_filter).apply(entry=entry1))
-        self.assertTrue(parser.parse(raw_filter=nested_filter).apply(entry=entry1))
+        self.assertTrue(parser.parse(raw_filter=single_filter).apply(entry=entry1, spec=spec))
+        self.assertTrue(parser.parse(raw_filter=or_filter).apply(entry=entry1, spec=spec))
+        self.assertTrue(parser.parse(raw_filter=and_filter).apply(entry=entry1, spec=spec))
+        self.assertTrue(parser.parse(raw_filter=nested_filter).apply(entry=entry1, spec=spec))
 
-        self.assertFalse(parser.parse(raw_filter=single_filter).apply(entry=entry2))
-        self.assertTrue(parser.parse(raw_filter=or_filter).apply(entry=entry2))
-        self.assertFalse(parser.parse(raw_filter=and_filter).apply(entry=entry2))
-        self.assertFalse(parser.parse(raw_filter=nested_filter).apply(entry=entry2))
+        self.assertFalse(parser.parse(raw_filter=single_filter).apply(entry=entry2, spec=spec))
+        self.assertTrue(parser.parse(raw_filter=or_filter).apply(entry=entry2, spec=spec))
+        self.assertFalse(parser.parse(raw_filter=and_filter).apply(entry=entry2, spec=spec))
+        self.assertFalse(parser.parse(raw_filter=nested_filter).apply(entry=entry2, spec=spec))
 
-        self.assertFalse(parser.parse(raw_filter=single_filter).apply(entry=entry3))
-        self.assertFalse(parser.parse(raw_filter=or_filter).apply(entry=entry3))
-        self.assertFalse(parser.parse(raw_filter=and_filter).apply(entry=entry3))
-        self.assertFalse(parser.parse(raw_filter=nested_filter).apply(entry=entry3))
+        self.assertFalse(parser.parse(raw_filter=single_filter).apply(entry=entry3, spec=spec))
+        self.assertFalse(parser.parse(raw_filter=or_filter).apply(entry=entry3, spec=spec))
+        self.assertFalse(parser.parse(raw_filter=and_filter).apply(entry=entry3, spec=spec))
+        self.assertFalse(parser.parse(raw_filter=nested_filter).apply(entry=entry3, spec=spec))
 
 
 class FilteringSpec(unittest.TestCase):
 
     def test_should_filter_entries(self):
+        spec = {'test_field': int, 'other_field': str, 'third_field': bool}
+
         single_filter = 'test_field > 42'
         or_filter = 'test_field > 42 OR other_field like test'
         and_filter = 'test_field > 42 AND other_field like test'
@@ -219,22 +208,22 @@ class FilteringSpec(unittest.TestCase):
         parser = FilterParser()
 
         self.assertListEqual(
-            list(Filtering(parsed_filter=parser.parse(raw_filter=single_filter)).apply(entries=entries)),
+            list(Filtering(parsed_filter=parser.parse(raw_filter=single_filter)).apply(entries=entries, spec=spec)),
             [entries[0]]
         )
 
         self.assertListEqual(
-            list(Filtering(parsed_filter=parser.parse(raw_filter=or_filter)).apply(entries=entries)),
+            list(Filtering(parsed_filter=parser.parse(raw_filter=or_filter)).apply(entries=entries, spec=spec)),
             [entries[0], entries[1]]
         )
 
         self.assertListEqual(
-            list(Filtering(parsed_filter=parser.parse(raw_filter=and_filter)).apply(entries=entries)),
+            list(Filtering(parsed_filter=parser.parse(raw_filter=and_filter)).apply(entries=entries, spec=spec)),
             [entries[0]]
         )
 
         self.assertListEqual(
-            list(Filtering(parsed_filter=parser.parse(raw_filter=nested_filter)).apply(entries=entries)),
+            list(Filtering(parsed_filter=parser.parse(raw_filter=nested_filter)).apply(entries=entries, spec=spec)),
             [entries[0]]
         )
 
@@ -246,13 +235,15 @@ class WithFilteringSpec(unittest.TestCase):
         @click.pass_context
         @with_filtering
         def test(ctx):
+            spec = {'test_field': int, 'other_field': str, 'third_field': bool}
+
             entries = [
                 {'test_field': 50, 'other_field': 'some-test-value', 'third_field': False},
                 {'test_field': 40, 'other_field': 'some-test-value', 'third_field': False},
                 {'test_field': 40, 'other_field': 'some-value', 'third_field': True}
             ]
 
-            click.echo('size={}'.format(len(list(ctx.obj.filtering.apply(entries)))))
+            click.echo('size={}'.format(len(list(ctx.obj.filtering.apply(entries, spec)))))
 
         runner = Runner().with_command(test)
         result = runner.invoke(args=['test', '--filter', 'test_field > 40'])

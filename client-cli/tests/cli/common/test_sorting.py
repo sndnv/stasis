@@ -1,14 +1,16 @@
 import unittest
 
 import click
-from tests.cli.cli_runner import Runner
 
 from client_cli.cli.common.sorting import Sorting, with_sorting
+from tests.cli.cli_runner import Runner
 
 
 class SortingSpec(unittest.TestCase):
 
     def test_should_sort_entries(self):
+        spec = {'id': int, 'test_field': int, 'other_field': str}
+
         entries = [
             {'id': 0, 'test_field': 40, 'other_field': 'some-test-value'},
             {'id': 1, 'test_field': 50, 'other_field': 'some-test-value'},
@@ -16,12 +18,12 @@ class SortingSpec(unittest.TestCase):
         ]
 
         self.assertListEqual(
-            list(Sorting(field='test_field', ordering='asc').apply(entries=entries)),
+            list(Sorting(field='test_field', ordering='asc').apply(entries=entries, spec=spec)),
             [entries[2], entries[0], entries[1]]
         )
 
         self.assertListEqual(
-            list(Sorting(field='test_field', ordering='desc').apply(entries=entries)),
+            list(Sorting(field='test_field', ordering='desc').apply(entries=entries, spec=spec)),
             [entries[1], entries[0], entries[2]]
         )
 
@@ -30,6 +32,19 @@ class SortingSpec(unittest.TestCase):
 
         self.assertEqual(sorting.ordering, 'asc')
         self.assertEqual(sorting.with_ordering(ordering='desc').ordering, 'desc')
+
+    def test_should_fail_filtering_entries_when_invalid_field_is_provided(self):
+        spec = {'id': int, 'test_field': int, 'other_field': str}
+
+        entries = [
+            {'id': 0, 'test_field': 40, 'other_field': 'some-test-value'},
+            {'id': 1, 'test_field': 50, 'other_field': 'some-test-value'},
+            {'id': 2, 'test_field': 30, 'other_field': 'some-value'}
+        ]
+
+        sorting = Sorting(field='missing-field', ordering='asc')
+        with self.assertRaises(click.Abort):
+            self.assertTrue(sorting.apply(entries=entries, spec=spec))
 
     def test_should_be_representable_as_a_string(self):
         self.assertEqual(
@@ -51,13 +66,17 @@ class WithSortingSpec(unittest.TestCase):
         @click.pass_context
         @with_sorting
         def test(ctx):
+            spec = {'id': int, 'test_field': int, 'other_field': str}
+
             entries = [
                 {'id': 0, 'test_field': 40, 'other_field': 'some-test-value'},
                 {'id': 1, 'test_field': 50, 'other_field': 'some-test-value'},
                 {'id': 2, 'test_field': 30, 'other_field': 'some-value'}
             ]
 
-            click.echo('entries={}'.format(','.join(map(lambda e: str(e['id']), ctx.obj.sorting.apply(entries)))))
+            click.echo(
+                'entries={}'.format(','.join(map(lambda e: str(e['id']), ctx.obj.sorting.apply(entries, spec=spec))))
+            )
 
         @click.group()
         def cli():

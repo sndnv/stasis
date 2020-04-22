@@ -14,10 +14,11 @@ from client_cli.render.flatten import dataset_definitions, dataset_entries, data
 @with_sorting
 def show_definitions(ctx):
     """Show available dataset definitions."""
+    spec = dataset_definitions.get_spec()
     definitions = ctx.obj.api.dataset_definitions()
     definitions = dataset_definitions.flatten(definitions)
-    definitions = ctx.obj.filtering.apply(definitions) if ctx.obj.filtering else definitions
-    definitions = ctx.obj.sorting.apply(definitions) if ctx.obj.sorting else definitions
+    definitions = ctx.obj.filtering.apply(definitions, spec) if ctx.obj.filtering else definitions
+    definitions = ctx.obj.sorting.apply(definitions, spec) if ctx.obj.sorting else definitions
 
     click.echo(ctx.obj.rendering.render_dataset_definitions(definitions))
 
@@ -29,10 +30,11 @@ def show_definitions(ctx):
 @with_sorting
 def show_entries(ctx, definition):
     """Show available dataset entries for the specified DEFINITION."""
+    spec = dataset_entries.get_spec()
     entries = ctx.obj.api.dataset_entries(definition)
     entries = dataset_entries.flatten(entries)
-    entries = ctx.obj.filtering.apply(entries) if ctx.obj.filtering else entries
-    entries = ctx.obj.sorting.apply(entries) if ctx.obj.sorting else entries
+    entries = ctx.obj.filtering.apply(entries, spec) if ctx.obj.filtering else entries
+    entries = ctx.obj.sorting.apply(entries, spec) if ctx.obj.sorting else entries
 
     click.echo(ctx.obj.rendering.render_dataset_entries(entries))
 
@@ -48,23 +50,26 @@ def show_metadata(ctx, entry, output):
     metadata = ctx.obj.api.dataset_metadata(entry)
 
     if output == 'changes':
+        spec = dataset_metadata.get_spec_changes()
         metadata_changes = dataset_metadata.flatten_changes(metadata)
-        metadata_changes = ctx.obj.filtering.apply(metadata_changes) if ctx.obj.filtering else metadata_changes
-        metadata_changes = ctx.obj.sorting.apply(metadata_changes) if ctx.obj.sorting else metadata_changes
+        metadata_changes = ctx.obj.filtering.apply(metadata_changes, spec) if ctx.obj.filtering else metadata_changes
+        metadata_changes = ctx.obj.sorting.apply(metadata_changes, spec) if ctx.obj.sorting else metadata_changes
 
         click.echo(ctx.obj.rendering.render_dataset_metadata_changes(metadata_changes))
 
     if output == 'fs':
-        metadata_filesystem = dataset_metadata.flatten_filesystem(entry, metadata)
-        metadata_filesystem = ctx.obj.filtering.apply(metadata_filesystem) if ctx.obj.filtering else metadata_filesystem
-        metadata_filesystem = ctx.obj.sorting.apply(metadata_filesystem) if ctx.obj.sorting else metadata_filesystem
+        spec = dataset_metadata.get_spec_filesystem()
+        metadata_fs = dataset_metadata.flatten_filesystem(entry, metadata)
+        metadata_fs = ctx.obj.filtering.apply(metadata_fs, spec) if ctx.obj.filtering else metadata_fs
+        metadata_fs = ctx.obj.sorting.apply(metadata_fs, spec) if ctx.obj.sorting else metadata_fs
 
-        click.echo(ctx.obj.rendering.render_dataset_metadata_filesystem(metadata_filesystem))
+        click.echo(ctx.obj.rendering.render_dataset_metadata_filesystem(metadata_fs))
 
     if output == 'crates':
+        spec = dataset_metadata.get_spec_crates()
         metadata_crates = dataset_metadata.flatten_crates(metadata)
-        metadata_crates = ctx.obj.filtering.apply(metadata_crates) if ctx.obj.filtering else metadata_crates
-        metadata_crates = ctx.obj.sorting.apply(metadata_crates) if ctx.obj.sorting else metadata_crates
+        metadata_crates = ctx.obj.filtering.apply(metadata_crates, spec) if ctx.obj.filtering else metadata_crates
+        metadata_crates = ctx.obj.sorting.apply(metadata_crates, spec) if ctx.obj.sorting else metadata_crates
 
         click.echo(ctx.obj.rendering.render_dataset_metadata_crates(metadata_crates))
 
@@ -204,10 +209,11 @@ def search(ctx, search_query, until):
     Search available metadata for files matching the provided SEARCH_QUERY regular expression,
     (optionally) restricting the results by searching entries only up to the provided timestamp.
     """
+    spec = dataset_metadata.get_spec_search_result()
     search_result = ctx.obj.api.dataset_metadata_search(search_query, until)
     search_result = dataset_metadata.flatten_search_result(search_result)
-    search_result = ctx.obj.filtering.apply(search_result) if ctx.obj.filtering else search_result
-    search_result = ctx.obj.sorting.apply(search_result) if ctx.obj.sorting else search_result
+    search_result = ctx.obj.filtering.apply(search_result, spec) if ctx.obj.filtering else search_result
+    search_result = ctx.obj.sorting.apply(search_result, spec) if ctx.obj.sorting else search_result
 
     click.echo(ctx.obj.rendering.render_dataset_metadata_search_result(search_result))
 

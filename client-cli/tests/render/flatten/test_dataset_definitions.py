@@ -1,14 +1,22 @@
 import unittest
 
-from client_cli.render.flatten.dataset_definitions import flatten, transform_retention
+from client_cli.render.flatten.dataset_definitions import get_spec, flatten, transform_retention
 from tests.mocks import mock_data
 
 
 class DatasetDefinitionsSpec(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.expected_keys = ['definition', 'info', 'device', 'copies', 'existing_versions', 'removed_versions']
+
+    def test_should_retrieve_dataset_definitions_spec(self):
+        spec = get_spec()
+        for key in self.expected_keys:
+            self.assertIn(key, spec)
 
     def test_should_flatten_dataset_definitions(self):
         for definition in flatten(definitions=mock_data.DEFINITIONS):
-            for key in ['definition', 'info', 'device', 'copies', 'existing_versions', 'removed_versions']:
+            for key in self.expected_keys:
                 self.assertIn(key, definition)
                 self.assertFalse(isinstance(definition[key], dict), 'for key [{}]'.format(key))
                 self.assertFalse(isinstance(definition[key], list), 'for key [{}]'.format(key))
