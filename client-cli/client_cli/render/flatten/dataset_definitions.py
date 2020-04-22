@@ -3,6 +3,23 @@
 from client_cli.render import duration_to_str
 
 
+def get_spec():
+    """
+    Retrieves the table spec for dataset definitions.
+
+    :return: the `field->field-type` mapping
+    """
+
+    return {
+        'definition': str,
+        'info': str,
+        'device': str,
+        'copies': int,
+        'existing_versions': str,
+        'removed_versions': str,
+    }
+
+
 def flatten(definitions):
     """
     Converts all nested objects from the provided dataset definitions into non-nested `field->field-value` dicts.

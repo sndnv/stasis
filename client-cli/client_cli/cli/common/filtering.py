@@ -5,7 +5,7 @@ import logging
 import click
 from pyparsing import Word, oneOf, alphas8bit, alphanums, infixNotation, opAssoc, ParseResults
 
-from client_cli.cli.common import normalize
+from client_cli.cli.common import coerce, normalize
 from client_cli.cli.context import Context
 
 
@@ -42,14 +42,15 @@ class Filtering:
     def __init__(self, parsed_filter):
         self.filter = parsed_filter
 
-    def apply(self, entries):
+    def apply(self, entries, spec: dict):
         """
         Applies this filter to the provided list of entries.
 
         :param entries: entries to filter
+        :param spec: specification of `field->field-type` mapping
         :return: filtered list of entries
         """
-        return filter(self.filter.apply, entries)
+        return filter(lambda entry: self.filter.apply(entry=entry, spec=spec), entries)
 
 
 class FilterBinaryOperator:
@@ -62,7 +63,7 @@ class FilterBinaryOperator:
         '>=': lambda v, c: v >= c,
         '==': lambda v, c: v == c,
         '!=': lambda v, c: v != c,
-        'like': lambda v, c: c in v,
+        'like': lambda v, c: str(c) in str(v),
     }
 
     def __init__(self, operator):
@@ -120,11 +121,12 @@ class Filter:
         self.operator = FilterBinaryOperator(tokens[1])
         self.condition = tokens[2]
 
-    def apply(self, entry: dict) -> bool:
+    def apply(self, entry: dict, spec: dict) -> bool:
         """
         Applies this filter to the provided entry.
 
         :param entry: entry to filter
+        :param spec: specification of `field->field-type` mapping
         :return: True, if the filter matches the entry
         """
         value = entry.get(self.field, None)
@@ -132,9 +134,14 @@ class Filter:
         if value is not None:
             value = normalize(value)
             condition = normalize(self.condition)
-            return self.operator.apply(value, Filter.coerce(provided=condition, expected=value))
+            return self.operator.apply(value, coerce(provided=condition, field=self.field, spec=spec))
         else:
-            logging.error('No value found for field [{}]'.format(self.field))
+            logging.error(
+                'No value found for field [{}]; available fields are: [{}]'.format(
+                    self.field,
+                    ', '.join(spec.keys())
+                )
+            )
             raise click.Abort()
 
     def as_dict(self):
@@ -157,36 +164,6 @@ class Filter:
         """
         return 'Filter(field=[{}], operator=[{}], condition=[{}])'.format(self.field, self.operator, self.condition)
 
-    @staticmethod
-    def coerce(provided: str, expected):
-        """
-        Attempts to coerce the provided condition to the expected field value for better filter comparisons.
-
-        Supported types are `bool`, `int` and `float`.
-
-        :param provided: value to coerce
-        :param expected: expected field value
-        :return: the coerced value or the original value (if coercion failed)
-        """
-        if isinstance(expected, bool):
-            provided = provided.lower()
-            if provided == 'true':
-                return True
-            elif provided == 'false':
-                return False
-            else:
-                logging.error('Cannot convert [{}] to boolean'.format(provided))
-            raise click.Abort()
-        elif isinstance(expected, int):
-            return int(provided)
-        elif isinstance(expected, float):
-            return float(provided)
-        elif isinstance(expected, str):
-            return provided
-        else:
-            logging.error('Unsupported type encountered for expected value: [{}]'.format(type(expected)))
-            raise click.Abort()
-
 
 class FilterGroup:
     """Representation of a filter group (filter / filter group, group operator and another filter / filter group)."""
@@ -199,15 +176,16 @@ class FilterGroup:
         self.operator = operator
         self.right = right
 
-    def apply(self, entry: dict) -> bool:
+    def apply(self, entry: dict, spec: dict) -> bool:
         """
         Applies this filter group (and all nested filters / filter groups) to the provided entry.
 
         :param entry: entry to filter
+        :param spec: specification of `field->field-type` mapping
         :return: True, if the filter group matches the entry
         """
-        left_result = self.left.apply(entry)
-        right_result = self.right.apply(entry)
+        left_result = self.left.apply(entry=entry, spec=spec)
+        right_result = self.right.apply(entry=entry, spec=spec)
 
         if self.operator in FilterGroup.AND_OPERATORS:
             return left_result and right_result
@@ -253,7 +231,7 @@ class FilterParser:
     def __init__(self):
         field = Word(alphanums + alphas8bit + '_')
         operator = oneOf(FilterBinaryOperator.supported_operators())
-        value = Word(alphanums + alphas8bit + '.')
+        value = Word(alphanums + alphas8bit + '.' + '_' + "-" + "/")
 
         comparison = field + operator + value
         comparison.setParseAction(Filter)

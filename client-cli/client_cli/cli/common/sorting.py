@@ -1,8 +1,10 @@
 """Functions and classes for handling sorting of entries retrieved by the CLI."""
 
+import logging
+
 import click
 
-from client_cli.cli.common import normalize
+from client_cli.cli.common import coerce, normalize
 from client_cli.cli.context import Context
 
 
@@ -77,18 +79,30 @@ class Sorting:
         self.ordering = ordering
         return self
 
-    def apply(self, entries):
+    def apply(self, entries, spec: dict):
         """
         Applies this sorting to the provided list of entries.
 
         :param entries: entries to sort
+        :param spec: specification of `field->field-type` mapping
         :return: sorted list of entries
         """
-        return sorted(
-            entries,
-            key=lambda entry: normalize(entry[self.field]),
-            reverse=self.ordering == 'desc'
-        )
+
+        def extract(entry):
+            value = entry.get(self.field, None)
+
+            if value is not None:
+                return coerce(provided=normalize(value), field=self.field, spec=spec)
+            else:
+                logging.error(
+                    'No value found for field [{}]; available fields are: [{}]'.format(
+                        self.field,
+                        ', '.join(spec.keys())
+                    )
+                )
+                raise click.Abort()
+
+        return sorted(entries, key=extract, reverse=self.ordering == 'desc')
 
     def as_dict(self):
         """

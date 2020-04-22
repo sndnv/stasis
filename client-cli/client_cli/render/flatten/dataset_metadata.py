@@ -5,6 +5,30 @@ import itertools
 from client_cli.render import memory_size_to_str
 
 
+def get_spec_changes():
+    """
+    Retrieves the table spec for metadata changes.
+
+    :return: the `field->field-type` mapping
+    """
+
+    return {
+        'changed': str,
+        'type': str,
+        'entity': str,
+        'size': int,
+        'link': str,
+        'hidden': str,
+        'created': str,
+        'updated': str,
+        'owner': str,
+        'group': str,
+        'permissions': str,
+        'checksum': int,
+        'crates': int,
+    }
+
+
 def flatten_changes(metadata):
     """
     Converts all nested objects from the provided metadata into non-nested `field->field-value` dicts
@@ -40,6 +64,20 @@ def flatten_changes(metadata):
     )
 
 
+def get_spec_crates():
+    """
+    Retrieves the table spec for crates metadata.
+
+    :return: the `field->field-type` mapping
+    """
+
+    return {
+        'entity': str,
+        'part': str,
+        'crate': str,
+    }
+
+
 def flatten_crates(metadata):
     """
     Converts all nested objects from the provided metadata into non-nested `field->field-value` dicts
@@ -69,6 +107,20 @@ def flatten_crates(metadata):
     )
 
 
+def get_spec_filesystem():
+    """
+    Retrieves the table spec for filesystem metadata.
+
+    :return: the `field->field-type` mapping
+    """
+
+    return {
+        'entity': str,
+        'state': str,
+        'entry': str,
+    }
+
+
 def flatten_filesystem(entry, metadata):
     """
     Converts all nested objects from the provided metadata into non-nested `field->field-value` dicts
@@ -90,6 +142,22 @@ def flatten_filesystem(entry, metadata):
             metadata['filesystem']['entities'].items()
         )
     )
+
+
+def get_spec_search_result():
+    """
+    Retrieves the table spec for search results.
+
+    :return: the `field->field-type` mapping
+    """
+
+    return {
+        'definition': str,
+        'info': str,
+        'entity': str,
+        'state': str,
+        'entry': str,
+    }
 
 
 def flatten_search_result(search_result):

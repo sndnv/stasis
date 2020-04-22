@@ -1,6 +1,23 @@
 """Utility functions for flattening dataset entries."""
 
 
+def get_spec():
+    """
+    Retrieves the table spec for dataset entries.
+
+    :return: the `field->field-type` mapping
+    """
+
+    return {
+        'entry': str,
+        'definition': str,
+        'device': str,
+        'crates': int,
+        'metadata': str,
+        'created': str,
+    }
+
+
 def flatten(entries):
     """
     Converts all nested objects from the provided dataset entries into non-nested `field->field-value` dicts.
