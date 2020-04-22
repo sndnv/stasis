@@ -7,16 +7,22 @@ def get_spec():
     """
     Retrieves the table spec for dataset definitions.
 
-    :return: the `field->field-type` mapping
+    :return: the `field->field-type` and `sorting` mapping
     """
 
     return {
-        'definition': str,
-        'info': str,
-        'device': str,
-        'copies': int,
-        'existing_versions': str,
-        'removed_versions': str,
+        'fields': {
+            'definition': str,
+            'info': str,
+            'device': str,
+            'copies': int,
+            'existing_versions': str,
+            'removed_versions': str,
+        },
+        'sorting': {
+            'field': 'definition',
+            'ordering': 'asc',
+        }
     }
 
 

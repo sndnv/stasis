@@ -9,23 +9,29 @@ def get_spec_changes():
     """
     Retrieves the table spec for metadata changes.
 
-    :return: the `field->field-type` mapping
+    :return: the `field->field-type` and `sorting` mapping
     """
 
     return {
-        'changed': str,
-        'type': str,
-        'entity': str,
-        'size': int,
-        'link': str,
-        'hidden': str,
-        'created': str,
-        'updated': str,
-        'owner': str,
-        'group': str,
-        'permissions': str,
-        'checksum': int,
-        'crates': int,
+        'fields': {
+            'changed': str,
+            'type': str,
+            'entity': str,
+            'size': int,
+            'link': str,
+            'hidden': str,
+            'created': str,
+            'updated': str,
+            'owner': str,
+            'group': str,
+            'permissions': str,
+            'checksum': int,
+            'crates': int,
+        },
+        'sorting': {
+            'field': 'entity',
+            'ordering': 'asc',
+        }
     }
 
 
@@ -68,13 +74,19 @@ def get_spec_crates():
     """
     Retrieves the table spec for crates metadata.
 
-    :return: the `field->field-type` mapping
+    :return: the `field->field-type` and `sorting` mapping
     """
 
     return {
-        'entity': str,
-        'part': str,
-        'crate': str,
+        'fields': {
+            'entity': str,
+            'part': str,
+            'crate': str,
+        },
+        'sorting': {
+            'field': 'entity',
+            'ordering': 'asc',
+        }
     }
 
 
@@ -111,13 +123,19 @@ def get_spec_filesystem():
     """
     Retrieves the table spec for filesystem metadata.
 
-    :return: the `field->field-type` mapping
+    :return: the `field->field-type` and `sorting` mapping
     """
 
     return {
-        'entity': str,
-        'state': str,
-        'entry': str,
+        'fields': {
+            'entity': str,
+            'state': str,
+            'entry': str,
+        },
+        'sorting': {
+            'field': 'entity',
+            'ordering': 'asc',
+        }
     }
 
 
@@ -148,15 +166,21 @@ def get_spec_search_result():
     """
     Retrieves the table spec for search results.
 
-    :return: the `field->field-type` mapping
+    :return: the `field->field-type` and `sorting` mapping
     """
 
     return {
-        'definition': str,
-        'info': str,
-        'entity': str,
-        'state': str,
-        'entry': str,
+        'fields': {
+            'definition': str,
+            'info': str,
+            'entity': str,
+            'state': str,
+            'entry': str,
+        },
+        'sorting': {
+            'field': 'entity',
+            'ordering': 'asc',
+        }
     }
 
 

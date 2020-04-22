@@ -4,7 +4,7 @@ import click
 
 from client_cli.cli import validate_duration
 from client_cli.cli.common.filtering import with_filtering
-from client_cli.cli.common.sorting import with_sorting
+from client_cli.cli.common.sorting import with_sorting, Sorting
 from client_cli.render.flatten import dataset_definitions, dataset_entries, dataset_metadata
 
 
@@ -15,10 +15,18 @@ from client_cli.render.flatten import dataset_definitions, dataset_entries, data
 def show_definitions(ctx):
     """Show available dataset definitions."""
     spec = dataset_definitions.get_spec()
+
+    fields = spec['fields']
+    default_sorting = spec['sorting']
+    default_sorting = Sorting(field=default_sorting['field'], ordering=default_sorting['ordering'])
+
+    filtering = ctx.obj.filtering
+    sorting = ctx.obj.sorting
+
     definitions = ctx.obj.api.dataset_definitions()
     definitions = dataset_definitions.flatten(definitions)
-    definitions = ctx.obj.filtering.apply(definitions, spec) if ctx.obj.filtering else definitions
-    definitions = ctx.obj.sorting.apply(definitions, spec) if ctx.obj.sorting else definitions
+    definitions = filtering.apply(definitions, fields) if filtering else definitions
+    definitions = (sorting or default_sorting).apply(definitions, fields)
 
     click.echo(ctx.obj.rendering.render_dataset_definitions(definitions))
 
@@ -31,10 +39,18 @@ def show_definitions(ctx):
 def show_entries(ctx, definition):
     """Show available dataset entries for the specified DEFINITION."""
     spec = dataset_entries.get_spec()
+
+    fields = spec['fields']
+    default_sorting = spec['sorting']
+    default_sorting = Sorting(field=default_sorting['field'], ordering=default_sorting['ordering'])
+
+    filtering = ctx.obj.filtering
+    sorting = ctx.obj.sorting
+
     entries = ctx.obj.api.dataset_entries(definition)
     entries = dataset_entries.flatten(entries)
-    entries = ctx.obj.filtering.apply(entries, spec) if ctx.obj.filtering else entries
-    entries = ctx.obj.sorting.apply(entries, spec) if ctx.obj.sorting else entries
+    entries = filtering.apply(entries, fields) if filtering else entries
+    entries = (sorting or default_sorting).apply(entries, fields)
 
     click.echo(ctx.obj.rendering.render_dataset_entries(entries))
 
@@ -49,27 +65,45 @@ def show_metadata(ctx, entry, output):
     """Show metadata information for the specified ENTRY."""
     metadata = ctx.obj.api.dataset_metadata(entry)
 
+    filtering = ctx.obj.filtering
+    sorting = ctx.obj.sorting
+
     if output == 'changes':
         spec = dataset_metadata.get_spec_changes()
+
+        fields = spec['fields']
+        default_sorting = spec['sorting']
+        default_sorting = Sorting(field=default_sorting['field'], ordering=default_sorting['ordering'])
+
         metadata_changes = dataset_metadata.flatten_changes(metadata)
-        metadata_changes = ctx.obj.filtering.apply(metadata_changes, spec) if ctx.obj.filtering else metadata_changes
-        metadata_changes = ctx.obj.sorting.apply(metadata_changes, spec) if ctx.obj.sorting else metadata_changes
+        metadata_changes = filtering.apply(metadata_changes, fields) if filtering else metadata_changes
+        metadata_changes = (sorting or default_sorting).apply(metadata_changes, fields)
 
         click.echo(ctx.obj.rendering.render_dataset_metadata_changes(metadata_changes))
 
     if output == 'fs':
         spec = dataset_metadata.get_spec_filesystem()
+
+        fields = spec['fields']
+        default_sorting = spec['sorting']
+        default_sorting = Sorting(field=default_sorting['field'], ordering=default_sorting['ordering'])
+
         metadata_fs = dataset_metadata.flatten_filesystem(entry, metadata)
-        metadata_fs = ctx.obj.filtering.apply(metadata_fs, spec) if ctx.obj.filtering else metadata_fs
-        metadata_fs = ctx.obj.sorting.apply(metadata_fs, spec) if ctx.obj.sorting else metadata_fs
+        metadata_fs = filtering.apply(metadata_fs, fields) if filtering else metadata_fs
+        metadata_fs = (sorting or default_sorting).apply(metadata_fs, fields)
 
         click.echo(ctx.obj.rendering.render_dataset_metadata_filesystem(metadata_fs))
 
     if output == 'crates':
         spec = dataset_metadata.get_spec_crates()
+
+        fields = spec['fields']
+        default_sorting = spec['sorting']
+        default_sorting = Sorting(field=default_sorting['field'], ordering=default_sorting['ordering'])
+
         metadata_crates = dataset_metadata.flatten_crates(metadata)
-        metadata_crates = ctx.obj.filtering.apply(metadata_crates, spec) if ctx.obj.filtering else metadata_crates
-        metadata_crates = ctx.obj.sorting.apply(metadata_crates, spec) if ctx.obj.sorting else metadata_crates
+        metadata_crates = filtering.apply(metadata_crates, fields) if filtering else metadata_crates
+        metadata_crates = (sorting or default_sorting).apply(metadata_crates, fields)
 
         click.echo(ctx.obj.rendering.render_dataset_metadata_crates(metadata_crates))
 
@@ -210,10 +244,18 @@ def search(ctx, search_query, until):
     (optionally) restricting the results by searching entries only up to the provided timestamp.
     """
     spec = dataset_metadata.get_spec_search_result()
+
+    fields = spec['fields']
+    default_sorting = spec['sorting']
+    default_sorting = Sorting(field=default_sorting['field'], ordering=default_sorting['ordering'])
+
+    filtering = ctx.obj.filtering
+    sorting = ctx.obj.sorting
+
     search_result = ctx.obj.api.dataset_metadata_search(search_query, until)
     search_result = dataset_metadata.flatten_search_result(search_result)
-    search_result = ctx.obj.filtering.apply(search_result, spec) if ctx.obj.filtering else search_result
-    search_result = ctx.obj.sorting.apply(search_result, spec) if ctx.obj.sorting else search_result
+    search_result = filtering.apply(search_result, fields) if filtering else search_result
+    search_result = (sorting or default_sorting).apply(search_result, fields)
 
     click.echo(ctx.obj.rendering.render_dataset_metadata_search_result(search_result))
 

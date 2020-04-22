@@ -5,16 +5,22 @@ def get_spec():
     """
     Retrieves the table spec for dataset entries.
 
-    :return: the `field->field-type` mapping
+    :return: the `field->field-type` and `sorting` mapping
     """
 
     return {
-        'entry': str,
-        'definition': str,
-        'device': str,
-        'crates': int,
-        'metadata': str,
-        'created': str,
+        'fields': {
+            'entry': str,
+            'definition': str,
+            'device': str,
+            'crates': int,
+            'metadata': str,
+            'created': str,
+        },
+        'sorting': {
+            'field': 'created',
+            'ordering': 'desc',
+        }
     }
 
 
