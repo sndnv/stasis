@@ -11,8 +11,12 @@ class DatasetDefinitionsSpec(unittest.TestCase):
 
     def test_should_retrieve_dataset_definitions_spec(self):
         spec = get_spec()
+
         for key in self.expected_keys:
-            self.assertIn(key, spec)
+            self.assertIn(key, spec['fields'])
+
+        self.assertIn('field', spec['sorting'])
+        self.assertIn('ordering', spec['sorting'])
 
     def test_should_flatten_dataset_definitions(self):
         for definition in flatten(definitions=mock_data.DEFINITIONS):

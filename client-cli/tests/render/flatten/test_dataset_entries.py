@@ -11,8 +11,12 @@ class DatasetEntriesSpec(unittest.TestCase):
 
     def test_should_retrieve_dataset_entries_spec(self):
         spec = get_spec()
+
         for key in self.expected_keys:
-            self.assertIn(key, spec)
+            self.assertIn(key, spec['fields'])
+
+        self.assertIn('field', spec['sorting'])
+        self.assertIn('ordering', spec['sorting'])
 
     def test_should_flatten_dataset_entries(self):
         for entry in flatten(entries=mock_data.ENTRIES):

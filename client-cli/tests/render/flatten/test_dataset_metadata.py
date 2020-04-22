@@ -25,8 +25,12 @@ class DatasetMetadataSpec(unittest.TestCase):
 
     def test_should_retrieve_changes_metadata_spec(self):
         spec = get_spec_changes()
+
         for key in self.expected_changes_keys:
-            self.assertIn(key, spec)
+            self.assertIn(key, spec['fields'])
+
+        self.assertIn('field', spec['sorting'])
+        self.assertIn('ordering', spec['sorting'])
 
     def test_should_flatten_changes_metadata(self):
         for entry in flatten_changes(metadata=mock_data.METADATA):
@@ -37,8 +41,12 @@ class DatasetMetadataSpec(unittest.TestCase):
 
     def test_should_retrieve_crates_metadata_spec(self):
         spec = get_spec_crates()
+
         for key in self.expected_crates_keys:
-            self.assertIn(key, spec)
+            self.assertIn(key, spec['fields'])
+
+        self.assertIn('field', spec['sorting'])
+        self.assertIn('ordering', spec['sorting'])
 
     def test_should_flatten_crates_metadata(self):
         for entry in flatten_crates(metadata=mock_data.METADATA):
@@ -49,8 +57,12 @@ class DatasetMetadataSpec(unittest.TestCase):
 
     def test_should_retrieve_filesystem_metadata_spec(self):
         spec = get_spec_filesystem()
+
         for key in self.expected_filesystem_keys:
-            self.assertIn(key, spec)
+            self.assertIn(key, spec['fields'])
+
+        self.assertIn('field', spec['sorting'])
+        self.assertIn('ordering', spec['sorting'])
 
     def test_should_flatten_filesystem_metadata(self):
         for entry in flatten_filesystem(entry=str(uuid4()), metadata=mock_data.METADATA):
@@ -61,8 +73,12 @@ class DatasetMetadataSpec(unittest.TestCase):
 
     def test_should_retrieve_search_results_spec(self):
         spec = get_spec_search_result()
+
         for key in self.expected_search_results_keys:
-            self.assertIn(key, spec)
+            self.assertIn(key, spec['fields'])
+
+        self.assertIn('field', spec['sorting'])
+        self.assertIn('ordering', spec['sorting'])
 
     def test_should_flatten_search_results(self):
         for entry in flatten_search_result(search_result=mock_data.METADATA_SEARCH_RESULTS):
