@@ -2,6 +2,7 @@ package stasis.client.api.http
 
 import java.nio.file.{Path, Paths}
 
+import stasis.client.collection.rules.{Rule, Specification}
 import stasis.client.model.{DatasetMetadata, EntityMetadata, FilesystemMetadata}
 import stasis.client.ops.exceptions.ScheduleRetrievalFailure
 import stasis.client.ops.scheduling.OperationScheduleAssignment
@@ -149,4 +150,24 @@ object Formats {
 
   implicit val searchResultFormat: Format[Search.Result] =
     Json.format[Search.Result]
+
+  implicit val ruleOperationFormat: Format[Rule.Operation] = Format(
+    fjs = _.validate[String].map {
+      case "include" => Rule.Operation.Include
+      case "exclude" => Rule.Operation.Exclude
+    },
+    tjs = {
+      case Rule.Operation.Include => Json.toJson("include")
+      case Rule.Operation.Exclude => Json.toJson("exclude")
+    }
+  )
+
+  implicit val ruleOriginalFormat: Format[Rule.Original] =
+    Json.format[Rule.Original]
+
+  implicit val ruleFormat: Format[Rule] =
+    Json.format[Rule]
+
+  implicit val specificationEntryExplanationFormat: Format[Specification.Entry.Explanation] =
+    Json.format[Specification.Entry.Explanation]
 }

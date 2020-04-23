@@ -1,10 +1,10 @@
-+ /home/stasis           **                  # include all files for the current user
-- /home/stasis/.m2       repository/**       # exclude maven artifacts
-- /home/stasis/.ivy2     {cache|local}/**    # exclude ivy artifacts
++ /home__/stasis           **                  # include all files for the current user
+- /home__/stasis/.m2       repository/**       # exclude maven artifacts
+- /home__/stasis/.ivy2     {cache|local}/**    # exclude ivy artifacts
 
 # exclude logs, temporary and cache files
-- /home/stasis           **/*.{class|obj}
-- /home/stasis           **/lost+found/*
-- /home/stasis           **/*cache*/*
-- /home/stasis           **/*log*/*
-- /home/stasis           **/*.{tmp|temp|part|bak|~}
+- /home__/stasis           **/*.{class|obj}
+- /home__/stasis           **/lost+found/*
+- /home__/stasis           **/*cache*/*
+- /home__/stasis           **/*log*/*
+- /home__/stasis           **/*.{tmp|temp|part|bak|~}

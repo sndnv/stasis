@@ -2,15 +2,15 @@ package stasis.test.specs.unit.client.ops.scheduling
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-import akka.{Done, NotUsed}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.scaladsl.Flow
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.util.ByteString
-import org.scalatest.concurrent.Eventually
+import akka.{Done, NotUsed}
 import org.scalatest.BeforeAndAfterAll
+import org.scalatest.concurrent.Eventually
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceMetadataSecret}
@@ -23,8 +23,8 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks._
 import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 
-import scala.concurrent.{ExecutionException, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionException, Future}
 import scala.util.control.NonFatal
 
 class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with BeforeAndAfterAll {
@@ -222,6 +222,17 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     eventually {
       executor.operations.await should be(empty)
     }
+  }
+
+  it should "provide the configured backup rules" in {
+    val executor = createExecutor()
+
+    executor.rules
+      .map { spec =>
+        // test rules are not expected to match anything on the default filesystem
+        spec.entries.size should be(0)
+        spec.unmatched.size should be(8)
+      }
   }
 
   private def createExecutor(
