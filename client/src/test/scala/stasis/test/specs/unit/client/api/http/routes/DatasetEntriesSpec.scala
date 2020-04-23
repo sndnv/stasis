@@ -19,7 +19,32 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
-  "DatasetEntries routes" should "respond with all entries for a definition" in {
+  "DatasetEntries routes" should "respond with all entries" in {
+    val mockApiClient = MockServerApiEndpointClient()
+    val routes = createRoutes(api = mockApiClient)
+
+    Get(s"/") ~> routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[Seq[DatasetEntry]] should not be empty
+
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryCreated) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntriesRetrieved) should be(2)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetDefinitionCreated) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetDefinitionRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetDefinitionsRetrieved) should be(1)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.PublicSchedulesRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.PublicScheduleRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.UserRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+    }
+  }
+
+  they should "respond with all entries for a definition" in {
     val mockApiClient = MockServerApiEndpointClient()
     val routes = createRoutes(api = mockApiClient)
 

@@ -49,7 +49,15 @@ class ClientApi(ABC):
         """
 
     @abstractmethod
-    def dataset_entries(self, definition):
+    def dataset_entries(self):
+        """
+        Retrieves all dataset entries.
+
+        :return: requested entries
+        """
+
+    @abstractmethod
+    def dataset_entries_for_definition(self, definition):
         """
         Retrieves all dataset entries for the provided dataset definition.
 

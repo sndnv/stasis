@@ -13,6 +13,7 @@ class MockClientApi(ClientApi):
             'dataset_metadata_search': 0,
             'dataset_definitions': 0,
             'dataset_entries': 0,
+            'dataset_entries_for_definition': 0,
             'user': 0,
             'device': 0,
             'device_connections': 0,
@@ -48,8 +49,12 @@ class MockClientApi(ClientApi):
         self.stats['dataset_definitions'] += 1
         return mock_data.DEFINITIONS
 
-    def dataset_entries(self, definition):
+    def dataset_entries(self):
         self.stats['dataset_entries'] += 1
+        return mock_data.ENTRIES
+
+    def dataset_entries_for_definition(self, definition):
+        self.stats['dataset_entries_for_definition'] += 1
         return mock_data.ENTRIES
 
     def user(self):

@@ -26,7 +26,10 @@ class InactiveClientApi(ClientApi):
     def dataset_definitions(self):
         InactiveClientApi._abort()
 
-    def dataset_entries(self, definition):
+    def dataset_entries(self):
+        InactiveClientApi._abort()
+
+    def dataset_entries_for_definition(self, definition):
         InactiveClientApi._abort()
 
     def user(self):
