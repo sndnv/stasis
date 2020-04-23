@@ -1,14 +1,14 @@
 package stasis.test.specs.unit.client.mocks
 
-import java.nio.file.Path
+import java.nio.file.{Path, Paths}
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
 
 import akka.Done
+import stasis.client.collection.rules.{Rule, Specification}
 import stasis.client.ops.recovery.Recovery
 import stasis.client.ops.scheduling.OperationExecutor
-import stasis.shared.model.datasets.DatasetDefinition
-import stasis.shared.model.datasets.DatasetEntry
+import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.client.mocks.MockOperationExecutor.Statistic
 
@@ -17,6 +17,7 @@ import scala.concurrent.Future
 class MockOperationExecutor extends OperationExecutor {
   private val stats: Map[Statistic, AtomicInteger] = Map(
     Statistic.GetOperations -> new AtomicInteger(0),
+    Statistic.GetRules -> new AtomicInteger(0),
     Statistic.StartBackupWithRules -> new AtomicInteger(0),
     Statistic.StartBackupWithFiles -> new AtomicInteger(0),
     Statistic.StartRecoveryWithDefinition -> new AtomicInteger(0),
@@ -36,6 +37,37 @@ class MockOperationExecutor extends OperationExecutor {
         Operation.generateId() -> Operation.Type.GarbageCollection
       )
     )
+  }
+
+  override def rules: Future[Specification] = {
+    stats(Statistic.GetRules).incrementAndGet()
+
+    val rule1 = Rule(line = "+ /tmp/file *", lineNumber = 0).get
+    val explanation = Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule1.original)
+
+    val rule2 = Rule(line = "+ /tmp/other *", lineNumber = 1).get
+
+    val file1 = Paths.get("/tmp/file/01")
+    val file2 = Paths.get("/tmp/file/02")
+
+    val spec = Specification(
+      entries = Map(
+        file1 -> Specification.Entry(
+          file = file1,
+          directory = file1.getParent,
+          operation = Rule.Operation.Include,
+          reason = Seq(explanation)
+        ),
+        file2 -> Specification.Entry(
+          file = file2,
+          directory = file2.getParent,
+          operation = Rule.Operation.Include,
+          reason = Seq(explanation)
+        )
+      ),
+      unmatched = Seq((rule2, new RuntimeException("test failure")))
+    )
+    Future.successful(spec)
   }
 
   override def startBackupWithRules(
@@ -101,6 +133,7 @@ object MockOperationExecutor {
   sealed trait Statistic
   object Statistic {
     case object GetOperations extends Statistic
+    case object GetRules extends Statistic
     case object StartBackupWithRules extends Statistic
     case object StartBackupWithFiles extends Statistic
     case object StartRecoveryWithDefinition extends Statistic

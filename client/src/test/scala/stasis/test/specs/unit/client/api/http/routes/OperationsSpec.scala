@@ -4,8 +4,8 @@ import java.time.Instant
 
 import akka.event.Logging
 import akka.http.scaladsl.model.{StatusCodes, Uri}
-import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import stasis.client.api.http.Context
 import stasis.client.api.http.routes.Operations
@@ -17,8 +17,8 @@ import stasis.test.specs.unit.client.mocks._
 
 class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   "Operations routes" should "provide current operations state" in {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import Operations._
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
     val mockTracker = MockTrackerView()
     val mockExecutor = MockOperationExecutor()
@@ -31,6 +31,35 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockTracker.statistics(MockTrackerView.Statistic.GetState) should be(1)
 
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(1)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithEntry) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartExpiration) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartValidation) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartKeyRotation) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.Stop) should be(0)
+    }
+  }
+
+  they should "provide current backup rules" in {
+    import Operations._
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+
+    val mockExecutor = MockOperationExecutor()
+    val routes = createRoutes(executor = mockExecutor)
+
+    Get("/backup/rules") ~> routes ~> check {
+      status should be(StatusCodes.OK)
+      val spec = responseAs[SpecificationRules]
+
+      spec.included should not be empty
+      spec.excluded shouldBe empty
+      spec.explanation should not be empty
+
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(1)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
@@ -52,6 +81,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       status should be(StatusCodes.Accepted)
 
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(1)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
@@ -73,6 +103,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       status should be(StatusCodes.Accepted)
 
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(1)
@@ -94,6 +125,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       status should be(StatusCodes.Accepted)
 
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(1)
@@ -116,6 +148,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       status should be(StatusCodes.Accepted)
 
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
@@ -137,6 +170,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       status should be(StatusCodes.OK)
 
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)

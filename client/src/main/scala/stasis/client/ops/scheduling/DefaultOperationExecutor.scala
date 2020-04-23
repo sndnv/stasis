@@ -43,6 +43,9 @@ class DefaultOperationExecutor(
   override def operations: Future[Map[Operation.Id, Operation.Type]] =
     activeOperations.entries.map(_.mapValues(_.`type`))
 
+  override def rules: Future[Specification] =
+    SchedulingConfig.rules(file = config.backup.rulesFile).map(Specification.apply)
+
   override def startBackupWithRules(
     definition: DatasetDefinition.Id
   ): Future[Operation.Id] =

@@ -6,6 +6,7 @@ import java.time.temporal.ChronoUnit
 
 import play.api.libs.json._
 import stasis.client.api.http.Formats._
+import stasis.client.collection.rules.Rule
 import stasis.client.model.{EntityMetadata, FilesystemMetadata}
 import stasis.client.ops.exceptions.ScheduleRetrievalFailure
 import stasis.client.ops.scheduling.OperationScheduleAssignment
@@ -147,6 +148,19 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
       case (entity, json) =>
         entityMetadataFormat.writes(entity).toString should be(json)
         entityMetadataFormat.reads(Json.parse(json)).asOpt should be(Some(entity))
+    }
+  }
+
+  they should "convert rule operations to/from JSON" in {
+    val operations = Map(
+      Rule.Operation.Include -> """"include"""",
+      Rule.Operation.Exclude -> """"exclude""""
+    )
+
+    operations.foreach {
+      case (operation, json) =>
+        ruleOperationFormat.writes(operation).toString should be(json)
+        ruleOperationFormat.reads(Json.parse(json)).asOpt should be(Some(operation))
     }
   }
 }
