@@ -32,7 +32,10 @@ class InactiveClientApiSpec(unittest.TestCase):
             api.dataset_definitions()
 
         with self.assertRaises(Abort):
-            api.dataset_entries(definition=definition)
+            api.dataset_entries()
+
+        with self.assertRaises(Abort):
+            api.dataset_entries_for_definition(definition=definition)
 
         with self.assertRaises(Abort):
             api.user()

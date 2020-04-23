@@ -102,8 +102,21 @@ class DefaultClientApiSpec(unittest.TestCase):
         client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
         mock_request.return_value = MockResponse.success(mock_data.ENTRIES)
 
+        self.assertEqual(client.dataset_entries(), mock_data.ENTRIES)
+
+        self.assert_valid_request(
+            mock=mock_request,
+            expected_method='get',
+            expected_url='/datasets/entries'
+        )
+
+    @patch('requests.request')
+    def test_should_get_dataset_entries_for_definition(self, mock_request):
+        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        mock_request.return_value = MockResponse.success(mock_data.ENTRIES)
+
         definition = uuid4()
-        self.assertEqual(client.dataset_entries(definition=definition), mock_data.ENTRIES)
+        self.assertEqual(client.dataset_entries_for_definition(definition=definition), mock_data.ENTRIES)
 
         self.assert_valid_request(
             mock=mock_request,

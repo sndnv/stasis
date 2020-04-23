@@ -30,11 +30,25 @@ class BackupSpec(unittest.TestCase):
         context.rendering = JsonWriter()
 
         runner = Runner(cli)
-        result = runner.invoke(args=['show', 'entries', str(uuid4())], obj=context)
+        result = runner.invoke(args=['show', 'entries'], obj=context)
 
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertTrue(json.loads(result.output))
         self.assertEqual(context.api.stats['dataset_entries'], 1)
+        self.assertEqual(context.api.stats['dataset_entries_for_definition'], 0)
+
+    def test_should_show_entries_for_definition(self):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        runner = Runner(cli)
+        result = runner.invoke(args=['show', 'entries', str(uuid4())], obj=context)
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertTrue(json.loads(result.output))
+        self.assertEqual(context.api.stats['dataset_entries'], 0)
+        self.assertEqual(context.api.stats['dataset_entries_for_definition'], 1)
 
     def test_should_show_metadata(self):
         context = Context()

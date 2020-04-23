@@ -39,7 +39,10 @@ class DefaultClientApi(ClientApi):
     def dataset_definitions(self):
         return self.get(url='/datasets/definitions')
 
-    def dataset_entries(self, definition):
+    def dataset_entries(self):
+        return self.get(url='/datasets/entries')
+
+    def dataset_entries_for_definition(self, definition):
         return self.get(url='/datasets/entries/{}'.format(definition))
 
     def user(self):

@@ -32,12 +32,12 @@ def show_definitions(ctx):
 
 
 @click.command(name='entries', short_help='Show available dataset entries.')
-@click.argument('definition', type=click.UUID)
+@click.argument('definition', type=click.UUID, required=False)
 @click.pass_context
 @with_filtering
 @with_sorting
 def show_entries(ctx, definition):
-    """Show available dataset entries for the specified DEFINITION."""
+    """Show all available dataset entries or only entries for DEFINITION."""
     spec = dataset_entries.get_spec()
 
     fields = spec['fields']
@@ -47,7 +47,7 @@ def show_entries(ctx, definition):
     filtering = ctx.obj.filtering
     sorting = ctx.obj.sorting
 
-    entries = ctx.obj.api.dataset_entries(definition)
+    entries = ctx.obj.api.dataset_entries_for_definition(definition) if definition else ctx.obj.api.dataset_entries()
     entries = dataset_entries.flatten(entries)
     entries = filtering.apply(entries, fields) if filtering else entries
     entries = (sorting or default_sorting).apply(entries, fields)
