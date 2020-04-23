@@ -344,3 +344,16 @@ ACTIVE_CONNECTIONS = {
     'localhost:9090': {'reachable': True, 'timestamp': int(round(time.time() * 1000))},
     'localhost:9091': {'reachable': False, 'timestamp': int(round(time.time() * 1000))},
 }
+
+BACKUP_RULES = {
+    'included': ['/some/path/01', '/some/path', '/some'],
+    'excluded': ['/other'],
+    'explanation': {
+        '/some/path/01': [{'operation': 'include', 'original': {'line': '+ /some/path *', 'line_number': 0}}],
+        '/other': [{'operation': 'exclude', 'original': {'line': '- / other', 'line_number': 1}}],
+    },
+    'unmatched': [
+        [{'line': '+ /test_01 *', 'line_number': 2}, 'Not found'],
+        [{'line': '- /test_02 *', 'line_number': 3}, 'Test failure'],
+    ]
+}

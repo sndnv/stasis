@@ -1,6 +1,7 @@
 """Table-based :class:`Writer`."""
 
 from client_cli.render.default import (
+    backup_rules,
     dataset_definitions,
     dataset_entries,
     dataset_metadata,
@@ -41,6 +42,12 @@ class DefaultWriter(Writer):
 
     def render_operations(self, operations) -> str:
         return ops.render_as_table(operations)
+
+    def render_backup_rules_matched(self, state, rules) -> str:
+        return backup_rules.render_matched_rules_as_table(state, rules)
+
+    def render_backup_rules_unmatched(self, rules) -> str:
+        return backup_rules.render_unmatched_rules_as_table(rules)
 
     def render_operation_response(self, response):
         return ops.render_operation_response(response)

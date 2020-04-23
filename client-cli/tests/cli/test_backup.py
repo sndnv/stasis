@@ -69,6 +69,25 @@ class BackupSpec(unittest.TestCase):
 
         self.assertEqual(context.api.stats['dataset_metadata'], 3)
 
+    def test_should_show_backup_rules(self):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        runner = Runner(cli)
+        result_matched_included = runner.invoke(args=['show', 'rules', 'included'], obj=context)
+        result_matched_excluded = runner.invoke(args=['show', 'rules', 'excluded'], obj=context)
+        result_unmatched = runner.invoke(args=['show', 'rules', 'unmatched'], obj=context)
+
+        self.assertEqual(result_matched_included.exit_code, 0, result_matched_included.output)
+        self.assertTrue(json.loads(result_matched_included.output))
+        self.assertEqual(result_matched_excluded.exit_code, 0, result_matched_excluded.output)
+        self.assertTrue(json.loads(result_matched_excluded.output))
+        self.assertEqual(result_unmatched.exit_code, 0, result_unmatched.output)
+        self.assertTrue(json.loads(result_unmatched.output))
+
+        self.assertEqual(context.api.stats['backup_rules'], 3)
+
     @patch('click.prompt')
     def test_should_define_backups(self, mock_prompt):
         context = Context()

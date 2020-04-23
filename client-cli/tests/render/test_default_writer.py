@@ -2,7 +2,7 @@ import unittest
 from uuid import uuid4
 
 from client_cli.render.default_writer import DefaultWriter
-from client_cli.render.flatten import dataset_metadata, dataset_definitions, dataset_entries
+from client_cli.render.flatten import backup_rules, dataset_metadata, dataset_definitions, dataset_entries
 from tests.mocks import mock_data
 
 
@@ -63,6 +63,28 @@ class DefaultWriterSpec(unittest.TestCase):
     def test_should_render_operations(self):
         self.assertTrue(
             DefaultWriter().render_operations(operations=mock_data.ACTIVE_OPERATIONS)
+        )
+
+    def test_should_render_backup_rules_matched(self):
+        self.assertTrue(
+            DefaultWriter().render_backup_rules_matched(
+                state='included',
+                rules=backup_rules.flatten_matched(state='included', rules=mock_data.BACKUP_RULES)
+            )
+        )
+
+        self.assertTrue(
+            DefaultWriter().render_backup_rules_matched(
+                state='excluded',
+                rules=backup_rules.flatten_matched(state='excluded', rules=mock_data.BACKUP_RULES)
+            )
+        )
+
+    def test_should_render_backup_rules_unmatched(self):
+        self.assertTrue(
+            DefaultWriter().render_backup_rules_unmatched(
+                rules=backup_rules.flatten_unmatched(rules=mock_data.BACKUP_RULES)
+            )
         )
 
     def test_should_render_operation_response(self):

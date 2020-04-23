@@ -60,6 +60,9 @@ class DefaultClientApi(ClientApi):
     def operation_stop(self, operation):
         return self.put(url='/operations/{}/stop'.format(operation))
 
+    def backup_rules(self):
+        return self.get(url='/operations/backup/rules')
+
     def backup_start(self, definition):
         return self.put(url='/operations/backup/{}'.format(definition))
 

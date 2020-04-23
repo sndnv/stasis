@@ -18,6 +18,7 @@ class MockClientApi(ClientApi):
             'device': 0,
             'device_connections': 0,
             'operations': 0,
+            'backup_rules': 0,
             'operation_stop': 0,
             'backup_start': 0,
             'backup_define': 0,
@@ -72,6 +73,10 @@ class MockClientApi(ClientApi):
     def operations(self):
         self.stats['operations'] += 1
         return mock_data.ACTIVE_OPERATIONS
+
+    def backup_rules(self):
+        self.stats['backup_rules'] += 1
+        return mock_data.BACKUP_RULES
 
     def operation_stop(self, operation):
         self.stats['operation_stop'] += 1
