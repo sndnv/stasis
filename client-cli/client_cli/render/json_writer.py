@@ -35,6 +35,12 @@ class JsonWriter(Writer):
     def render_operations(self, operations) -> str:
         return json.dumps(operations, indent=4)
 
+    def render_backup_rules_matched(self, state, rules) -> str:
+        return json.dumps(rules, indent=4)
+
+    def render_backup_rules_unmatched(self, rules) -> str:
+        return json.dumps(rules, indent=4)
+
     def render_operation_response(self, response):
         return json.dumps(response, indent=4)
 

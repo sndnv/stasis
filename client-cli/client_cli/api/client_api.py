@@ -98,6 +98,14 @@ class ClientApi(ABC):
         """
 
     @abstractmethod
+    def backup_rules(self):
+        """
+        Retrieves the current backup specification/rules.
+
+        :return: backup spec/rules
+        """
+
+    @abstractmethod
     def operation_stop(self, operation):
         """
         Stops an active operation.

@@ -5,7 +5,7 @@ import click
 from client_cli.cli import validate_duration
 from client_cli.cli.common.filtering import with_filtering
 from client_cli.cli.common.sorting import with_sorting, Sorting
-from client_cli.render.flatten import dataset_definitions, dataset_entries, dataset_metadata
+from client_cli.render.flatten import backup_rules, dataset_definitions, dataset_entries, dataset_metadata
 
 
 @click.command(name='definitions')
@@ -108,6 +108,39 @@ def show_metadata(ctx, entry, output):
         click.echo(ctx.obj.rendering.render_dataset_metadata_crates(metadata_crates))
 
 
+@click.command(name='rules')
+@click.argument('state', type=click.Choice(['included', 'excluded', 'unmatched'], case_sensitive=False),
+                default='included')
+@click.pass_context
+@with_filtering
+@with_sorting
+def show_rules(ctx, state):
+    """Show configured backup rules."""
+    spec = backup_rules.get_spec_unmatched() if state == 'unmatched' else backup_rules.get_spec_matched()
+
+    fields = spec['fields']
+    default_sorting = spec['sorting']
+    default_sorting = Sorting(field=default_sorting['field'], ordering=default_sorting['ordering'])
+
+    filtering = ctx.obj.filtering
+    sorting = ctx.obj.sorting
+
+    rules = ctx.obj.api.backup_rules()
+
+    if state == 'unmatched':
+        rules = backup_rules.flatten_unmatched(rules)
+        rules = filtering.apply(rules, fields) if filtering else rules
+        rules = (sorting or default_sorting).apply(rules, fields)
+
+        click.echo(ctx.obj.rendering.render_backup_rules_unmatched(rules))
+    else:
+        rules = backup_rules.flatten_matched(state, rules)
+        rules = filtering.apply(rules, fields) if filtering else rules
+        rules = (sorting or default_sorting).apply(rules, fields)
+
+        click.echo(ctx.obj.rendering.render_backup_rules_matched(state, rules))
+
+
 @click.group()
 def show():
     """Show backup-related data."""
@@ -116,6 +149,7 @@ def show():
 show.add_command(show_definitions)
 show.add_command(show_entries)
 show.add_command(show_metadata)
+show.add_command(show_rules)
 
 
 @click.command(

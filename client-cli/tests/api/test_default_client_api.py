@@ -177,6 +177,19 @@ class DefaultClientApiSpec(unittest.TestCase):
         )
 
     @patch('requests.request')
+    def test_should_get_backup_rules(self, mock_request):
+        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        mock_request.return_value = MockResponse.success(mock_data.BACKUP_RULES)
+
+        self.assertEqual(client.backup_rules(), mock_data.BACKUP_RULES)
+
+        self.assert_valid_request(
+            mock=mock_request,
+            expected_method='get',
+            expected_url='/operations/backup/rules'
+        )
+
+    @patch('requests.request')
     def test_should_stop_an_active_operation(self, mock_request):
         client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
         mock_request.return_value = MockResponse.empty()
