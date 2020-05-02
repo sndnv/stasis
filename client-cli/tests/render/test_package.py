@@ -31,6 +31,12 @@ class RenderPackageSpec(unittest.TestCase):
         string = 'invalid-string'
         self.assertIsNone(str_to_duration(string))
 
+        string = '2020-01-02T03:04:05.678901Z'
+        self.assertIsNone(str_to_duration(string))
+
+        string = '2020-01-02T03:04:05'
+        self.assertIsNone(str_to_duration(string))
+
     def test_should_convert_memory_size_to_string(self):
         sizes = {
             0: '0 bytes',

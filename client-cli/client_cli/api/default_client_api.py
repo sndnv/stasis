@@ -1,10 +1,11 @@
 """Default :class:`ClientApi` implementation."""
 
 import logging
-from json import JSONDecodeError
+from json import JSONDecodeError, loads
 
 import click
 import requests
+from sseclient import SSEClient
 
 from client_cli.api.client_api import ClientApi
 from client_cli.api.endpoint_context import EndpointContext
@@ -57,6 +58,23 @@ class DefaultClientApi(ClientApi):
     def operations(self):
         return self.get(url='/operations')
 
+    def operation_progress(self, operation):
+        return self.get(url='/operations/{}/progress'.format(operation))
+
+    def operation_follow(self, operation):
+        response = self.get_stream(url='/operations/{}/follow'.format(operation))
+        client = SSEClient(event_source=response)
+
+        try:
+            for event in client.events():
+                if event.data:
+                    progress = loads(event.data)
+                    yield progress
+                    if 'completed' in progress and progress['completed']:
+                        return
+        finally:
+            client.close()
+
     def operation_stop(self, operation):
         return self.put(url='/operations/{}/stop'.format(operation))
 
@@ -99,6 +117,16 @@ class DefaultClientApi(ClientApi):
         :return: endpoint response
         """
         return self.request(method='get', url=url, params=params)
+
+    def get_stream(self, url, params=None):
+        """
+        Executes a `GET` request for the specified URL with the provided query parameters, with streaming enabled.
+
+        :param url: URL to use for request (ex: /schedules)
+        :param params: query parameters (if any)
+        :return: endpoint response stream
+        """
+        return self.request_stream(method='get', url=url, params=params)
 
     def put(self, url, params=None, data=None):
         """
@@ -169,4 +197,37 @@ class DefaultClientApi(ClientApi):
             if response.text:
                 logging.error(response.text)
 
+            raise click.Abort()
+
+    def request_stream(self, method, url, params=None, data=None):
+        """
+        Executes a request with the specified method for the specified URL with
+        the provided query parameters and request data, with streaming enabled.
+
+        :param method: HTTP method to use for request
+        :param url: URL to use for request (ex: /schedules)
+        :param params: query parameters (if any)
+        :param data: request data (if any)
+        :return: endpoint response stream
+        """
+        if params is None:
+            params = {}
+
+        if data is None:
+            data = {}
+
+        response = requests.request(
+            method=method,
+            url='{}{}'.format(self.api_url, url),
+            params=params,
+            headers={'Authorization': 'Bearer {}'.format(self.api_token)},
+            json=data,
+            verify=self.context.verify,
+            stream=True
+        )
+
+        if response.ok:
+            return response
+        else:
+            logging.error('Request failed: [{} - {}]'.format(response.status_code, response.reason))
             raise click.Abort()

@@ -5,6 +5,7 @@ import click
 from client_cli.cli import validate_duration
 from client_cli.cli.common.filtering import with_filtering
 from client_cli.cli.common.sorting import with_sorting, Sorting
+from client_cli.cli.operations import follow_operation
 from client_cli.render.flatten import backup_rules, dataset_definitions, dataset_entries, dataset_metadata
 
 
@@ -256,14 +257,18 @@ def define(ctx, info, redundant_copies, existing_versions_policy, existing_versi
 
 @click.command(short_help='Start backup operations.')
 @click.argument('definition', type=click.UUID)
+@click.option('-f', '--follow', is_flag=True, default=False, help='Follow operation and display progress updates.')
 @click.pass_context
-def start(ctx, definition):
+def start(ctx, definition, follow):
     """
     Start a new backup for the provided dataset DEFINITION.
     """
     response = ctx.obj.api.backup_start(definition)
 
     click.echo(ctx.obj.rendering.render_operation_response(response))
+
+    if follow:
+        ctx.invoke(follow_operation, operation=response['operation'])
 
 
 @click.command(short_help='Search for files in backup metadata.')

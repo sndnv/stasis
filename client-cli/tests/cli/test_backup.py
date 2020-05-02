@@ -150,6 +150,17 @@ class BackupSpec(unittest.TestCase):
         self.assertTrue(json.loads(result.output))
         self.assertEqual(context.api.stats['backup_start'], 1)
 
+    def test_should_start_backups_and_follow_their_progress(self):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        runner = Runner(cli)
+        result = runner.invoke(args=['start', str(uuid4()), '--follow'], obj=context)
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertEqual(context.api.stats['backup_start'], 1)
+
     def test_should_search_metadata(self):
         context = Context()
         context.api = MockClientApi()

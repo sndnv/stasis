@@ -65,6 +65,11 @@ class DefaultWriterSpec(unittest.TestCase):
             DefaultWriter().render_operations(operations=mock_data.ACTIVE_OPERATIONS)
         )
 
+    def test_should_render_operation_progress(self):
+        self.assertTrue(
+            DefaultWriter().render_operation_progress(progress=mock_data.OPERATION_PROGRESS[0])
+        )
+
     def test_should_render_backup_rules_matched(self):
         self.assertTrue(
             DefaultWriter().render_backup_rules_matched(

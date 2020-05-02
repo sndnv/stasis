@@ -177,16 +177,40 @@ class DefaultClientApiSpec(unittest.TestCase):
         )
 
     @patch('requests.request')
-    def test_should_get_backup_rules(self, mock_request):
+    def test_should_get_operation_progress(self, mock_request):
         client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
-        mock_request.return_value = MockResponse.success(mock_data.BACKUP_RULES)
+        mock_request.return_value = MockResponse.success(mock_data.OPERATION_PROGRESS[0])
 
-        self.assertEqual(client.backup_rules(), mock_data.BACKUP_RULES)
+        operation = uuid4()
+        self.assertEqual(client.operation_progress(operation), mock_data.OPERATION_PROGRESS[0])
 
         self.assert_valid_request(
             mock=mock_request,
             expected_method='get',
-            expected_url='/operations/backup/rules'
+            expected_url='/operations/{}/progress'.format(operation)
+        )
+
+    @patch('requests.request')
+    def test_should_follow_operation_progress(self, mock_request):
+        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+
+        def sse_response():
+            for e in mock_data.OPERATION_PROGRESS:
+                yield 'data: {}\n\n'.format(json.dumps(e)).encode('utf-8')
+
+        mock_response = MockResponse.success(sse_response())
+        mock_request.return_value = mock_response
+
+        operation = uuid4()
+
+        self.assertEqual(list(client.operation_follow(operation)), mock_data.OPERATION_PROGRESS)
+
+        self.assertTrue(mock_response.closed)
+
+        self.assert_valid_streaming_request(
+            mock=mock_request,
+            expected_method='get',
+            expected_url='/operations/{}/follow'.format(operation)
         )
 
     @patch('requests.request')
@@ -201,6 +225,19 @@ class DefaultClientApiSpec(unittest.TestCase):
             mock=mock_request,
             expected_method='put',
             expected_url='/operations/{}/stop'.format(operation)
+        )
+
+    @patch('requests.request')
+    def test_should_get_backup_rules(self, mock_request):
+        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        mock_request.return_value = MockResponse.success(mock_data.BACKUP_RULES)
+
+        self.assertEqual(client.backup_rules(), mock_data.BACKUP_RULES)
+
+        self.assert_valid_request(
+            mock=mock_request,
+            expected_method='get',
+            expected_url='/operations/backup/rules'
         )
 
     @patch('requests.request')
@@ -372,6 +409,16 @@ class DefaultClientApiSpec(unittest.TestCase):
         with self.assertRaises(Abort):
             client.operations()
 
+    @patch('requests.request')
+    def test_should_handle_streaming_request_failures(self, mock_request):
+        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        mock_request.return_value = MockResponse.failure(response='test failure')
+
+        operation = uuid4()
+
+        with self.assertRaises(Abort):
+            list(client.operation_follow(operation))
+
     @patch('client_cli.api.endpoint_context.CustomHttpsContext._create_context_pem_file')
     @patch('requests.request')
     def test_should_handle_requests_with_custom_tls_context(self, mock_request, mock_create_pem):
@@ -427,12 +474,38 @@ class DefaultClientApiSpec(unittest.TestCase):
             verify=False
         )
 
+    def assert_valid_streaming_request(
+            self,
+            mock,
+            expected_method,
+            expected_url,
+            expected_request_params=None,
+            expected_request_data=None
+    ):
+        # pylint: disable=too-many-arguments
+        if expected_request_params is None:
+            expected_request_params = {}
+
+        if expected_request_data is None:
+            expected_request_data = {}
+
+        mock.assert_called_once_with(
+            method=expected_method,
+            url='{}{}'.format(self.url, expected_url),
+            params=expected_request_params,
+            headers={'Authorization': 'Bearer {}'.format(self.token)},
+            json=expected_request_data,
+            verify=False,
+            stream=True
+        )
+
 
 class MockResponse:
     def __init__(self, status_code, response):
         self.status_code = status_code
         self.response = response
         self.text = str(response)
+        self.closed = False
 
     @staticmethod
     def success(response=None):
@@ -470,3 +543,9 @@ class MockResponse:
             return self.response
         else:
             raise JSONDecodeError("Empty response provided", '', 0)
+
+    def __iter__(self):
+        return iter(self.response)
+
+    def close(self):
+        self.closed = True

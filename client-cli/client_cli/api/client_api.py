@@ -98,11 +98,21 @@ class ClientApi(ABC):
         """
 
     @abstractmethod
-    def backup_rules(self):
+    def operation_progress(self, operation):
         """
-        Retrieves the current backup specification/rules.
+        Retrieves the progress of an operation.
 
-        :return: backup spec/rules
+        :param operation: operation to follow
+        :return: response as an event stream
+        """
+
+    @abstractmethod
+    def operation_follow(self, operation):
+        """
+        Follows an operation's progress.
+
+        :param operation: operation to follow
+        :return: response as an event stream
         """
 
     @abstractmethod
@@ -112,6 +122,14 @@ class ClientApi(ABC):
 
         :param operation: operation to stop
         :return: dict with result of action
+        """
+
+    @abstractmethod
+    def backup_rules(self):
+        """
+        Retrieves the current backup specification/rules.
+
+        :return: backup spec/rules
         """
 
     @abstractmethod
