@@ -48,7 +48,7 @@ def str_to_duration(duration):
     :param duration: string representation of the duration
     :return: duration (in seconds) or None if the provided duration could not be parsed
     """
-    match = re.search(DURATION_REGEX, duration, re.IGNORECASE)
+    match = re.search(DURATION_REGEX, duration.strip(), re.IGNORECASE)
 
     if match:
         days = float(match.group(1) or 0)
@@ -104,7 +104,7 @@ def str_to_memory_size(memory_size):
         return None
 
 
-DURATION_REGEX = r'(?:(\d+) day(?:s?), )?(\d(?:\d?)):(\d\d):(\d\d)'
+DURATION_REGEX = r'^(?:(\d+) day(?:s?), )?(\d(?:\d?)):(\d\d):(\d\d)$'
 
 MEMORY_SIZE_REGEX = r'(\d+)\s*?(bytes|byte|b|kb|k|mb|m|gb|g|tb|t|pb|p)|(\d+)$'
 

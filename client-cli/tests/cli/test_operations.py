@@ -12,17 +12,40 @@ from tests.mocks.mock_client_api import MockClientApi
 
 class OperationsSpec(unittest.TestCase):
 
-    def test_should_show_operations(self):
+    def test_should_show_operations_state(self):
         context = Context()
         context.api = MockClientApi()
         context.rendering = JsonWriter()
 
         runner = Runner(cli)
-        result = runner.invoke(args=['show'], obj=context)
+        result = runner.invoke(args=['show', 'state'], obj=context)
 
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertTrue(json.loads(result.output))
         self.assertEqual(context.api.stats['operations'], 1)
+
+    def test_should_show_operations_progress(self):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        runner = Runner(cli)
+        result = runner.invoke(args=['show', 'progress', str(uuid4())], obj=context)
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertTrue(json.loads(result.output))
+        self.assertEqual(context.api.stats['operation_progress'], 1)
+
+    def test_should_follow_operations(self):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        runner = Runner(cli)
+        result = runner.invoke(args=['follow', str(uuid4())], obj=context)
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertEqual(context.api.stats['operation_follow'], 1)
 
     @patch('click.confirm')
     def test_should_stop_operations(self, mock_confirm):

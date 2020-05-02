@@ -9,7 +9,7 @@ from client_cli.render import str_to_memory_size, str_to_duration
 
 def normalize(value):
     """
-    Normalizes a memory size or duration string to a value that can be filtered.
+    Normalizes a memory size or duration string to a value that can be filtered/sorted.
 
     :param value: value to be normalized
     :return: normalized value or original value (if parsing failed)

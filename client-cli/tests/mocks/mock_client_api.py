@@ -18,8 +18,10 @@ class MockClientApi(ClientApi):
             'device': 0,
             'device_connections': 0,
             'operations': 0,
-            'backup_rules': 0,
+            'operation_follow': 0,
+            'operation_progress': 0,
             'operation_stop': 0,
+            'backup_rules': 0,
             'backup_start': 0,
             'backup_define': 0,
             'recover_until': 0,
@@ -74,13 +76,22 @@ class MockClientApi(ClientApi):
         self.stats['operations'] += 1
         return mock_data.ACTIVE_OPERATIONS
 
-    def backup_rules(self):
-        self.stats['backup_rules'] += 1
-        return mock_data.BACKUP_RULES
+    def operation_progress(self, operation):
+        self.stats['operation_progress'] += 1
+        return mock_data.OPERATION_PROGRESS[0]
+
+    def operation_follow(self, operation):
+        self.stats['operation_follow'] += 1
+        for progress in mock_data.OPERATION_PROGRESS:
+            yield progress
 
     def operation_stop(self, operation):
         self.stats['operation_stop'] += 1
         return {'successful': True}
+
+    def backup_rules(self):
+        self.stats['backup_rules'] += 1
+        return mock_data.BACKUP_RULES
 
     def backup_start(self, definition):
         self.stats['backup_start'] += 1

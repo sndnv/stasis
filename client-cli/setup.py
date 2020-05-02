@@ -10,6 +10,7 @@ install_requires = [
     'pyparsing==2.4.5',
     'psutil==5.6.7',
     'cryptography==2.8',
+    'sseclient-py==1.7',
 ]
 
 tests_require = [

@@ -2,6 +2,8 @@
 
 import click
 
+from client_cli.cli.operations import follow_operation
+
 
 @click.command(name='until', short_help='Recover data to a specified point in time.')
 @click.argument('definition', type=click.UUID)
@@ -9,8 +11,9 @@ import click
 @click.option('-q', '--path-query', help='File/path query to use for limiting recovery.')
 @click.option('-d', '--destination', help='Parent directory for recovered files.')
 @click.option('--discard-paths', is_flag=True, default=False, help='Recover files directly in destination directory.')
+@click.option('-f', '--follow', is_flag=True, default=False, help='Follow operation and display progress updates.')
 @click.pass_context
-def until_timestamp(ctx, definition, until, path_query, destination, discard_paths):
+def until_timestamp(ctx, definition, until, path_query, destination, discard_paths, follow):
     """
     Start recovery process for DEFINITION and recover all data until the provided timestamp.
 
@@ -28,6 +31,8 @@ def until_timestamp(ctx, definition, until, path_query, destination, discard_pat
         Recovered:                   /tmp/recover/home/user/.bashrc \n
         Recovered (paths discarded): /tmp/recover/.bashrc           \n
     """
+    # pylint: disable=too-many-arguments
+
     response = ctx.obj.api.recover_until(
         definition=definition,
         until=until,
@@ -38,6 +43,9 @@ def until_timestamp(ctx, definition, until, path_query, destination, discard_pat
 
     click.echo(ctx.obj.rendering.render_operation_response(response))
 
+    if follow:
+        ctx.invoke(follow_operation, operation=response['operation'])
+
 
 @click.command(name='from', short_help='Recover data from a specific dataset entry.')
 @click.argument('definition', type=click.UUID)
@@ -45,8 +53,9 @@ def until_timestamp(ctx, definition, until, path_query, destination, discard_pat
 @click.option('-q', '--path-query', help='File/path query to use for limiting recovery.')
 @click.option('-d', '--destination', help='Parent directory for recovered files.')
 @click.option('--discard-paths', is_flag=True, default=False, help='Recover files directly in destination directory.')
+@click.option('-f', '--follow', is_flag=True, default=False, help='Follow operation and display progress updates.')
 @click.pass_context
-def from_entry(ctx, definition, entry, path_query, destination, discard_paths):
+def from_entry(ctx, definition, entry, path_query, destination, discard_paths, follow):
     """
     Start recovery process for DEFINITION and recover data from ENTRY or `latest`.
 
@@ -64,6 +73,8 @@ def from_entry(ctx, definition, entry, path_query, destination, discard_paths):
         Recovered:                   /tmp/recover/home/user/.bashrc \n
         Recovered (paths discarded): /tmp/recover/.bashrc           \n
     """
+    # pylint: disable=too-many-arguments
+
     if entry.lower() == 'latest':
         response = ctx.obj.api.recover_from_latest(
             definition=definition,
@@ -81,6 +92,9 @@ def from_entry(ctx, definition, entry, path_query, destination, discard_paths):
         )
 
     click.echo(ctx.obj.rendering.render_operation_response(response))
+
+    if follow:
+        ctx.invoke(follow_operation, operation=response['operation'])
 
 
 @click.group(name='recover')

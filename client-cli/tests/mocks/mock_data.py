@@ -340,6 +340,118 @@ ACTIVE_OPERATIONS = [
     },
 ]
 
+EMPTY_OPERATION_PROGRESS = {
+    'stages': {},
+    'failures': []
+}
+
+OPERATION_PROGRESS = [
+    {
+        'stages': {
+            'examination': {
+                'steps': [
+                    {
+                        'name': '/some/path/01',
+                        'completed': '2020-12-21T01:02:05',
+                    },
+                ]
+            },
+        },
+        'failures': []
+    },
+    {
+        'stages': {
+            'examination': {
+                'steps': [
+                    {
+                        'name': '/some/path/01',
+                        'completed': '2020-12-21T01:02:05',
+                    },
+                    {
+                        'name': '/some/path/02',
+                        'completed': '2020-12-21T01:02:06',
+                    },
+                    {
+                        'name': '/some/path/03',
+                        'completed': '2020-12-21T01:02:07',
+                    },
+                ]
+            },
+            'processing': {
+                'steps': [
+                    {
+                        'name': '/some/path/01',
+                        'completed': '2020-12-21T01:02:10',
+                    },
+                ]
+            },
+        },
+        'failures': []
+    },
+    {
+        'stages': {
+            'examination': {
+                'steps': [
+                    {
+                        'name': '/some/path/01',
+                        'completed': '2020-12-21T01:02:05',
+                    },
+                    {
+                        'name': '/some/path/02',
+                        'completed': '2020-12-21T01:02:06',
+                    },
+                    {
+                        'name': '/some/path/03',
+                        'completed': '2020-12-21T01:02:07',
+                    },
+                    {
+                        'name': '/some/path',
+                        'completed': '2020-12-21T01:02:04',
+                    },
+                ]
+            },
+            'metadata': {
+                'steps': [
+                    {
+                        'name': 'collection',
+                        'completed': '2020-12-21T01:02:08',
+                    },
+                    {
+                        'name': 'push',
+                        'completed': '2020-12-21T01:02:09',
+                    }
+                ]
+            },
+            'processing': {
+                'steps': [
+                    {
+                        'name': '/some/path/01',
+                        'completed': '2020-12-21T01:02:10',
+                    },
+                    {
+                        'name': '/some/path/02',
+                        'completed': '2020-12-21T01:02:11',
+                    },
+                ]
+            },
+            'collection': {
+                'steps': [
+                    {
+                        'name': '/some/path/01',
+                        'completed': '2020-12-21T01:02:12',
+                    },
+                ]
+            }
+        },
+        'completed': '2020-12-21T01:02:13',
+        'failures': [
+            'FileNotFoundException: File [/some/path/04] not found',
+            'FileSystemException: /some/path/05: Operation not permitted',
+            'Test Failure',
+        ]
+    }
+]
+
 ACTIVE_CONNECTIONS = {
     'localhost:9090': {'reachable': True, 'timestamp': int(round(time.time() * 1000))},
     'localhost:9091': {'reachable': False, 'timestamp': int(round(time.time() * 1000))},

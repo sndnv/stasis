@@ -88,6 +88,15 @@ class Writer(ABC):
         """
 
     @abstractmethod
+    def render_operation_progress(self, progress) -> str:
+        """
+        Renders the provided operation progress.
+
+        :param progress: operation progress to render
+        :return: render result, as a string
+        """
+
+    @abstractmethod
     def render_backup_rules_matched(self, state, rules) -> str:
         """
         Renders the provided matched backup rules.

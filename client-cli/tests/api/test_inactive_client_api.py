@@ -50,10 +50,16 @@ class InactiveClientApiSpec(unittest.TestCase):
             api.operations()
 
         with self.assertRaises(Abort):
-            api.backup_rules()
+            api.operation_progress(operation=operation)
+
+        with self.assertRaises(Abort):
+            api.operation_follow(operation=operation)
 
         with self.assertRaises(Abort):
             api.operation_stop(operation=operation)
+
+        with self.assertRaises(Abort):
+            api.backup_rules()
 
         with self.assertRaises(Abort):
             api.backup_start(definition=definition)

@@ -43,6 +43,9 @@ class DefaultWriter(Writer):
     def render_operations(self, operations) -> str:
         return ops.render_as_table(operations)
 
+    def render_operation_progress(self, progress) -> str:
+        return ops.render_operation_progress(progress)
+
     def render_backup_rules_matched(self, state, rules) -> str:
         return backup_rules.render_matched_rules_as_table(state, rules)
 
