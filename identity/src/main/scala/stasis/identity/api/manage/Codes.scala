@@ -22,7 +22,7 @@ class Codes(store: AuthorizationCodeStore)(implicit system: ActorSystem, overrid
       pathEndOrSingleSlash {
         get {
           onSuccess(store.codes) { codes =>
-            log.info("User [{}] successfully retrieved [{}] authorization codes", user, codes.size)
+            log.debug("User [{}] successfully retrieved [{}] authorization codes", user, codes.size)
             discardEntity & complete(codes.values)
           }
         }
@@ -32,7 +32,7 @@ class Codes(store: AuthorizationCodeStore)(implicit system: ActorSystem, overrid
           get {
             onSuccess(store.get(AuthorizationCode(code))) {
               case Some(storedCode) =>
-                log.info(
+                log.debug(
                   "User [{}] successfully retrieved authorization code for client [{}] and owner [{}]",
                   user,
                   storedCode.client,
@@ -52,7 +52,7 @@ class Codes(store: AuthorizationCodeStore)(implicit system: ActorSystem, overrid
           delete {
             onSuccess(store.delete(AuthorizationCode(code))) { deleted =>
               if (deleted) {
-                log.info("User [{}] successfully deleted authorization code [{}]", user, code)
+                log.debug("User [{}] successfully deleted authorization code [{}]", user, code)
                 discardEntity & complete(StatusCodes.OK)
               } else {
                 log.warning("User [{}] failed to delete authorization code [{}]", user, code)

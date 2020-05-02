@@ -32,29 +32,28 @@ class Owners(
         concat(
           get {
             onSuccess(store.owners) { owners =>
-              log.info("User [{}] successfully retrieved [{}] resource owners", user, owners.size)
+              log.debug("User [{}] successfully retrieved [{}] resource owners", user, owners.size)
               discardEntity & complete(owners.values)
             }
           },
           post {
-            entity(as[CreateOwner]) {
-              request =>
-                onSuccess(store.contains(request.username)) {
-                  case true =>
-                    log.warning(
-                      "User [{}] tried to create resource owner [{}] but it already exists",
-                      user,
-                      request.username
-                    )
-                    complete(StatusCodes.Conflict)
+            entity(as[CreateOwner]) { request =>
+              onSuccess(store.contains(request.username)) {
+                case true =>
+                  log.warning(
+                    "User [{}] tried to create resource owner [{}] but it already exists",
+                    user,
+                    request.username
+                  )
+                  complete(StatusCodes.Conflict)
 
-                  case false =>
-                    val owner = request.toResourceOwner
-                    onSuccess(store.put(owner)) { _ =>
-                      log.info("User [{}] successfully created resource owner [{}]", user, owner.username)
-                      complete(StatusCodes.OK)
-                    }
-                }
+                case false =>
+                  val owner = request.toResourceOwner
+                  onSuccess(store.put(owner)) { _ =>
+                    log.debug("User [{}] successfully created resource owner [{}]", user, owner.username)
+                    complete(StatusCodes.OK)
+                  }
+              }
             }
           }
         )
@@ -69,7 +68,7 @@ class Owners(
                     val (secret, salt) = request.toSecret()
 
                     onSuccess(store.put(owner.copy(password = secret, salt = salt))) { _ =>
-                      log.info(
+                      log.debug(
                         "User [{}] successfully updated credentials for resource owner [{}]",
                         user,
                         ownerUsername
@@ -82,7 +81,7 @@ class Owners(
               pathEndOrSingleSlash {
                 concat(
                   get {
-                    log.info(
+                    log.debug(
                       "User [{}] successfully retrieved resource owner [{}]",
                       user,
                       ownerUsername
@@ -99,7 +98,7 @@ class Owners(
                           )
                         )
                       ) { _ =>
-                        log.info("User [{}] successfully updated resource owner [{}]", user, ownerUsername)
+                        log.debug("User [{}] successfully updated resource owner [{}]", user, ownerUsername)
                         complete(StatusCodes.OK)
 
                       }
@@ -107,7 +106,7 @@ class Owners(
                   },
                   delete {
                     onSuccess(store.delete(ownerUsername)) { _ =>
-                      log.info("User [{}] successfully deleted resource owner [{}]", user, ownerUsername)
+                      log.debug("User [{}] successfully deleted resource owner [{}]", user, ownerUsername)
                       discardEntity & complete(StatusCodes.OK)
                     }
                   }

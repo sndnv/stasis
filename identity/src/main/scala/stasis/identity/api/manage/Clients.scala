@@ -34,7 +34,7 @@ class Clients(
         concat(
           get {
             onSuccess(store.clients) { clients =>
-              log.info("User [{}] successfully retrieved [{}] clients", user, clients.size)
+              log.debug("User [{}] successfully retrieved [{}] clients", user, clients.size)
               discardEntity & complete(clients.values)
             }
           },
@@ -42,7 +42,7 @@ class Clients(
             entity(as[CreateClient]) { request =>
               val client = request.toClient
               onSuccess(store.put(client)) { _ =>
-                log.info("User [{}] successfully created client [{}]", user, client.id)
+                log.debug("User [{}] successfully created client [{}]", user, client.id)
                 complete(CreatedClient(client.id))
               }
             }
@@ -59,7 +59,7 @@ class Clients(
                     val (secret, salt) = request.toSecret()
 
                     onSuccess(store.put(client.copy(secret = secret, salt = salt))) { _ =>
-                      log.info("User [{}] successfully updated credentials for client [{}]", user, clientId)
+                      log.debug("User [{}] successfully updated credentials for client [{}]", user, clientId)
                       complete(StatusCodes.OK)
                     }
                   }
@@ -68,7 +68,7 @@ class Clients(
               pathEndOrSingleSlash {
                 concat(
                   get {
-                    log.info("User [{}] successfully retrieved client [{}]", user, clientId)
+                    log.debug("User [{}] successfully retrieved client [{}]", user, clientId)
                     discardEntity & complete(client)
                   },
                   put {
@@ -81,14 +81,14 @@ class Clients(
                           )
                         )
                       ) { _ =>
-                        log.info("User [{}] successfully updated client [{}]", user, clientId)
+                        log.debug("User [{}] successfully updated client [{}]", user, clientId)
                         complete(StatusCodes.OK)
                       }
                     }
                   },
                   delete {
                     onSuccess(store.delete(clientId)) { _ =>
-                      log.info("User [{}] successfully deleted client [{}]", user, clientId)
+                      log.debug("User [{}] successfully deleted client [{}]", user, clientId)
                       discardEntity & complete(StatusCodes.OK)
                     }
                   }

@@ -22,7 +22,7 @@ class Tokens(store: RefreshTokenStore)(implicit system: ActorSystem, override va
       pathEndOrSingleSlash {
         get {
           onSuccess(store.tokens) { tokens =>
-            log.info("User [{}] successfully retrieved [{}] refresh tokens", user, tokens.size)
+            log.debug("User [{}] successfully retrieved [{}] refresh tokens", user, tokens.size)
             discardEntity & complete(tokens.values)
           }
         }
@@ -32,7 +32,7 @@ class Tokens(store: RefreshTokenStore)(implicit system: ActorSystem, override va
           get {
             onSuccess(store.get(RefreshToken(token))) {
               case Some(storedToken) =>
-                log.info(
+                log.debug(
                   "User [{}] successfully retrieved refresh token for client [{}] and owner [{}]",
                   user,
                   storedToken.client,
@@ -52,7 +52,7 @@ class Tokens(store: RefreshTokenStore)(implicit system: ActorSystem, override va
           delete {
             onSuccess(store.delete(RefreshToken(token))) { deleted =>
               if (deleted) {
-                log.info("User [{}] successfully deleted refresh token [{}]", user, token)
+                log.debug("User [{}] successfully deleted refresh token [{}]", user, token)
                 discardEntity & complete(StatusCodes.OK)
               } else {
                 log.warning("User [{}] failed to delete refresh token [{}]", user, token)
