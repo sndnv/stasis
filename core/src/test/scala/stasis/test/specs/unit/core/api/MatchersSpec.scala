@@ -9,6 +9,8 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import stasis.core.api.Matchers._
 import stasis.test.specs.unit.UnitSpec
 
+import scala.concurrent.duration.FiniteDuration
+
 class MatchersSpec extends UnitSpec with ScalatestRouteTest {
   "Matchers for timestamps" should "match paths" in {
     val route = Route.seal(
@@ -62,6 +64,32 @@ class MatchersSpec extends UnitSpec with ScalatestRouteTest {
     }
   }
 
+  "Matchers for finite durations" should "provide support for parameters" in {
+    val route = Route.seal(
+      pathEndOrSingleSlash {
+        parameter("duration".as[FiniteDuration]) { _ =>
+          Directives.complete(StatusCodes.OK)
+        }
+      }
+    )
+
+    supportDurations.foreach { duration =>
+      withClue(s"Parsing supported duration [$duration]:") {
+        Get(Uri("/").withQuery(Uri.Query(s"duration" -> duration))) ~> route ~> check {
+          status should be(StatusCodes.OK)
+        }
+      }
+    }
+
+    unsupportedDurations.foreach { duration =>
+      withClue(s"Parsing unsupported duration [$duration]:") {
+        Get(Uri("/").withQuery(Uri.Query(s"duration" -> duration))) ~> route ~> check {
+          status should be(StatusCodes.BadRequest)
+        }
+      }
+    }
+  }
+
   private val supportedTimestamps = Seq(
     """2000-12-31T23:59:59Z""",
     """1900-11-30T11:30:00Z""",
@@ -76,5 +104,21 @@ class MatchersSpec extends UnitSpec with ScalatestRouteTest {
     """1800-09-28T10:45:59+01:00""",
     """1700-08-27T01:01:01-02:00""",
     """1700-99-01T00:00:00.900Z"""
+  )
+
+  private val supportDurations = Seq(
+    """3 seconds""",
+    """5ms""",
+    """1 hour""",
+    """42s"""
+  )
+
+  private val unsupportedDurations = Seq(
+    """five seconds""",
+    """invalid""",
+    """1""",
+    """?""",
+    """Inf""",
+    """"""
   )
 }
