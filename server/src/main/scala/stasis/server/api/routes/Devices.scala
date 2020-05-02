@@ -25,7 +25,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
           get {
             resource[DeviceStore.View.Privileged] { view =>
               view.list().map { devices =>
-                log.info("User [{}] successfully retrieved [{}] devices", currentUser, devices.size)
+                log.debug("User [{}] successfully retrieved [{}] devices", currentUser, devices.size)
                 discardEntity & complete(devices.values)
               }
             }
@@ -39,7 +39,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                       case Some(owner) =>
                         val device = createRequest.toDevice(owner)
                         deviceManage.create(device).map { _ =>
-                          log.info("User [{}] successfully created device [{}]", currentUser, device.id)
+                          log.debug("User [{}] successfully created device [{}]", currentUser, device.id)
                           complete(CreatedDevice(device.id))
                         }
 
@@ -64,7 +64,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                 resource[DeviceStore.View.Privileged] { view =>
                   view.get(deviceId).map {
                     case Some(device) =>
-                      log.info("User [{}] successfully retrieved device [{}]", currentUser, deviceId)
+                      log.debug("User [{}] successfully retrieved device [{}]", currentUser, deviceId)
                       discardEntity & complete(device)
 
                     case None =>
@@ -77,7 +77,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                 resource[DeviceStore.Manage.Privileged] { manage =>
                   manage.delete(deviceId).map { deleted =>
                     if (deleted) {
-                      log.info("User [{}] successfully deleted device [{}]", currentUser, deviceId)
+                      log.debug("User [{}] successfully deleted device [{}]", currentUser, deviceId)
                     } else {
                       log.warning("User [{}] failed to delete device [{}]", currentUser, deviceId)
                     }
@@ -112,7 +112,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
               get {
                 resource[DeviceStore.View.Self] { view =>
                   view.list(currentUser).map { devices =>
-                    log.info("User [{}] successfully retrieved [{}] devices", currentUser, devices.size)
+                    log.debug("User [{}] successfully retrieved [{}] devices", currentUser, devices.size)
                     discardEntity & complete(devices.values)
                   }
                 }
@@ -126,7 +126,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                           case Some(owner) =>
                             val device = createRequest.toDevice(owner)
                             deviceManage.create(currentUser, device).map { _ =>
-                              log.info("User [{}] successfully created device [{}]", currentUser, device.id)
+                              log.debug("User [{}] successfully created device [{}]", currentUser, device.id)
                               complete(CreatedDevice(device.id))
                             }
 
@@ -148,7 +148,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                       resource[DeviceStore.View.Self] { view =>
                         view.get(currentUser, deviceId).map {
                           case Some(device) =>
-                            log.info("User [{}] successfully retrieved device [{}]", currentUser, deviceId)
+                            log.debug("User [{}] successfully retrieved device [{}]", currentUser, deviceId)
                             discardEntity & complete(device)
 
                           case None =>
@@ -161,7 +161,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                       resource[DeviceStore.Manage.Self] { manage =>
                         manage.delete(currentUser, deviceId).map { deleted =>
                           if (deleted) {
-                            log.info("User [{}] successfully deleted device [{}]", currentUser, deviceId)
+                            log.debug("User [{}] successfully deleted device [{}]", currentUser, deviceId)
                           } else {
                             log.warning("User [{}] failed to delete device [{}]", currentUser, deviceId)
                           }
@@ -203,7 +203,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
             userView.get(device.owner).flatMap {
               case Some(owner) =>
                 deviceManage.update(updateRequest.toUpdatedDevice(device, owner)).map { _ =>
-                  log.info("User [{}] successfully updated device [{}]", currentUser, deviceId)
+                  log.debug("User [{}] successfully updated device [{}]", currentUser, deviceId)
                   complete(StatusCodes.OK)
                 }
 
@@ -231,34 +231,33 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
     updateRequest: UpdateDevice,
     deviceId: Device.Id
   )(implicit ctx: RoutesContext, currentUser: CurrentUser): Route =
-    resources[DeviceStore.View.Self, UserStore.View.Self, DeviceStore.Manage.Self] {
-      (deviceView, userView, deviceManage) =>
-        deviceView.get(currentUser, deviceId).flatMap {
-          case Some(device) =>
-            userView.get(currentUser).flatMap {
-              case Some(owner) =>
-                deviceManage.update(currentUser, updateRequest.toUpdatedDevice(device, owner)).map { _ =>
-                  log.info("User [{}] successfully updated device [{}]", currentUser, deviceId)
-                  complete(StatusCodes.OK)
-                }
+    resources[DeviceStore.View.Self, UserStore.View.Self, DeviceStore.Manage.Self] { (deviceView, userView, deviceManage) =>
+      deviceView.get(currentUser, deviceId).flatMap {
+        case Some(device) =>
+          userView.get(currentUser).flatMap {
+            case Some(owner) =>
+              deviceManage.update(currentUser, updateRequest.toUpdatedDevice(device, owner)).map { _ =>
+                log.debug("User [{}] successfully updated device [{}]", currentUser, deviceId)
+                complete(StatusCodes.OK)
+              }
 
-              case None =>
-                log.warning(
-                  "User [{}] failed to update device [{}]; device owner [{}] not found",
-                  currentUser,
-                  deviceId,
-                  device.owner
-                )
-                Future.successful(complete(StatusCodes.BadRequest))
-            }
+            case None =>
+              log.warning(
+                "User [{}] failed to update device [{}]; device owner [{}] not found",
+                currentUser,
+                deviceId,
+                device.owner
+              )
+              Future.successful(complete(StatusCodes.BadRequest))
+          }
 
-          case None =>
-            log.warning(
-              "User [{}] failed to update device [{}]; device not found",
-              currentUser,
-              deviceId
-            )
-            Future.successful(complete(StatusCodes.BadRequest))
-        }
+        case None =>
+          log.warning(
+            "User [{}] failed to update device [{}]; device not found",
+            currentUser,
+            deviceId
+          )
+          Future.successful(complete(StatusCodes.BadRequest))
+      }
     }
 }

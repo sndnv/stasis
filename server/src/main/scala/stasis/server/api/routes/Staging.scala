@@ -19,7 +19,7 @@ class Staging()(implicit ctx: RoutesContext) extends ApiRoutes {
         get {
           resource[ServerStagingStore.View.Service] { view =>
             view.list().map { pendingDestagingOps =>
-              log.info(
+              log.debug(
                 "User [{}] successfully retrieved [{}] pending destaging operations",
                 currentUser,
                 pendingDestagingOps.size
@@ -35,7 +35,7 @@ class Staging()(implicit ctx: RoutesContext) extends ApiRoutes {
             resource[ServerStagingStore.Manage.Service] { manage =>
               manage.drop(crateId).map { deleted =>
                 if (deleted) {
-                  log.info("User [{}] successfully deleted destaging operation for crate [{}]", currentUser, crateId)
+                  log.debug("User [{}] successfully deleted destaging operation for crate [{}]", currentUser, crateId)
                 } else {
                   log.warning("User [{}] failed to delete destaging operation for crate [{}]", currentUser, crateId)
                 }

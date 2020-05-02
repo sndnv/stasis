@@ -24,7 +24,7 @@ class Schedules()(implicit ctx: RoutesContext) extends ApiRoutes {
           get {
             resource[ScheduleStore.View.Service] { view =>
               view.list().map { schedules =>
-                log.info("User [{}] successfully retrieved [{}] schedules", currentUser, schedules.size)
+                log.debug("User [{}] successfully retrieved [{}] schedules", currentUser, schedules.size)
                 discardEntity & complete(schedules.values)
               }
             }
@@ -35,7 +35,7 @@ class Schedules()(implicit ctx: RoutesContext) extends ApiRoutes {
                 val schedule = createRequest.toSchedule
 
                 manage.create(schedule).map { _ =>
-                  log.info("User [{}] successfully created schedule [{}]", currentUser, schedule.id)
+                  log.debug("User [{}] successfully created schedule [{}]", currentUser, schedule.id)
                   complete(CreatedSchedule(schedule.id))
                 }
               }
@@ -49,27 +49,26 @@ class Schedules()(implicit ctx: RoutesContext) extends ApiRoutes {
             get {
               resource[ScheduleStore.View.Public] { view =>
                 view.list().map { schedules =>
-                  log.info("User [{}] successfully retrieved [{}] public schedules", currentUser, schedules.size)
+                  log.debug("User [{}] successfully retrieved [{}] public schedules", currentUser, schedules.size)
                   discardEntity & complete(schedules.values)
                 }
               }
             }
           },
-          path(JavaUUID) {
-            scheduleId =>
-              get {
-                resource[ScheduleStore.View.Public] { view =>
-                  view.get(scheduleId).map {
-                    case Some(schedule) =>
-                      log.info("User [{}] successfully retrieved public schedule [{}]", currentUser, scheduleId)
-                      discardEntity & complete(schedule)
+          path(JavaUUID) { scheduleId =>
+            get {
+              resource[ScheduleStore.View.Public] { view =>
+                view.get(scheduleId).map {
+                  case Some(schedule) =>
+                    log.debug("User [{}] successfully retrieved public schedule [{}]", currentUser, scheduleId)
+                    discardEntity & complete(schedule)
 
-                    case None =>
-                      log.warning("User [{}] failed to retrieve public schedule [{}]", currentUser, scheduleId)
-                      discardEntity & complete(StatusCodes.NotFound)
-                  }
+                  case None =>
+                    log.warning("User [{}] failed to retrieve public schedule [{}]", currentUser, scheduleId)
+                    discardEntity & complete(StatusCodes.NotFound)
                 }
               }
+            }
           }
         )
       },
@@ -79,7 +78,7 @@ class Schedules()(implicit ctx: RoutesContext) extends ApiRoutes {
             resource[ScheduleStore.View.Service] { view =>
               view.get(scheduleId).map {
                 case Some(schedule) =>
-                  log.info("User [{}] successfully retrieved schedule [{}]", currentUser, scheduleId)
+                  log.debug("User [{}] successfully retrieved schedule [{}]", currentUser, scheduleId)
                   discardEntity & complete(schedule)
 
                 case None =>
@@ -91,19 +90,18 @@ class Schedules()(implicit ctx: RoutesContext) extends ApiRoutes {
           put {
             entity(as[UpdateSchedule]) {
               updateRequest =>
-                resources[ScheduleStore.View.Service, ScheduleStore.Manage.Service] {
-                  (view, manage) =>
-                    view.get(scheduleId).flatMap {
-                      case Some(schedule) =>
-                        manage.update(updateRequest.toUpdatedSchedule(schedule)).map { _ =>
-                          log.info("User [{}] successfully updated schedule [{}]", currentUser, scheduleId)
-                          complete(StatusCodes.OK)
-                        }
+                resources[ScheduleStore.View.Service, ScheduleStore.Manage.Service] { (view, manage) =>
+                  view.get(scheduleId).flatMap {
+                    case Some(schedule) =>
+                      manage.update(updateRequest.toUpdatedSchedule(schedule)).map { _ =>
+                        log.debug("User [{}] successfully updated schedule [{}]", currentUser, scheduleId)
+                        complete(StatusCodes.OK)
+                      }
 
-                      case None =>
-                        log.warning("User [{}] failed to update missing schedule [{}]", currentUser, scheduleId)
-                        Future.successful(complete(StatusCodes.BadRequest))
-                    }
+                    case None =>
+                      log.warning("User [{}] failed to update missing schedule [{}]", currentUser, scheduleId)
+                      Future.successful(complete(StatusCodes.BadRequest))
+                  }
                 }
             }
           },
@@ -111,7 +109,7 @@ class Schedules()(implicit ctx: RoutesContext) extends ApiRoutes {
             resource[ScheduleStore.Manage.Service] { manage =>
               manage.delete(scheduleId).map { deleted =>
                 if (deleted) {
-                  log.info("User [{}] successfully deleted schedule [{}]", currentUser, scheduleId)
+                  log.debug("User [{}] successfully deleted schedule [{}]", currentUser, scheduleId)
                 } else {
                   log.warning("User [{}] failed to delete schedule [{}]", currentUser, scheduleId)
                 }

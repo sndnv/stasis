@@ -17,7 +17,7 @@ class Reservations()(implicit ctx: RoutesContext) extends ApiRoutes {
       get {
         resource[ServerReservationStore.View.Service] { view =>
           view.list().map { reservations =>
-            log.info("User [{}] successfully retrieved [{}] reservations", currentUser, reservations.size)
+            log.debug("User [{}] successfully retrieved [{}] reservations", currentUser, reservations.size)
             discardEntity & complete(reservations.values)
           }
         }

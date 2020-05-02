@@ -25,7 +25,7 @@ class Users()(implicit ctx: RoutesContext) extends ApiRoutes {
           get {
             resource[UserStore.View.Privileged] { view =>
               view.list().map { users =>
-                log.info("User [{}] successfully retrieved [{}] users", currentUser, users.size)
+                log.debug("User [{}] successfully retrieved [{}] users", currentUser, users.size)
                 discardEntity & complete(users.values)
               }
             }
@@ -35,7 +35,7 @@ class Users()(implicit ctx: RoutesContext) extends ApiRoutes {
               resource[UserStore.Manage.Privileged] { manage =>
                 val user = createRequest.toUser(withSalt = manage.generateSalt())
                 manage.create(user).map { _ =>
-                  log.info("User [{}] successfully created user [{}]", currentUser, user.id)
+                  log.debug("User [{}] successfully created user [{}]", currentUser, user.id)
                   complete(CreatedUser(user.id))
                 }
               }
@@ -51,7 +51,7 @@ class Users()(implicit ctx: RoutesContext) extends ApiRoutes {
                 resource[UserStore.View.Privileged] { view =>
                   view.get(userId).map {
                     case Some(user) =>
-                      log.info("User [{}] successfully retrieved user [{}]", currentUser, userId)
+                      log.debug("User [{}] successfully retrieved user [{}]", currentUser, userId)
                       discardEntity & complete(user)
 
                     case None =>
@@ -64,7 +64,7 @@ class Users()(implicit ctx: RoutesContext) extends ApiRoutes {
                 resource[UserStore.Manage.Privileged] { manage =>
                   manage.delete(userId).map { deleted =>
                     if (deleted) {
-                      log.info("User [{}] successfully deleted user [{}]", currentUser, userId)
+                      log.debug("User [{}] successfully deleted user [{}]", currentUser, userId)
                     } else {
                       log.warning("User [{}] failed to delete user [{}]", currentUser, userId)
                     }
@@ -105,7 +105,7 @@ class Users()(implicit ctx: RoutesContext) extends ApiRoutes {
               resource[UserStore.View.Self] { view =>
                 view.get(currentUser).map {
                   case Some(user) =>
-                    log.info("User [{}] successfully retrieved own data", currentUser)
+                    log.debug("User [{}] successfully retrieved own data", currentUser)
                     discardEntity & complete(user)
 
                   case None =>
@@ -119,7 +119,7 @@ class Users()(implicit ctx: RoutesContext) extends ApiRoutes {
             put {
               resource[UserStore.Manage.Self] { manage =>
                 manage.deactivate(currentUser).map { _ =>
-                  log.info("User [{}] successfully deactivated own account", currentUser)
+                  log.debug("User [{}] successfully deactivated own account", currentUser)
                   complete(StatusCodes.OK)
                 }
               }
@@ -137,7 +137,7 @@ class Users()(implicit ctx: RoutesContext) extends ApiRoutes {
       view.get(userId).flatMap {
         case Some(user) =>
           manage.update(updateRequest.toUpdatedUser(user)).map { _ =>
-            log.info("User [{}] successfully updated user [{}]", currentUser, userId)
+            log.debug("User [{}] successfully updated user [{}]", currentUser, userId)
             complete(StatusCodes.OK)
           }
 

@@ -25,7 +25,7 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
         get {
           resource[DatasetEntryStore.View.Privileged] { view =>
             view.list(definitionId).map { entries =>
-              log.info(
+              log.debug(
                 "User [{}] successfully retrieved [{}] entries for definition [{}]",
                 currentUser,
                 entries.size,
@@ -42,7 +42,7 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
             resource[DatasetEntryStore.View.Privileged] { view =>
               view.get(entryId).map {
                 case Some(entry) =>
-                  log.info("User [{}] successfully retrieved entry [{}]", currentUser, entryId)
+                  log.debug("User [{}] successfully retrieved entry [{}]", currentUser, entryId)
                   discardEntity & complete(entry)
 
                 case None =>
@@ -55,7 +55,7 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
             resource[DatasetEntryStore.Manage.Privileged] { manage =>
               manage.delete(entryId).map { deleted =>
                 if (deleted) {
-                  log.info("User [{}] successfully deleted entry [{}]", currentUser, entryId)
+                  log.debug("User [{}] successfully deleted entry [{}]", currentUser, entryId)
                 } else {
                   log.warning("User [{}] failed to delete entry [{}]", currentUser, entryId)
                 }
@@ -79,7 +79,7 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
                           .list(currentUser)
                           .flatMap(devices => entryView.list(devices.keys.toSeq, definitionId))
                           .map { entries =>
-                            log.info(
+                            log.debug(
                               "User [{}] successfully retrieved [{}] entries for definition [{}]",
                               currentUser,
                               entries.size,
@@ -98,7 +98,7 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
                               .list(currentUser)
                               .flatMap(devices => entryManage.create(devices.keys.toSeq, entry))
                               .map { _ =>
-                                log.info("User [{}] successfully created entry [{}]", currentUser, entry.id)
+                                log.debug("User [{}] successfully created entry [{}]", currentUser, entry.id)
                                 complete(CreatedDatasetEntry(entry.id))
                               }
                           }
@@ -126,7 +126,7 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
                               .flatMap(devices => entryView.latest(devices.keys.toSeq, definitionId, until))
                               .map {
                                 case Some(entry) =>
-                                  log.info(
+                                  log.debug(
                                     "User [{}] successfully retrieved latest entry [{}] for definition [{}]",
                                     currentUser,
                                     entry.id,
@@ -152,20 +152,19 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
             entryId =>
               concat(
                 get {
-                  resources[DeviceStore.View.Self, DatasetEntryStore.View.Self] {
-                    (deviceView, entryView) =>
-                      deviceView
-                        .list(currentUser)
-                        .flatMap(devices => entryView.get(devices.keys.toSeq, entryId))
-                        .map {
-                          case Some(entry) =>
-                            log.info("User [{}] successfully retrieved entry [{}]", currentUser, entryId)
-                            discardEntity & complete(entry)
+                  resources[DeviceStore.View.Self, DatasetEntryStore.View.Self] { (deviceView, entryView) =>
+                    deviceView
+                      .list(currentUser)
+                      .flatMap(devices => entryView.get(devices.keys.toSeq, entryId))
+                      .map {
+                        case Some(entry) =>
+                          log.debug("User [{}] successfully retrieved entry [{}]", currentUser, entryId)
+                          discardEntity & complete(entry)
 
-                          case None =>
-                            log.warning("User [{}] failed to retrieve entry [{}]", currentUser, entryId)
-                            discardEntity & complete(StatusCodes.NotFound)
-                        }
+                        case None =>
+                          log.warning("User [{}] failed to retrieve entry [{}]", currentUser, entryId)
+                          discardEntity & complete(StatusCodes.NotFound)
+                      }
                   }
                 },
                 delete {
@@ -175,7 +174,7 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
                       .flatMap(devices => entryManage.delete(devices.keys.toSeq, entryId))
                       .map { deleted =>
                         if (deleted) {
-                          log.info("User [{}] successfully deleted entry [{}]", currentUser, entryId)
+                          log.debug("User [{}] successfully deleted entry [{}]", currentUser, entryId)
                         } else {
                           log.warning("User [{}] failed to delete entry [{}]", currentUser, entryId)
                         }
