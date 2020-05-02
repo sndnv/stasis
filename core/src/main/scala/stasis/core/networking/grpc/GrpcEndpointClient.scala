@@ -124,7 +124,7 @@ class GrpcEndpointClient(
           .map(stream => (stream._1.toList, stream._2))
           .mapAsync(parallelism = 1) {
             case (head :: Nil, tail) =>
-              log.info("Endpoint [{}] responded to pull with content for crate [{}]", address.host, crate)
+              log.debug("Endpoint [{}] responded to pull with content for crate [{}]", address.host, crate)
               Future.successful(Some(Source.single(head) ++ tail))
 
             case _ =>
@@ -167,7 +167,7 @@ class GrpcEndpointClient(
           .flatMap { response =>
             response.result.complete match {
               case Some(_) =>
-                log.info("Endpoint [{}] completed discard for crate [{}]", address.host, crate)
+                log.debug("Endpoint [{}] completed discard for crate [{}]", address.host, crate)
                 Future.successful(true)
 
               case None =>
@@ -201,7 +201,7 @@ class GrpcEndpointClient(
       .flatMap { response =>
         response.result.reservation match {
           case Some(reservation) =>
-            log.info(
+            log.debug(
               "Endpoint [{}] responded to storage request [{}] with: [{}]",
               address.host,
               storageRequest,
@@ -236,7 +236,7 @@ class GrpcEndpointClient(
       .flatMap { response =>
         response.result.complete match {
           case Some(_) =>
-            log.info("Endpoint [{}] completed push for crate [{}]", address.host, manifest.crate)
+            log.debug("Endpoint [{}] completed push for crate [{}]", address.host, manifest.crate)
             Future.successful(Done)
 
           case None =>

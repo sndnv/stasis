@@ -53,7 +53,7 @@ class GrpcEndpoint(
           .reserve(storageRequest)
           .map {
             case Some(reservation) =>
-              log.info("Reservation created for node [{}]: [{}]", node, reservation)
+              log.debug("Reservation created for node [{}]: [{}]", node, reservation)
               proto.ReserveResponse().withReservation(reservation.id)
 
             case None =>
@@ -97,7 +97,7 @@ class GrpcEndpoint(
                 router
                   .push(manifest, incoming.map(chunk => chunk.content))
                   .map { _ =>
-                    log.info("Crate created with manifest: [{}]", manifest)
+                    log.debug("Crate created with manifest: [{}]", manifest)
                     proto.PushResponse().withComplete(proto.Complete())
                   }
                   .recover {
@@ -126,7 +126,7 @@ class GrpcEndpoint(
           .pull(crateId)
           .flatMap {
             case Some(source) =>
-              log.info("Node [{}] pulling crate [{}]", node, crateId)
+              log.debug("Node [{}] pulling crate [{}]", node, crateId)
               Future.successful(source.map(proto.PullChunk(request.crate, _)))
 
             case None =>
@@ -148,7 +148,7 @@ class GrpcEndpoint(
         router
           .discard(crateId)
           .map { _ =>
-            log.info("Node [{}] discarded crate [{}]", node, crateId)
+            log.debug("Node [{}] discarded crate [{}]", node, crateId)
             proto.DiscardResponse().withComplete(proto.Complete())
           }
           .recover {
