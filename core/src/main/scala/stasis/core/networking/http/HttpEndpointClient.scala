@@ -165,7 +165,7 @@ class HttpEndpointClient(
             status match {
               case StatusCodes.OK =>
                 Unmarshal(entity).to[CrateStorageReservation].map { reservation =>
-                  log.info(
+                  log.debug(
                     "Endpoint [{}] responded to storage request [{}] with: [{}]",
                     address.uri,
                     storageRequest,
@@ -210,7 +210,7 @@ class HttpEndpointClient(
       .flatMap { response =>
         response.status match {
           case StatusCodes.OK =>
-            log.info("Endpoint [{}] responded to push for crate [{}] with OK", address.uri, manifest.crate)
+            log.debug("Endpoint [{}] responded to push for crate [{}] with OK", address.uri, manifest.crate)
             Future.successful(Done)
 
           case _ =>
@@ -238,7 +238,7 @@ class HttpEndpointClient(
         case HttpResponse(status, _, entity, _) =>
           status match {
             case StatusCodes.OK =>
-              log.info("Endpoint [{}] responded to pull with content for crate [{}]", address.uri, crate)
+              log.debug("Endpoint [{}] responded to pull with content for crate [{}]", address.uri, crate)
               Future.successful(Some(entity.dataBytes.mapMaterializedValue(_ => NotUsed)))
 
             case StatusCodes.NotFound =>
@@ -273,7 +273,7 @@ class HttpEndpointClient(
           val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
           status match {
             case StatusCodes.OK =>
-              log.info("Endpoint [{}] responded to discard for crate [{}] with OK", address.uri, crate)
+              log.debug("Endpoint [{}] responded to discard for crate [{}] with OK", address.uri, crate)
               Future.successful(true)
 
             case StatusCodes.InternalServerError =>

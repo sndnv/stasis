@@ -118,7 +118,7 @@ class HttpEndpoint(
                     entity(as[CrateStorageRequest]) { storageRequest =>
                       onSuccess(router.reserve(storageRequest)) {
                         case Some(reservation) =>
-                          log.info("Reservation created for node [{}]: [{}]", node, reservation)
+                          log.debug("Reservation created for node [{}]: [{}]", node, reservation)
                           complete(reservation)
 
                         case None =>
@@ -140,7 +140,7 @@ class HttpEndpoint(
                                 onSuccess(
                                   router.push(manifest, stream.mapMaterializedValue(_ => NotUsed))
                                 ) { _ =>
-                                  log.info("Crate created with manifest: [{}]", manifest)
+                                  log.debug("Crate created with manifest: [{}]", manifest)
                                   complete(StatusCodes.OK)
                                 }
                               }
@@ -175,7 +175,7 @@ class HttpEndpoint(
                     get {
                       onSuccess(router.pull(crateId)) {
                         case Some(stream) =>
-                          log.info("Node [{}] pulling crate [{}]", node, crateId)
+                          log.debug("Node [{}] pulling crate [{}]", node, crateId)
                           complete(HttpEntity(ContentTypes.`application/octet-stream`, stream))
 
                         case None =>
@@ -185,7 +185,7 @@ class HttpEndpoint(
                     },
                     delete {
                       onSuccess(router.discard(crateId)) { _ =>
-                        log.info("Node [{}] discarded crate [{}]", node, crateId)
+                        log.debug("Node [{}] discarded crate [{}]", node, crateId)
                         complete(StatusCodes.OK)
                       }
                     }

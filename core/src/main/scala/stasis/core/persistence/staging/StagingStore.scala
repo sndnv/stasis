@@ -152,7 +152,7 @@ class StagingStore(
 
               val _ = content.runWith(broadcastSink)
 
-              log.info(
+              log.debug(
                 "Destaging crate [{}] to [{}] destinations complete",
                 manifest.crate,
                 destinations.size
