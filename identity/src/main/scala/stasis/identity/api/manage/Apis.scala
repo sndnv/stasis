@@ -13,8 +13,7 @@ import stasis.identity.model.owners.ResourceOwner
 
 import scala.concurrent.ExecutionContext
 
-class Apis(store: ApiStore)(implicit system: ActorSystem, override val mat: Materializer)
-    extends EntityDiscardingDirectives {
+class Apis(store: ApiStore)(implicit system: ActorSystem, override val mat: Materializer) extends EntityDiscardingDirectives {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.identity.api.Formats._
 
@@ -27,7 +26,7 @@ class Apis(store: ApiStore)(implicit system: ActorSystem, override val mat: Mate
         concat(
           get {
             onSuccess(store.apis) { apis =>
-              log.info("User [{}] successfully retrieved [{}] APIs", user, apis.size)
+              log.debug("User [{}] successfully retrieved [{}] APIs", user, apis.size)
               discardEntity & complete(apis.values)
             }
           },
@@ -40,7 +39,7 @@ class Apis(store: ApiStore)(implicit system: ActorSystem, override val mat: Mate
 
                 case false =>
                   onSuccess(store.put(request.toApi)) { _ =>
-                    log.info("User [{}] successfully created API [{}]", user, request.id)
+                    log.debug("User [{}] successfully created API [{}]", user, request.id)
                     complete(StatusCodes.OK)
                   }
               }
@@ -53,12 +52,12 @@ class Apis(store: ApiStore)(implicit system: ActorSystem, override val mat: Mate
           case Some(api) =>
             concat(
               get {
-                log.info("User [{}] successfully retrieved API [{}]", user, apiId)
+                log.debug("User [{}] successfully retrieved API [{}]", user, apiId)
                 discardEntity & complete(api)
               },
               delete {
                 onSuccess(store.delete(apiId)) { _ =>
-                  log.info("User [{}] successfully deleted API [{}]", user, apiId)
+                  log.debug("User [{}] successfully deleted API [{}]", user, apiId)
                   discardEntity & complete(StatusCodes.OK)
                 }
               }
