@@ -25,7 +25,7 @@ class Nodes()(implicit ctx: RoutesContext) extends ApiRoutes {
           get {
             resource[ServerNodeStore.View.Service] { view =>
               view.list().map { nodes =>
-                log.info("User [{}] successfully retrieved [{}] nodes", currentUser, nodes.size)
+                log.debug("User [{}] successfully retrieved [{}] nodes", currentUser, nodes.size)
                 discardEntity & complete(nodes.values)
               }
             }
@@ -36,7 +36,7 @@ class Nodes()(implicit ctx: RoutesContext) extends ApiRoutes {
                 val node = createRequest.toNode
 
                 manage.create(node).map { _ =>
-                  log.info("User [{}] successfully created node [{}]", currentUser, node.id)
+                  log.debug("User [{}] successfully created node [{}]", currentUser, node.id)
                   complete(CreatedNode(node.id))
                 }
               }
@@ -50,7 +50,7 @@ class Nodes()(implicit ctx: RoutesContext) extends ApiRoutes {
             resource[ServerNodeStore.View.Service] { view =>
               view.get(nodeId).map {
                 case Some(node) =>
-                  log.info("User [{}] successfully retrieved node [{}]", currentUser, nodeId)
+                  log.debug("User [{}] successfully retrieved node [{}]", currentUser, nodeId)
                   discardEntity & complete(node)
 
                 case None =>
@@ -66,7 +66,7 @@ class Nodes()(implicit ctx: RoutesContext) extends ApiRoutes {
                   view.get(nodeId).flatMap {
                     case Some(node) =>
                       manage.update(updateRequest.toUpdatedNode(node)).map { _ =>
-                        log.info("User [{}] successfully updated node [{}]", currentUser, nodeId)
+                        log.debug("User [{}] successfully updated node [{}]", currentUser, nodeId)
                         complete(StatusCodes.OK)
                       }
 
@@ -81,7 +81,7 @@ class Nodes()(implicit ctx: RoutesContext) extends ApiRoutes {
             resource[ServerNodeStore.Manage.Service] { manage =>
               manage.delete(nodeId).map { deleted =>
                 if (deleted) {
-                  log.info("User [{}] successfully deleted node [{}]", currentUser, nodeId)
+                  log.debug("User [{}] successfully deleted node [{}]", currentUser, nodeId)
                 } else {
                   log.warning("User [{}] failed to delete node [{}]", currentUser, nodeId)
                 }
