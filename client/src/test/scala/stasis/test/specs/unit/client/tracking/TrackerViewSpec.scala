@@ -73,7 +73,7 @@ class TrackerViewSpec extends UnitSpec {
         operations = Map(
           operation -> Operation.Progress(
             stages = Map.empty,
-            failures = Queue("test failure"),
+            failures = Queue("RuntimeException: test failure"),
             completed = None
           )
         ),

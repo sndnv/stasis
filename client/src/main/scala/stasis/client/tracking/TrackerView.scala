@@ -2,6 +2,8 @@ package stasis.client.tracking
 
 import java.time.Instant
 
+import akka.NotUsed
+import akka.stream.scaladsl.Source
 import stasis.shared.ops.Operation
 
 import scala.collection.immutable.Queue
@@ -9,6 +11,8 @@ import scala.concurrent.Future
 
 trait TrackerView {
   def state: Future[TrackerView.State]
+  def stateUpdates: Source[TrackerView.State, NotUsed]
+  def operationUpdates(operation: Operation.Id): Source[Operation.Progress, NotUsed]
 }
 
 object TrackerView {
@@ -31,7 +35,9 @@ object TrackerView {
 
     def withFailure(operationId: Operation.Id, failure: Throwable): State = {
       val existingProgress = operations.getOrElse(operationId, Operation.Progress.empty)
-      val updatedProgress = existingProgress.copy(failures = existingProgress.failures :+ failure.getMessage)
+      val updatedProgress = existingProgress.copy(
+        failures = existingProgress.failures :+ s"${failure.getClass.getSimpleName}: ${failure.getMessage}"
+      )
 
       copy(operations = operations + (operationId -> updatedProgress))
     }

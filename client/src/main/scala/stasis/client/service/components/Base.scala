@@ -14,11 +14,13 @@ import stasis.client.compression.{Compression, Decoder => CompressionDecoder, En
 import stasis.client.encryption.{Aes, Decoder => EncryptionDecoder, Encoder => EncryptionEncoder}
 import stasis.client.service.ApplicationDirectory
 import stasis.client.staging.{DefaultFileStaging, FileStaging}
+import stasis.client.tracking.TrackerView
 import stasis.client.tracking.trackers.DefaultTracker
 import stasis.core.persistence.backends.memory.EventLogMemoryBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.reflect.ClassTag
 import scala.util.Try
 
 trait Base {
@@ -103,7 +105,7 @@ object Base {
                 EventLogMemoryBackend(
                   name = s"tracker-${java.util.UUID.randomUUID()}",
                   initialState = state
-                )(typedSystem, timeout)
+                )(implicitly[ClassTag[TrackerView.State]], typedSystem, timeout)
             )(typedSystem)
 
           override val terminateService: () => Unit = terminate

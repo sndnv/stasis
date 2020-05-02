@@ -1,19 +1,30 @@
 package stasis.test.specs.unit.client.api.http.routes
 
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
+import akka.NotUsed
 import akka.event.Logging
-import akka.http.scaladsl.model.{StatusCodes, Uri}
+import akka.http.scaladsl.model.sse.ServerSentEvent
+import akka.http.scaladsl.model.{MediaTypes, StatusCodes, Uri}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.stream.scaladsl.{Sink, Source}
 import stasis.client.api.http.Context
 import stasis.client.api.http.routes.Operations
 import stasis.client.ops.recovery.Recovery.PathQuery
+import stasis.client.tracking.TrackerView
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.ops.Operation
+import stasis.shared.ops.Operation.Id
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks._
+
+import scala.collection.immutable.Queue
+import scala.concurrent.Future
+import scala.concurrent.duration._
 
 class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   "Operations routes" should "provide current operations state" in {
@@ -29,6 +40,8 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       responseAs[Seq[OperationState]] should not be empty
 
       mockTracker.statistics(MockTrackerView.Statistic.GetState) should be(1)
+      mockTracker.statistics(MockTrackerView.Statistic.GetStateUpdates) should be(0)
+      mockTracker.statistics(MockTrackerView.Statistic.GetOperationUpdates) should be(0)
 
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(1)
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
@@ -157,6 +170,91 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartValidation) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartKeyRotation) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.Stop) should be(0)
+    }
+  }
+
+  they should "support retrieving progress of specific operations" in {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import stasis.shared.api.Formats.operationProgressFormat
+
+    val operation = Operation.generateId()
+    val expectedProgress = Operation.Progress.empty
+
+    val mockTracker = new MockTrackerView() {
+      override def state: Future[TrackerView.State] = Future.successful(
+        TrackerView.State(
+          operations = Map(operation -> expectedProgress),
+          servers = Map.empty
+        )
+      )
+    }
+
+    val routes = createRoutes(tracker = mockTracker)
+
+    Get(s"/$operation/progress") ~> routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[Operation.Progress] should be(expectedProgress)
+    }
+  }
+
+  they should "fail to retrieve progress of a specific operation if it does not exist" in {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import stasis.shared.api.Formats.operationProgressFormat
+
+    val operation = Operation.generateId()
+
+    val mockTracker = MockTrackerView()
+    val routes = createRoutes(tracker = mockTracker)
+
+    Get(s"/$operation/progress") ~> routes ~> check {
+      status should be(StatusCodes.NotFound)
+
+      mockTracker.statistics(MockTrackerView.Statistic.GetState) should be(1)
+      mockTracker.statistics(MockTrackerView.Statistic.GetStateUpdates) should be(0)
+      mockTracker.statistics(MockTrackerView.Statistic.GetOperationUpdates) should be(0)
+    }
+  }
+
+  they should "support retrieve progress stream for specific operations" in {
+    import akka.http.scaladsl.unmarshalling.sse.EventStreamUnmarshalling._
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import play.api.libs.json.Json
+    import stasis.shared.api.Formats.operationProgressFormat
+
+    val operation = Operation.generateId()
+    val expectedEvents = List(
+      Operation.Progress.empty,
+      Operation.Progress(
+        stages = Map("test-1" -> Operation.Progress.Stage(steps = Queue.empty)),
+        failures = Queue("a", "b", "c"),
+        completed = None
+      ),
+      Operation.Progress(
+        stages = Map("test-1" -> Operation.Progress.Stage(steps = Queue.empty)),
+        failures = Queue("a", "b", "c", "d"),
+        completed = Some(Instant.now().truncatedTo(ChronoUnit.SECONDS))
+      )
+    )
+
+    val heartbeatInterval = 50.millis
+
+    val mockTracker = new MockTrackerView() {
+      override def operationUpdates(operation: Id): Source[Operation.Progress, NotUsed] =
+        Source(expectedEvents).throttle(elements = 1, per = heartbeatInterval * 4)
+    }
+    val routes = createRoutes(tracker = mockTracker)
+
+    Get(s"/$operation/follow?heartbeat=${heartbeatInterval.toMillis}ms") ~> routes ~> check {
+      status should be(StatusCodes.OK)
+      mediaType should be(MediaTypes.`text/event-stream`)
+
+      val actualEvents =
+        Unmarshal(response)
+          .to[Source[ServerSentEvent, NotUsed]]
+          .flatMap(_.map(event => Json.parse(event.data).as[Operation.Progress]).runWith(Sink.seq))
+          .await
+
+      actualEvents should be(expectedEvents)
     }
   }
 

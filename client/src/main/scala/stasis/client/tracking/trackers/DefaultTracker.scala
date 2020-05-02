@@ -2,9 +2,11 @@ package stasis.client.tracking.trackers
 
 import java.nio.file.Path
 
+import akka.NotUsed
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.event.{Logging, LoggingAdapter}
+import akka.stream.scaladsl.Source
 import stasis.client.tracking.{BackupTracker, RecoveryTracker, ServerTracker, TrackerView}
 import stasis.core.persistence.backends.EventLogBackend
 import stasis.core.persistence.events.EventLog
@@ -57,6 +59,29 @@ class DefaultTracker private (
   )
 
   override def state: Future[TrackerView.State] = events.state
+
+  override def stateUpdates: Source[State, NotUsed] = events.stateStream
+
+  @SuppressWarnings(Array("org.wartremover.warts.Var"))
+  override def operationUpdates(operation: Operation.Id): Source[Operation.Progress, NotUsed] =
+    stateUpdates
+      .statefulMapConcat { () =>
+        var last: Operation.Progress = Operation.Progress.empty
+
+        { state =>
+          state.operations
+            .get(operation)
+            .flatMap {
+              case current if current == last =>
+                None
+
+              case current =>
+                last = current
+                Some(current)
+            }
+            .toList
+        }
+      }
 
   object server extends ServerTracker {
     override def reachable(server: String): Unit = {
@@ -140,7 +165,12 @@ class DefaultTracker private (
     }
 
     override def failureEncountered(failure: Throwable)(implicit operation: Operation.Id): Unit = {
-      log.debug("[{}] (backup) - Failure encountered: [{}]", operation, failure.getMessage)
+      log.debug(
+        "[{}] (backup) - Failure encountered: [{}: {}]",
+        operation,
+        failure.getClass.getSimpleName,
+        failure.getMessage
+      )
 
       val _ = events.store(
         event = Event.OperationStepFailed(
@@ -219,7 +249,12 @@ class DefaultTracker private (
     }
 
     override def failureEncountered(failure: Throwable)(implicit operation: Operation.Id): Unit = {
-      log.debug("[{}] (recovery) - Failure encountered: [{}]", operation, failure.getMessage)
+      log.debug(
+        "[{}] (recovery) - Failure encountered: [{}: {}]",
+        operation,
+        failure.getClass.getSimpleName,
+        failure.getMessage
+      )
 
       val _ = events.store(
         event = Event.OperationStepFailed(
