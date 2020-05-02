@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.shared.api
 
-import java.time.Instant
+import java.time.{Instant, LocalDateTime}
 import java.time.temporal.ChronoUnit
 
 import akka.actor.Cancellable
@@ -55,18 +55,21 @@ class FormatsSpec extends UnitSpec {
   }
 
   they should "convert schedules to/from JSON with 'next_invocation' field" in {
-    val schedule = Generators.generateSchedule.copy(interval = 30.seconds)
+    val schedule = Generators.generateSchedule.copy(
+      start = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS),
+      interval = 30.seconds
+    )
 
     val json =
       s"""
-         |{
-         |"is_public":${schedule.isPublic},
-         |"start":"${schedule.start}",
-         |"interval":${schedule.interval.toSeconds},
-         |"id":"${schedule.id}",
-         |"next_invocation":"0",
-         |"info":"${schedule.info}"
-         |}
+           |{
+           |"is_public":${schedule.isPublic},
+           |"start":"${schedule.start.truncatedTo(ChronoUnit.SECONDS)}",
+           |"interval":${schedule.interval.toSeconds},
+           |"id":"${schedule.id}",
+           |"next_invocation":"0",
+           |"info":"${schedule.info}"
+           |}
       """.stripMargin.replaceAll("\n", "").trim
 
     scheduleFormat
