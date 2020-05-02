@@ -2,12 +2,15 @@ package stasis.test.specs.unit.client.tracking.trackers
 
 import java.nio.file.Paths
 
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.actor.typed.scaladsl.Behaviors
-import org.scalatest.concurrent.Eventually
+import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import akka.stream.scaladsl.Sink
+import akka.stream.{ActorMaterializer, Materializer}
 import org.scalatest.BeforeAndAfterAll
-import stasis.client.tracking.trackers.DefaultTracker
+import org.scalatest.concurrent.Eventually
 import stasis.client.tracking.TrackerView
+import stasis.client.tracking.trackers.DefaultTracker
 import stasis.core.persistence.backends.memory.EventLogMemoryBackend
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation
@@ -55,7 +58,7 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
       completedState.stages.contains("metadata") should be(true)
       completedState.stages("metadata").steps.size should be(2)
 
-      completedState.failures should be(Queue("test failure"))
+      completedState.failures should be(Queue("RuntimeException: test failure"))
     }
   }
 
@@ -96,7 +99,7 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
       completedState.stages.contains("metadata-applied") should be(true)
       completedState.stages("metadata-applied").steps.size should be(1)
 
-      completedState.failures should be(Queue("test failure"))
+      completedState.failures should be(Queue("RuntimeException: test failure"))
     }
   }
 
@@ -127,6 +130,77 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
     }
   }
 
+  it should "provide state updates" in {
+    val tracker = createTracker()
+
+    implicit val operation: Operation.Id = Operation.generateId()
+    val file = Paths.get("test").toAbsolutePath
+
+    val initialState = tracker.state.await
+
+    initialState should be(
+      TrackerView.State.empty
+    )
+
+    val expectedUpdates = 3
+    val updates = tracker.stateUpdates.take(expectedUpdates).runWith(Sink.seq)
+
+    tracker.backup.entityExamined(entity = file, metadataChanged = true, contentChanged = false)
+    await(50.millis, withSystem = system)
+    tracker.backup.entityCollected(entity = file)
+    await(50.millis, withSystem = system)
+    tracker.recovery.completed()
+
+    updates.await.flatMap(_.operations.get(operation)).toList match {
+      case first :: second :: third :: Nil =>
+        first.stages.size should be(1)
+        first.completed should be(empty)
+
+        second.stages.size should be(2)
+        second.completed should be(empty)
+
+        third.stages.size should be(2)
+        third.completed should not be empty
+
+      case other =>
+        fail(s"Unexpected result received: [$other]")
+    }
+  }
+
+  it should "provide operation updates" in {
+    val tracker = createTracker()
+
+    implicit val operation: Operation.Id = Operation.generateId()
+    val file = Paths.get("test").toAbsolutePath
+
+    val initialState = tracker.state.await
+
+    initialState should be(
+      TrackerView.State.empty
+    )
+
+    val expectedUpdates = 2
+    val updates = tracker.operationUpdates(operation).take(expectedUpdates).runWith(Sink.seq)
+
+    tracker.backup.entityExamined(entity = file, metadataChanged = true, contentChanged = false)
+    await(50.millis, withSystem = system)
+    tracker.backup.entityCollected(entity = file)(operation = Operation.generateId()) // other operation
+    await(50.millis, withSystem = system)
+    tracker.recovery.completed()
+
+    updates.await.toList match {
+      case first :: second :: Nil =>
+        first.stages.size should be(1)
+        first.completed should be(empty)
+
+        second.stages.size should be(1)
+        second.completed should not be empty
+
+      case other =>
+        fail(s"Unexpected result received: [$other]")
+    }
+  }
+
   private def createTracker(): DefaultTracker = DefaultTracker(
     createBackend = state =>
       EventLogMemoryBackend(
@@ -137,11 +211,13 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
+  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
     "DefaultTrackerSpec"
   )
 
+  private implicit val mat: Materializer = ActorMaterializer()(system.toUntyped)
+
   override protected def afterAll(): Unit =
-    typedSystem.terminate()
+    system.terminate()
 }

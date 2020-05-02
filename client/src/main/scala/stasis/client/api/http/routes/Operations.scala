@@ -3,26 +3,32 @@ package stasis.client.api.http.routes
 import java.nio.file.Path
 
 import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.sse.ServerSentEvent
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.stream.Materializer
+import play.api.libs.json.{Format, Json}
 import stasis.client.api.http.Context
+import stasis.client.api.http.Formats._
 import stasis.client.collection.rules.{Rule, Specification}
 import stasis.client.ops.recovery.Recovery
+import stasis.shared.api.Formats._
 import stasis.shared.ops.Operation
+
+import scala.concurrent.duration._
 
 class Operations()(implicit override val mat: Materializer, context: Context) extends ApiRoutes {
   import Operations._
+  import akka.http.scaladsl.marshalling.sse.EventStreamMarshalling._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import mat.executionContext
   import stasis.core.api.Matchers._
 
   def routes(): Route =
     concat(
       pathEndOrSingleSlash {
         get {
-          import mat.executionContext
-
           val operationsState = for {
             operations <- context.executor.operations
             progress <- context.tracker.state.map(_.operations)
@@ -134,22 +140,55 @@ class Operations()(implicit override val mat: Materializer, context: Context) ex
           }
         }
       },
-      path(JavaUUID / "stop") { operation =>
-        put {
-          onSuccess(context.executor.stop(operation)) { _ =>
-            log.debug("API stopped backup operation [{}]", operation)
-            discardEntity & complete(StatusCodes.OK)
+      pathPrefix(JavaUUID) { operation =>
+        concat(
+          path("progress") {
+            get {
+              onSuccess(context.tracker.state.map(_.operations.get(operation))) {
+                case Some(operation) =>
+                  log.debug("API successfully retrieved progress of operation [{}]", operation)
+                  discardEntity & complete(operation)
+
+                case None =>
+                  log.debug(
+                    "API could not retrieve progress of operation [{}]; operation not found",
+                    operation
+                  )
+                  discardEntity & complete(StatusCodes.NotFound)
+              }
+            }
+          },
+          path("follow") {
+            parameter("heartbeat".as[FiniteDuration].?(default = DefaultSseHeartbeatInterval)) { heartbeatInterval =>
+              get {
+                val sseSource = context.tracker
+                  .operationUpdates(operation)
+                  .map(update => Json.toJson(update).toString)
+                  .map(update => ServerSentEvent.apply(update))
+                  .keepAlive(maxIdle = heartbeatInterval, injectedElem = () => ServerSentEvent.heartbeat)
+
+                log.debug("API successfully retrieved progress stream for operation [{}]", operation)
+                discardEntity & complete(sseSource)
+              }
+            }
+          },
+          path("stop") {
+            put {
+              onSuccess(context.executor.stop(operation)) { _ =>
+                log.debug("API stopped backup operation [{}]", operation)
+                discardEntity & complete(StatusCodes.OK)
+              }
+            }
           }
-        }
+        )
       }
     )
 }
 
 object Operations {
   import akka.http.scaladsl.server.{Directive, Directive1}
-  import play.api.libs.json.{Format, Json}
-  import stasis.client.api.http.Formats._
-  import stasis.shared.api.Formats._
+
+  final val DefaultSseHeartbeatInterval: FiniteDuration = 3.seconds
 
   final case class OperationStarted(operation: Operation.Id)
 

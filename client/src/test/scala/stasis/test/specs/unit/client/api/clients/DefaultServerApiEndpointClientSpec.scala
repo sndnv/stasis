@@ -13,6 +13,7 @@ import akka.stream.scaladsl.{Flow, Source}
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.util.ByteString
 import com.typesafe.config.{Config, ConfigFactory}
+import org.scalatest.concurrent.Eventually
 import stasis.client.api.clients.DefaultServerApiEndpointClient
 import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.encryption.secrets.DeviceMetadataSecret
@@ -35,7 +36,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
-class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec {
+class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
   "A DefaultServerApiEndpointClient" should "create dataset definitions" in {
     val apiPort = ports.dequeue()
     val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials)
@@ -358,8 +359,11 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec {
     noException should be thrownBy apiClient.ping().await
   }
 
-  private def createClient(apiPort: Int, context: Option[HttpsConnectionContext] = None) =
-    new DefaultServerApiEndpointClient(
+  private def createClient(
+    apiPort: Int,
+    context: Option[HttpsConnectionContext] = None
+  ): DefaultServerApiEndpointClient = {
+    val client = new DefaultServerApiEndpointClient(
       apiUrl = context match {
         case Some(_) => s"https://localhost:$apiPort"
         case None    => s"http://localhost:$apiPort"
@@ -380,6 +384,14 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec {
       context = context
     )
 
+    eventually {
+      // ensures the endpoint has started; akka is expected to retry GET requests
+      val _ = client.ping().await
+    }
+
+    client
+  }
+
   private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
     "DefaultServerApiEndpointClientSpec"
@@ -389,7 +401,9 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec {
 
   private implicit val mat: Materializer = ActorMaterializer()
 
-  private val ports: mutable.Queue[Int] = (22000 to 22100).to[mutable.Queue]
+  private val ports: mutable.Queue[Int] = (22000 to 22900).to[mutable.Queue]
 
   private val apiCredentials = BasicHttpCredentials(username = "some-user", password = "some-password")
+
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 }
