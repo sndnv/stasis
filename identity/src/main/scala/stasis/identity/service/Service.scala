@@ -49,17 +49,19 @@ trait Service {
     Secret.ResourceOwnerConfig(rawConfig.getConfig("secrets.resource-owner"))
 
   Try {
+    val refreshTokensConfig = Config.RefreshTokens(rawConfig.getConfig("tokens.refresh"))
+    val accessTokensConfig = Config.AccessTokens(rawConfig.getConfig("tokens.access"))
+    val authorizationCodesConfig = Config.AuthorizationCodes(rawConfig.getConfig("codes.authorization"))
+    val ownerAuthenticatorConfig = Config.ResourceOwnerAuthenticator(rawConfig.getConfig("authenticators.resource-owner"))
+
     val persistence: Persistence = new Persistence(
       persistenceConfig = rawConfig.getConfig("persistence"),
-      authorizationCodeExpiration = rawConfig.getDuration("codes.authorization.expiration").toMillis.millis,
-      refreshTokenExpiration = rawConfig.getDuration("tokens.refresh.expiration").toMillis.millis
+      authorizationCodeExpiration = authorizationCodesConfig.expiration,
+      refreshTokenExpiration = refreshTokensConfig.expiration
     )(system, config.internalQueryTimeout)
 
     val accessTokenSignatureKey: JsonWebKey =
       SignatureKey.fromConfig(rawConfig.getConfig("tokens.access.signature-key"))
-
-    val accessTokenIssuer: String =
-      rawConfig.getString("tokens.access.issuer")
 
     val oauthProviders = oauthApi.setup.Providers(
       apiStore = persistence.apis.view,
@@ -67,15 +69,15 @@ trait Service {
       refreshTokenStore = persistence.refreshTokens,
       authorizationCodeStore = persistence.authorizationCodes,
       accessTokenGenerator = new JwtBearerAccessTokenGenerator(
-        issuer = accessTokenIssuer,
+        issuer = accessTokensConfig.issuer,
         jwk = accessTokenSignatureKey,
-        jwtExpiration = rawConfig.getDuration("tokens.access.expiration").toMillis.millis
+        jwtExpiration = accessTokensConfig.expiration
       ),
       authorizationCodeGenerator = new DefaultAuthorizationCodeGenerator(
-        codeSize = rawConfig.getInt("codes.authorization.size")
+        codeSize = authorizationCodesConfig.size
       ),
       refreshTokenGenerator = new RandomRefreshTokenGenerator(
-        tokenSize = rawConfig.getInt("tokens.refresh.size")
+        tokenSize = refreshTokensConfig.size
       ),
       clientAuthenticator = new oauth.DefaultClientAuthenticator(
         store = persistence.clients.view,
@@ -87,17 +89,16 @@ trait Service {
       )
     )
 
-    val ownerAuthenticatorConfig = rawConfig.getConfig("authenticators.resource-owner")
     val ownerAuthenticator = new manage.DefaultResourceOwnerAuthenticator(
       store = persistence.resourceOwners.view,
       underlying = new DefaultJwtAuthenticator(
         provider = new LocalKeyProvider(
           jwk = accessTokenSignatureKey,
-          issuer = accessTokenIssuer
+          issuer = accessTokensConfig.issuer
         ),
         audience = Api.ManageIdentity,
-        identityClaim = ownerAuthenticatorConfig.getString("identity-claim"),
-        expirationTolerance = ownerAuthenticatorConfig.getDuration("expiration-tolerance").toMillis.millis
+        identityClaim = ownerAuthenticatorConfig.identityClaim,
+        expirationTolerance = ownerAuthenticatorConfig.expirationTolerance
       )
     )
 
@@ -116,7 +117,7 @@ trait Service {
       keys = Seq(accessTokenSignatureKey),
       oauthConfig = oauthApi.setup.Config(
         realm = realm,
-        refreshTokensAllowed = rawConfig.getBoolean("tokens.refresh.allowed")
+        refreshTokensAllowed = refreshTokensConfig.allowed
       ),
       oauthProviders = oauthProviders,
       manageConfig = manageApi.setup.Config(
@@ -128,6 +129,63 @@ trait Service {
     )
 
     val context = EndpointContext.create(config.context)
+
+    log.info(
+      s"""
+         |Config(
+         |  realm: $realm
+         |
+         |  bootstrap:
+         |    enabled: ${rawConfig.getBoolean("bootstrap.enabled")}
+         |    config:  ${rawConfig.getString("bootstrap.config")}
+         |
+         |  service:
+         |    interface: ${config.interface}
+         |    port:      ${config.port}
+         |    iqt:       ${config.internalQueryTimeout.toMillis} ms
+         |    context:
+         |      protocol: ${config.context.protocol}
+         |      keystore: ${config.context.keyStoreConfig.map(_.storePath).getOrElse("none")}
+         |
+         |  authorization-codes:
+         |    size:       ${authorizationCodesConfig.size}
+         |    expiration: ${authorizationCodesConfig.expiration.toSeconds} s
+         |
+         |  access-tokens:
+         |    issuer:        ${accessTokensConfig.issuer}
+         |    expiration:    ${accessTokensConfig.expiration.toSeconds} s
+         |    signature-key: ${accessTokenSignatureKey.getKeyId}
+         |
+         |  refresh-tokens:
+         |    allowed:    ${refreshTokensConfig.allowed}
+         |    size:       ${refreshTokensConfig.size}
+         |    expiration: ${refreshTokensConfig.expiration.toSeconds} s
+         |
+         |  client-secrets:
+         |    algorithm:            ${clientSecretsConfig.algorithm}
+         |    iterations:           ${clientSecretsConfig.iterations}
+         |    key-size:             ${clientSecretsConfig.derivedKeySize} bytes
+         |    salt-size:            ${clientSecretsConfig.saltSize} bytes
+         |    authentication-delay: ${clientSecretsConfig.authenticationDelay.toMillis} ms
+         |
+         |  resource-owner-secrets:
+         |    algorithm:            ${ownerSecretsConfig.algorithm}
+         |    iterations:           ${ownerSecretsConfig.iterations}
+         |    key-size:             ${ownerSecretsConfig.derivedKeySize} bytes
+         |    salt-size:            ${ownerSecretsConfig.saltSize} bytes
+         |    authentication-delay: ${ownerSecretsConfig.authenticationDelay.toMillis} ms
+         |
+         |  resource-owner-authenticator:
+         |    identity-claim:       ${ownerAuthenticatorConfig.identityClaim}
+         |    expiration-tolerance: ${ownerAuthenticatorConfig.expirationTolerance.toMillis} ms
+         |
+         |  database:
+         |    url:        ${persistence.databaseUrl}
+         |    driver:     ${persistence.databaseDriver}
+         |    keep-alive: ${persistence.databaseKeepAlive}
+         |)
+       """.stripMargin
+    )
 
     (persistence, endpoint, context)
   } match {
@@ -190,5 +248,59 @@ object Service {
         internalQueryTimeout = config.getDuration("internal-query-timeout").toMillis.millis,
         context = EndpointContext.ContextConfig(config.getConfig("context"))
       )
+
+    final case class AuthorizationCodes(
+      size: Int,
+      expiration: FiniteDuration
+    )
+
+    object AuthorizationCodes {
+      def apply(config: com.typesafe.config.Config): AuthorizationCodes =
+        AuthorizationCodes(
+          size = config.getInt("size"),
+          expiration = config.getDuration("expiration").toMillis.millis
+        )
+    }
+
+    final case class AccessTokens(
+      issuer: String,
+      expiration: FiniteDuration
+    )
+
+    object AccessTokens {
+      def apply(config: com.typesafe.config.Config): AccessTokens =
+        AccessTokens(
+          issuer = config.getString("issuer"),
+          expiration = config.getDuration("expiration").toMillis.millis
+        )
+    }
+
+    final case class RefreshTokens(
+      allowed: Boolean,
+      size: Int,
+      expiration: FiniteDuration
+    )
+
+    object RefreshTokens {
+      def apply(config: com.typesafe.config.Config): RefreshTokens =
+        RefreshTokens(
+          allowed = config.getBoolean("allowed"),
+          size = config.getInt("size"),
+          expiration = config.getDuration("expiration").toMillis.millis
+        )
+    }
+
+    final case class ResourceOwnerAuthenticator(
+      identityClaim: String,
+      expirationTolerance: FiniteDuration
+    )
+
+    object ResourceOwnerAuthenticator {
+      def apply(config: com.typesafe.config.Config): ResourceOwnerAuthenticator =
+        ResourceOwnerAuthenticator(
+          identityClaim = config.getString("identity-claim"),
+          expirationTolerance = config.getDuration("expiration-tolerance").toMillis.millis
+        )
+    }
   }
 }
