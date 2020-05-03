@@ -26,14 +26,16 @@ class Persistence(
 
   private val profile: JdbcProfile = H2Profile
 
-  private val databaseUrl: String = persistenceConfig.getString("database.url")
+  val databaseUrl: String = persistenceConfig.getString("database.url")
+  val databaseDriver: String = persistenceConfig.getString("database.driver")
+  val databaseKeepAlive: Boolean = persistenceConfig.getBoolean("database.keep-alive-connection")
 
   private val database: profile.backend.DatabaseDef = profile.api.Database.forURL(
     url = databaseUrl,
     user = persistenceConfig.getString("database.user"),
     password = persistenceConfig.getString("database.password"),
-    driver = persistenceConfig.getString("database.driver"),
-    keepAliveConnection = persistenceConfig.getBoolean("database.keep-alive-connection")
+    driver = databaseDriver,
+    keepAliveConnection = databaseKeepAlive
   )
 
   val apis: ApiStore =
