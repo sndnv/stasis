@@ -29,23 +29,42 @@ class CorePersistence(
 
   private val profile: JdbcProfile = H2Profile
 
-  private val databaseUrl: String = persistenceConfig.getString("database.url")
+  val databaseUrl: String = persistenceConfig.getString("database.url")
+  val databaseDriver: String = persistenceConfig.getString("database.driver")
+  val databaseKeepAlive: Boolean = persistenceConfig.getBoolean("database.keep-alive-connection")
+
+  val nodeCachingEnabled: Boolean = persistenceConfig.getBoolean("nodes.caching-enabled")
+
+  val reservationExpiration: FiniteDuration = persistenceConfig.getDuration("reservations.expiration").toMillis.millis
+
+  val stagingStoreDescriptor: Option[CrateStore.Descriptor] =
+    if (persistenceConfig.getBoolean("staging.enabled")) {
+      Some(
+        CrateStore.Descriptor(
+          config = persistenceConfig.getConfig("staging.store")
+        )
+      )
+    } else {
+      None
+    }
+
+  val stagingStoreDestagingDelay: FiniteDuration = persistenceConfig.getDuration("staging.destaging-delay").toMillis.millis
 
   private val database: profile.backend.DatabaseDef = profile.api.Database.forURL(
     url = databaseUrl,
     user = persistenceConfig.getString("database.user"),
     password = persistenceConfig.getString("database.password"),
-    driver = persistenceConfig.getString("database.driver"),
-    keepAliveConnection = persistenceConfig.getBoolean("database.keep-alive-connection")
+    driver = databaseDriver,
+    keepAliveConnection = databaseKeepAlive
   )
 
   private val StoreInitializationResult(nodeStore, nodeStoreInit) = NodeStore(
     backend = backends.nodes,
-    cachingEnabled = persistenceConfig.getBoolean("nodes.caching-enabled")
+    cachingEnabled = nodeCachingEnabled
   )
 
   private val StoreInitializationResult(reservationStore, reservationStoreInit) = ReservationStore(
-    expiration = persistenceConfig.getDuration("reservations.expiration").toSeconds.seconds,
+    expiration = reservationExpiration,
     backend = backends.reservations
   )
 
@@ -55,21 +74,12 @@ class CorePersistence(
 
   val reservations: ReservationStore = reservationStore
 
-  val staging: Option[StagingStore] =
-    if (persistenceConfig.getBoolean("staging.enabled")) {
-      val store = new StagingStore(
-        crateStore = CrateStore.fromDescriptor(
-          descriptor = CrateStore.Descriptor(
-            config = persistenceConfig.getConfig("staging.store")
-          )
-        ),
-        destagingDelay = persistenceConfig.getDuration("staging.destaging-delay").toSeconds.seconds
-      )
-
-      Some(store)
-    } else {
-      None
-    }
+  val staging: Option[StagingStore] = stagingStoreDescriptor.map { descriptor =>
+    new StagingStore(
+      crateStore = CrateStore.fromDescriptor(descriptor),
+      destagingDelay = stagingStoreDestagingDelay
+    )
+  }
 
   def startup(): Future[Done] =
     for {

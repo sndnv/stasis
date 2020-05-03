@@ -78,7 +78,10 @@ class CrateStore(
 }
 
 object CrateStore {
-  sealed trait Descriptor
+  sealed trait Descriptor {
+    override def toString: String = Descriptor.asString(this)
+  }
+
   object Descriptor {
     final case class ForStreamingMemoryBackend(maxSize: Long, name: String) extends Descriptor
     final case class ForContainerBackend(path: String, maxChunkSize: Int, maxChunks: Int) extends Descriptor
@@ -103,6 +106,18 @@ object CrateStore {
           ForFileBackend(
             parentDirectory = config.getString("file.parent-directory")
           )
+      }
+
+    def asString(descriptor: Descriptor): String =
+      descriptor match {
+        case Descriptor.ForStreamingMemoryBackend(maxSize, name) =>
+          s"StreamingMemoryBackend(maxSize=$maxSize, name=$name)"
+
+        case Descriptor.ForContainerBackend(path, maxChunkSize, maxChunks) =>
+          s"ContainerBackend(path=$path, maxChunkSize=$maxChunkSize, maxChunks=$maxChunks)"
+
+        case Descriptor.ForFileBackend(parentDirectory) =>
+          s"FileBackend(parentDirectory=$parentDirectory)"
       }
   }
 
