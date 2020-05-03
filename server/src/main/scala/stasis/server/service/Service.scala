@@ -49,21 +49,21 @@ trait Service {
   Try {
     implicit val timeout: Timeout = rawConfig.getDuration("service.internal-query-timeout").toMillis.millis
 
-    val instanceAuthenticatorConfig = rawConfig.getConfig("authenticators.instance")
-    val serverId = UUID.fromString(instanceAuthenticatorConfig.getString("client-id"))
+    val instanceAuthenticatorConfig = Config.InstanceAuthenticatorConfig(rawConfig.getConfig("authenticators.instance"))
+    val serverId = UUID.fromString(instanceAuthenticatorConfig.clientId)
 
     val authenticationEndpointContext: Option[HttpsConnectionContext] =
       EndpointContext.fromConfig(rawConfig.getConfig("clients.authentication.context"))
 
     val jwtProvider: JwtProvider = new DefaultJwtProvider(
       client = new DefaultOAuthClient(
-        tokenEndpoint = instanceAuthenticatorConfig.getString("token-endpoint"),
+        tokenEndpoint = instanceAuthenticatorConfig.tokenEndpoint,
         client = serverId.toString,
-        clientSecret = instanceAuthenticatorConfig.getString("client-secret"),
-        useQueryString = instanceAuthenticatorConfig.getBoolean("use-query-string"),
+        clientSecret = instanceAuthenticatorConfig.clientSecret,
+        useQueryString = instanceAuthenticatorConfig.useQueryString,
         context = authenticationEndpointContext
       ),
-      expirationTolerance = instanceAuthenticatorConfig.getDuration("expiration-tolerance").toMillis.millis
+      expirationTolerance = instanceAuthenticatorConfig.expirationTolerance
     )
 
     val persistenceConfig = rawConfig.getConfig("persistence")
@@ -76,37 +76,37 @@ trait Service {
       users = serverPersistence.users.view()
     )
 
-    val userAuthenticatorConfig = rawConfig.getConfig("authenticators.users")
+    val userAuthenticatorConfig = Config.UserAuthenticatorConfig(rawConfig.getConfig("authenticators.users"))
     val userAuthenticator: UserAuthenticator = new DefaultUserAuthenticator(
       store = serverPersistence.users.view(),
       underlying = new DefaultJwtAuthenticator(
         provider = RemoteKeyProvider(
-          jwksEndpoint = userAuthenticatorConfig.getString("jwks-endpoint"),
+          jwksEndpoint = userAuthenticatorConfig.jwksEndpoint,
           context = authenticationEndpointContext,
-          refreshInterval = userAuthenticatorConfig.getDuration("refresh-interval").toSeconds.seconds,
-          refreshRetryInterval = userAuthenticatorConfig.getDuration("refresh-retry-interval").toSeconds.seconds,
-          issuer = userAuthenticatorConfig.getString("issuer")
+          refreshInterval = userAuthenticatorConfig.refreshInterval,
+          refreshRetryInterval = userAuthenticatorConfig.refreshRetryInterval,
+          issuer = userAuthenticatorConfig.issuer
         ),
-        audience = userAuthenticatorConfig.getString("audience"),
-        identityClaim = userAuthenticatorConfig.getString("identity-claim"),
-        expirationTolerance = userAuthenticatorConfig.getDuration("expiration-tolerance").toMillis.millis
+        audience = userAuthenticatorConfig.audience,
+        identityClaim = userAuthenticatorConfig.identityClaim,
+        expirationTolerance = userAuthenticatorConfig.expirationTolerance
       )
     )
 
-    val nodeAuthenticatorConfig = rawConfig.getConfig("authenticators.nodes")
+    val nodeAuthenticatorConfig = Config.NodeAuthenticatorConfig(rawConfig.getConfig("authenticators.nodes"))
     val nodeAuthenticator: NodeAuthenticator[HttpCredentials] = new JwtNodeAuthenticator(
       nodeStore = corePersistence.nodes.view,
       underlying = new DefaultJwtAuthenticator(
         provider = RemoteKeyProvider(
-          jwksEndpoint = nodeAuthenticatorConfig.getString("jwks-endpoint"),
+          jwksEndpoint = nodeAuthenticatorConfig.jwksEndpoint,
           context = authenticationEndpointContext,
-          refreshInterval = nodeAuthenticatorConfig.getDuration("refresh-interval").toSeconds.seconds,
-          refreshRetryInterval = userAuthenticatorConfig.getDuration("refresh-retry-interval").toSeconds.seconds,
-          issuer = nodeAuthenticatorConfig.getString("issuer")
+          refreshInterval = nodeAuthenticatorConfig.refreshInterval,
+          refreshRetryInterval = nodeAuthenticatorConfig.refreshRetryInterval,
+          issuer = nodeAuthenticatorConfig.issuer
         ),
-        audience = nodeAuthenticatorConfig.getString("audience"),
-        identityClaim = nodeAuthenticatorConfig.getString("identity-claim"),
-        expirationTolerance = nodeAuthenticatorConfig.getDuration("expiration-tolerance").toMillis.millis
+        audience = nodeAuthenticatorConfig.audience,
+        identityClaim = nodeAuthenticatorConfig.identityClaim,
+        expirationTolerance = nodeAuthenticatorConfig.expirationTolerance
       )
     )
 
@@ -162,6 +162,84 @@ trait Service {
         authenticator = nodeAuthenticator
       ),
       context = EndpointContext.create(coreConfig.context)
+    )
+
+    log.info(
+      s"""
+         |Config(
+         |  bootstrap:
+         |    enabled: ${rawConfig.getBoolean("bootstrap.enabled").toString}
+         |    config:  ${rawConfig.getString("bootstrap.config")}
+         |
+         |  service:
+         |    iqt:  ${timeout.duration.toMillis.toString} ms
+         |
+         |    api:
+         |      interface:  ${apiConfig.interface}
+         |      port:       ${apiConfig.port.toString}
+         |      context:
+         |        protocol: ${apiConfig.context.protocol}
+         |        keystore: ${apiConfig.context.keyStoreConfig.map(_.storePath).getOrElse("none")}
+         |
+         |    core:
+         |      interface:  ${coreConfig.interface}
+         |      port:       ${coreConfig.port.toString}
+         |      context:
+         |        protocol: ${coreConfig.context.protocol}
+         |        keystore: ${coreConfig.context.keyStoreConfig.map(_.storePath).getOrElse("none")}
+         |
+         |  authenticators:
+         |    users:
+         |      issuer:                 ${userAuthenticatorConfig.issuer}
+         |      audience:               ${userAuthenticatorConfig.audience}
+         |      identity-claim:         ${userAuthenticatorConfig.identityClaim}
+         |      jwks-endpoint:          ${userAuthenticatorConfig.jwksEndpoint}
+         |      refresh-interval:       ${userAuthenticatorConfig.refreshInterval.toSeconds.toString} s
+         |      refresh-retry-interval: ${userAuthenticatorConfig.refreshRetryInterval.toMillis.toString} ms
+         |      expiration-tolerance:   ${userAuthenticatorConfig.expirationTolerance.toMillis.toString} ms
+         |
+         |    nodes:
+         |      issuer:                 ${nodeAuthenticatorConfig.issuer}
+         |      audience:               ${nodeAuthenticatorConfig.audience}
+         |      identity-claim:         ${nodeAuthenticatorConfig.identityClaim}
+         |      jwks-endpoint:          ${nodeAuthenticatorConfig.jwksEndpoint}
+         |      refresh-interval:       ${nodeAuthenticatorConfig.refreshInterval.toSeconds.toString} s
+         |      refresh-retry-interval: ${nodeAuthenticatorConfig.refreshRetryInterval.toMillis.toString} ms
+         |      expiration-tolerance:   ${nodeAuthenticatorConfig.expirationTolerance.toMillis.toString} ms
+         |
+         |    instance:
+         |      token-endpoint:         ${instanceAuthenticatorConfig.tokenEndpoint}
+         |      client-id:              ${instanceAuthenticatorConfig.clientId}
+         |      expiration-tolerance:   ${instanceAuthenticatorConfig.expirationTolerance.toMillis.toString} ms
+         |      use-query-string:       ${instanceAuthenticatorConfig.useQueryString.toString}
+         |
+         |  persistence:
+         |    database:
+         |      core:
+         |        url:        ${corePersistence.databaseUrl}
+         |        driver:     ${corePersistence.databaseDriver}
+         |        keep-alive: ${corePersistence.databaseKeepAlive.toString}
+         |
+         |      server:
+         |        url:        ${serverPersistence.databaseUrl}
+         |        driver:     ${serverPersistence.databaseDriver}
+         |        keep-alive: ${serverPersistence.databaseKeepAlive.toString}
+         |
+         |    users:
+         |      salt-size: ${serverPersistence.userSaltSize.toString}
+         |
+         |    reservations:
+         |      expiration: ${corePersistence.reservationExpiration.toMillis.toString} ms
+         |
+         |    nodes:
+         |      caching-enabled: ${corePersistence.nodeCachingEnabled.toString}
+         |
+         |    staging:
+         |      enabled:         ${corePersistence.stagingStoreDescriptor.isDefined}
+         |      destaging-delay: ${corePersistence.stagingStoreDestagingDelay.toMillis.toString} ms
+         |      store:           ${corePersistence.stagingStoreDescriptor.map(_.toString).getOrElse("none")}
+         |)
+       """.stripMargin
     )
 
     (apiServices, coreServices)
@@ -251,5 +329,70 @@ object Service {
         port = config.getInt("port"),
         context = EndpointContext.ContextConfig(config.getConfig("context"))
       )
+
+    final case class UserAuthenticatorConfig(
+      issuer: String,
+      audience: String,
+      identityClaim: String,
+      jwksEndpoint: String,
+      refreshInterval: FiniteDuration,
+      refreshRetryInterval: FiniteDuration,
+      expirationTolerance: FiniteDuration
+    )
+
+    object UserAuthenticatorConfig {
+      def apply(config: com.typesafe.config.Config): UserAuthenticatorConfig =
+        UserAuthenticatorConfig(
+          issuer = config.getString("issuer"),
+          audience = config.getString("audience"),
+          identityClaim = config.getString("identity-claim"),
+          jwksEndpoint = config.getString("jwks-endpoint"),
+          refreshInterval = config.getDuration("refresh-interval").toMillis.millis,
+          refreshRetryInterval = config.getDuration("refresh-retry-interval").toMillis.millis,
+          expirationTolerance = config.getDuration("expiration-tolerance").toMillis.millis
+        )
+    }
+
+    final case class NodeAuthenticatorConfig(
+      issuer: String,
+      audience: String,
+      identityClaim: String,
+      jwksEndpoint: String,
+      refreshInterval: FiniteDuration,
+      refreshRetryInterval: FiniteDuration,
+      expirationTolerance: FiniteDuration
+    )
+
+    object NodeAuthenticatorConfig {
+      def apply(config: com.typesafe.config.Config): NodeAuthenticatorConfig =
+        NodeAuthenticatorConfig(
+          issuer = config.getString("issuer"),
+          audience = config.getString("audience"),
+          identityClaim = config.getString("identity-claim"),
+          jwksEndpoint = config.getString("jwks-endpoint"),
+          refreshInterval = config.getDuration("refresh-interval").toMillis.millis,
+          refreshRetryInterval = config.getDuration("refresh-retry-interval").toMillis.millis,
+          expirationTolerance = config.getDuration("expiration-tolerance").toMillis.millis
+        )
+    }
+
+    final case class InstanceAuthenticatorConfig(
+      tokenEndpoint: String,
+      clientId: String,
+      clientSecret: String,
+      expirationTolerance: FiniteDuration,
+      useQueryString: Boolean
+    )
+
+    object InstanceAuthenticatorConfig {
+      def apply(config: com.typesafe.config.Config): InstanceAuthenticatorConfig =
+        InstanceAuthenticatorConfig(
+          tokenEndpoint = config.getString("token-endpoint"),
+          clientId = config.getString("client-id"),
+          clientSecret = config.getString("client-secret"),
+          expirationTolerance = config.getDuration("expiration-tolerance").toMillis.millis,
+          useQueryString = config.getBoolean("use-query-string")
+        )
+    }
   }
 }

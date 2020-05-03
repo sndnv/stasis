@@ -84,6 +84,23 @@ class CrateStoreSpec extends AsyncUnitSpec {
     fileBackedStore.backend shouldBe a[FileBackend]
   }
 
+  it should "convert crate store descriptors to strings" in {
+    val memoryBackendName = s"memory-backed-store-${java.util.UUID.randomUUID()}"
+    CrateStore.Descriptor
+      .ForStreamingMemoryBackend(maxSize = 1, name = memoryBackendName)
+      .toString should be(s"StreamingMemoryBackend(maxSize=1, name=$memoryBackendName)")
+
+    val containerBackendPath = s"target/container-backed-store-${java.util.UUID.randomUUID()}"
+    CrateStore.Descriptor
+      .ForContainerBackend(path = containerBackendPath, maxChunkSize = 1, maxChunks = 1)
+      .toString should be(s"ContainerBackend(path=$containerBackendPath, maxChunkSize=1, maxChunks=1)")
+
+    val fileBackendParentDirectory = "target/file-backed-store"
+    CrateStore.Descriptor
+      .ForFileBackend(parentDirectory = fileBackendParentDirectory)
+      .toString should be(s"FileBackend(parentDirectory=$fileBackendParentDirectory)")
+  }
+
   it should "successfully persist crates" in {
     val store = new TestCrateStore()
 

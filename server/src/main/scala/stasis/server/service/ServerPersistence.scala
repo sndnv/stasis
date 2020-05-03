@@ -20,14 +20,18 @@ class ServerPersistence(
 
   private val profile: JdbcProfile = H2Profile
 
-  private val databaseUrl: String = persistenceConfig.getString("database.url")
+  val databaseUrl: String = persistenceConfig.getString("database.url")
+  val databaseDriver: String = persistenceConfig.getString("database.driver")
+  val databaseKeepAlive: Boolean = persistenceConfig.getBoolean("database.keep-alive-connection")
+
+  val userSaltSize: Int = persistenceConfig.getInt("users.salt-size")
 
   private val database: profile.backend.DatabaseDef = profile.api.Database.forURL(
     url = databaseUrl,
     user = persistenceConfig.getString("database.user"),
     password = persistenceConfig.getString("database.password"),
-    driver = persistenceConfig.getString("database.driver"),
-    keepAliveConnection = persistenceConfig.getBoolean("database.keep-alive-connection")
+    driver = databaseDriver,
+    keepAliveConnection = databaseKeepAlive
   )
 
   val datasetDefinitions: DatasetDefinitionStore = DatasetDefinitionStore(backend = backends.definitions)
@@ -39,7 +43,7 @@ class ServerPersistence(
   val schedules: ScheduleStore = ScheduleStore(backend = backends.schedules)
 
   val users: UserStore = UserStore(
-    userSaltSize = persistenceConfig.getInt("users.salt-size"),
+    userSaltSize = userSaltSize,
     backend = backends.users
   )
 
