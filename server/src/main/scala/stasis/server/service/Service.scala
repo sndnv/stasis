@@ -216,11 +216,13 @@ trait Service {
          |  persistence:
          |    database:
          |      core:
+         |        profile:    ${corePersistence.profile.getClass.getSimpleName}
          |        url:        ${corePersistence.databaseUrl}
          |        driver:     ${corePersistence.databaseDriver}
          |        keep-alive: ${corePersistence.databaseKeepAlive.toString}
          |
          |      server:
+         |        profile:    ${serverPersistence.profile.getClass.getSimpleName}
          |        url:        ${serverPersistence.databaseUrl}
          |        driver:     ${serverPersistence.databaseDriver}
          |        keep-alive: ${serverPersistence.databaseKeepAlive.toString}
