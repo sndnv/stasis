@@ -4,10 +4,10 @@ import akka.Done
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.util.Timeout
 import com.typesafe.{config => typesafe}
-import slick.jdbc.{H2Profile, JdbcProfile}
+import slick.jdbc.JdbcProfile
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.core.persistence.backends.memory.MemoryBackend
-import stasis.core.persistence.backends.slick.SlickBackend
+import stasis.core.persistence.backends.slick.{SlickBackend, SlickProfile}
 import stasis.identity.model.apis.{ApiStore, ApiStoreSerdes}
 import stasis.identity.model.clients.{Client, ClientStore, ClientStoreSerdes}
 import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, StoredAuthorizationCode}
@@ -24,7 +24,7 @@ class Persistence(
 )(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout) {
   private implicit val ec: ExecutionContext = system.executionContext
 
-  private val profile: JdbcProfile = H2Profile
+  val profile: JdbcProfile = SlickProfile(profile = persistenceConfig.getString("database.profile"))
 
   val databaseUrl: String = persistenceConfig.getString("database.url")
   val databaseDriver: String = persistenceConfig.getString("database.driver")

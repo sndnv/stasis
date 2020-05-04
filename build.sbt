@@ -11,6 +11,9 @@ lazy val akkaVersion = "2.5.23"
 lazy val akkaHttpVersion = "10.1.9"
 lazy val slickVersion = "3.3.1"
 lazy val h2Version = "1.4.199"
+lazy val postgresVersion = "42.2.12"
+lazy val mariadbVersion = "2.6.0"
+lazy val sqliteVersion = "3.30.1"
 lazy val logbackVersion = "1.2.3"
 
 lazy val jdkDockerImage = "openjdk:11"
@@ -59,10 +62,13 @@ lazy val identity = (project in file("./identity"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.typesafe.akka"   %% "akka-slf4j"       % akkaVersion,
-      "ch.qos.logback"      %  "logback-classic"  % logbackVersion,
-      "com.typesafe.slick"  %% "slick"            % slickVersion,
-      "com.h2database"      %  "h2"               % h2Version
+      "com.typesafe.akka"   %% "akka-slf4j"          % akkaVersion,
+      "ch.qos.logback"      %  "logback-classic"     % logbackVersion,
+      "com.typesafe.slick"  %% "slick"               % slickVersion,
+      "com.h2database"      %  "h2"                  % h2Version,
+      "org.postgresql"      %  "postgresql"          % postgresVersion,
+      "org.mariadb.jdbc"    %  "mariadb-java-client" % mariadbVersion,
+      "org.xerial"          %  "sqlite-jdbc"         % sqliteVersion
     ),
     dockerBaseImage := jdkDockerImage
   )

@@ -180,6 +180,7 @@ trait Service {
          |    expiration-tolerance: ${ownerAuthenticatorConfig.expirationTolerance.toMillis} ms
          |
          |  database:
+         |    profile:    ${persistence.profile.getClass.getSimpleName}
          |    url:        ${persistence.databaseUrl}
          |    driver:     ${persistence.databaseDriver}
          |    keep-alive: ${persistence.databaseKeepAlive}
