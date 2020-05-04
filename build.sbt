@@ -26,10 +26,13 @@ lazy val server = (project in file("./server"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.typesafe.akka"   %% "akka-slf4j"       % akkaVersion,
-      "ch.qos.logback"      %  "logback-classic"  % logbackVersion,
-      "com.typesafe.slick"  %% "slick"            % slickVersion,
-      "com.h2database"      %  "h2"               % h2Version
+      "com.typesafe.akka"   %% "akka-slf4j"          % akkaVersion,
+      "ch.qos.logback"      %  "logback-classic"     % logbackVersion,
+      "com.typesafe.slick"  %% "slick"               % slickVersion,
+      "com.h2database"      %  "h2"                  % h2Version,
+      "org.postgresql"      %  "postgresql"          % postgresVersion,
+      "org.mariadb.jdbc"    %  "mariadb-java-client" % mariadbVersion,
+      "org.xerial"          %  "sqlite-jdbc"         % sqliteVersion
     ),
     dockerBaseImage := jdkDockerImage
   )

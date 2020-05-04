@@ -3,8 +3,8 @@ package stasis.server.service
 import akka.Done
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import com.typesafe.{config => typesafe}
-import slick.jdbc.{H2Profile, JdbcProfile}
-import stasis.core.persistence.backends.slick.SlickBackend
+import slick.jdbc.JdbcProfile
+import stasis.core.persistence.backends.slick.{SlickBackend, SlickProfile}
 import stasis.server.model.datasets._
 import stasis.server.model.devices.{DeviceStore, DeviceStoreSerdes}
 import stasis.server.model.schedules.{ScheduleStore, ScheduleStoreSerdes}
@@ -18,7 +18,7 @@ class ServerPersistence(
 )(implicit system: ActorSystem[SpawnProtocol]) {
   private implicit val ec: ExecutionContext = system.executionContext
 
-  private val profile: JdbcProfile = H2Profile
+  val profile: JdbcProfile = SlickProfile(profile = persistenceConfig.getString("database.profile"))
 
   val databaseUrl: String = persistenceConfig.getString("database.url")
   val databaseDriver: String = persistenceConfig.getString("database.driver")

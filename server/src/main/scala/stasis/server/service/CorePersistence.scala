@@ -5,9 +5,9 @@ import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.util.Timeout
 import com.typesafe.{config => typesafe}
-import slick.jdbc.{H2Profile, JdbcProfile}
+import slick.jdbc.JdbcProfile
 import stasis.core.persistence.StoreInitializationResult
-import stasis.core.persistence.backends.slick.SlickBackend
+import stasis.core.persistence.backends.slick.{SlickBackend, SlickProfile}
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.manifests.{ManifestStore, ManifestStoreSerdes}
 import stasis.core.persistence.nodes.{NodeStore, NodeStoreSerdes}
@@ -27,7 +27,7 @@ class CorePersistence(
   private implicit val ec: ExecutionContext = system.executionContext
   private implicit val untyped: akka.actor.ActorSystem = system.toUntyped
 
-  private val profile: JdbcProfile = H2Profile
+  val profile: JdbcProfile = SlickProfile(profile = persistenceConfig.getString("database.profile"))
 
   val databaseUrl: String = persistenceConfig.getString("database.url")
   val databaseDriver: String = persistenceConfig.getString("database.driver")
