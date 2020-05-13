@@ -129,7 +129,12 @@ object Bootstrap {
       }
       .recoverWith {
         case NonFatal(e) =>
-          log.error("Failed to add entity [{}]: [{}]", entity.getClass.getName, e.getMessage)
+          log.error(
+            "Failed to add entity [{}]: [{}: {}]",
+            entity.getClass.getName,
+            e.getClass.getSimpleName,
+            e.getMessage
+          )
           Future.failed(e)
       }
 }
