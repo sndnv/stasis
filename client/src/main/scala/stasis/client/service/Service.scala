@@ -1,14 +1,17 @@
 package stasis.client.service
 
+import java.io.Console
 import java.util.concurrent.atomic.AtomicReference
 
 import akka.Done
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.event.{Logging, LoggingAdapter}
+import stasis.client.service.components.exceptions.ServiceStartupFailure
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
 trait Service {
@@ -30,29 +33,40 @@ trait Service {
   protected def applicationDirectory: ApplicationDirectory =
     ApplicationDirectory.Default(applicationName = applicationName)
 
-  protected def credentialsReader: CredentialsReader =
-    CredentialsReader.UsernameAndPassword()
+  protected def console: Option[Console] = Option(System.console())
 
-  private val init = for {
+  private val startupPromise: Promise[Done] = Promise()
+
+  private val startup = for {
     base <- components.Base(applicationDirectory = applicationDirectory, terminate = stop)
-    secrets <- components.Secrets(base, credentialsReader = credentialsReader)
+    init <- components.Init(base, startup = startupPromise.future, console = console)
+    secrets <- components.Secrets(base, init)
     clients <- components.ApiClients(base, secrets)
     ops <- components.Ops(base, clients, secrets)
     endpoint <- components.ApiEndpoint(base, clients, ops)
+    _ <- endpoint.api.start()
   } yield {
-    endpoint.api.start()
     Done
   }
 
-  init.onComplete {
+  startup.onComplete {
     case Success(_) =>
       log.info("Client startup completed")
       clientState.set(State.Started)
+      val _ = startupPromise.success(Done)
 
     case Failure(e) =>
-      log.error(e, "Client startup failed: [{}]", e.getMessage)
-      clientState.set(State.StartupFailed(e))
-      stop()
+      val failure = e match {
+        case e: ServiceStartupFailure               => e
+        case e: com.typesafe.config.ConfigException => ServiceStartupFailure.config(e)
+        case e: Throwable                           => ServiceStartupFailure.unknown(e)
+      }
+
+      log.error("Client startup failed: [{}]", failure.message)
+      clientState.set(State.StartupFailed(failure))
+      val _ = startupPromise.failure(failure)
+
+      delayed(stop(), by = FailureTerminationDelay)
   }
 
   def stop(): Unit = {
@@ -67,11 +81,22 @@ trait Service {
 
 object Service {
   final val ApplicationName: String = "stasis-client"
+  final val FailureTerminationDelay: FiniteDuration = 250.millis
 
   sealed trait State
   object State {
     case object Starting extends State
     final object Started extends State
     final case class StartupFailed(throwable: Throwable) extends State
+  }
+
+  private def delayed(
+    op: => Unit,
+    by: FiniteDuration
+  )(implicit system: akka.actor.ActorSystem): Unit = {
+    val _ = akka.pattern.after(
+      duration = by,
+      using = system.scheduler
+    ) { Future.successful(op) }(system.dispatcher)
   }
 }

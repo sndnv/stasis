@@ -3,10 +3,10 @@ package stasis.client.service.components
 import java.util.UUID
 
 import akka.util.ByteString
-import stasis.client.encryption.secrets.{DeviceSecret, Secret, UserPassword}
 import stasis.client.encryption.Aes
+import stasis.client.encryption.secrets.{DeviceSecret, Secret, UserPassword}
 import stasis.client.security.{CredentialsProvider, DefaultCredentialsProvider}
-import stasis.client.service.CredentialsReader
+import stasis.client.service.components.exceptions.ServiceStartupFailure
 import stasis.core.security.oauth.{DefaultOAuthClient, OAuthClient}
 import stasis.core.security.tls.EndpointContext
 
@@ -20,7 +20,7 @@ trait Secrets {
 }
 
 object Secrets {
-  def apply(base: Base, credentialsReader: CredentialsReader): Future[Secrets] = {
+  def apply(base: Base, init: Init): Future[Secrets] = {
     import base._
 
     val oauthClient = Try {
@@ -38,34 +38,43 @@ object Secrets {
       user <- UUID.fromString(rawConfig.getString("server.api.user")).future
       userSalt <- rawConfig.getString("server.api.user-salt").future
       device <- UUID.fromString(rawConfig.getString("server.api.device")).future
-      (username, password) <- credentialsReader.retrieve().future
+      (username, password) <- init
+        .credentials()
+        .transformFailureTo(ServiceStartupFailure.credentials)
       userPassword = UserPassword(
         user = user,
         salt = userSalt,
         password = password
       )(secretsConfig)
       _ = log.debug("Loading encrypted device secret from [{}]...", Files.DeviceSecret)
-      encryptedDeviceSecret <- directory.pullFile[ByteString](file = Files.DeviceSecret)
+      encryptedDeviceSecret <- directory
+        .pullFile[ByteString](file = Files.DeviceSecret)
+        .transformFailureTo(ServiceStartupFailure.file)
       _ = log.debug("Decrypting device secret...")
       decryptedDeviceSecret <- userPassword.toHashedEncryptionPassword.toEncryptionSecret
         .decryptDeviceSecret(
           device = device,
           encryptedSecret = encryptedDeviceSecret
         )
+        .transformFailureTo(ServiceStartupFailure.credentials)
       oauthClient <- oauthClient.future
       _ = log.debug("Retrieving core token...")
-      coreToken <- oauthClient.token(
-        scope = Try(rawConfig.getString("server.authentication.scopes.core")).toOption,
-        parameters = OAuthClient.GrantParameters.ClientCredentials()
-      )
-      _ = log.debug("Retrieving API token...")
-      apiToken <- oauthClient.token(
-        scope = Try(rawConfig.getString("server.authentication.scopes.api")).toOption,
-        parameters = OAuthClient.GrantParameters.ResourceOwnerPasswordCredentials(
-          username = username,
-          password = userPassword.toHashedAuthenticationPassword.extract()
+      coreToken <- oauthClient
+        .token(
+          scope = Try(rawConfig.getString("server.authentication.scopes.core")).toOption,
+          parameters = OAuthClient.GrantParameters.ClientCredentials()
         )
-      )
+        .transformFailureTo(ServiceStartupFailure.token)
+      _ = log.debug("Retrieving API token...")
+      apiToken <- oauthClient
+        .token(
+          scope = Try(rawConfig.getString("server.authentication.scopes.api")).toOption,
+          parameters = OAuthClient.GrantParameters.ResourceOwnerPasswordCredentials(
+            username = username,
+            password = userPassword.toHashedAuthenticationPassword.extract()
+          )
+        )
+        .transformFailureTo(ServiceStartupFailure.token)
     } yield {
       new Secrets {
         override val deviceSecret: DeviceSecret =

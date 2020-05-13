@@ -22,6 +22,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
 import scala.util.Try
+import scala.util.control.NonFatal
 
 trait Base {
   implicit def system: ActorSystem[SpawnProtocol]
@@ -36,6 +37,7 @@ trait Base {
   def rawConfig: typesafe.Config
 
   implicit def timeout: Timeout
+  def terminationDelay: FiniteDuration
 
   def checksum: Checksum
   def compression: CompressionEncoder with CompressionDecoder
@@ -51,6 +53,11 @@ trait Base {
 
   implicit class TryOpToFuture[T](op: => Try[T]) {
     def future: Future[T] = Future.fromTry(op)
+  }
+
+  implicit class FutureOpWithTransformedFailures[T](op: => Future[T]) {
+    def transformFailureTo(transformer: Throwable => Throwable): Future[T] =
+      op.recoverWith { case NonFatal(e) => Future.failed(transformer(e)) }
   }
 }
 
@@ -82,6 +89,9 @@ object Base {
 
           override implicit val timeout: Timeout =
             rawConfig.getDuration("service.internal-query-timeout").toMillis.millis
+
+          override val terminationDelay: FiniteDuration =
+            rawConfig.getDuration("service.termination-delay").toMillis.millis
 
           override val checksum: Checksum =
             Checksum(rawConfig.getString("analysis.checksum"))

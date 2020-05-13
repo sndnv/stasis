@@ -155,8 +155,9 @@ class DefaultOperationExecutor(
           case NonFatal(e) =>
             log.error(
               e,
-              "Failure encountered when running operation [{}]: [{}]",
+              "Failure encountered when running operation [{}]: [{}: {}]",
               operation.id,
+              e.getClass.getSimpleName,
               e.getMessage
             )
             Done
