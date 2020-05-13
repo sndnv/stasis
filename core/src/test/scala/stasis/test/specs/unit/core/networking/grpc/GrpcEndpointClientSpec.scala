@@ -89,7 +89,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
         case NonFatal(e) =>
           e.getMessage should be(
             s"Push to endpoint [${endpointAddress.host}] failed for crate [${testManifest.crate}]: " +
-              s"[Push failed for node [$testNode]: [[persistDisabled] is set to [true]]]"
+              s"[Push failed for node [$testNode]: [PersistenceFailure: [persistDisabled] is set to [true]]]"
           )
           endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
           endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(1)

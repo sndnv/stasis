@@ -182,7 +182,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
         response.result.failure match {
           case Some(failure) =>
             failure.message should be(
-              s"Node [$testNode] made reservation request with missing data: [Missing [id]: [ReserveRequest(None,None,0,0,None,None)]]"
+              s"Node [$testNode] made reservation request with missing data: [IllegalArgumentException: Missing [id]: [ReserveRequest(None,None,0,0,None,None)]]"
             )
 
           case None =>
@@ -213,7 +213,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
         response.result.failure match {
           case Some(failure) =>
             failure.message should be(
-              s"Reservation failed for node [$testNode]: [[reservationDisabled] is set to [true]]"
+              s"Reservation failed for node [$testNode]: [ReservationFailure: [reservationDisabled] is set to [true]]"
             )
 
           case None =>
