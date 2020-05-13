@@ -1,47 +1,139 @@
 import json
 import unittest
-from subprocess import TimeoutExpired
 from unittest.mock import patch
 
 from client_cli.api.inactive_client_api import InactiveClientApi
+from client_cli.api.inactive_init_api import InactiveInitApi
 from client_cli.cli.context import Context
 from client_cli.cli.service import cli
 from client_cli.render.json_writer import JsonWriter
 from tests.cli.cli_runner import Runner
+from tests.mocks import mock_data
 from tests.mocks.mock_client_api import MockClientApi
+from tests.mocks.mock_init_api import MockInitApi
 
 
 class ServiceSpec(unittest.TestCase):
 
+    @patch('psutil.process_iter')
     @patch('subprocess.Popen.__init__')
-    @patch('subprocess.Popen.communicate')
-    def test_should_start_background_service(self, mock_communicate, mock_popen):
+    @patch('time.sleep')
+    def test_should_start_background_service(self, mock_sleep, mock_popen, mock_process_iter):
         context = Context()
         context.api = InactiveClientApi()
+        context.init = MockInitApi(state_responses=[mock_data.INIT_STATE_PENDING, mock_data.INIT_STATE_SUCCESSFUL])
         context.rendering = JsonWriter()
         context.service_binary = 'test-name'
+        context.service_main_class = 'test.name.Main'
 
+        mock_process_iter.return_value = []
         mock_popen.return_value = None
-        mock_communicate.return_value = None
-        mock_communicate.side_effect = TimeoutExpired(cmd=[], timeout=0)
+        mock_sleep.return_value = None
 
         username = 'username'
         password = 'password'
 
         runner = Runner(cli)
         result = runner.invoke(
-            args=['start', '--username', username, '--password', password, '--detach-timeout', '0.5'],
+            args=['start', '--username', username, '--password', password],
             obj=context
         )
 
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertDictEqual(json.loads(result.output), {'successful': True})
+        mock_popen.assert_called_once()
+        mock_sleep.assert_called_once()
+        self.assertEqual(context.init.stats['state'], 2)
+        self.assertEqual(context.init.stats['provide_credentials'], 1)
+
+    @patch('psutil.process_iter')
+    @patch('subprocess.Popen.__init__')
+    @patch('time.sleep')
+    def test_should_poll_init_state_when_starting_background_service(self, mock_sleep, mock_popen, mock_process_iter):
+        expected_retries = 10
+
+        state_responses = [mock_data.INIT_STATE_PENDING] * (expected_retries + 1)
+
+        context = Context()
+        context.api = InactiveClientApi()
+        context.init = MockInitApi(state_responses=state_responses)
+        context.rendering = JsonWriter()
+        context.service_binary = 'test-name'
+        context.service_main_class = 'test.name.Main'
+
+        mock_process_iter.return_value = []
+        mock_popen.return_value = None
+        mock_sleep.return_value = None
+
+        username = 'username'
+        password = 'password'
+
+        runner = Runner(cli)
+        result = runner.invoke(
+            args=['start', '--username', username, '--password', password],
+            obj=context
+        )
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertDictEqual(
+            json.loads(result.output),
+            {'successful': False, 'failure': 'Initialization did not complete; last state received was [pending]'}
+        )
+        mock_popen.assert_called_once()
+        self.assertEqual(mock_sleep.call_count, expected_retries)
+        self.assertEqual(context.init.stats['state'], expected_retries + 1)
+        self.assertEqual(context.init.stats['provide_credentials'], 1)
+
+    @patch('psutil.process_iter')
+    @patch('subprocess.Popen.__init__')
+    @patch('time.sleep')
+    def test_should_fail_starting_background_service_if_init_already_failed(
+            self,
+            mock_sleep,
+            mock_popen,
+            mock_process_iter
+    ):
+        state_responses = [
+            mock_data.INIT_STATE_FAILED,
+        ]
+
+        context = Context()
+        context.api = InactiveClientApi()
+        context.init = MockInitApi(state_responses=state_responses)
+        context.rendering = JsonWriter()
+        context.service_binary = 'test-name'
+        context.service_main_class = 'test.name.Main'
+
+        mock_process_iter.return_value = []
+        mock_popen.return_value = None
+        mock_sleep.return_value = None
+
+        username = 'username'
+        password = 'password'
+
+        runner = Runner(cli)
+        result = runner.invoke(
+            args=['start', '--username', username, '--password', password],
+            obj=context
+        )
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertDictEqual(
+            json.loads(result.output),
+            {'successful': False, 'failure': 'No or invalid credentials provided'}
+        )
+        mock_popen.assert_called_once()
+        self.assertEqual(mock_sleep.call_count, 0)
+        self.assertEqual(context.init.stats['state'], 1)
+        self.assertEqual(context.init.stats['provide_credentials'], 0)
 
     def test_should_not_start_background_service_when_already_running(self):
         context = Context()
         context.api = MockClientApi()
+        context.init = InactiveInitApi()
         context.rendering = JsonWriter()
         context.service_binary = 'test-name'
+        context.service_main_class = 'test.name.Main'
 
         username = 'username'
         password = 'password'
@@ -55,17 +147,56 @@ class ServiceSpec(unittest.TestCase):
             {'successful': False, 'failure': 'Background service is already active'}
         )
 
+    @patch('psutil.process_iter')
+    def test_should_not_start_background_service_when_process_already_running(self, mock_process_iter):
+        context = Context()
+        context.api = InactiveClientApi()
+        context.init = MockInitApi()
+        context.rendering = JsonWriter()
+        context.service_binary = 'test-name'
+        context.service_main_class = 'test.name.Main'
+
+        process = MockProcess()
+
+        mock_process_iter.return_value = [process]
+        username = 'username'
+        password = 'password'
+
+        runner = Runner(cli)
+        result = runner.invoke(args=['start', '--username', username, '--password', password], obj=context)
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertDictEqual(
+            json.loads(result.output),
+            {'successful': False, 'failure': 'Unexpected background service process(es) found'}
+        )
+
     @patch('click.confirm')
     def test_should_stop_background_service(self, mock_confirm):
         context = Context()
         context.api = MockClientApi()
         context.rendering = JsonWriter()
         context.service_binary = 'test-name'
+        context.service_main_class = 'test.name.Main'
 
         mock_confirm.return_value = None
 
         runner = Runner(cli)
         result = runner.invoke(args=['stop'], obj=context)
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertDictEqual(json.loads(result.output), {'successful': True})
+        self.assertEqual(context.api.stats['stop'], 1)
+
+    def test_should_support_skipping_confirmation_when_stopping_background_service(self):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+        context.service_binary = 'test-name'
+        context.service_main_class = 'test.name.Main'
+
+        runner = Runner(cli)
+        result = runner.invoke(args=['stop', '--confirm'], obj=context)
 
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertDictEqual(json.loads(result.output), {'successful': True})
@@ -78,6 +209,7 @@ class ServiceSpec(unittest.TestCase):
         context.api = InactiveClientApi()
         context.rendering = JsonWriter()
         context.service_binary = 'test-name'
+        context.service_main_class = 'test.name.Main'
 
         process = MockProcess()
 
@@ -98,6 +230,7 @@ class ServiceSpec(unittest.TestCase):
         context.api = InactiveClientApi()
         context.rendering = JsonWriter()
         context.service_binary = 'test-name'
+        context.service_main_class = 'test.name.Main'
 
         mock_process_iter.return_value = []
         mock_confirm.return_value = None
@@ -157,7 +290,7 @@ class MockProcess:
         return {
             'pid': 42,
             'name': 'test-name',
-            'cmdline': ['test-command', 'param-a', 'param-b'],
+            'cmdline': ['test-command', 'param-a', 'param-b', 'test.name.Main'],
         }
 
     def kill(self):

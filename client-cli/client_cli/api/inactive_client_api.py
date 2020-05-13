@@ -17,6 +17,9 @@ class InactiveClientApi(ClientApi):
     def is_active(self):
         return False
 
+    def stop(self):
+        InactiveClientApi._abort()
+
     def dataset_metadata(self, entry):
         InactiveClientApi._abort()
 

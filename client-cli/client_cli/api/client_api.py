@@ -14,11 +14,12 @@ class ClientApi(ABC):
         :return: True, if the API is running and responding to requests
         """
 
+    @abstractmethod
     def stop(self):
         """
         Stops the backend service.
 
-        :return: True, if the API accepted the termination request
+        :return: dict with result of action
         """
 
     @abstractmethod

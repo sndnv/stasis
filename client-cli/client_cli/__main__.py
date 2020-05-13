@@ -5,7 +5,7 @@ import logging
 import click
 import urllib3
 
-from client_cli.api import create_api
+from client_cli.api import create_client_api, create_init_api
 from client_cli.cli import load_api_token, load_client_config, capture_failures
 from client_cli.cli import service, backup, recover, schedules, operations
 from client_cli.cli.context import Context
@@ -28,8 +28,11 @@ def cli(ctx, verbose, insecure, json):
     if not verbose:
         # suppress warning as self-signed certs are unlikely to have a SAN
         urllib3.disable_warnings(urllib3.exceptions.SubjectAltNameWarning)
+        # suppress logging warnings
+        logging.getLogger("urllib3").setLevel(logging.ERROR)
 
     application_name = 'stasis-client'
+    application_main_class = 'stasis.client.Main'
     config_file_name = 'client.conf'
     api_token_file_name = 'api-token'
 
@@ -37,8 +40,10 @@ def cli(ctx, verbose, insecure, json):
     api_token = load_api_token(application_name=application_name, api_token_file_name=api_token_file_name)
 
     context = ctx.ensure_object(Context)
-    context.api = create_api(config=config, api_token=api_token, insecure=insecure)
+    context.api = create_client_api(config=config, api_token=api_token, insecure=insecure)
+    context.init = create_init_api(config=config, insecure=insecure, client_api=context.api)
     context.service_binary = application_name
+    context.service_main_class = application_main_class
     context.rendering = JsonWriter() if json else DefaultWriter()
 
 
