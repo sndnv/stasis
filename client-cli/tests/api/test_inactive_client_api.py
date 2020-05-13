@@ -23,6 +23,9 @@ class InactiveClientApiSpec(unittest.TestCase):
         definition_request = {'a': 1, 'b': 2}
 
         with self.assertRaises(Abort):
+            api.stop()
+
+        with self.assertRaises(Abort):
             api.dataset_metadata(entry=entry)
 
         with self.assertRaises(Abort):

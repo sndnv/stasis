@@ -74,7 +74,7 @@ def flatten_unmatched(rules):
         map(
             lambda entry: {
                 'line': entry[0]['line_number'],
-                'rule': entry[0]['line'].split("#")[0].strip(),
+                'rule': entry[0]['line'].split('#')[0].strip(),
                 'failure': entry[1],
             },
             rules['unmatched']
@@ -97,7 +97,7 @@ def transform_rule_explanation(explanation):
                     lambda entry: '({} @ line {}): {}'.format(
                         entry['operation'],
                         str(entry['original']['line_number']).rjust(3, ' '),
-                        entry['original']['line'].split("#")[0].strip(),
+                        entry['original']['line'].split('#')[0].strip(),
                     ),
                     explanation
                 )

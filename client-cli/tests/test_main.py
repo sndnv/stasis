@@ -65,9 +65,10 @@ class MainSpec(unittest.TestCase):
 
         mock_create_pem.assert_called_once()
 
+    @patch('client_cli.api.endpoint_context.CustomHttpsContext._create_context_pem_file')
     @patch('logging.basicConfig')
     @patch('client_cli.__main__.load_client_config')
-    def test_should_support_verbose_logging(self, mock_load_config, mock_logging_config):
+    def test_should_support_verbose_logging(self, mock_load_config, mock_logging_config, mock_create_pem):
         mock_load_config.return_value = MockConfig()
 
         @click.command(name='assert')
@@ -85,6 +86,7 @@ class MainSpec(unittest.TestCase):
             format='[%(asctime)-15s] [%(levelname)s] [%(name)-5s]: %(message)s',
             level='DEBUG'
         )
+        mock_create_pem.assert_called_once()
 
     @patch('client_cli.api.default_client_api.DefaultClientApi.is_active')
     @patch('client_cli.__main__.load_api_token')
@@ -116,8 +118,9 @@ class MainSpec(unittest.TestCase):
 
         self.assertEqual(result.exit_code, 0, result.output or result.exc_info)
 
+    @patch('client_cli.api.endpoint_context.CustomHttpsContext._create_context_pem_file')
     @patch('client_cli.__main__.load_client_config')
-    def test_should_support_json_output(self, mock_load_config):
+    def test_should_support_json_output(self, mock_load_config, mock_create_pem):
         mock_load_config.return_value = MockConfig()
 
         @click.command(name='assert')
@@ -134,6 +137,7 @@ class MainSpec(unittest.TestCase):
         result = runner.invoke(args=['--json', 'assert'])
 
         self.assertEqual(result.exit_code, 0, result.output or result.exc_info)
+        mock_create_pem.assert_called_once()
 
 
 class MockConfig:

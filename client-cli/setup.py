@@ -5,12 +5,13 @@ install_requires = [
     'requests-oauthlib==1.3.0',
     'terminaltables==3.1.0',
     'hurry.filesize==0.9',
-    'pyhocon==0.3.51',
+    'pyhocon==0.3.54',
     'click==7.0',
     'pyparsing==2.4.5',
     'psutil==5.6.7',
     'cryptography==2.8',
     'sseclient-py==1.7',
+    'tqdm==4.46.0',
 ]
 
 tests_require = [

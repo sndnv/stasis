@@ -469,3 +469,9 @@ BACKUP_RULES = {
         [{'line': '- /test_02 *', 'line_number': 3}, 'Test failure'],
     ]
 }
+
+INIT_STATE_PENDING = {'startup': 'pending'}
+
+INIT_STATE_SUCCESSFUL = {'startup': 'successful'}
+
+INIT_STATE_FAILED = {'startup': 'failed', 'cause': 'credentials', 'message': 'invalid credentials'}
