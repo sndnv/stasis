@@ -81,8 +81,7 @@ object Bootstrap {
     for {
       _ <- serverPersistence.init()
       _ <- corePersistence.init()
-      _ <- Future.sequence(
-        entities.definitions.map(e => logged(serverPersistence.datasetDefinitions.manage().create, e)))
+      _ <- Future.sequence(entities.definitions.map(e => logged(serverPersistence.datasetDefinitions.manage().create, e)))
       _ <- Future.sequence(entities.devices.map(e => logged(serverPersistence.devices.manage().create, e)))
       _ <- Future.sequence(entities.schedules.map(e => logged(serverPersistence.schedules.manage().create, e)))
       _ <- Future.sequence(entities.users.map(e => logged(serverPersistence.users.manage().create, e)))
@@ -219,7 +218,12 @@ object Bootstrap {
       }
       .recoverWith {
         case NonFatal(e) =>
-          log.error("Failed to add entity [{}]: [{}]", entity.getClass.getName, e.getMessage)
+          log.error(
+            "Failed to add entity [{}]: [{}: {}]",
+            entity.getClass.getName,
+            e.getClass.getSimpleName,
+            e.getMessage
+          )
           Future.failed(e)
       }
 }
