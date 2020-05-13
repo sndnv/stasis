@@ -31,7 +31,7 @@ class Backup(
 
   private implicit val mat: Materializer = ActorMaterializer(
     ActorMaterializerSettings(untypedSystem).withSupervisionStrategy { e =>
-      system.log.error(e, "Backup stream encountered failure: [{}]; resuming", e.getMessage)
+      system.log.error(e, "Backup stream encountered failure: [{}: {}]; resuming", e.getClass.getSimpleName, e.getMessage)
       providers.track.failureEncountered(failure = e)
       Supervision.Resume
     }

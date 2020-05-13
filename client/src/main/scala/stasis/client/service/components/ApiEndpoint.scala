@@ -1,14 +1,15 @@
 package stasis.client.service.components
 
 import akka.event.Logging
+import akka.http.scaladsl.Http.ServerBinding
 import akka.util.ByteString
 import stasis.client.api.http
 import stasis.client.api.http.HttpApiEndpoint
 import stasis.client.security.DefaultFrontendAuthenticator
+import stasis.client.service.components.exceptions.ServiceStartupFailure
 import stasis.core.security.tls.EndpointContext
 
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 trait ApiEndpoint {
   def api: ApiEndpoint.Startable
@@ -16,7 +17,7 @@ trait ApiEndpoint {
 
 object ApiEndpoint {
   trait Startable {
-    def start(): Unit
+    def start(): Future[ServerBinding]
   }
 
   implicit val tokenFileToByteString: String => ByteString =
@@ -28,14 +29,15 @@ object ApiEndpoint {
     import ops._
 
     for {
-      terminationDelay <- rawConfig.getDuration("api.termination-delay").toMillis.millis.future
       tokenSize <- rawConfig.getInt("api.authentication.token-size").future
       frontendAuthenticator = DefaultFrontendAuthenticator(tokenSize)
       _ = log.debug("Creating API token file [{}]...", Files.ApiToken)
-      tokenFile <- directory.pushFile(
-        file = Files.ApiToken,
-        content = frontendAuthenticator.token
-      )
+      tokenFile <- directory
+        .pushFile(
+          file = Files.ApiToken,
+          content = frontendAuthenticator.token
+        )
+        .transformFailureTo(ServiceStartupFailure.file)
     } yield {
       implicit val context: http.Context = http.Context(
         api = clients.api,
@@ -66,11 +68,13 @@ object ApiEndpoint {
                 {
                   log.info("Client HTTP API starting on [{}:{}]...", apiInterface, apiPort)
 
-                  val _ = api.start(
-                    interface = apiInterface,
-                    port = apiPort,
-                    context = EndpointContext.fromConfig(rawConfig.getConfig("api.http.context"))
-                  )
+                  api
+                    .start(
+                      interface = apiInterface,
+                      port = apiPort,
+                      context = EndpointContext.fromConfig(rawConfig.getConfig("api.http.context"))
+                    )
+                    .transformFailureTo(ServiceStartupFailure.api)
                 }
           }
       }
