@@ -122,8 +122,8 @@ def _render_files_tree(stage_descriptions, stages):
         elements = [RENDERING_ELEMENTS['child']] * (len(parent) - 1) + [RENDERING_ELEMENTS['child_last']]
 
         for element, child in zip(elements, sorted(parent.keys())):
-            if 'data' in parent[child]:
-                data = parent[child]['data']
+            if _with_prefix('data') in parent[child]:
+                data = parent[child][_with_prefix('data')]
                 prioritised_stages = sorted(data['stages'], key=lambda s: stage_descriptions[s]['priority'])
                 last_stage = prioritised_stages[-1]
 
@@ -145,7 +145,7 @@ def _render_files_tree(stage_descriptions, stages):
                 extended = RENDERING_ELEMENTS['padding']
 
             yield from render(
-                parent={x: parent[child][x] for x in parent[child] if x != 'data'},
+                parent={x: parent[child][x] for x in parent[child] if x != _with_prefix('data')},
                 prefix='{}{}'.format(prefix, extended)
             )
 
@@ -161,9 +161,9 @@ def _transform_files_to_tree(files):
         current_level = files_tree
         for path_part in data['path']:
             if path_part not in current_level:
-                current_level[path_part] = {'data': data} if original.endswith(path_part) else {}
-            elif 'data' not in current_level[path_part] and original.endswith(path_part):
-                current_level[path_part] = {**current_level[path_part], **{'data': data}}
+                current_level[path_part] = {_with_prefix('data'): data} if original.endswith(path_part) else {}
+            elif _with_prefix('data') not in current_level[path_part] and original.endswith(path_part):
+                current_level[path_part] = {**current_level[path_part], **{_with_prefix('data'): data}}
             current_level = current_level[path_part]
 
     return files_tree
@@ -248,6 +248,12 @@ def _render_progress_completed(progress):
     else:
         return []
 
+
+def _with_prefix(item):
+    return '{}_{}'.format(INTERNAL_DATA_PREFIX, item)
+
+
+INTERNAL_DATA_PREFIX = '__stasis_cli_internal'
 
 RENDERING_ELEMENTS = {
     "padding": '   ',
