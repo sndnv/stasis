@@ -1,0 +1,13 @@
++ /home/demiourgos728           **                  # include all files for the current user
+- /home/demiourgos728           .local/bin/**       # exclude local binaries
+- /home/demiourgos728           .local/lib/**       # exclude local libraries
+- /home/demiourgos728           .cache/**           # exclude user cache
+- /home/demiourgos728/.m2       repository/**       # exclude maven artifacts
+- /home/demiourgos728/.ivy2     {cache|local}/**    # exclude ivy artifacts
+
+# exclude logs, temporary and cache files
+- /home/demiourgos728           **/*.{class|obj}
+- /home/demiourgos728           **/lost+found/*
+- /home/demiourgos728           **/*cache*/*
+- /home/demiourgos728           **/*log*/*
+- /home/demiourgos728           **/*.{tmp|temp|part|bak|~}
