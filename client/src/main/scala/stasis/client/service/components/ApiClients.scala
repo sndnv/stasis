@@ -37,7 +37,8 @@ object ApiClients {
             decoder = encryption
           ),
           self = deviceSecret.device,
-          context = EndpointContext.fromConfig(rawConfig.getConfig("server.api.context"))
+          context = EndpointContext.fromConfig(rawConfig.getConfig("server.api.context")),
+          requestBufferSize = rawConfig.getInt("server.api.request-buffer-size")
         )
 
         new ApiClients {

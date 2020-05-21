@@ -2,15 +2,15 @@ package stasis.test.specs.unit.client.api.clients
 
 import java.time.Instant
 
-import akka.NotUsed
+import akka.{Done, NotUsed}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.HttpsConnectionContext
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
 import akka.stream.scaladsl.{Flow, Source}
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.{ActorMaterializer, Materializer, QueueOfferResult}
 import akka.util.ByteString
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.concurrent.Eventually
@@ -32,7 +32,7 @@ import stasis.test.specs.unit.client.mocks.{MockEncryption, MockServerApiEndpoin
 import stasis.test.specs.unit.shared.model.Generators
 
 import scala.collection.mutable
-import scala.concurrent.Future
+import scala.concurrent.{Future, Promise}
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
@@ -359,6 +359,27 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
     noException should be thrownBy apiClient.ping().await
   }
 
+  it should "process http pool offer results" in {
+    val request = HttpRequest()
+    val promise = Promise.successful(Done)
+    val failure = new RuntimeException("test failure")
+
+    val process: QueueOfferResult => Future[Done] =
+      DefaultServerApiEndpointClient.processOfferResult(request = request, promise = promise)
+
+    for {
+      enqueued <- process(QueueOfferResult.Enqueued)
+      dropped <- process(QueueOfferResult.Dropped).failed
+      failed <- process(QueueOfferResult.Failure(failure)).failed
+      closed <- process(QueueOfferResult.QueueClosed).failed
+    } yield {
+      enqueued should be(Done)
+      dropped.getMessage should be("[GET] request for endpoint [/] failed; dropped by stream")
+      failed.getMessage should be(s"[GET] request for endpoint [/] failed; RuntimeException: ${failure.getMessage}")
+      closed.getMessage should be("[GET] request for endpoint [/] failed; stream closed")
+    }
+  }
+
   private def createClient(
     apiPort: Int,
     context: Option[HttpsConnectionContext] = None
@@ -381,7 +402,8 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
             Flow[ByteString].map(_ => DatasetMetadata.toByteString(DatasetMetadata.empty))
         }
       ),
-      context = context
+      context = context,
+      requestBufferSize = 100
     )
 
     eventually {

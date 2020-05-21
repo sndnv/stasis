@@ -9,8 +9,8 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
-import akka.stream.scaladsl.Sink
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.scaladsl.{Sink, Source}
+import akka.stream.{ActorMaterializer, Materializer, OverflowStrategy, QueueOfferResult}
 import akka.util.ByteString
 import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.encryption.Decoder
@@ -23,7 +23,7 @@ import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.control.NonFatal
 
 class DefaultServerApiEndpointClient(
@@ -31,7 +31,8 @@ class DefaultServerApiEndpointClient(
   credentials: => Future[HttpCredentials],
   decryption: DefaultServerApiEndpointClient.DecryptionContext,
   override val self: Device.Id,
-  context: Option[HttpsConnectionContext]
+  context: Option[HttpsConnectionContext],
+  requestBufferSize: Int
 )(implicit system: ActorSystem[SpawnProtocol])
     extends ServerApiEndpointClient {
   import DefaultServerApiEndpointClient._
@@ -43,26 +44,43 @@ class DefaultServerApiEndpointClient(
 
   override val server: String = apiUrl
 
-  private val http = Http()
-
   private val clientContext: HttpsConnectionContext = context match {
     case Some(context) => context
-    case None          => http.defaultClientHttpsContext
+    case None          => Http().defaultClientHttpsContext
+  }
+
+  private val queue = Source
+    .queue(
+      bufferSize = requestBufferSize,
+      overflowStrategy = OverflowStrategy.backpressure
+    )
+    .via(Http().superPool[Promise[HttpResponse]](connectionContext = clientContext))
+    .to(
+      Sink.foreach {
+        case (response, promise) => val _ = promise.complete(response)
+      }
+    )
+    .run()
+
+  private def offer(request: HttpRequest): Future[HttpResponse] = {
+    val promise = Promise[HttpResponse]()
+
+    queue
+      .offer((request, promise))
+      .flatMap(DefaultServerApiEndpointClient.processOfferResult(request, promise))
   }
 
   override def createDatasetDefinition(request: CreateDatasetDefinition): Future[CreatedDatasetDefinition] =
     for {
       entity <- request.toEntity
       credentials <- credentials
-      response <- http
-        .singleRequest(
-          request = HttpRequest(
-            method = HttpMethods.POST,
-            uri = s"$apiUrl/datasets/definitions/own",
-            entity = entity
-          ).addCredentials(credentials = credentials),
-          connectionContext = clientContext
-        )
+      response <- offer(
+        request = HttpRequest(
+          method = HttpMethods.POST,
+          uri = s"$apiUrl/datasets/definitions/own",
+          entity = entity
+        ).addCredentials(credentials = credentials)
+      )
       created <- response.to[CreatedDatasetDefinition]
     } yield {
       created
@@ -72,15 +90,13 @@ class DefaultServerApiEndpointClient(
     for {
       entity <- request.toEntity
       credentials <- credentials
-      response <- http
-        .singleRequest(
-          request = HttpRequest(
-            method = HttpMethods.POST,
-            uri = s"$apiUrl/datasets/entries/own/for-definition/${request.definition}",
-            entity = entity
-          ).addCredentials(credentials = credentials),
-          connectionContext = clientContext
-        )
+      response <- offer(
+        request = HttpRequest(
+          method = HttpMethods.POST,
+          uri = s"$apiUrl/datasets/entries/own/for-definition/${request.definition}",
+          entity = entity
+        ).addCredentials(credentials = credentials)
+      )
       created <- response.to[CreatedDatasetEntry]
     } yield {
       created
@@ -89,14 +105,12 @@ class DefaultServerApiEndpointClient(
   override def datasetDefinitions(): Future[Seq[DatasetDefinition]] =
     for {
       credentials <- credentials
-      response <- http
-        .singleRequest(
-          request = HttpRequest(
-            method = HttpMethods.GET,
-            uri = s"$apiUrl/datasets/definitions/own"
-          ).addCredentials(credentials = credentials),
-          connectionContext = clientContext
-        )
+      response <- offer(
+        request = HttpRequest(
+          method = HttpMethods.GET,
+          uri = s"$apiUrl/datasets/definitions/own"
+        ).addCredentials(credentials = credentials)
+      )
       definitions <- response.to[Seq[DatasetDefinition]]
     } yield {
       definitions
@@ -105,14 +119,12 @@ class DefaultServerApiEndpointClient(
   override def datasetEntries(definition: DatasetDefinition.Id): Future[Seq[DatasetEntry]] =
     for {
       credentials <- credentials
-      response <- http
-        .singleRequest(
-          request = HttpRequest(
-            method = HttpMethods.GET,
-            uri = s"$apiUrl/datasets/entries/own/for-definition/$definition"
-          ).addCredentials(credentials = credentials),
-          connectionContext = clientContext
-        )
+      response <- offer(
+        request = HttpRequest(
+          method = HttpMethods.GET,
+          uri = s"$apiUrl/datasets/entries/own/for-definition/$definition"
+        ).addCredentials(credentials = credentials)
+      )
       entries <- response.to[Seq[DatasetEntry]]
     } yield {
       entries
@@ -121,14 +133,12 @@ class DefaultServerApiEndpointClient(
   override def datasetDefinition(definition: DatasetDefinition.Id): Future[DatasetDefinition] =
     for {
       credentials <- credentials
-      response <- http
-        .singleRequest(
-          request = HttpRequest(
-            method = HttpMethods.GET,
-            uri = s"$apiUrl/datasets/definitions/own/$definition"
-          ).addCredentials(credentials = credentials),
-          connectionContext = clientContext
-        )
+      response <- offer(
+        request = HttpRequest(
+          method = HttpMethods.GET,
+          uri = s"$apiUrl/datasets/definitions/own/$definition"
+        ).addCredentials(credentials = credentials)
+      )
       definition <- response.to[DatasetDefinition]
     } yield {
       definition
@@ -137,14 +147,12 @@ class DefaultServerApiEndpointClient(
   override def datasetEntry(entry: DatasetEntry.Id): Future[DatasetEntry] =
     for {
       credentials <- credentials
-      response <- http
-        .singleRequest(
-          request = HttpRequest(
-            method = HttpMethods.GET,
-            uri = s"$apiUrl/datasets/entries/own/$entry"
-          ).addCredentials(credentials = credentials),
-          connectionContext = clientContext
-        )
+      response <- offer(
+        request = HttpRequest(
+          method = HttpMethods.GET,
+          uri = s"$apiUrl/datasets/entries/own/$entry"
+        ).addCredentials(credentials = credentials)
+      )
       entry <- response.to[DatasetEntry]
     } yield {
       entry
@@ -154,17 +162,15 @@ class DefaultServerApiEndpointClient(
     val baseUrl = s"$apiUrl/datasets/entries/own/for-definition/$definition/latest"
     for {
       credentials <- credentials
-      response <- http
-        .singleRequest(
-          request = HttpRequest(
-            method = HttpMethods.GET,
-            uri = until match {
-              case Some(until) => s"$baseUrl?until=$until"
-              case None        => baseUrl
-            }
-          ).addCredentials(credentials = credentials),
-          connectionContext = clientContext
-        )
+      response <- offer(
+        request = HttpRequest(
+          method = HttpMethods.GET,
+          uri = until match {
+            case Some(until) => s"$baseUrl?until=$until"
+            case None        => baseUrl
+          }
+        ).addCredentials(credentials = credentials)
+      )
       entry <- response match {
         case HttpResponse(StatusCodes.NotFound, _, _, _) => Future.successful(None)
         case _                                           => response.to[DatasetEntry].map(Some.apply)
@@ -177,14 +183,12 @@ class DefaultServerApiEndpointClient(
   def publicSchedules(): Future[Seq[Schedule]] =
     for {
       credentials <- credentials
-      response <- http
-        .singleRequest(
-          request = HttpRequest(
-            method = HttpMethods.GET,
-            uri = s"$apiUrl/schedules/public"
-          ).addCredentials(credentials = credentials),
-          connectionContext = clientContext
-        )
+      response <- offer(
+        request = HttpRequest(
+          method = HttpMethods.GET,
+          uri = s"$apiUrl/schedules/public"
+        ).addCredentials(credentials = credentials)
+      )
       schedules <- response.to[Seq[Schedule]]
     } yield {
       schedules
@@ -193,14 +197,12 @@ class DefaultServerApiEndpointClient(
   def publicSchedule(schedule: Schedule.Id): Future[Schedule] =
     for {
       credentials <- credentials
-      response <- http
-        .singleRequest(
-          request = HttpRequest(
-            method = HttpMethods.GET,
-            uri = s"$apiUrl/schedules/public/$schedule"
-          ).addCredentials(credentials = credentials),
-          connectionContext = clientContext
-        )
+      response <- offer(
+        request = HttpRequest(
+          method = HttpMethods.GET,
+          uri = s"$apiUrl/schedules/public/$schedule"
+        ).addCredentials(credentials = credentials)
+      )
       schedule <- response.to[Schedule]
     } yield {
       schedule
@@ -230,14 +232,12 @@ class DefaultServerApiEndpointClient(
   override def user(): Future[User] =
     for {
       credentials <- credentials
-      response <- http
-        .singleRequest(
-          request = HttpRequest(
-            method = HttpMethods.GET,
-            uri = s"$apiUrl/users/self"
-          ).addCredentials(credentials = credentials),
-          connectionContext = clientContext
-        )
+      response <- offer(
+        request = HttpRequest(
+          method = HttpMethods.GET,
+          uri = s"$apiUrl/users/self"
+        ).addCredentials(credentials = credentials)
+      )
       user <- response.to[User]
     } yield {
       user
@@ -246,14 +246,12 @@ class DefaultServerApiEndpointClient(
   override def device(): Future[Device] =
     for {
       credentials <- credentials
-      response <- http
-        .singleRequest(
-          request = HttpRequest(
-            method = HttpMethods.GET,
-            uri = s"$apiUrl/devices/own/$self"
-          ).addCredentials(credentials = credentials),
-          connectionContext = clientContext
-        )
+      response <- offer(
+        request = HttpRequest(
+          method = HttpMethods.GET,
+          uri = s"$apiUrl/devices/own/$self"
+        ).addCredentials(credentials = credentials)
+      )
       device <- response.to[Device]
     } yield {
       device
@@ -262,14 +260,12 @@ class DefaultServerApiEndpointClient(
   override def ping(): Future[Ping] =
     for {
       credentials <- credentials
-      response <- http
-        .singleRequest(
-          request = HttpRequest(
-            method = HttpMethods.GET,
-            uri = s"$apiUrl/service/ping"
-          ).addCredentials(credentials = credentials),
-          connectionContext = clientContext
-        )
+      response <- offer(
+        request = HttpRequest(
+          method = HttpMethods.GET,
+          uri = s"$apiUrl/service/ping"
+        ).addCredentials(credentials = credentials)
+      )
       ping <- response.to[Ping]
     } yield {
       ping
@@ -321,5 +317,22 @@ object DefaultServerApiEndpointClient {
             )
           }
       }
+  }
+
+  def processOfferResult[T](request: HttpRequest, promise: Promise[T])(result: QueueOfferResult): Future[T] = {
+    def clientFailure(cause: String): Future[T] =
+      Future.failed(
+        new ServerApiFailure(
+          status = StatusCodes.InternalServerError,
+          message = s"[${request.method.value}] request for endpoint [${request.uri}] failed; $cause"
+        )
+      )
+
+    result match {
+      case QueueOfferResult.Enqueued    => promise.future
+      case QueueOfferResult.Dropped     => clientFailure(cause = "dropped by stream")
+      case QueueOfferResult.Failure(e)  => clientFailure(cause = s"${e.getClass.getSimpleName}: ${e.getMessage}")
+      case QueueOfferResult.QueueClosed => clientFailure(cause = "stream closed")
+    }
   }
 }
