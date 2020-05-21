@@ -214,8 +214,9 @@ class BootstrapSpec extends AsyncUnitSpec {
           actualNodes.values.toList.sortBy(_.id.toString) match {
             case (node1: Node.Local) :: (node2: Node.Remote.Http) :: (node3: Node.Remote.Grpc) :: Nil =>
               node1.storeDescriptor match {
-                case CrateStore.Descriptor.ForStreamingMemoryBackend(maxSize, name) =>
+                case CrateStore.Descriptor.ForStreamingMemoryBackend(maxSize, maxChunkSize, name) =>
                   maxSize should be(1024)
+                  maxChunkSize should be(2048)
                   name should be("test-memory-store")
 
                 case other =>

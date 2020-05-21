@@ -49,6 +49,7 @@ object Formats {
         case "memory" =>
           CrateStore.Descriptor.ForStreamingMemoryBackend(
             maxSize = (descriptor \ "max_size").as[Long],
+            maxChunkSize = (descriptor \ "max_chunk_size").as[Int],
             name = (descriptor \ "name").as[String]
           )
 
@@ -72,6 +73,7 @@ object Formats {
       Json.obj(
         "backend_type" -> JsString("memory"),
         "max_size" -> JsNumber(backend.maxSize),
+        "max_chunk_size" -> JsNumber(backend.maxChunkSize),
         "name" -> JsString(backend.name)
       )
 

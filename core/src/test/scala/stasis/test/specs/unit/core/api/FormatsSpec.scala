@@ -66,8 +66,8 @@ class FormatsSpec extends UnitSpec {
   they should "convert crate store descriptors to/from JSON" in {
     val descriptors = Map(
       "memory" -> (
-        CrateStore.Descriptor.ForStreamingMemoryBackend(maxSize = 42, name = "backend-format-test"),
-        """{"backend_type":"memory","max_size":42,"name":"backend-format-test"}"""
+        CrateStore.Descriptor.ForStreamingMemoryBackend(maxSize = 42, maxChunkSize = 999, name = "backend-format-test"),
+        """{"backend_type":"memory","max_size":42,"max_chunk_size":999,"name":"backend-format-test"}"""
       ),
       "container" -> (
         CrateStore.Descriptor.ForContainerBackend(path = "/some/path", maxChunkSize = 1, maxChunks = 2),
@@ -91,7 +91,11 @@ class FormatsSpec extends UnitSpec {
 
   they should "convert nodes to/from JSON" in {
     val nodeId = Node.generateId()
-    val storeDescriptor = CrateStore.Descriptor.ForStreamingMemoryBackend(maxSize = 42, name = "node-format-test")
+    val storeDescriptor = CrateStore.Descriptor.ForStreamingMemoryBackend(
+      maxSize = 42,
+      maxChunkSize = 999,
+      name = "node-format-test"
+    )
     val httpAddress = HttpEndpointAddress(uri = "http://some-address:1234")
     val grpcAddress = GrpcEndpointAddress(host = "some-host", port = 1234, tlsEnabled = false)
 
