@@ -17,7 +17,8 @@ class DefaultServerCoreEndpointClient(
   address: HttpEndpointAddress,
   credentials: => Future[HttpCredentials],
   override val self: Node.Id,
-  context: Option[HttpsConnectionContext]
+  context: Option[HttpsConnectionContext],
+  requestBufferSize: Int
 )(implicit system: ActorSystem[SpawnProtocol])
     extends ServerCoreEndpointClient {
 
@@ -30,7 +31,8 @@ class DefaultServerCoreEndpointClient(
 
   private val client: HttpEndpointClient = HttpEndpointClient(
     credentials = (_: HttpEndpointAddress) => credentials,
-    context = clientContext
+    context = clientContext,
+    requestBufferSize = requestBufferSize
   )
 
   override val server: String = address.uri.toString

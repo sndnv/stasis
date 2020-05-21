@@ -1,10 +1,12 @@
 package stasis.test.specs.unit.core.networking.http
 
+import akka.Done
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.ConnectionContext
+import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.headers.HttpCredentials
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, QueueOfferResult}
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.typesafe.config.{Config, ConfigFactory}
@@ -21,6 +23,7 @@ import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockHttpAuthenticator
 
 import scala.collection.mutable
+import scala.concurrent.{Future, Promise}
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
@@ -32,7 +35,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpoint = new TestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
-      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword)
+      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
+      requestBufferSize = requestBufferSize
     )
 
     client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).map { _ =>
@@ -48,7 +52,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpoint = new TestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
-      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword)
+      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
+      requestBufferSize = requestBufferSize
     )
 
     client
@@ -73,7 +78,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpoint = new TestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
-      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword)
+      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
+      requestBufferSize = requestBufferSize
     )
 
     client
@@ -103,7 +109,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     )
 
     val client = HttpEndpointClient(
-      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword)
+      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
+      requestBufferSize = requestBufferSize
     )
 
     client
@@ -129,7 +136,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpoint = new TestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
-      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword)
+      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
+      requestBufferSize = requestBufferSize
     )
 
     client.sink(endpointAddress, testManifest).flatMap { sink =>
@@ -152,7 +160,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpoint = new TestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
-      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword)
+      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
+      requestBufferSize = requestBufferSize
     )
 
     client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).flatMap { _ =>
@@ -185,7 +194,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
-      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword)
+      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
+      requestBufferSize = requestBufferSize
     )
 
     client.pull(endpointAddress, Crate.generateId()).map { response =>
@@ -200,7 +210,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
-      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, "invalid-user", testPassword)
+      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, "invalid-user", testPassword),
+      requestBufferSize = requestBufferSize
     )
 
     val crate = Crate.generateId()
@@ -246,7 +257,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
           primaryEndpointAddress -> (primaryEndpointUser, primaryEndpointPassword),
           secondaryEndpointAddress -> (secondaryEndpointUser, secondaryEndpointPassword)
         )
-      )
+      ),
+      requestBufferSize = requestBufferSize
     )
 
     for {
@@ -264,7 +276,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
-      credentials = new MockHttpNodeCredentialsProvider(Map.empty)
+      credentials = new MockHttpNodeCredentialsProvider(Map.empty),
+      requestBufferSize = requestBufferSize
     )
 
     client
@@ -288,7 +301,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
-      credentials = new MockHttpNodeCredentialsProvider(Map.empty)
+      credentials = new MockHttpNodeCredentialsProvider(Map.empty),
+      requestBufferSize = requestBufferSize
     )
 
     client
@@ -312,7 +326,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
-      credentials = new MockHttpNodeCredentialsProvider(Map.empty)
+      credentials = new MockHttpNodeCredentialsProvider(Map.empty),
+      requestBufferSize = requestBufferSize
     )
 
     val crateId = Crate.generateId()
@@ -338,7 +353,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpoint = new TestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
-      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword)
+      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
+      requestBufferSize = requestBufferSize
     )
 
     client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).flatMap { _ =>
@@ -359,7 +375,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
-      credentials = new MockHttpNodeCredentialsProvider(Map.empty)
+      credentials = new MockHttpNodeCredentialsProvider(Map.empty),
+      requestBufferSize = requestBufferSize
     )
 
     val crateId = Crate.generateId()
@@ -385,7 +402,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
-      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword)
+      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
+      requestBufferSize = requestBufferSize
     )
 
     client.discard(endpointAddress, Crate.generateId()).map { result =>
@@ -400,7 +418,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
-      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, "invalid-user", testPassword)
+      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, "invalid-user", testPassword),
+      requestBufferSize = requestBufferSize
     )
 
     val crate = Crate.generateId()
@@ -437,12 +456,33 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
-      context = clientContext
+      context = clientContext,
+      requestBufferSize = requestBufferSize
     )
 
     client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).map { _ =>
       endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
       endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+    }
+  }
+
+  it should "process http pool offer results" in {
+    val request = HttpRequest()
+    val promise = Promise.successful(Done)
+    val failure = new RuntimeException("test failure")
+
+    val process: QueueOfferResult => Future[Done] = HttpEndpointClient.processOfferResult(request = request, promise = promise)
+
+    for {
+      enqueued <- process(QueueOfferResult.Enqueued)
+      dropped <- process(QueueOfferResult.Dropped).failed
+      failed <- process(QueueOfferResult.Failure(failure)).failed
+      closed <- process(QueueOfferResult.QueueClosed).failed
+    } yield {
+      enqueued should be(Done)
+      dropped.getMessage should be("[GET] request for endpoint [/] failed; dropped by stream")
+      failed.getMessage should be(s"[GET] request for endpoint [/] failed; RuntimeException: ${failure.getMessage}")
+      closed.getMessage should be("[GET] request for endpoint [/] failed; stream closed")
     }
   }
 
@@ -491,4 +531,6 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
   }
 
   private val ports: mutable.Queue[Int] = (19000 to 19100).to[mutable.Queue]
+
+  private val requestBufferSize = 100
 }

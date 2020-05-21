@@ -118,7 +118,8 @@ trait Service {
         nodeStore = corePersistence.nodes.view,
         underlying = jwtProvider
       ),
-      context = clientEndpointContext
+      context = clientEndpointContext,
+      requestBufferSize = rawConfig.getInt("clients.core.request-buffer-size")
     )
 
     val coreGrpcEndpointClient = new GrpcEndpointClient(
