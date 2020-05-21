@@ -8,23 +8,24 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Keep, Sink, Source}
+import akka.stream.{ActorMaterializer, OverflowStrategy, QueueOfferResult}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import stasis.core.networking.EndpointClient
-import stasis.core.networking.exceptions.{CredentialsFailure, EndpointFailure, ReservationFailure}
+import stasis.core.networking.exceptions.{ClientFailure, CredentialsFailure, EndpointFailure, ReservationFailure}
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.core.security.NodeCredentialsProvider
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.control.NonFatal
 
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
 class HttpEndpointClient(
   override protected val credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
-  context: Option[HttpsConnectionContext]
+  context: Option[HttpsConnectionContext],
+  requestBufferSize: Int
 )(implicit system: ActorSystem[SpawnProtocol])
     extends EndpointClient[HttpEndpointAddress, HttpCredentials] {
 
@@ -37,11 +38,30 @@ class HttpEndpointClient(
 
   private val log = Logging(untypedSystem, this.getClass.getName)
 
-  private val http = Http()
-
   private val clientContext: HttpsConnectionContext = context match {
     case Some(context) => context
-    case None          => http.defaultClientHttpsContext
+    case None          => Http().defaultClientHttpsContext
+  }
+
+  private val queue = Source
+    .queue(
+      bufferSize = requestBufferSize,
+      overflowStrategy = OverflowStrategy.backpressure
+    )
+    .via(Http().superPool[Promise[HttpResponse]](connectionContext = clientContext))
+    .to(
+      Sink.foreach {
+        case (response, promise) => val _ = promise.complete(response)
+      }
+    )
+    .run()
+
+  private def offer(request: HttpRequest): Future[HttpResponse] = {
+    val promise = Promise[HttpResponse]()
+
+    queue
+      .offer((request, promise))
+      .flatMap(HttpEndpointClient.processOfferResult(request, promise))
   }
 
   override def push(
@@ -69,7 +89,6 @@ class HttpEndpointClient(
           result
         }
       }
-
   }
 
   override def sink(address: HttpEndpointAddress, manifest: Manifest): Future[Sink[ByteString, Future[Done]]] = {
@@ -100,7 +119,6 @@ class HttpEndpointClient(
           sink.mapMaterializedValue(_ => Future.successful(Done))
         }
       }
-
   }
 
   override def pull(
@@ -122,7 +140,6 @@ class HttpEndpointClient(
       .flatMap { endpointCredentials =>
         pullCrate(address, crate, endpointCredentials)
       }
-
   }
 
   override def discard(address: HttpEndpointAddress, crate: Crate.Id): Future[Boolean] = {
@@ -151,43 +168,40 @@ class HttpEndpointClient(
     val storageRequest = CrateStorageRequest(manifest)
 
     Marshal(storageRequest).to[RequestEntity].flatMap { requestEntity =>
-      http
-        .singleRequest(
-          request = HttpRequest(
-            method = HttpMethods.PUT,
-            uri = s"${address.uri}/reservations",
-            entity = requestEntity
-          ).addCredentials(endpointCredentials),
-          connectionContext = clientContext
-        )
-        .flatMap {
-          case HttpResponse(status, _, entity, _) =>
-            status match {
-              case StatusCodes.OK =>
-                Unmarshal(entity).to[CrateStorageReservation].map { reservation =>
-                  log.debug(
-                    "Endpoint [{}] responded to storage request [{}] with: [{}]",
-                    address.uri,
-                    storageRequest,
-                    reservation
-                  )
-
+      offer(
+        request = HttpRequest(
+          method = HttpMethods.PUT,
+          uri = s"${address.uri}/reservations",
+          entity = requestEntity
+        ).addCredentials(endpointCredentials)
+      ).flatMap {
+        case HttpResponse(status, _, entity, _) =>
+          status match {
+            case StatusCodes.OK =>
+              Unmarshal(entity).to[CrateStorageReservation].map { reservation =>
+                log.debug(
+                  "Endpoint [{}] responded to storage request [{}] with: [{}]",
+                  address.uri,
+                  storageRequest,
                   reservation
-                }
+                )
 
-              case StatusCodes.InsufficientStorage =>
-                val message =
-                  s"Endpoint [${address.uri}] was unable to reserve enough storage for request [$storageRequest]"
-                log.warning(message)
-                Future.failed(ReservationFailure(message))
+                reservation
+              }
 
-              case _ =>
-                val message =
-                  s"Endpoint [${address.uri}] responded to storage request with unexpected status: [${status.value}]"
-                log.warning(message)
-                Future.failed(EndpointFailure(message))
-            }
-        }
+            case StatusCodes.InsufficientStorage =>
+              val message =
+                s"Endpoint [${address.uri}] was unable to reserve enough storage for request [$storageRequest]"
+              log.warning(message)
+              Future.failed(ReservationFailure(message))
+
+            case _ =>
+              val message =
+                s"Endpoint [${address.uri}] responded to storage request with unexpected status: [${status.value}]"
+              log.warning(message)
+              Future.failed(EndpointFailure(message))
+          }
+      }
     }
   }
 
@@ -198,112 +212,119 @@ class HttpEndpointClient(
     reservation: CrateStorageReservation,
     endpointCredentials: HttpCredentials
   ): Future[Done] =
-    http
-      .singleRequest(
-        request = HttpRequest(
-          method = HttpMethods.PUT,
-          uri = s"${address.uri}/crates/${manifest.crate}?reservation=${reservation.id}",
-          entity = HttpEntity(ContentTypes.`application/octet-stream`, content)
-        ).addCredentials(endpointCredentials),
-        connectionContext = clientContext
-      )
-      .flatMap { response =>
-        response.status match {
-          case StatusCodes.OK =>
-            log.debug("Endpoint [{}] responded to push for crate [{}] with OK", address.uri, manifest.crate)
-            Future.successful(Done)
+    offer(
+      request = HttpRequest(
+        method = HttpMethods.PUT,
+        uri = s"${address.uri}/crates/${manifest.crate}?reservation=${reservation.id}",
+        entity = HttpEntity(ContentTypes.`application/octet-stream`, content)
+      ).addCredentials(endpointCredentials)
+    ).flatMap { response =>
+      response.status match {
+        case StatusCodes.OK =>
+          log.debug("Endpoint [{}] responded to push for crate [{}] with OK", address.uri, manifest.crate)
+          Future.successful(Done)
 
-          case _ =>
-            val message =
-              s"Endpoint [${address.uri}] responded to push for crate [${manifest.crate}] with unexpected status: [${response.status.value}]"
-            log.warning(message)
-            Future.failed(EndpointFailure(message))
-        }
+        case _ =>
+          val message =
+            s"Endpoint [${address.uri}] responded to push for crate [${manifest.crate}] with unexpected status: [${response.status.value}]"
+          log.warning(message)
+          Future.failed(EndpointFailure(message))
       }
+    }
 
   private def pullCrate(
     address: HttpEndpointAddress,
     crate: Crate.Id,
     endpointCredentials: HttpCredentials
   ): Future[Option[Source[ByteString, NotUsed]]] =
-    http
-      .singleRequest(
-        request = HttpRequest(
-          method = HttpMethods.GET,
-          uri = s"${address.uri}/crates/$crate"
-        ).addCredentials(endpointCredentials),
-        connectionContext = clientContext
-      )
-      .flatMap {
-        case HttpResponse(status, _, entity, _) =>
-          status match {
-            case StatusCodes.OK =>
-              log.debug("Endpoint [{}] responded to pull with content for crate [{}]", address.uri, crate)
-              Future.successful(Some(entity.dataBytes.mapMaterializedValue(_ => NotUsed)))
+    offer(
+      request = HttpRequest(
+        method = HttpMethods.GET,
+        uri = s"${address.uri}/crates/$crate"
+      ).addCredentials(endpointCredentials)
+    ).flatMap {
+      case HttpResponse(status, _, entity, _) =>
+        status match {
+          case StatusCodes.OK =>
+            log.debug("Endpoint [{}] responded to pull with content for crate [{}]", address.uri, crate)
+            Future.successful(Some(entity.dataBytes.mapMaterializedValue(_ => NotUsed)))
 
-            case StatusCodes.NotFound =>
-              val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
-              log.warning("Endpoint [{}] responded to pull with no content for crate [{}]", address.uri, crate)
-              Future.successful(None)
+          case StatusCodes.NotFound =>
+            val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
+            log.warning("Endpoint [{}] responded to pull with no content for crate [{}]", address.uri, crate)
+            Future.successful(None)
 
-            case _ =>
-              val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
-              val message =
-                s"Endpoint [${address.uri}] responded to pull for crate [$crate] with unexpected status: [${status.value}]"
-              log.warning(message)
-              Future.failed(EndpointFailure(message))
-          }
-      }
+          case _ =>
+            val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
+            val message =
+              s"Endpoint [${address.uri}] responded to pull for crate [$crate] with unexpected status: [${status.value}]"
+            log.warning(message)
+            Future.failed(EndpointFailure(message))
+        }
+    }
 
   private def discardCrate(
     address: HttpEndpointAddress,
     crate: Crate.Id,
     endpointCredentials: HttpCredentials
   ): Future[Boolean] =
-    http
-      .singleRequest(
-        request = HttpRequest(
-          method = HttpMethods.DELETE,
-          uri = s"${address.uri}/crates/$crate"
-        ).addCredentials(endpointCredentials),
-        connectionContext = clientContext
-      )
-      .flatMap {
-        case HttpResponse(status, _, entity, _) =>
-          val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
-          status match {
-            case StatusCodes.OK =>
-              log.debug("Endpoint [{}] responded to discard for crate [{}] with OK", address.uri, crate)
-              Future.successful(true)
+    offer(
+      request = HttpRequest(
+        method = HttpMethods.DELETE,
+        uri = s"${address.uri}/crates/$crate"
+      ).addCredentials(endpointCredentials)
+    ).flatMap {
+      case HttpResponse(status, _, entity, _) =>
+        val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
+        status match {
+          case StatusCodes.OK =>
+            log.debug("Endpoint [{}] responded to discard for crate [{}] with OK", address.uri, crate)
+            Future.successful(true)
 
-            case StatusCodes.InternalServerError =>
-              log.error("Endpoint [{}] failed to discard crate [{}]", address.uri, crate)
-              Future.successful(false)
+          case StatusCodes.InternalServerError =>
+            log.error("Endpoint [{}] failed to discard crate [{}]", address.uri, crate)
+            Future.successful(false)
 
-            case _ =>
-              val message =
-                s"Endpoint [${address.uri}] responded to discard for crate [$crate] with unexpected status: [${status.value}]"
-              log.warning(message)
-              Future.failed(EndpointFailure(message))
-          }
-      }
+          case _ =>
+            val message =
+              s"Endpoint [${address.uri}] responded to discard for crate [$crate] with unexpected status: [${status.value}]"
+            log.warning(message)
+            Future.failed(EndpointFailure(message))
+        }
+    }
 }
 
 object HttpEndpointClient {
   def apply(
-    credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials]
+    credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
+    requestBufferSize: Int
   )(implicit system: ActorSystem[SpawnProtocol]): HttpEndpointClient =
     new HttpEndpointClient(
       credentials = credentials,
-      context = None
+      context = None,
+      requestBufferSize = requestBufferSize
     )
 
   def apply(
     credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
-    context: HttpsConnectionContext
+    context: HttpsConnectionContext,
+    requestBufferSize: Int
   )(implicit system: ActorSystem[SpawnProtocol]): HttpEndpointClient =
     new HttpEndpointClient(
       credentials = credentials,
-      context = Some(context)
+      context = Some(context),
+      requestBufferSize = requestBufferSize
     )
+
+  def processOfferResult[T](request: HttpRequest, promise: Promise[T])(result: QueueOfferResult): Future[T] = {
+    def clientFailure(cause: String): Future[T] =
+      Future.failed(ClientFailure(s"[${request.method.value}] request for endpoint [${request.uri}] failed; $cause"))
+
+    result match {
+      case QueueOfferResult.Enqueued    => promise.future
+      case QueueOfferResult.Dropped     => clientFailure(cause = "dropped by stream")
+      case QueueOfferResult.Failure(e)  => clientFailure(cause = s"${e.getClass.getSimpleName}: ${e.getMessage}")
+      case QueueOfferResult.QueueClosed => clientFailure(cause = "stream closed")
+    }
+  }
 }

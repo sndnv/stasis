@@ -80,7 +80,8 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
         case `coreAddress` => getJwt(subject = existingNode, signatureKey = defaultJwk).map(OAuth2BearerToken)
         case address       => Future.failed(new IllegalArgumentException(s"Unexpected address provided: [$address]"))
       },
-      context = trustedContext
+      context = trustedContext,
+      requestBufferSize = 100
     )
 
     for {
