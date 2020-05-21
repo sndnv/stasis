@@ -26,6 +26,7 @@ class CrateStoreSpec extends AsyncUnitSpec {
 
     val expectedMemoryDescriptor = CrateStore.Descriptor.ForStreamingMemoryBackend(
       maxSize = 1000,
+      maxChunkSize = 2000,
       name = "test-memory-store"
     )
     val actualMemoryDescriptor = CrateStore.Descriptor(
@@ -59,6 +60,7 @@ class CrateStoreSpec extends AsyncUnitSpec {
     val memoryBackedStore = CrateStore.fromDescriptor(
       descriptor = CrateStore.Descriptor.ForStreamingMemoryBackend(
         maxSize = 1,
+        maxChunkSize = 8192,
         name = s"memory-backed-store-${java.util.UUID.randomUUID()}"
       )
     )
@@ -87,8 +89,8 @@ class CrateStoreSpec extends AsyncUnitSpec {
   it should "convert crate store descriptors to strings" in {
     val memoryBackendName = s"memory-backed-store-${java.util.UUID.randomUUID()}"
     CrateStore.Descriptor
-      .ForStreamingMemoryBackend(maxSize = 1, name = memoryBackendName)
-      .toString should be(s"StreamingMemoryBackend(maxSize=1, name=$memoryBackendName)")
+      .ForStreamingMemoryBackend(maxSize = 1, maxChunkSize = 2, name = memoryBackendName)
+      .toString should be(s"StreamingMemoryBackend(maxSize=1, maxChunkSize=2, name=$memoryBackendName)")
 
     val containerBackendPath = s"target/container-backed-store-${java.util.UUID.randomUUID()}"
     CrateStore.Descriptor

@@ -12,8 +12,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class StreamingMemoryBackend private (
   backend: MemoryBackend[UUID, ByteString],
-  val maxSize: Long,
-  val name: String
+  maxSize: Long,
+  maxChunkSize: Int
 )(implicit ec: ExecutionContext)
     extends StreamingBackend {
   override def init(): Future[Done] = backend.init()
@@ -34,7 +34,7 @@ class StreamingMemoryBackend private (
     )
 
   override def source(key: UUID): Future[Option[Source[ByteString, NotUsed]]] =
-    backend.get(key).map(_.map(Source.single))
+    backend.get(key).map(_.map(value => Source(value.grouped(maxChunkSize).toList)))
 
   override def delete(key: UUID): Future[Boolean] = backend.delete(key)
 
@@ -52,23 +52,34 @@ class StreamingMemoryBackend private (
 object StreamingMemoryBackend {
   def apply[K](
     maxSize: Long,
+    maxChunkSize: Int,
     name: String
   )(implicit s: ActorSystem[SpawnProtocol], t: Timeout): StreamingMemoryBackend =
-    typed(maxSize, name)
+    typed(maxSize, maxChunkSize, name)
 
   def typed[K](
     maxSize: Long,
+    maxChunkSize: Int,
     name: String
   )(implicit s: ActorSystem[SpawnProtocol], t: Timeout): StreamingMemoryBackend = {
     implicit val ec: ExecutionContext = s.executionContext
-    new StreamingMemoryBackend(backend = MemoryBackend.typed[UUID, ByteString](name), maxSize, name)
+    new StreamingMemoryBackend(
+      backend = MemoryBackend.typed[UUID, ByteString](name),
+      maxSize = maxSize,
+      maxChunkSize = maxChunkSize
+    )
   }
 
   def untyped[K](
     maxSize: Long,
+    maxChunkSize: Int,
     name: String
   )(implicit s: akka.actor.ActorSystem, t: Timeout): StreamingMemoryBackend = {
     implicit val ec: ExecutionContext = s.dispatcher
-    new StreamingMemoryBackend(MemoryBackend.untyped[UUID, ByteString](name), maxSize, name)
+    new StreamingMemoryBackend(
+      backend = MemoryBackend.untyped[UUID, ByteString](name),
+      maxSize = maxSize,
+      maxChunkSize = maxChunkSize
+    )
   }
 }

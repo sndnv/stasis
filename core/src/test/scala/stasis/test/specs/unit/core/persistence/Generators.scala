@@ -51,6 +51,7 @@ object Generators {
       id = Node.generateId(),
       storeDescriptor = CrateStore.Descriptor.ForStreamingMemoryBackend(
         maxSize = rnd.nextLong(0, Long.MaxValue),
+        maxChunkSize = rnd.nextInt(0, Int.MaxValue),
         name = generateString(withSize = 42)
       )
     )

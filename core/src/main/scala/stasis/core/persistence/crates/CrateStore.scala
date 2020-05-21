@@ -83,7 +83,7 @@ object CrateStore {
   }
 
   object Descriptor {
-    final case class ForStreamingMemoryBackend(maxSize: Long, name: String) extends Descriptor
+    final case class ForStreamingMemoryBackend(maxSize: Long, maxChunkSize: Int, name: String) extends Descriptor
     final case class ForContainerBackend(path: String, maxChunkSize: Int, maxChunks: Int) extends Descriptor
     final case class ForFileBackend(parentDirectory: String) extends Descriptor
 
@@ -92,6 +92,7 @@ object CrateStore {
         case "memory" =>
           ForStreamingMemoryBackend(
             maxSize = config.getBytes("memory.max-size"),
+            maxChunkSize = config.getBytes("memory.max-chunk-size").toInt,
             name = config.getString("memory.name")
           )
 
@@ -110,8 +111,8 @@ object CrateStore {
 
     def asString(descriptor: Descriptor): String =
       descriptor match {
-        case Descriptor.ForStreamingMemoryBackend(maxSize, name) =>
-          s"StreamingMemoryBackend(maxSize=$maxSize, name=$name)"
+        case Descriptor.ForStreamingMemoryBackend(maxSize, maxChunkSize, name) =>
+          s"StreamingMemoryBackend(maxSize=$maxSize, maxChunkSize=$maxChunkSize, name=$name)"
 
         case Descriptor.ForContainerBackend(path, maxChunkSize, maxChunks) =>
           s"ContainerBackend(path=$path, maxChunkSize=$maxChunkSize, maxChunks=$maxChunks)"
@@ -127,9 +128,10 @@ object CrateStore {
     implicit val ec: ExecutionContext = system.executionContext
 
     val backend = descriptor match {
-      case Descriptor.ForStreamingMemoryBackend(maxSize, name) =>
+      case Descriptor.ForStreamingMemoryBackend(maxSize, maxChunkSize, name) =>
         StreamingMemoryBackend(
           maxSize = maxSize,
+          maxChunkSize = maxChunkSize,
           name = name
         )
 

@@ -61,14 +61,20 @@ class NodeProxySpec extends AsyncUnitSpec {
 
       val nodeA = Node.Local(
         id = Node.generateId(),
-        storeDescriptor =
-          CrateStore.Descriptor.ForStreamingMemoryBackend(maxSize = 1, name = s"node-a-${UUID.randomUUID()}")
+        storeDescriptor = CrateStore.Descriptor.ForStreamingMemoryBackend(
+          maxSize = 1,
+          maxChunkSize = 2,
+          name = s"node-a-${UUID.randomUUID()}"
+        )
       )
 
       val nodeB = Node.Local(
         id = Node.generateId(),
-        storeDescriptor =
-          CrateStore.Descriptor.ForStreamingMemoryBackend(maxSize = 1000, name = s"node-b-${UUID.randomUUID()}")
+        storeDescriptor = CrateStore.Descriptor.ForStreamingMemoryBackend(
+          maxSize = 1000,
+          maxChunkSize = 2,
+          name = s"node-b-${UUID.randomUUID()}"
+        )
       )
 
       proxy.stores.await should be(Map.empty)
