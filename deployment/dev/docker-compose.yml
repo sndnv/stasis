@@ -2,71 +2,129 @@ version: '3'
 
 services:
   identity:
-    image: identity:0.0.1-SNAPSHOT
+    image: stasis-identity:dev-latest
+    user: root
     ports:
       - '9090:9090'
     environment:
-      - IDENTITY_BOOTSTRAP_ENABLED=true
-      - IDENTITY_BOOTSTRAP_CONFIG=/opt/docker/config/identity-bootstrap.conf
-      - IDENTITY_LOGLEVEL=DEBUG
-      - IDENTITY_SERVICE_INTERFACE=0.0.0.0
-      - IDENTITY_SERVICE_PORT=9090
-      - IDENTITY_SERVICE_CONTEXT_KEYSTORE_PATH=/opt/docker/certs/identity.p12
-      - IDENTITY_TOKENS_REFRESH_ALLOWED=true
-      - IDENTITY_UI_DEV_CLIENT_ID=a928359a-e2ee-4db7-9307-8071b2a1c756
-      - IDENTITY_UI_DEV_REDIRECT_URI=https://localhost:8080/manage/login/callback
-      - IDENTITY_UI_DEV_CLIENT_SECRET=test-secret
-      - IDENTITY_UI_DEV_OWNER_PASSWORD=passw0rd
-      - SERVER_DEV_CLIENT_ID=1c31bd67-cb22-416f-9358-afb5485bca2c
-      - SERVER_DEV_CLIENT_SECRET=test-server-secret
-      - SERVER_DEV_TEST_NODE_CLIENT_ID=b4885566-dd69-4b7f-be7f-0568611d1a20
-      - SERVER_DEV_TEST_NODE_CLIENT_SECRET=test-secret
-      - SERVER_DEV_TEST_USER_ID=b21c3f0c-0133-4fb5-883d-95ad3aaa1740
+      - STASIS_IDENTITY_BOOTSTRAP_ENABLED=true
+      - STASIS_IDENTITY_BOOTSTRAP_CONFIG=/opt/docker/config/identity-bootstrap.conf
+      - STASIS_IDENTITY_LOGLEVEL=INFO
+      - STASIS_IDENTITY_SERVICE_INTERFACE=0.0.0.0
+      - STASIS_IDENTITY_SERVICE_PORT=9090
+      - STASIS_IDENTITY_SERVICE_CONTEXT_KEYSTORE_PATH=/opt/docker/certs/identity.p12
+      - STASIS_IDENTITY_TOKENS_REFRESH_ALLOWED=true
+      - STASIS_IDENTITY_UI_DEV_CLIENT_ID=a928359a-e2ee-4db7-9307-8071b2a1c756
+      - STASIS_IDENTITY_UI_DEV_REDIRECT_URI=https://localhost:8080/manage/login/callback
+      - STASIS_IDENTITY_UI_DEV_CLIENT_SECRET=test-secret
+      - STASIS_SMOKE_TEST_CLIENT_ID=ef1e47e0-3a55-492e-bf5d-3c09c10c394d
+      - STASIS_SMOKE_TEST_CLIENT_SECRET=test-secret
+      - STASIS_IDENTITY_UI_DEV_MASTER_PASSWORD=passw0rd
+      - STASIS_IDENTITY_UI_DEV_OWNER_PASSWORD=QcilMRSTjZvClf-I6Ac2RA # `pass0ord` - derived with salt `d92beb8f7c3b`
+      - STASIS_SERVER_DEV_CLIENT_ID=1c31bd67-cb22-416f-9358-afb5485bca2c
+      - STASIS_SERVER_DEV_CLIENT_SECRET=test-server-secret
+      - STASIS_SERVER_DEV_TEST_NODE_CLIENT_ID=b4885566-dd69-4b7f-be7f-0568611d1a20
+      - STASIS_SERVER_DEV_TEST_NODE_CLIENT_SECRET=test-secret
+      - STASIS_SERVER_DEV_TEST_USER_ID=b21c3f0c-0133-4fb5-883d-95ad3aaa1740
+      - STASIS_CLIENT_DEV_CLIENT_ID=1771f509-8020-4f9b-b4a3-0101e66068de
+      - STASIS_CLIENT_DEV_CLIENT_SECRET=test-secret
     volumes:
-      - ./identity-bootstrap.conf:/opt/docker/config/identity-bootstrap.conf
-      - ./certs/identity.p12:/opt/docker/certs/identity.p12
+      - ./config/identity-bootstrap.conf:/opt/docker/config/identity-bootstrap.conf
+      - ./secrets/identity.p12:/opt/docker/certs/identity.p12
 
   identity-ui:
-    image: identity-ui:dev-latest
+    image: stasis-identity-ui:dev-latest
     command: /bin/sh -c "yarn serve"
     ports:
       - '8080:8080'
     environment:
-      - IDENTITY_UI_API_URL=https://localhost:8080
-      - IDENTITY_UI_AUTH_CLIENT_ID=a928359a-e2ee-4db7-9307-8071b2a1c756
-      - IDENTITY_UI_AUTH_REDIRECT_URI=https://localhost:8080/manage/login/callback
+      - STASIS_IDENTITY_UI_API_URL=https://localhost:8080
+      - STASIS_IDENTITY_UI_AUTH_CLIENT_ID=a928359a-e2ee-4db7-9307-8071b2a1c756
+      - STASIS_IDENTITY_UI_AUTH_REDIRECT_URI=https://localhost:8080/manage/login/callback
 
   server:
-    image: server:0.0.1-SNAPSHOT
+    image: stasis-server:dev-latest
+    user: root
     ports:
       - '19090:9090'
       - '19091:9091'
     environment:
-      - SERVER_BOOTSTRAP_ENABLED=true
-      - SERVER_BOOTSTRAP_CONFIG=/opt/docker/config/server-bootstrap.conf
-      - SERVER_LOGLEVEL=DEBUG
-      - SERVER_SERVICE_API_INTERFACE=0.0.0.0
-      - SERVER_SERVICE_API_PORT=9090
-      - SERVER_SERVICE_API_CONTEXT_KEYSTORE_PATH=/opt/docker/certs/server.p12
-      - SERVER_SERVICE_CORE_INTERFACE=0.0.0.0
-      - SERVER_SERVICE_CORE_PORT=9091
-      - SERVER_SERVICE_CORE_CONTEXT_KEYSTORE_PATH=/opt/docker/certs/server.p12
-      - SERVER_CLIENTS_AUTHENTICATION_CONTEXT_ENABLED=true
-      - SERVER_CLIENTS_AUTHENTICATION_CONTEXT_TRUSTSTORE_PATH=/opt/docker/certs/identity.p12
-      - SERVER_AUTHENTICATORS_USERS_AUDIENCE=server-api
-      - SERVER_AUTHENTICATORS_USERS_JWKS_ENDPOINT=https://identity:9090/jwks/jwks.json
-      - SERVER_AUTHENTICATORS_NODES_AUDIENCE=b4885566-dd69-4b7f-be7f-0568611d1a20
-      - SERVER_AUTHENTICATORS_NODES_JWKS_ENDPOINT=https://identity:9090/jwks/jwks.json
-      - SERVER_AUTHENTICATORS_INSTANCE_TOKEN_ENDPOINT=https://identity:9090/oauth/token
-      - SERVER_AUTHENTICATORS_INSTANCE_CLIENT_ID=1c31bd67-cb22-416f-9358-afb5485bca2c
-      - SERVER_AUTHENTICATORS_INSTANCE_CLIENT_SECRET=test-server-secret
-      - SERVER_PERSISTENCE_STAGING_ENABLED=false
-      - SERVER_PERSISTENCE_STAGING_STORE_TYPE=memory
-      - SERVER_PERSISTENCE_STAGING_STORE_MEMORY_MAX_SIZE=1M
-      - SERVER_DEV_TEST_DEVICE_ID=519e0c7b-43d0-4df5-890a-dd0d86f56072
-      - SERVER_DEV_TEST_DEVICE_NODE_ID=e264b6bf-13f4-425e-a92c-be0b6b53fb7d
-      - SERVER_DEV_TEST_USER_ID=b21c3f0c-0133-4fb5-883d-95ad3aaa1740
+      - AKKA_HTTP_PARSING_MAX_CONTENT_LENGTH=4G
+      - STASIS_SERVER_BOOTSTRAP_ENABLED=true
+      - STASIS_SERVER_BOOTSTRAP_CONFIG=/opt/docker/config/server-bootstrap.conf
+      - STASIS_SERVER_LOGLEVEL=INFO
+      - STASIS_SERVER_SERVICE_API_INTERFACE=0.0.0.0
+      - STASIS_SERVER_SERVICE_API_PORT=9090
+      - STASIS_SERVER_SERVICE_API_CONTEXT_KEYSTORE_PATH=/opt/docker/certs/server.p12
+      - STASIS_SERVER_SERVICE_CORE_INTERFACE=0.0.0.0
+      - STASIS_SERVER_SERVICE_CORE_PORT=9091
+      - STASIS_SERVER_SERVICE_CORE_CONTEXT_KEYSTORE_PATH=/opt/docker/certs/server.p12
+      - STASIS_SERVER_CLIENTS_AUTHENTICATION_CONTEXT_ENABLED=true
+      - STASIS_SERVER_CLIENTS_AUTHENTICATION_CONTEXT_TRUSTSTORE_PATH=/opt/docker/certs/identity.p12
+      - STASIS_SERVER_AUTHENTICATORS_USERS_AUDIENCE=server-api
+      - STASIS_SERVER_AUTHENTICATORS_USERS_JWKS_ENDPOINT=https://identity:9090/jwks/jwks.json
+      - STASIS_SERVER_AUTHENTICATORS_NODES_AUDIENCE=b4885566-dd69-4b7f-be7f-0568611d1a20
+      - STASIS_SERVER_AUTHENTICATORS_NODES_JWKS_ENDPOINT=https://identity:9090/jwks/jwks.json
+      - STASIS_SERVER_AUTHENTICATORS_INSTANCE_TOKEN_ENDPOINT=https://identity:9090/oauth/token
+      - STASIS_SERVER_AUTHENTICATORS_INSTANCE_CLIENT_ID=1c31bd67-cb22-416f-9358-afb5485bca2c
+      - STASIS_SERVER_AUTHENTICATORS_INSTANCE_CLIENT_SECRET=test-server-secret
+      - STASIS_SERVER_AUTHENTICATORS_INSTANCE_USE_QUERY_STRING=true
+      - STASIS_SERVER_PERSISTENCE_STAGING_ENABLED=false
+      - STASIS_SERVER_PERSISTENCE_STAGING_STORE_TYPE=memory
+      - STASIS_SERVER_PERSISTENCE_STAGING_STORE_MEMORY_MAX_SIZE=1M
+      - STASIS_SERVER_DEV_TEST_DEVICE_ID=519e0c7b-43d0-4df5-890a-dd0d86f56072
+      - STASIS_SERVER_DEV_TEST_DEVICE_NODE_ID=1771f509-8020-4f9b-b4a3-0101e66068de
+      - STASIS_SERVER_DEV_TEST_USER_ID=b21c3f0c-0133-4fb5-883d-95ad3aaa1740
+      - STASIS_SERVER_DEV_TEST_USER_SALT=d92beb8f7c3b
+      - STASIS_SMOKE_TEST_CLIENT_ID=ef1e47e0-3a55-492e-bf5d-3c09c10c394d
     volumes:
-      - ./server-bootstrap.conf:/opt/docker/config/server-bootstrap.conf
-      - ./certs/identity.p12:/opt/docker/certs/identity.p12
-      - ./certs/server.p12:/opt/docker/certs/server.p12
+      - ./config/server-bootstrap.conf:/opt/docker/config/server-bootstrap.conf
+      - ./secrets/identity.p12:/opt/docker/certs/identity.p12
+      - ./secrets/server.p12:/opt/docker/certs/server.p12
+
+  client:
+    image: stasis-client-cli:dev-latest
+    command: tail -F /opt/docker/bin/logs/client.log
+    tty: true
+    environment:
+      - STASIS_CLIENT_LOGLEVEL=INFO
+      - STASIS_CLIENT_API_HTTP_INTERFACE=localhost
+      - STASIS_CLIENT_API_HTTP_PORT=9090
+      - STASIS_CLIENT_API_HTTP_CONTEXT_ENABLED=true
+      - STASIS_CLIENT_API_HTTP_CONTEXT_KEYSTORE_PATH=/home/demiourgos728/.config/stasis-client/certs/client.p12
+      - STASIS_CLIENT_API_INIT_INTERFACE=localhost
+      - STASIS_CLIENT_API_INIT_PORT=9091
+      - STASIS_CLIENT_API_INIT_CONTEXT_ENABLED=true
+      - STASIS_CLIENT_API_INIT_CONTEXT_KEYSTORE_PATH=/home/demiourgos728/.config/stasis-client/certs/client.p12
+      - STASIS_CLIENT_SERVER_AUTHENTICATION_TOKEN_ENDPOINT=https://identity:9090/oauth/token
+      - STASIS_CLIENT_SERVER_AUTHENTICATION_CLIENT_ID=1771f509-8020-4f9b-b4a3-0101e66068de
+      - STASIS_CLIENT_SERVER_AUTHENTICATION_CLIENT_SECRET=test-secret
+      - STASIS_CLIENT_SERVER_AUTHENTICATION_USE_QUERY_STRING=true
+      - STASIS_CLIENT_SERVER_AUTHENTICATION_SCOPES_API=urn:stasis:identity:audience:server-api
+      - STASIS_CLIENT_SERVER_AUTHENTICATION_SCOPES_CORE=urn:stasis:identity:audience:b4885566-dd69-4b7f-be7f-0568611d1a20
+      - STASIS_CLIENT_SERVER_AUTHENTICATION_CONTEXT_ENABLED=true
+      - STASIS_CLIENT_SERVER_AUTHENTICATION_CONTEXT_TRUSTSTORE_PATH=/home/demiourgos728/.config/stasis-client/certs/identity.p12
+      - STASIS_CLIENT_SERVER_API_URL=https://server:9090
+      - STASIS_CLIENT_SERVER_API_USER=b21c3f0c-0133-4fb5-883d-95ad3aaa1740
+      - STASIS_CLIENT_SERVER_API_USER_SALT=d92beb8f7c3b
+      - STASIS_CLIENT_SERVER_API_DEVICE=519e0c7b-43d0-4df5-890a-dd0d86f56072
+      - STASIS_CLIENT_SERVER_API_CONTEXT_ENABLED=true
+      - STASIS_CLIENT_SERVER_API_CONTEXT_TRUSTSTORE_PATH=/home/demiourgos728/.config/stasis-client/certs/server.p12
+      - STASIS_CLIENT_SERVER_CORE_ADDRESS=https://server:9091
+      - STASIS_CLIENT_SERVER_CORE_CONTEXT_ENABLED=true
+      - STASIS_CLIENT_SERVER_CORE_CONTEXT_TRUSTSTORE_PATH=/home/demiourgos728/.config/stasis-client/certs/server.p12
+      - STASIS_CLIENT_OPS_BACKUP_RULES_FILE=client.rules
+      - STASIS_CLIENT_OPS_BACKUP_MAX_CHUNK_SIZE=8K
+      - STASIS_CLIENT_OPS_BACKUP_MAX_PART_SIZE=4G
+      - STASIS_CLIENT_OPS_SCHEDULING_SCHEDULES_FILE=client.schedules
+      - STASIS_CLIENT_OPS_SCHEDULING_MIN_DELAY=30 seconds
+      - STASIS_CLIENT_OPS_SCHEDULING_MAX_EXTRA_DELAY=5 minutes
+      - STASIS_CLIENT_OPS_MONITORING_INTERVAL=10 seconds
+    volumes:
+      - ./secrets/localhost.p12:/home/demiourgos728/.config/stasis-client/certs/client.p12
+      - ./secrets/identity.p12:/home/demiourgos728/.config/stasis-client/certs/identity.p12
+      - ./secrets/server.p12:/home/demiourgos728/.config/stasis-client/certs/server.p12
+      - ./config/client.conf:/home/demiourgos728/.config/stasis-client/client.conf
+      - ./config/client.rules:/home/demiourgos728/.config/stasis-client/client.rules
+      - ./config/client.schedules:/home/demiourgos728/.config/stasis-client/client.schedules
+      - ./secrets/client.secret:/home/demiourgos728/.config/stasis-client/device-secret

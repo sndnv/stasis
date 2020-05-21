@@ -1,0 +1,4 @@
+# backups
+# operation     # schedule-id                        # definition-id                      # target files (optional)
+backup          54ad087b-7fd7-4403-926e-dbd774651fc7 ad84e86b-6489-4622-8e2d-53ff6921b5a2
+backup          f1993da5-67bd-40c8-8a97-3b27ee66e264 ad84e86b-6489-4622-8e2d-53ff6921b5a2 /work/file-01, /work/file-02
