@@ -235,6 +235,28 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       }
   }
 
+  it should "fail to start an operation if one of the same type is already running" in {
+    val executor = createExecutor(slowEncryption = true)
+
+    executor.operations.await should be(empty)
+
+    eventually {
+      val backup = executor.startBackupWithRules(definition = DatasetDefinition.generateId()).await
+      executor.operations.await.get(backup) should be(Some(Operation.Type.Backup))
+    }
+
+    executor
+      .startBackupWithRules(definition = DatasetDefinition.generateId())
+      .map { result =>
+        fail(s"Unexpected result received: [$result]")
+      }
+      .recover {
+        case NonFatal(e) =>
+          e.getMessage should startWith("Cannot start [Backup] operation")
+          e.getMessage should include("already active")
+      }
+  }
+
   private def createExecutor(
     slowEncryption: Boolean = false,
     backupTracker: MockBackupTracker = new MockBackupTracker(),
