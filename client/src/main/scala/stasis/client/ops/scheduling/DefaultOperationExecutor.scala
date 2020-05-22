@@ -50,6 +50,7 @@ class DefaultOperationExecutor(
     definition: DatasetDefinition.Id
   ): Future[Operation.Id] =
     for {
+      _ <- requireUniqueOperation(ofType = Operation.Type.Backup)
       rules <- SchedulingConfig.rules(file = config.backup.rulesFile)
       descriptor <- backup.Backup.Descriptor(
         definition = definition,
@@ -69,6 +70,7 @@ class DefaultOperationExecutor(
     entities: Seq[Path]
   ): Future[Operation.Id] =
     for {
+      _ <- requireUniqueOperation(ofType = Operation.Type.Backup)
       descriptor <- backup.Backup.Descriptor(
         definition = definition,
         collector = backup.Backup.Descriptor.Collector.WithEntities(entities = entities),
@@ -89,6 +91,7 @@ class DefaultOperationExecutor(
     destination: Option[recovery.Recovery.Destination]
   ): Future[Operation.Id] =
     for {
+      _ <- requireUniqueOperation(ofType = Operation.Type.Recovery)
       descriptor <- recovery.Recovery.Descriptor(
         collector = recovery.Recovery.Descriptor.Collector.WithDefinition(definition, until),
         query = query,
@@ -108,6 +111,7 @@ class DefaultOperationExecutor(
     destination: Option[recovery.Recovery.Destination]
   ): Future[Operation.Id] =
     for {
+      _ <- requireUniqueOperation(ofType = Operation.Type.Recovery)
       descriptor <- recovery.Recovery.Descriptor(
         query = query,
         destination = destination,
@@ -140,6 +144,19 @@ class DefaultOperationExecutor(
         val message = s"Failed to stop [$operation]; operation not found"
         log.error(message)
         Future.failed(new OperationExecutionFailure(message))
+    }
+
+  private def requireUniqueOperation(ofType: Operation.Type): Future[Done] =
+    operations.flatMap { active =>
+      active.find(_._2 == ofType) match {
+        case Some((operation, _)) =>
+          val message = s"Cannot start [$ofType] operation; [$ofType] with ID [$operation] is already active"
+          log.error(message)
+          Future.failed(new OperationExecutionFailure(message))
+
+        case None =>
+          Future.successful(Done)
+      }
     }
 
   implicit class RunnableOperation(operation: Operation) {
