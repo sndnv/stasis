@@ -210,7 +210,7 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
-  it should "retrieve  individual public schedules" in {
+  it should "retrieve individual public schedules" in {
     val apiPort = ports.dequeue()
     val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials)
     api.start(port = apiPort)

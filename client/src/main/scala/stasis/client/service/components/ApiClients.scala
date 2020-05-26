@@ -7,6 +7,7 @@ import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.security.tls.EndpointContext
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
 import scala.util.Try
 
 trait ApiClients {
@@ -41,9 +42,19 @@ object ApiClients {
           requestBufferSize = rawConfig.getInt("server.api.request-buffer-size")
         )
 
+        val cachedApiClient = new CachedServerApiEndpointClient(
+          config = CachedServerApiEndpointClient.Config(
+            initialCapacity = rawConfig.getInt("server.api.cache.initial-capacity"),
+            maximumCapacity = rawConfig.getInt("server.api.cache.maximum-capacity"),
+            timeToLive = rawConfig.getDuration("server.api.cache.time-to-live").toMillis.millis,
+            timeToIdle = rawConfig.getDuration("server.api.cache.time-to-idle").toMillis.millis
+          ),
+          underlying = apiClient
+        )
+
         new ApiClients {
           override val clients: Clients = Clients(
-            api = apiClient,
+            api = cachedApiClient,
             core = coreClient
           )
         }
