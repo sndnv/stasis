@@ -1,13 +1,12 @@
 package stasis.client.encryption.secrets
 
 import java.nio.charset.{Charset, StandardCharsets}
-import javax.crypto.SecretKeyFactory
-import javax.crypto.spec.PBEKeySpec
 
 import akka.util.ByteString
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.PBEKeySpec
 import stasis.shared.model.users.User
 
-// doc - never stored or sent externally
 final case class UserPassword(
   user: User.Id,
   salt: String,

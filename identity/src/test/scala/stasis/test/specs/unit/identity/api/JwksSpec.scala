@@ -5,7 +5,6 @@ import play.api.libs.json.{JsArray, JsObject, Json}
 import stasis.identity.api.Jwks
 import stasis.test.specs.unit.core.security.mocks.MockJwksGenerators
 import stasis.test.specs.unit.identity.RouteTest
-import stasis.test.specs.unit.identity.model.Generators
 
 class JwksSpec extends RouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._

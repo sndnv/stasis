@@ -5,14 +5,13 @@ import java.nio.file._
 import java.util.UUID
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.scalatest.BeforeAndAfter
-import stasis.core.persistence.backends.file.container.headers.ChunkHeader
-import stasis.core.persistence.backends.file.container.stream.CrateChunkSink
 import stasis.core.persistence.backends.file.container.CrateChunk
+import stasis.core.persistence.backends.file.container.headers.ChunkHeader
 import stasis.core.persistence.backends.file.container.ops.ConversionOps
+import stasis.core.persistence.backends.file.container.stream.CrateChunkSink
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.backends.file.container.TestOps
 
@@ -21,7 +20,6 @@ import scala.util.control.NonFatal
 
 class CrateChunkSinkSpec extends AsyncUnitSpec with BeforeAndAfter {
   private implicit val system: ActorSystem = ActorSystem(name = "CrateChunkSinkSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
   private implicit val ec: ExecutionContext = system.dispatcher
   private implicit val byteOrder: ByteOrder = ConversionOps.DEFAULT_BYTE_ORDER
 

@@ -1,13 +1,12 @@
 package stasis.core.persistence.crates
 
-import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.event.Logging
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.{ByteString, Timeout}
 import akka.{Done, NotUsed}
 import com.typesafe.config.Config
+import org.slf4j.LoggerFactory
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.backends.StreamingBackend
@@ -18,15 +17,13 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class CrateStore(
   val backend: StreamingBackend
-)(implicit system: ActorSystem[SpawnProtocol]) { store =>
-  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
+)(implicit system: ActorSystem[SpawnProtocol.Command]) { store =>
   private implicit val ec: ExecutionContext = system.executionContext
 
-  private val log = Logging(untypedSystem, this.getClass.getName)
+  private val log = LoggerFactory.getLogger(this.getClass.getName)
 
   def persist(manifest: Manifest, content: Source[ByteString, NotUsed]): Future[Done] = {
-    log.debug("Persisting content for crate [{}] with manifest [{}]", manifest.crate, manifest)
+    log.debugN("Persisting content for crate [{}] with manifest [{}]", manifest.crate, manifest)
 
     for {
       sink <- sink(manifest.crate)
@@ -61,7 +58,7 @@ class CrateStore(
         if (result) {
           log.debug("Discarded crate [{}]", crate)
         } else {
-          log.warning("Failed to discard crate [{}]; crate not found", crate)
+          log.warn("Failed to discard crate [{}]; crate not found", crate)
         }
 
         result
@@ -124,7 +121,7 @@ object CrateStore {
 
   def fromDescriptor(
     descriptor: Descriptor
-  )(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout): CrateStore = {
+  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): CrateStore = {
     implicit val ec: ExecutionContext = system.executionContext
 
     val backend = descriptor match {

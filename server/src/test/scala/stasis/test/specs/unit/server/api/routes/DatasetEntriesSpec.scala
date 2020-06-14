@@ -2,12 +2,13 @@ package stasis.test.specs.unit.server.api.routes
 
 import java.time.Instant
 
-import akka.actor.ActorSystem
-import akka.event.{Logging, LoggingAdapter}
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{RequestEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
 import stasis.server.api.routes.{DatasetEntries, RoutesContext}
@@ -200,8 +201,14 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  private implicit val untypedSystem: ActorSystem = ActorSystem(name = "DatasetEntriesSpec")
-  private implicit val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+    "DatasetEntriesSpec"
+  )
+
+  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
+
+  private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private trait TestFixtures {
     lazy val deviceStore: DeviceStore = MockDeviceStore()

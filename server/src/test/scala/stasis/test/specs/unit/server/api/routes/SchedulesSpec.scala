@@ -2,15 +2,13 @@ package stasis.test.specs.unit.server.api.routes
 
 import java.time.LocalDateTime
 
-import scala.concurrent.Future
-import scala.concurrent.duration._
-
-import akka.actor.ActorSystem
-import akka.event.{Logging, LoggingAdapter}
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{RequestEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.server.api.routes.{RoutesContext, Schedules}
 import stasis.server.model.schedules.ScheduleStore
 import stasis.server.security.{CurrentUser, ResourceProvider}
@@ -21,6 +19,9 @@ import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.MockScheduleStore
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
+
+import scala.concurrent.Future
+import scala.concurrent.duration._
 
 class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
@@ -144,8 +145,14 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  private implicit val untypedSystem: ActorSystem = ActorSystem(name = "SchedulesSpec")
-  private implicit val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+    "SchedulesSpec"
+  )
+
+  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
+
+  private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private trait TestFixtures {
     lazy val scheduleStore: ScheduleStore = MockScheduleStore()

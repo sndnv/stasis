@@ -1,10 +1,9 @@
 package stasis.test.specs.unit.client.service.components
 
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
-import akka.event.{Logging, LoggingAdapter}
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import com.typesafe.{config => typesafe}
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.analysis.Checksum
 import stasis.client.compression.Gzip
 import stasis.client.encryption.Aes
@@ -41,10 +40,10 @@ class BaseSpec extends AsyncUnitSpec with ResourceHelpers {
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "BaseSpec"
   )
 
-  private implicit val log: LoggingAdapter = Logging(typedSystem.toUntyped, this.getClass.getName)
+  private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 }

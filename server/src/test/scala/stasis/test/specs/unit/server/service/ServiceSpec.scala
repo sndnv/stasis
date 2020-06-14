@@ -15,11 +15,12 @@ import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import com.typesafe.config.{Config, ConfigFactory}
 import javax.net.ssl.{SSLContext, TrustManagerFactory}
 import org.jose4j.jwk.JsonWebKey
+import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 import stasis.core.networking.http.{HttpEndpointAddress, HttpEndpointClient}
 import stasis.core.packaging.Crate
 import stasis.core.security.tls.EndpointContext
-import stasis.server.service.Service
+import stasis.server.service.{CorePersistence, ServerPersistence, Service}
 import stasis.shared.api.requests.CreateUser
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
@@ -56,7 +57,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     val corePort = 39999
     val coreUrl = s"https://$interface:$corePort"
 
-    val (serverPersistence, corePersistence) = eventually {
+    val (serverPersistence, corePersistence) = eventually[(ServerPersistence, CorePersistence)] {
       service.state match {
         case Service.State.Started(apiServices, coreServices) => (apiServices.persistence, coreServices.persistence)
         case state                                            => fail(s"Unexpected service state encountered: [$state]")
@@ -121,7 +122,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
       override protected def systemConfig: Config = ConfigFactory.load("application-invalid-bootstrap")
     }
 
-    eventually {
+    eventually[Assertion] {
       service.state shouldBe a[Service.State.BootstrapFailed]
     }
   }
@@ -131,7 +132,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
       override protected def systemConfig: Config = ConfigFactory.load("application-invalid-config")
     }
 
-    eventually {
+    eventually[Assertion] {
       service.state shouldBe a[Service.State.StartupFailed]
     }
   }
@@ -204,8 +205,8 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
 
   private val defaultConfig: Config = ConfigFactory.load()
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "ServiceSpec"
   )
 

@@ -3,13 +3,11 @@ package stasis.test.specs.unit.client.service.components
 import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
-import akka.stream.ActorMaterializer
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.api.clients.Clients
 import stasis.client.ops.monitoring.ServerMonitor
 import stasis.client.ops.scheduling.{OperationExecutor, OperationScheduler}
@@ -102,7 +100,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
 
     val endpointToken = java.nio.file.Files.readString(directory.config.get.resolve(Files.ApiToken))
 
-    val response = Http()
+    val response = Http()(typedSystem.classicSystem)
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.PUT,
@@ -189,14 +187,12 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
       }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "ApiEndpointSpec"
   )
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.toUntyped
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
-  private implicit val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)
+  private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private val apiEndpointConfigEntry = "stasis.client.api.http.port"
   private val apiTerminationDelayEntry = "stasis.client.service.termination-delay"

@@ -1,10 +1,10 @@
 package stasis.test.specs.unit.shared.model.devices
 
-import scala.concurrent.duration._
-
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.UnitSpec
+
+import scala.concurrent.duration._
 
 class DeviceSpec extends UnitSpec {
 

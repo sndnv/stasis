@@ -1,12 +1,12 @@
 package stasis.client.ops.backup.stages
 
-import akka.{Done, NotUsed}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Source}
+import akka.{Done, NotUsed}
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.{DatasetMetadata, EntityMetadata}
-import stasis.client.ops.backup.Providers
 import stasis.client.ops.ParallelismConfig
+import stasis.client.ops.backup.Providers
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}

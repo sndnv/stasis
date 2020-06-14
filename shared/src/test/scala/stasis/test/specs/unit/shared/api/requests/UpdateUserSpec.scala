@@ -1,11 +1,11 @@
 package stasis.test.specs.unit.shared.api.requests
 
-import scala.concurrent.duration._
-
 import stasis.shared.api.requests.{UpdateUserLimits, UpdateUserPermissions, UpdateUserState}
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.UnitSpec
+
+import scala.concurrent.duration._
 
 class UpdateUserSpec extends UnitSpec {
   it should "convert requests to updated users" in {

@@ -61,8 +61,8 @@ class JwtNodeCredentialsProviderSpec extends AsyncUnitSpec {
     (provider, storeInit.store)
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "JwtNodeCredentialsProviderSpec"
   )
 

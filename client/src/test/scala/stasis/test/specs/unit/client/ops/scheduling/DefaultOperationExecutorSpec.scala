@@ -3,13 +3,11 @@ package stasis.test.specs.unit.client.ops.scheduling
 import java.util.concurrent.atomic.AtomicBoolean
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.scaladsl.Flow
-import akka.stream.{ActorMaterializer, Materializer}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{Assertion, BeforeAndAfterAll}
 import org.scalatest.concurrent.Eventually
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
@@ -38,7 +36,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       )
       .await
 
-    eventually {
+    eventually[Assertion] {
       mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
@@ -60,7 +58,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       )
       .await
 
-    eventually {
+    eventually[Assertion] {
       mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
@@ -84,7 +82,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       )
       .await
 
-    eventually {
+    eventually[Assertion] {
       mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(0)
@@ -106,7 +104,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       )
       .await
 
-    eventually {
+    eventually[Assertion] {
       mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(0)
@@ -165,7 +163,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     val operation = executor.startBackupWithRules(definition = DatasetDefinition.generateId()).await
     val _ = executor.stop(operation).await
 
-    eventually {
+    eventually[Assertion] {
       mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
     }
   }
@@ -214,12 +212,12 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
 
     executor.operations.await should be(empty)
 
-    eventually {
+    eventually[Assertion] {
       val backup = executor.startBackupWithRules(definition = DatasetDefinition.generateId()).await
       executor.operations.await.get(backup) should be(Some(Operation.Type.Backup))
     }
 
-    eventually {
+    eventually[Assertion] {
       executor.operations.await should be(empty)
     }
   }
@@ -240,7 +238,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
 
     executor.operations.await should be(empty)
 
-    eventually {
+    eventually[Assertion] {
       val backup = executor.startBackupWithRules(definition = DatasetDefinition.generateId()).await
       executor.operations.await.get(backup) should be(Some(Operation.Type.Backup))
     }
@@ -334,14 +332,10 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DefaultOperationExecutorSpec"
   )
-
-  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.toUntyped
-
-  private implicit val mat: Materializer = ActorMaterializer()
 
   private implicit val parallelismConfig: ParallelismConfig = ParallelismConfig(value = 1)
 

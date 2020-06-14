@@ -1,14 +1,15 @@
 package stasis.server.api
 
-import akka.actor.ActorSystem
-import akka.event.{Logging, LoggingAdapter}
+import akka.actor.typed.scaladsl.LoggerOps
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.{ConnectionContext, Http}
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Sink
+import akka.stream.{Materializer, SystemMaterializer}
 import akka.util.ByteString
+import org.slf4j.LoggerFactory
 import stasis.server.api.routes._
 import stasis.server.security.exceptions.AuthorizationFailure
 import stasis.server.security.{ResourceProvider, UserAuthenticator}
@@ -20,12 +21,11 @@ import scala.util.{Failure, Success}
 class ApiEndpoint(
   resourceProvider: ResourceProvider,
   authenticator: UserAuthenticator
-)(implicit val system: ActorSystem) {
+)(implicit val system: ActorSystem[SpawnProtocol.Command]) {
+  private implicit val ec: ExecutionContextExecutor = system.executionContext
+  private implicit val mat: Materializer = SystemMaterializer(system).materializer
 
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
-  private implicit val ec: ExecutionContextExecutor = system.dispatcher
-
-  private val log: LoggingAdapter = Logging(system, this.getClass.getName)
+  private val log = LoggerFactory.getLogger(this.getClass.getName)
 
   private implicit val context: RoutesContext = RoutesContext(resourceProvider, ec, mat, log)
 
@@ -44,7 +44,7 @@ class ApiEndpoint(
       case e: AuthorizationFailure =>
         extractRequestEntity { entity =>
           val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
-          log.error(e, "User authorization failed: [{}]", e.getMessage)
+          log.errorN("User authorization failed: [{}]", e.getMessage, e)
           complete(StatusCodes.Forbidden)
         }
 
@@ -54,10 +54,10 @@ class ApiEndpoint(
           val failureReference = java.util.UUID.randomUUID()
 
           log.error(
-            e,
             "Unhandled exception encountered: [{}]; failure reference is [{}]",
             e.getMessage,
-            failureReference
+            failureReference,
+            e
           )
 
           complete(
@@ -79,7 +79,7 @@ class ApiEndpoint(
             val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
             val message = "Provided data is invalid or malformed"
-            log.warning(message)
+            log.warn(message)
 
             complete(
               StatusCodes.BadRequest,
@@ -115,7 +115,7 @@ class ApiEndpoint(
             case Failure(e) =>
               val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
-              log.warning(
+              log.warn(
                 "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{}]",
                 method.value,
                 uri,
@@ -129,7 +129,7 @@ class ApiEndpoint(
         case None =>
           val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
-          log.warning(
+          log.warn(
             "Rejecting [{}] request for [{}] with no credentials from [{}]",
             method.value,
             uri,
@@ -140,11 +140,14 @@ class ApiEndpoint(
       }
     }
 
-  def start(interface: String, port: Int, context: ConnectionContext): Future[Http.ServerBinding] =
+  def start(interface: String, port: Int, context: ConnectionContext): Future[Http.ServerBinding] = {
+    implicit val untyped: akka.actor.ActorSystem = system.classicSystem
+
     Http().bindAndHandle(
       handler = endpointRoutes,
       interface = interface,
       port = port,
       connectionContext = context
     )
+  }
 }

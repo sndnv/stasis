@@ -3,7 +3,7 @@ package stasis.test.specs.unit.identity.api.oauth.directives
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.{Materializer, SystemMaterializer}
 import play.api.libs.json._
 import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.AudienceExtraction
@@ -166,7 +166,7 @@ class AudienceExtractionSpec extends RouteTest {
     apis: ApiStore
   ) =
     new AudienceExtraction {
-      override implicit protected def mat: Materializer = ActorMaterializer()
+      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
       override implicit protected def ec: ExecutionContext = system.dispatcher
       override protected def log: LoggingAdapter = createLogger()
       override protected def clientStore: ClientStoreView = clients.view

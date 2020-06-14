@@ -1,11 +1,10 @@
 package stasis.core.routing
 
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.event.Logging
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.{ByteString, Timeout}
 import akka.{Done, NotUsed}
+import org.slf4j.LoggerFactory
 import stasis.core.networking.EndpointClient
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
@@ -19,10 +18,10 @@ import scala.concurrent.{ExecutionContext, Future}
 class NodeProxy(
   val httpClient: EndpointClient[HttpEndpointAddress, _],
   val grpcClient: EndpointClient[GrpcEndpointAddress, _]
-)(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout) {
+)(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout) {
   private implicit val ec: ExecutionContext = system.executionContext
 
-  private val log = Logging(system.toUntyped, this.getClass.getName)
+  private val log = LoggerFactory.getLogger(this.getClass.getName)
 
   private val cache: MemoryBackend[Node.Id, CrateStore] = MemoryBackend[Node.Id, CrateStore](
     name = s"crate-store-cache-${java.util.UUID.randomUUID()}"

@@ -1,6 +1,5 @@
 package stasis.client.api.clients
 
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
@@ -19,10 +18,10 @@ class DefaultServerCoreEndpointClient(
   override val self: Node.Id,
   context: Option[HttpsConnectionContext],
   requestBufferSize: Int
-)(implicit system: ActorSystem[SpawnProtocol])
+)(implicit system: ActorSystem[SpawnProtocol.Command])
     extends ServerCoreEndpointClient {
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
+  private implicit val untypedSystem: akka.actor.ActorSystem = system.classicSystem
 
   private val clientContext: HttpsConnectionContext = context match {
     case Some(context) => context

@@ -1,5 +1,6 @@
 package stasis.server.api.routes
 
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
@@ -25,7 +26,7 @@ class Nodes()(implicit ctx: RoutesContext) extends ApiRoutes {
           get {
             resource[ServerNodeStore.View.Service] { view =>
               view.list().map { nodes =>
-                log.debug("User [{}] successfully retrieved [{}] nodes", currentUser, nodes.size)
+                log.debugN("User [{}] successfully retrieved [{}] nodes", currentUser, nodes.size)
                 discardEntity & complete(nodes.values)
               }
             }
@@ -36,7 +37,7 @@ class Nodes()(implicit ctx: RoutesContext) extends ApiRoutes {
                 val node = createRequest.toNode
 
                 manage.create(node).map { _ =>
-                  log.debug("User [{}] successfully created node [{}]", currentUser, node.id)
+                  log.debugN("User [{}] successfully created node [{}]", currentUser, node.id)
                   complete(CreatedNode(node.id))
                 }
               }
@@ -50,11 +51,11 @@ class Nodes()(implicit ctx: RoutesContext) extends ApiRoutes {
             resource[ServerNodeStore.View.Service] { view =>
               view.get(nodeId).map {
                 case Some(node) =>
-                  log.debug("User [{}] successfully retrieved node [{}]", currentUser, nodeId)
+                  log.debugN("User [{}] successfully retrieved node [{}]", currentUser, nodeId)
                   discardEntity & complete(node)
 
                 case None =>
-                  log.warning("User [{}] failed to retrieve node [{}]", currentUser, nodeId)
+                  log.warnN("User [{}] failed to retrieve node [{}]", currentUser, nodeId)
                   discardEntity & complete(StatusCodes.NotFound)
               }
             }
@@ -66,12 +67,12 @@ class Nodes()(implicit ctx: RoutesContext) extends ApiRoutes {
                   view.get(nodeId).flatMap {
                     case Some(node) =>
                       manage.update(updateRequest.toUpdatedNode(node)).map { _ =>
-                        log.debug("User [{}] successfully updated node [{}]", currentUser, nodeId)
+                        log.debugN("User [{}] successfully updated node [{}]", currentUser, nodeId)
                         complete(StatusCodes.OK)
                       }
 
                     case None =>
-                      log.warning("User [{}] failed to update missing node [{}]", currentUser, nodeId)
+                      log.warnN("User [{}] failed to update missing node [{}]", currentUser, nodeId)
                       Future.successful(complete(StatusCodes.BadRequest))
                   }
                 }
@@ -81,9 +82,9 @@ class Nodes()(implicit ctx: RoutesContext) extends ApiRoutes {
             resource[ServerNodeStore.Manage.Service] { manage =>
               manage.delete(nodeId).map { deleted =>
                 if (deleted) {
-                  log.debug("User [{}] successfully deleted node [{}]", currentUser, nodeId)
+                  log.debugN("User [{}] successfully deleted node [{}]", currentUser, nodeId)
                 } else {
-                  log.warning("User [{}] failed to delete node [{}]", currentUser, nodeId)
+                  log.warnN("User [{}] failed to delete node [{}]", currentUser, nodeId)
                 }
 
                 discardEntity & complete(DeletedNode(existing = deleted))

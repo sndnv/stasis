@@ -3,7 +3,6 @@ package stasis.test.specs.unit.client.ops.recovery.stages.internal
 import java.nio.file.Paths
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import stasis.client.ops.exceptions.EntityProcessingFailure
@@ -77,5 +76,4 @@ class MergedCratesSpec extends AsyncUnitSpec {
   }
 
   private implicit val system: ActorSystem = ActorSystem(name = "MergedCratesSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 }

@@ -1,9 +1,7 @@
 package stasis.test.specs.unit.core.persistence.crates
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
@@ -207,12 +205,10 @@ class CrateStoreSpec extends AsyncUnitSpec {
     }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "CrateStoreSpec"
   )
-
-  private implicit val mat: ActorMaterializer = ActorMaterializer()(system.toUntyped)
 
   private class TestCrateStore(
     val isStorageAvailable: Boolean = true,

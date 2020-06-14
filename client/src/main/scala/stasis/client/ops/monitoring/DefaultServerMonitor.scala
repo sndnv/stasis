@@ -1,17 +1,16 @@
 package stasis.client.ops.monitoring
 
 import akka.Done
-import akka.actor.typed.{ActorRef, ActorSystem, Behavior, SpawnProtocol}
+import akka.actor.typed._
 import akka.actor.typed.scaladsl.AskPattern._
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.Scheduler
+import akka.actor.typed.scaladsl.{Behaviors, LoggerOps}
 import akka.util.Timeout
 import stasis.client.api.clients.ServerApiEndpointClient
 import stasis.client.tracking.ServerTracker
 import stasis.shared.api.responses.Ping
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 class DefaultServerMonitor private (
@@ -27,14 +26,13 @@ object DefaultServerMonitor {
     interval: FiniteDuration,
     api: ServerApiEndpointClient,
     tracker: ServerTracker
-  )(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout): DefaultServerMonitor = {
-    implicit val scheduler: Scheduler = system.scheduler
+  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): DefaultServerMonitor = {
     implicit val ec: ExecutionContext = system.executionContext
 
     val behaviour = monitor(interval, api, tracker)
 
     new DefaultServerMonitor(
-      monitorRef = system ? SpawnProtocol.Spawn(behaviour, name = "server-monitor")
+      monitorRef = system ? (SpawnProtocol.Spawn(behaviour, name = "server-monitor", props = Props.empty, _))
     )
   }
 
@@ -63,12 +61,12 @@ object DefaultServerMonitor {
               .ping()
               .onComplete {
                 case Success(Ping(id)) =>
-                  log.debug("Server [{}] responded to ping with [{}]", api.server, id)
+                  log.debugN("Server [{}] responded to ping with [{}]", api.server, id)
                   tracker.reachable(api.server)
                   self ! ScheduleNextPing
 
                 case Failure(e) =>
-                  log.error(e, "Failed to reach server [{}]: [{}]", api.server, e.getMessage)
+                  log.errorN("Failed to reach server [{}]: [{}]", api.server, e.getMessage, e)
                   tracker.unreachable(api.server)
                   self ! ScheduleNextPing
               }(ctx.executionContext)
@@ -76,7 +74,7 @@ object DefaultServerMonitor {
             Behaviors.same
 
           case ScheduleNextPing =>
-            ctx.log.debug(
+            ctx.log.debugN(
               "Scheduling next ping for server [{}] in [{}] second(s)",
               api.server,
               interval.toSeconds
@@ -85,7 +83,7 @@ object DefaultServerMonitor {
             Behaviors.same
 
           case Stop(replyTo) =>
-            ctx.log.debug("Stopping monitor for server [{}]", api.server)
+            ctx.log.debugN("Stopping monitor for server [{}]", api.server)
             replyTo ! Done
             Behaviors.stopped
         }

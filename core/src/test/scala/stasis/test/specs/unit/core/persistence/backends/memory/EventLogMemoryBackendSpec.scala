@@ -11,8 +11,8 @@ import scala.collection.immutable.Queue
 import scala.concurrent.duration._
 
 class EventLogMemoryBackendSpec extends AsyncUnitSpec with EventLogBackendBehaviour with Eventually {
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    guardianBehavior = Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    guardianBehavior = Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     name = "EventLogMemoryBackendSpec"
   )
 

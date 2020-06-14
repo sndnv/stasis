@@ -5,9 +5,8 @@ import java.util.concurrent.atomic.AtomicReference
 
 import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.event.{Logging, LoggingAdapter}
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.service.components.exceptions.ServiceStartupFailure
 
 import scala.concurrent.duration._
@@ -19,14 +18,13 @@ trait Service {
 
   private val clientState: AtomicReference[State] = new AtomicReference[State](State.Starting)
 
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     name = "stasis-client-service"
   )
 
   private implicit val ec: ExecutionContext = system.executionContext
-  private implicit val untyped: akka.actor.ActorSystem = system.toUntyped
-  private implicit val log: LoggingAdapter = Logging(untyped, this.getClass.getName)
+  private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   protected def applicationName: String = Service.ApplicationName
 
@@ -93,10 +91,10 @@ object Service {
   private def delayed(
     op: => Unit,
     by: FiniteDuration
-  )(implicit system: akka.actor.ActorSystem): Unit = {
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): Unit = {
     val _ = akka.pattern.after(
       duration = by,
-      using = system.scheduler
-    ) { Future.successful(op) }(system.dispatcher)
+      using = system.classicSystem.scheduler
+    ) { Future.successful(op) }(system.executionContext)
   }
 }

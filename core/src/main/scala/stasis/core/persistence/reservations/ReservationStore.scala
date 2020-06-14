@@ -35,8 +35,9 @@ object ReservationStore {
   def apply(
     expiration: FiniteDuration,
     backend: KeyValueBackend[CrateStorageReservation.Id, CrateStorageReservation]
-  )(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout): StoreInitializationResult[ReservationStore] = {
+  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): StoreInitializationResult[ReservationStore] = {
     implicit val ec: ExecutionContext = system.executionContext
+    val untypedSystem = system.classicSystem
 
     val cache: KeyValueBackend[(Crate.Id, Node.Id), CrateStorageReservation.Id] =
       MemoryBackend[(Crate.Id, Node.Id), CrateStorageReservation.Id](
@@ -60,7 +61,7 @@ object ReservationStore {
           _ <- backend.put(reservation.id, reservation)
           _ <- cache.put((reservation.crate, reservation.target), reservation.id)
         } yield {
-          val _ = akka.pattern.after(expiration, system.scheduler)(delete(reservation.crate, reservation.target))
+          val _ = akka.pattern.after(expiration, untypedSystem.scheduler)(delete(reservation.crate, reservation.target))
           Done
         }
 

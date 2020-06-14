@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.server.model.staging
 
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import stasis.core.networking.http.HttpEndpointAddress
@@ -81,8 +81,8 @@ class ServerStagingStoreSpec extends AsyncUnitSpec {
     }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "ServerStagingStoreSpec"
   )
 

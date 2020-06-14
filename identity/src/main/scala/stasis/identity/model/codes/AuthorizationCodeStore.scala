@@ -18,15 +18,16 @@ object AuthorizationCodeStore {
   def apply(
     expiration: FiniteDuration,
     backend: KeyValueBackend[AuthorizationCode, StoredAuthorizationCode]
-  )(implicit system: ActorSystem[SpawnProtocol]): AuthorizationCodeStore =
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): AuthorizationCodeStore =
     new AuthorizationCodeStore {
+      private val untypedSystem = system.classicSystem
       private implicit val ec: ExecutionContext = system.executionContext
 
       override def put(storedCode: StoredAuthorizationCode): Future[Done] =
         backend
           .put(storedCode.code, storedCode)
           .map { result =>
-            val _ = akka.pattern.after(expiration, system.scheduler)(backend.delete(storedCode.code))
+            val _ = akka.pattern.after(expiration, untypedSystem.scheduler)(backend.delete(storedCode.code))
             result
           }
 

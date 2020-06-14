@@ -5,7 +5,6 @@ import akka.http.scaladsl.model.headers.{BasicHttpCredentials, CacheDirectives}
 import akka.http.scaladsl.model.{StatusCodes, Uri}
 import stasis.identity.api.OAuth
 import stasis.identity.api.oauth.directives.AudienceExtraction
-import stasis.identity.model.Seconds
 import stasis.identity.model.codes.StoredAuthorizationCode
 import stasis.identity.model.errors.AuthorizationError
 import stasis.identity.model.secrets.Secret

@@ -2,6 +2,7 @@ package stasis.client.api.http.routes
 
 import java.nio.file.Path
 
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.sse.ServerSentEvent
 import akka.http.scaladsl.server.Directives._
@@ -49,7 +50,7 @@ class Operations()(implicit override val mat: Materializer, context: Context) ex
           }
 
           onSuccess(operationsState) { operations =>
-            log.debug("API successfully retrieved state of [{}] operations", operations.size)
+            log.debugN("API successfully retrieved state of [{}] operations", operations.size)
             discardEntity & complete(operations)
           }
         }
@@ -59,7 +60,7 @@ class Operations()(implicit override val mat: Materializer, context: Context) ex
           path("rules") {
             get {
               onSuccess(context.executor.rules) { rules =>
-                log.debug("API successfully retrieved backup rules specification")
+                log.debugN("API successfully retrieved backup rules specification")
                 discardEntity & complete(StatusCodes.OK, SpecificationRules(rules))
               }
             }
@@ -67,7 +68,7 @@ class Operations()(implicit override val mat: Materializer, context: Context) ex
           path(JavaUUID) { definition =>
             put {
               onSuccess(context.executor.startBackupWithRules(definition)) { operation =>
-                log.debug("API started backup operation [{}]", operation)
+                log.debugN("API started backup operation [{}]", operation)
                 discardEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
               }
             }
@@ -90,7 +91,7 @@ class Operations()(implicit override val mat: Materializer, context: Context) ex
                       )
 
                       onSuccess(result) { operation =>
-                        log.debug(
+                        log.debugN(
                           "API started recovery operation [{}] for definition [{}] with latest entry",
                           operation,
                           definition
@@ -108,7 +109,7 @@ class Operations()(implicit override val mat: Materializer, context: Context) ex
                       )
 
                       onSuccess(result) { operation =>
-                        log.debug(
+                        log.debugN(
                           "API started recovery operation [{}] for definition [{}] until [{}]",
                           operation,
                           definition,
@@ -126,7 +127,7 @@ class Operations()(implicit override val mat: Materializer, context: Context) ex
                       )
 
                       onSuccess(result) { operation =>
-                        log.debug(
+                        log.debugN(
                           "API started recovery operation [{}] for definition [{}] with entry [{}]",
                           operation,
                           definition,
@@ -146,11 +147,11 @@ class Operations()(implicit override val mat: Materializer, context: Context) ex
             get {
               onSuccess(context.tracker.state.map(_.operations.get(operation))) {
                 case Some(operation) =>
-                  log.debug("API successfully retrieved progress of operation [{}]", operation)
+                  log.debugN("API successfully retrieved progress of operation [{}]", operation)
                   discardEntity & complete(operation)
 
                 case None =>
-                  log.debug(
+                  log.debugN(
                     "API could not retrieve progress of operation [{}]; operation not found",
                     operation
                   )
@@ -167,7 +168,7 @@ class Operations()(implicit override val mat: Materializer, context: Context) ex
                   .map(update => ServerSentEvent.apply(update))
                   .keepAlive(maxIdle = heartbeatInterval, injectedElem = () => ServerSentEvent.heartbeat)
 
-                log.debug("API successfully retrieved progress stream for operation [{}]", operation)
+                log.debugN("API successfully retrieved progress stream for operation [{}]", operation)
                 discardEntity & complete(sseSource)
               }
             }
@@ -175,7 +176,7 @@ class Operations()(implicit override val mat: Materializer, context: Context) ex
           path("stop") {
             put {
               onSuccess(context.executor.stop(operation)) { _ =>
-                log.debug("API stopped backup operation [{}]", operation)
+                log.debugN("API stopped backup operation [{}]", operation)
                 discardEntity & complete(StatusCodes.OK)
               }
             }

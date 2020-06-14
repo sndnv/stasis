@@ -43,7 +43,7 @@ object Generators {
     )
 
   def generateLocalNode(
-    implicit system: ActorSystem[SpawnProtocol],
+    implicit system: ActorSystem[SpawnProtocol.Command],
     timeout: Timeout,
     rnd: ThreadLocalRandom = ThreadLocalRandom.current()
   ): Node.Local =

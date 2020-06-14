@@ -5,7 +5,8 @@ import akka.http.scaladsl.model
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
 import akka.http.scaladsl.model.{StatusCodes, Uri}
 import akka.http.scaladsl.server.Directives
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.{Materializer, SystemMaterializer}
+import play.api.libs.json.{JsObject, JsString}
 import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.ResourceOwnerAuthentication
 import stasis.identity.authentication.oauth.{DefaultResourceOwnerAuthenticator, ResourceOwnerAuthenticator}
@@ -14,9 +15,8 @@ import stasis.identity.model.owners.ResourceOwnerStore
 import stasis.identity.model.secrets.Secret
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
-import scala.concurrent.duration._
 
-import play.api.libs.json.{JsObject, JsString}
+import scala.concurrent.duration._
 
 class ResourceOwnerAuthenticationSpec extends RouteTest {
   "A ResourceOwnerAuthentication directive" should "authenticate resource owners with provided credentials" in {
@@ -207,7 +207,7 @@ class ResourceOwnerAuthenticationSpec extends RouteTest {
   private def createDirective(
     owners: ResourceOwnerStore
   ) = new ResourceOwnerAuthentication {
-    override implicit protected def mat: Materializer = ActorMaterializer()
+    override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
 
     override protected def log: LoggingAdapter = createLogger()
     override protected def resourceOwnerAuthenticator: ResourceOwnerAuthenticator =

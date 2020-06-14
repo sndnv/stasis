@@ -2,6 +2,7 @@ package stasis.client.api.http.routes
 
 import java.time.Instant
 
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
@@ -17,7 +18,7 @@ class DatasetMetadata()(implicit override val mat: Materializer, context: Contex
       path(JavaUUID) { entryId =>
         get {
           onSuccess(context.api.datasetMetadata(entry = entryId)) { metadata =>
-            log.debug("API successfully retrieved metadata for entry [{}]", entryId)
+            log.debugN("API successfully retrieved metadata for entry [{}]", entryId)
             discardEntity & complete(metadata)
           }
         }
@@ -30,7 +31,7 @@ class DatasetMetadata()(implicit override val mat: Materializer, context: Contex
           ) {
             case (query, until) =>
               onSuccess(context.search.search(query.r, until)) { result =>
-                log.debug(
+                log.debugN(
                   "API found [{}] matches for [{}] definitions with query [{}]",
                   result.definitions.count(_._2.nonEmpty),
                   result.definitions.size,

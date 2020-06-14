@@ -5,8 +5,6 @@ import java.util.UUID
 import stasis.core.networking.grpc.proto
 import stasis.core.persistence.CrateStorageRequest
 
-import scala.concurrent.duration._
-
 object Requests {
 
   import Implicits._

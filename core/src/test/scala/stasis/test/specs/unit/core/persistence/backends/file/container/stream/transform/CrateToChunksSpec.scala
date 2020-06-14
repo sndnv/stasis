@@ -4,19 +4,17 @@ import java.nio.ByteOrder
 import java.util.UUID
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import stasis.core.packaging.Crate
-import stasis.core.persistence.backends.file.container.headers.ChunkHeader
-import stasis.core.persistence.backends.file.container.stream.transform.CrateToChunks
 import stasis.core.persistence.backends.file.container.CrateChunk
+import stasis.core.persistence.backends.file.container.headers.ChunkHeader
 import stasis.core.persistence.backends.file.container.ops.ConversionOps
+import stasis.core.persistence.backends.file.container.stream.transform.CrateToChunks
 import stasis.test.specs.unit.AsyncUnitSpec
 
 class CrateToChunksSpec extends AsyncUnitSpec {
   private implicit val system: ActorSystem = ActorSystem(name = "CrateChunkSinkSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
   private implicit val byteOrder: ByteOrder = ConversionOps.DEFAULT_BYTE_ORDER
 
   private def generatedExpectedChunks(

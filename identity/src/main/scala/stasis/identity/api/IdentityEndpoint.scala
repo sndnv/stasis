@@ -2,11 +2,10 @@ package stasis.identity.api
 
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
-import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import akka.stream.ActorMaterializer
+import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import org.jose4j.jwk.JsonWebKey
@@ -25,7 +24,6 @@ class IdentityEndpoint(
 )(implicit system: ActorSystem) {
 
   private val log: LoggingAdapter = Logging(system, this.getClass.getName)
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 
   private val oauth = new OAuth(oauthConfig, oauthProviders)
   private val jwks = new Jwks(keys)

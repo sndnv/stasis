@@ -1,5 +1,6 @@
 package stasis.client.api.http.routes
 
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
@@ -15,7 +16,7 @@ class Device()(implicit override val mat: Materializer, context: Context) extend
       pathEndOrSingleSlash {
         get {
           onSuccess(context.api.device()) { device =>
-            log.debug("API successfully retrieved device [{}] for user [{}]", device.id, device.owner)
+            log.debugN("API successfully retrieved device [{}] for user [{}]", device.id, device.owner)
             discardEntity & complete(device)
           }
         }
@@ -23,7 +24,7 @@ class Device()(implicit override val mat: Materializer, context: Context) extend
       path("connections") {
         get {
           onSuccess(context.tracker.state) { state =>
-            log.debug("API successfully retrieved connection state for [{}] servers", state.servers.size)
+            log.debugN("API successfully retrieved connection state for [{}] servers", state.servers.size)
             discardEntity & complete(state.servers)
           }
         }

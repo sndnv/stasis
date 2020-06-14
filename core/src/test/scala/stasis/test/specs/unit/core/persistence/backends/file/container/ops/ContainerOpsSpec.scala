@@ -5,7 +5,6 @@ import java.nio.file.Paths
 import java.util.UUID
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import akka.util.ByteString
 import org.scalatest.BeforeAndAfter
 import stasis.core.persistence.backends.file.container._
@@ -19,7 +18,6 @@ import scala.util.control.NonFatal
 
 class ContainerOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoCloseSupport {
   private implicit val system: ActorSystem = ActorSystem(name = "ContainerOpsSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
   private implicit val ec: ExecutionContext = system.dispatcher
   private implicit val byteOrder: ByteOrder = ConversionOps.DEFAULT_BYTE_ORDER
 

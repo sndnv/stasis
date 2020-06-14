@@ -2,6 +2,7 @@ package stasis.client.api.http.routes
 
 import java.time.Instant
 
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
@@ -29,7 +30,7 @@ class DatasetEntries()(implicit override val mat: Materializer, context: Context
           }
 
           onSuccess(result) { entries =>
-            log.debug("API successfully retrieved [{}] entries for all definitions", entries.size)
+            log.debugN("API successfully retrieved [{}] entries for all definitions", entries.size)
             discardEntity & complete(entries)
           }
         }
@@ -39,7 +40,7 @@ class DatasetEntries()(implicit override val mat: Materializer, context: Context
           pathEndOrSingleSlash {
             get {
               onSuccess(context.api.datasetEntries(definition)) { entries =>
-                log.debug("API successfully retrieved [{}] entries", entries.size)
+                log.debugN("API successfully retrieved [{}] entries", entries.size)
                 discardEntity & complete(entries)
               }
             }
@@ -49,7 +50,7 @@ class DatasetEntries()(implicit override val mat: Materializer, context: Context
               parameter("until".as[Instant].?) { until =>
                 onSuccess(context.api.latestEntry(definition, until)) {
                   case Some(entry) =>
-                    log.debug(
+                    log.debugN(
                       "API successfully retrieved latest entry [{}] for definition [{}]",
                       entry.id,
                       definition
@@ -57,7 +58,7 @@ class DatasetEntries()(implicit override val mat: Materializer, context: Context
                     discardEntity & complete(entry)
 
                   case None =>
-                    log.debug(
+                    log.debugN(
                       "API could not retrieve latest entry for definition [{}]; no entry found",
                       definition
                     )

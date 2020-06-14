@@ -1,15 +1,16 @@
 package stasis.test.specs.unit.server.model.datasets
 
-import scala.concurrent.duration._
-import scala.util.control.NonFatal
-
 import akka.Done
-import akka.actor.ActorSystem
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.devices.Device
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.MockDatasetDefinitionStore
+
+import scala.concurrent.duration._
+import scala.util.control.NonFatal
 
 class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
   "A DatasetDefinitionStore" should "provide a view resource (privileged)" in {
@@ -276,7 +277,12 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
     }
   }
 
-  private implicit val system: ActorSystem = ActorSystem(name = "DatasetDefinitionStoreSpec")
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+    "DatasetDefinitionStoreSpec"
+  )
+
+  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
 
   private val ownDevices = Seq(Device.generateId(), Device.generateId())
 

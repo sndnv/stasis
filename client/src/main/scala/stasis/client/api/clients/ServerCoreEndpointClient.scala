@@ -1,12 +1,12 @@
 package stasis.client.api.clients
 
-import scala.concurrent.Future
-
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.routing.Node
+
+import scala.concurrent.Future
 
 trait ServerCoreEndpointClient {
   def self: Node.Id

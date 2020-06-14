@@ -3,19 +3,19 @@ package stasis.core.security.keys
 import java.security.Key
 
 import akka.Done
-import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.event.Logging
-import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, StatusCodes}
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.ActorMaterializer
+import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.scaladsl.Sink
 import akka.util.{ByteString, Timeout}
 import org.jose4j.jwk.JsonWebKeySet
 import org.jose4j.jws.AlgorithmIdentifiers
+import org.slf4j.LoggerFactory
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.security.exceptions.ProviderFailure
+
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -29,14 +29,12 @@ final class RemoteKeyProvider(
   refreshRetryInterval: FiniteDuration,
   override val issuer: String,
   override val allowedAlgorithms: Seq[String]
-)(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout)
+)(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout)
     extends KeyProvider {
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
   private implicit val ec: ExecutionContext = system.executionContext
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 
-  private val log = Logging(untypedSystem, this.getClass.getName)
+  private val log = LoggerFactory.getLogger(this.getClass.getName)
 
   private val cache = MemoryBackend[String, Key](name = "jwk-provider-cache")
 
@@ -66,11 +64,11 @@ final class RemoteKeyProvider(
       .recover {
         case NonFatal(e) =>
           log.error(
-            e,
             "Failed to load keys from JWKs endpoint [{}]: [{}: {}]",
             jwksEndpoint,
             e.getClass.getSimpleName,
-            e.getMessage
+            e.getMessage,
+            e
           )
           scheduleKeysRefresh(delay = refreshRetryInterval)
           Done
@@ -94,7 +92,7 @@ final class RemoteKeyProvider(
           .sequence(
             jwks.map {
               case Right(jwk) =>
-                log.debug(
+                log.debugN(
                   "JWKs endpoint [{}] provided key [{}] with algorithm [{}}]",
                   jwksEndpoint,
                   jwk.id,
@@ -103,7 +101,7 @@ final class RemoteKeyProvider(
                 cache.put(jwk.id, jwk.key)
 
               case Left(failure) =>
-                log.warning("JWKs endpoint [{}] provided key that could not be handled: [{}]", jwksEndpoint, failure)
+                log.warnN("JWKs endpoint [{}] provided key that could not be handled: [{}]", jwksEndpoint, failure)
                 Future.successful(Done)
             }
           )
@@ -118,7 +116,7 @@ object RemoteKeyProvider {
     refreshInterval: FiniteDuration,
     refreshRetryInterval: FiniteDuration,
     issuer: String
-  )(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout): RemoteKeyProvider =
+  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): RemoteKeyProvider =
     new RemoteKeyProvider(
       jwksEndpoint = jwksEndpoint,
       context = context,
@@ -151,10 +149,10 @@ object RemoteKeyProvider {
   def getRawJwks(
     jwksEndpoint: String,
     context: Option[HttpsConnectionContext]
-  )(implicit s: akka.actor.ActorSystem, m: ActorMaterializer): Future[String] = {
-    import s.dispatcher
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): Future[String] = {
+    import system.executionContext
 
-    val http = Http()
+    val http = Http()(system.classicSystem)
 
     val clientContext: HttpsConnectionContext = context match {
       case Some(context) => context

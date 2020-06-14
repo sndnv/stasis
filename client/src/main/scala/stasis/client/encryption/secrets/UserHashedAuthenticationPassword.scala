@@ -1,8 +1,8 @@
 package stasis.client.encryption.secrets
 
+import java.util.Base64
 import java.util.concurrent.atomic.AtomicBoolean
 
-import java.util.Base64
 import akka.util.ByteString
 import stasis.shared.model.users.User
 

@@ -1,15 +1,13 @@
 package stasis.core.persistence.backends.memory
 
-import scala.concurrent.{ExecutionContext, Future}
-
 import akka.Done
-import akka.actor.Scheduler
+import akka.actor.typed._
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
-import akka.actor.typed.{ActorRef, ActorSystem, Behavior, SpawnProtocol}
 import akka.util.Timeout
 import stasis.core.persistence.backends.KeyValueBackend
+
+import scala.concurrent.{ExecutionContext, Future}
 
 class MemoryBackend[K, V] private (
   storeRef: Future[ActorRef[MemoryBackend.Message[K, V]]]
@@ -36,19 +34,10 @@ class MemoryBackend[K, V] private (
 }
 
 object MemoryBackend {
-  def apply[K, V](name: String)(implicit s: ActorSystem[SpawnProtocol], t: Timeout): MemoryBackend[K, V] =
-    typed(name)
-
-  def typed[K, V](name: String)(implicit s: ActorSystem[SpawnProtocol], t: Timeout): MemoryBackend[K, V] = {
-    implicit val scheduler: Scheduler = s.scheduler
+  def apply[K, V](name: String)(implicit s: ActorSystem[SpawnProtocol.Command], t: Timeout): MemoryBackend[K, V] = {
     implicit val ec: ExecutionContext = s.executionContext
-    new MemoryBackend[K, V](storeRef = s ? SpawnProtocol.Spawn(store(Map.empty[K, V]), name))
-  }
 
-  def untyped[K, V](name: String)(implicit s: akka.actor.ActorSystem, t: Timeout): MemoryBackend[K, V] = {
-    implicit val scheduler: Scheduler = s.scheduler
-    implicit val ec: ExecutionContext = s.dispatcher
-    new MemoryBackend[K, V](storeRef = Future.successful(s.spawn(store(Map.empty[K, V]), name)))
+    new MemoryBackend[K, V](storeRef = s ? (SpawnProtocol.Spawn(store(Map.empty[K, V]), name, Props.empty, _)))
   }
 
   private sealed trait Message[K, V]

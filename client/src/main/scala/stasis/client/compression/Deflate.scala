@@ -1,7 +1,7 @@
 package stasis.client.compression
 
 import akka.NotUsed
-import akka.stream.scaladsl.{Compression => AkkaCompression, Flow}
+import akka.stream.scaladsl.{Flow, Compression => AkkaCompression}
 import akka.util.ByteString
 
 object Deflate extends Encoder with Decoder {

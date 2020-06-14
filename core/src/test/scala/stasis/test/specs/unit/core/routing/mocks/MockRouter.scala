@@ -8,10 +8,10 @@ import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.exceptions.ReservationFailure
 import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
+import stasis.core.routing.exceptions.DiscardFailure
 import stasis.core.routing.{Node, Router}
 
 import scala.concurrent.{ExecutionContext, Future}
-import stasis.core.routing.exceptions.DiscardFailure
 
 class MockRouter(
   store: CrateStore,

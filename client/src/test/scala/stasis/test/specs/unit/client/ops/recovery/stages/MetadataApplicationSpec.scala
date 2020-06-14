@@ -1,11 +1,10 @@
 package stasis.test.specs.unit.client.ops.recovery.stages
 
-import java.nio.file.{Files, LinkOption, Paths}
 import java.nio.file.attribute.PosixFileAttributes
+import java.nio.file.{Files, LinkOption, Paths}
 import java.time.Instant
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import stasis.client.analysis.{Checksum, Metadata}
 import stasis.client.api.clients.Clients
@@ -55,7 +54,7 @@ class MetadataApplicationSpec extends AsyncUnitSpec { spec =>
         track = mockTracker
       )
 
-      override implicit protected def ec: ExecutionContext = spec.mat.executionContext
+      override implicit protected def ec: ExecutionContext = spec.system.dispatcher
     }
 
     implicit val operationId: Operation.Id = Operation.generateId()
@@ -90,5 +89,4 @@ class MetadataApplicationSpec extends AsyncUnitSpec { spec =>
   }
 
   private implicit val system: ActorSystem = ActorSystem(name = "MetadataApplicationSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 }

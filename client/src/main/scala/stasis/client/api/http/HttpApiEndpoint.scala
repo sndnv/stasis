@@ -1,12 +1,11 @@
 package stasis.client.api.http
 
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.{ConnectionContext, Http}
-import akka.stream.ActorMaterializer
+import akka.stream.{Materializer, SystemMaterializer}
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import stasis.client.api.clients.exceptions.ServerApiFailure
@@ -19,10 +18,10 @@ import scala.util.{Failure, Success}
 
 class HttpApiEndpoint(
   authenticator: FrontendAuthenticator
-)(implicit system: ActorSystem[SpawnProtocol], context: Context) {
+)(implicit system: ActorSystem[SpawnProtocol.Command], context: Context) {
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
+  private implicit val untypedSystem: akka.actor.ActorSystem = system.classicSystem
+  private implicit val mat: Materializer = SystemMaterializer(system).materializer
   private implicit val ec: ExecutionContextExecutor = system.executionContext
 
   private val definitions = new DatasetDefinitions()
@@ -40,7 +39,7 @@ class HttpApiEndpoint(
         extractRequestEntity { entity =>
           val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
-          context.log.error(e, e.message)
+          context.log.error(e.message, e)
 
           complete(
             e.status,
@@ -53,7 +52,7 @@ class HttpApiEndpoint(
           val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
           val message = s"Unhandled exception encountered: [${e.getMessage}]"
 
-          context.log.error(e, message)
+          context.log.error(message, e)
 
           complete(
             StatusCodes.InternalServerError,
@@ -86,7 +85,7 @@ class HttpApiEndpoint(
             case Failure(e) =>
               val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
-              context.log.warning(
+              context.log.warn(
                 "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{}]",
                 method.value,
                 uri,
@@ -100,7 +99,7 @@ class HttpApiEndpoint(
         case None =>
           val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
-          context.log.warning(
+          context.log.warn(
             "Rejecting [{}] request for [{}] with no credentials from [{}]",
             method.value,
             uri,

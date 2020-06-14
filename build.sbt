@@ -6,14 +6,15 @@ name in ThisBuild := projectName
 licenses in ThisBuild := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
 homepage in ThisBuild := Some(url("https://github.com/sndnv/stasis"))
 
-lazy val defaultScalaVersion = "2.12.9"
-lazy val akkaVersion = "2.5.23"
-lazy val akkaHttpVersion = "10.1.9"
-lazy val slickVersion = "3.3.1"
-lazy val h2Version = "1.4.199"
-lazy val postgresVersion = "42.2.12"
+lazy val defaultScalaVersion = "2.12.11"
+lazy val akkaVersion = "2.6.6"
+lazy val akkaHttpVersion = "10.1.12"
+lazy val geodeVersion = "1.12.0"
+lazy val slickVersion = "3.3.2"
+lazy val h2Version = "1.4.200"
+lazy val postgresVersion = "42.2.13"
 lazy val mariadbVersion = "2.6.0"
-lazy val sqliteVersion = "3.30.1"
+lazy val sqliteVersion = "3.31.1"
 lazy val logbackVersion = "1.2.3"
 
 lazy val jdkDockerImage = "openjdk:11"
@@ -44,14 +45,14 @@ lazy val client = (project in file("./client"))
   .settings(
     libraryDependencies ++= Seq(
       "at.favre.lib"      %   "hkdf"                    % "1.1.0",
-      "net.harawata"      %   "appdirs"                 % "1.0.3",
+      "net.harawata"      %   "appdirs"                 % "1.1.0",
       "com.typesafe.akka" %%  "akka-slf4j"              % akkaVersion,
       "com.typesafe.akka" %%  "akka-http-caching"       % akkaHttpVersion,
       "ch.qos.logback"    %   "logback-classic"         % logbackVersion,
       "com.google.jimfs"  %   "jimfs"                   % "1.1"     % Test,
-      "org.mockito"       %%  "mockito-scala"           % "1.11.2"  % Test,
-      "org.mockito"       %%  "mockito-scala-scalatest" % "1.11.2"  % Test,
-      "org.mockito"       %   "mockito-inline"          % "3.2.4"   % Test
+      "org.mockito"       %%  "mockito-scala"           % "1.14.4"  % Test,
+      "org.mockito"       %%  "mockito-scala-scalatest" % "1.14.4"  % Test,
+      "org.mockito"       %   "mockito-inline"          % "3.3.3"   % Test
     ),
     dockerBaseImage := jdkDockerImage,
     PB.targets in Compile := Seq(
@@ -90,21 +91,22 @@ lazy val core = (project in file("./core"))
       "com.typesafe.akka"       %% "akka-actor"           % akkaVersion,
       "com.typesafe.akka"       %% "akka-actor-typed"     % akkaVersion,
       "com.typesafe.akka"       %% "akka-stream"          % akkaVersion,
+      "com.typesafe.akka"       %% "akka-discovery"       % akkaVersion,
       "com.typesafe.akka"       %% "akka-http"            % akkaHttpVersion,
       "com.typesafe.akka"       %% "akka-http-core"       % akkaHttpVersion,
       "com.typesafe.akka"       %% "akka-http2-support"   % akkaHttpVersion,
-      "com.typesafe.play"       %% "play-json"            % "2.7.4",
-      "de.heikoseeberger"       %% "akka-http-play-json"  % "1.27.0",
-      "org.bitbucket.b_c"       %  "jose4j"               % "0.6.5",
-      "org.apache.geode"        %  "geode-core"           % "1.9.0"           % Provided,
+      "com.typesafe.play"       %% "play-json"            % "2.9.0",
+      "de.heikoseeberger"       %% "akka-http-play-json"  % "1.32.0",
+      "org.bitbucket.b_c"       %  "jose4j"               % "0.7.1",
+      "org.apache.geode"        %  "geode-core"           % geodeVersion      % Provided,
       "com.typesafe.slick"      %% "slick"                % slickVersion      % Provided,
       "com.h2database"          %  "h2"                   % h2Version         % Test,
-      "org.scalacheck"          %% "scalacheck"           % "1.14.0"          % Test,
-      "org.scalatest"           %% "scalatest"            % "3.0.8"           % Test,
+      "org.scalacheck"          %% "scalacheck"           % "1.14.3"          % Test,
+      "org.scalatest"           %% "scalatest"            % "3.1.2"           % Test,
       "com.typesafe.akka"       %% "akka-testkit"         % akkaVersion       % Test,
       "com.typesafe.akka"       %% "akka-stream-testkit"  % akkaVersion       % Test,
       "com.typesafe.akka"       %% "akka-http-testkit"    % akkaHttpVersion   % Test,
-      "com.github.tomakehurst"  %  "wiremock-jre8"        % "2.24.1"          % Test
+      "com.github.tomakehurst"  %  "wiremock-jre8"        % "2.26.3"          % Test
     )
   )
   .dependsOn(proto)

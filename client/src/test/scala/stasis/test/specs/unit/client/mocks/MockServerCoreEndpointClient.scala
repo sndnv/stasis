@@ -6,13 +6,13 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import akka.{Done, NotUsed}
+import stasis.client.api.clients.ServerCoreEndpointClient
 import stasis.core.packaging
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
 import stasis.test.specs.unit.client.mocks.MockServerCoreEndpointClient.Statistic
-import scala.concurrent.{ExecutionContext, Future}
 
-import stasis.client.api.clients.ServerCoreEndpointClient
+import scala.concurrent.{ExecutionContext, Future}
 
 class MockServerCoreEndpointClient(
   override val self: Node.Id,

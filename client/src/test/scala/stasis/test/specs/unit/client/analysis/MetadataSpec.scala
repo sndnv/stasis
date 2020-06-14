@@ -6,7 +6,6 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import stasis.client.analysis.{Checksum, Metadata}
 import stasis.client.model.{EntityMetadata, TargetEntity}
 import stasis.core.packaging.Crate
@@ -17,9 +16,6 @@ import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
-  private implicit val system: ActorSystem = ActorSystem(name = "MetadataSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
-
   "A Metadata implementation" should "extract base metadata from a file" in {
     val sourceFileResourcesPath = "analysis/metadata-source-file"
     val sourceFile = s"/$sourceFileResourcesPath".asTestResource
@@ -447,4 +443,6 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
         actualTargetFile.currentMetadata should be(None)
       }
   }
+
+  private implicit val system: ActorSystem = ActorSystem(name = "MetadataSpec")
 }

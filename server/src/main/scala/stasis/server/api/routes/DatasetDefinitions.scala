@@ -1,5 +1,6 @@
 package stasis.server.api.routes
 
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
@@ -25,7 +26,7 @@ class DatasetDefinitions()(implicit ctx: RoutesContext) extends ApiRoutes {
           get {
             resource[DatasetDefinitionStore.View.Privileged] { view =>
               view.list().map { definitions =>
-                log.debug("User [{}] successfully retrieved [{}] definitions", currentUser, definitions.size)
+                log.debugN("User [{}] successfully retrieved [{}] definitions", currentUser, definitions.size)
                 discardEntity & complete(definitions.values)
               }
             }
@@ -35,7 +36,7 @@ class DatasetDefinitions()(implicit ctx: RoutesContext) extends ApiRoutes {
               resource[DatasetDefinitionStore.Manage.Privileged] { manage =>
                 val definition = createRequest.toDefinition
                 manage.create(definition).map { _ =>
-                  log.debug("User [{}] successfully created definition [{}]", currentUser, definition.id)
+                  log.debugN("User [{}] successfully created definition [{}]", currentUser, definition.id)
                   complete(CreatedDatasetDefinition(definition.id))
                 }
               }
@@ -49,11 +50,11 @@ class DatasetDefinitions()(implicit ctx: RoutesContext) extends ApiRoutes {
             resource[DatasetDefinitionStore.View.Privileged] { view =>
               view.get(definitionId).map {
                 case Some(definition) =>
-                  log.debug("User [{}] successfully retrieved definition [{}]", currentUser, definitionId)
+                  log.debugN("User [{}] successfully retrieved definition [{}]", currentUser, definitionId)
                   discardEntity & complete(definition)
 
                 case None =>
-                  log.warning("User [{}] failed to retrieve definition [{}]", currentUser, definitionId)
+                  log.warnN("User [{}] failed to retrieve definition [{}]", currentUser, definitionId)
                   discardEntity & complete(StatusCodes.NotFound)
               }
             }
@@ -66,12 +67,12 @@ class DatasetDefinitions()(implicit ctx: RoutesContext) extends ApiRoutes {
                     view.get(definitionId).flatMap {
                       case Some(definition) =>
                         manage.update(updateRequest.toUpdatedDefinition(definition)).map { _ =>
-                          log.debug("User [{}] successfully updated definition [{}]", currentUser, definitionId)
+                          log.debugN("User [{}] successfully updated definition [{}]", currentUser, definitionId)
                           complete(StatusCodes.OK)
                         }
 
                       case None =>
-                        log.warning("User [{}] failed to update missing definition [{}]", currentUser, definitionId)
+                        log.warnN("User [{}] failed to update missing definition [{}]", currentUser, definitionId)
                         Future.successful(complete(StatusCodes.BadRequest))
                     }
                 }
@@ -81,9 +82,9 @@ class DatasetDefinitions()(implicit ctx: RoutesContext) extends ApiRoutes {
             resource[DatasetDefinitionStore.Manage.Privileged] { manage =>
               manage.delete(definitionId).map { deleted =>
                 if (deleted) {
-                  log.debug("User [{}] successfully deleted definition [{}]", currentUser, definitionId)
+                  log.debugN("User [{}] successfully deleted definition [{}]", currentUser, definitionId)
                 } else {
-                  log.warning("User [{}] failed to delete definition [{}]", currentUser, definitionId)
+                  log.warnN("User [{}] failed to delete definition [{}]", currentUser, definitionId)
                 }
 
                 discardEntity & complete(DeletedDatasetDefinition(existing = deleted))
@@ -102,7 +103,7 @@ class DatasetDefinitions()(implicit ctx: RoutesContext) extends ApiRoutes {
                     .list(currentUser)
                     .flatMap(devices => definitionView.list(devices.keys.toSeq))
                     .map { definitions =>
-                      log.debug("User [{}] successfully retrieved [{}] definitions", currentUser, definitions.size)
+                      log.debugN("User [{}] successfully retrieved [{}] definitions", currentUser, definitions.size)
                       discardEntity & complete(definitions.values)
                     }
                 }
@@ -116,7 +117,7 @@ class DatasetDefinitions()(implicit ctx: RoutesContext) extends ApiRoutes {
                         .list(currentUser)
                         .flatMap(devices => definitionManage.create(devices.keys.toSeq, definition))
                         .map { _ =>
-                          log.debug("User [{}] successfully created definition [{}]", currentUser, definition.id)
+                          log.debugN("User [{}] successfully created definition [{}]", currentUser, definition.id)
                           complete(CreatedDatasetDefinition(definition.id))
                         }
                     }
@@ -135,11 +136,11 @@ class DatasetDefinitions()(implicit ctx: RoutesContext) extends ApiRoutes {
                         .flatMap(devices => definitionView.get(devices.keys.toSeq, definitionId))
                         .map {
                           case Some(definition) =>
-                            log.debug("User [{}] successfully retrieved definition [{}]", currentUser, definitionId)
+                            log.debugN("User [{}] successfully retrieved definition [{}]", currentUser, definitionId)
                             discardEntity & complete(definition)
 
                           case None =>
-                            log.warning("User [{}] failed to retrieve definition [{}]", currentUser, definitionId)
+                            log.warnN("User [{}] failed to retrieve definition [{}]", currentUser, definitionId)
                             discardEntity & complete(StatusCodes.NotFound)
                         }
                   }
@@ -163,7 +164,7 @@ class DatasetDefinitions()(implicit ctx: RoutesContext) extends ApiRoutes {
                                     definitionManage
                                       .update(deviceIds, updateRequest.toUpdatedDefinition(definition))
                                       .map { _ =>
-                                        log.debug(
+                                        log.debugN(
                                           "User [{}] successfully updated definition [{}]",
                                           currentUser,
                                           definitionId
@@ -172,7 +173,7 @@ class DatasetDefinitions()(implicit ctx: RoutesContext) extends ApiRoutes {
                                       }
 
                                   case None =>
-                                    log.warning(
+                                    log.warnN(
                                       "User [{}] failed to update missing definition [{}]",
                                       currentUser,
                                       definitionId
@@ -192,9 +193,9 @@ class DatasetDefinitions()(implicit ctx: RoutesContext) extends ApiRoutes {
                         .flatMap(devices => definitionManage.delete(devices.keys.toSeq, definitionId))
                         .map { deleted =>
                           if (deleted) {
-                            log.debug("User [{}] successfully deleted definition [{}]", currentUser, definitionId)
+                            log.debugN("User [{}] successfully deleted definition [{}]", currentUser, definitionId)
                           } else {
-                            log.warning("User [{}] failed to delete definition [{}]", currentUser, definitionId)
+                            log.warnN("User [{}] failed to delete definition [{}]", currentUser, definitionId)
                           }
 
                           discardEntity & complete(DeletedDatasetDefinition(existing = deleted))

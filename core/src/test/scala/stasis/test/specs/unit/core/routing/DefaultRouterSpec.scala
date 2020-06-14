@@ -1,12 +1,12 @@
 package stasis.test.specs.unit.core.routing
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
+import org.scalatest.enablers.Retrying
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.crates.CrateStore
@@ -111,13 +111,12 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     router.push(testManifest, Source.single(testContent)).await
 
-    eventually {
+    eventually[Assertion] {
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
       router.testClient.crateCopies(testManifest.crate).await should be(router.fixtures.remoteNodes.size)
       router.testClient.crateNodes(testManifest.crate).await should be(router.fixtures.remoteNodes.size)
-      router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(
-        router.fixtures.remoteNodes.size)
+      router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(router.fixtures.remoteNodes.size)
       router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
     }
   }
@@ -138,7 +137,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     stagingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
     stagingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
 
-    eventually {
+    eventually[Assertion] {
       fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
       fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
       testClient.crateCopies(testManifest.crate).await should be(fixtures.remoteNodes.size)
@@ -171,7 +170,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     testReservationStore.reservations.await.size should be(0)
 
-    eventually {
+    eventually[Assertion] {
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
     }
@@ -262,7 +261,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     val failedNodesCount = 1
 
-    eventually {
+    eventually[Assertion] {
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
       router.testClient.crateCopies(testManifest.crate).await should be(
@@ -322,7 +321,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     router.push(testManifest, Source.single(testContent)).await
 
-    eventually {
+    eventually[Assertion] {
       router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(
         router.fixtures.remoteNodes.size
       )
@@ -354,7 +353,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     router.push(testManifest, Source.single(testContent)).await
 
-    eventually {
+    eventually[Assertion] {
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
     }
@@ -418,7 +417,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     router.push(testManifest, Source.single(testContent)).await
 
-    eventually {
+    eventually[Assertion] {
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
       router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(
@@ -456,7 +455,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     router.push(testManifest, Source.single(testContent)).await
 
-    eventually {
+    eventually[Assertion] {
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
       router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(
@@ -489,7 +488,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     router.push(testManifest, Source.single(testContent)).await
 
-    eventually {
+    eventually[Assertion] {
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
       router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(
@@ -543,7 +542,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     router.push(testManifest, Source.single(testContent)).await
 
-    eventually {
+    eventually[Assertion] {
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
     }
@@ -571,7 +570,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     router.push(testManifest, Source.single(testContent)).await
 
-    eventually {
+    eventually[Assertion] {
       stagingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
       stagingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
     }
@@ -641,7 +640,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     router.push(testManifest, Source.single(testContent)).await
 
-    eventually {
+    eventually[Assertion] {
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
       router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(
@@ -683,7 +682,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     router.push(testManifest, Source.single(testContent)).await
 
-    eventually {
+    eventually[Assertion] {
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
       router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(2)
@@ -728,7 +727,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     router.push(testManifest, Source.single(testContent)).await
 
-    eventually {
+    eventually[Assertion] {
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
     }
@@ -878,16 +877,16 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.reserve(request).map(_ should be(None))
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DefaultRouterSpec"
   )
-
-  private implicit val mat: ActorMaterializer = ActorMaterializer()(system.toUntyped)
 
   private implicit val ec: ExecutionContext = system.executionContext
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
+
+  private implicit val retrying: Retrying[Future[Assertion]] = Retrying.retryingNatureOfT[Future[Assertion]]
 
   private trait TestFixtures {
     lazy val reservationStore: MockReservationStore = new MockReservationStore()
@@ -916,8 +915,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
   private class TestRouter(
     val fixtures: TestFixtures = new TestFixtures {},
     val testClient: MockHttpEndpointClient = new MockHttpEndpointClient()
-  )(implicit untypedSystem: akka.actor.ActorSystem = system.toUntyped)
-      extends DefaultRouter(
+  ) extends DefaultRouter(
         routerId = Node.generateId(),
         persistence = DefaultRouter.Persistence(
           manifests = fixtures.manifestStore,

@@ -1,8 +1,9 @@
 package stasis.test.specs.unit
 
-import akka.util.Timeout
 import akka.Done
-import org.scalatest.{AsyncFlatSpec, Matchers}
+import akka.util.Timeout
+import org.scalatest.flatspec.AsyncFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -23,12 +24,16 @@ trait AsyncUnitSpec extends AsyncFlatSpec with Matchers {
       .await
   }
 
-  def await(delay: FiniteDuration, withSystem: akka.actor.typed.ActorSystem[_]): Unit = {
-    val _ = akka.pattern
+  def await(delay: FiniteDuration, withSystem: akka.actor.typed.ActorSystem[_]): Unit =
+    await(delay, withSystem.classicSystem)
+
+  def after[T](delay: FiniteDuration, using: akka.actor.ActorSystem)(value: => Future[T]): Future[T] =
+    akka.pattern
       .after(
         duration = delay,
-        using = withSystem.scheduler
-      )(Future.successful(Done))(withSystem.executionContext)
-      .await
-  }
+        using = using.scheduler
+      )(value)(using.dispatcher)
+
+  def after[T](delay: FiniteDuration, using: akka.actor.typed.ActorSystem[_])(value: => Future[T]): Future[T] =
+    after(delay, using.classicSystem)(value)
 }

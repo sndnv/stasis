@@ -43,12 +43,12 @@ object ViaApi {
         get {
           if (credentials.isCompleted) {
             onComplete(startup) {
-              case Success(_)                        => complete(InitState.Completed)
-              case Failure(e: ServiceStartupFailure) => complete(InitState.Failed(cause = e.cause, message = e.message))
-              case Failure(e)                        => complete(InitState.Failed(cause = "unknown", message = e.getMessage))
+              case Success(_)                        => complete(InitState.Completed: InitState)
+              case Failure(e: ServiceStartupFailure) => complete(InitState.Failed(e.cause, e.message): InitState)
+              case Failure(e)                        => complete(InitState.Failed(cause = "unknown", message = e.getMessage): InitState)
             }
           } else {
-            complete(InitState.Pending)
+            complete(InitState.Pending: InitState)
           }
         },
         post {

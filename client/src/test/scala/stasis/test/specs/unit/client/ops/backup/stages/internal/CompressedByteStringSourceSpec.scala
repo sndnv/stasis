@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.client.ops.backup.stages.internal
 
 import akka.actor.ActorSystem
+import akka.stream.IOResult
 import akka.stream.scaladsl.{Sink, Source}
-import akka.stream.{ActorMaterializer, IOResult}
 import akka.util.ByteString
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
@@ -43,5 +43,4 @@ class CompressedByteStringSourceSpec extends AsyncUnitSpec {
   }
 
   private implicit val system: ActorSystem = ActorSystem(name = "CompressedByteStringSourceSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 }

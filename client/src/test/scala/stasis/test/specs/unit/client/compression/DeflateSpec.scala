@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.client.compression
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import stasis.client.compression.Deflate
@@ -9,12 +8,6 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.EncodingHelpers
 
 class DeflateSpec extends AsyncUnitSpec with EncodingHelpers {
-  private implicit val system: ActorSystem = ActorSystem(name = "DeflateSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
-
-  private val decompressedData = "some-decompressed-data"
-  private val compressedData = "eNoqzs9N1U1JTc7PLShKLS5OTdFNSSxJBAAAAP//AwBkTwin"
-
   "A Deflate encoder/decoder implementation" should "compress data" in {
     Source
       .single(ByteString(decompressedData))
@@ -34,4 +27,9 @@ class DeflateSpec extends AsyncUnitSpec with EncodingHelpers {
         actualDecompressedData.utf8String should be(decompressedData)
       }
   }
+
+  private implicit val system: ActorSystem = ActorSystem(name = "DeflateSpec")
+
+  private val decompressedData = "some-decompressed-data"
+  private val compressedData = "eNoqzs9N1U1JTc7PLShKLS5OTdFNSSxJBAAAAP//AwBkTwin"
 }

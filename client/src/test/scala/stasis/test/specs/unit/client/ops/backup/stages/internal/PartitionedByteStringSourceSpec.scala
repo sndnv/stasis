@@ -4,8 +4,8 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.ActorSystem
+import akka.stream.IOResult
 import akka.stream.scaladsl.{Flow, Sink, Source}
-import akka.stream.{ActorMaterializer, IOResult}
 import akka.util.ByteString
 import stasis.client.ops.backup.stages.internal.PartitionedByteStringSource
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -24,7 +24,7 @@ class PartitionedByteStringSourceSpec extends AsyncUnitSpec {
     val subFlowCounter = new AtomicInteger(0)
     val subFlowEntries = new ConcurrentHashMap[Int, ByteString]()
 
-    val flow = Flow.lazyInitAsync(() => {
+    val flow = Flow.lazyFutureFlow(() => {
       val subFlowId = subFlowCounter.getAndIncrement()
       Future.successful(
         Flow[ByteString]
@@ -76,5 +76,4 @@ class PartitionedByteStringSourceSpec extends AsyncUnitSpec {
   }
 
   private implicit val system: ActorSystem = ActorSystem(name = "PartitionedByteStringSourceSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 }

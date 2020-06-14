@@ -5,11 +5,7 @@ import java.nio.file.Paths
 import java.util.UUID
 import java.util.concurrent.Executors
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
-import scala.util.control.NonFatal
-
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.scalatest.BeforeAndAfter
@@ -18,10 +14,12 @@ import stasis.core.persistence.backends.file.container.headers.{ChunkHeader, Con
 import stasis.core.persistence.backends.file.container.ops.{ContainerLogOps, ContainerOps, ConversionOps}
 import stasis.test.specs.unit.AsyncUnitSpec
 
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.util.control.NonFatal
+
 class ContainerSpec extends AsyncUnitSpec with BeforeAndAfter {
   private implicit val system: ActorSystem = ActorSystem(name = "ContainerSpec")
   private implicit val ec: ExecutionContext = system.dispatcher
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
   private implicit val byteOrder: ByteOrder = ConversionOps.DEFAULT_BYTE_ORDER
 
   private val containersDir = s"${System.getProperty("user.dir")}/target/containers_test"

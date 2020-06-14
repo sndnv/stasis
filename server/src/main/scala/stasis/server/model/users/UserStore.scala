@@ -2,13 +2,13 @@ package stasis.server.model.users
 
 import java.util.concurrent.ThreadLocalRandom
 
-import scala.concurrent.{ExecutionContext, Future}
 import akka.Done
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.server.security.{CurrentUser, Resource}
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
 trait UserStore { store =>

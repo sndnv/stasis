@@ -24,8 +24,8 @@ import scala.concurrent.duration._
 trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
   import scala.language.implicitConversions
 
-  implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     name = this.getClass.getSimpleName + "_typed"
   )
 
@@ -65,7 +65,7 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
     failingContains: Boolean = false
   ): ApiStore = ApiStore(
     new FailingMemoryBackend[Api.Id, Api] {
-      override def system: ActorSystem[SpawnProtocol] = typedSystem
+      override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
       override def storeName: String = s"api-store-${java.util.UUID.randomUUID()}"
       override def putFails: Boolean = failingPut
       override def deleteFails: Boolean = failingDelete
@@ -83,7 +83,7 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
     failingContains: Boolean = false
   ): ClientStore = ClientStore(
     new FailingMemoryBackend[Client.Id, Client] {
-      override def system: ActorSystem[SpawnProtocol] = typedSystem
+      override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
       override def storeName: String = s"client-store-${java.util.UUID.randomUUID()}"
       override def putFails: Boolean = failingPut
       override def deleteFails: Boolean = failingDelete
@@ -103,7 +103,7 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
   ): AuthorizationCodeStore = AuthorizationCodeStore(
     expiration = expiration,
     new FailingMemoryBackend[AuthorizationCode, StoredAuthorizationCode] {
-      override def system: ActorSystem[SpawnProtocol] = typedSystem
+      override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
       override def storeName: String = s"code-store-${java.util.UUID.randomUUID()}"
       override def putFails: Boolean = failingPut
       override def deleteFails: Boolean = failingDelete
@@ -121,7 +121,7 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
     failingContains: Boolean = false
   ): ResourceOwnerStore = ResourceOwnerStore(
     new FailingMemoryBackend[ResourceOwner.Id, ResourceOwner] {
-      override def system: ActorSystem[SpawnProtocol] = typedSystem
+      override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
       override def storeName: String = s"owner-store-${java.util.UUID.randomUUID()}"
       override def putFails: Boolean = failingPut
       override def deleteFails: Boolean = failingDelete
@@ -141,7 +141,7 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
   ): RefreshTokenStore = RefreshTokenStore(
     expiration = expiration,
     new FailingMemoryBackend[RefreshToken, StoredRefreshToken] {
-      override def system: ActorSystem[SpawnProtocol] = typedSystem
+      override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
       override def storeName: String = s"token-store-${java.util.UUID.randomUUID()}"
       override def putFails: Boolean = failingPut
       override def deleteFails: Boolean = failingDelete
@@ -157,7 +157,7 @@ object RouteTest {
   trait FailingMemoryBackend[K, V] extends KeyValueBackend[K, V] {
     private val underlying = MemoryBackend[K, V](storeName)
 
-    implicit def system: ActorSystem[SpawnProtocol]
+    implicit def system: ActorSystem[SpawnProtocol.Command]
     implicit def timeout: Timeout = 3.seconds
 
     def storeName: String

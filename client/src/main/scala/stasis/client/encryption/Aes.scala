@@ -1,12 +1,12 @@
 package stasis.client.encryption
 
 import java.security.SecureRandom
-import javax.crypto.{Cipher, KeyGenerator}
-import javax.crypto.spec.{GCMParameterSpec, SecretKeySpec}
 
 import akka.NotUsed
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
+import javax.crypto.spec.{GCMParameterSpec, SecretKeySpec}
+import javax.crypto.{Cipher, KeyGenerator}
 import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceMetadataSecret}
 import stasis.client.encryption.stream.CipherStage
 

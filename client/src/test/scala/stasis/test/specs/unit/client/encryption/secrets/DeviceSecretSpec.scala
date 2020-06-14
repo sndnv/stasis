@@ -3,29 +3,13 @@ package stasis.test.specs.unit.client.encryption.secrets
 import java.nio.file.Paths
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceMetadataSecret, DeviceSecret}
 import stasis.client.encryption.Aes
+import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceMetadataSecret, DeviceSecret}
 import stasis.core.packaging.Crate
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.EncodingHelpers
 
 class DeviceSecretSpec extends AsyncUnitSpec with SecretsConfig with EncodingHelpers {
-  private implicit val system: ActorSystem = ActorSystem(name = "DeviceSecretSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
-
-  private val encryptionIv = "J9vRvveXTnC0iF4ymYbIo5racLWx60CGxcOlklH/qH4xqIKvlsZQyr66bGFxzpYrayRS7iipCVimlYt7BCj7uQ=="
-  private val encryptionKey = "nXT1Bw0YCrk79xgnvlUJ5CZByYD9nuSZo9XQghf1xQU="
-  private val secret = "BOunLSLKxVbluhDSPZ/wWw=="
-
-  private val deviceSecret = DeviceSecret(
-    user = testUser,
-    device = testDevice,
-    secret = secret.decodeFromBase64
-  )
-
-  private val encryptedDeviceSecret = "z+pus9Glc/HssFVWozd+T2iuw4OOM4aeqcdDY+gvG8M=".decodeFromBase64
-
   "A DeviceSecret" should "support encryption" in {
     val encryptionStage = Aes.encryption(
       key = encryptionKey.decodeFromBase64,
@@ -89,4 +73,18 @@ class DeviceSecretSpec extends AsyncUnitSpec with SecretsConfig with EncodingHel
   it should "not render its content via toString" in {
     deviceSecret.toString should be(s"Secret(${deviceSecret.getClass.getName})")
   }
+
+  private implicit val system: ActorSystem = ActorSystem(name = "DeviceSecretSpec")
+
+  private val encryptionIv = "J9vRvveXTnC0iF4ymYbIo5racLWx60CGxcOlklH/qH4xqIKvlsZQyr66bGFxzpYrayRS7iipCVimlYt7BCj7uQ=="
+  private val encryptionKey = "nXT1Bw0YCrk79xgnvlUJ5CZByYD9nuSZo9XQghf1xQU="
+  private val secret = "BOunLSLKxVbluhDSPZ/wWw=="
+
+  private val deviceSecret = DeviceSecret(
+    user = testUser,
+    device = testDevice,
+    secret = secret.decodeFromBase64
+  )
+
+  private val encryptedDeviceSecret = "z+pus9Glc/HssFVWozd+T2iuw4OOM4aeqcdDY+gvG8M=".decodeFromBase64
 }

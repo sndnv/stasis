@@ -2,7 +2,6 @@ package stasis.client.api.clients
 
 import java.time.Instant
 
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
@@ -10,7 +9,7 @@ import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.scaladsl.{Sink, Source}
-import akka.stream.{ActorMaterializer, Materializer, OverflowStrategy, QueueOfferResult}
+import akka.stream.{Materializer, OverflowStrategy, QueueOfferResult}
 import akka.util.ByteString
 import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.encryption.Decoder
@@ -33,20 +32,20 @@ class DefaultServerApiEndpointClient(
   override val self: Device.Id,
   context: Option[HttpsConnectionContext],
   requestBufferSize: Int
-)(implicit system: ActorSystem[SpawnProtocol])
+)(implicit system: ActorSystem[SpawnProtocol.Command])
     extends ServerApiEndpointClient {
   import DefaultServerApiEndpointClient._
   import stasis.shared.api.Formats._
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
   private implicit val ec: ExecutionContext = system.executionContext
 
   override val server: String = apiUrl
 
+  private val http = Http()(system.classicSystem)
+
   private val clientContext: HttpsConnectionContext = context match {
     case Some(context) => context
-    case None          => Http().defaultClientHttpsContext
+    case None          => http.defaultClientHttpsContext
   }
 
   private val queue = Source
@@ -54,7 +53,7 @@ class DefaultServerApiEndpointClient(
       bufferSize = requestBufferSize,
       overflowStrategy = OverflowStrategy.backpressure
     )
-    .via(Http().superPool[Promise[HttpResponse]](connectionContext = clientContext))
+    .via(http.superPool[Promise[HttpResponse]](connectionContext = clientContext))
     .to(
       Sink.foreach {
         case (response, promise) => val _ = promise.complete(response)

@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.shared.api
 
-import java.time.{Instant, LocalDateTime}
 import java.time.temporal.ChronoUnit
+import java.time.{Instant, LocalDateTime}
 
 import akka.actor.Cancellable
 import play.api.libs.json.Json
@@ -63,12 +63,12 @@ class FormatsSpec extends UnitSpec {
     val json =
       s"""
            |{
+           |"id":"${schedule.id}",
+           |"info":"${schedule.info}",
            |"is_public":${schedule.isPublic},
            |"start":"${schedule.start.truncatedTo(ChronoUnit.SECONDS)}",
            |"interval":${schedule.interval.toSeconds},
-           |"id":"${schedule.id}",
-           |"next_invocation":"0",
-           |"info":"${schedule.info}"
+           |"next_invocation":"0"
            |}
       """.stripMargin.replaceAll("\n", "").trim
 

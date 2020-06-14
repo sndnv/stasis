@@ -1,5 +1,6 @@
 package stasis.server.api.routes
 
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
@@ -25,7 +26,7 @@ class Users()(implicit ctx: RoutesContext) extends ApiRoutes {
           get {
             resource[UserStore.View.Privileged] { view =>
               view.list().map { users =>
-                log.debug("User [{}] successfully retrieved [{}] users", currentUser, users.size)
+                log.debugN("User [{}] successfully retrieved [{}] users", currentUser, users.size)
                 discardEntity & complete(users.values)
               }
             }
@@ -35,7 +36,7 @@ class Users()(implicit ctx: RoutesContext) extends ApiRoutes {
               resource[UserStore.Manage.Privileged] { manage =>
                 val user = createRequest.toUser(withSalt = manage.generateSalt())
                 manage.create(user).map { _ =>
-                  log.debug("User [{}] successfully created user [{}]", currentUser, user.id)
+                  log.debugN("User [{}] successfully created user [{}]", currentUser, user.id)
                   complete(CreatedUser(user.id))
                 }
               }
@@ -51,11 +52,11 @@ class Users()(implicit ctx: RoutesContext) extends ApiRoutes {
                 resource[UserStore.View.Privileged] { view =>
                   view.get(userId).map {
                     case Some(user) =>
-                      log.debug("User [{}] successfully retrieved user [{}]", currentUser, userId)
+                      log.debugN("User [{}] successfully retrieved user [{}]", currentUser, userId)
                       discardEntity & complete(user)
 
                     case None =>
-                      log.warning("User [{}] failed to retrieve user [{}]", currentUser, userId)
+                      log.warnN("User [{}] failed to retrieve user [{}]", currentUser, userId)
                       discardEntity & complete(StatusCodes.NotFound)
                   }
                 }
@@ -64,9 +65,9 @@ class Users()(implicit ctx: RoutesContext) extends ApiRoutes {
                 resource[UserStore.Manage.Privileged] { manage =>
                   manage.delete(userId).map { deleted =>
                     if (deleted) {
-                      log.debug("User [{}] successfully deleted user [{}]", currentUser, userId)
+                      log.debugN("User [{}] successfully deleted user [{}]", currentUser, userId)
                     } else {
-                      log.warning("User [{}] failed to delete user [{}]", currentUser, userId)
+                      log.warnN("User [{}] failed to delete user [{}]", currentUser, userId)
                     }
 
                     discardEntity & complete(DeletedUser(existing = deleted))
@@ -105,11 +106,11 @@ class Users()(implicit ctx: RoutesContext) extends ApiRoutes {
               resource[UserStore.View.Self] { view =>
                 view.get(currentUser).map {
                   case Some(user) =>
-                    log.debug("User [{}] successfully retrieved own data", currentUser)
+                    log.debugN("User [{}] successfully retrieved own data", currentUser)
                     discardEntity & complete(user)
 
                   case None =>
-                    log.warning("User [{}] failed to retrieve own data [{}]", currentUser)
+                    log.warnN("User [{}] failed to retrieve own data [{}]", currentUser)
                     discardEntity & complete(StatusCodes.NotFound)
                 }
               }
@@ -119,7 +120,7 @@ class Users()(implicit ctx: RoutesContext) extends ApiRoutes {
             put {
               resource[UserStore.Manage.Self] { manage =>
                 manage.deactivate(currentUser).map { _ =>
-                  log.debug("User [{}] successfully deactivated own account", currentUser)
+                  log.debugN("User [{}] successfully deactivated own account", currentUser)
                   complete(StatusCodes.OK)
                 }
               }
@@ -137,12 +138,12 @@ class Users()(implicit ctx: RoutesContext) extends ApiRoutes {
       view.get(userId).flatMap {
         case Some(user) =>
           manage.update(updateRequest.toUpdatedUser(user)).map { _ =>
-            log.debug("User [{}] successfully updated user [{}]", currentUser, userId)
+            log.debugN("User [{}] successfully updated user [{}]", currentUser, userId)
             complete(StatusCodes.OK)
           }
 
         case None =>
-          log.warning("User [{}] failed to update missing user [{}]", currentUser, userId)
+          log.warnN("User [{}] failed to update missing user [{}]", currentUser, userId)
           Future.successful(complete(StatusCodes.BadRequest))
       }
     }

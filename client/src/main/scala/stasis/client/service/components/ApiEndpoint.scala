@@ -1,8 +1,8 @@
 package stasis.client.service.components
 
-import akka.event.Logging
 import akka.http.scaladsl.Http.ServerBinding
 import akka.util.ByteString
+import org.slf4j.LoggerFactory
 import stasis.client.api.http
 import stasis.client.api.http.HttpApiEndpoint
 import stasis.client.security.DefaultFrontendAuthenticator
@@ -48,10 +48,10 @@ object ApiEndpoint {
         terminateService = () => {
           val _ = akka.pattern.after(
             duration = terminationDelay,
-            using = system.scheduler
+            using = untyped.scheduler
           ) { Future.successful(base.terminateService()) }
         },
-        log = Logging(untyped, this.getClass.getName)
+        log = LoggerFactory.getLogger(this.getClass.getName)
       )
 
       log.debug("Successfully created API token file [{}]", tokenFile)

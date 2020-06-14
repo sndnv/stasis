@@ -3,7 +3,6 @@ package stasis.test.specs.unit.client.model
 import java.util.UUID
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.google.protobuf.InvalidProtocolBufferException
@@ -310,7 +309,6 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
   }
 
   private implicit val system: ActorSystem = ActorSystem(name = "MetadataPushSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 
   private implicit val secretsConfig: Secret.Config = Secret.Config(
     derivation = Secret.DerivationConfig(

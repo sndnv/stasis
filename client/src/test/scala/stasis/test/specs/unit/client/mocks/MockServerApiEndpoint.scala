@@ -1,14 +1,15 @@
 package stasis.test.specs.unit.client.mocks
 
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.event.{Logging, LoggingAdapter}
-import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.stream.ActorMaterializer
+import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
+import akka.stream.{Materializer, SystemMaterializer}
 import akka.util.Timeout
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}
 import stasis.shared.api.responses.{CreatedDatasetDefinition, CreatedDatasetEntry, Ping}
@@ -24,18 +25,15 @@ import scala.util.{Failure, Success}
 class MockServerApiEndpoint(
   expectedCredentials: BasicHttpCredentials,
   definitionsWithoutEntries: Seq[DatasetDefinition.Id] = Seq.empty
-)(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout) {
+)(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout) {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = akka.actor.ActorSystem(name = "MockServerApiEndpoint")
+  private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
-  private val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)
-
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
   private implicit val ec: ExecutionContextExecutor = system.executionContext
 
-  private val http = Http()
+  private val http = Http()(system.classicSystem)
 
   private val entriesStore: MemoryBackend[DatasetEntry.Id, DatasetEntry] =
     MemoryBackend[DatasetDefinition.Id, DatasetEntry](
@@ -60,23 +58,22 @@ class MockServerApiEndpoint(
                     Generators.generateDefinition
                   )
 
-                  log.info("Successfully retrieved definitions [{}]", definitions.map(_.id).mkString(", "))
+                  log.infoN("Successfully retrieved definitions [{}]", definitions.map(_.id).mkString(", "))
 
                   complete(definitions)
                 },
                 post {
-                  entity(as[CreateDatasetDefinition]) {
-                    createRequest =>
-                      val definition = createRequest.toDefinition
-                      onComplete(definitionsStore.put(definition.id, definition)) {
-                        case Success(_) =>
-                          log.info("Successfully created definition [{}]", definition.id)
-                          complete(CreatedDatasetDefinition(definition.id))
+                  entity(as[CreateDatasetDefinition]) { createRequest =>
+                    val definition = createRequest.toDefinition
+                    onComplete(definitionsStore.put(definition.id, definition)) {
+                      case Success(_) =>
+                        log.infoN("Successfully created definition [{}]", definition.id)
+                        complete(CreatedDatasetDefinition(definition.id))
 
-                        case Failure(e) =>
-                          log.error(e, "Failed to create definition [{}]: [{}]", definition.id, e.getMessage)
-                          complete(StatusCodes.InternalServerError)
-                      }
+                      case Failure(e) =>
+                        log.errorN("Failed to create definition [{}]: [{}]", definition.id, e.getMessage, e)
+                        complete(StatusCodes.InternalServerError)
+                    }
                   }
                 }
               )
@@ -84,7 +81,7 @@ class MockServerApiEndpoint(
             path(JavaUUID) { definitionId =>
               get {
                 val definition: DatasetDefinition = Generators.generateDefinition.copy(id = definitionId)
-                log.info("Successfully retrieved definition [{}]", definition.id)
+                log.infoN("Successfully retrieved definition [{}]", definition.id)
                 complete(definition)
               }
             }
@@ -113,7 +110,7 @@ class MockServerApiEndpoint(
                       ).map(_.copy(definition = definitionId))
                     }
 
-                    log.info("Successfully retrieved entries [{}]", entries.map(_.id).mkString(", "))
+                    log.infoN("Successfully retrieved entries [{}]", entries.map(_.id).mkString(", "))
 
                     complete(entries)
 
@@ -124,16 +121,16 @@ class MockServerApiEndpoint(
                         val entry = createRequest.toEntry
                         onComplete(entriesStore.put(entry.id, entry)) {
                           case Success(_) =>
-                            log.info("Successfully created entry [{}]", entry.id)
+                            log.infoN("Successfully created entry [{}]", entry.id)
                             complete(CreatedDatasetEntry(entry.id))
 
                           case Failure(e) =>
-                            log.error(e, "Failed to create entry [{}]: [{}]", entry.id, e.getMessage)
+                            log.errorN("Failed to create entry [{}]: [{}]", entry.id, e.getMessage, e)
                             complete(StatusCodes.InternalServerError)
                         }
 
                       case createRequest =>
-                        log.error(
+                        log.errorN(
                           "Attempted to create entry for definition [{}] but definition [{}] expected",
                           createRequest.definition,
                           definitionId
@@ -145,11 +142,11 @@ class MockServerApiEndpoint(
               },
               path("latest") {
                 if (definitionsWithoutEntries.contains(definitionId)) {
-                  log.warning("No entry found for definition [{}]", definitionId)
+                  log.warnN("No entry found for definition [{}]", definitionId)
                   complete(StatusCodes.NotFound)
                 } else {
                   val entry: DatasetEntry = Generators.generateEntry.copy(definition = definitionId)
-                  log.info("Successfully retrieved latest entry [{}]", entry)
+                  log.infoN("Successfully retrieved latest entry [{}]", entry)
                   complete(entry)
                 }
               }
@@ -158,7 +155,7 @@ class MockServerApiEndpoint(
           path(JavaUUID) { entryId =>
             get {
               val entry: DatasetEntry = Generators.generateEntry.copy(id = entryId)
-              log.info("Successfully retrieved entry [{}]", entry.id)
+              log.infoN("Successfully retrieved entry [{}]", entry.id)
               complete(entry)
             }
           }
@@ -224,7 +221,7 @@ class MockServerApiEndpoint(
         case _ =>
           val _ = request.discardEntityBytes()
 
-          log.warning(
+          log.warnN(
             "Rejecting [{}] request for [{}] with no/invalid credentials",
             method.value,
             uri
@@ -240,11 +237,15 @@ class MockServerApiEndpoint(
   def definitionExists(definition: DatasetDefinition.Id): Future[Boolean] =
     definitionsStore.contains(definition)
 
-  def start(port: Int, context: Option[HttpsConnectionContext] = None): Future[Http.ServerBinding] =
+  def start(port: Int, context: Option[HttpsConnectionContext] = None): Future[Http.ServerBinding] = {
+    implicit val untyped: akka.actor.ActorSystem = system.classicSystem
+    implicit val mat: Materializer = SystemMaterializer(system).materializer
+
     http.bindAndHandle(
       handler = routes,
       interface = "localhost",
       port = port,
       connectionContext = context.getOrElse(ConnectionContext.noEncryption())
     )
+  }
 }

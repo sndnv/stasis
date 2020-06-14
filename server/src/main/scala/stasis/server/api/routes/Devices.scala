@@ -1,6 +1,6 @@
 package stasis.server.api.routes
 
-import scala.concurrent.Future
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
@@ -11,6 +11,8 @@ import stasis.server.security.CurrentUser
 import stasis.shared.api.requests._
 import stasis.shared.api.responses.{CreatedDevice, DeletedDevice}
 import stasis.shared.model.devices.Device
+
+import scala.concurrent.Future
 
 class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
@@ -25,7 +27,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
           get {
             resource[DeviceStore.View.Privileged] { view =>
               view.list().map { devices =>
-                log.debug("User [{}] successfully retrieved [{}] devices", currentUser, devices.size)
+                log.debugN("User [{}] successfully retrieved [{}] devices", currentUser, devices.size)
                 discardEntity & complete(devices.values)
               }
             }
@@ -39,12 +41,12 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                       case Some(owner) =>
                         val device = createRequest.toDevice(owner)
                         deviceManage.create(device).map { _ =>
-                          log.debug("User [{}] successfully created device [{}]", currentUser, device.id)
+                          log.debugN("User [{}] successfully created device [{}]", currentUser, device.id)
                           complete(CreatedDevice(device.id))
                         }
 
                       case None =>
-                        log.warning(
+                        log.warnN(
                           "User [{}] failed to retrieve device owner data for user [{}]",
                           currentUser,
                           createRequest.owner
@@ -64,11 +66,11 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                 resource[DeviceStore.View.Privileged] { view =>
                   view.get(deviceId).map {
                     case Some(device) =>
-                      log.debug("User [{}] successfully retrieved device [{}]", currentUser, deviceId)
+                      log.debugN("User [{}] successfully retrieved device [{}]", currentUser, deviceId)
                       discardEntity & complete(device)
 
                     case None =>
-                      log.warning("User [{}] failed to retrieve device [{}]", currentUser, deviceId)
+                      log.warnN("User [{}] failed to retrieve device [{}]", currentUser, deviceId)
                       discardEntity & complete(StatusCodes.NotFound)
                   }
                 }
@@ -77,9 +79,9 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                 resource[DeviceStore.Manage.Privileged] { manage =>
                   manage.delete(deviceId).map { deleted =>
                     if (deleted) {
-                      log.debug("User [{}] successfully deleted device [{}]", currentUser, deviceId)
+                      log.debugN("User [{}] successfully deleted device [{}]", currentUser, deviceId)
                     } else {
-                      log.warning("User [{}] failed to delete device [{}]", currentUser, deviceId)
+                      log.warnN("User [{}] failed to delete device [{}]", currentUser, deviceId)
                     }
 
                     discardEntity & complete(DeletedDevice(existing = deleted))
@@ -112,7 +114,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
               get {
                 resource[DeviceStore.View.Self] { view =>
                   view.list(currentUser).map { devices =>
-                    log.debug("User [{}] successfully retrieved [{}] devices", currentUser, devices.size)
+                    log.debugN("User [{}] successfully retrieved [{}] devices", currentUser, devices.size)
                     discardEntity & complete(devices.values)
                   }
                 }
@@ -126,12 +128,12 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                           case Some(owner) =>
                             val device = createRequest.toDevice(owner)
                             deviceManage.create(currentUser, device).map { _ =>
-                              log.debug("User [{}] successfully created device [{}]", currentUser, device.id)
+                              log.debugN("User [{}] successfully created device [{}]", currentUser, device.id)
                               complete(CreatedDevice(device.id))
                             }
 
                           case None =>
-                            log.warning("User [{}] failed to retrieve own data", currentUser)
+                            log.warnN("User [{}] failed to retrieve own data", currentUser)
                             Future.successful(complete(StatusCodes.BadRequest))
                         }
                     }
@@ -148,11 +150,11 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                       resource[DeviceStore.View.Self] { view =>
                         view.get(currentUser, deviceId).map {
                           case Some(device) =>
-                            log.debug("User [{}] successfully retrieved device [{}]", currentUser, deviceId)
+                            log.debugN("User [{}] successfully retrieved device [{}]", currentUser, deviceId)
                             discardEntity & complete(device)
 
                           case None =>
-                            log.warning("User [{}] failed to retrieve device [{}]", currentUser, deviceId)
+                            log.warnN("User [{}] failed to retrieve device [{}]", currentUser, deviceId)
                             discardEntity & complete(StatusCodes.NotFound)
                         }
                       }
@@ -161,9 +163,9 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                       resource[DeviceStore.Manage.Self] { manage =>
                         manage.delete(currentUser, deviceId).map { deleted =>
                           if (deleted) {
-                            log.debug("User [{}] successfully deleted device [{}]", currentUser, deviceId)
+                            log.debugN("User [{}] successfully deleted device [{}]", currentUser, deviceId)
                           } else {
-                            log.warning("User [{}] failed to delete device [{}]", currentUser, deviceId)
+                            log.warnN("User [{}] failed to delete device [{}]", currentUser, deviceId)
                           }
 
                           discardEntity & complete(DeletedDevice(existing = deleted))
@@ -203,12 +205,12 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
             userView.get(device.owner).flatMap {
               case Some(owner) =>
                 deviceManage.update(updateRequest.toUpdatedDevice(device, owner)).map { _ =>
-                  log.debug("User [{}] successfully updated device [{}]", currentUser, deviceId)
+                  log.debugN("User [{}] successfully updated device [{}]", currentUser, deviceId)
                   complete(StatusCodes.OK)
                 }
 
               case None =>
-                log.warning(
+                log.warnN(
                   "User [{}] failed to update device [{}]; device owner [{}] not found",
                   currentUser,
                   deviceId,
@@ -218,7 +220,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
             }
 
           case None =>
-            log.warning(
+            log.warnN(
               "User [{}] failed to update device [{}]; device not found",
               currentUser,
               deviceId
@@ -237,12 +239,12 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
           userView.get(currentUser).flatMap {
             case Some(owner) =>
               deviceManage.update(currentUser, updateRequest.toUpdatedDevice(device, owner)).map { _ =>
-                log.debug("User [{}] successfully updated device [{}]", currentUser, deviceId)
+                log.debugN("User [{}] successfully updated device [{}]", currentUser, deviceId)
                 complete(StatusCodes.OK)
               }
 
             case None =>
-              log.warning(
+              log.warnN(
                 "User [{}] failed to update device [{}]; device owner [{}] not found",
                 currentUser,
                 deviceId,
@@ -252,7 +254,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
           }
 
         case None =>
-          log.warning(
+          log.warnN(
             "User [{}] failed to update device [{}]; device not found",
             currentUser,
             deviceId

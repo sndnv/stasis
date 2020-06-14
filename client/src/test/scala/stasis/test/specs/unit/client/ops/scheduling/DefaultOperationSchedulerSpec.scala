@@ -2,10 +2,10 @@ package stasis.test.specs.unit.client.ops.scheduling
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.actor.typed.scaladsl.Behaviors
-import org.scalatest.{Assertion, BeforeAndAfterAll}
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.scalatest.concurrent.Eventually
+import org.scalatest.{Assertion, BeforeAndAfterAll}
 import stasis.client.ops.exceptions.ScheduleRetrievalFailure
 import stasis.client.ops.scheduling.{DefaultOperationScheduler, OperationScheduleAssignment}
 import stasis.shared.model.datasets.DatasetDefinition
@@ -16,8 +16,8 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.client.mocks.{MockOperationExecutor, MockServerApiEndpointClient}
 
-import scala.concurrent.duration._
 import scala.concurrent.Future
+import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
 class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with BeforeAndAfterAll {
@@ -25,7 +25,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
     val scheduler = createScheduler()
 
     managedScheduler(scheduler) {
-      eventually {
+      eventually[Assertion] {
         val schedules = scheduler.schedules.await
 
         schedules.toList match {
@@ -57,7 +57,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
     val scheduler = createScheduler(api = mockApiClient)
 
     managedScheduler(scheduler) {
-      eventually {
+      eventually[Assertion] {
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryCreated) should be(0)
@@ -76,7 +76,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
 
       val _ = scheduler.refresh().await
 
-      eventually {
+      eventually[Assertion] {
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryCreated) should be(0)
@@ -98,7 +98,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
   it should "support stopping itself" in {
     val scheduler = createScheduler()
 
-    eventually {
+    eventually[Assertion] {
       scheduler.schedules.await should not be empty
     }
 
@@ -123,7 +123,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
     val scheduler = createScheduler(api = mockApiClient)
 
     managedScheduler(scheduler) {
-      eventually {
+      eventually[Assertion] {
         val schedules = scheduler.schedules.await
 
         schedules.toList match {
@@ -162,7 +162,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
     val scheduler = createScheduler(executor = mockExecutor, api = mockApiClient)
 
     managedScheduler(scheduler) {
-      eventually {
+      eventually[Assertion] {
         scheduler.schedules.await should not be empty
 
         mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
@@ -189,7 +189,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
     val scheduler = createScheduler(executor = mockExecutor, api = mockApiClient)
 
     managedScheduler(scheduler) {
-      eventually {
+      eventually[Assertion] {
         scheduler.schedules.await should not be empty
 
         await(delay = defaultMinDelay * 2, withSystem = typedSystem)
@@ -219,7 +219,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
     val scheduler = createScheduler(executor = mockExecutor, api = mockApiClient, maxAdditionalDelay = 1.millis)
 
     managedScheduler(scheduler) {
-      eventually {
+      eventually[Assertion] {
         scheduler.schedules.await should not be empty
       }
 
@@ -268,7 +268,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
     )
 
     managedScheduler(scheduler) {
-      eventually {
+      eventually[Assertion] {
         scheduler.schedules.await should not be empty
       }
 
@@ -289,10 +289,10 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
   it should "not execute an operation if it is already active" in {
     val mockExecutor = new MockOperationExecutor() {
       override def startBackupWithRules(definition: DatasetDefinition.Id): Future[Operation.Id] =
-        akka.pattern.after(
-          duration = 1.second,
-          using = typedSystem.scheduler
-        )(super.startBackupWithRules(definition))(typedSystem.executionContext)
+        after(
+          delay = 1.second,
+          using = typedSystem
+        )(super.startBackupWithRules(definition))
     }
 
     val mockApiClient = new MockServerApiEndpointClient(self = Device.generateId()) {
@@ -310,7 +310,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
     )
 
     managedScheduler(scheduler) {
-      eventually {
+      eventually[Assertion] {
         scheduler.schedules.await should not be empty
 
         mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
@@ -327,7 +327,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
       val _ = scheduler.refresh().await
       await(delay = defaultMinDelay, withSystem = typedSystem)
 
-      eventually {
+      eventually[Assertion] {
         scheduler.schedules.await should not be empty
 
         mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
@@ -372,7 +372,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
     managedScheduler(scheduler) {
       await(delay = maxDelay * 2, withSystem = typedSystem)
 
-      eventually {
+      eventually[Assertion] {
         scheduler.schedules.await should not be empty
 
         mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
@@ -404,7 +404,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
     val scheduler = createScheduler(executor = mockExecutor, api = mockApiClient)
 
     managedScheduler(scheduler) {
-      eventually {
+      eventually[Assertion] {
         scheduler.schedules.await should not be empty
 
         mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
@@ -434,7 +434,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
     val scheduler = createScheduler(executor = mockExecutor, api = mockApiClient)
 
     managedScheduler(scheduler) {
-      eventually {
+      eventually[Assertion] {
         scheduler.schedules.await should not be empty
 
         mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
@@ -464,7 +464,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
     val scheduler = createScheduler(executor = mockExecutor, api = mockApiClient)
 
     managedScheduler(scheduler) {
-      eventually {
+      eventually[Assertion] {
         scheduler.schedules.await should not be empty
 
         mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
@@ -494,7 +494,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
     val scheduler = createScheduler(executor = mockExecutor, api = mockApiClient)
 
     managedScheduler(scheduler) {
-      eventually {
+      eventually[Assertion] {
         scheduler.schedules.await should not be empty
 
         mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
@@ -524,7 +524,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
     val scheduler = createScheduler(executor = mockExecutor, api = mockApiClient)
 
     managedScheduler(scheduler) {
-      eventually {
+      eventually[Assertion] {
         scheduler.schedules.await should not be empty
 
         mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
@@ -569,8 +569,8 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
       val _ = scheduler.stop().await
     }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DefaultOperationSchedulerSpec"
   )
 

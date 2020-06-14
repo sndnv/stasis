@@ -1,6 +1,6 @@
 package stasis.client.api.http
 
-import akka.event.LoggingAdapter
+import org.slf4j.Logger
 import stasis.client.api.clients.ServerApiEndpointClient
 import stasis.client.ops.scheduling.{OperationExecutor, OperationScheduler}
 import stasis.client.ops.search.Search
@@ -13,5 +13,5 @@ final case class Context(
   tracker: TrackerView,
   search: Search,
   terminateService: () => Unit,
-  log: LoggingAdapter
+  log: Logger
 )

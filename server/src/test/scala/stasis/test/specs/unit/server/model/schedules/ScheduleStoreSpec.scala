@@ -2,14 +2,15 @@ package stasis.test.specs.unit.server.model.schedules
 
 import java.time.LocalDateTime
 
-import scala.concurrent.duration._
 import akka.Done
-import akka.actor.ActorSystem
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.MockScheduleStore
 
+import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
 class ScheduleStoreSpec extends AsyncUnitSpec {
@@ -145,7 +146,12 @@ class ScheduleStoreSpec extends AsyncUnitSpec {
     }
   }
 
-  private implicit val system: ActorSystem = ActorSystem(name = "ScheduleStoreSpec")
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+    "ScheduleStoreSpec"
+  )
+
+  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
 
   private val mockSchedule = Schedule(
     id = Schedule.generateId(),

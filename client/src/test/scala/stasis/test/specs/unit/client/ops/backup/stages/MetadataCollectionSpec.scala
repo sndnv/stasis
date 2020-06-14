@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.client.ops.backup.stages
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
@@ -139,7 +138,6 @@ class MetadataCollectionSpec extends AsyncUnitSpec {
   }
 
   private implicit val system: ActorSystem = ActorSystem(name = "MetadataCollectionSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 
   private def createProviders(tracker: BackupTracker): Providers = Providers(
     checksum = Checksum.MD5,

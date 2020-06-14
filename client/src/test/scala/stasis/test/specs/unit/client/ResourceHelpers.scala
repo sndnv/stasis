@@ -1,8 +1,7 @@
 package stasis.test.specs.unit.client
 
-import java.nio.file.{FileSystem, FileVisitOption, Files, Path, Paths}
+import java.nio.file._
 
-import scala.collection.JavaConverters._
 import akka.Done
 import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Source}
@@ -13,6 +12,7 @@ import stasis.client.model.EntityMetadata
 import stasis.client.service.ApplicationDirectory
 import stasis.core.packaging.Crate
 
+import scala.collection.JavaConverters._
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 trait ResourceHelpers {

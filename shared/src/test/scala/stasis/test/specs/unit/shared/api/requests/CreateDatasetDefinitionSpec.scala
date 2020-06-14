@@ -1,11 +1,11 @@
 package stasis.test.specs.unit.shared.api.requests
 
-import scala.concurrent.duration._
-
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.devices.Device
 import stasis.test.specs.unit.UnitSpec
+
+import scala.concurrent.duration._
 
 class CreateDatasetDefinitionSpec extends UnitSpec {
   it should "convert requests to definitions" in {

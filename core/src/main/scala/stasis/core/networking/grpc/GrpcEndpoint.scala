@@ -4,16 +4,16 @@ import java.util.UUID
 
 import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.event.Logging
-import akka.grpc.Codecs
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.grpc.scaladsl.{GrpcExceptionHandler, GrpcMarshalling}
 import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.model.Uri.Path.Segment
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
 import akka.http.scaladsl.{ConnectionContext, Http, Http2}
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
+import akka.stream.{Materializer, SystemMaterializer}
+import org.slf4j.LoggerFactory
 import stasis.core.networking.Endpoint
 import stasis.core.networking.exceptions.{CredentialsFailure, EndpointFailure, ReservationFailure}
 import stasis.core.packaging.Manifest
@@ -33,10 +33,10 @@ class GrpcEndpoint(
 
   import internal.Implicits._
 
+  private implicit val mat: Materializer = SystemMaterializer(system).materializer
   private implicit val ec: ExecutionContext = system.dispatcher
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 
-  private val log = Logging(system, this.getClass.getName)
+  private val log = LoggerFactory.getLogger(this.getClass.getName)
 
   def start(interface: String, port: Int, connectionContext: ConnectionContext): Future[Http.ServerBinding] =
     Http2().bindAndHandleAsync(
@@ -53,12 +53,12 @@ class GrpcEndpoint(
           .reserve(storageRequest)
           .map {
             case Some(reservation) =>
-              log.debug("Reservation created for node [{}]: [{}]", node, reservation)
+              log.debugN("Reservation created for node [{}]: [{}]", node, reservation)
               proto.ReserveResponse().withReservation(reservation.id)
 
             case None =>
               val message = s"Reservation rejected for node [$node]"
-              log.warning(message)
+              log.warn(message)
               proto.ReserveResponse().withFailure(ReservationFailure(message))
           }
           .recover {
@@ -127,11 +127,11 @@ class GrpcEndpoint(
           .pull(crateId)
           .flatMap {
             case Some(source) =>
-              log.debug("Node [{}] pulling crate [{}]", node, crateId)
+              log.debugN("Node [{}] pulling crate [{}]", node, crateId)
               Future.successful(source.map(proto.PullChunk(request.crate, _)))
 
             case None =>
-              log.warning("Node [{}] failed to pull crate [{}]", node, crateId)
+              log.warnN("Node [{}] failed to pull crate [{}]", node, crateId)
               Future.successful(Source.empty[proto.PullChunk])
           }
 
@@ -149,7 +149,7 @@ class GrpcEndpoint(
         router
           .discard(crateId)
           .map { _ =>
-            log.debug("Node [{}] discarded crate [{}]", node, crateId)
+            log.debugN("Node [{}] discarded crate [{}]", node, crateId)
             proto.DiscardResponse().withComplete(proto.Complete())
           }
           .recover {
@@ -170,40 +170,43 @@ class GrpcEndpoint(
 
     request.uri.path match {
       case Path.Slash(Segment(proto.StasisEndpoint.name, Path.Slash(Segment(method, Path.Empty)))) =>
-        val response = method match {
-          case "Reserve" =>
-            val responseCodec = Codecs.negotiate(request)
-            GrpcMarshalling
-              .unmarshal(request)(ReserveRequestSerializer, mat)
-              .flatMap(reserve(node, _))
-              .map(e => GrpcMarshalling.marshal(e)(ReserveResponseSerializer, mat, responseCodec, system))
+        GrpcMarshalling
+          .negotiated(
+            req = request,
+            f = (reader, writer) => {
+              val response = method match {
+                case "Reserve" =>
+                  GrpcMarshalling
+                    .unmarshal(request.entity.dataBytes)(ReserveRequestSerializer, mat, reader)
+                    .flatMap(reserve(node, _))
+                    .map(e => GrpcMarshalling.marshal(e)(ReserveResponseSerializer, writer, system))
 
-          case "Push" =>
-            val responseCodec = Codecs.negotiate(request)
-            GrpcMarshalling
-              .unmarshalStream(request)(PushChunkSerializer, mat)
-              .flatMap(push(node, _))
-              .map(e => GrpcMarshalling.marshal(e)(PushResponseSerializer, mat, responseCodec, system))
+                case "Push" =>
+                  GrpcMarshalling
+                    .unmarshalStream(request.entity.dataBytes)(PushChunkSerializer, mat, reader)
+                    .flatMap(push(node, _))
+                    .map(e => GrpcMarshalling.marshal(e)(PushResponseSerializer, writer, system))
 
-          case "Pull" =>
-            val responseCodec = Codecs.negotiate(request)
-            GrpcMarshalling
-              .unmarshal(request)(PullRequestSerializer, mat)
-              .flatMap(pull(node, _))
-              .map(e => GrpcMarshalling.marshalStream(e)(PullChunkSerializer, mat, responseCodec, system))
+                case "Pull" =>
+                  GrpcMarshalling
+                    .unmarshal(request.entity.dataBytes)(PullRequestSerializer, mat, reader)
+                    .flatMap(pull(node, _))
+                    .map(e => GrpcMarshalling.marshalStream(e)(PullChunkSerializer, writer, system))
 
-          case "Discard" =>
-            val responseCodec = Codecs.negotiate(request)
-            GrpcMarshalling
-              .unmarshal(request)(DiscardRequestSerializer, mat)
-              .flatMap(discard(node, _))
-              .map(e => GrpcMarshalling.marshal(e)(DiscardResponseSerializer, mat, responseCodec, system))
+                case "Discard" =>
+                  GrpcMarshalling
+                    .unmarshal(request.entity.dataBytes)(DiscardRequestSerializer, mat, reader)
+                    .flatMap(discard(node, _))
+                    .map(e => GrpcMarshalling.marshal(e)(DiscardResponseSerializer, writer, system))
 
-          case _ =>
-            Future.successful(HttpResponse(StatusCodes.MethodNotAllowed))
-        }
+                case _ =>
+                  Future.successful(HttpResponse(StatusCodes.MethodNotAllowed))
+              }
 
-        response.recoverWith(GrpcExceptionHandler.default)
+              response.recoverWith(GrpcExceptionHandler.default(system, writer))
+            }
+          )
+          .getOrElse(Future.successful(HttpResponse(StatusCodes.UnsupportedMediaType)))
 
       case _ =>
         Future.successful(HttpResponse(StatusCodes.NotFound))
@@ -224,12 +227,7 @@ class GrpcEndpoint(
     response
       .recover {
         case CredentialsFailure(failure) =>
-          log.warning(
-            "Rejecting request for [{}]: [{}]",
-            request.uri,
-            failure
-          )
-
+          log.warnN("Rejecting request for [{}]: [{}]", request.uri, failure)
           HttpResponse(StatusCodes.Unauthorized)
       }
 

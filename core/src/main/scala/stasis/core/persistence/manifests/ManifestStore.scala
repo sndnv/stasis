@@ -1,10 +1,10 @@
 package stasis.core.persistence.manifests
 
-import scala.concurrent.Future
-
 import akka.Done
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.backends.KeyValueBackend
+
+import scala.concurrent.Future
 
 trait ManifestStore { store =>
   def put(manifest: Manifest): Future[Done]

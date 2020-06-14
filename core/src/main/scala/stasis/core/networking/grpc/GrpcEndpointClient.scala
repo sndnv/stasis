@@ -2,14 +2,14 @@ package stasis.core.networking.grpc
 
 import java.util.UUID
 
-import akka.actor.ActorSystem
-import akka.event.Logging
+import akka.actor.typed.scaladsl.LoggerOps
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.scaladsl.HttpsConnectionContext
 import akka.http.scaladsl.model.headers.HttpCredentials
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
+import org.slf4j.LoggerFactory
 import stasis.core.networking.EndpointClient
 import stasis.core.networking.exceptions.{CredentialsFailure, EndpointFailure}
 import stasis.core.networking.grpc.internal.Client
@@ -23,22 +23,21 @@ import scala.util.control.NonFatal
 class GrpcEndpointClient(
   override protected val credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials],
   context: Option[HttpsConnectionContext]
-)(implicit system: ActorSystem)
+)(implicit system: ActorSystem[SpawnProtocol.Command])
     extends EndpointClient[GrpcEndpointAddress, HttpCredentials] {
 
   import internal.Implicits._
 
-  private implicit val ec: ExecutionContext = system.dispatcher
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
+  private implicit val ec: ExecutionContext = system.executionContext
 
-  private val log = Logging(system, this.getClass.getName)
+  private val log = LoggerFactory.getLogger(this.getClass.getName)
 
   override def push(
     address: GrpcEndpointAddress,
     manifest: Manifest,
     content: Source[ByteString, NotUsed]
   ): Future[Done] = {
-    log.debug("Pushing to endpoint [{}] content with manifest [{}]", address.host, manifest)
+    log.debugN("Pushing to endpoint [{}] content with manifest [{}]", address.host, manifest)
 
     credentials
       .provide(address)
@@ -66,7 +65,7 @@ class GrpcEndpointClient(
     address: GrpcEndpointAddress,
     manifest: Manifest
   ): Future[Sink[ByteString, Future[Done]]] = {
-    log.debug("Building content sink for endpoint [{}] with manifest [{}]", address.host, manifest)
+    log.debugN("Building content sink for endpoint [{}] with manifest [{}]", address.host, manifest)
 
     credentials
       .provide(address)
@@ -101,7 +100,7 @@ class GrpcEndpointClient(
     address: GrpcEndpointAddress,
     crate: Crate.Id
   ): Future[Option[Source[ByteString, NotUsed]]] = {
-    log.debug("Pulling from endpoint [{}] crate with ID [{}]", address.host, crate)
+    log.debugN("Pulling from endpoint [{}] crate with ID [{}]", address.host, crate)
 
     val client = internal.Client(address, context)
 
@@ -124,11 +123,11 @@ class GrpcEndpointClient(
           .map(stream => (stream._1.toList, stream._2))
           .mapAsync(parallelism = 1) {
             case (head :: Nil, tail) =>
-              log.debug("Endpoint [{}] responded to pull with content for crate [{}]", address.host, crate)
+              log.debugN("Endpoint [{}] responded to pull with content for crate [{}]", address.host, crate)
               Future.successful(Some(Source.single(head) ++ tail))
 
             case _ =>
-              log.warning("Endpoint [{}] responded to pull with no content for crate [{}]", address.host, crate)
+              log.warnN("Endpoint [{}] responded to pull with no content for crate [{}]", address.host, crate)
               Future.successful(None)
           }
           .runWith(Sink.head)
@@ -136,7 +135,7 @@ class GrpcEndpointClient(
             case NonFatal(e) =>
               val exceptionMessage = e.getMessage.replaceAll("\r", "").replaceAll("\n", "; ")
               val message = s"Pull from endpoint [${address.host}] failed for crate [$crate]: [$exceptionMessage]"
-              log.warning(message)
+              log.warn(message)
               Future.failed(EndpointFailure(message))
           }
       }
@@ -146,7 +145,7 @@ class GrpcEndpointClient(
     address: GrpcEndpointAddress,
     crate: Crate.Id
   ): Future[Boolean] = {
-    log.debug("Discarding from endpoint [{}] crate with ID [{}]", address.host, crate)
+    log.debugN("Discarding from endpoint [{}] crate with ID [{}]", address.host, crate)
 
     val client = internal.Client(address, context)
 
@@ -167,7 +166,7 @@ class GrpcEndpointClient(
           .flatMap { response =>
             response.result.complete match {
               case Some(_) =>
-                log.debug("Endpoint [{}] completed discard for crate [{}]", address.host, crate)
+                log.debugN("Endpoint [{}] completed discard for crate [{}]", address.host, crate)
                 Future.successful(true)
 
               case None =>
@@ -177,7 +176,7 @@ class GrpcEndpointClient(
           .recoverWith {
             case NonFatal(e) =>
               val message = s"Discard from endpoint [${address.host}] failed for crate [$crate]: [${e.getMessage}]"
-              log.warning(message)
+              log.warnN(message)
               Future.successful(false)
           }
       }
@@ -217,7 +216,7 @@ class GrpcEndpointClient(
         case NonFatal(e) =>
           val message =
             s"Reservation on endpoint [${address.host}] failed for crate [${manifest.crate}]: [${e.getMessage}]"
-          log.warning(message)
+          log.warn(message)
           Future.failed(EndpointFailure(message))
       }
   }
@@ -236,7 +235,7 @@ class GrpcEndpointClient(
       .flatMap { response =>
         response.result.complete match {
           case Some(_) =>
-            log.debug("Endpoint [{}] completed push for crate [{}]", address.host, manifest.crate)
+            log.debugN("Endpoint [{}] completed push for crate [{}]", address.host, manifest.crate)
             Future.successful(Done)
 
           case None =>
@@ -247,7 +246,7 @@ class GrpcEndpointClient(
         case NonFatal(e) =>
           val message =
             s"Push to endpoint [${address.host}] failed for crate [${manifest.crate}]: [${e.getMessage}]"
-          log.warning(message)
+          log.warn(message)
           Future.failed(EndpointFailure(message))
       }
 }
@@ -255,7 +254,7 @@ class GrpcEndpointClient(
 object GrpcEndpointClient {
   def apply(
     credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials]
-  )(implicit system: ActorSystem): GrpcEndpointClient =
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): GrpcEndpointClient =
     new GrpcEndpointClient(
       credentials = credentials,
       context = None
@@ -264,7 +263,7 @@ object GrpcEndpointClient {
   def apply(
     credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials],
     context: HttpsConnectionContext
-  )(implicit system: ActorSystem): GrpcEndpointClient =
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): GrpcEndpointClient =
     new GrpcEndpointClient(
       credentials = credentials,
       context = Some(context)

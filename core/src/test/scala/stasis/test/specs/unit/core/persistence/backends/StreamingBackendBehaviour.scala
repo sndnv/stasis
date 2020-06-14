@@ -2,7 +2,6 @@ package stasis.test.specs.unit.core.persistence.backends
 
 import akka.Done
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import stasis.core.persistence.backends.StreamingBackend
@@ -12,7 +11,6 @@ import scala.concurrent.Future
 
 trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
   protected implicit val system: ActorSystem = ActorSystem(name = "StreamingBackendBehaviour")
-  protected implicit val mat: ActorMaterializer = ActorMaterializer()
 
   def streamingBackend[B <: StreamingBackend](
     createBackend: () => B,

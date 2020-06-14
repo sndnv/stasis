@@ -4,10 +4,6 @@ import java.nio.channels.FileChannel
 import java.nio.file.{Path, StandardOpenOption}
 import java.nio.{ByteBuffer, ByteOrder}
 
-import scala.collection.mutable
-import scala.concurrent.{Future, Promise}
-import scala.util.control.NonFatal
-
 import akka.Done
 import akka.stream._
 import akka.stream.scaladsl.Source
@@ -15,6 +11,10 @@ import akka.stream.stage.{GraphStageLogic, GraphStageWithMaterializedValue, OutH
 import akka.util.ByteString
 import stasis.core.persistence.backends.file.container.exceptions.ContainerSourceFailure
 import stasis.core.persistence.backends.file.container.{CrateChunk, CrateChunkDescriptor}
+
+import scala.collection.mutable
+import scala.concurrent.{Future, Promise}
+import scala.util.control.NonFatal
 
 @SuppressWarnings(
   Array(

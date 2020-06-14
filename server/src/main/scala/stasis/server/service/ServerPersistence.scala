@@ -15,7 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ServerPersistence(
   persistenceConfig: typesafe.Config,
-)(implicit system: ActorSystem[SpawnProtocol]) {
+)(implicit system: ActorSystem[SpawnProtocol.Command]) {
   private implicit val ec: ExecutionContext = system.executionContext
 
   val profile: JdbcProfile = SlickProfile(profile = persistenceConfig.getString("database.profile"))

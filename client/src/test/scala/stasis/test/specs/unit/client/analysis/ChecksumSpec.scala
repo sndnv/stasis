@@ -1,17 +1,11 @@
 package stasis.test.specs.unit.client.analysis
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import stasis.client.analysis.Checksum
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 
 class ChecksumSpec extends AsyncUnitSpec with ResourceHelpers {
-  private implicit val system: ActorSystem = ActorSystem(name = "ChecksumSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
-
-  private val sourceFile = "/analysis/digest-source-file".asTestResource
-
   "A Checksum implementation" should "calculate digest checksums for files" in {
     val expectedChecksum = BigInt(
       "39848954327861382298906397279462496107584551024072291" +
@@ -72,4 +66,8 @@ class ChecksumSpec extends AsyncUnitSpec with ResourceHelpers {
     Checksum(checksum = "sha1") should be(Checksum.SHA1)
     Checksum(checksum = "sha256") should be(Checksum.SHA256)
   }
+
+  private implicit val system: ActorSystem = ActorSystem(name = "ChecksumSpec")
+
+  private val sourceFile = "/analysis/digest-source-file".asTestResource
 }

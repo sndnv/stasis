@@ -19,7 +19,7 @@ trait ManageFixtures { _: RouteTest =>
     expiration: FiniteDuration = 3.seconds,
     withOwnerScopes: Seq[String] =
       stasis.test.Generators.generateSeq(min = 1, g = stasis.test.Generators.generateString(withSize = 10))
-  ) = Providers(
+  ): Providers = Providers(
     apiStore = ApiStore(
       MemoryBackend[Api.Id, Api](name = s"api-store-${java.util.UUID.randomUUID()}")
     ),
@@ -42,7 +42,7 @@ trait ManageFixtures { _: RouteTest =>
         name = s"token-directory-${java.util.UUID.randomUUID()}"
       )
     ),
-    ownerAuthenticator = (_: OAuth2BearerToken) =>
-      Future.successful(Generators.generateResourceOwner.copy(allowedScopes = withOwnerScopes))
+    ownerAuthenticator =
+      (_: OAuth2BearerToken) => Future.successful(Generators.generateResourceOwner.copy(allowedScopes = withOwnerScopes))
   )
 }

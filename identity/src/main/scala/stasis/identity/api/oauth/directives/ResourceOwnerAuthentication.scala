@@ -42,7 +42,7 @@ trait ResourceOwnerAuthentication extends EntityDiscardingDirectives {
       unauthorizedResponse = if (noRedirect) {
         complete(
           StatusCodes.Unauthorized,
-          AuthorizationError.AccessDenied(state)
+          AuthorizationError.AccessDenied(state): AuthorizationError
         )
       } else {
         redirect(

@@ -3,11 +3,9 @@ package stasis.test.specs.unit.client.tracking.trackers
 import java.nio.file.Paths
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.scaladsl.Sink
-import akka.stream.{ActorMaterializer, Materializer}
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{Assertion, BeforeAndAfterAll}
 import org.scalatest.concurrent.Eventually
 import stasis.client.tracking.TrackerView
 import stasis.client.tracking.trackers.DefaultTracker
@@ -41,7 +39,7 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
     tracker.backup.failureEncountered(failure = new RuntimeException("test failure"))
     tracker.backup.completed()
 
-    eventually {
+    eventually[Assertion] {
       val completedState = tracker.state.await.operations(operation)
 
       completedState.completed should not be empty
@@ -82,7 +80,7 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
     tracker.recovery.failureEncountered(failure = new RuntimeException("test failure"))
     tracker.recovery.completed()
 
-    eventually {
+    eventually[Assertion] {
       val completedState = tracker.state.await.operations(operation)
 
       completedState.completed should not be empty
@@ -120,7 +118,7 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
     tracker.server.reachable(server2)
     tracker.server.unreachable(server1)
 
-    eventually {
+    eventually[Assertion] {
       tracker.state.await.servers.mapValues(_.reachable) should be(
         Map(
           server1 -> false,
@@ -211,12 +209,10 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DefaultTrackerSpec"
   )
-
-  private implicit val mat: Materializer = ActorMaterializer()(system.toUntyped)
 
   override protected def afterAll(): Unit =
     system.terminate()

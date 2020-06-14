@@ -4,14 +4,12 @@ import java.nio.file.Paths
 import java.time.Instant
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import akka.{Done, NotUsed}
+import org.scalatest.{Assertion, BeforeAndAfterAll}
 import org.scalatest.concurrent.Eventually
-import org.scalatest.BeforeAndAfterAll
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.collection.BackupCollector
@@ -20,8 +18,8 @@ import stasis.client.compression.Gzip
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.{DeviceMetadataSecret, DeviceSecret, Secret}
 import stasis.client.model.{DatasetMetadata, FilesystemMetadata}
-import stasis.client.ops.backup.{Backup, Providers}
 import stasis.client.ops.ParallelismConfig
+import stasis.client.ops.backup.{Backup, Providers}
 import stasis.client.staging.DefaultFileStaging
 import stasis.core.routing.Node
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
@@ -84,7 +82,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     )
 
     backup.start().map { _ =>
-      eventually {
+      eventually[Assertion] {
         // dataset entry for backup created; metadata crate pushed
         // /ops directory is unchanged
         // /ops/source-file-1 has metadata changes only; /ops/source-file-2 is unchanged; crate for /ops/source-file-3 pushed;
@@ -159,7 +157,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     )
 
     backup.start().map { _ =>
-      eventually {
+      eventually[Assertion] {
         // dataset entry for backup created; metadata crate pushed
         // source-file-1 has metadata changes only; source-file-2 is unchanged; crate for source-file-3 pushed;
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved) should be(0)
@@ -228,7 +226,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     )
 
     backup.start().map { _ =>
-      eventually {
+      eventually[Assertion] {
         // dataset entry for backup created; metadata crate pushed
         // source-file-1 has metadata changes only; source-file-2 is unchanged; third file is invalid/missing;
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved) should be(0)
@@ -273,7 +271,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
       .map { result =>
         result should be(Done)
 
-        eventually {
+        eventually[Assertion] {
           mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
@@ -302,7 +300,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         case NonFatal(e) =>
           e shouldBe a[RuntimeException]
 
-          eventually {
+          eventually[Assertion] {
             mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
             mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
             mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
@@ -334,7 +332,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     val _ = backup.start()
     backup.stop()
 
-    eventually {
+    eventually[Assertion] {
       mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
     }
   }
@@ -474,14 +472,10 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "BackupSpec"
   )
-
-  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.toUntyped
-
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 
   private implicit val parallelismConfig: ParallelismConfig = ParallelismConfig(value = 1)
 

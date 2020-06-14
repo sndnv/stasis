@@ -7,6 +7,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
 import org.mockito.scalatest.AsyncMockitoSugar
+import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 import stasis.client.service.components.Files
 import stasis.client.service.components.exceptions.ServiceStartupFailure
@@ -60,7 +61,7 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       override protected def console: Option[Console] = Some(mockConsole(username, password))
     }
 
-    eventually {
+    eventually[Assertion] {
       service.state should be(Service.State.Started)
     }
 
@@ -119,7 +120,7 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val request = HttpRequest(method = HttpMethods.GET, uri = s"http://localhost:$initEndpointPort/init")
 
     if (!service.isConsoleAvailable) {
-      eventually {
+      eventually[Assertion] {
         Http().singleRequest(request).await.status should be(StatusCodes.OK)
       }
 
@@ -159,7 +160,7 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       override protected def console: Option[Console] = Some(mockConsole(username, password = "invalid-password"))
     }
 
-    eventually {
+    eventually[Assertion] {
       service.state match {
         case Service.State.StartupFailed(e: ServiceStartupFailure) =>
           e.cause should be("credentials")
@@ -188,7 +189,7 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       override protected def console: Option[Console] = Some(mockConsole(username, password))
     }
 
-    eventually {
+    eventually[Assertion] {
       service.state match {
         case Service.State.StartupFailed(e: ServiceStartupFailure) =>
           e.cause should be("config")
@@ -217,7 +218,7 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       override protected def console: Option[Console] = Some(mockConsole(username, password))
     }
 
-    eventually {
+    eventually[Assertion] {
       service.state match {
         case Service.State.StartupFailed(e: ServiceStartupFailure) =>
           e.cause should be("unknown")

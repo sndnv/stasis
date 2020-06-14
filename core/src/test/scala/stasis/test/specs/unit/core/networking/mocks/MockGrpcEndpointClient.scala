@@ -1,6 +1,5 @@
 package stasis.test.specs.unit.core.networking.mocks
 
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
@@ -11,11 +10,11 @@ import stasis.core.packaging.Crate
 
 import scala.concurrent.Future
 
-class MockGrpcEndpointClient()(implicit system: ActorSystem[SpawnProtocol])
+class MockGrpcEndpointClient()(implicit system: ActorSystem[SpawnProtocol.Command])
     extends GrpcEndpointClient(
       (_: GrpcEndpointAddress) => Future.failed(new RuntimeException("No credentials available")),
       context = None
-    )(system.toUntyped) {
+    ) {
   override def push(
     address: GrpcEndpointAddress,
     manifest: packaging.Manifest,

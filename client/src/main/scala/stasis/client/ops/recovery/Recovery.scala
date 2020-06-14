@@ -3,39 +3,36 @@ package stasis.client.ops.recovery
 import java.nio.file.{FileSystem, FileSystems, Path}
 import java.time.Instant
 
-import akka.{Done, NotUsed}
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.actor.typed.scaladsl.adapter._
 import akka.stream._
 import akka.stream.scaladsl.{Keep, Sink, Source}
+import akka.{Done, NotUsed}
 import stasis.client.collection.{RecoveryCollector, RecoveryMetadataCollector}
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.{DatasetMetadata, TargetEntity}
-import stasis.client.ops.recovery.stages.{EntityCollection, EntityProcessing, MetadataApplication}
 import stasis.client.ops.ParallelismConfig
+import stasis.client.ops.recovery.stages.{EntityCollection, EntityProcessing, MetadataApplication}
 import stasis.client.tracking.RecoveryTracker
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.ops.Operation
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 import scala.util.matching.Regex
+import scala.util.{Failure, Success}
 
 class Recovery(
   descriptor: Recovery.Descriptor
-)(implicit system: ActorSystem[SpawnProtocol], parallelism: ParallelismConfig, providers: Providers)
+)(implicit system: ActorSystem[SpawnProtocol.Command], parallelism: ParallelismConfig, providers: Providers)
     extends Operation { parent =>
   import Recovery._
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
+  private implicit val mat: Materializer = SystemMaterializer(system).materializer
 
-  private implicit val mat: Materializer = ActorMaterializer(
-    ActorMaterializerSettings(untypedSystem).withSupervisionStrategy { e =>
-      system.log.error(e, "Recovery stream encountered failure: [{}: {}]; resuming", e.getClass.getSimpleName, e.getMessage)
-      providers.track.failureEncountered(failure = e)
-      Supervision.Resume
-    }
-  )
+  private val supervision: Supervision.Decider = { e =>
+    system.log.error("Recovery stream encountered failure: [{}: {}]; resuming", e.getClass.getSimpleName, e.getMessage, e)
+    providers.track.failureEncountered(failure = e)
+    Supervision.Resume
+  }
 
   private implicit val ec: ExecutionContext = system.executionContext
 
@@ -50,6 +47,7 @@ class Recovery(
       .via(stages.entityProcessing)
       .via(stages.metadataApplication)
       .viaMat(KillSwitches.single)(Keep.right[NotUsed, UniqueKillSwitch])
+      .withAttributes(ActorAttributes.supervisionStrategy(supervision))
       .preMaterialize()
 
   override def start(): Future[Done] =

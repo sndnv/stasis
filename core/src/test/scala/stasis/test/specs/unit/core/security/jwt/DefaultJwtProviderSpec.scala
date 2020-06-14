@@ -42,7 +42,7 @@ class DefaultJwtProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
       response1 <- provider.provide(scope = client)
       response2 <- provider.provide(scope = client)
       response3 <- provider.provide(scope = client)
-      _ <- akka.pattern.after(waitDelay, system.scheduler)(Future.successful(Done))
+      _ <- after(waitDelay, system)(Future.successful(Done))
       response4 <- provider.provide(scope = client)
       response5 <- provider.provide(scope = client)
     } yield {
@@ -56,8 +56,8 @@ class DefaultJwtProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
     }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DefaultJwtProviderSpec"
   )
 

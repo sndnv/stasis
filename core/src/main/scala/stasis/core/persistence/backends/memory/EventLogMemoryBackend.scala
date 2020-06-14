@@ -1,12 +1,10 @@
 package stasis.core.persistence.backends.memory
 
-import akka.actor.Scheduler
+import akka.actor.typed._
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
-import akka.actor.typed.{ActorRef, ActorSystem, Behavior, SpawnProtocol}
+import akka.stream.{CompletionStrategy, OverflowStrategy}
 import akka.stream.scaladsl.Source
-import akka.stream.{ActorMaterializer, Materializer, OverflowStrategy}
 import akka.util.Timeout
 import akka.{Done, NotUsed}
 import stasis.core.persistence.backends.EventLogBackend
@@ -18,14 +16,11 @@ import scala.reflect.ClassTag
 class EventLogMemoryBackend[E, S] private (
   storeRef: Future[ActorRef[EventLogMemoryBackend.Message[E, S]]],
   stateStreamBufferSize: Int
-)(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout, tag: ClassTag[S])
+)(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout, tag: ClassTag[S])
     extends EventLogBackend[E, S] {
   import EventLogMemoryBackend._
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
   private implicit val ec: ExecutionContext = system.executionContext
-  private implicit val scheduler: Scheduler = system.scheduler
-  private implicit val mat: Materializer = ActorMaterializer()
 
   override def getState: Future[S] =
     storeRef.flatMap(_ ? (ref => GetState(ref)))
@@ -33,12 +28,14 @@ class EventLogMemoryBackend[E, S] private (
   override def getStateStream: Source[S, NotUsed] = {
     val (actor, source) = Source
       .actorRef[S](
+        completionMatcher = PartialFunction.empty[Any, CompletionStrategy],
+        failureMatcher = PartialFunction.empty[Any, Throwable],
         bufferSize = stateStreamBufferSize,
         overflowStrategy = OverflowStrategy.dropHead
       )
       .preMaterialize()
 
-    val _ = untypedSystem.eventStream.subscribe(subscriber = actor, channel = tag.runtimeClass)
+    val _ = system.classicSystem.eventStream.subscribe(subscriber = actor, channel = tag.runtimeClass)
 
     source
   }
@@ -56,19 +53,18 @@ object EventLogMemoryBackend {
   def apply[E, S: ClassTag](
     name: String,
     initialState: => S
-  )(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout): EventLogMemoryBackend[E, S] =
+  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): EventLogMemoryBackend[E, S] =
     apply(name = name, stateStreamBufferSize = DefaultStreamBufferSize, initialState = initialState)
 
   def apply[E, S: ClassTag](
     name: String,
     stateStreamBufferSize: Int,
     initialState: => S
-  )(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout): EventLogMemoryBackend[E, S] = {
-    implicit val scheduler: Scheduler = system.scheduler
-
+  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): EventLogMemoryBackend[E, S] = {
     val behaviour = store(state = initialState, events = Queue.empty[E])
+
     new EventLogMemoryBackend[E, S](
-      storeRef = system ? SpawnProtocol.Spawn(behaviour, name),
+      storeRef = system ? (SpawnProtocol.Spawn(behaviour, name, Props.empty, _)),
       stateStreamBufferSize = stateStreamBufferSize
     )
   }
@@ -96,7 +92,7 @@ object EventLogMemoryBackend {
     message match {
       case StoreEventAndUpdateState(event, update, replyTo) =>
         val updated = update(event, state)
-        context.system.toUntyped.eventStream.publish(updated)
+        context.system.classicSystem.eventStream.publish(updated)
 
         replyTo ! Done
         store(state = updated, events = events :+ event)
