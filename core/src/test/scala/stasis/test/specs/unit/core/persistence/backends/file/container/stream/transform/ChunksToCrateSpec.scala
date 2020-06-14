@@ -3,7 +3,6 @@ package stasis.test.specs.unit.core.persistence.backends.file.container.stream.t
 import java.util.UUID
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import stasis.core.persistence.backends.file.container.CrateChunk
@@ -13,7 +12,6 @@ import stasis.test.specs.unit.AsyncUnitSpec
 
 class ChunksToCrateSpec extends AsyncUnitSpec {
   private implicit val system: ActorSystem = ActorSystem(name = "CrateChunkSinkSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 
   "A ChunksToCrate" should "map chunks to crates" in {
     val crateId = UUID.randomUUID()

@@ -12,7 +12,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class MockNodeStore(
   replacementNodes: Map[Node.Id, Option[Node]] = Map.empty
-)(implicit system: ActorSystem[SpawnProtocol])
+)(implicit system: ActorSystem[SpawnProtocol.Command])
     extends NodeStore {
   private type StoreKey = Node.Id
   private type StoreValue = Node
@@ -20,8 +20,7 @@ class MockNodeStore(
   private implicit val timeout: Timeout = 3.seconds
   private implicit val ec: ExecutionContext = system.executionContext
 
-  private val store =
-    MemoryBackend.typed[StoreKey, StoreValue](name = s"mock-node-store-${java.util.UUID.randomUUID()}")
+  private val store = MemoryBackend[StoreKey, StoreValue](name = s"mock-node-store-${java.util.UUID.randomUUID()}")
 
   override def put(node: Node): Future[Done] = store.put(node.id, node)
 

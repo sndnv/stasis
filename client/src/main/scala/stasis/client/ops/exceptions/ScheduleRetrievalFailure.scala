@@ -1,3 +1,3 @@
 package stasis.client.ops.exceptions
 
-final case class ScheduleRetrievalFailure(val message: String) extends Exception(message)
+final case class ScheduleRetrievalFailure(message: String) extends Exception(message)

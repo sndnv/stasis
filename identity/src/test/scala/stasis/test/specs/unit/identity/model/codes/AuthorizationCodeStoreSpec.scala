@@ -1,7 +1,5 @@
 package stasis.test.specs.unit.identity.model.codes
 
-import scala.concurrent.Future
-import scala.concurrent.duration._
 import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
@@ -10,6 +8,9 @@ import stasis.identity.model.clients.Client
 import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, StoredAuthorizationCode}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.identity.model.Generators
+
+import scala.concurrent.Future
+import scala.concurrent.duration._
 
 class AuthorizationCodeStoreSpec extends AsyncUnitSpec {
   "An AuthorizationCodeStore" should "add, retrieve and delete authorization codes" in {
@@ -48,7 +49,7 @@ class AuthorizationCodeStoreSpec extends AsyncUnitSpec {
       _ <- store.put(StoredAuthorizationCode(expectedCode, client, owner, scope = None))
       actualCode <- store.get(expectedCode)
       someCodes <- store.codes
-      _ <- akka.pattern.after(expiration * 2, using = system.scheduler)(Future.successful(Done))
+      _ <- after(expiration * 2, using = system)(Future.successful(Done))
       missingCode <- store.get(expectedCode)
       noCodes <- store.codes
     } yield {
@@ -59,8 +60,8 @@ class AuthorizationCodeStoreSpec extends AsyncUnitSpec {
     }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "AuthorizationCodeStoreSpec"
   )
 

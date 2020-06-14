@@ -3,7 +3,7 @@ package stasis.test.specs.unit.identity.api.oauth.directives
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.{Materializer, SystemMaterializer}
 import play.api.libs.json._
 import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.RefreshTokenConsumption
@@ -143,7 +143,7 @@ class RefreshTokenConsumptionSpec extends RouteTest {
   }
 
   private def createDirective(tokens: RefreshTokenStore) = new RefreshTokenConsumption {
-    override implicit protected def mat: Materializer = ActorMaterializer()
+    override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
     override implicit protected def ec: ExecutionContext = system.dispatcher
     override protected def log: LoggingAdapter = createLogger()
     override protected def refreshTokenStore: RefreshTokenStore = tokens

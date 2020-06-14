@@ -3,8 +3,6 @@ package stasis.core.persistence
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
 
-import scala.concurrent.duration.FiniteDuration
-
 final case class CrateStorageReservation(
   id: CrateStorageReservation.Id,
   crate: Crate.Id,

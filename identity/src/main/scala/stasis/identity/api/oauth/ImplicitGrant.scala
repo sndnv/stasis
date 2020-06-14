@@ -83,7 +83,7 @@ class ImplicitGrant(
               discardEntity {
                 complete(
                   StatusCodes.BadRequest,
-                  AuthorizationError.InvalidRequest(withState = request.state)
+                  AuthorizationError.InvalidRequest(withState = request.state): AuthorizationError
                 )
               }
           }

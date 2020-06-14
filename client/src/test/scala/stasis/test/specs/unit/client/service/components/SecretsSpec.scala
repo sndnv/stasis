@@ -3,10 +3,9 @@ package stasis.test.specs.unit.client.service.components
 import java.util.UUID
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.event.{Logging, LoggingAdapter}
 import akka.util.ByteString
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.service.ApplicationDirectory
 import stasis.client.service.components.exceptions.ServiceStartupFailure
 import stasis.client.service.components.{Base, Files, Init, Secrets}
@@ -182,13 +181,12 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       }
     )
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "SecretsSpec"
   )
 
-  private implicit val log: LoggingAdapter =
-    Logging(typedSystem.toUntyped, this.getClass.getName)
+  private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private val ports: mutable.Queue[Int] = (29000 to 29100).to[mutable.Queue]
 

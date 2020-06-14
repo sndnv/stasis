@@ -1,14 +1,16 @@
 package stasis.test.specs.unit.server.security
 
-import scala.reflect.ClassTag
-import scala.util.control.NonFatal
-import akka.actor.ActorSystem
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.server.model.users.UserStore
 import stasis.server.security.{CurrentUser, DefaultResourceProvider, Resource}
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
+
+import scala.reflect.ClassTag
+import scala.util.control.NonFatal
 
 class DefaultResourceProviderSpec extends AsyncUnitSpec {
   import DefaultResourceProviderSpec._
@@ -61,11 +63,14 @@ class DefaultResourceProviderSpec extends AsyncUnitSpec {
       }
   }
 
-  private implicit val system: ActorSystem = ActorSystem(name = "DefaultResourceProviderSpec")
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+    "DefaultResourceProviderSpec"
+  )
 
   private val userStore: UserStore = UserStore(
     userSaltSize = 8,
-    backend = MemoryBackend.untyped[User.Id, User](s"mock-user-store-${java.util.UUID.randomUUID()}")
+    backend = MemoryBackend[User.Id, User](s"mock-user-store-${java.util.UUID.randomUUID()}")
   )
 
   private val manageSelfResource = new ManageSelfResource

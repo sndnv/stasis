@@ -1,10 +1,9 @@
 package stasis.test.specs.unit.identity.service
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.event.{Logging, LoggingAdapter}
 import com.typesafe.config.Config
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.identity.model.Seconds
 import stasis.identity.model.apis.Api
 import stasis.identity.model.secrets.Secret
@@ -143,14 +142,12 @@ class BootstrapSpec extends AsyncUnitSpec {
       }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "BootstrapSpec"
   )
 
-  private implicit val untyped: akka.actor.ActorSystem = system.toUntyped
-
-  private implicit val log: LoggingAdapter = Logging(untyped, this.getClass.getName)
+  private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private implicit val clientSecretsConfig: Secret.ClientConfig =
     Secret.ClientConfig(

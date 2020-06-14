@@ -2,14 +2,13 @@ package stasis.client.ops.backup
 
 import java.nio.file.Path
 
-import akka.{Done, NotUsed}
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.actor.typed.scaladsl.adapter._
 import akka.stream._
 import akka.stream.scaladsl.{Keep, Sink, Source}
+import akka.{Done, NotUsed}
 import stasis.client.analysis.Checksum
-import stasis.client.collection.{BackupCollector, BackupMetadataCollector}
 import stasis.client.collection.rules.Specification
+import stasis.client.collection.{BackupCollector, BackupMetadataCollector}
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.DatasetMetadata
 import stasis.client.ops.ParallelismConfig
@@ -23,19 +22,17 @@ import scala.util.{Failure, Success}
 
 class Backup(
   descriptor: Backup.Descriptor
-)(implicit system: ActorSystem[SpawnProtocol], parallelism: ParallelismConfig, providers: Providers)
+)(implicit system: ActorSystem[SpawnProtocol.Command], parallelism: ParallelismConfig, providers: Providers)
     extends Operation { parent =>
   import Backup._
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
+  private implicit val mat: Materializer = SystemMaterializer(system).materializer
 
-  private implicit val mat: Materializer = ActorMaterializer(
-    ActorMaterializerSettings(untypedSystem).withSupervisionStrategy { e =>
-      system.log.error(e, "Backup stream encountered failure: [{}: {}]; resuming", e.getClass.getSimpleName, e.getMessage)
-      providers.track.failureEncountered(failure = e)
-      Supervision.Resume
-    }
-  )
+  private val supervision: Supervision.Decider = { e =>
+    system.log.error("Backup stream encountered failure: [{}: {}]; resuming", e.getClass.getSimpleName, e.getMessage, e)
+    providers.track.failureEncountered(failure = e)
+    Supervision.Resume
+  }
 
   private implicit val ec: ExecutionContext = system.executionContext
 
@@ -51,6 +48,7 @@ class Backup(
       .via(stages.metadataCollection)
       .via(stages.metadataPush)
       .viaMat(KillSwitches.single)(Keep.right[NotUsed, UniqueKillSwitch])
+      .withAttributes(ActorAttributes.supervisionStrategy(supervision))
       .preMaterialize()
 
   override def start(): Future[Done] =

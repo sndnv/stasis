@@ -4,17 +4,16 @@ import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit.MINUTES
 import java.util.UUID
 
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
-import akka.event.{Logging, LoggingAdapter}
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import com.typesafe.config.Config
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.routing.Node
-import stasis.server.service.{Bootstrap, CorePersistence, ServerPersistence}
 import stasis.server.service.Bootstrap.Entities
+import stasis.server.service.{Bootstrap, CorePersistence, ServerPersistence}
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
@@ -271,14 +270,12 @@ class BootstrapSpec extends AsyncUnitSpec {
       }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "BootstrapSpec"
   )
 
-  private implicit val untyped: akka.actor.ActorSystem = system.toUntyped
-
-  private implicit val log: LoggingAdapter = Logging(untyped, this.getClass.getName)
+  private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private val config: Config = system.settings.config.getConfig("stasis.test.server")
 }

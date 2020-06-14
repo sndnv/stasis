@@ -3,13 +3,12 @@ package stasis.core.persistence.staging
 import java.time.Instant
 
 import akka.actor.Cancellable
-import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.event.Logging
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Broadcast, Sink, Source}
 import akka.util.{ByteString, Timeout}
 import akka.{Done, NotUsed}
+import org.slf4j.LoggerFactory
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.backends.memory.MemoryBackend
@@ -25,16 +24,14 @@ import scala.util.control.NonFatal
 class StagingStore(
   crateStore: CrateStore,
   destagingDelay: FiniteDuration
-)(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout) {
+)(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout) {
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
   private implicit val ec: ExecutionContext = system.executionContext
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 
   private val pendingDestagingStore: MemoryBackend[Crate.Id, PendingDestaging] =
     MemoryBackend[Crate.Id, PendingDestaging](name = "pending-destaging-store")
 
-  private val log = Logging(untypedSystem, this.getClass.getName)
+  private val log = LoggerFactory.getLogger(this.getClass.getName)
 
   def stage(
     manifest: Manifest,
@@ -43,12 +40,12 @@ class StagingStore(
     viaProxy: NodeProxy
   ): Future[Done] =
     if (destinations.nonEmpty) {
-      log.debug("Staging crate [{}] with manifest [{}]", manifest.crate, manifest)
+      log.debug2("Staging crate [{}] with manifest [{}]", manifest.crate, manifest)
 
       crateStore.canStore(request = CrateStorageRequest(manifest)).flatMap {
         case true =>
           crateStore.persist(manifest, content).flatMap { _ =>
-            log.debug(
+            log.debugN(
               "Scheduling destaging of crate [{}] in [{}] second(s) to [{}] destination(s): [{}]",
               manifest.crate,
               destagingDelay.toSeconds,
@@ -56,7 +53,7 @@ class StagingStore(
               destinations
             )
 
-            val cancellable = system.scheduler.scheduleOnce(destagingDelay) {
+            val cancellable = system.classicSystem.scheduler.scheduleOnce(destagingDelay) {
               val _ = destage(manifest, destinations, viaProxy)
                 .recover {
                   case NonFatal(e) =>
@@ -103,7 +100,7 @@ class StagingStore(
           )
 
         case None =>
-          log.warning("No destaging schedule found for crate [{}]", crate)
+          log.warn("No destaging schedule found for crate [{}]", crate)
       }
 
       result
@@ -117,7 +114,7 @@ class StagingStore(
     destinations: Map[Node, Int],
     viaProxy: NodeProxy
   ): Future[Done] = {
-    log.debug(
+    log.debugN(
       "Destaging crate [{}] to [{}] destinations: [{}]",
       manifest.crate,
       destinations.size,

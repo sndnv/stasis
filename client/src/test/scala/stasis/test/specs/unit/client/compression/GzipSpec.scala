@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.client.compression
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import stasis.client.compression.Gzip
@@ -9,12 +8,6 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.EncodingHelpers
 
 class GzipSpec extends AsyncUnitSpec with EncodingHelpers {
-  private implicit val system: ActorSystem = ActorSystem(name = "GzipSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
-
-  private val decompressedData = "some-decompressed-data"
-  private val compressedData = "H4sIAAAAAAAAACrOz03VTUlNzs8tKEotLk5N0U1JLEkEAAAA//8DAG894xUWAAAA"
-
   "A Gzip encoder/decoder implementation" should "compress data" in {
     Source
       .single(ByteString(decompressedData))
@@ -34,4 +27,9 @@ class GzipSpec extends AsyncUnitSpec with EncodingHelpers {
         actualDecompressedData.utf8String should be(decompressedData)
       }
   }
+
+  private implicit val system: ActorSystem = ActorSystem(name = "GzipSpec")
+
+  private val decompressedData = "some-decompressed-data"
+  private val compressedData = "H4sIAAAAAAAAACrOz03VTUlNzs8tKEotLk5N0U1JLEkEAAAA//8DAG894xUWAAAA"
 }

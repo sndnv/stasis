@@ -1,12 +1,12 @@
 package stasis.test.specs.unit.client.api.http.routes
 
-import akka.event.Logging
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{RequestEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import stasis.client.api.http.routes.DatasetDefinitions
+import org.slf4j.LoggerFactory
 import stasis.client.api.http.Context
+import stasis.client.api.http.routes.DatasetDefinitions
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.responses.CreatedDatasetDefinition
 import stasis.shared.model.datasets.DatasetDefinition
@@ -90,7 +90,7 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       tracker = MockTrackerView(),
       search = MockSearch(),
       terminateService = () => (),
-      log = Logging(system, this.getClass.getName)
+      log = LoggerFactory.getLogger(this.getClass.getName)
     )
 
     new DatasetDefinitions().routes()

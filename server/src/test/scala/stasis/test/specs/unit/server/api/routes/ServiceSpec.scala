@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.server.api.routes
 
-import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.server.api.routes.{RoutesContext, Service}
 import stasis.server.security.{CurrentUser, ResourceProvider}
 import stasis.shared.api.responses.Ping
@@ -24,7 +24,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  private implicit val log: LoggingAdapter = Logging(system, this.getClass.getName)
+  private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private trait TestFixtures {
     lazy implicit val provider: ResourceProvider = new MockResourceProvider(

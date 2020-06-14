@@ -5,9 +5,6 @@ import java.nio.file.{Path, StandardOpenOption}
 import java.nio.{ByteBuffer, ByteOrder}
 import java.util.UUID
 
-import scala.concurrent.{Future, Promise}
-import scala.util.control.NonFatal
-
 import akka.Done
 import akka.stream._
 import akka.stream.scaladsl.Sink
@@ -15,6 +12,9 @@ import akka.stream.stage.{GraphStageLogic, GraphStageWithMaterializedValue, InHa
 import stasis.core.persistence.backends.file.container.CrateChunk
 import stasis.core.persistence.backends.file.container.exceptions.ContainerSinkFailure
 import stasis.core.persistence.backends.file.container.headers.ChunkHeader
+
+import scala.concurrent.{Future, Promise}
+import scala.util.control.NonFatal
 
 @SuppressWarnings(
   Array(

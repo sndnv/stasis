@@ -7,29 +7,17 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.backends.StreamingBackendBehaviour
 
 class StreamingMemoryBackendSpec extends AsyncUnitSpec with StreamingBackendBehaviour {
-  "A StreamingMemoryBackend with typed actor system" should behave like streamingBackend(
+  "A StreamingMemoryBackend" should behave like streamingBackend(
     createBackend = () =>
-      StreamingMemoryBackend.typed[java.util.UUID](
+      StreamingMemoryBackend[java.util.UUID](
         maxSize = 1000,
         maxChunkSize = 8192,
         name = "map-store"
       )(
         s = ActorSystem(
-          Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+          Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
           "StreamingMemoryBackendSpec-Typed"
         ),
-        t = timeout
-    )
-  )
-
-  "A StreamingMemoryBackend with untyped actor system" should behave like streamingBackend(
-    createBackend = () =>
-      StreamingMemoryBackend.untyped[java.util.UUID](
-        maxSize = 1000,
-        maxChunkSize = 8192,
-        name = "map-store"
-      )(
-        s = akka.actor.ActorSystem("StreamingMemoryBackendSpec-Untyped"),
         t = timeout
     )
   )

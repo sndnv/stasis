@@ -3,7 +3,8 @@ package stasis.test.specs.unit.server.model.datasets
 import java.time.Instant
 
 import akka.Done
-import akka.actor.ActorSystem
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.packaging.Crate
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.model.devices.Device
@@ -329,7 +330,12 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
     }
   }
 
-  private implicit val system: ActorSystem = ActorSystem(name = "DatasetEntryStoreSpec")
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+    "DatasetEntryStoreSpec"
+  )
+
+  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
 
   private val ownDevices = Seq(Device.generateId(), Device.generateId())
 

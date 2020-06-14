@@ -1,10 +1,9 @@
 package stasis.client.encryption.secrets
 
 import akka.util.ByteString
-import stasis.client.encryption.stream.CipherStage
 import stasis.client.encryption.Aes
+import stasis.client.encryption.stream.CipherStage
 
-// doc - never stored or sent externally
 final case class DeviceMetadataSecret(
   iv: ByteString,
   private val key: ByteString

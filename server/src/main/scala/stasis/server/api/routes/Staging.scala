@@ -1,5 +1,6 @@
 package stasis.server.api.routes
 
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
@@ -19,7 +20,7 @@ class Staging()(implicit ctx: RoutesContext) extends ApiRoutes {
         get {
           resource[ServerStagingStore.View.Service] { view =>
             view.list().map { pendingDestagingOps =>
-              log.debug(
+              log.debugN(
                 "User [{}] successfully retrieved [{}] pending destaging operations",
                 currentUser,
                 pendingDestagingOps.size
@@ -35,9 +36,9 @@ class Staging()(implicit ctx: RoutesContext) extends ApiRoutes {
             resource[ServerStagingStore.Manage.Service] { manage =>
               manage.drop(crateId).map { deleted =>
                 if (deleted) {
-                  log.debug("User [{}] successfully deleted destaging operation for crate [{}]", currentUser, crateId)
+                  log.debugN("User [{}] successfully deleted destaging operation for crate [{}]", currentUser, crateId)
                 } else {
-                  log.warning("User [{}] failed to delete destaging operation for crate [{}]", currentUser, crateId)
+                  log.warnN("User [{}] failed to delete destaging operation for crate [{}]", currentUser, crateId)
                 }
 
                 discardEntity & complete(DeletedPendingDestaging(existing = deleted))

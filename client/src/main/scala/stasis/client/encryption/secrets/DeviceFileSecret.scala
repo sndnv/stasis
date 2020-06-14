@@ -3,10 +3,9 @@ package stasis.client.encryption.secrets
 import java.nio.file.Path
 
 import akka.util.ByteString
-import stasis.client.encryption.stream.CipherStage
 import stasis.client.encryption.Aes
+import stasis.client.encryption.stream.CipherStage
 
-// doc - never stored or sent externally
 final case class DeviceFileSecret(
   file: Path,
   iv: ByteString,

@@ -45,7 +45,7 @@ trait AudienceExtraction extends EntityDiscardingDirectives {
             discardEntity {
               complete(
                 StatusCodes.BadRequest,
-                TokenError.InvalidScope
+                TokenError.InvalidScope: TokenError
               )
             }
         }
@@ -94,7 +94,7 @@ trait AudienceExtraction extends EntityDiscardingDirectives {
               discardEntity {
                 complete(
                   StatusCodes.BadRequest,
-                  TokenError.InvalidScope
+                  TokenError.InvalidScope: TokenError
                 )
               }
           }
@@ -133,7 +133,7 @@ trait AudienceExtraction extends EntityDiscardingDirectives {
           discardEntity {
             complete(
               StatusCodes.BadRequest,
-              TokenError.InvalidScope
+              TokenError.InvalidScope: TokenError
             )
           }
 

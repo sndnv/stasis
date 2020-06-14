@@ -3,7 +3,7 @@ package stasis.test.specs.unit.identity.api.oauth.directives
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.{Materializer, SystemMaterializer}
 import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.RefreshTokenGeneration
 import stasis.identity.model.clients.Client
@@ -99,7 +99,7 @@ class RefreshTokenGenerationSpec extends RouteTest {
 
     override protected def refreshTokensAllowed: Boolean = withRefreshTokens
 
-    override implicit protected def mat: Materializer = ActorMaterializer()
+    override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
 
     override protected def log: LoggingAdapter = createLogger()
 

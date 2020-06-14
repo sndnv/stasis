@@ -3,12 +3,11 @@ package stasis.identity.service
 import java.util.concurrent.atomic.AtomicReference
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.ConnectionContext
 import com.typesafe.{config => typesafe}
 import org.jose4j.jwk.JsonWebKey
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.security.jwt.DefaultJwtAuthenticator
 import stasis.core.security.keys.LocalKeyProvider
 import stasis.core.security.tls.EndpointContext
@@ -28,14 +27,14 @@ trait Service {
 
   private val serviceState: AtomicReference[State] = new AtomicReference[State](State.Starting)
 
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     name = "stasis-identity-service"
   )
 
-  private implicit val untyped: akka.actor.ActorSystem = system.toUntyped
+  private implicit val untyped: akka.actor.ActorSystem = system.classicSystem
   private implicit val ec: ExecutionContext = system.executionContext
-  private implicit val log: LoggingAdapter = Logging(untyped, this.getClass.getName)
+  private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   protected def systemConfig: typesafe.Config = system.settings.config
 
@@ -204,13 +203,13 @@ trait Service {
             )
 
           case Failure(e) =>
-            log.error(e, "Bootstrap failed: [{}: {}]", e.getClass.getSimpleName, e.getMessage)
+            log.error("Bootstrap failed: [{}: {}]", e.getClass.getSimpleName, e.getMessage, e)
             serviceState.set(State.BootstrapFailed(e))
             stop()
         }
 
     case Failure(e) =>
-      log.error(e, "Service startup failed: [{}: {}]", e.getClass.getSimpleName, e.getMessage)
+      log.error("Service startup failed: [{}: {}]", e.getClass.getSimpleName, e.getMessage, e)
       serviceState.set(State.StartupFailed(e))
       stop()
   }

@@ -6,7 +6,6 @@ import java.util.UUID
 
 import akka.Done
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.scalatest.BeforeAndAfter
@@ -22,7 +21,6 @@ import scala.util.control.NonFatal
 
 class CrateChunkSourceSpec extends AsyncUnitSpec with BeforeAndAfter {
   private implicit val system: ActorSystem = ActorSystem(name = "CrateChunkSourceSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
   private implicit val ec: ExecutionContext = system.dispatcher
   private implicit val byteOrder: ByteOrder = ConversionOps.DEFAULT_BYTE_ORDER
 
@@ -32,9 +30,7 @@ class CrateChunkSourceSpec extends AsyncUnitSpec with BeforeAndAfter {
     Paths.get(containersDir).toFile.listFiles().foreach(_.delete)
   }
 
-  private def runFold(
-    source: Source[CrateChunk, Future[Done]]
-  )(implicit mat: ActorMaterializer): Future[Seq[CrateChunk]] =
+  private def runFold(source: Source[CrateChunk, Future[Done]]): Future[Seq[CrateChunk]] =
     source.runFold(Seq.empty[CrateChunk]) { case (folded, chunk) => folded :+ chunk }
 
   "CrateChunkSource" should "successfully read data from a container" in {

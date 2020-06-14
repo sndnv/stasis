@@ -3,11 +3,11 @@ package stasis.test.specs.unit.client.api.http
 import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.slf4j.LoggerFactory
 import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.api.http.{Context, HttpApiEndpoint}
 import stasis.client.model.DatasetMetadata
@@ -206,7 +206,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       tracker = MockTrackerView(),
       search = MockSearch(),
       terminateService = () => (),
-      log = Logging(system, this.getClass.getName)
+      log = LoggerFactory.getLogger(this.getClass.getName)
     )
 
     new HttpApiEndpoint(
@@ -220,8 +220,8 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     )
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "HttpApiEndpointSpec"
   )
 

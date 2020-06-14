@@ -4,9 +4,9 @@ import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.packaging.Crate
-import stasis.core.persistence.{CrateStorageReservation, StoreInitializationResult}
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.reservations.ReservationStore
+import stasis.core.persistence.{CrateStorageReservation, StoreInitializationResult}
 import stasis.core.routing.Node
 import stasis.test.specs.unit.AsyncUnitSpec
 
@@ -81,7 +81,7 @@ class ReservationStoreSpec extends AsyncUnitSpec {
     for {
       _ <- store.put(expectedReservation)
       actualReservation <- store.get(expectedReservation.id)
-      _ <- akka.pattern.after(expiration * 2, using = system.scheduler)(Future.successful(Done))
+      _ <- after(expiration * 2, using = system)(Future.successful(Done))
       missingReservation <- store.get(expectedReservation.id)
     } yield {
       actualReservation should be(Some(expectedReservation))
@@ -122,8 +122,8 @@ class ReservationStoreSpec extends AsyncUnitSpec {
     }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "ReservationStoreSpec"
   )
 

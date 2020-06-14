@@ -2,7 +2,6 @@ package stasis.test.specs.unit.identity.api.manage
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.util.ByteString
-import play.api.libs.json.JsArray
 import stasis.identity.api.Formats._
 import stasis.identity.api.manage.Owners
 import stasis.identity.api.manage.requests.{CreateOwner, UpdateOwner, UpdateOwnerCredentials}

@@ -3,8 +3,6 @@ package stasis.core.packaging
 import stasis.core.persistence.CrateStorageReservation
 import stasis.core.routing.Node
 
-import scala.concurrent.duration.FiniteDuration
-
 final case class Manifest(
   crate: Crate.Id,
   size: Long,

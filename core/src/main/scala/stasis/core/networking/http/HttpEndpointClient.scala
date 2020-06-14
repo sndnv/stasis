@@ -1,17 +1,17 @@
 package stasis.core.networking.http
 
-import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.event.Logging
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.stream.{ActorMaterializer, OverflowStrategy, QueueOfferResult}
+import akka.stream.{OverflowStrategy, QueueOfferResult}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
+import org.slf4j.LoggerFactory
 import stasis.core.networking.EndpointClient
 import stasis.core.networking.exceptions.{ClientFailure, CredentialsFailure, EndpointFailure, ReservationFailure}
 import stasis.core.packaging.{Crate, Manifest}
@@ -26,21 +26,21 @@ class HttpEndpointClient(
   override protected val credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
   context: Option[HttpsConnectionContext],
   requestBufferSize: Int
-)(implicit system: ActorSystem[SpawnProtocol])
+)(implicit system: ActorSystem[SpawnProtocol.Command])
     extends EndpointClient[HttpEndpointAddress, HttpCredentials] {
 
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.core.api.Formats._
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
   private implicit val ec: ExecutionContext = system.executionContext
 
-  private val log = Logging(untypedSystem, this.getClass.getName)
+  private val log = LoggerFactory.getLogger(this.getClass.getName)
+
+  private val http = Http()(system.classicSystem)
 
   private val clientContext: HttpsConnectionContext = context match {
     case Some(context) => context
-    case None          => Http().defaultClientHttpsContext
+    case None          => http.defaultClientHttpsContext
   }
 
   private val queue = Source
@@ -48,7 +48,7 @@ class HttpEndpointClient(
       bufferSize = requestBufferSize,
       overflowStrategy = OverflowStrategy.backpressure
     )
-    .via(Http().superPool[Promise[HttpResponse]](connectionContext = clientContext))
+    .via(http.superPool[Promise[HttpResponse]](connectionContext = clientContext))
     .to(
       Sink.foreach {
         case (response, promise) => val _ = promise.complete(response)
@@ -69,7 +69,7 @@ class HttpEndpointClient(
     manifest: Manifest,
     content: Source[ByteString, NotUsed]
   ): Future[Done] = {
-    log.debug("Pushing to endpoint [{}] content with manifest [{}]", address.uri, manifest)
+    log.debugN("Pushing to endpoint [{}] content with manifest [{}]", address.uri, manifest)
 
     credentials
       .provide(address)
@@ -92,7 +92,7 @@ class HttpEndpointClient(
   }
 
   override def sink(address: HttpEndpointAddress, manifest: Manifest): Future[Sink[ByteString, Future[Done]]] = {
-    log.debug("Building content sink for endpoint [{}] with manifest [{}]", address.uri, manifest)
+    log.debugN("Building content sink for endpoint [{}] with manifest [{}]", address.uri, manifest)
 
     val (sink, content) = Source
       .asSubscriber[ByteString]
@@ -125,7 +125,7 @@ class HttpEndpointClient(
     address: HttpEndpointAddress,
     crate: Crate.Id
   ): Future[Option[Source[ByteString, NotUsed]]] = {
-    log.debug("Pulling from endpoint [{}] crate with ID [{}]", address.uri, crate)
+    log.debugN("Pulling from endpoint [{}] crate with ID [{}]", address.uri, crate)
 
     credentials
       .provide(address)
@@ -143,7 +143,7 @@ class HttpEndpointClient(
   }
 
   override def discard(address: HttpEndpointAddress, crate: Crate.Id): Future[Boolean] = {
-    log.debug("Discarding from endpoint [{}] crate with ID [{}]", address.uri, crate)
+    log.debugN("Discarding from endpoint [{}] crate with ID [{}]", address.uri, crate)
 
     credentials
       .provide(address)
@@ -192,13 +192,13 @@ class HttpEndpointClient(
             case StatusCodes.InsufficientStorage =>
               val message =
                 s"Endpoint [${address.uri}] was unable to reserve enough storage for request [$storageRequest]"
-              log.warning(message)
+              log.warn(message)
               Future.failed(ReservationFailure(message))
 
             case _ =>
               val message =
                 s"Endpoint [${address.uri}] responded to storage request with unexpected status: [${status.value}]"
-              log.warning(message)
+              log.warn(message)
               Future.failed(EndpointFailure(message))
           }
       }
@@ -221,13 +221,13 @@ class HttpEndpointClient(
     ).flatMap { response =>
       response.status match {
         case StatusCodes.OK =>
-          log.debug("Endpoint [{}] responded to push for crate [{}] with OK", address.uri, manifest.crate)
+          log.debugN("Endpoint [{}] responded to push for crate [{}] with OK", address.uri, manifest.crate)
           Future.successful(Done)
 
         case _ =>
           val message =
             s"Endpoint [${address.uri}] responded to push for crate [${manifest.crate}] with unexpected status: [${response.status.value}]"
-          log.warning(message)
+          log.warn(message)
           Future.failed(EndpointFailure(message))
       }
     }
@@ -246,19 +246,19 @@ class HttpEndpointClient(
       case HttpResponse(status, _, entity, _) =>
         status match {
           case StatusCodes.OK =>
-            log.debug("Endpoint [{}] responded to pull with content for crate [{}]", address.uri, crate)
+            log.debugN("Endpoint [{}] responded to pull with content for crate [{}]", address.uri, crate)
             Future.successful(Some(entity.dataBytes.mapMaterializedValue(_ => NotUsed)))
 
           case StatusCodes.NotFound =>
             val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
-            log.warning("Endpoint [{}] responded to pull with no content for crate [{}]", address.uri, crate)
+            log.warnN("Endpoint [{}] responded to pull with no content for crate [{}]", address.uri, crate)
             Future.successful(None)
 
           case _ =>
             val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
             val message =
               s"Endpoint [${address.uri}] responded to pull for crate [$crate] with unexpected status: [${status.value}]"
-            log.warning(message)
+            log.warn(message)
             Future.failed(EndpointFailure(message))
         }
     }
@@ -278,17 +278,17 @@ class HttpEndpointClient(
         val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
         status match {
           case StatusCodes.OK =>
-            log.debug("Endpoint [{}] responded to discard for crate [{}] with OK", address.uri, crate)
+            log.debugN("Endpoint [{}] responded to discard for crate [{}] with OK", address.uri, crate)
             Future.successful(true)
 
           case StatusCodes.InternalServerError =>
-            log.error("Endpoint [{}] failed to discard crate [{}]", address.uri, crate)
+            log.errorN("Endpoint [{}] failed to discard crate [{}]", address.uri, crate)
             Future.successful(false)
 
           case _ =>
             val message =
               s"Endpoint [${address.uri}] responded to discard for crate [$crate] with unexpected status: [${status.value}]"
-            log.warning(message)
+            log.warn(message)
             Future.failed(EndpointFailure(message))
         }
     }
@@ -298,7 +298,7 @@ object HttpEndpointClient {
   def apply(
     credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
     requestBufferSize: Int
-  )(implicit system: ActorSystem[SpawnProtocol]): HttpEndpointClient =
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): HttpEndpointClient =
     new HttpEndpointClient(
       credentials = credentials,
       context = None,
@@ -309,7 +309,7 @@ object HttpEndpointClient {
     credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
     context: HttpsConnectionContext,
     requestBufferSize: Int
-  )(implicit system: ActorSystem[SpawnProtocol]): HttpEndpointClient =
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): HttpEndpointClient =
     new HttpEndpointClient(
       credentials = credentials,
       context = Some(context),

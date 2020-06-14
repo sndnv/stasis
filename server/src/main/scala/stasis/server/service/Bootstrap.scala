@@ -5,9 +5,9 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import akka.Done
-import akka.event.LoggingAdapter
-import com.typesafe.{config => typesafe}
 import com.typesafe.config.ConfigFactory
+import com.typesafe.{config => typesafe}
+import org.slf4j.Logger
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.crates.CrateStore
@@ -19,8 +19,8 @@ import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import scala.util.control.NonFatal
 
@@ -39,7 +39,7 @@ object Bootstrap {
     corePersistence: CorePersistence
   )(
     implicit ec: ExecutionContext,
-    log: LoggingAdapter,
+    log: Logger,
   ): Future[Done] = {
     val enabled = bootstrapConfig.getBoolean("enabled")
     val configFile = bootstrapConfig.getString("config").trim
@@ -77,7 +77,7 @@ object Bootstrap {
     entities: Entities,
     serverPersistence: ServerPersistence,
     corePersistence: CorePersistence
-  )(implicit ec: ExecutionContext, log: LoggingAdapter): Future[Done] =
+  )(implicit ec: ExecutionContext, log: Logger): Future[Done] =
     for {
       _ <- serverPersistence.init()
       _ <- corePersistence.init()
@@ -203,7 +203,7 @@ object Bootstrap {
   private def logged[T](
     create: T => Future[Done],
     entity: T
-  )(implicit ec: ExecutionContext, log: LoggingAdapter): Future[Done] =
+  )(implicit ec: ExecutionContext, log: Logger): Future[Done] =
     create(entity)
       .map { result =>
         entity match {

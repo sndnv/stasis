@@ -10,7 +10,7 @@ import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.api.Formats._
 import stasis.identity.api.manage.requests.{CreateClient, UpdateClient, UpdateClientCredentials}
 import stasis.identity.api.manage.responses.CreatedClient
-import stasis.identity.model.clients.{Client, ClientStore}
+import stasis.identity.model.clients.ClientStore
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.secrets.Secret
 

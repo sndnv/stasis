@@ -12,6 +12,7 @@ import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 import javax.net.ssl.{SSLContext, TrustManagerFactory}
 import org.jose4j.jwk.{JsonWebKey, JsonWebKeySet}
 import org.jose4j.jws.JsonWebSignature
+import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 import play.api.libs.json._
 import stasis.core.security.tls.EndpointContext
@@ -38,7 +39,7 @@ class ServiceSpec extends RouteTest with Eventually {
     val servicePort = 19999
     val serviceUrl = s"https://$serviceInterface:$servicePort"
 
-    val persistence = eventually {
+    val persistence = eventually[Persistence] {
       service.state match {
         case Service.State.Started(persistence: Persistence, _) => persistence
         case state                                              => fail(s"Unexpected service state encountered: [$state]")
@@ -113,7 +114,7 @@ class ServiceSpec extends RouteTest with Eventually {
       override protected def systemConfig: Config = ConfigFactory.load("application-invalid-bootstrap")
     }
 
-    eventually {
+    eventually[Assertion] {
       service.state shouldBe a[Service.State.BootstrapFailed]
     }
   }
@@ -123,7 +124,7 @@ class ServiceSpec extends RouteTest with Eventually {
       override protected def systemConfig: Config = ConfigFactory.load("application-invalid-config")
     }
 
-    eventually {
+    eventually[Assertion] {
       service.state shouldBe a[Service.State.StartupFailed]
     }
   }

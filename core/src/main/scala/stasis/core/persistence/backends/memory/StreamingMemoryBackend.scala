@@ -2,10 +2,10 @@ package stasis.core.persistence.backends.memory
 
 import java.util.UUID
 
-import akka.{Done, NotUsed}
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.util.{ByteString, Timeout}
+import akka.{Done, NotUsed}
 import stasis.core.persistence.backends.StreamingBackend
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -54,30 +54,10 @@ object StreamingMemoryBackend {
     maxSize: Long,
     maxChunkSize: Int,
     name: String
-  )(implicit s: ActorSystem[SpawnProtocol], t: Timeout): StreamingMemoryBackend =
-    typed(maxSize, maxChunkSize, name)
-
-  def typed[K](
-    maxSize: Long,
-    maxChunkSize: Int,
-    name: String
-  )(implicit s: ActorSystem[SpawnProtocol], t: Timeout): StreamingMemoryBackend = {
+  )(implicit s: ActorSystem[SpawnProtocol.Command], t: Timeout): StreamingMemoryBackend = {
     implicit val ec: ExecutionContext = s.executionContext
     new StreamingMemoryBackend(
-      backend = MemoryBackend.typed[UUID, ByteString](name),
-      maxSize = maxSize,
-      maxChunkSize = maxChunkSize
-    )
-  }
-
-  def untyped[K](
-    maxSize: Long,
-    maxChunkSize: Int,
-    name: String
-  )(implicit s: akka.actor.ActorSystem, t: Timeout): StreamingMemoryBackend = {
-    implicit val ec: ExecutionContext = s.dispatcher
-    new StreamingMemoryBackend(
-      backend = MemoryBackend.untyped[UUID, ByteString](name),
+      backend = MemoryBackend[UUID, ByteString](name),
       maxSize = maxSize,
       maxChunkSize = maxChunkSize
     )

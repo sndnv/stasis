@@ -15,11 +15,11 @@ import stasis.server.security.DefaultUserAuthenticator
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.security.mocks.{MockJwksGenerators, MockJwtGenerators}
+import stasis.test.specs.unit.shared.model.Generators
+
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
-
-import stasis.test.specs.unit.shared.model.Generators
 
 class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
   "A DefaultUserAuthenticator" should "authenticate users with valid JWTs" in {
@@ -210,8 +210,8 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
       }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DefaultUserAuthenticatorSpec"
   )
 

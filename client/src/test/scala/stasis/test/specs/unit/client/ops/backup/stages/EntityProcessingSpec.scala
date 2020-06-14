@@ -1,9 +1,11 @@
 package stasis.test.specs.unit.client.ops.backup.stages
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Flow, Source}
-import akka.stream.{ActorMaterializer, ActorMaterializerSettings, Materializer, Supervision}
+import akka.stream.{ActorAttributes, Materializer, Supervision, SystemMaterializer}
 import akka.util.ByteString
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
@@ -84,7 +86,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
       override protected def maxChunkSize: Int = 8192
       override protected def maxPartSize: Long = 16384
-      override implicit protected def mat: Materializer = spec.mat
+      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
       override implicit protected def ec: ExecutionContext = spec.system.dispatcher
     }
 
@@ -174,7 +176,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
       override protected def maxChunkSize: Int = 5
       override protected def maxPartSize: Long = 10
-      override implicit protected def mat: Materializer = spec.mat
+      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
       override implicit protected def ec: ExecutionContext = spec.system.dispatcher
     }
 
@@ -261,7 +263,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
       override protected def maxChunkSize: Int = 8192
       override protected def maxPartSize: Long = 16384
-      override implicit protected def mat: Materializer = spec.mat
+      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
       override implicit protected def ec: ExecutionContext = spec.system.dispatcher
     }
 
@@ -320,13 +322,14 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
   }
 
   it should "fail processing a file if processing for a part fails" in {
-    // using resuming materializer to replicate behaviour of ops/Backup
-    val resumingMaterializer = ActorMaterializer(
-      ActorMaterializerSettings(system).withSupervisionStrategy { e =>
-        system.log.error(e, "Test failure: [{}]; resuming", e.getMessage)
-        Supervision.Resume
-      }
-    )
+    val failures = new AtomicInteger(0)
+
+    // using resuming supervision to replicate behaviour of ops/Backup
+    val supervision: Supervision.Decider = { e =>
+      system.log.error(e, "Test failure: [{}]; resuming", e.getMessage)
+      val _ = failures.incrementAndGet()
+      Supervision.Resume
+    }
 
     val largeSourceFileMetadata = "/ops/large-source-file".asTestResource.extractFileMetadata(
       withChecksum = 1,
@@ -339,7 +342,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
       currentMetadata = largeSourceFileMetadata
     )
 
-    val maxChunksBeforeFailure = 4
+    val maxChunksBeforeFailure = 5
 
     val mockStaging = new MockFileStaging()
     val mockCompression = new MockCompression() {
@@ -374,15 +377,18 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
       override protected def maxChunkSize: Int = 5
       override protected def maxPartSize: Long = 10
-      override implicit protected def mat: Materializer = resumingMaterializer
+      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
       override implicit protected def ec: ExecutionContext = spec.system.dispatcher
     }
 
     Source(List(largeSourceFile))
       .via(stage.entityProcessing)
-      .runFold(Seq.empty[Either[EntityMetadata, EntityMetadata]])(_ :+ _)(resumingMaterializer)
+      .withAttributes(ActorAttributes.supervisionStrategy(supervision))
+      .runFold(Seq.empty[Either[EntityMetadata, EntityMetadata]])(_ :+ _)
       .map { stageOutput =>
         stageOutput should be(empty)
+
+        failures.get should be(1)
 
         val expectedParts = maxChunksBeforeFailure / 2 // each part is made of two chunks
         val expectedChunks = maxChunksBeforeFailure
@@ -391,7 +397,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
         mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(expectedParts)
         mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
 
-        mockEncryption.statistics(MockEncryption.Statistic.FileEncrypted) should be(expectedChunks)
+        mockEncryption.statistics(MockEncryption.Statistic.FileEncrypted) should be(expectedChunks - 1)
         mockEncryption.statistics(MockEncryption.Statistic.FileDecrypted) should be(0)
         mockEncryption.statistics(MockEncryption.Statistic.MetadataEncrypted) should be(0)
         mockEncryption.statistics(MockEncryption.Statistic.MetadataDecrypted) should be(0)
@@ -410,5 +416,4 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
   }
 
   private implicit val system: ActorSystem = ActorSystem(name = "EntityProcessingSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 }

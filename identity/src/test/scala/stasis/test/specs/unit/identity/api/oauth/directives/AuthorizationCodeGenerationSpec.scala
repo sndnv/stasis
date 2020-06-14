@@ -4,13 +4,13 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.model
 import akka.http.scaladsl.model.{StatusCodes, Uri}
 import akka.http.scaladsl.server.Directives
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.{Materializer, SystemMaterializer}
 import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.AuthorizationCodeGeneration
 import stasis.identity.model.ChallengeMethod
 import stasis.identity.model.clients.Client
-import stasis.identity.model.codes.{AuthorizationCodeStore, StoredAuthorizationCode}
 import stasis.identity.model.codes.generators.{AuthorizationCodeGenerator, DefaultAuthorizationCodeGenerator}
+import stasis.identity.model.codes.{AuthorizationCodeStore, StoredAuthorizationCode}
 import stasis.identity.model.errors.AuthorizationError
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
@@ -100,9 +100,8 @@ class AuthorizationCodeGenerationSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
     val scope = "some-scope"
 
-    val routes = directive.generateAuthorizationCode(client, redirectUri, state, owner, scope = Some(scope)) {
-      generatedCode =>
-        Directives.complete(StatusCodes.OK, generatedCode.value)
+    val routes = directive.generateAuthorizationCode(client, redirectUri, state, owner, scope = Some(scope)) { generatedCode =>
+      Directives.complete(StatusCodes.OK, generatedCode.value)
     }
 
     Get() ~> routes ~> check {
@@ -116,7 +115,7 @@ class AuthorizationCodeGenerationSpec extends RouteTest {
   private def createDirective(
     codes: AuthorizationCodeStore
   ) = new AuthorizationCodeGeneration {
-    override implicit protected def mat: Materializer = ActorMaterializer()
+    override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
 
     override protected def log: LoggingAdapter = createLogger()
 

@@ -1,10 +1,9 @@
 package stasis.test.specs.unit.core.persistence.events
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.scaladsl.Sink
-import akka.stream.{ActorMaterializer, Materializer}
+import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 import stasis.core.persistence.backends.EventLogBackend
 import stasis.core.persistence.backends.memory.EventLogMemoryBackend
@@ -52,7 +51,7 @@ class EventLogSpec extends AsyncUnitSpec with Eventually {
   }
 
   it should "provide a state update stream" in {
-    eventually {
+    eventually[Assertion] {
       val backend = createBackend()
       val store = EventLog[String, Queue[String]](backend, updateState)
 
@@ -112,14 +111,10 @@ class EventLogSpec extends AsyncUnitSpec with Eventually {
       initialState = Queue.empty[String]
     )
 
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    guardianBehavior = Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    guardianBehavior = Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     name = "EventLogSpec"
   )
-
-  private implicit val untyped: akka.actor.ActorSystem = system.toUntyped
-
-  private implicit val mat: Materializer = ActorMaterializer()
 
   private def updateState(event: String, state: Queue[String]): Queue[String] = state :+ event
 

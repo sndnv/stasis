@@ -4,10 +4,10 @@ import java.nio.file.Path
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 
-import akka.{Done, NotUsed}
 import akka.stream.scaladsl.{FileIO, Flow, Keep, Source, SubFlow}
 import akka.stream.{IOResult, Materializer}
 import akka.util.ByteString
+import akka.{Done, NotUsed}
 import stasis.client.encryption.secrets.DeviceFileSecret
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.exceptions.EntityProcessingFailure
@@ -45,11 +45,11 @@ class StagedSubFlow(
     withPartSecret: Int => DeviceFileSecret
   )(implicit providers: Providers): Flow[ByteString, (Path, Path), Future[Done]] =
     Flow
-      .lazyInitAsync(() => {
+      .lazyFutureFlow(() => {
         val partId = nextPartId.getAndIncrement()
         createStagingFlow(partSecret = withPartSecret(partId))
       })
-      .mapMaterializedValue(unwrapLazyFlowIOResult)
+      .mapMaterializedValue(_.flatten.map(_ => Done))
 }
 
 object StagedSubFlow {
@@ -68,14 +68,6 @@ object StagedSubFlow {
             )(Keep.left[Future[IOResult], NotUsed])
           )(Keep.right[NotUsed, Future[IOResult]])
       }
-
-  def unwrapLazyFlowIOResult[T](
-    materializedResult: Future[Option[Future[IOResult]]]
-  )(implicit ec: ExecutionContext): Future[Done] =
-    materializedResult.flatMap {
-      case Some(flowResult) => flowResult.flatMap(ioResult => Future.fromTry(ioResult.status))
-      case None             => Future.failed(new IllegalStateException("Upstream completed with no elements"))
-    }
 
   def handleStagingFailure[T](
     stagedParts: java.util.Queue[(Path, Path)]

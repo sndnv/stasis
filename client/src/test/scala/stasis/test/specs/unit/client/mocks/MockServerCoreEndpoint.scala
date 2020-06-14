@@ -1,12 +1,11 @@
 package stasis.test.specs.unit.client.mocks
 
-import akka.{Done, NotUsed}
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.actor.typed.scaladsl.adapter._
-import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
+import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import akka.{Done, NotUsed}
 import stasis.core.networking.http.HttpEndpoint
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.routing.Node
@@ -18,8 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class MockServerCoreEndpoint(
   expectedCredentials: BasicHttpCredentials
-)(implicit typedSystem: ActorSystem[SpawnProtocol]) {
-  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.toUntyped
+)(implicit typedSystem: ActorSystem[SpawnProtocol.Command]) {
   private implicit val ec: ExecutionContext = typedSystem.executionContext
 
   private val reservationStore = new MockReservationStore()

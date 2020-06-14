@@ -32,7 +32,7 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
       store = store.view,
       underlying = new DefaultJwtAuthenticator(
         provider = provider,
-        audience = targetApi.id.toString,
+        audience = targetApi.id,
         identityClaim = "sub",
         expirationTolerance = 10.seconds
       )
@@ -58,7 +58,7 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
       store = store.view,
       underlying = new DefaultJwtAuthenticator(
         provider = provider,
-        audience = targetApi.id.toString,
+        audience = targetApi.id,
         identityClaim = "sub",
         expirationTolerance = 10.seconds
       )
@@ -122,7 +122,7 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
       store = store.view,
       underlying = new DefaultJwtAuthenticator(
         provider = provider,
-        audience = targetApi.id.toString,
+        audience = targetApi.id,
         identityClaim = "sub",
         expirationTolerance = 10.seconds
       )
@@ -140,8 +140,8 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
       }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DefaultResourceOwnerAuthenticatorSpec-manage"
   )
 

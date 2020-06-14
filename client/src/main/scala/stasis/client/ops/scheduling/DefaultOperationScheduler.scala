@@ -6,19 +6,18 @@ import java.time.temporal.ChronoUnit
 import java.util.concurrent.ThreadLocalRandom
 
 import akka.Done
-import akka.actor.typed.{ActorRef, ActorSystem, Behavior, SpawnProtocol}
-import akka.actor.typed.scaladsl.{Behaviors, TimerScheduler}
-import akka.actor.Scheduler
+import akka.actor.typed._
 import akka.actor.typed.scaladsl.AskPattern._
+import akka.actor.typed.scaladsl.{Behaviors, LoggerOps, TimerScheduler}
 import akka.util.Timeout
 import stasis.client.api.clients.ServerApiEndpointClient
 import stasis.client.ops.exceptions.ScheduleRetrievalFailure
 import stasis.client.ops.scheduling.OperationScheduler.ActiveSchedule
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
-import scala.util.{Failure, Success}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
+import scala.util.{Failure, Success}
 
 class DefaultOperationScheduler private (
   schedulerRef: Future[ActorRef[DefaultOperationScheduler.Message]]
@@ -49,8 +48,7 @@ object DefaultOperationScheduler {
     config: Config,
     api: ServerApiEndpointClient,
     executor: OperationExecutor
-  )(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout): DefaultOperationScheduler = {
-    implicit val akkaScheduler: Scheduler = system.scheduler
+  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): DefaultOperationScheduler = {
     implicit val executionContext: ExecutionContext = system.executionContext
     implicit val schedulerConfig: Config = config
     implicit val apiClient: ServerApiEndpointClient = api
@@ -66,7 +64,7 @@ object DefaultOperationScheduler {
     }
 
     new DefaultOperationScheduler(
-      schedulerRef = system ? SpawnProtocol.Spawn(behaviour, name = "operation-scheduler")
+      schedulerRef = system ? (SpawnProtocol.Spawn(behaviour, name = "operation-scheduler", props = Props.empty, _))
     )
   }
 
@@ -97,14 +95,14 @@ object DefaultOperationScheduler {
     case (ctx, message) =>
       message match {
         case GetSchedules(replyTo) =>
-          ctx.log.debug("Responding with [{}] active schedule(s)", activeSchedules.size)
+          ctx.log.debugN("Responding with [{}] active schedule(s)", activeSchedules.size)
           replyTo ! activeSchedules
           Behaviors.same
 
         case RefreshSchedules(replyTo) =>
           val log = ctx.log
           val self = ctx.self
-          log.debug("Refreshing schedules from [{}]", config.schedulesFile.toAbsolutePath)
+          log.debugN("Refreshing schedules from [{}]", config.schedulesFile.toAbsolutePath)
 
           val _ = for {
             configuredSchedules <- SchedulingConfig.schedules(file = config.schedulesFile)
@@ -113,7 +111,7 @@ object DefaultOperationScheduler {
                 api
                   .publicSchedule(assignment.schedule)
                   .map { schedule =>
-                    log.debug(
+                    log.debugN(
                       "Loaded [{}] schedule for [{}]",
                       assignment.getClass.getSimpleName,
                       assignment.schedule
@@ -125,7 +123,7 @@ object DefaultOperationScheduler {
                       val operation = assignment.getClass.getSimpleName
                       val schedule = assignment.schedule
                       val message = s"Failed to load [$operation] schedule for [$schedule]: [${e.getMessage}]"
-                      log.error(e, message)
+                      log.errorN(message, e)
                       ActiveSchedule(assignment = assignment, schedule = Left(ScheduleRetrievalFailure(message)))
                   }
               }
@@ -138,7 +136,7 @@ object DefaultOperationScheduler {
           Behaviors.same
 
         case UpdateActiveSchedules(schedules) =>
-          ctx.log.debug("Loaded [{}] schedule(s)", schedules.size)
+          ctx.log.debugN("Loaded [{}] schedule(s)", schedules.size)
           ctx.self ! SetupNextScheduleExecution
           scheduler(activeSchedules = schedules, activeOperations = activeOperations)
 
@@ -161,7 +159,7 @@ object DefaultOperationScheduler {
 
               val actualDelay = (executionDelay + randomDelay).millis
 
-              ctx.log.debug(
+              ctx.log.debugN(
                 "Scheduling execution of [{}] in [{}] second(s)",
                 assignment.schedule,
                 actualDelay.toSeconds
@@ -172,12 +170,12 @@ object DefaultOperationScheduler {
               scheduler(activeSchedules = activeSchedules, activeOperations = activeOperations)
 
             case None =>
-              ctx.log.warning("No active schedules found")
+              ctx.log.warnN("No active schedules found")
               Behaviors.same
           }
 
         case ExecuteSchedule(assignment) if activeOperations.contains(assignment) =>
-          ctx.log.warning(
+          ctx.log.warnN(
             "[{}] operation with schedule [{}] is already running; execution skipped",
             assignment.getClass.getSimpleName,
             assignment.schedule
@@ -188,7 +186,7 @@ object DefaultOperationScheduler {
           val log = ctx.log
           val self = ctx.self
 
-          log.debug(
+          log.debugN(
             "Starting [{}] operation with schedule [{}]",
             assignment.getClass.getSimpleName,
             assignment.schedule
@@ -213,7 +211,7 @@ object DefaultOperationScheduler {
 
           result.onComplete {
             case Success(operation) =>
-              log.debug(
+              log.debugN(
                 "[{}] operation [{}] with schedule [{}] completed successfully",
                 assignment.getClass.getSimpleName,
                 operation,
@@ -222,12 +220,12 @@ object DefaultOperationScheduler {
               self ! ScheduleExecuted(assignment)
 
             case Failure(e) =>
-              log.error(
-                e,
+              log.errorN(
                 "[{}] operation with schedule [{}] failed: [{}]",
                 assignment.getClass.getSimpleName,
                 assignment.schedule,
-                e.getMessage
+                e.getMessage,
+                e
               )
               self ! ScheduleExecuted(assignment)
           }
@@ -239,7 +237,7 @@ object DefaultOperationScheduler {
           scheduler(activeSchedules = activeSchedules, activeOperations = activeOperations - assignment)
 
         case StopScheduler(replyTo) =>
-          ctx.log.debug("Stopping scheduler")
+          ctx.log.debugN("Stopping scheduler")
           replyTo ! Done
           Behaviors.stopped
       }

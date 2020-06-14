@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.client.ops.backup.stages
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.collection.BackupCollector
@@ -74,5 +73,4 @@ class EntityCollectionSpec extends AsyncUnitSpec {
   }
 
   private implicit val system: ActorSystem = ActorSystem(name = "EntityCollectionSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 }

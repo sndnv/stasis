@@ -14,7 +14,6 @@ import stasis.shared.model.users.User
 
 import scala.concurrent.{ExecutionContext, Future}
 
-// doc - never stored or sent unencrypted
 final case class DeviceSecret(
   user: User.Id,
   device: Device.Id,

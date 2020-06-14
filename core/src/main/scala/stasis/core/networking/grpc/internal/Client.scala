@@ -1,11 +1,10 @@
 package stasis.core.networking.grpc.internal
 
-import akka.actor.ActorSystem
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.grpc.GrpcClientSettings
 import akka.grpc.scaladsl.{SingleResponseRequestBuilder, StreamResponseRequestBuilder}
 import akka.http.scaladsl.HttpsConnectionContext
 import akka.http.scaladsl.model.headers.HttpCredentials
-import akka.stream.ActorMaterializer
 import stasis.core.networking.grpc.{proto, GrpcEndpointAddress}
 
 import scala.concurrent.ExecutionContext
@@ -13,12 +12,12 @@ import scala.concurrent.ExecutionContext
 private[grpc] class Client(
   address: GrpcEndpointAddress,
   context: Option[HttpsConnectionContext]
-)(implicit system: ActorSystem, mat: ActorMaterializer) {
-  implicit val ec: ExecutionContext = system.dispatcher
+)(implicit system: ActorSystem[SpawnProtocol.Command]) {
+  implicit val ec: ExecutionContext = system.executionContext
 
   val client: proto.StasisEndpointClient = {
     val baseSettings = GrpcClientSettings
-      .connectToServiceAt(address.host, address.port)
+      .connectToServiceAt(address.host, address.port)(system.classicSystem)
       .withTls(address.tlsEnabled)
 
     proto.StasisEndpointClient(
@@ -46,6 +45,6 @@ object Client {
   def apply(
     address: GrpcEndpointAddress,
     context: Option[HttpsConnectionContext]
-  )(implicit system: ActorSystem, mat: ActorMaterializer): Client =
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): Client =
     new Client(address, context)
 }

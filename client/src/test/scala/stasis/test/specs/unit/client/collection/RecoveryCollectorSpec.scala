@@ -4,7 +4,6 @@ import java.nio.file.Paths
 import java.time.Instant
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import stasis.client.collection.RecoveryCollector
 import stasis.client.model.{DatasetMetadata, EntityMetadata, FilesystemMetadata, TargetEntity}
 import stasis.client.ops.ParallelismConfig
@@ -134,7 +133,6 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
   }
 
   private implicit val system: ActorSystem = ActorSystem(name = "DatasetMetadataRecoveryCollectorSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 
   private implicit val parallelismConfig: ParallelismConfig = ParallelismConfig(value = 1)
 }

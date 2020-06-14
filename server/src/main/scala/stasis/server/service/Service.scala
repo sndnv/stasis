@@ -4,21 +4,20 @@ import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.{ConnectionContext, HttpsConnectionContext}
 import akka.util.Timeout
 import com.typesafe.{config => typesafe}
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.networking.grpc.{GrpcEndpointAddress, GrpcEndpointClient}
 import stasis.core.networking.http.{HttpEndpoint, HttpEndpointAddress, HttpEndpointClient}
 import stasis.core.routing.{DefaultRouter, NodeProxy, Router}
 import stasis.core.security.jwt.{DefaultJwtAuthenticator, DefaultJwtProvider, JwtProvider}
 import stasis.core.security.keys.RemoteKeyProvider
+import stasis.core.security.oauth.DefaultOAuthClient
 import stasis.core.security.tls.EndpointContext
 import stasis.core.security.{JwtNodeAuthenticator, JwtNodeCredentialsProvider, NodeAuthenticator}
-import stasis.core.security.oauth.DefaultOAuthClient
 import stasis.server.api.ApiEndpoint
 import stasis.server.security._
 
@@ -31,14 +30,13 @@ trait Service {
 
   private val serviceState: AtomicReference[State] = new AtomicReference[State](State.Starting)
 
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     name = "stasis-server-service"
   )
 
-  private implicit val untyped: akka.actor.ActorSystem = system.toUntyped
   private implicit val ec: ExecutionContext = system.executionContext
-  private implicit val log: LoggingAdapter = Logging(untyped, this.getClass.getName)
+  private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   protected def systemConfig: typesafe.Config = system.settings.config
 
@@ -271,13 +269,13 @@ trait Service {
             serviceState.set(State.Started(apiServices, coreServices))
 
           case Failure(e) =>
-            log.error(e, "Bootstrap failed: [{}]", e.getMessage)
+            log.error("Bootstrap failed: [{}: {}]", e.getClass.getSimpleName, e.getMessage, e)
             serviceState.set(State.BootstrapFailed(e))
             stop()
         }
 
     case Failure(e) =>
-      log.error(e, "Service startup failed: [{}]", e.getMessage)
+      log.error("Service startup failed: [{}: {}]", e.getClass.getSimpleName, e.getMessage, e)
       serviceState.set(State.StartupFailed(e))
       stop()
   }

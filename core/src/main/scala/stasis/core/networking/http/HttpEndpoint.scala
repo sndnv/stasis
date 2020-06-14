@@ -1,17 +1,17 @@
 package stasis.core.networking.http
 
 import akka.NotUsed
-import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.event.Logging
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.{ConnectionContext, Http}
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Sink
+import akka.stream.{Materializer, SystemMaterializer}
 import akka.util.ByteString
+import org.slf4j.LoggerFactory
 import stasis.core.networking.Endpoint
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.CrateStorageRequest
@@ -28,25 +28,27 @@ class HttpEndpoint(
   router: Router,
   reservationStore: ReservationStoreView,
   override protected val authenticator: NodeAuthenticator[HttpCredentials]
-)(implicit system: ActorSystem[SpawnProtocol])
+)(implicit system: ActorSystem[SpawnProtocol.Command])
     extends Endpoint[HttpCredentials] {
 
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.core.api.Formats._
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
   private implicit val ec: ExecutionContextExecutor = system.executionContext
 
-  private val log = Logging(untypedSystem, this.getClass.getName)
+  private val log = LoggerFactory.getLogger(this.getClass.getName)
 
-  def start(interface: String, port: Int, context: ConnectionContext): Future[Http.ServerBinding] =
+  def start(interface: String, port: Int, context: ConnectionContext): Future[Http.ServerBinding] = {
+    implicit val mat: Materializer = SystemMaterializer(system).materializer
+    implicit val untyped: akka.actor.ActorSystem = system.classicSystem
+
     Http().bindAndHandle(
       handler = routes,
       interface = interface,
       port = port,
       connectionContext = context
     )
+  }
 
   private implicit def sanitizingExceptionHandler: ExceptionHandler =
     ExceptionHandler {
@@ -56,10 +58,10 @@ class HttpEndpoint(
           val failureReference = java.util.UUID.randomUUID()
 
           log.error(
-            e,
             "Unhandled exception encountered: [{}]; failure reference is [{}]",
             e.getMessage,
-            failureReference
+            failureReference,
+            e
           )
 
           complete(
@@ -81,7 +83,7 @@ class HttpEndpoint(
             val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
             val message = s"Parameter [$parameterName] is missing, invalid or malformed"
-            log.warning(message)
+            log.warn(message)
 
             complete(
               StatusCodes.BadRequest,
@@ -95,7 +97,7 @@ class HttpEndpoint(
             val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
             val message = "Provided data is invalid or malformed"
-            log.warning(message)
+            log.warn(message)
 
             complete(
               StatusCodes.BadRequest,
@@ -118,11 +120,11 @@ class HttpEndpoint(
                     entity(as[CrateStorageRequest]) { storageRequest =>
                       onSuccess(router.reserve(storageRequest)) {
                         case Some(reservation) =>
-                          log.debug("Reservation created for node [{}]: [{}]", node, reservation)
+                          log.debugN("Reservation created for node [{}]: [{}]", node, reservation)
                           complete(reservation)
 
                         case None =>
-                          log.warning("Reservation rejected for node [{}]", node)
+                          log.warn("Reservation rejected for node [{}]", node)
                           complete(StatusCodes.InsufficientStorage)
                       }
                     }
@@ -175,17 +177,17 @@ class HttpEndpoint(
                     get {
                       onSuccess(router.pull(crateId)) {
                         case Some(stream) =>
-                          log.debug("Node [{}] pulling crate [{}]", node, crateId)
+                          log.debugN("Node [{}] pulling crate [{}]", node, crateId)
                           complete(HttpEntity(ContentTypes.`application/octet-stream`, stream))
 
                         case None =>
-                          log.warning("Node [{}] failed to pull crate [{}]", node, crateId)
+                          log.warnN("Node [{}] failed to pull crate [{}]", node, crateId)
                           complete(StatusCodes.NotFound)
                       }
                     },
                     delete {
                       onSuccess(router.discard(crateId)) { _ =>
-                        log.debug("Node [{}] discarded crate [{}]", node, crateId)
+                        log.debugN("Node [{}] discarded crate [{}]", node, crateId)
                         complete(StatusCodes.OK)
                       }
                     }
@@ -196,7 +198,7 @@ class HttpEndpoint(
             case Failure(e) =>
               val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
-              log.warning(
+              log.warn(
                 "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{}]",
                 method.value,
                 uri,
@@ -211,7 +213,7 @@ class HttpEndpoint(
         case None =>
           val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
-          log.warning(
+          log.warn(
             "Rejecting [{}] request for [{}] with no credentials from [{}]",
             method.value,
             uri,

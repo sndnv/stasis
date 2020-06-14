@@ -7,8 +7,8 @@ import stasis.client.ops.exceptions.ScheduleAssignmentParsingFailure
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.schedules.Schedule
 
-import scala.util.{Failure, Success, Try}
 import scala.util.matching.Regex
+import scala.util.{Failure, Success, Try}
 
 sealed trait OperationScheduleAssignment {
   def schedule: Schedule.Id

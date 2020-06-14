@@ -4,7 +4,6 @@ import java.nio.file.attribute.{PosixFileAttributes, PosixFilePermissions}
 import java.nio.file.{Files, LinkOption, Paths}
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import stasis.client.staging.DefaultFileStaging
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
@@ -105,5 +104,4 @@ class DefaultFileStagingSpec extends AsyncUnitSpec with ResourceHelpers {
   }
 
   private implicit val system: ActorSystem = ActorSystem(name = "DefaultFileStagingSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 }

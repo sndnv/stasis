@@ -1,7 +1,6 @@
 package stasis.server.service
 
 import akka.Done
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.util.Timeout
 import com.typesafe.{config => typesafe}
@@ -23,9 +22,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class CorePersistence(
   persistenceConfig: typesafe.Config,
-)(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout) { persistence =>
+)(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout) { persistence =>
   private implicit val ec: ExecutionContext = system.executionContext
-  private implicit val untyped: akka.actor.ActorSystem = system.toUntyped
 
   val profile: JdbcProfile = SlickProfile(profile = persistenceConfig.getString("database.profile"))
 

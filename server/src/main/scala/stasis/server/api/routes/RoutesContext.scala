@@ -1,8 +1,8 @@
 package stasis.server.api.routes
 
-import akka.event.LoggingAdapter
 import akka.stream.Materializer
-import stasis.server.security.{CurrentUser, ResourceProvider}
+import org.slf4j.Logger
+import stasis.server.security.ResourceProvider
 
 import scala.concurrent.ExecutionContext
 
@@ -10,7 +10,7 @@ final case class RoutesContext(
   resourceProvider: ResourceProvider,
   ec: ExecutionContext,
   mat: Materializer,
-  log: LoggingAdapter
+  log: Logger
 )
 
 object RoutesContext {
@@ -19,7 +19,7 @@ object RoutesContext {
     resourceProvider: ResourceProvider,
     ec: ExecutionContext,
     mat: Materializer,
-    log: LoggingAdapter
+    log: Logger
   ): RoutesContext =
     RoutesContext(
       resourceProvider = resourceProvider,

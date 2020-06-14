@@ -1,12 +1,10 @@
 package stasis.core.security.oauth
 
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.actor.typed.scaladsl.adapter._
-import akka.http.scaladsl.{Http, HttpsConnectionContext}
-import akka.http.scaladsl.model.{FormData, HttpMethods, HttpRequest, HttpResponse, Uri}
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import stasis.core.security.exceptions.ProviderFailure
@@ -21,15 +19,14 @@ class DefaultOAuthClient(
   clientSecret: String,
   useQueryString: Boolean,
   context: Option[HttpsConnectionContext]
-)(implicit system: ActorSystem[SpawnProtocol])
+)(implicit system: ActorSystem[SpawnProtocol.Command])
     extends OAuthClient {
-  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
-  private implicit val mat: Materializer = ActorMaterializer()
+
   private implicit val ec: ExecutionContext = system.executionContext
 
   private val credentials: BasicHttpCredentials = BasicHttpCredentials(username = client, password = clientSecret)
 
-  private val http = Http()
+  private val http = Http()(system.classicSystem)
 
   private val clientContext: HttpsConnectionContext = context match {
     case Some(context) => context

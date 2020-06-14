@@ -3,14 +3,14 @@ package stasis.client.api.clients
 import java.time.Instant
 
 import stasis.client.model.DatasetMetadata
-
-import scala.concurrent.Future
 import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}
 import stasis.shared.api.responses.{CreatedDatasetDefinition, CreatedDatasetEntry, Ping}
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
+
+import scala.concurrent.Future
 
 trait ServerApiEndpointClient {
   def self: Device.Id

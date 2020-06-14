@@ -4,22 +4,20 @@ import java.nio.file.Paths
 import java.time.Instant
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import akka.{Done, NotUsed}
+import org.scalatest.{Assertion, BeforeAndAfterAll}
 import org.scalatest.concurrent.Eventually
-import org.scalatest.BeforeAndAfterAll
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.collection.RecoveryCollector
 import stasis.client.encryption.secrets.{DeviceMetadataSecret, DeviceSecret, Secret}
 import stasis.client.model.{DatasetMetadata, FilesystemMetadata}
+import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.recovery.Recovery.PathQuery
 import stasis.client.ops.recovery.{Providers, Recovery}
-import stasis.client.ops.ParallelismConfig
 import stasis.client.staging.DefaultFileStaging
 import stasis.core.routing.Node
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
@@ -83,7 +81,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     )
 
     recovery.start().map { _ =>
-      eventually {
+      eventually[Assertion] {
         // data pulled for source-file-1; source-file-2 is unchanged; source-file-3 has only metadata changes;
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(1)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
@@ -163,7 +161,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     )
 
     recovery.start().map { _ =>
-      eventually {
+      eventually[Assertion] {
         // data pulled for all entities; 2 directories and 5 files
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(5)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
@@ -221,7 +219,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     )
 
     recovery.start().map { _ =>
-      eventually {
+      eventually[Assertion] {
         // data pulled for source-file-1, source-file-2; source-file-3 has not data and will fail
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(2)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
@@ -249,7 +247,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
       .map { result =>
         result should be(Done)
 
-        eventually {
+        eventually[Assertion] {
           mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(0)
@@ -277,7 +275,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
         case NonFatal(e) =>
           e shouldBe a[RuntimeException]
 
-          eventually {
+          eventually[Assertion] {
             mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(0)
             mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(0)
             mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(0)
@@ -317,7 +315,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     val _ = recovery.start()
     recovery.stop()
 
-    eventually {
+    eventually[Assertion] {
       mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(1)
     }
   }
@@ -526,14 +524,10 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "RecoverySpec"
   )
-
-  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.toUntyped
-
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 
   private implicit val parallelismConfig: ParallelismConfig = ParallelismConfig(value = 1)
 

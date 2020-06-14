@@ -91,7 +91,7 @@ class FormatsSpec extends UnitSpec {
 
   they should "convert nodes to/from JSON" in {
     val nodeId = Node.generateId()
-    val storeDescriptor = CrateStore.Descriptor.ForStreamingMemoryBackend(
+    val storeDescriptor: CrateStore.Descriptor = CrateStore.Descriptor.ForStreamingMemoryBackend(
       maxSize = 42,
       maxChunkSize = 999,
       name = "node-format-test"
@@ -99,7 +99,7 @@ class FormatsSpec extends UnitSpec {
     val httpAddress = HttpEndpointAddress(uri = "http://some-address:1234")
     val grpcAddress = GrpcEndpointAddress(host = "some-host", port = 1234, tlsEnabled = false)
 
-    val nodes = Map(
+    val nodes: Map[String, (Node, String)] = Map(
       "local" -> (
         Node.Local(id = nodeId, storeDescriptor = storeDescriptor),
         s"""{"node_type":"local","id":"$nodeId","store_descriptor":${Json.toJson(storeDescriptor).toString}}"""
@@ -129,8 +129,8 @@ class FormatsSpec extends UnitSpec {
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "FormatsSpec"
   )
 

@@ -4,7 +4,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{Assertion, BeforeAndAfterAll}
 import org.scalatest.concurrent.Eventually
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.packaging.{Crate, Manifest}
@@ -51,7 +51,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
         viaProxy = fixtures.proxy
       )
       .map { _ =>
-        eventually {
+        eventually[Assertion] {
           fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(1)
           fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(0)
           fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
@@ -61,8 +61,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
 
           fixtures.testClient.crateCopies(testManifest.crate).await should be(fixtures.remoteNodes.size)
           fixtures.testClient.crateNodes(testManifest.crate).await should be(fixtures.remoteNodes.size)
-          fixtures.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(
-            fixtures.remoteNodes.size)
+          fixtures.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(fixtures.remoteNodes.size)
           fixtures.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
         }
       }
@@ -81,7 +80,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
         viaProxy = fixtures.proxy
       )
       .map { _ =>
-        eventually {
+        eventually[Assertion] {
           fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(1)
           fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(0)
           fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
@@ -159,7 +158,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
           viaProxy = fixtures.proxy
         )
         .map { _ =>
-          eventually {
+          eventually[Assertion] {
             fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(0)
             fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(1)
             fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
@@ -229,8 +228,8 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
     }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "StagingStoreSpec"
   )
 

@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.server.model.nodes
 
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.persistence.crates.CrateStore
 import stasis.server.model.nodes.ServerNodeStore
 import stasis.shared.security.Permission
@@ -98,8 +98,8 @@ class ServerNodeStoreSpec extends AsyncUnitSpec {
     }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "ServerNodeStoreSpec"
   )
 }

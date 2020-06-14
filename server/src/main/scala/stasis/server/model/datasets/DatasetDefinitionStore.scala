@@ -1,12 +1,13 @@
 package stasis.server.model.datasets
 
-import scala.concurrent.{ExecutionContext, Future}
 import akka.Done
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.server.security.Resource
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.devices.Device
 import stasis.shared.security.Permission
+
+import scala.concurrent.{ExecutionContext, Future}
 
 trait DatasetDefinitionStore { store =>
   protected implicit def ec: ExecutionContext

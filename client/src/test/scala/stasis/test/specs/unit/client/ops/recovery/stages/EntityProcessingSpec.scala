@@ -3,8 +3,8 @@ package stasis.test.specs.unit.client.ops.recovery.stages
 import java.nio.file.Paths
 
 import akka.actor.ActorSystem
+import akka.stream.{Materializer, SystemMaterializer}
 import akka.stream.scaladsl.Source
-import akka.stream.{ActorMaterializer, Materializer}
 import akka.util.ByteString
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
@@ -118,7 +118,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
         track = mockTracker
       )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
-      override implicit protected def mat: Materializer = spec.mat
+      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
       override implicit protected def ec: ExecutionContext = spec.system.dispatcher
     }
 
@@ -198,7 +198,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
         track = mockTracker
       )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
-      override implicit protected def mat: Materializer = spec.mat
+      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
       override implicit protected def ec: ExecutionContext = spec.system.dispatcher
     }
 
@@ -259,5 +259,4 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
   }
 
   private implicit val system: ActorSystem = ActorSystem(name = "EntityProcessingSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 }

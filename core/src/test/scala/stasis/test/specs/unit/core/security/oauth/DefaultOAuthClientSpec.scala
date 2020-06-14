@@ -1,10 +1,8 @@
 package stasis.test.specs.unit.core.security.oauth
 
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.HttpsConnectionContext
-import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.BeforeAndAfterAll
 import stasis.core.security.oauth.DefaultOAuthClient
@@ -264,13 +262,10 @@ class DefaultOAuthClientSpec extends AsyncUnitSpec with BeforeAndAfterAll {
     withKeystoreConfig = keystoreConfig
   )
 
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "OAuthClientSpec"
   )
-
-  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 
   private val ports: mutable.Queue[Int] = (26000 to 26100).to[mutable.Queue]
 

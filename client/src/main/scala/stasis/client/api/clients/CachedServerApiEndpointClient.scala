@@ -2,7 +2,6 @@ package stasis.client.api.clients
 
 import java.time.Instant
 
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.caching.LfuCache
 import akka.http.caching.scaladsl.{Cache, CachingSettings}
@@ -20,12 +19,12 @@ import scala.concurrent.{ExecutionContext, Future}
 class CachedServerApiEndpointClient(
   config: CachedServerApiEndpointClient.Config,
   underlying: ServerApiEndpointClient
-)(implicit system: ActorSystem[SpawnProtocol])
+)(implicit system: ActorSystem[SpawnProtocol.Command])
     extends ServerApiEndpointClient {
 
   private implicit val ec: ExecutionContext = system.executionContext
 
-  private val defaultCacheSettings: CachingSettings = CachingSettings(system.toUntyped)
+  private val defaultCacheSettings: CachingSettings = CachingSettings(system.classicSystem)
 
   private val cacheSettings: CachingSettings = defaultCacheSettings.withLfuCacheSettings(
     defaultCacheSettings.lfuCacheSettings

@@ -1,14 +1,15 @@
 package stasis.test.specs.unit.server.model.users
 
-import scala.util.control.NonFatal
-
 import akka.Done
-import akka.actor.ActorSystem
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.server.security.CurrentUser
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.MockUserStore
+
+import scala.util.control.NonFatal
 
 class UserStoreSpec extends AsyncUnitSpec {
   "A UserStore" should "provide a view resource (privileged)" in {
@@ -150,7 +151,12 @@ class UserStoreSpec extends AsyncUnitSpec {
       }
   }
 
-  private implicit val system: ActorSystem = ActorSystem(name = "UserStoreSpec")
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+    "UserStoreSpec"
+  )
+
+  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
 
   private val mockUser = User(
     id = User.generateId(),

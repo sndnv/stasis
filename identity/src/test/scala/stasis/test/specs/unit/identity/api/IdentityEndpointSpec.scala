@@ -1,12 +1,12 @@
 package stasis.test.specs.unit.identity.api
 
-import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest, StatusCodes}
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.http.scaladsl.{ConnectionContext, Http}
 import play.api.libs.json._
-import stasis.identity.api.{IdentityEndpoint, Manage}
 import stasis.identity.api.manage.setup.Config
+import stasis.identity.api.{IdentityEndpoint, Manage}
 import stasis.identity.model.apis.Api
 import stasis.identity.model.secrets.Secret
 import stasis.test.specs.unit.core.security.mocks.MockJwksGenerators

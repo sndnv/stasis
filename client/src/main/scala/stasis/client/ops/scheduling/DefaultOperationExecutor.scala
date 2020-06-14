@@ -4,15 +4,15 @@ import java.nio.file.Path
 import java.time.Instant
 
 import akka.Done
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.actor.typed.scaladsl.adapter._
-import akka.event.{Logging, LoggingAdapter}
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.{Materializer, SystemMaterializer}
 import akka.util.Timeout
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.collection.rules.Specification
 import stasis.client.encryption.secrets.DeviceSecret
-import stasis.client.ops.{backup, recovery, ParallelismConfig}
 import stasis.client.ops.exceptions.OperationExecutionFailure
+import stasis.client.ops.{backup, recovery, ParallelismConfig}
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.ops.Operation
@@ -24,18 +24,17 @@ class DefaultOperationExecutor(
   config: DefaultOperationExecutor.Config,
   secret: DeviceSecret
 )(
-  implicit system: ActorSystem[SpawnProtocol],
+  implicit system: ActorSystem[SpawnProtocol.Command],
   parallelismConfig: ParallelismConfig,
   timeout: Timeout,
   backupProviders: backup.Providers,
   recoveryProviders: recovery.Providers
 ) extends OperationExecutor {
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
   private implicit val ec: ExecutionContext = system.executionContext
-  private implicit val mat: Materializer = ActorMaterializer()
+  private implicit val mat: Materializer = SystemMaterializer(system).materializer
 
-  private val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)
+  private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private val activeOperations: MemoryBackend[Operation.Id, Operation] =
     MemoryBackend(name = "executor-operations-store")
@@ -142,7 +141,7 @@ class DefaultOperationExecutor(
 
       case None =>
         val message = s"Failed to stop [$operation]; operation not found"
-        log.error(message)
+        log.errorN(message)
         Future.failed(new OperationExecutionFailure(message))
     }
 
@@ -151,7 +150,7 @@ class DefaultOperationExecutor(
       active.find(_._2 == ofType) match {
         case Some((operation, _)) =>
           val message = s"Cannot start [$ofType] operation; [$ofType] with ID [$operation] is already active"
-          log.error(message)
+          log.errorN(message)
           Future.failed(new OperationExecutionFailure(message))
 
         case None =>
@@ -165,17 +164,17 @@ class DefaultOperationExecutor(
     }
 
     def runWithResult(): Future[Done] = {
-      log.debug("Starting operation [{}]", operation.id)
+      log.debugN("Starting operation [{}]", operation.id)
       operation
         .start()
         .recover {
           case NonFatal(e) =>
-            log.error(
-              e,
+            log.errorN(
               "Failure encountered when running operation [{}]: [{}: {}]",
               operation.id,
               e.getClass.getSimpleName,
-              e.getMessage
+              e.getMessage,
+              e
             )
             Done
         }

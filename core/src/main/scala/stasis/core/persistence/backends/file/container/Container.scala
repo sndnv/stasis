@@ -4,15 +4,16 @@ import java.nio.ByteOrder
 import java.nio.file.{Files, Path, Paths}
 import java.util.UUID
 
-import akka.{Done, NotUsed}
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.util.ByteString
+import akka.{Done, NotUsed}
 import stasis.core.persistence.backends.file.container.exceptions.{ContainerFailure, ConversionFailure}
 import stasis.core.persistence.backends.file.container.headers.ContainerHeader
 import stasis.core.persistence.backends.file.container.ops.{ContainerLogOps, ContainerOps, ConversionOps}
 import stasis.core.persistence.backends.file.container.stream.transform.{ChunksToCrate, CrateToChunks}
 import stasis.core.persistence.backends.file.container.stream.{CrateChunkSink, CrateChunkSource}
+
 import scala.concurrent.{ExecutionContext, Future}
 
 class Container(
@@ -141,7 +142,7 @@ class Container(
       }
     }
 
-  def compact()(implicit mat: ActorMaterializer): Future[Done] =
+  def compact()(implicit mat: Materializer): Future[Done] =
     for {
       crates <- ContainerLogOps.crates(containerLogPath)
       temporaryContainer = containerPath.resolveSibling(s"${containerPath.getFileName}.compact")

@@ -6,8 +6,8 @@ import java.util.Base64
 
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.{Directive, Route}
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.{Directive, Route}
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.api.Formats._
 import stasis.identity.model.ChallengeMethod
@@ -49,7 +49,7 @@ trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
           discardEntity {
             complete(
               StatusCodes.BadRequest,
-              TokenError.InvalidGrant
+              TokenError.InvalidGrant: TokenError
             )
           }
       }
@@ -101,7 +101,7 @@ trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
             discardEntity {
               complete(
                 StatusCodes.BadRequest,
-                TokenError.InvalidGrant
+                TokenError.InvalidGrant: TokenError
               )
             }
           }
@@ -116,7 +116,7 @@ trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
           discardEntity {
             complete(
               StatusCodes.BadRequest,
-              TokenError.InvalidGrant
+              TokenError.InvalidGrant: TokenError
             )
           }
       }
@@ -151,7 +151,7 @@ trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
             discardEntity {
               complete(
                 StatusCodes.BadRequest,
-                TokenError.InvalidGrant
+                TokenError.InvalidGrant: TokenError
               )
             }
 
@@ -164,7 +164,7 @@ trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
             discardEntity {
               complete(
                 StatusCodes.BadRequest,
-                TokenError.InvalidGrant
+                TokenError.InvalidGrant: TokenError
               )
             }
 

@@ -3,10 +3,10 @@ package stasis.test.specs.unit.core.networking.grpc
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.ConnectionContext
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.typesafe.config.{Config, ConfigFactory}
+import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 import stasis.core.networking.grpc.{GrpcEndpoint, GrpcEndpointAddress, GrpcEndpointClient}
 import stasis.core.packaging.{Crate, Manifest}
@@ -111,7 +111,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
         .single(ByteString(crateContent))
         .runWith(sink)
         .map { _ =>
-          eventually {
+          eventually[Assertion] {
             endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
             endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
           }
@@ -408,15 +408,10 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
-  private implicit val untypedSystem: akka.actor.ActorSystem =
-    akka.actor.ActorSystem(name = "GrpcEndpointClientSpec_Untyped")
-
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "GrpcEndpointClientSpec_Typed"
   )
-
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 
   private val crateContent = "some value"
 
@@ -442,7 +437,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val fixtures: TestFixtures = new TestFixtures {},
     context: ConnectionContext = ConnectionContext.noEncryption(),
     port: Int
-  ) extends GrpcEndpoint(fixtures.router, fixtures.reservationStore.view, testAuthenticator) {
+  ) extends GrpcEndpoint(fixtures.router, fixtures.reservationStore.view, testAuthenticator)(typedSystem.classicSystem) {
     private val _ = start("localhost", port, connectionContext = context)
   }
 

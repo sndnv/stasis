@@ -7,7 +7,6 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives
 import akka.http.scaladsl.server.Directives._
-import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
 import stasis.core.security.tls.EndpointContext
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -111,7 +110,6 @@ class EndpointContextSpec extends AsyncUnitSpec {
     )
 
     implicit val system: ActorSystem = ActorSystem(name = "EndpointContextSpec")
-    implicit val mat: ActorMaterializer = ActorMaterializer()
 
     val endpointUrl = s"https://$interface:$port"
 
@@ -144,7 +142,6 @@ class EndpointContextSpec extends AsyncUnitSpec {
     val clientContext = EndpointContext.fromConfig(config = config.getConfig("context-mutual")).get
 
     implicit val system: ActorSystem = ActorSystem(name = "EndpointContextSpec")
-    implicit val mat: ActorMaterializer = ActorMaterializer()
 
     val endpointUrl = s"https://$interface:$port"
 

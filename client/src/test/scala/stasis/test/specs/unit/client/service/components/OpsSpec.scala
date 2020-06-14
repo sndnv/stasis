@@ -1,22 +1,20 @@
 package stasis.test.specs.unit.client.service.components
 
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
-import akka.event.{Logging, LoggingAdapter}
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
-import akka.stream.ActorMaterializer
 import akka.util.ByteString
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.api.clients.Clients
-import stasis.client.encryption.secrets.{DeviceSecret, Secret}
 import stasis.client.encryption.Aes
+import stasis.client.encryption.secrets.{DeviceSecret, Secret}
 import stasis.client.security.CredentialsProvider
 import stasis.client.service.components.{ApiClients, Base, Ops, Secrets}
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.mocks.{MockServerApiEndpointClient, MockServerCoreEndpointClient}
 import stasis.test.specs.unit.client.ResourceHelpers
+import stasis.test.specs.unit.client.mocks.{MockServerApiEndpointClient, MockServerCoreEndpointClient}
 
 import scala.concurrent.Future
 
@@ -62,15 +60,10 @@ class OpsSpec extends AsyncUnitSpec with ResourceHelpers {
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "OpsSpec"
   )
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.toUntyped
-
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
-
-  private implicit val log: LoggingAdapter =
-    Logging(untypedSystem, this.getClass.getName)
+  private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 }

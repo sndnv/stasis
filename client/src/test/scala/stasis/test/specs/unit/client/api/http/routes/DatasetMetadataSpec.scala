@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.client.api.http.routes
 
-import akka.event.Logging
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.slf4j.LoggerFactory
 import stasis.client.api.http.Context
 import stasis.client.api.http.routes.DatasetMetadata
 import stasis.client.model
@@ -68,7 +68,7 @@ class DatasetMetadataSpec extends AsyncUnitSpec with ScalatestRouteTest {
       tracker = MockTrackerView(),
       search = search,
       terminateService = () => (),
-      log = Logging(system, this.getClass.getName)
+      log = LoggerFactory.getLogger(this.getClass.getName)
     )
 
     new DatasetMetadata().routes()

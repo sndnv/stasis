@@ -4,7 +4,6 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 import akka.NotUsed
-import akka.event.Logging
 import akka.http.scaladsl.model.sse.ServerSentEvent
 import akka.http.scaladsl.model.{MediaTypes, StatusCodes, Uri}
 import akka.http.scaladsl.server.Directives._
@@ -12,6 +11,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.scaladsl.{Sink, Source}
+import org.slf4j.LoggerFactory
 import stasis.client.api.http.Context
 import stasis.client.api.http.routes.Operations
 import stasis.client.ops.recovery.Recovery.PathQuery
@@ -354,7 +354,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       tracker = tracker,
       search = MockSearch(),
       terminateService = () => (),
-      log = Logging(system, this.getClass.getName)
+      log = LoggerFactory.getLogger(this.getClass.getName)
     )
 
     new Operations().routes()

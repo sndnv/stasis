@@ -1,13 +1,12 @@
 package stasis.test.specs.unit.client.ops.recovery.stages
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.collection.RecoveryCollector
 import stasis.client.model.TargetEntity
-import stasis.client.ops.recovery.stages.EntityCollection
 import stasis.client.ops.recovery.Providers
+import stasis.client.ops.recovery.stages.EntityCollection
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
@@ -69,5 +68,4 @@ class EntityCollectionSpec extends AsyncUnitSpec {
   }
 
   private implicit val system: ActorSystem = ActorSystem(name = "EntityCollectionSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 }

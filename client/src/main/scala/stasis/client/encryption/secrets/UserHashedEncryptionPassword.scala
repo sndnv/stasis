@@ -4,7 +4,6 @@ import akka.util.ByteString
 import at.favre.lib.crypto.HKDF
 import stasis.shared.model.users.User
 
-// doc - never stored or sent externally
 final case class UserHashedEncryptionPassword(
   user: User.Id,
   private val hashedPassword: ByteString

@@ -3,9 +3,9 @@ package stasis.identity.service
 import java.io.File
 
 import akka.Done
-import akka.event.LoggingAdapter
 import com.typesafe.config.ConfigFactory
 import com.typesafe.{config => typesafe}
+import org.slf4j.Logger
 import stasis.identity.model.Seconds
 import stasis.identity.model.apis.Api
 import stasis.identity.model.clients.Client
@@ -29,7 +29,7 @@ object Bootstrap {
     persistence: Persistence
   )(
     implicit ec: ExecutionContext,
-    log: LoggingAdapter,
+    log: Logger,
     clientSecretConfig: Secret.ClientConfig,
     ownerSecretConfig: Secret.ResourceOwnerConfig
   ): Future[Done] = {
@@ -61,7 +61,7 @@ object Bootstrap {
   def run(
     entities: Entities,
     persistence: Persistence
-  )(implicit ec: ExecutionContext, log: LoggingAdapter): Future[Done] = {
+  )(implicit ec: ExecutionContext, log: Logger): Future[Done] = {
     val identityApi: Api = Api(id = Api.ManageIdentity)
 
     for {
@@ -116,7 +116,7 @@ object Bootstrap {
   private def logged[T](
     put: T => Future[Done],
     entity: T
-  )(implicit ec: ExecutionContext, log: LoggingAdapter): Future[Done] =
+  )(implicit ec: ExecutionContext, log: Logger): Future[Done] =
     put(entity)
       .map { result =>
         entity match {

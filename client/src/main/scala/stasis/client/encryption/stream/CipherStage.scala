@@ -2,11 +2,11 @@ package stasis.client.encryption.stream
 
 import java.security.Key
 import java.security.spec.AlgorithmParameterSpec
-import javax.crypto.Cipher
 
-import akka.stream.{Attributes, FlowShape, Inlet, Outlet}
 import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
+import akka.stream.{Attributes, FlowShape, Inlet, Outlet}
 import akka.util.ByteString
+import javax.crypto.Cipher
 
 class CipherStage(
   algorithm: String,

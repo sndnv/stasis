@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.identity.authentication.oauth
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import stasis.core.persistence.backends.memory.MemoryBackend
@@ -115,12 +114,12 @@ class DefaultClientAuthenticatorSpec extends AsyncUnitSpec {
       }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DefaultClientAuthenticatorSpec"
   )
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
+  private implicit val untypedSystem: akka.actor.ActorSystem = system.classicSystem
 
   private implicit val secretConfig: Secret.ClientConfig = Secret.ClientConfig(
     algorithm = "PBKDF2WithHmacSHA512",

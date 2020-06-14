@@ -1,10 +1,8 @@
 package stasis.test.specs.unit.client.api.clients
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.typesafe.config.{Config, ConfigFactory}
@@ -139,15 +137,10 @@ class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec {
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DefaultServerCoreEndpointClientSpec"
   )
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.toUntyped
-
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
-
   private val ports: mutable.Queue[Int] = (23000 to 23100).to[mutable.Queue]
-
 }

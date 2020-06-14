@@ -21,7 +21,7 @@ class Persistence(
   persistenceConfig: typesafe.Config,
   authorizationCodeExpiration: FiniteDuration,
   refreshTokenExpiration: FiniteDuration
-)(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout) {
+)(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout) {
   private implicit val ec: ExecutionContext = system.executionContext
 
   val profile: JdbcProfile = SlickProfile(profile = persistenceConfig.getString("database.profile"))
@@ -55,7 +55,10 @@ class Persistence(
     )
 
   val authorizationCodes: AuthorizationCodeStore =
-    AuthorizationCodeStore(expiration = authorizationCodeExpiration, backend = backends.codes)
+    AuthorizationCodeStore(
+      expiration = authorizationCodeExpiration,
+      backend = backends.codes
+    )
 
   def init(): Future[Done] =
     for {

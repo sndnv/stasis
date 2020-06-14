@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.client.collection
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import stasis.client.analysis.Checksum
 import stasis.client.collection.BackupMetadataCollector
 import stasis.client.model.EntityMetadata
@@ -48,5 +47,4 @@ class BackupMetadataCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
   }
 
   private implicit val system: ActorSystem = ActorSystem(name = "BackupMetadataCollectorSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 }

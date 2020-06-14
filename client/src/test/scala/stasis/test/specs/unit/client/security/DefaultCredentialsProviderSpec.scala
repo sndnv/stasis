@@ -3,6 +3,7 @@ package stasis.test.specs.unit.client.security
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
+import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 import stasis.client.security.DefaultCredentialsProvider
 import stasis.core.security.oauth.OAuthClient.AccessTokenResponse
@@ -46,7 +47,7 @@ class DefaultCredentialsProviderSpec extends AsyncUnitSpec with Eventually {
       expirationTolerance = 1.second
     )
 
-    eventually {
+    eventually[Assertion] {
       val token = provider.core.await
 
       token match {
@@ -68,7 +69,7 @@ class DefaultCredentialsProviderSpec extends AsyncUnitSpec with Eventually {
       expirationTolerance = 1.second
     )
 
-    eventually {
+    eventually[Assertion] {
       val token = provider.api.await
 
       token match {
@@ -90,7 +91,7 @@ class DefaultCredentialsProviderSpec extends AsyncUnitSpec with Eventually {
       expirationTolerance = 1.second
     )
 
-    eventually {
+    eventually[Assertion] {
       val token = provider.core.await
 
       token match {
@@ -112,7 +113,7 @@ class DefaultCredentialsProviderSpec extends AsyncUnitSpec with Eventually {
       expirationTolerance = 1.second
     )
 
-    eventually {
+    eventually[Assertion] {
       val token = provider.api.await
 
       token match {
@@ -148,8 +149,8 @@ class DefaultCredentialsProviderSpec extends AsyncUnitSpec with Eventually {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DefaultCredentialsProviderSpec"
   )
 

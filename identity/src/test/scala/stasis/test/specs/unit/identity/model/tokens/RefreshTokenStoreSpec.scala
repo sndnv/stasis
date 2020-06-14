@@ -4,6 +4,7 @@ import java.time.Instant
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.identity.model.clients.Client
@@ -55,7 +56,7 @@ class RefreshTokenStoreSpec extends AsyncUnitSpec with Eventually {
 
     store.put(client, expectedToken, owner, scope = None).await
 
-    eventually {
+    eventually[Assertion] {
       store.get(expectedToken).await should be(None)
       store.tokens.await should be(Map.empty)
     }
@@ -98,7 +99,7 @@ class RefreshTokenStoreSpec extends AsyncUnitSpec with Eventually {
     tokens.foreach(token => backend.put(token.token, token).await)
 
     val store = RefreshTokenStore(expiration = 3.seconds, backend = backend, directory = directory)
-    eventually {
+    eventually[Assertion] {
       val remainingTokens = store.tokens.await
       remainingTokens.values.toSeq should be(tokens.drop(2))
     }
@@ -131,8 +132,8 @@ class RefreshTokenStoreSpec extends AsyncUnitSpec with Eventually {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
-  private implicit val system: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "RefreshTokenStoreSpec"
   )
 

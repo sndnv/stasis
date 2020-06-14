@@ -90,7 +90,7 @@ class AuthorizationCodeGrant(
               discardEntity {
                 complete(
                   StatusCodes.BadRequest,
-                  AuthorizationError.InvalidRequest(withState = request.state)
+                  AuthorizationError.InvalidRequest(withState = request.state): AuthorizationError
                 )
               }
           }
@@ -154,7 +154,7 @@ class AuthorizationCodeGrant(
             discardEntity {
               complete(
                 StatusCodes.BadRequest,
-                TokenError.InvalidRequest
+                TokenError.InvalidRequest: TokenError
               )
             }
         }

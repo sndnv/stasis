@@ -1,10 +1,10 @@
 package stasis.core.persistence.reservations
 
-import stasis.core.persistence.CrateStorageReservation
-import scala.concurrent.Future
-
 import stasis.core.packaging.Crate
+import stasis.core.persistence.CrateStorageReservation
 import stasis.core.routing.Node
+
+import scala.concurrent.Future
 
 trait ReservationStoreView {
   def get(reservation: CrateStorageReservation.Id): Future[Option[CrateStorageReservation]]

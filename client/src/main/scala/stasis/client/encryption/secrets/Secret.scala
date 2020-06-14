@@ -1,6 +1,7 @@
 package stasis.client.encryption.secrets
 
 import java.nio.ByteBuffer
+
 import com.typesafe.{config => typesafe}
 
 private[secrets] trait Secret {

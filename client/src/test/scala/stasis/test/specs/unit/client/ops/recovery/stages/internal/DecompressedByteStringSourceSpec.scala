@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.client.ops.recovery.stages.internal
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import stasis.client.analysis.Checksum
@@ -37,5 +36,4 @@ class DecompressedByteStringSourceSpec extends AsyncUnitSpec {
   }
 
   private implicit val system: ActorSystem = ActorSystem(name = "DecompressedByteStringSourceSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 }

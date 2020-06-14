@@ -1,12 +1,11 @@
 package stasis.core.routing
 
-import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.event.Logging
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Broadcast, Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
+import org.slf4j.LoggerFactory
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.exceptions.ReservationFailure
 import stasis.core.persistence.manifests.ManifestStore
@@ -24,14 +23,12 @@ class DefaultRouter(
   routerId: Node.Id,
   persistence: DefaultRouter.Persistence,
   nodeProxy: NodeProxy
-)(implicit system: ActorSystem[SpawnProtocol])
+)(implicit system: ActorSystem[SpawnProtocol.Command])
     extends Router {
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = system.toUntyped
   private implicit val ec: ExecutionContext = system.executionContext
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 
-  private val log = Logging(untypedSystem, this.getClass.getName)
+  private val log = LoggerFactory.getLogger(this.getClass.getName)
 
   override def push(
     manifest: Manifest,
@@ -64,7 +61,7 @@ class DefaultRouter(
                     .sequence(
                       distribution.map {
                         case (node, copies) =>
-                          log.debug(
+                          log.debugN(
                             "Distributing [{}] copies of crate [{}] on node [{}]",
                             copies,
                             manifest.crate,
@@ -75,7 +72,7 @@ class DefaultRouter(
                             nodeProxy
                               .sink(node, manifest.copy(copies = copies))
                               .map { sink =>
-                                log.debug(
+                                log.debugN(
                                   "Content sink retrieved for node [{}] while pushing crate [{}]",
                                   node,
                                   manifest.crate
@@ -115,10 +112,7 @@ class DefaultRouter(
                       }
 
                       result.flatMap { _ =>
-                        log.debug("Crate [{}] pushed to [{}] nodes: [{}]",
-                                  manifest.crate,
-                                  destinations.size,
-                                  destinations)
+                        log.debugN("Crate [{}] pushed to [{}] nodes: [{}]", manifest.crate, destinations.size, destinations)
                         persistence.manifests.put(manifest.copy(destinations = destinations.map(_.id).toSeq))
                       }
                     }
@@ -152,7 +146,7 @@ class DefaultRouter(
                 .pull(node, crate)
                 .flatMap {
                   case Some(content) =>
-                    log.debug(
+                    log.debugN(
                       "Pull of crate [{}] from node [{}] completed",
                       crate,
                       node
@@ -161,7 +155,7 @@ class DefaultRouter(
                     Future.successful(Some(content))
 
                   case None =>
-                    log.warning(
+                    log.warnN(
                       "Pull of crate [{}] from node [{}] completed with no content",
                       crate,
                       node
@@ -182,7 +176,7 @@ class DefaultRouter(
                 }
 
             case None =>
-              log.error(
+              log.errorN(
                 "Pull of crate [{}] from node [{}] failed; node not found",
                 crate,
                 currentNodeId
@@ -204,7 +198,7 @@ class DefaultRouter(
     persistence.manifests.get(crate).flatMap {
       case Some(manifest) =>
         if (manifest.destinations.nonEmpty) {
-          log.debug(
+          log.debugN(
             "Pulling crate [{}] from [{}] nodes: [{}]",
             crate,
             manifest.destinations.size,
@@ -233,7 +227,7 @@ class DefaultRouter(
         }
 
       case None =>
-        log.warning("Crate [{}] was not pulled; failed to retrieve manifest", crate)
+        log.warn("Crate [{}] was not pulled; failed to retrieve manifest", crate)
         Future.successful(None)
     }
   }
@@ -245,7 +239,7 @@ class DefaultRouter(
           .fold(Future.successful(false))(_.drop(crate))
           .flatMap { droppedFromStaging =>
             if (droppedFromStaging) {
-              log.debug(
+              log.debugN(
                 "Dropped staged crate [{}] with [{}] nodes: [{}]",
                 crate,
                 manifest.destinations.size,
@@ -255,7 +249,7 @@ class DefaultRouter(
               Future.successful(Done)
             } else {
               if (manifest.destinations.nonEmpty) {
-                log.debug(
+                log.debugN(
                   "Discarding crate [{}] from [{}] nodes: [{}]",
                   crate,
                   manifest.destinations.size,
@@ -302,7 +296,7 @@ class DefaultRouter(
                                 Some(reservation)
                               }
                             } else {
-                              log.warning(
+                              log.warnN(
                                 "Storage request [{}] for crate [{}] cannot be fulfilled; storage not available",
                                 request,
                                 request.crate
@@ -349,7 +343,7 @@ class DefaultRouter(
 
       distributionResult.recover {
         case NonFatal(e) =>
-          log.error("Storage reservation failed for request [{}]: [{}]", request.id, e)
+          log.errorN("Storage reservation failed for request [{}]: [{}]", request.id, e)
           None
       }
     }
@@ -365,7 +359,7 @@ class DefaultRouter(
             nodeProxy.discard(node, manifest.crate).map(destination -> _)
 
           case None =>
-            log.error(s"Crate [${manifest.crate}] was not discarded from node [$destination]; node not found")
+            log.errorN("Crate [{}] was not discarded from node [{}]; node not found", manifest.crate, destination)
             Future.successful(destination -> false)
         }
       }
@@ -379,14 +373,14 @@ class DefaultRouter(
     val successfulDiscards = successful.map(_._1)
 
     failed.foreach { node =>
-      log.error("Failed to discard crate [{}] from node [{}]; crate not found", manifest.crate, node._1)
+      log.errorN("Failed to discard crate [{}] from node [{}]; crate not found", manifest.crate, node._1)
     }
 
     val destinationsCount = manifest.destinations.size
 
     dropManifestNodes(manifest, successfulDiscards, destinationsCount).flatMap { _ =>
       if (successful.lengthCompare(destinationsCount) == 0) {
-        log.debug(
+        log.debugN(
           "Discarded crate [{}] from [{}] nodes: [{}]",
           manifest.crate,
           manifest.destinations.size,

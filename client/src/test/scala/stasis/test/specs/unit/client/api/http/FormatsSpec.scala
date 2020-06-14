@@ -67,7 +67,7 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
         schedule = schedule,
         definition = backupDefinition,
         entities = Seq.empty
-      ) -> s"""{"schedule":"$schedule","entities":[],"assignment_type":"backup","definition":"$backupDefinition"}""",
+      ) -> s"""{"schedule":"$schedule","definition":"$backupDefinition","entities":[],"assignment_type":"backup"}""",
       OperationScheduleAssignment.Expiration(
         schedule = schedule
       ) -> s"""{"schedule":"$schedule","assignment_type":"expiration"}""",

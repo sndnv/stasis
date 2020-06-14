@@ -8,19 +8,13 @@ import stasis.test.specs.unit.core.persistence.backends.KeyValueBackendBehaviour
 
 class MemoryBackendSpec extends AsyncUnitSpec with KeyValueBackendBehaviour {
 
-  "A MemoryBackend with typed actor system" should behave like keyValueBackend[MemoryBackend[String, Int]](
+  "A MemoryBackend" should behave like keyValueBackend[MemoryBackend[String, Int]](
     createBackend = () =>
-      MemoryBackend.typed(name = "map-store")(
-        s =
-          ActorSystem(Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol], "MemoryBackendSpec-Typed"),
-        t = timeout
-    )
-  )
-
-  "A MemoryBackend with untyped actor system" should behave like keyValueBackend[MemoryBackend[String, Int]](
-    createBackend = () =>
-      MemoryBackend.untyped(name = "map-store")(
-        s = akka.actor.ActorSystem("MemoryBackendSpec-Untyped"),
+      MemoryBackend(name = "map-store")(
+        s = ActorSystem(
+          Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+          "MemoryBackendSpec-Typed"
+        ),
         t = timeout
     )
   )

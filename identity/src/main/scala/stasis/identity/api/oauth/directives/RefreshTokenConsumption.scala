@@ -47,7 +47,7 @@ trait RefreshTokenConsumption extends EntityDiscardingDirectives {
               storedScope
             )
 
-            discardEntity & complete(StatusCodes.BadRequest, TokenError.InvalidScope)
+            discardEntity & complete(StatusCodes.BadRequest, TokenError.InvalidScope: TokenError)
           }
 
         case Success(Some(StoredRefreshToken(storedToken, storedClient, owner, _, _))) =>
@@ -59,7 +59,7 @@ trait RefreshTokenConsumption extends EntityDiscardingDirectives {
             storedClient
           )
 
-          discardEntity & complete(StatusCodes.BadRequest, TokenError.InvalidGrant)
+          discardEntity & complete(StatusCodes.BadRequest, TokenError.InvalidGrant: TokenError)
 
         case Success(None) =>
           log.warning(
@@ -67,7 +67,7 @@ trait RefreshTokenConsumption extends EntityDiscardingDirectives {
             client
           )
 
-          discardEntity & complete(StatusCodes.BadRequest, TokenError.InvalidGrant)
+          discardEntity & complete(StatusCodes.BadRequest, TokenError.InvalidGrant: TokenError)
 
         case Failure(e) =>
           log.error(

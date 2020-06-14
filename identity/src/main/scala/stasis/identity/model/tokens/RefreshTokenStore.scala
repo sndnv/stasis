@@ -10,7 +10,6 @@ import stasis.identity.model.owners.ResourceOwner
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-
 trait RefreshTokenStore { store =>
   def put(client: Client.Id, token: RefreshToken, owner: ResourceOwner, scope: Option[String]): Future[Done]
   def delete(token: RefreshToken): Future[Boolean]
@@ -23,8 +22,9 @@ object RefreshTokenStore {
     expiration: FiniteDuration,
     backend: KeyValueBackend[RefreshToken, StoredRefreshToken],
     directory: KeyValueBackend[(Client.Id, ResourceOwner.Id), RefreshToken]
-  )(implicit system: ActorSystem[SpawnProtocol]): RefreshTokenStore =
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): RefreshTokenStore =
     new RefreshTokenStore {
+      private val untypedSystem = system.classicSystem
       private implicit val ec: ExecutionContext = system.executionContext
 
       override def put(
@@ -99,6 +99,6 @@ object RefreshTokenStore {
           }
 
       private def expire(token: RefreshToken): Future[Boolean] =
-        akka.pattern.after(expiration, system.scheduler)(backend.delete(token))
+        akka.pattern.after(expiration, untypedSystem.scheduler)(backend.delete(token))
     }
 }

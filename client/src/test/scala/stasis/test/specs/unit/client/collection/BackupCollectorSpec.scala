@@ -1,23 +1,17 @@
 package stasis.test.specs.unit.client.collection
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import stasis.client.analysis.Checksum
 import stasis.client.collection.{BackupCollector, BackupMetadataCollector}
 import stasis.client.model.{DatasetMetadata, EntityMetadata, FilesystemMetadata, SourceEntity}
 import stasis.client.ops.ParallelismConfig
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 import stasis.test.specs.unit.client.mocks.MockServerApiEndpointClient
+import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 
 import scala.concurrent.Future
 
 class BackupCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
-  private implicit val system: ActorSystem = ActorSystem(name = "BackupCollectorSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
-
-  private implicit val parallelismConfig: ParallelismConfig = ParallelismConfig(value = 1)
-
   "A default BackupCollector" should "collect backup files based on a files list" in {
     val mockApiClient = MockServerApiEndpointClient()
 
@@ -121,4 +115,8 @@ class BackupCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
           fail(s"Unexpected number of entries received: [${collectedFiles.size}]")
       }
   }
+
+  private implicit val system: ActorSystem = ActorSystem(name = "BackupCollectorSpec")
+
+  private implicit val parallelismConfig: ParallelismConfig = ParallelismConfig(value = 1)
 }

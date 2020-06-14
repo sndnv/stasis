@@ -6,7 +6,7 @@ import java.nio.{ByteBuffer, ByteOrder}
 import java.util.UUID
 
 import akka.Done
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import akka.util.ByteString
 import stasis.core.persistence.backends.file.container.Container.Index.{ChunkEntryNumber, IndexingFailure}
 import stasis.core.persistence.backends.file.container.exceptions.ContainerFailure
@@ -150,7 +150,7 @@ object ContainerOps extends AutoCloseSupport {
     source: Path,
     target: Path,
     p: ChunkHeader => Boolean
-  )(implicit ec: ExecutionContext, mat: ActorMaterializer, byteOrder: ByteOrder): Future[Done] =
+  )(implicit ec: ExecutionContext, mat: Materializer, byteOrder: ByteOrder): Future[Done] =
     index(source)
       .flatMap { sourceIndex =>
         Future

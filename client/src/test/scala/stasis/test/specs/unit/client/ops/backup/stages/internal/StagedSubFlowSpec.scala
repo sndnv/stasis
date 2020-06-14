@@ -4,9 +4,10 @@ import java.nio.file.{Path, Paths}
 
 import akka.Done
 import akka.actor.ActorSystem
+import akka.stream.IOResult
 import akka.stream.scaladsl.{Sink, Source}
-import akka.stream.{ActorMaterializer, IOResult}
 import akka.util.ByteString
+import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
@@ -54,7 +55,7 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
       actualPartPath should be(expectedPartPath)
       stagedPath should be(mockStaging.temporaryPath)
 
-      eventually {
+      eventually[Assertion] {
         mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(1)
         mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(0)
         mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
@@ -64,32 +65,6 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
         mockEncryption.statistics(MockEncryption.Statistic.MetadataEncrypted) should be(0)
         mockEncryption.statistics(MockEncryption.Statistic.MetadataDecrypted) should be(0)
       }
-    }
-  }
-
-  it should "unwrap results from lazy flows" in {
-    val failure = new RuntimeException("test failure")
-
-    val successfulIoResult = IOResult.createSuccessful(0)
-    val failedIoResult = IOResult.createFailed(0, failure)
-
-    for {
-      _ <- StagedSubFlow
-        .unwrapLazyFlowIOResult(Future.successful(Some(Future.successful(successfulIoResult))))
-      _ <- StagedSubFlow
-        .unwrapLazyFlowIOResult(Future.successful(Some(Future.successful(failedIoResult))))
-        .recover { case NonFatal(e: RuntimeException) => e.getMessage should be(failure.getMessage) }
-      _ <- StagedSubFlow
-        .unwrapLazyFlowIOResult(Future.successful(Some(Future.failed(failure))))
-        .recover { case NonFatal(e: RuntimeException) => e.getMessage should be(failure.getMessage) }
-      _ <- StagedSubFlow
-        .unwrapLazyFlowIOResult(Future.successful(None))
-        .recover { case NonFatal(e: IllegalStateException) => e.getMessage should be("Upstream completed with no elements") }
-      _ <- StagedSubFlow
-        .unwrapLazyFlowIOResult(Future.failed(failure))
-        .recover { case NonFatal(e: RuntimeException) => e.getMessage should be(failure.getMessage) }
-    } yield {
-      succeed
     }
   }
 
@@ -223,7 +198,7 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
             fail(s"Unexpected result received: [$other]")
         }
 
-        eventually {
+        eventually[Assertion] {
           mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(2)
           mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(0)
           mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
@@ -237,7 +212,6 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
   }
 
   private implicit val system: ActorSystem = ActorSystem(name = "StagedSubFlowSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 }

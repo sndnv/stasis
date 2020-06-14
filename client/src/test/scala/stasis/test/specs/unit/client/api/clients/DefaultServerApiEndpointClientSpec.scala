@@ -2,16 +2,15 @@ package stasis.test.specs.unit.client.api.clients
 
 import java.time.Instant
 
-import akka.{Done, NotUsed}
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.HttpsConnectionContext
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
+import akka.stream.QueueOfferResult
 import akka.stream.scaladsl.{Flow, Source}
-import akka.stream.{ActorMaterializer, Materializer, QueueOfferResult}
 import akka.util.ByteString
+import akka.{Done, NotUsed}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.concurrent.Eventually
 import stasis.client.api.clients.DefaultServerApiEndpointClient
@@ -32,8 +31,8 @@ import stasis.test.specs.unit.client.mocks.{MockEncryption, MockServerApiEndpoin
 import stasis.test.specs.unit.shared.model.Generators
 
 import scala.collection.mutable
-import scala.concurrent.{Future, Promise}
 import scala.concurrent.duration._
+import scala.concurrent.{Future, Promise}
 import scala.util.control.NonFatal
 
 class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
@@ -310,7 +309,7 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
           e.status should be(StatusCodes.InternalServerError)
 
           e.getMessage should be(
-            "Server API request unmarshalling failed with: [Unsupported Content-Type, supported: application/json]"
+            "Server API request unmarshalling failed with: [Unsupported Content-Type [Some(text/plain; charset=UTF-8)], supported: application/json]"
           )
       }
   }
@@ -406,7 +405,7 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
       requestBufferSize = 100
     )
 
-    eventually {
+    eventually[Unit] {
       // ensures the endpoint has started; akka is expected to retry GET requests
       val _ = client.ping().await
     }
@@ -414,14 +413,10 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
     client
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DefaultServerApiEndpointClientSpec"
   )
-
-  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.toUntyped
-
-  private implicit val mat: Materializer = ActorMaterializer()
 
   private val ports: mutable.Queue[Int] = (22000 to 22900).to[mutable.Queue]
 

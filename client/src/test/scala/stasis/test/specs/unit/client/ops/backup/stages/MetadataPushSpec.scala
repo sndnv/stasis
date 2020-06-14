@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.client.ops.backup.stages
 
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.{Materializer, SystemMaterializer}
 import akka.stream.scaladsl.{Sink, Source}
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
@@ -39,7 +39,7 @@ class MetadataPushSpec extends AsyncUnitSpec { spec =>
         track = mockTracker
       )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
-      override implicit protected def mat: Materializer = spec.mat
+      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
     }
 
     implicit val operationId: Operation.Id = Operation.generateId()
@@ -100,5 +100,4 @@ class MetadataPushSpec extends AsyncUnitSpec { spec =>
   }
 
   private implicit val system: ActorSystem = ActorSystem(name = "MetadataPushSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 }

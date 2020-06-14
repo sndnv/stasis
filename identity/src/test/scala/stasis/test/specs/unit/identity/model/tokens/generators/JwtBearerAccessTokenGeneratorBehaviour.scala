@@ -91,9 +91,9 @@ trait JwtBearerAccessTokenGeneratorBehaviour { _: AsyncUnitSpec =>
       payload.fields should contain("sub" -> JsString(owner.subject.getOrElse("invalid")))
       payload.fields should (
         contain(
-          "aud" -> JsArray(audience.map(aud => JsString(aud.id.toString)))
+          "aud" -> JsArray(audience.map(aud => JsString(aud.id)))
         ) or contain(
-          "aud" -> JsString(audience.headOption.map(_.id.toString).getOrElse(""))
+          "aud" -> JsString(audience.headOption.map(_.id).getOrElse(""))
         )
       )
     }
@@ -114,9 +114,9 @@ trait JwtBearerAccessTokenGeneratorBehaviour { _: AsyncUnitSpec =>
       payload.fields should contain("sub" -> JsString(owner.username))
       payload.fields should (
         contain(
-          "aud" -> JsArray(audience.map(aud => JsString(aud.id.toString)))
+          "aud" -> JsArray(audience.map(aud => JsString(aud.id)))
         ) or contain(
-          "aud" -> JsString(audience.headOption.map(_.id.toString).getOrElse(""))
+          "aud" -> JsString(audience.headOption.map(_.id).getOrElse(""))
         )
       )
     }

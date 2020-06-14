@@ -1,9 +1,8 @@
 package stasis.test.specs.unit.server.model.devices
 
-import scala.util.control.NonFatal
-
 import akka.Done
-import akka.actor.ActorSystem
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.routing.Node
 import stasis.server.security.CurrentUser
 import stasis.shared.model.devices.Device
@@ -11,6 +10,8 @@ import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.model.mocks.MockDeviceStore
+
+import scala.util.control.NonFatal
 
 class DeviceStoreSpec extends AsyncUnitSpec {
   "A DeviceStore" should "provide a view resource (privileged)" in {
@@ -277,7 +278,12 @@ class DeviceStoreSpec extends AsyncUnitSpec {
     }
   }
 
-  private implicit val system: ActorSystem = ActorSystem(name = "DeviceStoreSpec")
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+    "DeviceStoreSpec"
+  )
+
+  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
 
   private val mockDevice = Device(
     id = Device.generateId(),

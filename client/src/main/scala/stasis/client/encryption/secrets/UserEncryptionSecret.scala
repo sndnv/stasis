@@ -8,7 +8,6 @@ import stasis.shared.model.users.User
 
 import scala.concurrent.Future
 
-// doc - never stored or sent externally
 final case class UserEncryptionSecret(
   user: User.Id,
   iv: ByteString,

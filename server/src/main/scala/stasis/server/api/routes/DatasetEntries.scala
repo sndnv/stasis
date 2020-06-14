@@ -2,6 +2,7 @@ package stasis.server.api.routes
 
 import java.time.Instant
 
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
@@ -25,7 +26,7 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
         get {
           resource[DatasetEntryStore.View.Privileged] { view =>
             view.list(definitionId).map { entries =>
-              log.debug(
+              log.debugN(
                 "User [{}] successfully retrieved [{}] entries for definition [{}]",
                 currentUser,
                 entries.size,
@@ -42,11 +43,11 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
             resource[DatasetEntryStore.View.Privileged] { view =>
               view.get(entryId).map {
                 case Some(entry) =>
-                  log.debug("User [{}] successfully retrieved entry [{}]", currentUser, entryId)
+                  log.debugN("User [{}] successfully retrieved entry [{}]", currentUser, entryId)
                   discardEntity & complete(entry)
 
                 case None =>
-                  log.warning("User [{}] failed to retrieve entry [{}]", currentUser, entryId)
+                  log.warnN("User [{}] failed to retrieve entry [{}]", currentUser, entryId)
                   discardEntity & complete(StatusCodes.NotFound)
               }
             }
@@ -55,9 +56,9 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
             resource[DatasetEntryStore.Manage.Privileged] { manage =>
               manage.delete(entryId).map { deleted =>
                 if (deleted) {
-                  log.debug("User [{}] successfully deleted entry [{}]", currentUser, entryId)
+                  log.debugN("User [{}] successfully deleted entry [{}]", currentUser, entryId)
                 } else {
-                  log.warning("User [{}] failed to delete entry [{}]", currentUser, entryId)
+                  log.warnN("User [{}] failed to delete entry [{}]", currentUser, entryId)
                 }
 
                 discardEntity & complete(DeletedDatasetEntry(existing = deleted))
@@ -79,7 +80,7 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
                           .list(currentUser)
                           .flatMap(devices => entryView.list(devices.keys.toSeq, definitionId))
                           .map { entries =>
-                            log.debug(
+                            log.debugN(
                               "User [{}] successfully retrieved [{}] entries for definition [{}]",
                               currentUser,
                               entries.size,
@@ -98,13 +99,13 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
                               .list(currentUser)
                               .flatMap(devices => entryManage.create(devices.keys.toSeq, entry))
                               .map { _ =>
-                                log.debug("User [{}] successfully created entry [{}]", currentUser, entry.id)
+                                log.debugN("User [{}] successfully created entry [{}]", currentUser, entry.id)
                                 complete(CreatedDatasetEntry(entry.id))
                               }
                           }
 
                         case createRequest =>
-                          log.warning(
+                          log.warnN(
                             "User [{}] attempted to create entry for definition [{}] but definition [{}] expected",
                             currentUser,
                             createRequest.definition,
@@ -126,7 +127,7 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
                               .flatMap(devices => entryView.latest(devices.keys.toSeq, definitionId, until))
                               .map {
                                 case Some(entry) =>
-                                  log.debug(
+                                  log.debugN(
                                     "User [{}] successfully retrieved latest entry [{}] for definition [{}]",
                                     currentUser,
                                     entry.id,
@@ -135,7 +136,7 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
                                   discardEntity & complete(entry)
 
                                 case None =>
-                                  log.warning(
+                                  log.warnN(
                                     "User [{}] failed to retrieve latest entry for definition [{}]",
                                     currentUser,
                                     definitionId
@@ -158,11 +159,11 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
                       .flatMap(devices => entryView.get(devices.keys.toSeq, entryId))
                       .map {
                         case Some(entry) =>
-                          log.debug("User [{}] successfully retrieved entry [{}]", currentUser, entryId)
+                          log.debugN("User [{}] successfully retrieved entry [{}]", currentUser, entryId)
                           discardEntity & complete(entry)
 
                         case None =>
-                          log.warning("User [{}] failed to retrieve entry [{}]", currentUser, entryId)
+                          log.warnN("User [{}] failed to retrieve entry [{}]", currentUser, entryId)
                           discardEntity & complete(StatusCodes.NotFound)
                       }
                   }
@@ -174,9 +175,9 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
                       .flatMap(devices => entryManage.delete(devices.keys.toSeq, entryId))
                       .map { deleted =>
                         if (deleted) {
-                          log.debug("User [{}] successfully deleted entry [{}]", currentUser, entryId)
+                          log.debugN("User [{}] successfully deleted entry [{}]", currentUser, entryId)
                         } else {
-                          log.warning("User [{}] failed to delete entry [{}]", currentUser, entryId)
+                          log.warnN("User [{}] failed to delete entry [{}]", currentUser, entryId)
                         }
 
                         discardEntity & complete(DeletedDatasetEntry(existing = deleted))

@@ -28,7 +28,7 @@ object NodeStore {
   def apply(
     backend: KeyValueBackend[Node.Id, Node],
     cachingEnabled: Boolean
-  )(implicit system: ActorSystem[SpawnProtocol], timeout: Timeout): StoreInitializationResult[NodeStore] = {
+  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): StoreInitializationResult[NodeStore] = {
     implicit val ec: ExecutionContext = system.executionContext
 
     val cacheOpt: Option[KeyValueBackend[Node.Id, Node]] =

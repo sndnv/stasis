@@ -1,13 +1,10 @@
 package stasis.test.specs.unit.core.networking.grpc
 
-import akka.actor.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{Behavior, SpawnProtocol}
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import stasis.core.networking.grpc.internal.{Implicits, Requests}
@@ -74,9 +71,11 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   it should "successfully respond to valid URLs" in {
     val endpoint = new TestGrpcEndpoint()
 
+    val grpcEntity = HttpEntity(ContentTypes.`application/grpc+proto`, ByteString.empty)
+
     endpoint
       .grpcHandler(
-        Get(s"/${proto.StasisEndpoint.name}/Push"),
+        Get(s"/${proto.StasisEndpoint.name}/Push", grpcEntity),
         Node.generateId()
       )
       .map { response =>
@@ -87,13 +86,30 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   it should "respond with failure to invalid methods" in {
     val endpoint = new TestGrpcEndpoint()
 
+    val grpcEntity = HttpEntity(ContentTypes.`application/grpc+proto`, ByteString.empty)
+
     endpoint
       .grpcHandler(
-        Get(s"/${proto.StasisEndpoint.name}/method"),
+        Get(s"/${proto.StasisEndpoint.name}/method", grpcEntity),
         Node.generateId()
       )
       .map { response =>
         response.status should be(StatusCodes.MethodNotAllowed)
+      }
+  }
+
+  it should "respond with failure to unsupported gRPC protocols" in {
+    val endpoint = new TestGrpcEndpoint()
+
+    val octetEntity = HttpEntity(ContentTypes.`application/octet-stream`, ByteString.empty)
+
+    endpoint
+      .grpcHandler(
+        Get(s"/${proto.StasisEndpoint.name}/method", octetEntity),
+        Node.generateId()
+      )
+      .map { response =>
+        response.status should be(StatusCodes.UnsupportedMediaType)
       }
   }
 
@@ -182,7 +198,8 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
         response.result.failure match {
           case Some(failure) =>
             failure.message should be(
-              s"Node [$testNode] made reservation request with missing data: [IllegalArgumentException: Missing [id]: [ReserveRequest(None,None,0,0,None,None)]]"
+              s"Node [$testNode] made reservation request with missing data: " +
+                s"[IllegalArgumentException: Missing [id]: [ReserveRequest(None,None,0,0,None,None,UnknownFieldSet(Map()))]]"
             )
 
           case None =>
@@ -374,7 +391,9 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
       .recover {
         case NonFatal(e) =>
-          e.getMessage should be(s"Node [$testNode] made pull request with missing crate: [PullRequest(None)]")
+          e.getMessage should be(
+            s"Node [$testNode] made pull request with missing crate: [PullRequest(None,UnknownFieldSet(Map()))]"
+          )
       }
   }
 
@@ -425,18 +444,15 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       .map { response =>
         response.result.complete should be(None)
         response.result.failure.map(_.message) should be(
-          Some(s"Node [$testNode] made discard request with missing crate: [DiscardRequest(None)]")
+          Some(s"Node [$testNode] made discard request with missing crate: [DiscardRequest(None,UnknownFieldSet(Map()))]")
         )
       }
   }
 
-  private implicit val typedSystem: akka.actor.typed.ActorSystem[SpawnProtocol] = akka.actor.typed.ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val typedSystem: akka.actor.typed.ActorSystem[SpawnProtocol.Command] = akka.actor.typed.ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "GrpcEndpointSpec"
   )
-
-  private implicit val untypedSystem: ActorSystem = typedSystem.toUntyped
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 
   private class TestGrpcEndpoint(
     val testCrateStore: Option[MockCrateStore] = None,
@@ -452,7 +468,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
         ),
         testReservationStore.view,
         testAuthenticator
-      )
+      )(typedSystem.classicSystem)
 
   private val crateContent = "some value"
 

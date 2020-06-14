@@ -1,15 +1,16 @@
 package stasis.test.specs.unit.core.networking.http
 
 import akka.Done
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.ConnectionContext
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.headers.HttpCredentials
-import akka.stream.{ActorMaterializer, QueueOfferResult}
+import akka.stream.QueueOfferResult
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.typesafe.config.{Config, ConfigFactory}
+import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 import stasis.core.networking.http.{HttpEndpoint, HttpEndpointAddress, HttpEndpointClient}
 import stasis.core.packaging.{Crate, Manifest}
@@ -23,8 +24,8 @@ import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockHttpAuthenticator
 
 import scala.collection.mutable
-import scala.concurrent.{Future, Promise}
 import scala.concurrent.duration._
+import scala.concurrent.{Future, Promise}
 import scala.util.control.NonFatal
 
 class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
@@ -145,7 +146,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
         .single(ByteString(crateContent))
         .runWith(sink)
         .map { _ =>
-          eventually {
+          eventually[Assertion] {
             endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
             endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
           }
@@ -488,15 +489,10 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
-  private implicit val untypedSystem: akka.actor.ActorSystem =
-    akka.actor.ActorSystem(name = "HttpEndpointClientSpec_Untyped")
-
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "HttpEndpointClientSpec_Typed"
   )
-
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 
   private val crateContent = "some value"
 

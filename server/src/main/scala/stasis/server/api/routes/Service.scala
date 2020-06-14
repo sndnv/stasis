@@ -1,5 +1,6 @@
 package stasis.server.api.routes
 
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
@@ -16,7 +17,7 @@ class Service()(implicit ctx: RoutesContext) extends ApiRoutes {
     path("ping") {
       get {
         val response = Ping()
-        log.debug("Received ping request from user [{}]; responding with [{}]", currentUser, response.id)
+        log.debugN("Received ping request from user [{}]; responding with [{}]", currentUser, response.id)
         discardEntity & complete(response)
       }
     }

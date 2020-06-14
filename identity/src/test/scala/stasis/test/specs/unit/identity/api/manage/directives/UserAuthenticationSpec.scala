@@ -5,7 +5,7 @@ import akka.http.scaladsl.model
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpChallenges, OAuth2BearerToken}
 import akka.http.scaladsl.server.Directives
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.{Materializer, SystemMaterializer}
 import stasis.identity.api.manage.directives.UserAuthentication
 import stasis.identity.authentication.manage.ResourceOwnerAuthenticator
 import stasis.identity.model.owners.ResourceOwner
@@ -81,7 +81,7 @@ class UserAuthenticationSpec extends RouteTest {
 
   private def createDirective(auth: OAuth2BearerToken => Future[ResourceOwner]) = new UserAuthentication {
     override protected def realm: String = testRealm
-    override implicit protected def mat: Materializer = ActorMaterializer()
+    override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
     override protected def log: LoggingAdapter = createLogger()
     override protected def authenticator: ResourceOwnerAuthenticator =
       (credentials: OAuth2BearerToken) => auth(credentials)

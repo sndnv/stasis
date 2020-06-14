@@ -1,7 +1,8 @@
 package stasis.server.api.routes
-import akka.event.LoggingAdapter
+
 import akka.http.scaladsl.server.Directives.onSuccess
 import akka.http.scaladsl.server.Route
+import org.slf4j.Logger
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.server.security.{CurrentUser, Resource, ResourceProvider}
 
@@ -62,5 +63,5 @@ trait ApiRoutes extends EntityDiscardingDirectives {
 
   implicit def routeContextToResourceProvider(implicit ctx: RoutesContext): ResourceProvider = ctx.resourceProvider
 
-  def log(implicit ctx: RoutesContext): LoggingAdapter = ctx.log
+  def log(implicit ctx: RoutesContext): Logger = ctx.log
 }

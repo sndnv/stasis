@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.client.encryption
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Source}
 import akka.util.ByteString
 import stasis.client.encryption.Aes
@@ -67,7 +66,6 @@ class AesSpec extends AsyncUnitSpec with EncodingHelpers with ResourceHelpers {
   }
 
   private implicit val system: ActorSystem = ActorSystem(name = "AesSpec")
-  private implicit val mat: ActorMaterializer = ActorMaterializer()
 
   private val plaintextFile = "/encryption/plaintext-file".asTestResource
   private val encryptedFile = "/encryption/encrypted-file".asTestResource

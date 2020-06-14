@@ -1,17 +1,17 @@
 package stasis.test.specs.unit.client.ops.monitoring
 
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.actor.typed.scaladsl.Behaviors
-import org.scalatest.{Assertion, BeforeAndAfterAll}
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.scalatest.concurrent.Eventually
+import org.scalatest.{Assertion, BeforeAndAfterAll}
 import stasis.client.ops.monitoring.DefaultServerMonitor
 import stasis.shared.api.responses.Ping
 import stasis.shared.model.devices.Device
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks.{MockServerApiEndpointClient, MockServerTracker}
 
-import scala.concurrent.duration._
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with BeforeAndAfterAll {
   "A DefaultServerMonitor" should "support pinging servers periodically" in {
@@ -81,7 +81,7 @@ class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with Before
     val mockTracker = MockServerTracker()
     val monitor = createMonitor(interval = defaultInterval / 2, tracker = mockTracker)
 
-    eventually {
+    eventually[Assertion] {
       mockTracker.statistics(MockServerTracker.Statistic.ServerReachable) should be(1)
       mockTracker.statistics(MockServerTracker.Statistic.ServerUnreachable) should be(0)
     }
@@ -114,8 +114,8 @@ class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with Before
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DefaultServerMonitorSpec"
   )
 

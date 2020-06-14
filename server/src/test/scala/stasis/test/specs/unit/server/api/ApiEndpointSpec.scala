@@ -3,14 +3,14 @@ package stasis.test.specs.unit.server.api
 import java.time.{Instant, LocalDateTime}
 import java.util.UUID
 
-import akka.actor.typed.{Behavior, SpawnProtocol}
 import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{Behavior, SpawnProtocol}
 import akka.event.{Logging, LoggingAdapter}
-import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import play.api.libs.json.JsArray
@@ -383,8 +383,8 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  private implicit val typedSystem: akka.actor.typed.ActorSystem[SpawnProtocol] = akka.actor.typed.ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val typedSystem: akka.actor.typed.ActorSystem[SpawnProtocol.Command] = akka.actor.typed.ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "ApiEndpointSpec_Typed"
   )
 

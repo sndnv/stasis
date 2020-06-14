@@ -7,8 +7,8 @@ import java.util.UUID
 
 import akka.Done
 import akka.util.ByteString
-import stasis.core.persistence.backends.file.container.{Container, CrateChunk, CrateChunkDescriptor}
 import stasis.core.persistence.backends.file.container.headers.{ChunkHeader, ContainerLogHeader}
+import stasis.core.persistence.backends.file.container.{Container, CrateChunk, CrateChunkDescriptor}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -92,8 +92,7 @@ object TestOps {
   ): Seq[(UUID, CrateChunk, CrateChunkDescriptor)] =
     chunks.zipWithIndex.map {
       case ((crate, chunk), index) =>
-        val startOffset
-          : Long = ChunkHeader.HEADER_SIZE + (index + indexOffset) * (ChunkHeader.HEADER_SIZE + maxChunkSize)
+        val startOffset: Long = ChunkHeader.HEADER_SIZE + (index + indexOffset) * (ChunkHeader.HEADER_SIZE + maxChunkSize)
 
         val header = ChunkHeader(
           crateId = crate,

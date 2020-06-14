@@ -2,9 +2,7 @@ package stasis.test.specs.unit.core.networking.mocks
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.util.{ByteString, Timeout}
 import akka.{Done, NotUsed}
@@ -20,7 +18,7 @@ class MockHttpEndpointClient(
   pullFailureAddresses: Map[HttpEndpointAddress, Exception] = Map.empty,
   discardFailureAddresses: Map[HttpEndpointAddress, Exception] = Map.empty,
   pullEmptyAddresses: Seq[HttpEndpointAddress] = Seq.empty
-)(implicit system: ActorSystem[SpawnProtocol])
+)(implicit system: ActorSystem[SpawnProtocol.Command])
     extends HttpEndpointClient(
       (_: HttpEndpointAddress) => Future.failed(new RuntimeException("No credentials available")),
       context = None,
@@ -30,12 +28,9 @@ class MockHttpEndpointClient(
   import MockHttpEndpointClient._
 
   private implicit val timeout: Timeout = 3.seconds
-  private implicit val mat: ActorMaterializer = ActorMaterializer()(system.toUntyped)
   private implicit val ec: ExecutionContext = system.executionContext
 
-  private val store = MemoryBackend.typed[StoreKey, StoreValue](
-    name = s"mock-endpoint-store-${java.util.UUID.randomUUID()}"
-  )
+  private val store = MemoryBackend[StoreKey, StoreValue](name = s"mock-endpoint-store-${java.util.UUID.randomUUID()}")
 
   private val stats: Map[Statistic, AtomicInteger] = Map(
     Statistic.PushCompleted -> new AtomicInteger(0),

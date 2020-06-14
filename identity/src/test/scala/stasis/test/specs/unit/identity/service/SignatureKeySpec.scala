@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.identity.service
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.jose4j.jwk.JsonWebKey
 import stasis.identity.service.SignatureKey
 import stasis.test.specs.unit.UnitSpec
 

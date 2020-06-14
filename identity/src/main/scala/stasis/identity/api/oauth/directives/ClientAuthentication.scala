@@ -42,7 +42,7 @@ trait ClientAuthentication extends EntityDiscardingDirectives {
                   complete(
                     StatusCodes.Unauthorized,
                     List(headers.`WWW-Authenticate`(HttpChallenges.basic(realm))),
-                    TokenError.InvalidClient
+                    TokenError.InvalidClient: TokenError
                   )
                 }
             }
@@ -58,7 +58,7 @@ trait ClientAuthentication extends EntityDiscardingDirectives {
               complete(
                 StatusCodes.Unauthorized,
                 List(headers.`WWW-Authenticate`(HttpChallenges.basic(realm))),
-                TokenError.InvalidClient
+                TokenError.InvalidClient: TokenError
               )
             }
 
@@ -72,7 +72,7 @@ trait ClientAuthentication extends EntityDiscardingDirectives {
               complete(
                 StatusCodes.Unauthorized,
                 List(headers.`WWW-Authenticate`(HttpChallenges.basic(realm))),
-                TokenError.InvalidClient
+                TokenError.InvalidClient: TokenError
               )
             }
         }

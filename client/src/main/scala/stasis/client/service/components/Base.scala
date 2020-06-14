@@ -4,11 +4,10 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
 
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.actor.typed.scaladsl.adapter._
-import akka.event.LoggingAdapter
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.{Materializer, SystemMaterializer}
 import akka.util.Timeout
 import com.typesafe.{config => typesafe}
+import org.slf4j.Logger
 import stasis.client.analysis.Checksum
 import stasis.client.compression.{Compression, Decoder => CompressionDecoder, Encoder => CompressionEncoder}
 import stasis.client.encryption.{Aes, Decoder => EncryptionDecoder, Encoder => EncryptionEncoder}
@@ -18,18 +17,18 @@ import stasis.client.tracking.TrackerView
 import stasis.client.tracking.trackers.DefaultTracker
 import stasis.core.persistence.backends.memory.EventLogMemoryBackend
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 import scala.util.Try
 import scala.util.control.NonFatal
 
 trait Base {
-  implicit def system: ActorSystem[SpawnProtocol]
+  implicit def system: ActorSystem[SpawnProtocol.Command]
   implicit def ec: ExecutionContext
   implicit def untyped: akka.actor.ActorSystem
   implicit def mat: Materializer
-  implicit def log: LoggingAdapter
+  implicit def log: Logger
 
   def directory: ApplicationDirectory
 
@@ -66,17 +65,17 @@ object Base {
     applicationDirectory: ApplicationDirectory,
     terminate: () => Unit
   )(
-    implicit typedSystem: ActorSystem[SpawnProtocol],
-    loggingAdapter: LoggingAdapter
+    implicit typedSystem: ActorSystem[SpawnProtocol.Command],
+    logger: Logger
   ): Future[Base] =
     Future.fromTry(
       Try {
         new Base {
-          override implicit val system: ActorSystem[SpawnProtocol] = typedSystem
+          override implicit val system: ActorSystem[SpawnProtocol.Command] = typedSystem
           override implicit val ec: ExecutionContext = typedSystem.executionContext
-          override implicit val untyped: akka.actor.ActorSystem = typedSystem.toUntyped
-          override implicit val mat: Materializer = ActorMaterializer()
-          override implicit val log: LoggingAdapter = loggingAdapter
+          override implicit val untyped: akka.actor.ActorSystem = typedSystem.classicSystem
+          override implicit val mat: Materializer = SystemMaterializer(system).materializer
+          override implicit val log: Logger = logger
 
           override val directory: ApplicationDirectory =
             applicationDirectory

@@ -1,22 +1,21 @@
 package stasis.test.specs.unit.server.api.routes
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{RequestEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
 import stasis.server.api.routes.{Nodes, RoutesContext}
 import stasis.server.model.nodes.ServerNodeStore
 import stasis.server.security.{CurrentUser, ResourceProvider}
-import stasis.shared.api.requests.{CreateNode, UpdateNode}
 import stasis.shared.api.requests.CreateNode.CreateLocalNode
 import stasis.shared.api.requests.UpdateNode.UpdateLocalNode
+import stasis.shared.api.requests.{CreateNode, UpdateNode}
 import stasis.shared.api.responses.{CreatedNode, DeletedNode}
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -120,13 +119,14 @@ class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "NodesSpec"
   )
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.toUntyped
-  private implicit val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)
+  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
+
+  private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private trait TestFixtures {
     lazy val nodeStore: NodeStore = new MockNodeStore()

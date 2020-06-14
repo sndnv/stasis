@@ -2,11 +2,12 @@ package stasis.test.specs.unit.client.api.http.routes
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import akka.event.Logging
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
+import org.slf4j.LoggerFactory
 import stasis.client.api.http.Context
 import stasis.client.api.http.routes.Service
 import stasis.shared.api.responses.Ping
@@ -34,7 +35,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
 
     Put("/stop") ~> routes ~> check {
       status should be(StatusCodes.Accepted)
-      eventually {
+      eventually[Assertion] {
         terminationCounter.get should be(1)
       }
     }
@@ -50,7 +51,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
       tracker = MockTrackerView(),
       search = MockSearch(),
       terminateService = terminate,
-      log = Logging(system, this.getClass.getName)
+      log = LoggerFactory.getLogger(this.getClass.getName)
     )
 
     new Service().routes()

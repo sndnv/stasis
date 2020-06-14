@@ -2,13 +2,12 @@ package stasis.test.specs.unit.client.service.components
 
 import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{FormData, HttpMethods, HttpRequest, StatusCodes}
 import org.mockito.scalatest.AsyncMockitoSugar
 import org.scalatest.concurrent.Eventually
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.service.components.{Base, Init}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
@@ -53,7 +52,7 @@ class InitSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockitoSugar
         startup = startup.future,
         console = None
       )
-      response <- Http()
+      response <- Http()(typedSystem.classicSystem)
         .singleRequest(
           HttpRequest(
             method = HttpMethods.POST,
@@ -70,14 +69,12 @@ class InitSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockitoSugar
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol.behavior): Behavior[SpawnProtocol],
+  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "InitSpec"
   )
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.toUntyped
-
-  private implicit val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)
+  private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 }
