@@ -6,7 +6,7 @@ import akka.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken
 import akka.http.scaladsl.model.{StatusCodes, Uri}
 import akka.http.scaladsl.server.Directives
 import akka.stream.{Materializer, SystemMaterializer}
-import play.api.libs.json.{JsObject, JsString}
+import play.api.libs.json.{JsObject, Json}
 import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.ResourceOwnerAuthentication
 import stasis.identity.authentication.oauth.{DefaultResourceOwnerAuthenticator, ResourceOwnerAuthenticator}
@@ -148,8 +148,8 @@ class ResourceOwnerAuthenticationSpec extends RouteTest {
     Get("/?no_redirect=true").addCredentials(credentials) ~> routes ~> check {
       status should be(StatusCodes.Unauthorized)
       val response = responseAs[JsObject]
-      response.fields should contain("error" -> JsString("access_denied"))
-      response.fields should contain("state" -> JsString(state))
+      response.fields should contain("error" -> Json.toJson("access_denied"))
+      response.fields should contain("state" -> Json.toJson(state))
     }
   }
 

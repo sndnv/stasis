@@ -19,12 +19,12 @@ object Formats {
 
   implicit val finiteDurationFormat: Format[FiniteDuration] = Format(
     fjs = js => js.validate[Long].map(seconds => seconds.seconds),
-    tjs = duration => JsNumber(duration.toSeconds)
+    tjs = duration => Json.toJson(duration.toSeconds)
   )
 
   implicit def uuidMapFormat[V](implicit format: Format[V]): Format[Map[UUID, V]] = Format(
     fjs = _.validate[Map[String, V]].map(_.map { case (k, v) => UUID.fromString(k) -> v }),
-    tjs = map => JsObject(map.map { case (k, v) => k.toString -> format.writes(v) })
+    tjs = map => Json.toJson(map.map { case (k, v) => k.toString -> format.writes(v) })
   )
 
   implicit def optionFormat[V](implicit format: Format[V]): Format[Option[V]] = Format(
@@ -34,7 +34,7 @@ object Formats {
 
   implicit val uriFormat: Format[Uri] = Format(
     fjs = _.validate[String].map(Uri.apply),
-    tjs = uri => JsString(uri.toString)
+    tjs = uri => Json.toJson(uri.toString)
   )
 
   implicit val httpEndpointAddressFormat: Format[HttpEndpointAddress] =
@@ -71,24 +71,24 @@ object Formats {
   implicit val crateStoreDescriptorWrites: Writes[CrateStore.Descriptor] = Writes {
     case backend: CrateStore.Descriptor.ForStreamingMemoryBackend =>
       Json.obj(
-        "backend_type" -> JsString("memory"),
-        "max_size" -> JsNumber(backend.maxSize),
-        "max_chunk_size" -> JsNumber(backend.maxChunkSize),
-        "name" -> JsString(backend.name)
+        "backend_type" -> Json.toJson("memory"),
+        "max_size" -> Json.toJson(backend.maxSize),
+        "max_chunk_size" -> Json.toJson(backend.maxChunkSize),
+        "name" -> Json.toJson(backend.name)
       )
 
     case backend: CrateStore.Descriptor.ForContainerBackend =>
       Json.obj(
-        "backend_type" -> JsString("container"),
-        "path" -> JsString(backend.path),
-        "max_chunk_size" -> JsNumber(backend.maxChunkSize),
-        "max_chunks" -> JsNumber(backend.maxChunks)
+        "backend_type" -> Json.toJson("container"),
+        "path" -> Json.toJson(backend.path),
+        "max_chunk_size" -> Json.toJson(backend.maxChunkSize),
+        "max_chunks" -> Json.toJson(backend.maxChunks)
       )
 
     case backend: CrateStore.Descriptor.ForFileBackend =>
       Json.obj(
-        "backend_type" -> JsString("file"),
-        "parent_directory" -> JsString(backend.parentDirectory)
+        "backend_type" -> Json.toJson("file"),
+        "parent_directory" -> Json.toJson(backend.parentDirectory)
       )
   }
 
@@ -120,21 +120,21 @@ object Formats {
   implicit val nodeWrites: Writes[Node] = Writes {
     case node: Node.Local =>
       Json.obj(
-        "node_type" -> JsString("local"),
+        "node_type" -> Json.toJson("local"),
         "id" -> Json.toJson(node.id),
         "store_descriptor" -> Json.toJson(node.storeDescriptor)
       )
 
     case node: Node.Remote.Http =>
       Json.obj(
-        "node_type" -> JsString("remote-http"),
+        "node_type" -> Json.toJson("remote-http"),
         "id" -> Json.toJson(node.id),
         "address" -> Json.toJson(node.address)
       )
 
     case node: Node.Remote.Grpc =>
       Json.obj(
-        "node_type" -> JsString("remote-grpc"),
+        "node_type" -> Json.toJson("remote-grpc"),
         "id" -> Json.toJson(node.id),
         "address" -> Json.toJson(node.address)
       )

@@ -34,7 +34,7 @@ object Formats {
 
   implicit val permissionFormat: Format[Permission] = Format(
     fjs = _.validate[String].map(stringToPermission),
-    tjs = permission => JsString(permissionToString(permission))
+    tjs = permission => Json.toJson(permissionToString(permission))
   )
 
   implicit val retentionPolicyFormat: Format[DatasetDefinition.Retention.Policy] = Format(
@@ -52,13 +52,13 @@ object Formats {
     },
     tjs = {
       case DatasetDefinition.Retention.Policy.AtMost(versions) =>
-        Json.obj("policy_type" -> JsString("at-most"), "versions" -> JsNumber(versions))
+        Json.obj("policy_type" -> Json.toJson("at-most"), "versions" -> Json.toJson(versions))
 
       case DatasetDefinition.Retention.Policy.LatestOnly =>
-        Json.obj("policy_type" -> JsString("latest-only"))
+        Json.obj("policy_type" -> Json.toJson("latest-only"))
 
       case DatasetDefinition.Retention.Policy.All =>
-        Json.obj("policy_type" -> JsString("all"))
+        Json.obj("policy_type" -> Json.toJson("all"))
     }
   )
 
@@ -184,19 +184,19 @@ object Formats {
     tjs = {
       case CreateLocalNode(storeDescriptor) =>
         Json.obj(
-          "node_type" -> JsString("local"),
+          "node_type" -> Json.toJson("local"),
           "store_descriptor" -> Json.toJson(storeDescriptor)
         )
 
       case CreateRemoteHttpNode(address) =>
         Json.obj(
-          "node_type" -> JsString("remote-http"),
+          "node_type" -> Json.toJson("remote-http"),
           "address" -> Json.toJson(address)
         )
 
       case CreateRemoteGrpcNode(address) =>
         Json.obj(
-          "node_type" -> JsString("remote-grpc"),
+          "node_type" -> Json.toJson("remote-grpc"),
           "address" -> Json.toJson(address)
         )
     }
@@ -217,13 +217,13 @@ object Formats {
     },
     tjs = {
       case UpdateLocalNode(storeDescriptor) =>
-        Json.obj("node_type" -> JsString("local"), "store_descriptor" -> Json.toJson(storeDescriptor))
+        Json.obj("node_type" -> Json.toJson("local"), "store_descriptor" -> Json.toJson(storeDescriptor))
 
       case UpdateRemoteHttpNode(address) =>
-        Json.obj("node_type" -> JsString("remote-http"), "address" -> Json.toJson(address))
+        Json.obj("node_type" -> Json.toJson("remote-http"), "address" -> Json.toJson(address))
 
       case UpdateRemoteGrpcNode(address) =>
-        Json.obj("node_type" -> JsString("remote-grpc"), "address" -> Json.toJson(address))
+        Json.obj("node_type" -> Json.toJson("remote-grpc"), "address" -> Json.toJson(address))
     }
   )
 
@@ -235,9 +235,9 @@ object Formats {
 
   implicit val pendingDestagingWrites: Writes[PendingDestaging] = Writes { destaging =>
     Json.obj(
-      "crate" -> JsString(destaging.crate.toString),
-      "staged" -> JsString(destaging.staged.toString),
-      "destaged" -> JsString(destaging.destaged.toString)
+      "crate" -> Json.toJson(destaging.crate.toString),
+      "staged" -> Json.toJson(destaging.staged.toString),
+      "destaged" -> Json.toJson(destaging.destaged.toString)
     )
   }
 
@@ -245,7 +245,7 @@ object Formats {
 
   implicit val operationTypeFormat: Format[Operation.Type] = Format(
     fjs = _.validate[String].map(stringToOperationType),
-    tjs = operationType => JsString(operationTypeToString(operationType))
+    tjs = operationType => Json.toJson(operationTypeToString(operationType))
   )
 
   implicit val operationProgressStageStepFormat: Format[Operation.Progress.Stage.Step] =

@@ -179,9 +179,9 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
           )
 
           val response = responseAs[JsObject]
-          response.fields should contain("code" -> JsString(code))
-          response.fields should contain("state" -> JsString(request.state))
-          response.fields should contain("scope" -> JsString(request.scope.getOrElse("invalid")))
+          response.fields should contain("code" -> Json.toJson(code))
+          response.fields should contain("state" -> Json.toJson(request.state))
+          response.fields should contain("scope" -> Json.toJson(request.scope.getOrElse("invalid")))
 
           val redirectUri = response.fields.find(_._1 == "redirect_uri") match {
             case Some((_, uri)) => uri.as[String]
@@ -280,7 +280,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.apis.put(api).await
     Get(request).addCredentials(credentials) ~> grant.authorization() ~> check {
       status should be(StatusCodes.BadRequest)
-      responseAs[JsObject].fields should contain("error" -> JsString("invalid_request"))
+      responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_request"))
       stores.codes.codes.await should be(Map.empty)
     }
   }
@@ -440,7 +440,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.codes.put(storedCode).await
     Post(request).addCredentials(credentials) ~> grant.token() ~> check {
       status should be(StatusCodes.BadRequest)
-      responseAs[JsObject].fields should contain("error" -> JsString("invalid_request"))
+      responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_request"))
     }
   }
 
@@ -487,7 +487,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.codes.put(storedCode).await
     Post(request).addCredentials(credentials) ~> grant.token() ~> check {
       status should be(StatusCodes.BadRequest)
-      responseAs[JsObject].fields should contain("error" -> JsString("invalid_grant"))
+      responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_grant"))
     }
   }
 

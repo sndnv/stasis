@@ -2,7 +2,7 @@ package stasis.test.specs.unit.identity.model.tokens.generators
 
 import org.jose4j.jwk.JsonWebKey
 import org.jose4j.jws.JsonWebSignature
-import play.api.libs.json.{JsArray, JsObject, JsString, Json}
+import play.api.libs.json._
 import stasis.identity.model.Seconds
 import stasis.identity.model.tokens.generators.JwtBearerAccessTokenGenerator
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -34,13 +34,13 @@ trait JwtBearerAccessTokenGeneratorBehaviour { _: AsyncUnitSpec =>
       jws.verifySignature() should be(true)
 
       val payload = Json.parse(jws.getPayload).as[JsObject]
-      payload.fields should contain("iss" -> JsString(issuer))
-      payload.fields should contain("sub" -> JsString(client.subject.getOrElse("invalid")))
+      payload.fields should contain("iss" -> Json.toJson(issuer))
+      payload.fields should contain("sub" -> Json.toJson(client.subject.getOrElse("invalid")))
       payload.fields should (
         contain(
-          "aud" -> JsArray(audience.map(aud => JsString(aud.id.toString)))
+          "aud" -> Json.toJson(audience.map(aud => Json.toJson(aud.id.toString)))
         ) or contain(
-          "aud" -> JsString(audience.headOption.map(_.id.toString).getOrElse(""))
+          "aud" -> Json.toJson(audience.headOption.map(_.id.toString).getOrElse(""))
         )
       )
     }
@@ -62,13 +62,13 @@ trait JwtBearerAccessTokenGeneratorBehaviour { _: AsyncUnitSpec =>
       jws.verifySignature() should be(true)
 
       val payload = Json.parse(jws.getPayload).as[JsObject]
-      payload.fields should contain("iss" -> JsString(issuer))
-      payload.fields should contain("sub" -> JsString(client.id.toString))
+      payload.fields should contain("iss" -> Json.toJson(issuer))
+      payload.fields should contain("sub" -> Json.toJson(client.id.toString))
       payload.fields should (
         contain(
-          "aud" -> JsArray(audience.map(aud => JsString(aud.id.toString)))
+          "aud" -> Json.toJson(audience.map(aud => Json.toJson(aud.id.toString)))
         ) or contain(
-          "aud" -> JsString(audience.headOption.map(_.id.toString).getOrElse(""))
+          "aud" -> Json.toJson(audience.headOption.map(_.id.toString).getOrElse(""))
         )
       )
     }
@@ -87,13 +87,13 @@ trait JwtBearerAccessTokenGeneratorBehaviour { _: AsyncUnitSpec =>
       jws.verifySignature() should be(true)
 
       val payload = Json.parse(jws.getPayload).as[JsObject]
-      payload.fields should contain("iss" -> JsString(issuer))
-      payload.fields should contain("sub" -> JsString(owner.subject.getOrElse("invalid")))
+      payload.fields should contain("iss" -> Json.toJson(issuer))
+      payload.fields should contain("sub" -> Json.toJson(owner.subject.getOrElse("invalid")))
       payload.fields should (
         contain(
-          "aud" -> JsArray(audience.map(aud => JsString(aud.id)))
+          "aud" -> Json.toJson(audience.map(aud => Json.toJson(aud.id)))
         ) or contain(
-          "aud" -> JsString(audience.headOption.map(_.id).getOrElse(""))
+          "aud" -> Json.toJson(audience.headOption.map(_.id).getOrElse(""))
         )
       )
     }
@@ -110,13 +110,13 @@ trait JwtBearerAccessTokenGeneratorBehaviour { _: AsyncUnitSpec =>
       jws.verifySignature() should be(true)
 
       val payload = Json.parse(jws.getPayload).as[JsObject]
-      payload.fields should contain("iss" -> JsString(issuer))
-      payload.fields should contain("sub" -> JsString(owner.username))
+      payload.fields should contain("iss" -> Json.toJson(issuer))
+      payload.fields should contain("sub" -> Json.toJson(owner.username))
       payload.fields should (
         contain(
-          "aud" -> JsArray(audience.map(aud => JsString(aud.id)))
+          "aud" -> Json.toJson(audience.map(aud => Json.toJson(aud.id)))
         ) or contain(
-          "aud" -> JsString(audience.headOption.map(_.id).getOrElse(""))
+          "aud" -> Json.toJson(audience.headOption.map(_.id).getOrElse(""))
         )
       )
     }

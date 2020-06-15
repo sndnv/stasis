@@ -79,7 +79,7 @@ class RefreshTokenConsumptionSpec extends RouteTest {
     tokens.put(client, token, owner, scope).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.BadRequest)
-      responseAs[JsObject].fields should contain("error" -> JsString("invalid_scope"))
+      responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_scope"))
     }
   }
 
@@ -99,7 +99,7 @@ class RefreshTokenConsumptionSpec extends RouteTest {
     tokens.put(client, token, owner, scope).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.BadRequest)
-      responseAs[JsObject].fields should contain("error" -> JsString("invalid_grant"))
+      responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_grant"))
     }
   }
 
@@ -119,7 +119,7 @@ class RefreshTokenConsumptionSpec extends RouteTest {
     tokens.put(client, token, owner, scope).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.BadRequest)
-      responseAs[JsObject].fields should contain("error" -> JsString("invalid_grant"))
+      responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_grant"))
     }
   }
 

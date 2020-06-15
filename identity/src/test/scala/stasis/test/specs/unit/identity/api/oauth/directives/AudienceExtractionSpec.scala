@@ -86,7 +86,7 @@ class AudienceExtractionSpec extends RouteTest {
 
     Get() ~> routes ~> check {
       status should be(StatusCodes.BadRequest)
-      responseAs[JsObject].fields should contain("error" -> JsString("invalid_scope"))
+      responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_scope"))
     }
   }
 
@@ -121,7 +121,7 @@ class AudienceExtractionSpec extends RouteTest {
 
     Get() ~> routes ~> check {
       status should be(StatusCodes.BadRequest)
-      responseAs[JsObject].fields should contain("error" -> JsString("invalid_scope"))
+      responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_scope"))
     }
   }
 
@@ -139,7 +139,7 @@ class AudienceExtractionSpec extends RouteTest {
     Future.sequence(clients.map(clientStore.put)).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.BadRequest)
-      responseAs[JsObject].fields should contain("error" -> JsString("invalid_scope"))
+      responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_scope"))
     }
   }
 

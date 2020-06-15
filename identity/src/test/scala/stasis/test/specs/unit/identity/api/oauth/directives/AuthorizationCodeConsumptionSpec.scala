@@ -36,7 +36,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
         Directives.complete(
           StatusCodes.OK,
           Json.obj(
-            "owner" -> JsString(extractedOwner.username),
+            "owner" -> Json.toJson(extractedOwner.username),
             "scope" -> Json.toJson(extractedScope)
           )
         )
@@ -46,8 +46,8 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     Get() ~> routes ~> check {
       status should be(StatusCodes.OK)
       val fields = responseAs[JsObject].fields
-      fields should contain("owner" -> JsString(owner.username))
-      fields should contain("scope" -> JsString(scope))
+      fields should contain("owner" -> Json.toJson(owner.username))
+      fields should contain("scope" -> Json.toJson(scope))
       codes.codes.await should be(Map.empty)
     }
   }
@@ -70,7 +70,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
         Directives.complete(
           StatusCodes.OK,
           Json.obj(
-            "owner" -> JsString(extractedOwner.username),
+            "owner" -> Json.toJson(extractedOwner.username),
             "scope" -> Json.toJson(extractedScope)
           )
         )
@@ -79,7 +79,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     codes.put(StoredAuthorizationCode(code, client, owner, scope = Some(scope), challenge = Some(challenge))).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.BadRequest)
-      responseAs[JsObject].fields should contain("error" -> JsString("invalid_grant"))
+      responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_grant"))
     }
   }
 
@@ -99,7 +99,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
         Directives.complete(
           StatusCodes.OK,
           Json.obj(
-            "owner" -> JsString(extractedOwner.username),
+            "owner" -> Json.toJson(extractedOwner.username),
             "scope" -> Json.toJson(extractedScope)
           )
         )
@@ -109,8 +109,8 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     Get() ~> routes ~> check {
       status should be(StatusCodes.OK)
       val fields = responseAs[JsObject].fields
-      fields should contain("owner" -> JsString(owner.username))
-      fields should contain("scope" -> JsString(scope))
+      fields should contain("owner" -> Json.toJson(owner.username))
+      fields should contain("scope" -> Json.toJson(scope))
       codes.codes.await should be(Map.empty)
     }
   }
@@ -141,7 +141,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
         Directives.complete(
           StatusCodes.OK,
           Json.obj(
-            "owner" -> JsString(extractedOwner.username),
+            "owner" -> Json.toJson(extractedOwner.username),
             "scope" -> Json.toJson(extractedScope)
           )
         )
@@ -151,8 +151,8 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     Get() ~> routes ~> check {
       status should be(StatusCodes.OK)
       val fields = responseAs[JsObject].fields
-      fields should contain("owner" -> JsString(owner.username))
-      fields should contain("scope" -> JsString(scope))
+      fields should contain("owner" -> Json.toJson(owner.username))
+      fields should contain("scope" -> Json.toJson(scope))
       codes.codes.await should be(Map.empty)
     }
   }
@@ -179,7 +179,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
         Directives.complete(
           StatusCodes.OK,
           Json.obj(
-            "owner" -> JsString(extractedOwner.username),
+            "owner" -> Json.toJson(extractedOwner.username),
             "scope" -> Json.toJson(extractedScope)
           )
         )
@@ -188,7 +188,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     codes.put(StoredAuthorizationCode(code, client, owner, scope = Some(scope), challenge = Some(challenge))).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.BadRequest)
-      responseAs[JsObject].fields should contain("error" -> JsString("invalid_grant"))
+      responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_grant"))
     }
   }
 
@@ -207,7 +207,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
         Directives.complete(
           StatusCodes.OK,
           Json.obj(
-            "owner" -> JsString(extractedOwner.username),
+            "owner" -> Json.toJson(extractedOwner.username),
             "scope" -> Json.toJson(extractedScope)
           )
         )
@@ -216,7 +216,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     codes.put(StoredAuthorizationCode(code, client, owner, scope = Some(scope), challenge = None)).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.BadRequest)
-      responseAs[JsObject].fields should contain("error" -> JsString("invalid_grant"))
+      responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_grant"))
     }
   }
 
@@ -237,7 +237,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     codes.put(StoredAuthorizationCode(Generators.generateAuthorizationCode, client, owner, scope = Some(scope))).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.BadRequest)
-      responseAs[JsObject].fields should contain("error" -> JsString("invalid_grant"))
+      responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_grant"))
     }
   }
 
@@ -258,7 +258,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     codes.put(StoredAuthorizationCode(code, Client.generateId(), owner, scope = Some(scope))).await
     Get() ~> routes ~> check {
       status should be(StatusCodes.BadRequest)
-      responseAs[JsObject].fields should contain("error" -> JsString("invalid_grant"))
+      responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_grant"))
     }
   }
 
@@ -276,7 +276,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
         Directives.complete(
           StatusCodes.OK,
           Json.obj(
-            "owner" -> JsString(extractedOwner.username),
+            "owner" -> Json.toJson(extractedOwner.username),
             "scope" -> Json.toJson(extractedScope)
           )
         )

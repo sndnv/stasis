@@ -18,9 +18,9 @@ class FormatsSpec extends UnitSpec {
     val json = authorizationErrorWrites.writes(error).toString
     val parsedFields = Json.parse(json).as[JsObject].fields
 
-    parsedFields should contain("error" -> JsString(error.error))
-    parsedFields should contain("error_description" -> JsString(error.error_description))
-    parsedFields should contain("state" -> JsString(error.state))
+    parsedFields should contain("error" -> Json.toJson(error.error))
+    parsedFields should contain("error_description" -> Json.toJson(error.error_description))
+    parsedFields should contain("state" -> Json.toJson(error.state))
   }
 
   they should "convert token errors to JSON" in {
@@ -28,8 +28,8 @@ class FormatsSpec extends UnitSpec {
     val json = tokenErrorWrites.writes(error).toString
     val parsedFields = Json.parse(json).as[JsObject].fields
 
-    parsedFields should contain("error" -> JsString(error.error))
-    parsedFields should contain("error_description" -> JsString(error.error_description))
+    parsedFields should contain("error" -> Json.toJson(error.error))
+    parsedFields should contain("error_description" -> Json.toJson(error.error_description))
   }
 
   they should "convert token types to/from JSON" in {
@@ -120,8 +120,8 @@ class FormatsSpec extends UnitSpec {
     val json = codeChallengeFormat.writes(codeChallenge).toString
     val parsedFields = Json.parse(json).as[JsObject].fields
 
-    parsedFields should contain("value" -> JsString(codeChallenge.value))
-    parsedFields should contain("method" -> JsString("s256"))
+    parsedFields should contain("value" -> Json.toJson(codeChallenge.value))
+    parsedFields should contain("method" -> Json.toJson("s256"))
   }
 
   they should "convert APIs to/from JSON" in {
@@ -129,7 +129,7 @@ class FormatsSpec extends UnitSpec {
     val json = apiFormat.writes(api).toString
     val parsedFields = Json.parse(json).as[JsObject].fields
 
-    parsedFields should contain("id" -> JsString(api.id))
+    parsedFields should contain("id" -> Json.toJson(api.id))
 
     apiFormat.reads(Json.parse(json).as[JsObject]).asOpt should be(Some(api))
   }
@@ -140,10 +140,10 @@ class FormatsSpec extends UnitSpec {
     val parsedFields = Json.parse(json).as[JsObject].fields
     val parsedKeys = parsedFields.map(_._1)
 
-    parsedFields should contain("id" -> JsString(client.id.toString))
-    parsedFields should contain("redirect_uri" -> JsString(client.redirectUri))
-    parsedFields should contain("token_expiration" -> JsNumber(client.tokenExpiration.value))
-    parsedFields should contain("active" -> JsBoolean(client.active))
+    parsedFields should contain("id" -> Json.toJson(client.id.toString))
+    parsedFields should contain("redirect_uri" -> Json.toJson(client.redirectUri))
+    parsedFields should contain("token_expiration" -> Json.toJson(client.tokenExpiration.value))
+    parsedFields should contain("active" -> Json.toJson(client.active))
     parsedKeys should not contain "secret"
     parsedKeys should not contain "salt"
   }
@@ -165,9 +165,9 @@ class FormatsSpec extends UnitSpec {
     val parsedFields = Json.parse(json).as[JsObject].fields
     val parsedKeys = parsedFields.map(_._1)
 
-    parsedFields should contain("code" -> JsString(code.code.value))
-    parsedFields should contain("client" -> JsString(code.client.toString))
-    parsedFields should contain("scope" -> JsString(code.scope.getOrElse("invalid-scope")))
+    parsedFields should contain("code" -> Json.toJson(code.code.value))
+    parsedFields should contain("client" -> Json.toJson(code.client.toString))
+    parsedFields should contain("scope" -> Json.toJson(code.scope.getOrElse("invalid-scope")))
     parsedKeys should contain("owner")
     parsedKeys should contain("challenge")
   }
@@ -178,9 +178,9 @@ class FormatsSpec extends UnitSpec {
     val parsedFields = Json.parse(json).as[JsObject].fields
     val parsedKeys = parsedFields.map(_._1)
 
-    parsedFields should contain("username" -> JsString(owner.username))
-    parsedFields should contain("allowed_scopes" -> JsArray(owner.allowedScopes.map(JsString)))
-    parsedFields should contain("active" -> JsBoolean(owner.active))
+    parsedFields should contain("username" -> Json.toJson(owner.username))
+    parsedFields should contain("allowed_scopes" -> Json.toJson(owner.allowedScopes.map(Json.toJson(_: String))))
+    parsedFields should contain("active" -> Json.toJson(owner.active))
     parsedKeys should not contain "secret"
     parsedKeys should not contain "salt"
   }
@@ -197,9 +197,9 @@ class FormatsSpec extends UnitSpec {
     val parsedFields = Json.parse(json).as[JsObject].fields
     val parsedKeys = parsedFields.map(_._1)
 
-    parsedFields should contain("token" -> JsString(token.token.value))
-    parsedFields should contain("client" -> JsString(token.client.toString))
-    parsedFields should contain("scope" -> JsString(token.scope.getOrElse("invalid-scope")))
+    parsedFields should contain("token" -> Json.toJson(token.token.value))
+    parsedFields should contain("client" -> Json.toJson(token.client.toString))
+    parsedFields should contain("scope" -> Json.toJson(token.scope.getOrElse("invalid-scope")))
     parsedKeys should contain("owner")
     parsedKeys should contain("expiration")
   }

@@ -66,7 +66,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
     Get("/jwks/jwks.json") ~> endpoint.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[JsObject].fields should contain(
-        "keys" -> JsArray(keys.map(jwk => Json.parse(jwk.toJson)))
+        "keys" -> Json.toJson(keys.map(jwk => Json.parse(jwk.toJson)))
       )
     }
   }

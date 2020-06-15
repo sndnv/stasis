@@ -37,7 +37,7 @@ class ClientAuthenticationSpec extends RouteTest {
     clients.put(client).await
     Get().addCredentials(credentials) ~> routes ~> check {
       status should be(StatusCodes.OK)
-      responseAs[JsString] should be(JsString(client.id.toString))
+      responseAs[JsString] should be(Json.toJson(client.id.toString))
     }
   }
 
@@ -58,7 +58,7 @@ class ClientAuthenticationSpec extends RouteTest {
     Get().addCredentials(credentials) ~> routes ~> check {
       status should be(StatusCodes.Unauthorized)
       headers should contain(model.headers.`WWW-Authenticate`(HttpChallenges.basic(testRealm)))
-      responseAs[JsObject].fields should contain("error" -> JsString("invalid_client"))
+      responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_client"))
     }
   }
 
@@ -79,7 +79,7 @@ class ClientAuthenticationSpec extends RouteTest {
     Get().addCredentials(credentials) ~> routes ~> check {
       status should be(StatusCodes.Unauthorized)
       headers should contain(model.headers.`WWW-Authenticate`(HttpChallenges.basic(testRealm)))
-      responseAs[JsObject].fields should contain("error" -> JsString("invalid_client"))
+      responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_client"))
     }
   }
 
@@ -97,7 +97,7 @@ class ClientAuthenticationSpec extends RouteTest {
     Get() ~> routes ~> check {
       status should be(StatusCodes.Unauthorized)
       headers should contain(model.headers.`WWW-Authenticate`(HttpChallenges.basic(testRealm)))
-      responseAs[JsObject].fields should contain("error" -> JsString("invalid_client"))
+      responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_client"))
     }
   }
 
