@@ -95,3 +95,7 @@ class Nodes()(implicit ctx: RoutesContext) extends ApiRoutes {
       }
     )
 }
+
+object Nodes {
+  def apply()(implicit ctx: RoutesContext): Nodes = new Nodes()
+}

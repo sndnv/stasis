@@ -18,12 +18,12 @@ class OAuth(
 
   private val log: LoggingAdapter = Logging(system, this.getClass.getName)
 
-  private val authorizationCodeGrant = new AuthorizationCodeGrant(config, providers)
-  private val pkceAuthorizationCodeGrant = new PkceAuthorizationCodeGrant(config, providers)
-  private val clientCredentialsGrant = new ClientCredentialsGrant(config, providers)
-  private val implicitGrant = new ImplicitGrant(config, providers)
-  private val refreshTokenGrant = new RefreshTokenGrant(config, providers)
-  private val passwordCredentialsGrant = new ResourceOwnerPasswordCredentialsGrant(config, providers)
+  private val authorizationCodeGrant = AuthorizationCodeGrant(config, providers)
+  private val pkceAuthorizationCodeGrant = PkceAuthorizationCodeGrant(config, providers)
+  private val clientCredentialsGrant = ClientCredentialsGrant(config, providers)
+  private val implicitGrant = ImplicitGrant(config, providers)
+  private val refreshTokenGrant = RefreshTokenGrant(config, providers)
+  private val passwordCredentialsGrant = ResourceOwnerPasswordCredentialsGrant(config, providers)
 
   def routes: Route =
     concat(
@@ -67,5 +67,16 @@ class OAuth(
             discardEntity & complete(StatusCodes.BadRequest, message)
         }
       }
+    )
+}
+
+object OAuth {
+  def apply(
+    config: Config,
+    providers: Providers
+  )(implicit system: ActorSystem, mat: Materializer): OAuth =
+    new OAuth(
+      config = config,
+      providers = providers
     )
 }

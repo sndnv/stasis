@@ -12,3 +12,8 @@ class RandomRefreshTokenGenerator(tokenSize: Int) extends RefreshTokenGenerator 
     RefreshToken(random.alphanumeric.take(tokenSize).mkString(""))
   }
 }
+
+object RandomRefreshTokenGenerator {
+  def apply(tokenSize: Int): RandomRefreshTokenGenerator =
+    new RandomRefreshTokenGenerator(tokenSize = tokenSize)
+}

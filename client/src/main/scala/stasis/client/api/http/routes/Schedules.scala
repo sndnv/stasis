@@ -53,3 +53,8 @@ class Schedules()(implicit override val mat: Materializer, context: Context) ext
       }
     )
 }
+
+object Schedules {
+  def apply()(implicit mat: Materializer, context: Context): Schedules =
+    new Schedules()
+}

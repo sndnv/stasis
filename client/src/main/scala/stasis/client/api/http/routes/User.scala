@@ -19,3 +19,8 @@ class User()(implicit override val mat: Materializer, context: Context) extends 
       }
     }
 }
+
+object User {
+  def apply()(implicit mat: Materializer, context: Context): User =
+    new User()
+}

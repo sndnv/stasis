@@ -100,3 +100,14 @@ class NodeProxy(
         cache.put(id, store).map(_ => store)
     }
 }
+
+object NodeProxy {
+  def apply(
+    httpClient: EndpointClient[HttpEndpointAddress, _],
+    grpcClient: EndpointClient[GrpcEndpointAddress, _]
+  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): NodeProxy =
+    new NodeProxy(
+      httpClient = httpClient,
+      grpcClient = grpcClient
+    )
+}

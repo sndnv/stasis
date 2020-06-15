@@ -263,3 +263,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
       }
     }
 }
+
+object Devices {
+  def apply()(implicit ctx: RoutesContext): Devices = new Devices()
+}

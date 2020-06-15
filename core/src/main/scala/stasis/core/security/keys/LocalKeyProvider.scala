@@ -27,3 +27,14 @@ final class LocalKeyProvider(
       case None                                 => Future.successful(key)
     }
 }
+
+object LocalKeyProvider {
+  def apply(
+    jwk: JsonWebKey,
+    issuer: String
+  ): LocalKeyProvider =
+    new LocalKeyProvider(
+      jwk = jwk,
+      issuer = issuer
+    )
+}

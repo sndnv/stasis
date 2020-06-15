@@ -8,7 +8,7 @@ import slick.jdbc.JdbcProfile
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.backends.slick.{SlickBackend, SlickProfile}
-import stasis.identity.model.apis.{ApiStore, ApiStoreSerdes}
+import stasis.identity.model.apis.{Api, ApiStore, ApiStoreSerdes}
 import stasis.identity.model.clients.{Client, ClientStore, ClientStoreSerdes}
 import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, StoredAuthorizationCode}
 import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore, ResourceOwnerStoreSerdes}
@@ -83,28 +83,28 @@ class Persistence(
     }
 
   private object backends {
-    val apis = new SlickBackend(
+    val apis: SlickBackend[Api.Id, Api] = SlickBackend(
       tableName = "APIS",
       profile = profile,
       database = database,
       serdes = ApiStoreSerdes
     )
 
-    val clients: KeyValueBackend[Client.Id, Client] = new SlickBackend(
+    val clients: KeyValueBackend[Client.Id, Client] = SlickBackend(
       tableName = "CLIENTS",
       profile = profile,
       database = database,
       serdes = ClientStoreSerdes
     )
 
-    val owners: KeyValueBackend[ResourceOwner.Id, ResourceOwner] = new SlickBackend(
+    val owners: KeyValueBackend[ResourceOwner.Id, ResourceOwner] = SlickBackend(
       tableName = "RESOURCE_OWNERS",
       profile = profile,
       database = database,
       serdes = ResourceOwnerStoreSerdes
     )
 
-    val tokens: KeyValueBackend[RefreshToken, StoredRefreshToken] = new SlickBackend(
+    val tokens: KeyValueBackend[RefreshToken, StoredRefreshToken] = SlickBackend(
       tableName = "REFRESH_TOKENS",
       profile = profile,
       database = database,
@@ -121,4 +121,17 @@ class Persistence(
         name = s"code-store-${java.util.UUID.randomUUID().toString}"
       )
   }
+}
+
+object Persistence {
+  def apply(
+    persistenceConfig: typesafe.Config,
+    authorizationCodeExpiration: FiniteDuration,
+    refreshTokenExpiration: FiniteDuration
+  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): Persistence =
+    new Persistence(
+      persistenceConfig = persistenceConfig,
+      authorizationCodeExpiration = authorizationCodeExpiration,
+      refreshTokenExpiration = refreshTokenExpiration
+    )
 }

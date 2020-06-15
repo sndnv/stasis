@@ -53,8 +53,8 @@ trait Service {
     val authenticationEndpointContext: Option[HttpsConnectionContext] =
       EndpointContext.fromConfig(rawConfig.getConfig("clients.authentication.context"))
 
-    val jwtProvider: JwtProvider = new DefaultJwtProvider(
-      client = new DefaultOAuthClient(
+    val jwtProvider: JwtProvider = DefaultJwtProvider(
+      client = DefaultOAuthClient(
         tokenEndpoint = instanceAuthenticatorConfig.tokenEndpoint,
         client = serverId.toString,
         clientSecret = instanceAuthenticatorConfig.clientSecret,
@@ -66,18 +66,18 @@ trait Service {
 
     val persistenceConfig = rawConfig.getConfig("persistence")
 
-    val serverPersistence: ServerPersistence = new ServerPersistence(persistenceConfig)
-    val corePersistence: CorePersistence = new CorePersistence(persistenceConfig)
+    val serverPersistence: ServerPersistence = ServerPersistence(persistenceConfig)
+    val corePersistence: CorePersistence = CorePersistence(persistenceConfig)
 
-    val resourceProvider: ResourceProvider = new DefaultResourceProvider(
+    val resourceProvider: ResourceProvider = DefaultResourceProvider(
       resources = serverPersistence.resources ++ corePersistence.resources,
       users = serverPersistence.users.view()
     )
 
     val userAuthenticatorConfig = Config.UserAuthenticatorConfig(rawConfig.getConfig("authenticators.users"))
-    val userAuthenticator: UserAuthenticator = new DefaultUserAuthenticator(
+    val userAuthenticator: UserAuthenticator = DefaultUserAuthenticator(
       store = serverPersistence.users.view(),
-      underlying = new DefaultJwtAuthenticator(
+      underlying = DefaultJwtAuthenticator(
         provider = RemoteKeyProvider(
           jwksEndpoint = userAuthenticatorConfig.jwksEndpoint,
           context = authenticationEndpointContext,
@@ -92,9 +92,9 @@ trait Service {
     )
 
     val nodeAuthenticatorConfig = Config.NodeAuthenticatorConfig(rawConfig.getConfig("authenticators.nodes"))
-    val nodeAuthenticator: NodeAuthenticator[HttpCredentials] = new JwtNodeAuthenticator(
+    val nodeAuthenticator: NodeAuthenticator[HttpCredentials] = JwtNodeAuthenticator(
       nodeStore = corePersistence.nodes.view,
-      underlying = new DefaultJwtAuthenticator(
+      underlying = DefaultJwtAuthenticator(
         provider = RemoteKeyProvider(
           jwksEndpoint = nodeAuthenticatorConfig.jwksEndpoint,
           context = authenticationEndpointContext,
@@ -111,8 +111,8 @@ trait Service {
     val clientEndpointContext: Option[HttpsConnectionContext] =
       EndpointContext.fromConfig(rawConfig.getConfig("clients.core.context"))
 
-    val coreHttpEndpointClient = new HttpEndpointClient(
-      credentials = new JwtNodeCredentialsProvider[HttpEndpointAddress](
+    val coreHttpEndpointClient = HttpEndpointClient(
+      credentials = JwtNodeCredentialsProvider[HttpEndpointAddress](
         nodeStore = corePersistence.nodes.view,
         underlying = jwtProvider
       ),
@@ -120,20 +120,20 @@ trait Service {
       requestBufferSize = rawConfig.getInt("clients.core.request-buffer-size")
     )
 
-    val coreGrpcEndpointClient = new GrpcEndpointClient(
-      credentials = new JwtNodeCredentialsProvider[GrpcEndpointAddress](
+    val coreGrpcEndpointClient = GrpcEndpointClient(
+      credentials = JwtNodeCredentialsProvider[GrpcEndpointAddress](
         nodeStore = corePersistence.nodes.view,
         underlying = jwtProvider
       ),
       context = clientEndpointContext
     )
 
-    val nodeProxy = new NodeProxy(
+    val nodeProxy = NodeProxy(
       httpClient = coreHttpEndpointClient,
       grpcClient = coreGrpcEndpointClient
     )
 
-    val router: Router = new DefaultRouter(
+    val router: Router = DefaultRouter(
       routerId = serverId,
       persistence = DefaultRouter.Persistence(
         manifests = corePersistence.manifests,
@@ -146,7 +146,7 @@ trait Service {
 
     val apiServices = ApiServices(
       persistence = serverPersistence,
-      endpoint = new ApiEndpoint(
+      endpoint = ApiEndpoint(
         resourceProvider = resourceProvider,
         authenticator = userAuthenticator
       ),
@@ -155,7 +155,7 @@ trait Service {
 
     val coreServices = CoreServices(
       persistence = corePersistence,
-      endpoint = new HttpEndpoint(
+      endpoint = HttpEndpoint(
         router = router,
         reservationStore = corePersistence.reservations.view,
         authenticator = nodeAuthenticator

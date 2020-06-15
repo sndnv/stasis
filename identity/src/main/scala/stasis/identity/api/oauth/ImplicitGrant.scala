@@ -94,6 +94,15 @@ class ImplicitGrant(
 object ImplicitGrant {
   import play.api.libs.json.{Format, Json}
 
+  def apply(
+    config: Config,
+    providers: Providers
+  )(implicit system: ActorSystem, mat: Materializer): ImplicitGrant =
+    new ImplicitGrant(
+      config = config,
+      providers = providers
+    )
+
   implicit val accessTokenResponseWithRedirectUriFormat: Format[AccessTokenResponseWithRedirectUri] =
     Json.format[AccessTokenResponseWithRedirectUri]
 

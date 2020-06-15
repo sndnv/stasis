@@ -148,3 +148,7 @@ class Users()(implicit ctx: RoutesContext) extends ApiRoutes {
       }
     }
 }
+
+object Users {
+  def apply()(implicit ctx: RoutesContext): Users = new Users()
+}

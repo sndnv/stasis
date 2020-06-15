@@ -94,4 +94,13 @@ object CachedServerApiEndpointClient {
     timeToLive: FiniteDuration,
     timeToIdle: FiniteDuration
   )
+
+  def apply(
+    config: CachedServerApiEndpointClient.Config,
+    underlying: ServerApiEndpointClient
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): CachedServerApiEndpointClient =
+    new CachedServerApiEndpointClient(
+      config = config,
+      underlying = underlying
+    )
 }

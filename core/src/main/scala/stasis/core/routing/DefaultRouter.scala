@@ -424,6 +424,17 @@ object DefaultRouter {
     staging: Option[StagingStore],
   )
 
+  def apply(
+    routerId: Node.Id,
+    persistence: DefaultRouter.Persistence,
+    nodeProxy: NodeProxy
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): DefaultRouter =
+    new DefaultRouter(
+      routerId = routerId,
+      persistence = persistence,
+      nodeProxy = nodeProxy
+    )
+
   def distributeCopies(
     availableNodes: Seq[Node],
     request: CrateStorageRequest

@@ -22,3 +22,7 @@ class Service()(implicit ctx: RoutesContext) extends ApiRoutes {
       }
     }
 }
+
+object Service {
+  def apply()(implicit ctx: RoutesContext): Service = new Service()
+}

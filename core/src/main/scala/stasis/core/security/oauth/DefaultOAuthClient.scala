@@ -111,3 +111,20 @@ class DefaultOAuthClient(
             }
       }
 }
+
+object DefaultOAuthClient {
+  def apply(
+    tokenEndpoint: String,
+    client: String,
+    clientSecret: String,
+    useQueryString: Boolean,
+    context: Option[HttpsConnectionContext]
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): DefaultOAuthClient =
+    new DefaultOAuthClient(
+      tokenEndpoint = tokenEndpoint,
+      client = client,
+      clientSecret = clientSecret,
+      useQueryString = useQueryString,
+      context = context
+    )
+}

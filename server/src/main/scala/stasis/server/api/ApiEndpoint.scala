@@ -29,15 +29,15 @@ class ApiEndpoint(
 
   private implicit val context: RoutesContext = RoutesContext(resourceProvider, ec, mat, log)
 
-  private val definitions = new DatasetDefinitions()
-  private val entries = new DatasetEntries()
-  private val users = new Users()
-  private val devices = new Devices()
-  private val schedules = new Schedules()
-  private val nodes = new Nodes()
-  private val reservations = new Reservations()
-  private val staging = new Staging()
-  private val service = new Service()
+  private val definitions = DatasetDefinitions()
+  private val entries = DatasetEntries()
+  private val users = Users()
+  private val devices = Devices()
+  private val schedules = Schedules()
+  private val nodes = Nodes()
+  private val reservations = Reservations()
+  private val staging = Staging()
+  private val service = Service()
 
   private implicit def sanitizingExceptionHandler: ExceptionHandler =
     ExceptionHandler {
@@ -150,4 +150,15 @@ class ApiEndpoint(
       connectionContext = context
     )
   }
+}
+
+object ApiEndpoint {
+  def apply(
+    resourceProvider: ResourceProvider,
+    authenticator: UserAuthenticator
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): ApiEndpoint =
+    new ApiEndpoint(
+      resourceProvider = resourceProvider,
+      authenticator = authenticator
+    )
 }

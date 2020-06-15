@@ -57,7 +57,7 @@ class DefaultOperationExecutor(
         deviceSecret = secret,
         limits = config.backup.limits
       )
-      operation = new backup.Backup(descriptor = descriptor)
+      operation = backup.Backup(descriptor = descriptor)
       _ <- activeOperations.put(operation.id, operation)
     } yield {
       operation.run()
@@ -76,7 +76,7 @@ class DefaultOperationExecutor(
         deviceSecret = secret,
         limits = config.backup.limits
       )
-      operation = new backup.Backup(descriptor = descriptor)
+      operation = backup.Backup(descriptor = descriptor)
       _ <- activeOperations.put(operation.id, operation)
     } yield {
       operation.run()
@@ -97,7 +97,7 @@ class DefaultOperationExecutor(
         destination = destination,
         deviceSecret = secret
       )
-      operation = new recovery.Recovery(descriptor = descriptor)
+      operation = recovery.Recovery(descriptor = descriptor)
       _ <- activeOperations.put(operation.id, operation)
     } yield {
       operation.run()
@@ -117,7 +117,7 @@ class DefaultOperationExecutor(
         collector = recovery.Recovery.Descriptor.Collector.WithEntry(entry),
         deviceSecret = secret
       )
-      operation = new recovery.Recovery(descriptor = descriptor)
+      operation = recovery.Recovery(descriptor = descriptor)
       _ <- activeOperations.put(operation.id, operation)
     } yield {
       operation.run()

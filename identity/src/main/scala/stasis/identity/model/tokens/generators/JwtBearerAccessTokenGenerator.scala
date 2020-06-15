@@ -74,3 +74,16 @@ class JwtBearerAccessTokenGenerator(
     )
   }
 }
+
+object JwtBearerAccessTokenGenerator {
+  def apply(
+    issuer: String,
+    jwk: JsonWebKey,
+    jwtExpiration: FiniteDuration
+  ): JwtBearerAccessTokenGenerator =
+    new JwtBearerAccessTokenGenerator(
+      issuer = issuer,
+      jwk = jwk,
+      jwtExpiration = jwtExpiration
+    )
+}

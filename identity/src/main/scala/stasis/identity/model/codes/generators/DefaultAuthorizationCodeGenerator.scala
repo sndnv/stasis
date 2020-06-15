@@ -12,3 +12,8 @@ class DefaultAuthorizationCodeGenerator(codeSize: Int) extends AuthorizationCode
     AuthorizationCode(random.alphanumeric.take(codeSize).mkString(""))
   }
 }
+
+object DefaultAuthorizationCodeGenerator {
+  def apply(codeSize: Int): DefaultAuthorizationCodeGenerator =
+    new DefaultAuthorizationCodeGenerator(codeSize = codeSize)
+}

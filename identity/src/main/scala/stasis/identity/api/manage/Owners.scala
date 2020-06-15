@@ -121,3 +121,14 @@ class Owners(
       }
     )
 }
+
+object Owners {
+  def apply(
+    store: ResourceOwnerStore,
+    ownerSecretConfig: Secret.ResourceOwnerConfig
+  )(implicit system: ActorSystem, mat: Materializer): Owners =
+    new Owners(
+      store = store,
+      ownerSecretConfig = ownerSecretConfig
+    )
+}

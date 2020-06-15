@@ -30,4 +30,8 @@ object RecoveryMetadataCollector {
         existingMetadata = existingMetadata
       )
   }
+
+  object Default {
+    def apply(checksum: Checksum)(implicit mat: Materializer): Default = new Default(checksum)
+  }
 }

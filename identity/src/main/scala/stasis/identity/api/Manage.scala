@@ -23,11 +23,11 @@ class Manage(
   override protected def log: LoggingAdapter = Logging(system, this.getClass.getName)
   override protected def authenticator: ResourceOwnerAuthenticator = providers.ownerAuthenticator
 
-  private val apis = new Apis(providers.apiStore)
-  private val clients = new Clients(providers.clientStore, config.clientSecrets)
-  private val codes = new Codes(providers.codeStore)
-  private val owners = new Owners(providers.ownerStore, config.ownerSecrets)
-  private val tokens = new Tokens(providers.tokenStore)
+  private val apis = Apis(providers.apiStore)
+  private val clients = Clients(providers.clientStore, config.clientSecrets)
+  private val codes = Codes(providers.codeStore)
+  private val owners = Owners(providers.ownerStore, config.ownerSecrets)
+  private val tokens = Tokens(providers.tokenStore)
 
   def routes: Route =
     authenticate() { user =>
@@ -69,4 +69,13 @@ object Manage {
     final val ManageClients: String = "manage:clients"
     final val ManageOwners: String = "manage:owners"
   }
+
+  def apply(
+    providers: Providers,
+    config: Config
+  )(implicit system: ActorSystem, mat: Materializer): Manage =
+    new Manage(
+      providers = providers,
+      config = config
+    )
 }

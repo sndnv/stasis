@@ -90,3 +90,18 @@ class DefaultJwtAuthenticator(
       claims
     }
 }
+
+object DefaultJwtAuthenticator {
+  def apply(
+    provider: KeyProvider,
+    audience: String,
+    identityClaim: String,
+    expirationTolerance: FiniteDuration
+  )(implicit ec: ExecutionContext): DefaultJwtAuthenticator =
+    new DefaultJwtAuthenticator(
+      provider = provider,
+      audience = audience,
+      identityClaim = identityClaim,
+      expirationTolerance = expirationTolerance
+    )
+}

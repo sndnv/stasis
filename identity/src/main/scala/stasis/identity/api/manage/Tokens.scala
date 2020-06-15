@@ -64,3 +64,10 @@ class Tokens(store: RefreshTokenStore)(implicit system: ActorSystem, override va
       }
     )
 }
+
+object Tokens {
+  def apply(store: RefreshTokenStore)(implicit system: ActorSystem, mat: Materializer): Tokens =
+    new Tokens(
+      store = store
+    )
+}

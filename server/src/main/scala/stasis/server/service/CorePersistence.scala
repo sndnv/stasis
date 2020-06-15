@@ -5,13 +5,15 @@ import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.util.Timeout
 import com.typesafe.{config => typesafe}
 import slick.jdbc.JdbcProfile
-import stasis.core.persistence.StoreInitializationResult
+import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.backends.slick.{SlickBackend, SlickProfile}
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.manifests.{ManifestStore, ManifestStoreSerdes}
 import stasis.core.persistence.nodes.{NodeStore, NodeStoreSerdes}
 import stasis.core.persistence.reservations.{ReservationStore, ReservationStoreSerdes}
 import stasis.core.persistence.staging.StagingStore
+import stasis.core.persistence.{CrateStorageReservation, StoreInitializationResult}
+import stasis.core.routing.Node
 import stasis.server.model.nodes.ServerNodeStore
 import stasis.server.model.reservations.ServerReservationStore
 import stasis.server.model.staging.ServerStagingStore
@@ -73,7 +75,7 @@ class CorePersistence(
   val reservations: ReservationStore = reservationStore
 
   val staging: Option[StagingStore] = stagingStoreDescriptor.map { descriptor =>
-    new StagingStore(
+    StagingStore(
       crateStore = CrateStore.fromDescriptor(descriptor),
       destagingDelay = stagingStoreDestagingDelay
     )
@@ -120,25 +122,32 @@ class CorePersistence(
   private val serverStaging: Option[ServerStagingStore] = staging.map(ServerStagingStore.apply)
 
   private object backends {
-    val manifests = new SlickBackend(
+    val manifests: SlickBackend[Crate.Id, Manifest] = SlickBackend(
       tableName = "MANIFESTS",
       profile = profile,
       database = database,
       serdes = ManifestStoreSerdes
     )
 
-    val nodes = new SlickBackend(
+    val nodes: SlickBackend[Node.Id, Node] = SlickBackend(
       tableName = "NODES",
       profile = profile,
       database = database,
       serdes = NodeStoreSerdes
     )
 
-    val reservations = new SlickBackend(
+    val reservations: SlickBackend[CrateStorageReservation.Id, CrateStorageReservation] = SlickBackend(
       tableName = "RESERVATIONS",
       profile = profile,
       database = database,
       serdes = ReservationStoreSerdes
     )
   }
+}
+
+object CorePersistence {
+  def apply(
+    persistenceConfig: typesafe.Config,
+  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): CorePersistence =
+    new CorePersistence(persistenceConfig)
 }

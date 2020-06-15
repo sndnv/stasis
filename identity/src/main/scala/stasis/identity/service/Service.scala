@@ -53,7 +53,7 @@ trait Service {
     val authorizationCodesConfig = Config.AuthorizationCodes(rawConfig.getConfig("codes.authorization"))
     val ownerAuthenticatorConfig = Config.ResourceOwnerAuthenticator(rawConfig.getConfig("authenticators.resource-owner"))
 
-    val persistence: Persistence = new Persistence(
+    val persistence: Persistence = Persistence(
       persistenceConfig = rawConfig.getConfig("persistence"),
       authorizationCodeExpiration = authorizationCodesConfig.expiration,
       refreshTokenExpiration = refreshTokensConfig.expiration
@@ -67,31 +67,31 @@ trait Service {
       clientStore = persistence.clients.view,
       refreshTokenStore = persistence.refreshTokens,
       authorizationCodeStore = persistence.authorizationCodes,
-      accessTokenGenerator = new JwtBearerAccessTokenGenerator(
+      accessTokenGenerator = JwtBearerAccessTokenGenerator(
         issuer = accessTokensConfig.issuer,
         jwk = accessTokenSignatureKey,
         jwtExpiration = accessTokensConfig.expiration
       ),
-      authorizationCodeGenerator = new DefaultAuthorizationCodeGenerator(
+      authorizationCodeGenerator = DefaultAuthorizationCodeGenerator(
         codeSize = authorizationCodesConfig.size
       ),
-      refreshTokenGenerator = new RandomRefreshTokenGenerator(
+      refreshTokenGenerator = RandomRefreshTokenGenerator(
         tokenSize = refreshTokensConfig.size
       ),
-      clientAuthenticator = new oauth.DefaultClientAuthenticator(
+      clientAuthenticator = oauth.DefaultClientAuthenticator(
         store = persistence.clients.view,
         secretConfig = clientSecretsConfig
       ),
-      resourceOwnerAuthenticator = new oauth.DefaultResourceOwnerAuthenticator(
+      resourceOwnerAuthenticator = oauth.DefaultResourceOwnerAuthenticator(
         store = persistence.resourceOwners.view,
         secretConfig = ownerSecretsConfig
       )
     )
 
-    val ownerAuthenticator = new manage.DefaultResourceOwnerAuthenticator(
+    val ownerAuthenticator = manage.DefaultResourceOwnerAuthenticator(
       store = persistence.resourceOwners.view,
-      underlying = new DefaultJwtAuthenticator(
-        provider = new LocalKeyProvider(
+      underlying = DefaultJwtAuthenticator(
+        provider = LocalKeyProvider(
           jwk = accessTokenSignatureKey,
           issuer = accessTokensConfig.issuer
         ),
@@ -112,7 +112,7 @@ trait Service {
 
     val realm: String = rawConfig.getString("realm")
 
-    val endpoint = new IdentityEndpoint(
+    val endpoint = IdentityEndpoint(
       keys = Seq(accessTokenSignatureKey),
       oauthConfig = oauthApi.setup.Config(
         realm = realm,

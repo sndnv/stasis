@@ -49,3 +49,7 @@ class Staging()(implicit ctx: RoutesContext) extends ApiRoutes {
       }
     )
 }
+
+object Staging {
+  def apply()(implicit ctx: RoutesContext): Staging = new Staging()
+}

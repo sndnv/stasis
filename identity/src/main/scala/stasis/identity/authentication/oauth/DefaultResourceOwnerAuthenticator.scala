@@ -30,3 +30,14 @@ class DefaultResourceOwnerAuthenticator(
         case None                          => Future.failed(AuthenticationFailure(s"Resource owner [$username] was not found"))
       }
 }
+
+object DefaultResourceOwnerAuthenticator {
+  def apply(
+    store: ResourceOwnerStoreView,
+    secretConfig: Secret.ResourceOwnerConfig
+  )(implicit system: ActorSystem): DefaultResourceOwnerAuthenticator =
+    new DefaultResourceOwnerAuthenticator(
+      store = store,
+      secretConfig = secretConfig
+    )
+}

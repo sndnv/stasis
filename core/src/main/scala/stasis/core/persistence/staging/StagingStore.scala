@@ -174,4 +174,10 @@ object StagingStore {
     destaged: Instant,
     private val cancellable: Cancellable
   )
+
+  def apply(
+    crateStore: CrateStore,
+    destagingDelay: FiniteDuration
+  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): StagingStore =
+    new StagingStore(crateStore = crateStore, destagingDelay = destagingDelay)
 }

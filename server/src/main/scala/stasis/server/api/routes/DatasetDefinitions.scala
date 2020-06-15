@@ -208,3 +208,7 @@ class DatasetDefinitions()(implicit ctx: RoutesContext) extends ApiRoutes {
       }
     )
 }
+
+object DatasetDefinitions {
+  def apply()(implicit ctx: RoutesContext): DatasetDefinitions = new DatasetDefinitions()
+}

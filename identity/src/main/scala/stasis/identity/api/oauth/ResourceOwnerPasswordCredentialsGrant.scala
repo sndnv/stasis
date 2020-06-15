@@ -74,6 +74,15 @@ class ResourceOwnerPasswordCredentialsGrant(
 }
 
 object ResourceOwnerPasswordCredentialsGrant {
+  def apply(
+    config: Config,
+    providers: Providers
+  )(implicit system: ActorSystem, mat: Materializer): ResourceOwnerPasswordCredentialsGrant =
+    new ResourceOwnerPasswordCredentialsGrant(
+      config = config,
+      providers = providers
+    )
+
   implicit val accessTokenResponseFormat: Format[AccessTokenResponse] = Json.format[AccessTokenResponse]
 
   final case class AccessTokenRequest(

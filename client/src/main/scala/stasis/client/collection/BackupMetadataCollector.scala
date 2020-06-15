@@ -17,4 +17,8 @@ object BackupMetadataCollector {
     override def collect(entity: Path, existingMetadata: Option[EntityMetadata]): Future[SourceEntity] =
       Metadata.collectSource(checksum = checksum, entity = entity, existingMetadata = existingMetadata)
   }
+
+  object Default {
+    def apply(checksum: Checksum)(implicit mat: Materializer): Default = new Default(checksum)
+  }
 }

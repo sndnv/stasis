@@ -64,3 +64,10 @@ class Codes(store: AuthorizationCodeStore)(implicit system: ActorSystem, overrid
       }
     )
 }
+
+object Codes {
+  def apply(store: AuthorizationCodeStore)(implicit system: ActorSystem, mat: Materializer): Codes =
+    new Codes(
+      store = store
+    )
+}

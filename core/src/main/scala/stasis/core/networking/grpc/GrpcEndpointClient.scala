@@ -253,9 +253,18 @@ class GrpcEndpointClient(
 
 object GrpcEndpointClient {
   def apply(
-    credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials]
+    credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials],
+    context: Option[HttpsConnectionContext]
   )(implicit system: ActorSystem[SpawnProtocol.Command]): GrpcEndpointClient =
     new GrpcEndpointClient(
+      credentials = credentials,
+      context = context
+    )
+
+  def apply(
+    credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials]
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): GrpcEndpointClient =
+    GrpcEndpointClient(
       credentials = credentials,
       context = None
     )
@@ -264,7 +273,7 @@ object GrpcEndpointClient {
     credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials],
     context: HttpsConnectionContext
   )(implicit system: ActorSystem[SpawnProtocol.Command]): GrpcEndpointClient =
-    new GrpcEndpointClient(
+    GrpcEndpointClient(
       credentials = credentials,
       context = Some(context)
     )

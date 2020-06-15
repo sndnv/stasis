@@ -302,9 +302,20 @@ class HttpEndpointClient(
 object HttpEndpointClient {
   def apply(
     credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
+    context: Option[HttpsConnectionContext],
     requestBufferSize: Int
   )(implicit system: ActorSystem[SpawnProtocol.Command]): HttpEndpointClient =
     new HttpEndpointClient(
+      credentials = credentials,
+      context = context,
+      requestBufferSize = requestBufferSize
+    )
+
+  def apply(
+    credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
+    requestBufferSize: Int
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): HttpEndpointClient =
+    HttpEndpointClient(
       credentials = credentials,
       context = None,
       requestBufferSize = requestBufferSize
@@ -315,7 +326,7 @@ object HttpEndpointClient {
     context: HttpsConnectionContext,
     requestBufferSize: Int
   )(implicit system: ActorSystem[SpawnProtocol.Command]): HttpEndpointClient =
-    new HttpEndpointClient(
+    HttpEndpointClient(
       credentials = credentials,
       context = Some(context),
       requestBufferSize = requestBufferSize

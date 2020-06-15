@@ -10,6 +10,10 @@ import stasis.server.model.devices.{DeviceStore, DeviceStoreSerdes}
 import stasis.server.model.schedules.{ScheduleStore, ScheduleStoreSerdes}
 import stasis.server.model.users.{UserStore, UserStoreSerdes}
 import stasis.server.security.Resource
+import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.model.devices.Device
+import stasis.shared.model.schedules.Schedule
+import stasis.shared.model.users.User
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -92,39 +96,46 @@ class ServerPersistence(
   )
 
   private object backends {
-    val definitions = new SlickBackend(
+    val definitions: SlickBackend[DatasetDefinition.Id, DatasetDefinition] = SlickBackend(
       tableName = "DATASET_DEFINITIONS",
       profile = profile,
       database = database,
       serdes = DatasetDefinitionStoreSerdes
     )
 
-    val entries = new SlickBackend(
+    val entries: SlickBackend[DatasetEntry.Id, DatasetEntry] = SlickBackend(
       tableName = "DATASET_ENTRIES",
       profile = profile,
       database = database,
       serdes = DatasetEntryStoreSerdes
     )
 
-    val devices = new SlickBackend(
+    val devices: SlickBackend[Device.Id, Device] = SlickBackend(
       tableName = "DEVICES",
       profile = profile,
       database = database,
       serdes = DeviceStoreSerdes
     )
 
-    val schedules = new SlickBackend(
+    val schedules: SlickBackend[Schedule.Id, Schedule] = SlickBackend(
       tableName = "SCHEDULES",
       profile = profile,
       database = database,
       serdes = ScheduleStoreSerdes
     )
 
-    val users = new SlickBackend(
+    val users: SlickBackend[User.Id, User] = SlickBackend(
       tableName = "USERS",
       profile = profile,
       database = database,
       serdes = UserStoreSerdes
     )
   }
+}
+
+object ServerPersistence {
+  def apply(
+    persistenceConfig: typesafe.Config
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): ServerPersistence =
+    new ServerPersistence(persistenceConfig)
 }

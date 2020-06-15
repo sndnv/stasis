@@ -163,6 +163,15 @@ class AuthorizationCodeGrant(
 }
 
 object AuthorizationCodeGrant {
+  def apply(
+    config: Config,
+    providers: Providers
+  )(implicit system: ActorSystem, mat: Materializer): AuthorizationCodeGrant =
+    new AuthorizationCodeGrant(
+      config = config,
+      providers = providers
+    )
+
   implicit val accessTokenResponseFormat: Format[AccessTokenResponse] =
     Json.format[AccessTokenResponse]
 

@@ -50,3 +50,14 @@ class JwtNodeAuthenticator(
       }
     )
 }
+
+object JwtNodeAuthenticator {
+  def apply(
+    nodeStore: NodeStoreView,
+    underlying: JwtAuthenticator
+  )(implicit ec: ExecutionContext): JwtNodeAuthenticator =
+    new JwtNodeAuthenticator(
+      nodeStore = nodeStore,
+      underlying = underlying
+    )
+}

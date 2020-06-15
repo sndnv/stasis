@@ -60,7 +60,7 @@ object ApiEndpoint {
         override def api: Startable =
           rawConfig.getString("api.type").toLowerCase match {
             case "http" =>
-              val api = new HttpApiEndpoint(authenticator = frontendAuthenticator)
+              val api = HttpApiEndpoint(authenticator = frontendAuthenticator)
               val apiInterface = rawConfig.getString("api.http.interface")
               val apiPort = rawConfig.getInt("api.http.port")
 
