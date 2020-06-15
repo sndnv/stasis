@@ -10,7 +10,19 @@ final case class CrateStorageReservation(
   copies: Int,
   origin: Node.Id,
   target: Node.Id
-)
+) {
+  override def toString: String =
+    s"""
+       |CrateStorageReservation(
+       |  id=${id.toString},
+       |  crate=${crate.toString},
+       |  size=${size.toString},
+       |  copies=${copies.toString},
+       |  origin=${origin.toString},
+       |  target=${target.toString}
+       |)
+     """.stripMargin.replaceAll("\n", "").replaceAll(" ", "").trim
+}
 
 object CrateStorageReservation {
   def apply(

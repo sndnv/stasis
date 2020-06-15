@@ -77,8 +77,15 @@ trait EntityProcessing {
             providers.clients.core
               .pull(crate)
               .flatMap {
-                case Some(source) => Future.successful((partPath, source))
-                case None         => Future.failed(PullFailure(s"Failed to pull crate [$crate] for entity [$entity]"))
+                case Some(source) =>
+                  Future.successful((partPath, source))
+
+                case None =>
+                  Future.failed(
+                    PullFailure(
+                      s"Failed to pull crate [${crate.toString}] for entity [${entity.toString}]"
+                    )
+                  )
               }
         }
       )
@@ -106,7 +113,9 @@ object EntityProcessing {
 
       case directory: EntityMetadata.Directory =>
         Future.failed(
-          new IllegalArgumentException(s"Expected metadata for file but directory metadata for [${directory.path}] provided")
+          new IllegalArgumentException(
+            s"Expected metadata for file but directory metadata for [${directory.path.toString}] provided"
+          )
         )
     }
 }

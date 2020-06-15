@@ -26,7 +26,7 @@ class GeodeBackendSpec extends AsyncUnitSpec with KeyValueBackendBehaviour {
         .set(ConfigurationProperties.START_LOCATOR, "localhost[10334]")
         .build
 
-    private val _ = Future { serverLauncher.start() }
+    locally { val _ = Future { serverLauncher.start() } }
 
     private val cache: ClientCache =
       new ClientCacheFactory().addPoolLocator("localhost", 10334).create

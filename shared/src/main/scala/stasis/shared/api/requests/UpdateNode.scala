@@ -29,7 +29,7 @@ object UpdateNode {
         val nodeType = node.getClass.getSimpleName
 
         throw new IllegalArgumentException(
-          s"Update request type [$requestType] does not match type [$nodeType] of node [${node.id}]"
+          s"Update request type [$requestType] does not match type [$nodeType] of node [${node.id.toString}]"
         )
     }
   }

@@ -60,7 +60,7 @@ trait EntityProcessing {
 
   private def stage(entity: Path): Future[Seq[(Path, Path)]] = {
     def createPartSecret(partId: Int): DeviceFileSecret = {
-      val partPath = Paths.get(s"${entity.toAbsolutePath}_$partId")
+      val partPath = Paths.get(s"${entity.toAbsolutePath.toString}_${partId.toString}")
       deviceSecret.toFileSecret(partPath)
     }
 
@@ -131,7 +131,9 @@ object EntityProcessing {
 
       case directory: EntityMetadata.Directory =>
         Future.failed(
-          new IllegalArgumentException(s"Expected metadata for file but directory metadata for [${directory.path}] provided")
+          new IllegalArgumentException(
+            s"Expected metadata for file but directory metadata for [${directory.path.toString}] provided"
+          )
         )
     }
 }

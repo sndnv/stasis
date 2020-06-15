@@ -57,20 +57,20 @@ class GrpcEndpoint(
               proto.ReserveResponse().withReservation(reservation.id)
 
             case None =>
-              val message = s"Reservation rejected for node [$node]"
+              val message = s"Reservation rejected for node [${node.toString}]"
               log.warn(message)
               proto.ReserveResponse().withFailure(ReservationFailure(message))
           }
           .recover {
             case NonFatal(e) =>
-              val message = s"Reservation failed for node [$node]: [${e.getClass.getSimpleName}: ${e.getMessage}]"
+              val message = s"Reservation failed for node [${node.toString}]: [${e.getClass.getSimpleName}: ${e.getMessage}]"
               log.error(message)
               proto.ReserveResponse().withFailure(ReservationFailure(message))
           }
 
       case Left(failure) =>
         val message =
-          s"Node [$node] made reservation request with missing data: [${failure.getClass.getSimpleName}: ${failure.getMessage}]"
+          s"Node [${node.toString}] made reservation request with missing data: [${failure.getClass.getSimpleName}: ${failure.getMessage}]"
         log.error(message)
         Future.successful(proto.ReserveResponse().withFailure(EndpointFailure(message)))
     }
@@ -82,10 +82,10 @@ class GrpcEndpoint(
         case (head :: Nil, tail) =>
           head.reservation
             .map(reservation => (reservation: UUID, Source.single(head) ++ tail))
-            .toRight(new IllegalArgumentException(s"Node [$node] made push request with missing reservation"))
+            .toRight(new IllegalArgumentException(s"Node [${node.toString}] made push request with missing reservation"))
 
         case _ =>
-          Left(new IllegalArgumentException(s"Node [$node] made push request with empty stream"))
+          Left(new IllegalArgumentException(s"Node [${node.toString}] made push request with empty stream"))
       }
       .runWith(Sink.head)
       .flatMap {
@@ -103,13 +103,13 @@ class GrpcEndpoint(
                   }
                   .recover {
                     case NonFatal(e) =>
-                      val message = s"Push failed for node [$node]: [${e.getClass.getSimpleName}: ${e.getMessage}]"
+                      val message = s"Push failed for node [${node.toString}]: [${e.getClass.getSimpleName}: ${e.getMessage}]"
                       log.error(message)
                       proto.PushResponse().withFailure(EndpointFailure(message))
                   }
 
               case None =>
-                val message = s"Node [$node] failed to push crate; reservation [$reservationId] not found"
+                val message = s"Node [${node.toString}] failed to push crate; reservation [${reservationId.toString}] not found"
                 log.error(message)
                 Future.successful(proto.PushResponse().withFailure(EndpointFailure(message)))
             }
@@ -136,7 +136,7 @@ class GrpcEndpoint(
           }
 
       case None =>
-        val message = s"Node [$node] made pull request with missing crate: [$request]"
+        val message = s"Node [${node.toString}] made pull request with missing crate: [${request.crate.toString}]"
         log.error(message)
         Future.failed(new IllegalArgumentException(message))
     }
@@ -154,13 +154,13 @@ class GrpcEndpoint(
           }
           .recover {
             case NonFatal(e) =>
-              val message = s"Discard failed for node [$node]: [${e.getMessage}]"
+              val message = s"Discard failed for node [${node.toString}]: [${e.getMessage}]"
               log.error(message)
               proto.DiscardResponse().withFailure(EndpointFailure(message))
           }
 
       case None =>
-        val message = s"Node [$node] made discard request with missing crate: [$request]"
+        val message = s"Node [${node.toString}] made discard request with missing crate: [${request.crate.toString}]"
         log.error(message)
         Future.successful(proto.DiscardResponse().withFailure(new IllegalArgumentException(message)))
     }

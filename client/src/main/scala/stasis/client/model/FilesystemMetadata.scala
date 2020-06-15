@@ -16,11 +16,11 @@ final case class FilesystemMetadata(
       case entity                              => entity -> (EntityState.New: EntityState)
     }
 
-    val existing = entities.mapValues {
+    val existing = entities.view.mapValues {
       case EntityState.New                => EntityState.Existing(entry = latestEntry)
       case EntityState.Updated            => EntityState.Existing(entry = latestEntry)
       case existing: EntityState.Existing => existing
-    }
+    }.toMap
 
     FilesystemMetadata(entities = existing ++ newAndUpdated)
   }

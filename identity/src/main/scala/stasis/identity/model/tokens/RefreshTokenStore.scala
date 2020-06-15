@@ -66,20 +66,22 @@ object RefreshTokenStore {
       override def tokens: Future[Map[RefreshToken, StoredRefreshToken]] =
         backend.entries
 
-      private val _ = backend.entries.flatMap { entries =>
-        val now = Instant.now()
+      locally {
+        val _ = backend.entries.flatMap { entries =>
+          val now = Instant.now()
 
-        Future.sequence(
-          entries.map {
-            case (token, storedToken) if storedToken.expiration.isBefore(now) =>
-              backend.delete(token)
+          Future.sequence(
+            entries.map {
+              case (token, storedToken) if storedToken.expiration.isBefore(now) =>
+                backend.delete(token)
 
-            case (token, storedToken) =>
-              directory
-                .put(storedToken.client -> storedToken.owner.username, storedToken.token)
-                .flatMap(_ => expire(token))
-          }
-        )
+              case (token, storedToken) =>
+                directory
+                  .put(storedToken.client -> storedToken.owner.username, storedToken.token)
+                  .flatMap(_ => expire(token))
+            }
+          )
+        }
       }
 
       private def dropExisting(client: Client.Id, owner: ResourceOwner.Id): Future[Done] =

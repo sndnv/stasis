@@ -12,8 +12,8 @@ import stasis.client.model.EntityMetadata
 import stasis.client.service.ApplicationDirectory
 import stasis.core.packaging.Crate
 
-import scala.collection.JavaConverters._
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.jdk.CollectionConverters._
 
 trait ResourceHelpers {
   import ResourceHelpers._

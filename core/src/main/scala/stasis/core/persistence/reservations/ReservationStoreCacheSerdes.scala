@@ -13,7 +13,7 @@ object ReservationStoreCacheSerdes extends KeyValueBackend.Serdes[(Crate.Id, Nod
   private val separator: String = ":"
 
   override implicit def serializeKey: ((Crate.Id, Node.Id)) => String = {
-    case (crate, node) => s"$crate$separator$node"
+    case (crate, node) => s"${crate.toString}$separator${node.toString}"
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))

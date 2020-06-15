@@ -37,7 +37,7 @@ class MockTrackerView extends TrackerView {
     Source.empty
   }
 
-  def statistics: Map[Statistic, Int] = stats.mapValues(_.get())
+  def statistics: Map[Statistic, Int] = stats.view.mapValues(_.get()).toMap
 }
 
 object MockTrackerView {

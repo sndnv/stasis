@@ -56,7 +56,7 @@ class MockServerCoreEndpointClient(
       Future.failed(new RuntimeException(s"[pullDisabled] is set to [true]"))
     }
 
-  def statistics: Map[Statistic, Int] = stats.mapValues(_.get())
+  def statistics: Map[Statistic, Int] = stats.view.mapValues(_.get()).toMap
 }
 
 object MockServerCoreEndpointClient {

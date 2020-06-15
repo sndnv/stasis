@@ -25,7 +25,7 @@ class DefaultOperationScheduler private (
     extends OperationScheduler {
   import DefaultOperationScheduler._
 
-  private val _ = refresh()
+  locally { val _ = refresh() }
 
   override def schedules: Future[Seq[ActiveSchedule]] =
     schedulerRef.flatMap(_ ? (ref => GetSchedules(ref)))
@@ -121,7 +121,7 @@ object DefaultOperationScheduler {
                   .recover {
                     case NonFatal(e) =>
                       val operation = assignment.getClass.getSimpleName
-                      val schedule = assignment.schedule
+                      val schedule = assignment.schedule.toString
                       val message = s"Failed to load [$operation] schedule for [$schedule]: [${e.getMessage}]"
                       log.errorN(message, e)
                       ActiveSchedule(assignment = assignment, schedule = Left(ScheduleRetrievalFailure(message)))

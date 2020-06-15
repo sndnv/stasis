@@ -113,12 +113,12 @@ class Persistence(
 
     val tokenDirectory: KeyValueBackend[(Client.Id, ResourceOwner.Id), RefreshToken] =
       MemoryBackend[(Client.Id, ResourceOwner.Id), RefreshToken](
-        name = s"token-directory-${java.util.UUID.randomUUID()}"
+        name = s"token-directory-${java.util.UUID.randomUUID().toString}"
       )
 
     val codes: KeyValueBackend[AuthorizationCode, StoredAuthorizationCode] =
       MemoryBackend[AuthorizationCode, StoredAuthorizationCode](
-        name = s"code-store-${java.util.UUID.randomUUID()}"
+        name = s"code-store-${java.util.UUID.randomUUID().toString}"
       )
   }
 }

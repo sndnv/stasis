@@ -61,7 +61,7 @@ object ContainerHeader {
 
         require(
           SUPPORTED_VERSIONS.contains(header.containerVersion),
-          s"Unsupported container version found [${header.containerVersion}]; " +
+          s"Unsupported container version found [${header.containerVersion.toString}]; " +
             s"supported versions are: [${SUPPORTED_VERSIONS.mkString(", ")}]"
         )
 

@@ -56,7 +56,7 @@ trait UserStore { store =>
       override def deactivate(self: CurrentUser): Future[Done] =
         store.get(self.id).flatMap {
           case Some(user) => store.update(user.copy(active = false))
-          case None       => Future.failed(new IllegalArgumentException(s"Expected user [${self.id}] not found"))
+          case None       => Future.failed(new IllegalArgumentException(s"Expected user [${self.id.toString}] not found"))
         }
     }
 }

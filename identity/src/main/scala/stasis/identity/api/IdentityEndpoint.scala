@@ -47,7 +47,7 @@ class IdentityEndpoint(
             StatusCodes.InternalServerError,
             HttpEntity(
               ContentTypes.`text/plain(UTF-8)`,
-              s"Failed to process request; failure reference is [$failureReference]"
+              s"Failed to process request; failure reference is [${failureReference.toString}]"
             )
           )
         }

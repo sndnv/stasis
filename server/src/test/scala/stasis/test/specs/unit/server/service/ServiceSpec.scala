@@ -27,9 +27,9 @@ import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.security.mocks.{MockJwksEndpoint, MockJwtGenerators}
 
-import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.jdk.CollectionConverters._
 
 class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._

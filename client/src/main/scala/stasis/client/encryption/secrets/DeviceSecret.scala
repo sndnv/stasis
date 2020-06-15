@@ -31,8 +31,8 @@ final case class DeviceSecret(
 
     val salt = user.toBytes ++ device.toBytes ++ filePath.getBytes(StandardCharsets.UTF_8)
 
-    val keyInfo = ByteString(s"$user-$device-$filePath-key")
-    val ivInfo = ByteString(s"$user-$device-$filePath-iv")
+    val keyInfo = ByteString(s"${user.toString}-${device.toString}-$filePath-key")
+    val ivInfo = ByteString(s"${user.toString}-${device.toString}-$filePath-iv")
 
     val hkdf = HKDF.fromHmacSha512()
 
@@ -51,8 +51,8 @@ final case class DeviceSecret(
   def toMetadataSecret(metadataCrate: Crate.Id): DeviceMetadataSecret = {
     val salt = user.toBytes ++ device.toBytes ++ metadataCrate.toBytes
 
-    val keyInfo = ByteString(s"$user-$device-$metadataCrate-key")
-    val ivInfo = ByteString(s"$user-$device-$metadataCrate-iv")
+    val keyInfo = ByteString(s"${user.toString}-${device.toString}-${metadataCrate.toString}-key")
+    val ivInfo = ByteString(s"${user.toString}-${device.toString}-${metadataCrate.toString}-iv")
 
     val hkdf = HKDF.fromHmacSha512()
 

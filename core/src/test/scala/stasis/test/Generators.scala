@@ -14,7 +14,7 @@ object Generators {
     max: Int = 10,
     g: => T
   )(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Seq[T] =
-    Stream.continually(g).take(rnd.nextInt(min, max))
+    LazyList.continually(g).take(rnd.nextInt(min, max))
 
   def generateUri(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): String = {
     val host = generateString(withSize = 10)

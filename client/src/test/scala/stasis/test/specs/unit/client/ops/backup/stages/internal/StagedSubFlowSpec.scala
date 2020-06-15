@@ -17,9 +17,9 @@ import stasis.client.ops.backup.stages.internal.StagedSubFlow
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks._
 
-import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 
 class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {

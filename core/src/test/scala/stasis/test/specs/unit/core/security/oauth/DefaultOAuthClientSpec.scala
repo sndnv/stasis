@@ -267,7 +267,7 @@ class DefaultOAuthClientSpec extends AsyncUnitSpec with BeforeAndAfterAll {
     "OAuthClientSpec"
   )
 
-  private val ports: mutable.Queue[Int] = (26000 to 26100).to[mutable.Queue]
+  private val ports: mutable.Queue[Int] = (26000 to 26100).to(mutable.Queue)
 
   private val clientId: String = "some-client"
   private val clientSecret: String = "some-client-secret"

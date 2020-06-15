@@ -123,7 +123,7 @@ class CrateChunkSourceSpec extends AsyncUnitSpec with BeforeAndAfter {
         case NonFatal(e) =>
           e.getMessage should be(
             s"Failed to read chunk [0] for crate [$crateId] from file [$path] at offset [${ChunkHeader.HEADER_SIZE}]: " +
-              s"[java.lang.IllegalArgumentException: requirement failed:" +
+              s"[IllegalArgumentException: requirement failed:" +
               s" Expected chunk with size [$invalidChunkSize] but only [$maxChunkSize] byte(s) were read]"
           )
       }
@@ -155,7 +155,7 @@ class CrateChunkSourceSpec extends AsyncUnitSpec with BeforeAndAfter {
         case NonFatal(e) =>
           e.getMessage should be(
             s"Failed to read chunk [0] for crate [$crateId] from file [$path] at offset [${ChunkHeader.HEADER_SIZE}]: " +
-              s"[java.lang.IllegalArgumentException: requirement failed:" +
+              s"[IllegalArgumentException: requirement failed:" +
               s" Expected chunk with size [$maxChunkSize] but no bytes were read]"
           )
       }
@@ -173,7 +173,7 @@ class CrateChunkSourceSpec extends AsyncUnitSpec with BeforeAndAfter {
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Failed to open channel for file [$path]: [java.nio.file.NoSuchFileException: $path]"
+            s"Failed to open channel for file [$path]: [NoSuchFileException: $path]"
           )
       }
   }
@@ -216,7 +216,7 @@ class CrateChunkSourceSpec extends AsyncUnitSpec with BeforeAndAfter {
         case NonFatal(e) =>
           e.getMessage should be(
             s"Failed to read chunk [0] for crate [$crateId] from file [$path] at offset [-1]: " +
-              s"[java.lang.IllegalArgumentException: Negative position]"
+              s"[IllegalArgumentException: Negative position]"
           )
       }
   }

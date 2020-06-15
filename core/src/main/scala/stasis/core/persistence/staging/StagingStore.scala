@@ -57,7 +57,7 @@ class StagingStore(
               val _ = destage(manifest, destinations, viaProxy)
                 .recover {
                   case NonFatal(e) =>
-                    log.error(s"Scheduled action failed: [$e]")
+                    log.error(s"Scheduled action failed: [${e.getClass.getSimpleName}: ${e.getMessage}]")
                     Done
                 }
             }
@@ -76,12 +76,12 @@ class StagingStore(
           }
 
         case false =>
-          val message = s"Failed to stage crate [${manifest.crate}]; storage not available"
+          val message = s"Failed to stage crate [${manifest.crate.toString}]; storage not available"
           log.error(message)
           Future.failed(StagingFailure(message))
       }
     } else {
-      val message = s"Failed to stage crate [${manifest.crate}]; no destinations specified"
+      val message = s"Failed to stage crate [${manifest.crate.toString}]; no destinations specified"
       log.error(message)
       Future.failed(StagingFailure(message))
     }
@@ -159,7 +159,7 @@ class StagingStore(
             }
 
           case None =>
-            val message = s"Destaging crate [${manifest.crate}] failed: crate content not found"
+            val message = s"Destaging crate [${manifest.crate.toString}] failed: crate content not found"
             log.error(message)
             Future.failed(StagingFailure(message))
         }

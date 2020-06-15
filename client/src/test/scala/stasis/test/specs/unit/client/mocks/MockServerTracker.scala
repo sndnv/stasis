@@ -17,7 +17,7 @@ class MockServerTracker extends ServerTracker {
   override def unreachable(server: String): Unit =
     stats(Statistic.ServerUnreachable).incrementAndGet()
 
-  def statistics: Map[Statistic, Int] = stats.mapValues(_.get())
+  def statistics: Map[Statistic, Int] = stats.view.mapValues(_.get()).toMap
 }
 
 object MockServerTracker {

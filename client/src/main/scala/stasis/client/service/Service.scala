@@ -74,7 +74,9 @@ trait Service {
 
   def state: State = clientState.get()
 
-  private val _ = sys.addShutdownHook(stop())
+  locally {
+    val _ = sys.addShutdownHook(stop())
+  }
 }
 
 object Service {

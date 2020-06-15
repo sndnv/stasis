@@ -58,7 +58,7 @@ class MockOperationScheduler extends OperationScheduler {
     Future.successful(Done)
   }
 
-  def statistics: Map[Statistic, Int] = stats.mapValues(_.get())
+  def statistics: Map[Statistic, Int] = stats.view.mapValues(_.get()).toMap
 }
 
 object MockOperationScheduler {

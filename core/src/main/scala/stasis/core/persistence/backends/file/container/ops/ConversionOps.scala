@@ -27,8 +27,11 @@ object ConversionOps {
 
       buffer.putLong(crc).array()
     }.toEither match {
-      case Left(e)      => throw ConversionFailure(s"Failed to convert object to bytes: [$e]")
-      case Right(bytes) => bytes
+      case Left(e) =>
+        throw ConversionFailure(s"Failed to convert object to bytes: [${e.getClass.getSimpleName}: ${e.getMessage}]")
+
+      case Right(bytes) =>
+        bytes
     }
 
   def fromBytes[H](
@@ -39,7 +42,8 @@ object ConversionOps {
     if (bytes.lengthCompare(expectedObjectSize) != 0) {
       Left(
         ConversionFailure(
-          s"Failed to convert bytes to object; expected size is [$expectedObjectSize] but [${bytes.length}] byte(s) provided"
+          s"Failed to convert bytes to object; " +
+            s"expected size is [${expectedObjectSize.toString}] but [${bytes.length.toString}] byte(s) provided"
         )
       )
     } else {
@@ -55,7 +59,8 @@ object ConversionOps {
         if (availableCrc != expectedCrc) {
           Left(
             ConversionFailure(
-              s"Failed to convert bytes to object; expected CRC [$expectedCrc] but found [$availableCrc]"
+              s"Failed to convert bytes to object; " +
+                s"expected CRC [${expectedCrc.toString}] but found [${availableCrc.toString}]"
             )
           )
         } else {

@@ -41,10 +41,10 @@ class MockNodeStore(
 
   override def nodes: Future[Map[Node.Id, Node]] =
     storeData.map { result =>
-      (result.mapValues(value => Some(value)) ++ replacementNodes).flatMap {
+      (result.view.mapValues(value => Some(value)) ++ replacementNodes).flatMap {
         case (k, optV) =>
           optV.map(v => k -> v)
-      }
+      }.toMap
     }
 
   private def storeData: Future[Map[StoreKey, StoreValue]] = store.entries

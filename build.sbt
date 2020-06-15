@@ -6,7 +6,7 @@ name in ThisBuild := projectName
 licenses in ThisBuild := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
 homepage in ThisBuild := Some(url("https://github.com/sndnv/stasis"))
 
-lazy val defaultScalaVersion = "2.12.11"
+lazy val defaultScalaVersion = "2.13.2"
 lazy val akkaVersion = "2.6.6"
 lazy val akkaHttpVersion = "10.1.12"
 lazy val geodeVersion = "1.12.0"
@@ -56,7 +56,7 @@ lazy val client = (project in file("./client"))
     ),
     dockerBaseImage := jdkDockerImage,
     PB.targets in Compile := Seq(
-      scalapb.gen() -> (sourceManaged in Compile).value
+      scalapb.gen(singleLineToProtoString = true) -> (sourceManaged in Compile).value
     ),
     coverageExcludedPackages := "stasis.client.model.proto.metadata.*"
   )
@@ -120,15 +120,20 @@ lazy val proto = (project in file("./proto"))
       "com.typesafe.akka" %% "akka-http-core"     % akkaHttpVersion,
       "com.typesafe.akka" %% "akka-http2-support" % akkaHttpVersion
     ),
-    coverageEnabled := false
+    coverageEnabled := false,
+    akkaGrpcCodeGeneratorSettings += "single_line_to_proto_string"
   )
  .enablePlugins(AkkaGrpcPlugin)
+
+lazy val excludedWarts = Seq(
+  Wart.Any // too many false positives; more info - https://github.com/wartremover/wartremover/issues/454
+)
 
 lazy val commonSettings = Seq(
   crossScalaVersions := crossVersions,
   logBuffered in Test := false,
   parallelExecution in Test := false,
-  wartremoverWarnings in(Compile, compile) ++= Warts.unsafe,
+  wartremoverWarnings in(Compile, compile) ++= Warts.unsafe.filterNot(excludedWarts.contains),
   wartremoverExcluded in(Compile, compile) += sourceManaged.value,
   packageName := s"$projectName-${name.value}",
   executableScriptName := s"$projectName-${name.value}",

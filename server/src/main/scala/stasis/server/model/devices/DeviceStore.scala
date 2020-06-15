@@ -36,7 +36,7 @@ trait DeviceStore { store =>
           case Some(d) =>
             Future.failed(
               new IllegalArgumentException(
-                s"Expected to retrieve own [${self.id}] device but device for user [${d.owner}] found"
+                s"Expected to retrieve own [${self.id.toString}] device but device for user [${d.owner.toString}] found"
               )
             )
 
@@ -68,7 +68,7 @@ trait DeviceStore { store =>
         } else {
           Future.failed(
             new IllegalArgumentException(
-              s"Expected to create own [${self.id}] device but device for user [${device.owner}] provided"
+              s"Expected to create own [${self.id.toString}] device but device for user [${device.owner.toString}] provided"
             )
           )
         }
@@ -79,7 +79,7 @@ trait DeviceStore { store =>
         } else {
           Future.failed(
             new IllegalArgumentException(
-              s"Expected to update own [${self.id}] device but device for user [${device.owner}] provided"
+              s"Expected to update own [${self.id.toString}] device but device for user [${device.owner.toString}] provided"
             )
           )
         }
@@ -92,7 +92,7 @@ trait DeviceStore { store =>
             } else {
               Future.failed(
                 new IllegalArgumentException(
-                  s"Expected to delete own [${self.id}] device but device for user [${d.owner}] provided"
+                  s"Expected to delete own [${self.id.toString}] device but device for user [${d.owner.toString}] provided"
                 )
               )
             }

@@ -106,7 +106,7 @@ class DefaultRouter(
                           content.runWith(single)
 
                         case Nil =>
-                          val message = s"Crate [${manifest.crate}] was not pushed; no content sinks retrieved"
+                          val message = s"Crate [${manifest.crate.toString}] was not pushed; no content sinks retrieved"
                           log.error(message)
                           Future.failed(PushFailure(message))
                       }
@@ -118,14 +118,14 @@ class DefaultRouter(
                     }
               }
             } else {
-              val message = s"Push of crate [${manifest.crate}] failed; unable to remove reservation for crate"
+              val message = s"Push of crate [${manifest.crate.toString}] failed; unable to remove reservation for crate"
               log.error(message)
               Future.failed(PushFailure(message))
             }
           }
 
         case Failure(e) =>
-          val message = s"Push of crate [${manifest.crate}] failed: [$e]"
+          val message = s"Push of crate [${manifest.crate.toString}] failed: [${e.getClass.getSimpleName}: ${e.getMessage}]"
           log.error(message)
           Future.failed(PushFailure(message))
       }
@@ -221,7 +221,7 @@ class DefaultRouter(
             pullFromNodes((local ++ remote).toList, crate)
           }
         } else {
-          val message = s"Crate [$crate] was not pulled; no destinations found"
+          val message = s"Crate [${crate.toString}] was not pulled; no destinations found"
           log.error(message)
           Future.failed(PullFailure(message))
         }
@@ -264,7 +264,7 @@ class DefaultRouter(
                   Done
                 }
               } else {
-                val message = s"Crate [$crate] was not discarded; no destinations found"
+                val message = s"Crate [${crate.toString}] was not discarded; no destinations found"
                 log.error(message)
                 Future.failed(DiscardFailure(message))
               }
@@ -272,7 +272,7 @@ class DefaultRouter(
           }
 
       case None =>
-        val message = s"Crate [$crate] was not discarded; failed to retrieve manifest"
+        val message = s"Crate [${crate.toString}] was not discarded; failed to retrieve manifest"
         log.error(message)
         Future.failed(DiscardFailure(message))
     }
@@ -305,8 +305,8 @@ class DefaultRouter(
                             }
                           }
                         } else {
-                          val message =
-                            s"Failed to process reservation request [$request]; reservation already exists for crate [${request.crate}]"
+                          val message = s"Failed to process reservation request [${request.toString}]; " +
+                            s"reservation already exists for crate [${request.crate.toString}]"
                           log.error(message)
                           Future.failed(ReservationFailure(message))
                         }
@@ -389,7 +389,7 @@ class DefaultRouter(
 
         Future.successful(Done)
       } else {
-        val message = s"Crate [${manifest.crate}] was not discarded; crate or nodes missing"
+        val message = s"Crate [${manifest.crate.toString}] was not discarded; crate or nodes missing"
         log.error(message)
         Future.failed(DiscardFailure(message))
       }
@@ -473,8 +473,8 @@ object DefaultRouter {
     }
 
   private def distributeCopiesOverNodes(nodes: Seq[Node], copies: Int): Map[Node, Int] = {
-    val localNodesStream = Stream.continually(nodes).flatten
-    val copyIndexes = (0 until copies).seq
+    val localNodesStream = LazyList.continually(nodes).flatten
+    val copyIndexes = 0 until copies
 
     val localNodesDistribution = localNodesStream.zip(copyIndexes).foldLeft(Map.empty[Node, Int]) {
       case (reduced, (node, _)) =>

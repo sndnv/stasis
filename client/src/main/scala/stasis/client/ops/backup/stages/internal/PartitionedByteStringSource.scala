@@ -18,7 +18,7 @@ class PartitionedByteStringSource(val source: Source[ByteString, Future[IOResult
 
           require(
             withMaximumPartSize >= currentSize,
-            s"Stream element size [$currentSize] is above maximum part size [$withMaximumPartSize]"
+            s"Stream element size [${currentSize.toString}] is above maximum part size [${withMaximumPartSize.toString}]"
           )
 
           if (collected + currentSize > withMaximumPartSize) {

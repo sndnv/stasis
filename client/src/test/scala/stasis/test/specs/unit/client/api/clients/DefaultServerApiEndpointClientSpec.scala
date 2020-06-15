@@ -418,7 +418,7 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
     "DefaultServerApiEndpointClientSpec"
   )
 
-  private val ports: mutable.Queue[Int] = (22000 to 22900).to[mutable.Queue]
+  private val ports: mutable.Queue[Int] = (22000 to 22900).to(mutable.Queue)
 
   private val apiCredentials = BasicHttpCredentials(username = "some-user", password = "some-password")
 

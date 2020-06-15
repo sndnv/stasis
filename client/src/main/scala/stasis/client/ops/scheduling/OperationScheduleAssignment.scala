@@ -29,14 +29,14 @@ object OperationScheduleAssignment {
             Backup(
               schedule = schedule,
               definition = definition,
-              entities = entities.mkString(" ").split(",").map(_.trim).filter(_.nonEmpty).map(Paths.get(_))
+              entities = entities.mkString(" ").split(",").map(_.trim).filter(_.nonEmpty).map(Paths.get(_)).toSeq
             )
           }
 
         case Nil =>
           Failure(
             new ScheduleAssignmentParsingFailure(
-              s"Invalid backup schedule assignment parameters provided on line [$lineNumber]: [${parameters.getOrElse("none")}]"
+              s"Invalid backup schedule assignment parameters provided on line [${lineNumber.toString}]: [${parameters.getOrElse("none")}]"
             )
           )
       }
@@ -84,7 +84,7 @@ object OperationScheduleAssignment {
             case other =>
               Failure(
                 new ScheduleAssignmentParsingFailure(
-                  s"Invalid schedule assignment operation type provided on line [$lineNumber]: [$other]"
+                  s"Invalid schedule assignment operation type provided on line [${lineNumber.toString}]: [$other]"
                 )
               ): Try[OperationScheduleAssignment]
           }
@@ -95,7 +95,7 @@ object OperationScheduleAssignment {
       case other =>
         Failure(
           new ScheduleAssignmentParsingFailure(
-            s"Invalid schedule assignment found on line [$lineNumber]: [$other]"
+            s"Invalid schedule assignment found on line [${lineNumber.toString}]: [$other]"
           )
         )
     }

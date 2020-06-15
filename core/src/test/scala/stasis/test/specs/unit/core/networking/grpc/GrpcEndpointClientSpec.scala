@@ -438,8 +438,10 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     context: ConnectionContext = ConnectionContext.noEncryption(),
     port: Int
   ) extends GrpcEndpoint(fixtures.router, fixtures.reservationStore.view, testAuthenticator)(typedSystem.classicSystem) {
-    private val _ = start("localhost", port, connectionContext = context)
+    locally {
+      val _ = start(interface = "localhost", port = port, connectionContext = context)
+    }
   }
 
-  private val ports: mutable.Queue[Int] = (20000 to 20100).to[mutable.Queue]
+  private val ports: mutable.Queue[Int] = (20000 to 20100).to(mutable.Queue)
 }

@@ -12,8 +12,8 @@ import stasis.client.encryption.secrets.DeviceFileSecret
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.exceptions.EntityProcessingFailure
 
-import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 
 class StagedSubFlow(

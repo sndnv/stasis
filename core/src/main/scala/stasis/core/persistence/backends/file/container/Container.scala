@@ -62,7 +62,8 @@ class Container(
         } else {
           Future.failed(
             new ContainerFailure(
-              s"Cannot put crate [$crate] in container [$containerPath]; not enough storage available"
+              s"Cannot put crate [${crate.toString}] in container [${containerPath.toString}]; " +
+                s"not enough storage available"
             )
           )
         }
@@ -122,7 +123,8 @@ class Container(
       } else {
         Future.failed(
           new ContainerFailure(
-            s"Cannot create sink for crate [$crate] in container [$containerPath]; not enough storage available"
+            s"Cannot create sink for crate [${crate.toString}] in container [${containerPath.toString}]; " +
+              s"not enough storage available"
           )
         )
       }
@@ -145,7 +147,7 @@ class Container(
   def compact()(implicit mat: Materializer): Future[Done] =
     for {
       crates <- ContainerLogOps.crates(containerLogPath)
-      temporaryContainer = containerPath.resolveSibling(s"${containerPath.getFileName}.compact")
+      temporaryContainer = containerPath.resolveSibling(s"${containerPath.getFileName.toString}.compact")
       _ <- ContainerOps.create(
         temporaryContainer,
         maxChunkSize = maxChunkSize,
@@ -240,7 +242,7 @@ object Container {
         byte match {
           case 1 => Add
           case 2 => Remove
-          case _ => throw ConversionFailure(s"Failed to convert byte to event; unexpected value provided: [$byte]")
+          case _ => throw ConversionFailure(s"Failed to convert byte to event; unexpected value provided: [${byte.toString}]")
         }
     }
   }

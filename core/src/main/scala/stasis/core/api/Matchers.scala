@@ -24,8 +24,13 @@ object Matchers {
   implicit val stringToFiniteDuration: Unmarshaller[String, FiniteDuration] =
     Unmarshaller { _ => string =>
       Duration(string) match {
-        case duration: FiniteDuration => Future.successful(duration)
-        case other                    => Future.failed(new IllegalArgumentException(s"Expected FiniteDuration but [$other] provided"))
+        case duration: FiniteDuration =>
+          Future.successful(duration)
+
+        case other =>
+          Future.failed(
+            new IllegalArgumentException(s"Expected FiniteDuration but [${other.toString}] provided")
+          )
       }
     }
 }

@@ -135,54 +135,54 @@ trait Service {
          |  realm: $realm
          |
          |  bootstrap:
-         |    enabled: ${rawConfig.getBoolean("bootstrap.enabled")}
+         |    enabled: ${rawConfig.getBoolean("bootstrap.enabled").toString}
          |    config:  ${rawConfig.getString("bootstrap.config")}
          |
          |  service:
          |    interface: ${config.interface}
-         |    port:      ${config.port}
-         |    iqt:       ${config.internalQueryTimeout.toMillis} ms
+         |    port:      ${config.port.toString}
+         |    iqt:       ${config.internalQueryTimeout.toMillis.toString} ms
          |    context:
          |      protocol: ${config.context.protocol}
          |      keystore: ${config.context.keyStoreConfig.map(_.storePath).getOrElse("none")}
          |
          |  authorization-codes:
-         |    size:       ${authorizationCodesConfig.size}
-         |    expiration: ${authorizationCodesConfig.expiration.toSeconds} s
+         |    size:       ${authorizationCodesConfig.size.toString}
+         |    expiration: ${authorizationCodesConfig.expiration.toSeconds.toString} s
          |
          |  access-tokens:
          |    issuer:        ${accessTokensConfig.issuer}
-         |    expiration:    ${accessTokensConfig.expiration.toSeconds} s
+         |    expiration:    ${accessTokensConfig.expiration.toSeconds.toString} s
          |    signature-key: ${accessTokenSignatureKey.getKeyId}
          |
          |  refresh-tokens:
-         |    allowed:    ${refreshTokensConfig.allowed}
-         |    size:       ${refreshTokensConfig.size}
-         |    expiration: ${refreshTokensConfig.expiration.toSeconds} s
+         |    allowed:    ${refreshTokensConfig.allowed.toString}
+         |    size:       ${refreshTokensConfig.size.toString}
+         |    expiration: ${refreshTokensConfig.expiration.toSeconds.toString} s
          |
          |  client-secrets:
          |    algorithm:            ${clientSecretsConfig.algorithm}
-         |    iterations:           ${clientSecretsConfig.iterations}
-         |    key-size:             ${clientSecretsConfig.derivedKeySize} bytes
-         |    salt-size:            ${clientSecretsConfig.saltSize} bytes
-         |    authentication-delay: ${clientSecretsConfig.authenticationDelay.toMillis} ms
+         |    iterations:           ${clientSecretsConfig.iterations.toString}
+         |    key-size:             ${clientSecretsConfig.derivedKeySize.toString} bytes
+         |    salt-size:            ${clientSecretsConfig.saltSize.toString} bytes
+         |    authentication-delay: ${clientSecretsConfig.authenticationDelay.toMillis.toString} ms
          |
          |  resource-owner-secrets:
          |    algorithm:            ${ownerSecretsConfig.algorithm}
-         |    iterations:           ${ownerSecretsConfig.iterations}
-         |    key-size:             ${ownerSecretsConfig.derivedKeySize} bytes
-         |    salt-size:            ${ownerSecretsConfig.saltSize} bytes
-         |    authentication-delay: ${ownerSecretsConfig.authenticationDelay.toMillis} ms
+         |    iterations:           ${ownerSecretsConfig.iterations.toString}
+         |    key-size:             ${ownerSecretsConfig.derivedKeySize.toString} bytes
+         |    salt-size:            ${ownerSecretsConfig.saltSize.toString} bytes
+         |    authentication-delay: ${ownerSecretsConfig.authenticationDelay.toMillis.toString} ms
          |
          |  resource-owner-authenticator:
          |    identity-claim:       ${ownerAuthenticatorConfig.identityClaim}
-         |    expiration-tolerance: ${ownerAuthenticatorConfig.expirationTolerance.toMillis} ms
+         |    expiration-tolerance: ${ownerAuthenticatorConfig.expirationTolerance.toMillis.toString} ms
          |
          |  database:
          |    profile:    ${persistence.profile.getClass.getSimpleName}
          |    url:        ${persistence.databaseUrl}
          |    driver:     ${persistence.databaseDriver}
-         |    keep-alive: ${persistence.databaseKeepAlive}
+         |    keep-alive: ${persistence.databaseKeepAlive.toString}
          |)
        """.stripMargin
     )
@@ -214,7 +214,9 @@ trait Service {
       stop()
   }
 
-  private val _ = sys.addShutdownHook(stop())
+  locally {
+    val _ = sys.addShutdownHook(stop())
+  }
 
   def stop(): Unit = {
     log.info("Identity service stopping...")

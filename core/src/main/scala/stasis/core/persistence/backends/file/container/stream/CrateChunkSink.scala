@@ -35,7 +35,7 @@ class CrateChunkSink(
   override val shape: SinkShape[CrateChunk] = SinkShape(in)
 
   override def toString: String =
-    s"CrateChunkSink(path=$path, crate=$crate, maxChunkSize=$maxChunkSize)"
+    s"CrateChunkSink(path=${path.toString}, crate=${crate.toString}, maxChunkSize=${maxChunkSize.toString})"
 
   override def createLogicAndMaterializedValue(inheritedAttributes: Attributes): (GraphStageLogic, Future[Done]) = {
     val resultPromise = Promise[Done]()
@@ -53,7 +53,10 @@ class CrateChunkSink(
         } catch {
           case NonFatal(e) =>
             completeWithFailure(
-              ContainerSinkFailure(s"Failed to open channel for file [$path]: [$e]")
+              ContainerSinkFailure(
+                s"Failed to open channel for file [${path.toString}]: " +
+                  s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
+              )
             )
         }
 
@@ -79,13 +82,14 @@ class CrateChunkSink(
 
           require(
             actualBytesWritten == expectedBytesWritten,
-            s"Expected to write [$expectedBytesWritten] byte(s) but only [$actualBytesWritten] were written"
+            s"Expected to write [${expectedBytesWritten.toString}] byte(s) but only [${actualBytesWritten.toString}] were written"
           )
         } catch {
           case NonFatal(e) =>
             completeWithFailure(
               ContainerSinkFailure(
-                s"Failed to write chunk [${header.chunkId}] for crate [$crate] to file [$path]: [$e]"
+                s"Failed to write chunk [${header.chunkId.toString}] for crate [${crate.toString}] to file [${path.toString}]: " +
+                  s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
               )
             )
         }
@@ -117,7 +121,7 @@ object CrateChunkSink {
       .fromGraph(new CrateChunkSink(path, crate, maxChunkSize, byteOrder))
       .withAttributes(
         Attributes
-          .name("crateChunkSink")
+          .name(name = "crateChunkSink")
           .and(ActorAttributes.IODispatcher)
       )
 }

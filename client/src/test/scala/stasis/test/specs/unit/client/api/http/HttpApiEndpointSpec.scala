@@ -230,5 +230,5 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
   private val testCredentials = BasicHttpCredentials(username = testUser, password = testPassword)
 
-  private val ports: mutable.Queue[Int] = (28000 to 28100).to[mutable.Queue]
+  private val ports: mutable.Queue[Int] = (28000 to 28100).to(mutable.Queue)
 }

@@ -77,7 +77,10 @@ object TestOps {
       .grouped(size = bytesToRead)
       .map { chunk =>
         val (headerBytes, chunkBytes) = chunk.splitAt(ChunkHeader.HEADER_SIZE)
-        val header = ChunkHeader.fromBytes(headerBytes.toArray).right.get
+        val header = ChunkHeader.fromBytes(headerBytes.toArray) match {
+          case Left(e)      => throw e
+          case Right(value) => value
+        }
 
         CrateChunk(header, ByteString.fromArray(chunkBytes.take(header.chunkSize).toArray))
       }
@@ -130,7 +133,10 @@ object TestOps {
     val partialEntries = readNextBytes(entries = Seq.empty).flatten
       .grouped(size = entrySize)
       .map { entryBytes =>
-        Container.LogEntry.fromBytes(entryBytes.take(bytesToRead).toArray).right.get
+        Container.LogEntry.fromBytes(entryBytes.take(bytesToRead).toArray) match {
+          case Left(e)      => throw e
+          case Right(value) => value
+        }
       }
 
     partialEntries.toSeq

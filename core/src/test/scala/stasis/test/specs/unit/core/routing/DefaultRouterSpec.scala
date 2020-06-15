@@ -216,7 +216,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       .recover {
         case PushFailure(message) =>
           message should be(
-            s"Push of crate [${testManifest.crate}] failed: [stasis.core.routing.exceptions.DistributionFailure: No nodes provided]"
+            s"Push of crate [${testManifest.crate}] failed: [DistributionFailure: No nodes provided]"
           )
           router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
           router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
@@ -236,7 +236,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       .recover {
         case PushFailure(message) =>
           message should be(
-            s"Push of crate [${testManifest.crate}] failed: [stasis.core.routing.exceptions.DistributionFailure: No copies requested]"
+            s"Push of crate [${testManifest.crate}] failed: [DistributionFailure: No copies requested]"
           )
           router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
           router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)

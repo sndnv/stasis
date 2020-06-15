@@ -115,7 +115,9 @@ object Metadata {
 
       case Some(directory: EntityMetadata.Directory) =>
         Future.failed(
-          new IllegalArgumentException(s"Expected metadata for file but directory metadata for [${directory.path}] provided")
+          new IllegalArgumentException(
+            s"Expected metadata for file but directory metadata for [${directory.path.toString}] provided"
+          )
         )
 
       case _ =>
@@ -129,7 +131,9 @@ object Metadata {
 
       case directory: EntityMetadata.Directory =>
         Future.failed(
-          new IllegalArgumentException(s"Expected metadata for file but directory metadata for [${directory.path}] provided")
+          new IllegalArgumentException(
+            s"Expected metadata for file but directory metadata for [${directory.path.toString}] provided"
+          )
         )
     }
 

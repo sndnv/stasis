@@ -71,7 +71,7 @@ class MockCrateStore(
       case None          => super.canStore(request)
     }
 
-  def statistics: Map[Statistic, Int] = stats.mapValues(_.get())
+  def statistics: Map[Statistic, Int] = stats.view.mapValues(_.get()).toMap
 
   override val backend: StreamingBackend = new StreamingBackend {
     override def init(): Future[Done] = Future.successful(Done)

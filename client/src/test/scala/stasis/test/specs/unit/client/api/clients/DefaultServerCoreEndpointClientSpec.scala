@@ -142,5 +142,5 @@ class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec {
     "DefaultServerCoreEndpointClientSpec"
   )
 
-  private val ports: mutable.Queue[Int] = (23000 to 23100).to[mutable.Queue]
+  private val ports: mutable.Queue[Int] = (23000 to 23100).to(mutable.Queue)
 }

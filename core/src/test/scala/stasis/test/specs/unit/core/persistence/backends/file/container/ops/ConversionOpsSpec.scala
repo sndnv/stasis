@@ -87,7 +87,7 @@ class ConversionOpsSpec extends UnitSpec {
     Try(ConversionOps.toBytes(buffer => putHeaderFields(header, buffer), MOCK_HEADER_SIZE - 1)) should be(
       Failure(
         ConversionFailure(
-          s"Failed to convert object to bytes: [java.nio.BufferOverflowException]"
+          s"Failed to convert object to bytes: [BufferOverflowException: null]"
         )
       )
     )

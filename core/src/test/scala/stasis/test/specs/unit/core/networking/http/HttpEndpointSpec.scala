@@ -305,5 +305,5 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     target = Node.generateId()
   )
 
-  private val ports: mutable.Queue[Int] = (27000 to 27100).to[mutable.Queue]
+  private val ports: mutable.Queue[Int] = (27000 to 27100).to(mutable.Queue)
 }

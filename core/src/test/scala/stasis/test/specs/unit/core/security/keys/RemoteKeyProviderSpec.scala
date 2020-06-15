@@ -179,7 +179,7 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
 
     val actualResult = RemoteKeyProvider.parseJwks(rawJwks) match {
       case Success(result) =>
-        result.map(_.right.map(jwk => (jwk.id, jwk.key.getAlgorithm)).left.map(_.failure))
+        result.map(_.map(jwk => (jwk.id, jwk.key.getAlgorithm)).left.map(_.failure))
 
       case Failure(e) =>
         fail(s"Received unexpected parsing result: [$e]")
@@ -297,7 +297,7 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
 
   private implicit val untypedSystem: akka.actor.ActorSystem = system.classicSystem
 
-  private val ports: mutable.Queue[Int] = (18000 to 18100).to[mutable.Queue]
+  private val ports: mutable.Queue[Int] = (18000 to 18100).to(mutable.Queue)
 
   override protected def afterAll(): Unit =
     system.terminate()

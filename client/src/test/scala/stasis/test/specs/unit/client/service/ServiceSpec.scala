@@ -240,7 +240,7 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
   private implicit val untypedSystem: ActorSystem = ActorSystem(name = "ServiceSpec")
 
-  private val ports: mutable.Queue[Int] = (31000 to 31100).to[mutable.Queue]
+  private val ports: mutable.Queue[Int] = (31000 to 31100).to(mutable.Queue)
 
   private val username = "test-user"
   private val password = "test-password"

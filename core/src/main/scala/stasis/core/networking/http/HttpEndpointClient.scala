@@ -76,7 +76,7 @@ class HttpEndpointClient(
       .recoverWith {
         case NonFatal(e) =>
           val message =
-            s"Push to endpoint [${address.uri}] failed for crate [${manifest.crate}];" +
+            s"Push to endpoint [${address.uri.toString()}] failed for crate [${manifest.crate.toString}];" +
               s" unable to retrieve credentials: [${e.getMessage}]"
           log.error(message)
           Future.failed(CredentialsFailure(message))
@@ -108,7 +108,7 @@ class HttpEndpointClient(
       .recoverWith {
         case NonFatal(e) =>
           val message =
-            s"Push to endpoint [${address.uri}] via sink failed for crate [${manifest.crate}];" +
+            s"Push to endpoint [${address.uri.toString()}] via sink failed for crate [${manifest.crate.toString}];" +
               s" unable to retrieve credentials: [${e.getMessage}]"
           log.error(message)
           Future.failed(CredentialsFailure(message))
@@ -132,7 +132,7 @@ class HttpEndpointClient(
       .recoverWith {
         case NonFatal(e) =>
           val message =
-            s"Pull from endpoint [${address.uri}] failed for crate [$crate];" +
+            s"Pull from endpoint [${address.uri.toString}] failed for crate [${crate.toString}];" +
               s" unable to retrieve credentials: [${e.getMessage}]"
           log.error(message)
           Future.failed(CredentialsFailure(message))
@@ -150,7 +150,7 @@ class HttpEndpointClient(
       .recoverWith {
         case NonFatal(e) =>
           val message =
-            s"Discard from endpoint [${address.uri}] failed for crate [$crate];" +
+            s"Discard from endpoint [${address.uri.toString}] failed for crate [${crate.toString}];" +
               s" unable to retrieve credentials: [${e.getMessage}]"
           log.error(message)
           Future.failed(CredentialsFailure(message))
@@ -171,7 +171,7 @@ class HttpEndpointClient(
       offer(
         request = HttpRequest(
           method = HttpMethods.PUT,
-          uri = s"${address.uri}/reservations",
+          uri = address.uri.withPath(address.uri.path ?/ "reservations"),
           entity = requestEntity
         ).addCredentials(endpointCredentials)
       ).flatMap {
@@ -191,13 +191,13 @@ class HttpEndpointClient(
 
             case StatusCodes.InsufficientStorage =>
               val message =
-                s"Endpoint [${address.uri}] was unable to reserve enough storage for request [$storageRequest]"
+                s"Endpoint [${address.uri.toString}] was unable to reserve enough storage for request [${storageRequest.toString}]"
               log.warn(message)
               Future.failed(ReservationFailure(message))
 
             case _ =>
               val message =
-                s"Endpoint [${address.uri}] responded to storage request with unexpected status: [${status.value}]"
+                s"Endpoint [${address.uri.toString}] responded to storage request with unexpected status: [${status.value}]"
               log.warn(message)
               Future.failed(EndpointFailure(message))
           }
@@ -215,7 +215,9 @@ class HttpEndpointClient(
     offer(
       request = HttpRequest(
         method = HttpMethods.PUT,
-        uri = s"${address.uri}/crates/${manifest.crate}?reservation=${reservation.id}",
+        uri = address.uri
+          .withPath(address.uri.path ?/ "crates" / manifest.crate.toString)
+          .withQuery(Uri.Query("reservation" -> reservation.id.toString)),
         entity = HttpEntity(ContentTypes.`application/octet-stream`, content)
       ).addCredentials(endpointCredentials)
     ).flatMap { response =>
@@ -226,7 +228,8 @@ class HttpEndpointClient(
 
         case _ =>
           val message =
-            s"Endpoint [${address.uri}] responded to push for crate [${manifest.crate}] with unexpected status: [${response.status.value}]"
+            s"Endpoint [${address.uri.toString}] responded to push for crate [${manifest.crate.toString}] " +
+              s"with unexpected status: [${response.status.value}]"
           log.warn(message)
           Future.failed(EndpointFailure(message))
       }
@@ -240,7 +243,7 @@ class HttpEndpointClient(
     offer(
       request = HttpRequest(
         method = HttpMethods.GET,
-        uri = s"${address.uri}/crates/$crate"
+        uri = address.uri.withPath(address.uri.path ?/ "crates" / crate.toString)
       ).addCredentials(endpointCredentials)
     ).flatMap {
       case HttpResponse(status, _, entity, _) =>
@@ -257,7 +260,8 @@ class HttpEndpointClient(
           case _ =>
             val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
             val message =
-              s"Endpoint [${address.uri}] responded to pull for crate [$crate] with unexpected status: [${status.value}]"
+              s"Endpoint [${address.uri.toString}] responded to pull for crate [${crate.toString}] " +
+                s"with unexpected status: [${status.value}]"
             log.warn(message)
             Future.failed(EndpointFailure(message))
         }
@@ -271,7 +275,7 @@ class HttpEndpointClient(
     offer(
       request = HttpRequest(
         method = HttpMethods.DELETE,
-        uri = s"${address.uri}/crates/$crate"
+        uri = address.uri.withPath(address.uri.path ?/ "crates" / crate.toString)
       ).addCredentials(endpointCredentials)
     ).flatMap {
       case HttpResponse(status, _, entity, _) =>
@@ -287,7 +291,8 @@ class HttpEndpointClient(
 
           case _ =>
             val message =
-              s"Endpoint [${address.uri}] responded to discard for crate [$crate] with unexpected status: [${status.value}]"
+              s"Endpoint [${address.uri.toString}] responded to discard for crate [${crate.toString}] " +
+                s"with unexpected status: [${status.value}]"
             log.warn(message)
             Future.failed(EndpointFailure(message))
         }
@@ -318,7 +323,7 @@ object HttpEndpointClient {
 
   def processOfferResult[T](request: HttpRequest, promise: Promise[T])(result: QueueOfferResult): Future[T] = {
     def clientFailure(cause: String): Future[T] =
-      Future.failed(ClientFailure(s"[${request.method.value}] request for endpoint [${request.uri}] failed; $cause"))
+      Future.failed(ClientFailure(s"[${request.method.value}] request for endpoint [${request.uri.toString}] failed; $cause"))
 
     result match {
       case QueueOfferResult.Enqueued    => promise.future

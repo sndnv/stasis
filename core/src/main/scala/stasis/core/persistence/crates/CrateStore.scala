@@ -109,10 +109,10 @@ object CrateStore {
     def asString(descriptor: Descriptor): String =
       descriptor match {
         case Descriptor.ForStreamingMemoryBackend(maxSize, maxChunkSize, name) =>
-          s"StreamingMemoryBackend(maxSize=$maxSize, maxChunkSize=$maxChunkSize, name=$name)"
+          s"StreamingMemoryBackend(maxSize=${maxSize.toString}, maxChunkSize=${maxChunkSize.toString}, name=$name)"
 
         case Descriptor.ForContainerBackend(path, maxChunkSize, maxChunks) =>
-          s"ContainerBackend(path=$path, maxChunkSize=$maxChunkSize, maxChunks=$maxChunks)"
+          s"ContainerBackend(path=$path, maxChunkSize=${maxChunkSize.toString}, maxChunks=${maxChunks.toString})"
 
         case Descriptor.ForFileBackend(parentDirectory) =>
           s"FileBackend(parentDirectory=$parentDirectory)"

@@ -35,7 +35,12 @@ object ContainerOps extends AutoCloseSupport {
     result
       .recoverWith {
         case NonFatal(e) =>
-          Future.failed(new ContainerFailure(s"Failed to create container [$path]: [$e]"))
+          Future.failed(
+            new ContainerFailure(
+              s"Failed to create container [${path.toString}]: " +
+                s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
+            )
+          )
       }
   }
 
@@ -46,7 +51,12 @@ object ContainerOps extends AutoCloseSupport {
       .destroyFile(path)
       .recoverWith {
         case NonFatal(e) =>
-          Future.failed(new ContainerFailure(s"Failed to destroy container [$path]: [$e]"))
+          Future.failed(
+            new ContainerFailure(
+              s"Failed to destroy container [${path.toString}]: " +
+                s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
+            )
+          )
       }
 
   def exists(path: Path)(implicit ec: ExecutionContext, byteOrder: ByteOrder): Future[Boolean] =
@@ -79,7 +89,12 @@ object ContainerOps extends AutoCloseSupport {
       }
       .recoverWith {
         case NonFatal(e) =>
-          Future.failed(new ContainerFailure(s"Failed to load container [$path]: [$e]"))
+          Future.failed(
+            new ContainerFailure(
+              s"Failed to load container [${path.toString}]: " +
+                s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
+            )
+          )
       }
 
   def put(
@@ -120,7 +135,12 @@ object ContainerOps extends AutoCloseSupport {
       }
       .recoverWith {
         case NonFatal(e) =>
-          Future.failed(new ContainerFailure(s"Failed to read container header [$path]: [$e]"))
+          Future.failed(
+            new ContainerFailure(
+              s"Failed to read container header [${path.toString}]: " +
+                s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
+            )
+          )
       }
 
   def get(
@@ -176,7 +196,12 @@ object ContainerOps extends AutoCloseSupport {
       occupiedChunks.toInt
     }.recoverWith {
       case NonFatal(e) =>
-        Future.failed(new ContainerFailure(s"Failed to calculate occupied chunks for container [$path]: [$e]"))
+        Future.failed(
+          new ContainerFailure(
+            s"Failed to calculate occupied chunks for container [${path.toString}]: " +
+              s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
+          )
+        )
     }
 
   private def readChunkHeaders(
