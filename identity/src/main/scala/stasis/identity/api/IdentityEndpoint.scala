@@ -25,9 +25,9 @@ class IdentityEndpoint(
 
   private val log: LoggingAdapter = Logging(system, this.getClass.getName)
 
-  private val oauth = new OAuth(oauthConfig, oauthProviders)
-  private val jwks = new Jwks(keys)
-  private val manage = new Manage(manageProviders, manageConfig)
+  private val oauth = OAuth(oauthConfig, oauthProviders)
+  private val jwks = Jwks(keys)
+  private val manage = Manage(manageProviders, manageConfig)
 
   private implicit def sanitizingExceptionHandler: ExceptionHandler =
     ExceptionHandler {
@@ -100,5 +100,22 @@ class IdentityEndpoint(
       interface = interface,
       port = port,
       connectionContext = context
+    )
+}
+
+object IdentityEndpoint {
+  def apply(
+    keys: Seq[JsonWebKey],
+    oauthConfig: OAuthConfig,
+    oauthProviders: OAuthProviders,
+    manageConfig: ManageConfig,
+    manageProviders: ManageProviders
+  )(implicit system: ActorSystem): IdentityEndpoint =
+    new IdentityEndpoint(
+      keys = keys,
+      oauthConfig = oauthConfig,
+      oauthProviders = oauthProviders,
+      manageConfig = manageConfig,
+      manageProviders = manageProviders
     )
 }

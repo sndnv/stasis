@@ -45,3 +45,14 @@ class DefaultUserAuthenticator(
       user
     }
 }
+
+object DefaultUserAuthenticator {
+  def apply(
+    store: UserStore.View.Privileged,
+    underlying: JwtAuthenticator
+  )(implicit ec: ExecutionContext): DefaultUserAuthenticator =
+    new DefaultUserAuthenticator(
+      store = store,
+      underlying = underlying
+    )
+}

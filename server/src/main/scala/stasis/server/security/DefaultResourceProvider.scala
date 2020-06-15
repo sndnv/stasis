@@ -38,3 +38,13 @@ class DefaultResourceProvider(
         )
     }
 }
+
+object DefaultResourceProvider {
+  def apply(
+    resources: Set[Resource],
+    users: UserStore.View.Privileged
+  )(implicit ec: ExecutionContext): DefaultResourceProvider = new DefaultResourceProvider(
+    resources = resources,
+    users = users
+  )
+}

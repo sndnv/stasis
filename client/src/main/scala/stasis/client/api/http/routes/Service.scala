@@ -29,3 +29,8 @@ class Service()(implicit override val mat: Materializer, context: Context) exten
       }
     )
 }
+
+object Service {
+  def apply()(implicit mat: Materializer, context: Context): Service =
+    new Service()
+}

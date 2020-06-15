@@ -24,14 +24,14 @@ class HttpApiEndpoint(
   private implicit val mat: Materializer = SystemMaterializer(system).materializer
   private implicit val ec: ExecutionContextExecutor = system.executionContext
 
-  private val definitions = new DatasetDefinitions()
-  private val entries = new DatasetEntries()
-  private val metadata = new DatasetMetadata()
-  private val user = new User()
-  private val device = new Device()
-  private val service = new Service()
-  private val schedules = new Schedules()
-  private val operations = new Operations()
+  private val definitions = DatasetDefinitions()
+  private val entries = DatasetEntries()
+  private val metadata = DatasetMetadata()
+  private val user = User()
+  private val device = Device()
+  private val service = Service()
+  private val schedules = Schedules()
+  private val operations = Operations()
 
   private implicit def exceptionHandler: ExceptionHandler =
     ExceptionHandler {
@@ -120,4 +120,13 @@ class HttpApiEndpoint(
       connectionContext = context.getOrElse(http.defaultServerHttpContext)
     )
   }
+}
+
+object HttpApiEndpoint {
+  def apply(
+    authenticator: FrontendAuthenticator
+  )(implicit system: ActorSystem[SpawnProtocol.Command], context: Context): HttpApiEndpoint =
+    new HttpApiEndpoint(
+      authenticator = authenticator
+    )
 }

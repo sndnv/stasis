@@ -25,3 +25,7 @@ class Reservations()(implicit ctx: RoutesContext) extends ApiRoutes {
     }
 
 }
+
+object Reservations {
+  def apply()(implicit ctx: RoutesContext): Reservations = new Reservations()
+}

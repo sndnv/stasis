@@ -70,3 +70,10 @@ class Apis(store: ApiStore)(implicit system: ActorSystem, override val mat: Mate
       }
     )
 }
+
+object Apis {
+  def apply(store: ApiStore)(implicit system: ActorSystem, mat: Materializer): Apis =
+    new Apis(
+      store = store
+    )
+}

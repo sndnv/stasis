@@ -30,3 +30,14 @@ class JwtNodeCredentialsProvider[A <: EndpointAddress](
       }
 
 }
+
+object JwtNodeCredentialsProvider {
+  def apply[A <: EndpointAddress](
+    nodeStore: NodeStoreView,
+    underlying: JwtProvider
+  )(implicit ec: ExecutionContext): JwtNodeCredentialsProvider[A] =
+    new JwtNodeCredentialsProvider[A](
+      nodeStore = nodeStore,
+      underlying = underlying
+    )
+}

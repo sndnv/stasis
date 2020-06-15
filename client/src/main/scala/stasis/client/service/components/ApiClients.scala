@@ -21,7 +21,7 @@ object ApiClients {
 
     Future.fromTry(
       Try {
-        val coreClient: ServerCoreEndpointClient = new DefaultServerCoreEndpointClient(
+        val coreClient: ServerCoreEndpointClient = DefaultServerCoreEndpointClient(
           address = HttpEndpointAddress(rawConfig.getString("server.core.address")),
           credentials = credentialsProvider.core,
           self = UUID.fromString(rawConfig.getString("server.authentication.client-id")),
@@ -29,7 +29,7 @@ object ApiClients {
           requestBufferSize = rawConfig.getInt("server.core.request-buffer-size")
         )
 
-        val apiClient: ServerApiEndpointClient = new DefaultServerApiEndpointClient(
+        val apiClient: ServerApiEndpointClient = DefaultServerApiEndpointClient(
           apiUrl = rawConfig.getString("server.api.url"),
           credentials = credentialsProvider.api,
           decryption = DefaultServerApiEndpointClient.DecryptionContext(
@@ -42,7 +42,7 @@ object ApiClients {
           requestBufferSize = rawConfig.getInt("server.api.request-buffer-size")
         )
 
-        val cachedApiClient = new CachedServerApiEndpointClient(
+        val cachedApiClient = CachedServerApiEndpointClient(
           config = CachedServerApiEndpointClient.Config(
             initialCapacity = rawConfig.getInt("server.api.cache.initial-capacity"),
             maximumCapacity = rawConfig.getInt("server.api.cache.maximum-capacity"),

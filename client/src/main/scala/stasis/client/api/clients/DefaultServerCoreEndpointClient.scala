@@ -42,3 +42,20 @@ class DefaultServerCoreEndpointClient(
   override def pull(crate: Node.Id): Future[Option[Source[ByteString, NotUsed]]] =
     client.pull(address, crate)
 }
+
+object DefaultServerCoreEndpointClient {
+  def apply(
+    address: HttpEndpointAddress,
+    credentials: => Future[HttpCredentials],
+    self: Node.Id,
+    context: Option[HttpsConnectionContext],
+    requestBufferSize: Int
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): DefaultServerCoreEndpointClient =
+    new DefaultServerCoreEndpointClient(
+      address = address,
+      credentials = credentials,
+      self = self,
+      context = context,
+      requestBufferSize = requestBufferSize
+    )
+}

@@ -71,3 +71,8 @@ class DatasetEntries()(implicit override val mat: Materializer, context: Context
       }
     )
 }
+
+object DatasetEntries {
+  def apply()(implicit mat: Materializer, context: Context): DatasetEntries =
+    new DatasetEntries()
+}

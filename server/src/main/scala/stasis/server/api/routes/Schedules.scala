@@ -123,3 +123,7 @@ class Schedules()(implicit ctx: RoutesContext) extends ApiRoutes {
       }
     )
 }
+
+object Schedules {
+  def apply()(implicit ctx: RoutesContext): Schedules = new Schedules()
+}

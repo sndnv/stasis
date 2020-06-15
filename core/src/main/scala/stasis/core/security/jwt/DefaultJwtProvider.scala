@@ -41,3 +41,14 @@ class DefaultJwtProvider(
         }
     }
 }
+
+object DefaultJwtProvider {
+  def apply(
+    client: OAuthClient,
+    expirationTolerance: FiniteDuration
+  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): DefaultJwtProvider =
+    new DefaultJwtProvider(
+      client = client,
+      expirationTolerance = expirationTolerance
+    )
+}

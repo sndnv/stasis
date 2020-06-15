@@ -103,3 +103,14 @@ class Clients(
       }
     )
 }
+
+object Clients {
+  def apply(
+    store: ClientStore,
+    clientSecretConfig: Secret.ClientConfig
+  )(implicit system: ActorSystem, mat: Materializer): Clients =
+    new Clients(
+      store = store,
+      clientSecretConfig = clientSecretConfig
+    )
+}

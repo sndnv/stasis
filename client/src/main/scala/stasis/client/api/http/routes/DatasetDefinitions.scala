@@ -30,3 +30,8 @@ class DatasetDefinitions()(implicit override val mat: Materializer, context: Con
       )
     }
 }
+
+object DatasetDefinitions {
+  def apply()(implicit mat: Materializer, context: Context): DatasetDefinitions =
+    new DatasetDefinitions()
+}

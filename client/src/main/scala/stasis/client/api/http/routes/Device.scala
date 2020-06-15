@@ -31,3 +31,8 @@ class Device()(implicit override val mat: Materializer, context: Context) extend
       }
     )
 }
+
+object Device {
+  def apply()(implicit mat: Materializer, context: Context): Device =
+    new Device()
+}

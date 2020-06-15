@@ -69,6 +69,11 @@ class Recovery(
 }
 
 object Recovery {
+  def apply(
+    descriptor: Recovery.Descriptor
+  )(implicit system: ActorSystem[SpawnProtocol.Command], parallelism: ParallelismConfig, providers: Providers): Recovery =
+    new Recovery(descriptor)
+
   final case class Descriptor(
     targetMetadata: DatasetMetadata,
     query: Option[PathQuery],
@@ -85,7 +90,7 @@ object Recovery {
         targetMetadata = targetMetadata,
         keep = (entity, _) => query.forall(_.matches(entity.toAbsolutePath)),
         destination = destination.toTargetEntityDestination,
-        metadataCollector = new RecoveryMetadataCollector.Default(checksum = providers.checksum),
+        metadataCollector = RecoveryMetadataCollector.Default(checksum = providers.checksum),
         api = providers.clients.api
       )
   }

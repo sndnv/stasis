@@ -274,6 +274,23 @@ class DefaultServerApiEndpointClient(
 object DefaultServerApiEndpointClient {
   import play.api.libs.json.Format
 
+  def apply(
+    apiUrl: String,
+    credentials: => Future[HttpCredentials],
+    decryption: DefaultServerApiEndpointClient.DecryptionContext,
+    self: Device.Id,
+    context: Option[HttpsConnectionContext],
+    requestBufferSize: Int
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): DefaultServerApiEndpointClient =
+    new DefaultServerApiEndpointClient(
+      apiUrl = apiUrl,
+      credentials = credentials,
+      decryption = decryption,
+      self = self,
+      context = context,
+      requestBufferSize = requestBufferSize
+    )
+
   final case class DecryptionContext(
     core: ServerCoreEndpointClient,
     deviceSecret: DeviceSecret,

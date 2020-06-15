@@ -73,6 +73,15 @@ class RefreshTokenGrant(
 }
 
 object RefreshTokenGrant {
+  def apply(
+    config: Config,
+    providers: Providers
+  )(implicit system: ActorSystem, mat: Materializer): RefreshTokenGrant =
+    new RefreshTokenGrant(
+      config = config,
+      providers = providers
+    )
+
   implicit val accessTokenResponseFormat: Format[AccessTokenResponse] = Json.format[AccessTokenResponse]
 
   final case class AccessTokenRequest(

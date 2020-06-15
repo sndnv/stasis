@@ -35,3 +35,14 @@ class DefaultResourceOwnerAuthenticator(
       owner
     }
 }
+
+object DefaultResourceOwnerAuthenticator {
+  def apply(
+    store: ResourceOwnerStoreView,
+    underlying: JwtAuthenticator
+  )(implicit ec: ExecutionContext): DefaultResourceOwnerAuthenticator =
+    new DefaultResourceOwnerAuthenticator(
+      store = store,
+      underlying = underlying
+    )
+}

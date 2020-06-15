@@ -72,3 +72,13 @@ class SlickBackend[K, V](
     database.run(action)
   }
 }
+
+object SlickBackend {
+  def apply[K, V](
+    tableName: String,
+    profile: JdbcProfile,
+    database: JdbcProfile#Backend#DatabaseDef,
+    serdes: KeyValueBackend.Serdes[K, V]
+  )(implicit ec: ExecutionContext): SlickBackend[K, V] =
+    new SlickBackend[K, V](tableName, profile, database, serdes)
+}

@@ -75,6 +75,11 @@ class Backup(
 }
 
 object Backup {
+  def apply(
+    descriptor: Backup.Descriptor
+  )(implicit system: ActorSystem[SpawnProtocol.Command], parallelism: ParallelismConfig, providers: Providers): Backup =
+    new Backup(descriptor)
+
   final case class Descriptor(
     targetDataset: DatasetDefinition,
     latestEntry: Option[DatasetEntry],
@@ -96,7 +101,7 @@ object Backup {
           new BackupCollector.Default(
             entities = spec.included.toList,
             latestMetadata = latestMetadata,
-            metadataCollector = new BackupMetadataCollector.Default(checksum = checksum),
+            metadataCollector = BackupMetadataCollector.Default(checksum = checksum),
             api = providers.clients.api
           )
 
@@ -104,7 +109,7 @@ object Backup {
           new BackupCollector.Default(
             entities = entities.toList,
             latestMetadata = latestMetadata,
-            metadataCollector = new BackupMetadataCollector.Default(checksum = checksum),
+            metadataCollector = BackupMetadataCollector.Default(checksum = checksum),
             api = providers.clients.api
           )
       }

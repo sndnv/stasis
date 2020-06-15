@@ -224,3 +224,16 @@ class HttpEndpoint(
       }
     }
 }
+
+object HttpEndpoint {
+  def apply(
+    router: Router,
+    reservationStore: ReservationStoreView,
+    authenticator: NodeAuthenticator[HttpCredentials]
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): HttpEndpoint =
+    new HttpEndpoint(
+      router = router,
+      reservationStore = reservationStore,
+      authenticator = authenticator
+    )
+}

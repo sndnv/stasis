@@ -189,6 +189,9 @@ class Operations()(implicit override val mat: Materializer, context: Context) ex
 object Operations {
   import akka.http.scaladsl.server.{Directive, Directive1}
 
+  def apply()(implicit mat: Materializer, context: Context): Operations =
+    new Operations()
+
   final val DefaultSseHeartbeatInterval: FiniteDuration = 3.seconds
 
   final case class OperationStarted(operation: Operation.Id)

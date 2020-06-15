@@ -39,3 +39,14 @@ class DefaultClientAuthenticator(
         )
     }
 }
+
+object DefaultClientAuthenticator {
+  def apply(
+    store: ClientStoreView,
+    secretConfig: Secret.ClientConfig
+  )(implicit system: ActorSystem): DefaultClientAuthenticator =
+    new DefaultClientAuthenticator(
+      store = store,
+      secretConfig = secretConfig
+    )
+}

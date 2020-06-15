@@ -45,3 +45,8 @@ class DatasetMetadata()(implicit override val mat: Materializer, context: Contex
       }
     )
 }
+
+object DatasetMetadata {
+  def apply()(implicit mat: Materializer, context: Context): DatasetMetadata =
+    new DatasetMetadata()
+}
