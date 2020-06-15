@@ -17,61 +17,61 @@ object Formats {
 
   implicit val authorizationErrorWrites: Writes[AuthorizationError] = Writes[AuthorizationError] { error =>
     Json.obj(
-      "error" -> JsString(error.error),
-      "error_description" -> JsString(error.error_description),
-      "state" -> JsString(error.state)
+      "error" -> Json.toJson(error.error),
+      "error_description" -> Json.toJson(error.error_description),
+      "state" -> Json.toJson(error.state)
     )
   }
 
   implicit val tokenErrorWrites: Writes[TokenError] = Writes[TokenError] { error =>
     Json.obj(
-      "error" -> JsString(error.error),
-      "error_description" -> JsString(error.error_description)
+      "error" -> Json.toJson(error.error),
+      "error_description" -> Json.toJson(error.error_description)
     )
   }
 
   implicit val tokenTypeFormat: Format[TokenType] = Format[TokenType](
     fjs = Reads[TokenType](_.validate[String].map { case "bearer" => TokenType.Bearer }),
-    tjs = Writes[TokenType](tokenType => JsString(tokenType.toString.toLowerCase))
+    tjs = Writes[TokenType](tokenType => Json.toJson(tokenType.toString.toLowerCase))
   )
 
   implicit val grantTypeFormat: Format[GrantType] = Format[GrantType](
     fjs = Reads[GrantType](_.validate[String].map(convertStringToGrantType)),
-    tjs = Writes[GrantType](grantType => JsString(convertGrantTypeToString(grantType)))
+    tjs = Writes[GrantType](grantType => Json.toJson(convertGrantTypeToString(grantType)))
   )
 
   implicit val challengeMethodFormat: Format[ChallengeMethod] = Format[ChallengeMethod](
     fjs = Reads[ChallengeMethod](_.validate[String].map(convertStringToChallengeMethod)),
-    tjs = Writes[ChallengeMethod](challengeMethod => JsString(convertChallengeMethodToString(challengeMethod)))
+    tjs = Writes[ChallengeMethod](challengeMethod => Json.toJson(convertChallengeMethodToString(challengeMethod)))
   )
 
   implicit val responseTypeFormat: Format[ResponseType] = Format[ResponseType](
     fjs = Reads[ResponseType](_.validate[String].map(convertStringToResponseType)),
-    tjs = Writes[ResponseType](responseType => JsString(convertResponseTypeToString(responseType)))
+    tjs = Writes[ResponseType](responseType => Json.toJson(convertResponseTypeToString(responseType)))
   )
 
   implicit val accessTokenFormat: Format[AccessToken] =
     Format(
       fjs = Reads[AccessToken](_.validate[String].map(AccessToken)),
-      tjs = Writes[AccessToken](token => JsString(token.value))
+      tjs = Writes[AccessToken](token => Json.toJson(token.value))
     )
 
   implicit val refreshTokenFormat: Format[RefreshToken] =
     Format(
       fjs = Reads[RefreshToken](_.validate[String].map(RefreshToken)),
-      tjs = Writes[RefreshToken](token => JsString(token.value))
+      tjs = Writes[RefreshToken](token => Json.toJson(token.value))
     )
 
   implicit val authorizationCodeFormat: Format[AuthorizationCode] =
     Format(
       fjs = Reads[AuthorizationCode](_.validate[String].map(AuthorizationCode)),
-      tjs = Writes[AuthorizationCode](code => JsString(code.value))
+      tjs = Writes[AuthorizationCode](code => Json.toJson(code.value))
     )
 
   implicit val secondsFormat: Format[Seconds] =
     Format(
       fjs = Reads[Seconds](_.validate[Long].map(Seconds.apply)),
-      tjs = Writes[Seconds](seconds => JsNumber(seconds.value))
+      tjs = Writes[Seconds](seconds => Json.toJson(seconds.value))
     )
 
   implicit val codeChallengeFormat: Format[StoredAuthorizationCode.Challenge] =

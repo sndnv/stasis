@@ -30,7 +30,7 @@ class ManageSpec extends RouteTest with ManageFixtures {
     providers.codeStore.put(StoredAuthorizationCode(code, client, owner, scope = None)).await
     Get(s"/codes/${code.value}").addCredentials(credentials) ~> manage.routes ~> check {
       status should be(StatusCodes.OK)
-      responseAs[JsObject].fields should contain("code" -> JsString(code.value))
+      responseAs[JsObject].fields should contain("code" -> Json.toJson(code.value))
     }
   }
 
@@ -45,7 +45,7 @@ class ManageSpec extends RouteTest with ManageFixtures {
     providers.tokenStore.put(client, token, owner, scope = None).await
     Get(s"/tokens/${token.value}").addCredentials(credentials) ~> manage.routes ~> check {
       status should be(StatusCodes.OK)
-      responseAs[JsObject].fields should contain("token" -> JsString(token.value))
+      responseAs[JsObject].fields should contain("token" -> Json.toJson(token.value))
     }
   }
 
@@ -71,7 +71,7 @@ class ManageSpec extends RouteTest with ManageFixtures {
     providers.clientStore.put(expectedClient).await
     Get(s"/clients/${expectedClient.id}").addCredentials(credentials) ~> manage.routes ~> check {
       status should be(StatusCodes.OK)
-      responseAs[JsObject].fields should contain("id" -> JsString(expectedClient.id.toString))
+      responseAs[JsObject].fields should contain("id" -> Json.toJson(expectedClient.id.toString))
     }
   }
 
@@ -84,7 +84,7 @@ class ManageSpec extends RouteTest with ManageFixtures {
     providers.ownerStore.put(expectedOwner).await
     Get(s"/owners/${expectedOwner.username}").addCredentials(credentials) ~> manage.routes ~> check {
       status should be(StatusCodes.OK)
-      responseAs[JsObject].fields should contain("username" -> JsString(expectedOwner.username))
+      responseAs[JsObject].fields should contain("username" -> Json.toJson(expectedOwner.username))
     }
   }
 

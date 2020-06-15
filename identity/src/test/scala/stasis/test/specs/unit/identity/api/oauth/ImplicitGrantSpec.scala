@@ -2,7 +2,7 @@ package stasis.test.specs.unit.identity.api.oauth
 
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.model.{StatusCodes, Uri}
-import play.api.libs.json.{JsObject, JsString}
+import play.api.libs.json._
 import stasis.identity.api.oauth.ImplicitGrant
 import stasis.identity.api.oauth.ImplicitGrant._
 import stasis.identity.model.clients.Client
@@ -152,8 +152,8 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
 
       val response = responseAs[JsObject]
       response.fields.exists(_._1 == "access_token") should be(true)
-      response.fields should contain("state" -> JsString(request.state))
-      response.fields should contain("scope" -> JsString(request.scope.getOrElse("invalid")))
+      response.fields should contain("state" -> Json.toJson(request.state))
+      response.fields should contain("scope" -> Json.toJson(request.scope.getOrElse("invalid")))
 
       val redirectUri = response.fields.find(_._1 == "redirect_uri") match {
         case Some((_, uri)) => uri.as[String]
@@ -197,7 +197,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
     stores.apis.put(api).await
     Get(request).addCredentials(credentials) ~> grant.authorization() ~> check {
       status should be(StatusCodes.BadRequest)
-      responseAs[JsObject].fields should contain("error" -> JsString("invalid_request"))
+      responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_request"))
     }
   }
 
