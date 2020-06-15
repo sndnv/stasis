@@ -67,7 +67,7 @@ class CrateChunkSinkSpec extends AsyncUnitSpec with BeforeAndAfter {
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Failed to open channel for file [$path]: [java.nio.file.NoSuchFileException: $path]"
+            s"Failed to open channel for file [$path]: [NoSuchFileException: $path]"
           )
       }
 
@@ -88,7 +88,7 @@ class CrateChunkSinkSpec extends AsyncUnitSpec with BeforeAndAfter {
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Failed to write chunk [0] for crate [$crateId] to file [$path]: [java.nio.BufferOverflowException]"
+            s"Failed to write chunk [0] for crate [$crateId] to file [$path]: [BufferOverflowException: null]"
           )
       }
   }
@@ -110,7 +110,7 @@ class CrateChunkSinkSpec extends AsyncUnitSpec with BeforeAndAfter {
         case NonFatal(e) =>
           e.getMessage should be(
             s"Failed to write chunk [0] for crate [$crateId] to file [$path]: " +
-              s"[java.lang.IllegalArgumentException: requirement failed: Cannot store empty chunks]"
+              s"[IllegalArgumentException: requirement failed: Cannot store empty chunks]"
           )
       }
   }

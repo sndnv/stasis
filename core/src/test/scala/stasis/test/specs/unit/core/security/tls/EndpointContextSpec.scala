@@ -14,8 +14,6 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import scala.collection.mutable
 
 class EndpointContextSpec extends AsyncUnitSpec {
-  private val ports: mutable.Queue[Int] = (25000 to 25100).to[mutable.Queue]
-
   "An EndpointContext" should "load store config" in {
     val expectedConfig = EndpointContext.StoreConfig(
       storePath = "./core/src/test/resources/certs/localhost.p12",
@@ -182,4 +180,6 @@ class EndpointContextSpec extends AsyncUnitSpec {
   }
 
   private val config: Config = ConfigFactory.load().getConfig("stasis.test.core.security.tls")
+
+  private val ports: mutable.Queue[Int] = (25000 to 25100).to(mutable.Queue)
 }

@@ -40,7 +40,7 @@ trait DatasetDefinitionStore { store =>
           case Some(d) =>
             Future.failed(
               new IllegalArgumentException(
-                s"Expected to retrieve definition for own device but device [${d.device}] found"
+                s"Expected to retrieve definition for own device but device [${d.device.toString}] found"
               )
             )
 
@@ -72,7 +72,7 @@ trait DatasetDefinitionStore { store =>
         } else {
           Future.failed(
             new IllegalArgumentException(
-              s"Expected to create definition for own device but device [${definition.device}] provided"
+              s"Expected to create definition for own device but device [${definition.device.toString}] provided"
             )
           )
         }
@@ -83,7 +83,7 @@ trait DatasetDefinitionStore { store =>
         } else {
           Future.failed(
             new IllegalArgumentException(
-              s"Expected to update definition for own device but device [${definition.device}] provided"
+              s"Expected to update definition for own device but device [${definition.device.toString}] provided"
             )
           )
         }
@@ -96,7 +96,7 @@ trait DatasetDefinitionStore { store =>
             } else {
               Future.failed(
                 new IllegalArgumentException(
-                  s"Expected to delete definition for own device but device [${d.device}] provided"
+                  s"Expected to delete definition for own device but device [${d.device.toString}] provided"
                 )
               )
             }

@@ -40,7 +40,7 @@ class DefaultOperationExecutor(
     MemoryBackend(name = "executor-operations-store")
 
   override def operations: Future[Map[Operation.Id, Operation.Type]] =
-    activeOperations.entries.map(_.mapValues(_.`type`))
+    activeOperations.entries.map(_.map { case (id, operation) => (id, operation.`type`) })
 
   override def rules: Future[Specification] =
     SchedulingConfig.rules(file = config.backup.rulesFile).map(Specification.apply)
@@ -140,7 +140,7 @@ class DefaultOperationExecutor(
         Future.successful(Done)
 
       case None =>
-        val message = s"Failed to stop [$operation]; operation not found"
+        val message = s"Failed to stop [${operation.toString}]; operation not found"
         log.errorN(message)
         Future.failed(new OperationExecutionFailure(message))
     }
@@ -149,7 +149,8 @@ class DefaultOperationExecutor(
     operations.flatMap { active =>
       active.find(_._2 == ofType) match {
         case Some((operation, _)) =>
-          val message = s"Cannot start [$ofType] operation; [$ofType] with ID [$operation] is already active"
+          val opType = ofType.toString
+          val message = s"Cannot start [$opType] operation; [$opType] with ID [${operation.toString}] is already active"
           log.errorN(message)
           Future.failed(new OperationExecutionFailure(message))
 

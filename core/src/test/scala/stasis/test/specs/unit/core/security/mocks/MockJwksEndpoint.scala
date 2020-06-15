@@ -8,7 +8,7 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.jose4j.jwk.JsonWebKeySet
 import stasis.core.security.tls.EndpointContext
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class MockJwksEndpoint(
   port: Int,

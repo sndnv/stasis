@@ -33,7 +33,7 @@ object NodeStore {
 
     val cacheOpt: Option[KeyValueBackend[Node.Id, Node]] =
       if (cachingEnabled) {
-        Some(MemoryBackend[Node.Id, Node](name = s"nodes-cache-${java.util.UUID.randomUUID()}"))
+        Some(MemoryBackend[Node.Id, Node](name = s"nodes-cache-${java.util.UUID.randomUUID().toString}"))
       } else {
         None
       }

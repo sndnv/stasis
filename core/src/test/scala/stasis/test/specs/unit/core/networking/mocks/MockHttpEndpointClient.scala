@@ -135,7 +135,7 @@ class MockHttpEndpointClient(
         .size
     }
 
-  def statistics: Map[Statistic, Int] = stats.mapValues(_.get())
+  def statistics: Map[Statistic, Int] = stats.view.mapValues(_.get()).toMap
 
   private def storeData: Future[Map[StoreKey, StoreValue]] = store.entries
 }

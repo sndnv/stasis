@@ -11,7 +11,7 @@ final case class SourceEntity(
     existing =>
       require(
         existing.getClass == currentMetadata.getClass,
-        s"Mismatched current metadata for [${currentMetadata.path}] and existing metadata for [${existing.path}]"
+        s"Mismatched current metadata for [${currentMetadata.path.toString}] and existing metadata for [${existing.path.toString}]"
     )
   )
 

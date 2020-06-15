@@ -18,9 +18,9 @@ import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 
-import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 import scala.util.control.NonFatal
 
@@ -55,11 +55,11 @@ object Bootstrap {
         .getConfig("bootstrap")
 
       val entities = Entities(
-        definitions = config.getConfigList("dataset-definitions").asScala.map(definitionFromConfig),
-        devices = config.getConfigList("devices").asScala.map(deviceFromConfig),
-        schedules = config.getConfigList("schedules").asScala.map(scheduleFromConfig),
-        users = config.getConfigList("users").asScala.map(userFromConfig),
-        nodes = config.getConfigList("nodes").asScala.map(nodeFromConfig)
+        definitions = config.getConfigList("dataset-definitions").asScala.map(definitionFromConfig).toSeq,
+        devices = config.getConfigList("devices").asScala.map(deviceFromConfig).toSeq,
+        schedules = config.getConfigList("schedules").asScala.map(scheduleFromConfig).toSeq,
+        users = config.getConfigList("users").asScala.map(userFromConfig).toSeq,
+        nodes = config.getConfigList("nodes").asScala.map(nodeFromConfig).toSeq
       )
 
       for {
@@ -147,7 +147,7 @@ object Bootstrap {
       salt = config.getString("salt"),
       active = config.getBoolean("active"),
       limits = Try(config.getConfig("limits")).toOption.map(userLimitsFromConfig),
-      permissions = userPermissionsFromConfig(config.getStringList("permissions").asScala)
+      permissions = userPermissionsFromConfig(config.getStringList("permissions").asScala.toSeq)
     )
 
   private def userLimitsFromConfig(config: typesafe.Config): User.Limits =

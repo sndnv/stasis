@@ -119,7 +119,7 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
     tracker.server.unreachable(server1)
 
     eventually[Assertion] {
-      tracker.state.await.servers.mapValues(_.reachable) should be(
+      tracker.state.await.servers.view.mapValues(_.reachable).toMap should be(
         Map(
           server1 -> false,
           server2 -> true

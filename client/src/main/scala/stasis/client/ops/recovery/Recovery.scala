@@ -113,7 +113,7 @@ object Recovery {
               case None =>
                 Future.failed(
                   new IllegalStateException(
-                    s"Expected dataset entry for definition [$definition] but none was found"
+                    s"Expected dataset entry for definition [${definition.toString}] but none was found"
                   )
                 )
             }

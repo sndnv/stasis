@@ -34,7 +34,7 @@ trait ScheduleStore { store =>
             Future.successful(Some(schedule))
 
           case Some(schedule) =>
-            Future.failed(new IllegalArgumentException(s"Schedule [${schedule.id}] is not public"))
+            Future.failed(new IllegalArgumentException(s"Schedule [${schedule.id.toString}] is not public"))
 
           case None =>
             Future.successful(None)

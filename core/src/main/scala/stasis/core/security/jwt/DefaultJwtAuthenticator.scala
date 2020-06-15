@@ -10,9 +10,9 @@ import org.jose4j.jwx.JsonWebStructure
 import stasis.core.security.exceptions.AuthenticationFailure
 import stasis.core.security.keys.KeyProvider
 
-import scala.collection.JavaConverters._
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 import scala.util.control.NonFatal
 
@@ -43,7 +43,11 @@ class DefaultJwtAuthenticator(
     result
       .recoverWith {
         case NonFatal(e) =>
-          Future.failed(AuthenticationFailure(s"Failed to authenticate token: [$e]"))
+          Future.failed(
+            AuthenticationFailure(
+              s"Failed to authenticate token: [${e.getClass.getSimpleName}: ${e.getMessage}]"
+            )
+          )
       }
   }
 
@@ -78,7 +82,10 @@ class DefaultJwtAuthenticator(
       val _ = consumer.processContext(context)
       val claims = context.getJwtClaims
 
-      require(claims.hasClaim(identityClaim), s"Required identity claim [$identityClaim] was not found in [$claims]")
+      require(
+        claims.hasClaim(identityClaim),
+        s"Required identity claim [$identityClaim] was not found in [${claims.toString}]"
+      )
 
       claims
     }

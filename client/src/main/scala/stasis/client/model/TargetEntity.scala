@@ -12,7 +12,7 @@ final case class TargetEntity(
     current =>
       require(
         current.getClass == existingMetadata.getClass,
-        s"Mismatched current metadata for [${current.path}] and existing metadata for [${existingMetadata.path}]"
+        s"Mismatched current metadata for [${current.path.toString}] and existing metadata for [${existingMetadata.path.toString}]"
     )
   )
 

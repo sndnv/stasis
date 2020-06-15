@@ -199,7 +199,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
           case Some(failure) =>
             failure.message should be(
               s"Node [$testNode] made reservation request with missing data: " +
-                s"[IllegalArgumentException: Missing [id]: [ReserveRequest(None,None,0,0,None,None,UnknownFieldSet(Map()))]]"
+                s"[IllegalArgumentException: Missing [id]: [size: 0 copies: 0]]"
             )
 
           case None =>
@@ -392,7 +392,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Node [$testNode] made pull request with missing crate: [PullRequest(None,UnknownFieldSet(Map()))]"
+            s"Node [$testNode] made pull request with missing crate: [None]"
           )
       }
   }
@@ -444,7 +444,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       .map { response =>
         response.result.complete should be(None)
         response.result.failure.map(_.message) should be(
-          Some(s"Node [$testNode] made discard request with missing crate: [DiscardRequest(None,UnknownFieldSet(Map()))]")
+          Some(s"Node [$testNode] made discard request with missing crate: [None]")
         )
       }
   }

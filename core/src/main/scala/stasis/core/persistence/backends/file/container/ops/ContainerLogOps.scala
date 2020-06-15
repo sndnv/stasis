@@ -32,7 +32,12 @@ object ContainerLogOps extends AutoCloseSupport {
 
     result.recoverWith {
       case NonFatal(e) =>
-        Future.failed(new ContainerFailure(s"Failed to create container log [$path]: [$e]"))
+        Future.failed(
+          new ContainerFailure(
+            s"Failed to create container log [${path.toString}]: " +
+              s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
+          )
+        )
     }
   }
 
@@ -41,7 +46,12 @@ object ContainerLogOps extends AutoCloseSupport {
       .destroyFile(path)
       .recoverWith {
         case NonFatal(e) =>
-          Future.failed(new ContainerFailure(s"Failed to destroy container log [$path]: [$e]"))
+          Future.failed(
+            new ContainerFailure(
+              s"Failed to destroy container log [${path.toString}]: " +
+                s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
+            )
+          )
       }
 
   def exists(path: Path)(implicit ec: ExecutionContext, byteOrder: ByteOrder): Future[Boolean] =
@@ -75,7 +85,12 @@ object ContainerLogOps extends AutoCloseSupport {
       }
       .recoverWith {
         case NonFatal(e) =>
-          Future.failed(new ContainerFailure(s"Failed to retrieve crates from container log [$path]: [$e]"))
+          Future.failed(
+            new ContainerFailure(
+              s"Failed to retrieve crates from container log [${path.toString}]: " +
+                s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
+            )
+          )
       }
 
   private def addLogEntry(
@@ -97,7 +112,12 @@ object ContainerLogOps extends AutoCloseSupport {
       }
     }.recoverWith {
       case NonFatal(e) =>
-        Future.failed(new ContainerFailure(s"Failed to update container log [$path] with event [$event]: [$e]"))
+        Future.failed(
+          new ContainerFailure(
+            s"Failed to update container log [${path.toString}] with event [${event.toString}]: " +
+              s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
+          )
+        )
     }
 
   private def readLogEntries(
@@ -122,7 +142,10 @@ object ContainerLogOps extends AutoCloseSupport {
               Container.LogEntry.fromBytes(buffer.array()) match {
                 case Left(e) =>
                   Left(
-                    new ContainerFailure(s"Failed to read entry [$nextEntry] from container log [$path]: [$e]")
+                    new ContainerFailure(
+                      s"Failed to read entry [${nextEntry.toString}] from container log [${path.toString}]: " +
+                        s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
+                    )
                   )
 
                 case Right(entry) =>

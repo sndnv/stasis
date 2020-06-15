@@ -32,7 +32,7 @@ final case class DatasetMetadata(
           case None =>
             Future.failed(
               new IllegalArgumentException(
-                s"Metadata for entity [${entity.toAbsolutePath}] not found"
+                s"Metadata for entity [${entity.toAbsolutePath.toString}] not found"
               )
             )
         }
@@ -49,7 +49,8 @@ final case class DatasetMetadata(
             case None =>
               Future.failed(
                 new IllegalArgumentException(
-                  s"Expected metadata for entity [${entity.toAbsolutePath}] but none was found in metadata for entry [$entry]"
+                  s"Expected metadata for entity [${entity.toAbsolutePath.toString}] " +
+                    s"but none was found in metadata for entry [${entry.toString}]"
                 )
               )
           }
@@ -75,7 +76,7 @@ final case class DatasetMetadata(
       case None =>
         Future.failed(
           new IllegalArgumentException(
-            s"Required metadata for entity [${entity.toAbsolutePath}] not found"
+            s"Required metadata for entity [${entity.toAbsolutePath.toString}] not found"
           )
         )
     }
@@ -159,7 +160,7 @@ object DatasetMetadata {
 
       case None =>
         Future.failed(
-          new IllegalArgumentException(s"Cannot decrypt metadata crate [$metadataCrate]; no data provided")
+          new IllegalArgumentException(s"Cannot decrypt metadata crate [${metadataCrate.toString}]; no data provided")
         )
     }
 

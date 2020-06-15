@@ -27,7 +27,7 @@ class JwtNodeAuthenticator(
           node <- extractNodeFromClaims(claims)
           _ <- nodeStore.contains(node).flatMap {
             case true  => Future.successful(Done)
-            case false => Future.failed(AuthenticationFailure(s"Node [$node] not found"))
+            case false => Future.failed(AuthenticationFailure(s"Node [${node.toString}] not found"))
           }
         } yield {
           node

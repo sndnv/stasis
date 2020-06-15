@@ -24,7 +24,7 @@ class NodeProxy(
   private val log = LoggerFactory.getLogger(this.getClass.getName)
 
   private val cache: MemoryBackend[Node.Id, CrateStore] = MemoryBackend[Node.Id, CrateStore](
-    name = s"crate-store-cache-${java.util.UUID.randomUUID()}"
+    name = s"crate-store-cache-${java.util.UUID.randomUUID().toString}"
   )
 
   def push(node: Node, manifest: Manifest, content: Source[ByteString, NotUsed]): Future[Done] =

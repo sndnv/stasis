@@ -54,7 +54,7 @@ class CrateToChunks(
           }
 
           if (pending.nonEmpty) {
-            emitMultiple(out, pending.toIterator)
+            emitMultiple(out, pending.iterator)
           }
 
           completeStage()

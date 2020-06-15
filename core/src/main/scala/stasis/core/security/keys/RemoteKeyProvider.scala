@@ -16,9 +16,9 @@ import org.slf4j.LoggerFactory
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.security.exceptions.ProviderFailure
 
-import scala.collection.JavaConverters._
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 import scala.util.control.NonFatal
 
@@ -143,7 +143,7 @@ object RemoteKeyProvider {
           case Some(keyId) => Right(Jwk(keyId, jwk.getKey))
           case None        => Left(UnusableJwk(s"Found key of type [${jwk.getKeyType}] without an ID"))
         }
-      }
+      }.toSeq
     }
 
   def getRawJwks(

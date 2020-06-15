@@ -10,7 +10,19 @@ final case class CrateStorageRequest(
   copies: Int,
   origin: Node.Id,
   source: Node.Id
-)
+) {
+  override def toString: String =
+    s"""
+       |CrateStorageRequest(
+       |  id=${id.toString},
+       |  crate=${crate.toString},
+       |  size=${size.toString},
+       |  copies=${copies.toString},
+       |  origin=${origin.toString},
+       |  source=${source.toString}
+       |)
+     """.stripMargin.replaceAll("\n", "").replaceAll(" ", "").trim
+}
 
 object CrateStorageRequest {
   def apply(
@@ -33,5 +45,4 @@ object CrateStorageRequest {
   type Id = java.util.UUID
 
   def generateId(): Id = java.util.UUID.randomUUID()
-
 }

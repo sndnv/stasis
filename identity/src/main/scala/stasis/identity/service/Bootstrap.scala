@@ -12,8 +12,8 @@ import stasis.identity.model.clients.Client
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.secrets.Secret
 
-import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 import scala.util.control.NonFatal
 
@@ -47,9 +47,9 @@ object Bootstrap {
         .getConfig("bootstrap")
 
       val entities = Entities(
-        apis = config.getConfigList("apis").asScala.map(apiFromConfig),
-        clients = config.getConfigList("clients").asScala.map(clientFromConfig),
-        owners = config.getConfigList("owners").asScala.map(ownerFromConfig)
+        apis = config.getConfigList("apis").asScala.map(apiFromConfig).toSeq,
+        clients = config.getConfigList("clients").asScala.map(clientFromConfig).toSeq,
+        owners = config.getConfigList("owners").asScala.map(ownerFromConfig).toSeq
       )
 
       run(entities, persistence)
@@ -107,7 +107,7 @@ object Bootstrap {
       username = config.getString("username"),
       password = Secret.derive(rawSecret = config.getString("raw-password"), salt),
       salt = salt,
-      allowedScopes = config.getStringList("allowed-scopes").asScala,
+      allowedScopes = config.getStringList("allowed-scopes").asScala.toSeq,
       active = config.getBoolean("active"),
       subject = Try(config.getString("subject")).toOption
     )

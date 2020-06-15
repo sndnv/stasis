@@ -21,20 +21,20 @@ class DefaultResourceProvider(
             } else {
               Future.failed(
                 AuthorizationFailure(
-                  s"User [${user.id}] does not have permission [${resource.requiredPermission}] for resource [$resource]"
+                  s"User [${user.id.toString}] does not have permission [${resource.requiredPermission.toString}] for resource [${resource.toString}]"
                 )
               )
             }
 
           case None =>
             Future.failed(
-              AuthorizationFailure(s"Resource [$tag] requested by user [${user.id}] was not found")
+              AuthorizationFailure(s"Resource [${tag.toString()}] requested by user [${user.id.toString}] was not found")
             )
         }
 
       case None =>
         Future.failed(
-          AuthorizationFailure(s"User [${user.id}] not found")
+          AuthorizationFailure(s"User [${user.id.toString}] not found")
         )
     }
 }

@@ -53,7 +53,7 @@ object ContainerLogHeader {
 
         require(
           ContainerHeader.SUPPORTED_VERSIONS.contains(header.containerVersion),
-          s"Unsupported container version found [${header.containerVersion}]; " +
+          s"Unsupported container version found [${header.containerVersion.toString}]; " +
             s"supported versions are: [${ContainerHeader.SUPPORTED_VERSIONS.mkString(", ")}]"
         )
 

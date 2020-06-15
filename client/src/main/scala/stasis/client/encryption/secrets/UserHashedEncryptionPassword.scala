@@ -11,8 +11,8 @@ final case class UserHashedEncryptionPassword(
     extends Secret {
   def toEncryptionSecret: UserEncryptionSecret = {
     val salt = user.toBytes
-    val keyInfo = ByteString(s"$user-encryption-key")
-    val ivInfo = ByteString(s"$user-encryption-iv")
+    val keyInfo = ByteString(s"${user.toString}-encryption-key")
+    val ivInfo = ByteString(s"${user.toString}-encryption-iv")
 
     val hkdf = HKDF.fromHmacSha512()
 

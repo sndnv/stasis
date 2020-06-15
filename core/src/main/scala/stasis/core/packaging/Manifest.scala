@@ -10,7 +10,19 @@ final case class Manifest(
   origin: Node.Id,
   source: Node.Id,
   destinations: Seq[Node.Id]
-)
+) {
+  override def toString: String =
+    s"""
+       |Manifest(
+       |  crate=${crate.toString},
+       |  size=${size.toString},
+       |  copies=${copies.toString},
+       |  origin=${origin.toString},
+       |  source=${source.toString},
+       |  destinations=[${destinations.mkString(",")}]
+       |)
+     """.stripMargin.replaceAll("\n", "").replaceAll(" ", "").trim
+}
 
 object Manifest {
   def apply(source: Node.Id, reservation: CrateStorageReservation): Manifest =

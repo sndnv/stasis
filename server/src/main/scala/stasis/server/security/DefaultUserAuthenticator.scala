@@ -38,8 +38,8 @@ class DefaultUserAuthenticator(
       userOpt <- store.get(identity)
       user <- userOpt match {
         case Some(user) if user.active => Future.successful(user)
-        case Some(_)                   => Future.failed(AuthenticationFailure(s"User [$identity] is not active"))
-        case None                      => Future.failed(AuthenticationFailure(s"User [$identity] not found"))
+        case Some(_)                   => Future.failed(AuthenticationFailure(s"User [${identity.toString}] is not active"))
+        case None                      => Future.failed(AuthenticationFailure(s"User [${identity.toString}] not found"))
       }
     } yield {
       user

@@ -44,7 +44,7 @@ class MockBackupTracker extends BackupTracker {
   override def completed()(implicit operation: Operation.Id): Unit =
     stats(Statistic.Completed).incrementAndGet()
 
-  def statistics: Map[Statistic, Int] = stats.mapValues(_.get())
+  def statistics: Map[Statistic, Int] = stats.view.mapValues(_.get()).toMap
 }
 
 object MockBackupTracker {

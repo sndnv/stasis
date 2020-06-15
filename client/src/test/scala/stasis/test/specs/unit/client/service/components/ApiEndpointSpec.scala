@@ -197,5 +197,5 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
   private val apiEndpointConfigEntry = "stasis.client.api.http.port"
   private val apiTerminationDelayEntry = "stasis.client.service.termination-delay"
 
-  private val ports: mutable.Queue[Int] = (30000 to 30100).to[mutable.Queue]
+  private val ports: mutable.Queue[Int] = (30000 to 30100).to(mutable.Queue)
 }

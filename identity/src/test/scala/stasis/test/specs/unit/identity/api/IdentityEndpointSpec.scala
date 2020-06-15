@@ -19,8 +19,6 @@ import scala.collection.mutable
 import scala.concurrent.duration._
 
 class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtures {
-  private val ports: mutable.Queue[Int] = (24000 to 24100).to[mutable.Queue]
-
   "An IdentityEndpoint" should "provide OAuth routes" in {
     val (_, _, oauthConfig, oauthProviders) = createOAuthFixtures()
     val manageProviders = createManageProviders()
@@ -242,4 +240,6 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
       authenticationDelay = 20.millis
     )
   )
+
+  private val ports: mutable.Queue[Int] = (24000 to 24100).to(mutable.Queue)
 }

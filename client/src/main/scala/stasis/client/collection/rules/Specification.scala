@@ -4,7 +4,7 @@ import java.nio.file._
 
 import stasis.client.collection.rules.exceptions.RuleMatchingFailure
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 
 final case class Specification(
@@ -12,7 +12,7 @@ final case class Specification(
   unmatched: Seq[(Rule, Throwable)],
 ) {
   lazy val explanation: Map[Path, Seq[Specification.Entry.Explanation]] =
-    entries.mapValues(_.reason)
+    entries.map { case (path, entry) => (path, entry.reason) }
 
   lazy val (includedEntries: Seq[Path], includedParents: Seq[Path], excludedEntries: Seq[Path]) =
     entries.values.partition(_.operation == Rule.Operation.Include) match {

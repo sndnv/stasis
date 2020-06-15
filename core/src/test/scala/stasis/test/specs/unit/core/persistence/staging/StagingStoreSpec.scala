@@ -23,7 +23,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
   "A StagingStore" should "stage crates to temporary storage" in {
     val fixtures = new TestFixtures {}
     val store = new TestStagingStore(fixtures)
-    val destinations: Map[Node, Int] = fixtures.remoteNodes ++ fixtures.localNodes
+    val destinations: Map[Node, Int] = (fixtures.remoteNodes ++ fixtures.localNodes).toMap
 
     store
       .stage(
@@ -41,7 +41,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
   it should "destage crates from temporary storage to multiple crate destinations" in {
     val fixtures = new TestFixtures {}
     val store = new TestStagingStore(fixtures)
-    val destinations: Map[Node, Int] = fixtures.remoteNodes ++ fixtures.localNodes
+    val destinations: Map[Node, Int] = (fixtures.remoteNodes ++ fixtures.localNodes).toMap
 
     store
       .stage(
@@ -121,7 +121,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
       )
     }
     val store = new TestStagingStore(fixtures)
-    val destinations: Map[Node, Int] = fixtures.remoteNodes ++ fixtures.localNodes
+    val destinations: Map[Node, Int] = (fixtures.remoteNodes ++ fixtures.localNodes).toMap
 
     store
       .stage(
@@ -148,7 +148,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
           new MockCrateStore(retrieveEmpty = true)
       }
       val store = new TestStagingStore(fixtures)
-      val destinations: Map[Node, Int] = fixtures.remoteNodes ++ fixtures.localNodes
+      val destinations: Map[Node, Int] = (fixtures.remoteNodes ++ fixtures.localNodes).toMap
 
       store
         .stage(
@@ -173,7 +173,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
   it should "successfully drop scheduled crate destage operations" in {
     val fixtures = new TestFixtures {}
     val store = new TestStagingStore(fixtures)
-    val destinations: Map[Node, Int] = fixtures.remoteNodes ++ fixtures.localNodes
+    val destinations: Map[Node, Int] = (fixtures.remoteNodes ++ fixtures.localNodes).toMap
 
     for {
       _ <- store.stage(
@@ -208,7 +208,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
   it should "provide a list of currently pending destaging operations" in {
     val fixtures = new TestFixtures {}
     val store = new TestStagingStore(fixtures)
-    val destinations: Map[Node, Int] = fixtures.remoteNodes ++ fixtures.localNodes
+    val destinations: Map[Node, Int] = (fixtures.remoteNodes ++ fixtures.localNodes).toMap
 
     store
       .stage(

@@ -8,8 +8,8 @@ import akka.util.ByteString
 import akka.{Done, NotUsed}
 import stasis.core.persistence.backends.StreamingBackend
 
-import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters._
 
 class FileBackend(val parentDirectory: String)(implicit ec: ExecutionContext) extends StreamingBackend {
 

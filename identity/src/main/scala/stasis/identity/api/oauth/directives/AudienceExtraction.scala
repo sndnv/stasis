@@ -65,7 +65,7 @@ trait AudienceExtraction extends EntityDiscardingDirectives {
 
   def clientAudienceToScope(audience: Seq[Client]): Option[String] =
     if (audience.nonEmpty) {
-      Some(audience.map(client => s"${AudienceExtraction.UrnPrefix}:${client.id}").mkString(" "))
+      Some(audience.map(client => s"${AudienceExtraction.UrnPrefix}:${client.id.toString}").mkString(" "))
     } else {
       None
     }

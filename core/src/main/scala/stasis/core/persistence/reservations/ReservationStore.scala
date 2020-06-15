@@ -41,7 +41,7 @@ object ReservationStore {
 
     val cache: KeyValueBackend[(Crate.Id, Node.Id), CrateStorageReservation.Id] =
       MemoryBackend[(Crate.Id, Node.Id), CrateStorageReservation.Id](
-        name = s"reservations-cache-${java.util.UUID.randomUUID()}"
+        name = s"reservations-cache-${java.util.UUID.randomUUID().toString}"
       )
 
     def caching(): Future[Done] =

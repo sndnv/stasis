@@ -59,7 +59,7 @@ class ContainerOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoCloseS
         .recover {
           case NonFatal(e) =>
             e.getMessage should be(
-              s"Failed to create container [$containerPath]: [java.nio.file.FileAlreadyExistsException: $containerPath]"
+              s"Failed to create container [$containerPath]: [FileAlreadyExistsException: $containerPath]"
             )
         }
     }
@@ -92,7 +92,7 @@ class ContainerOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoCloseS
       .recover {
         case NonFatal(e) =>
           e.getMessage should be(
-            s"Failed to destroy container [$containerPath]: [java.nio.file.NoSuchFileException: $containerPath]"
+            s"Failed to destroy container [$containerPath]: [NoSuchFileException: $containerPath]"
           )
       }
   }
@@ -244,7 +244,7 @@ class ContainerOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoCloseS
         case NonFatal(e) =>
           e.getMessage should be(
             s"Failed to load container [$containerPath]: " +
-              s"[java.lang.IllegalArgumentException: requirement failed:" +
+              s"[IllegalArgumentException: requirement failed:" +
               s" Unsupported container version found [0]; supported versions are: [1]]"
           )
       }
@@ -285,7 +285,7 @@ class ContainerOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoCloseS
         case NonFatal(e) =>
           e.getMessage should be(
             s"Failed to read container header [$containerPath]: " +
-              s"[java.lang.IllegalArgumentException: requirement failed:" +
+              s"[IllegalArgumentException: requirement failed:" +
               s" Unsupported container version found [0]; supported versions are: [1]]"
           )
       }
@@ -350,7 +350,7 @@ class ContainerOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoCloseS
         case NonFatal(e) =>
           e.getMessage should be(
             s"Failed to load container [$containerPath]: " +
-              s"[java.lang.IllegalArgumentException: requirement failed:" +
+              s"[IllegalArgumentException: requirement failed:" +
               s" Unsupported container version found [0]; supported versions are: [1]]"
           )
       }
@@ -451,7 +451,7 @@ class ContainerOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoCloseS
         case NonFatal(e) =>
           e.getMessage should be(
             s"Failed to calculate occupied chunks for container [$containerPath]: " +
-              s"[java.nio.file.NoSuchFileException: $containerPath]"
+              s"[NoSuchFileException: $containerPath]"
           )
       }
   }
@@ -469,7 +469,7 @@ class ContainerOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoCloseS
         case NonFatal(e) =>
           e.getMessage should be(
             s"Failed to calculate occupied chunks for container [$containerPath]: " +
-              s"[java.lang.IllegalArgumentException: requirement failed: Provided container is not valid]"
+              s"[IllegalArgumentException: requirement failed: Provided container is not valid]"
           )
       }
   }

@@ -5,8 +5,8 @@ import akka.util.ByteString
 import org.apache.geode.cache.Region
 import stasis.core.persistence.backends.KeyValueBackend
 
-import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters._
 
 class GeodeBackend[K, V](
   protected val region: Region[String, Array[Byte]],

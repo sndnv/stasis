@@ -22,9 +22,9 @@ import stasis.identity.model.apis.Api
 import stasis.identity.service.{Persistence, Service}
 import stasis.test.specs.unit.identity.RouteTest
 
-import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.jdk.CollectionConverters._
 
 class ServiceSpec extends RouteTest with Eventually {
   import ServiceSpec._

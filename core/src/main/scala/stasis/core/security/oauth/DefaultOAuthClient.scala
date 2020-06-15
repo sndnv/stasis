@@ -64,13 +64,13 @@ class DefaultOAuthClient(
       if (useQueryString) {
         HttpRequest(
           method = HttpMethods.POST,
-          uri = Uri(tokenEndpoint).withQuery(Uri.Query(scopeParams ++ grantParams))
+          uri = Uri(tokenEndpoint).withQuery(Uri.Query((scopeParams ++ grantParams).toMap))
         )
       } else {
         HttpRequest(
           method = HttpMethods.POST,
           uri = Uri(tokenEndpoint),
-          entity = FormData(scopeParams ++ grantParams).toEntity
+          entity = FormData((scopeParams ++ grantParams).toMap).toEntity
         )
       }
 
@@ -85,7 +85,7 @@ class DefaultOAuthClient(
       )
       .recoverWith {
         case NonFatal(e) =>
-          val message = s"Failed to retrieve token from [$tokenEndpoint]: [${e.getMessage}]"
+          val message = s"Failed to retrieve token from [$tokenEndpoint]: [${e.getClass.getSimpleName}: ${e.getMessage}]"
           Future.failed(ProviderFailure(message))
       }
       .flatMap {
@@ -97,7 +97,8 @@ class DefaultOAuthClient(
             .recoverWith {
               case NonFatal(e) =>
                 val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
-                val message = s"Failed to unmarshal response [$code] from [$tokenEndpoint]: [${e.getMessage}]"
+                val message = s"Failed to unmarshal response [${code.value}] from [$tokenEndpoint]: " +
+                  s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
                 Future.failed(ProviderFailure(message))
             }
 
@@ -105,7 +106,7 @@ class DefaultOAuthClient(
           Unmarshal(entity)
             .to[String]
             .flatMap { response =>
-              val message = s"Token retrieval from [$tokenEndpoint] failed with [$code]: [$response]"
+              val message = s"Token retrieval from [$tokenEndpoint] failed with [${code.value}]: [$response]"
               Future.failed(ProviderFailure(message))
             }
       }

@@ -50,7 +50,7 @@ trait DatasetEntryStore { store =>
           case Some(e) =>
             Future.failed(
               new IllegalArgumentException(
-                s"Expected to retrieve entry for own device but device [${e.device}] found"
+                s"Expected to retrieve entry for own device but device [${e.device.toString}] found"
               )
             )
 
@@ -89,7 +89,7 @@ trait DatasetEntryStore { store =>
         } else {
           Future.failed(
             new IllegalArgumentException(
-              s"Expected to create entry for own device but device [${entry.device}] provided"
+              s"Expected to create entry for own device but device [${entry.device.toString}] provided"
             )
           )
         }
@@ -102,7 +102,7 @@ trait DatasetEntryStore { store =>
             } else {
               Future.failed(
                 new IllegalArgumentException(
-                  s"Expected to delete entry for own device but device [${e.device}] provided"
+                  s"Expected to delete entry for own device but device [${e.device.toString}] provided"
                 )
               )
             }

@@ -188,7 +188,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
-  private val ports: mutable.Queue[Int] = (29000 to 29100).to[mutable.Queue]
+  private val ports: mutable.Queue[Int] = (29000 to 29100).to(mutable.Queue)
 
   private val encryptedDeviceSecret = "08ko0LWDalPvEHna/WWuq3LoEaA3m4dQ1QuP".decodeFromBase64 // decrypted == "test-secret"
 

@@ -92,7 +92,7 @@ class DefaultServerApiEndpointClient(
       response <- offer(
         request = HttpRequest(
           method = HttpMethods.POST,
-          uri = s"$apiUrl/datasets/entries/own/for-definition/${request.definition}",
+          uri = s"$apiUrl/datasets/entries/own/for-definition/${request.definition.toString}",
           entity = entity
         ).addCredentials(credentials = credentials)
       )
@@ -121,7 +121,7 @@ class DefaultServerApiEndpointClient(
       response <- offer(
         request = HttpRequest(
           method = HttpMethods.GET,
-          uri = s"$apiUrl/datasets/entries/own/for-definition/$definition"
+          uri = s"$apiUrl/datasets/entries/own/for-definition/${definition.toString}"
         ).addCredentials(credentials = credentials)
       )
       entries <- response.to[Seq[DatasetEntry]]
@@ -135,7 +135,7 @@ class DefaultServerApiEndpointClient(
       response <- offer(
         request = HttpRequest(
           method = HttpMethods.GET,
-          uri = s"$apiUrl/datasets/definitions/own/$definition"
+          uri = s"$apiUrl/datasets/definitions/own/${definition.toString}"
         ).addCredentials(credentials = credentials)
       )
       definition <- response.to[DatasetDefinition]
@@ -149,7 +149,7 @@ class DefaultServerApiEndpointClient(
       response <- offer(
         request = HttpRequest(
           method = HttpMethods.GET,
-          uri = s"$apiUrl/datasets/entries/own/$entry"
+          uri = s"$apiUrl/datasets/entries/own/${entry.toString}"
         ).addCredentials(credentials = credentials)
       )
       entry <- response.to[DatasetEntry]
@@ -158,14 +158,14 @@ class DefaultServerApiEndpointClient(
     }
 
   override def latestEntry(definition: DatasetDefinition.Id, until: Option[Instant]): Future[Option[DatasetEntry]] = {
-    val baseUrl = s"$apiUrl/datasets/entries/own/for-definition/$definition/latest"
+    val baseUrl = s"$apiUrl/datasets/entries/own/for-definition/${definition.toString}/latest"
     for {
       credentials <- credentials
       response <- offer(
         request = HttpRequest(
           method = HttpMethods.GET,
           uri = until match {
-            case Some(until) => s"$baseUrl?until=$until"
+            case Some(until) => s"$baseUrl?until=${until.toString}"
             case None        => baseUrl
           }
         ).addCredentials(credentials = credentials)
@@ -199,7 +199,7 @@ class DefaultServerApiEndpointClient(
       response <- offer(
         request = HttpRequest(
           method = HttpMethods.GET,
-          uri = s"$apiUrl/schedules/public/$schedule"
+          uri = s"$apiUrl/schedules/public/${schedule.toString}"
         ).addCredentials(credentials = credentials)
       )
       schedule <- response.to[Schedule]
@@ -248,7 +248,7 @@ class DefaultServerApiEndpointClient(
       response <- offer(
         request = HttpRequest(
           method = HttpMethods.GET,
-          uri = s"$apiUrl/devices/own/$self"
+          uri = s"$apiUrl/devices/own/${self.toString}"
         ).addCredentials(credentials = credentials)
       )
       device <- response.to[Device]
@@ -311,7 +311,7 @@ object DefaultServerApiEndpointClient {
             Future.failed(
               new ServerApiFailure(
                 status = response.status,
-                message = s"Server API request failed with [${response.status}]: [$responseContent]"
+                message = s"Server API request failed with [${response.status.value}]: [$responseContent]"
               )
             )
           }
@@ -323,7 +323,7 @@ object DefaultServerApiEndpointClient {
       Future.failed(
         new ServerApiFailure(
           status = StatusCodes.InternalServerError,
-          message = s"[${request.method.value}] request for endpoint [${request.uri}] failed; $cause"
+          message = s"[${request.method.value}] request for endpoint [${request.uri.toString}] failed; $cause"
         )
       )
 

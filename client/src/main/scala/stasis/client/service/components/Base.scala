@@ -112,7 +112,7 @@ object Base {
             DefaultTracker(
               createBackend = state =>
                 EventLogMemoryBackend(
-                  name = s"tracker-${java.util.UUID.randomUUID()}",
+                  name = s"tracker-${java.util.UUID.randomUUID().toString}",
                   initialState = state
                 )(implicitly[ClassTag[TrackerView.State]], typedSystem, timeout)
             )(typedSystem)

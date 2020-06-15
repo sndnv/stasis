@@ -236,7 +236,7 @@ trait Service {
          |      caching-enabled: ${corePersistence.nodeCachingEnabled.toString}
          |
          |    staging:
-         |      enabled:         ${corePersistence.stagingStoreDescriptor.isDefined}
+         |      enabled:         ${corePersistence.stagingStoreDescriptor.isDefined.toString}
          |      destaging-delay: ${corePersistence.stagingStoreDestagingDelay.toMillis.toString} ms
          |      store:           ${corePersistence.stagingStoreDescriptor.map(_.toString).getOrElse("none")}
          |)
@@ -280,7 +280,9 @@ trait Service {
       stop()
   }
 
-  private val _ = sys.addShutdownHook(stop())
+  locally {
+    val _ = sys.addShutdownHook(stop())
+  }
 
   def stop(): Unit = {
     log.info("Service stopping...")

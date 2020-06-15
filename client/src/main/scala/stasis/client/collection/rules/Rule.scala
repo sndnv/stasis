@@ -32,7 +32,7 @@ object Rule {
     operation match {
       case "+"   => Success(Operation.Include)
       case "-"   => Success(Operation.Exclude)
-      case other => Failure(new RuleParsingFailure(s"Invalid rule operation provided on line [$lineNumber]: [$other]"))
+      case other => Failure(new RuleParsingFailure(s"Invalid rule operation provided on line [${lineNumber.toString}]: [$other]"))
     }
 
   def extractDirectoryPattern(rule: String, lineNumber: Int): Try[(String, String)] =
@@ -43,7 +43,7 @@ object Rule {
       case other =>
         Failure(
           new RuleParsingFailure(
-            s"Invalid rule directory and/or pattern provided on line [$lineNumber]: [$other]"
+            s"Invalid rule directory and/or pattern provided on line [${lineNumber.toString}]: [$other]"
           )
         )
     }
@@ -68,6 +68,6 @@ object Rule {
         }
 
       case other =>
-        Failure(new RuleParsingFailure(s"Invalid rule definition found on line [$lineNumber]: [$other]"))
+        Failure(new RuleParsingFailure(s"Invalid rule definition found on line [${lineNumber.toString}]: [$other]"))
     }
 }

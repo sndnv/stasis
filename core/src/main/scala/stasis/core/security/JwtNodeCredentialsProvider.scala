@@ -22,7 +22,7 @@ class JwtNodeCredentialsProvider[A <: EndpointAddress](
           case (_, node: Node.Remote[A]) if node.address == address => node.id
         } match {
           case Some(node) => Future.successful(node)
-          case None       => Future.failed(ProviderFailure(s"Failed to find node with address [$address]"))
+          case None       => Future.failed(ProviderFailure(s"Failed to find node with address [${address.toString}]"))
         }
       }
       .flatMap { node =>
