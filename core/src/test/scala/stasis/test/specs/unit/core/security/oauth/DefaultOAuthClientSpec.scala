@@ -257,7 +257,7 @@ class DefaultOAuthClientSpec extends AsyncUnitSpec with BeforeAndAfterAll {
       user = user,
       userPassword = userPassword
     ),
-    expirationSeconds = expirationSeconds,
+    expirationSeconds = expirationSeconds.toLong,
     signatureKey = MockJwksGenerators.generateRandomRsaKey(keyId = Some("rsa-0")),
     withKeystoreConfig = keystoreConfig
   )

@@ -13,16 +13,14 @@ import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
 
 class CachedServerApiEndpointClient(
   config: CachedServerApiEndpointClient.Config,
   underlying: ServerApiEndpointClient
 )(implicit system: ActorSystem[SpawnProtocol.Command])
     extends ServerApiEndpointClient {
-
-  private implicit val ec: ExecutionContext = system.executionContext
 
   private val defaultCacheSettings: CachingSettings = CachingSettings(system.classicSystem)
 

@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.core.persistence.backends.geode
 
 import akka.Done
-import akka.actor.ActorSystem
 import akka.util.ByteString
 import org.apache.geode.cache.Region
 import org.apache.geode.cache.client.{ClientCache, ClientCacheFactory, ClientRegionShortcut}
@@ -14,8 +13,6 @@ import stasis.test.specs.unit.core.persistence.backends.KeyValueBackendBehaviour
 import scala.concurrent.Future
 
 class GeodeBackendSpec extends AsyncUnitSpec with KeyValueBackendBehaviour {
-  private implicit val system: ActorSystem = ActorSystem(name = "GeodeBackendSpec")
-
   private class TestGeodeBackend extends KeyValueBackend[String, Int] {
 
     private val serverLauncher: ServerLauncher =

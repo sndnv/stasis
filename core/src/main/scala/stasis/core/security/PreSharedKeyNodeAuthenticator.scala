@@ -32,7 +32,7 @@ class PreSharedKeyNodeAuthenticator(
           }
         }
 
-      case Failure(e) =>
+      case Failure(_) =>
         Future.failed(AuthenticationFailure(s"Invalid node ID encountered: [$node]"))
     }
   }

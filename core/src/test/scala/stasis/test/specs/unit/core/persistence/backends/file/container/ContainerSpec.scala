@@ -196,11 +196,11 @@ class ContainerSpec extends AsyncUnitSpec with BeforeAndAfter {
 
     for {
       _ <- container.create()
-      canStoreEmpty <- container.canStore(crateThreeData.length)
+      canStoreEmpty <- container.canStore(crateThreeData.length.toLong)
       _ <- container.put(crateOneId, crateOneData)
-      canStorePartial <- container.canStore(crateThreeData.length)
+      canStorePartial <- container.canStore(crateThreeData.length.toLong)
       _ <- container.put(crateTwoId, crateTwoData)
-      canStoreFull <- container.canStore(crateThreeData.length)
+      canStoreFull <- container.canStore(crateThreeData.length.toLong)
     } yield {
       canStoreEmpty should be(true)
       canStorePartial should be(true)

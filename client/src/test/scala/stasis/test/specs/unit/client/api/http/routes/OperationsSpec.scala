@@ -198,9 +198,6 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   they should "fail to retrieve progress of a specific operation if it does not exist" in {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
-    import stasis.shared.api.Formats.operationProgressFormat
-
     val operation = Operation.generateId()
 
     val mockTracker = MockTrackerView()

@@ -129,7 +129,6 @@ object DatasetMetadata {
     }
 
   def encrypt(
-    metadataCrate: Crate.Id,
     metadataSecret: DeviceMetadataSecret,
     metadata: DatasetMetadata,
     encoder: Encoder

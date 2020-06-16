@@ -5,7 +5,6 @@ import java.util.UUID
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{Behavior, SpawnProtocol}
-import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.testkit.ScalatestRouteTest
@@ -253,7 +252,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     val testManifest = Manifest(
       crate = Crate.generateId(),
-      size = testContent.size,
+      size = testContent.size.toLong,
       copies = 4,
       source = Node.generateId(),
       origin = Node.generateId()
@@ -389,7 +388,6 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   )
 
   private implicit val untypedSystem: akka.actor.ActorSystem = akka.actor.ActorSystem(name = "ApiEndpointSpec_Untyped")
-  private implicit val log: LoggingAdapter = Logging(untypedSystem, this.getClass.getName)
 
   private trait TestFixtures {
     lazy val definitionStore: DatasetDefinitionStore = MockDatasetDefinitionStore()

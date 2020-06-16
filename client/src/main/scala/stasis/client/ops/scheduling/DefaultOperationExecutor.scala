@@ -6,7 +6,6 @@ import java.time.Instant
 import akka.Done
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.stream.{Materializer, SystemMaterializer}
 import akka.util.Timeout
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.collection.rules.Specification
@@ -32,7 +31,6 @@ class DefaultOperationExecutor(
 ) extends OperationExecutor {
 
   private implicit val ec: ExecutionContext = system.executionContext
-  private implicit val mat: Materializer = SystemMaterializer(system).materializer
 
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 

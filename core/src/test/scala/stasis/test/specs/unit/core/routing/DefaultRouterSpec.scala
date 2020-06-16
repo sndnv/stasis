@@ -6,7 +6,6 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
-import org.scalatest.enablers.Retrying
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.crates.CrateStore
@@ -886,8 +885,6 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
-  private implicit val retrying: Retrying[Future[Assertion]] = Retrying.retryingNatureOfT[Future[Assertion]]
-
   private trait TestFixtures {
     lazy val reservationStore: MockReservationStore = new MockReservationStore()
     lazy val crateStore: MockCrateStore = new MockCrateStore()
@@ -936,7 +933,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
   private val testManifest = Manifest(
     crate = Crate.generateId(),
-    size = testContent.size,
+    size = testContent.size.toLong,
     copies = 4,
     source = Node.generateId(),
     origin = Node.generateId()

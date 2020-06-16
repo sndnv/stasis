@@ -107,7 +107,7 @@ object Recovery {
       destination: Option[Destination],
       collector: Descriptor.Collector,
       deviceSecret: DeviceSecret
-    )(implicit ec: ExecutionContext, mat: Materializer, providers: Providers): Future[Descriptor] =
+    )(implicit ec: ExecutionContext, providers: Providers): Future[Descriptor] =
       for {
         entry <- collector match {
           case Collector.WithDefinition(definition, until) =>

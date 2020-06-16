@@ -127,7 +127,7 @@ object Backup {
       collector: Descriptor.Collector,
       deviceSecret: DeviceSecret,
       limits: Limits
-    )(implicit ec: ExecutionContext, mat: Materializer, providers: Providers): Future[Descriptor] =
+    )(implicit ec: ExecutionContext, providers: Providers): Future[Descriptor] =
       for {
         targetDataset <- providers.clients.api.datasetDefinition(definition = definition)
         latestEntry <- providers.clients.api.latestEntry(definition = definition, until = None)

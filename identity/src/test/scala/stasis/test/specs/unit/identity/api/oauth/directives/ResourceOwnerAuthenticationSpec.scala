@@ -7,7 +7,6 @@ import akka.http.scaladsl.model.{StatusCodes, Uri}
 import akka.http.scaladsl.server.Directives
 import akka.stream.{Materializer, SystemMaterializer}
 import play.api.libs.json.{JsObject, Json}
-import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.ResourceOwnerAuthentication
 import stasis.identity.authentication.oauth.{DefaultResourceOwnerAuthenticator, ResourceOwnerAuthenticator}
 import stasis.identity.model.errors.AuthorizationError

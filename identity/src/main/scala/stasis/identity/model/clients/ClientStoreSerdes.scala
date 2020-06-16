@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets
 import akka.util.ByteString
 import play.api.libs.json._
 import stasis.core.persistence.backends.KeyValueBackend
-import stasis.identity.api.Formats.{codeChallengeFormat, secondsFormat}
+import stasis.identity.api.Formats.secondsFormat
 import stasis.identity.model.secrets.SecretSerdes.secretFormat
 
 object ClientStoreSerdes extends KeyValueBackend.Serdes[Client.Id, Client] {

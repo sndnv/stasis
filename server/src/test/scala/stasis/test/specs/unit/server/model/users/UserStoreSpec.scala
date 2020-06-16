@@ -108,7 +108,7 @@ class UserStoreSpec extends AsyncUnitSpec {
     val store = MockUserStore(userSaltSize = expectedSaltSize)
 
     val salt = store.manage().generateSalt()
-    salt should have length expectedSaltSize
+    salt should have length expectedSaltSize.toLong
   }
 
   it should "provide management resource (self)" in {
@@ -155,8 +155,6 @@ class UserStoreSpec extends AsyncUnitSpec {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "UserStoreSpec"
   )
-
-  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
 
   private val mockUser = User(
     id = User.generateId(),

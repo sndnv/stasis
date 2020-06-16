@@ -22,7 +22,7 @@ class PartitionedByteStringSource(val source: Source[ByteString, Future[IOResult
           )
 
           if (collected + currentSize > withMaximumPartSize) {
-            collected = currentSize
+            collected = currentSize.toLong
             (current, true) :: Nil
           } else {
             collected += currentSize

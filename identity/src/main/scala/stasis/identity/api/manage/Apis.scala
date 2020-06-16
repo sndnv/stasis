@@ -11,13 +11,10 @@ import stasis.identity.api.manage.requests.CreateApi
 import stasis.identity.model.apis.ApiStore
 import stasis.identity.model.owners.ResourceOwner
 
-import scala.concurrent.ExecutionContext
-
 class Apis(store: ApiStore)(implicit system: ActorSystem, override val mat: Materializer) extends EntityDiscardingDirectives {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.identity.api.Formats._
 
-  private implicit val ec: ExecutionContext = system.dispatcher
   private val log: LoggingAdapter = Logging(system, this.getClass.getName)
 
   def routes(user: ResourceOwner.Id): Route =

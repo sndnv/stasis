@@ -79,7 +79,7 @@ class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with Before
 
   it should "support stopping itself" in {
     val mockTracker = MockServerTracker()
-    val monitor = createMonitor(interval = defaultInterval / 2, tracker = mockTracker)
+    val monitor = createMonitor(interval = defaultInterval / 2, api = MockServerApiEndpointClient(), tracker = mockTracker)
 
     eventually[Assertion] {
       mockTracker.statistics(MockServerTracker.Statistic.ServerReachable) should be(1)
@@ -96,8 +96,8 @@ class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with Before
 
   private def createMonitor(
     interval: FiniteDuration,
-    api: MockServerApiEndpointClient = MockServerApiEndpointClient(),
-    tracker: MockServerTracker = MockServerTracker()
+    api: MockServerApiEndpointClient,
+    tracker: MockServerTracker
   ): DefaultServerMonitor =
     DefaultServerMonitor(
       interval = interval,

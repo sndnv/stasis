@@ -96,7 +96,7 @@ class CrateChunkSourceSpec extends AsyncUnitSpec with BeforeAndAfter {
       (crateId, ByteString("crate-1/chunk-1"))
     ).zipWithIndex.map {
       case ((crate, chunk), index) =>
-        val startOffset: Long = ChunkHeader.HEADER_SIZE + index * (ChunkHeader.HEADER_SIZE + maxChunkSize)
+        val startOffset = ChunkHeader.HEADER_SIZE + index * (ChunkHeader.HEADER_SIZE + maxChunkSize)
 
         val header = ChunkHeader(
           crateId = crate,
@@ -104,7 +104,7 @@ class CrateChunkSourceSpec extends AsyncUnitSpec with BeforeAndAfter {
           chunkSize = invalidChunkSize
         )
 
-        (crate, CrateChunk(header, chunk), CrateChunkDescriptor(header, startOffset))
+        (crate, CrateChunk(header, chunk), CrateChunkDescriptor(header, startOffset.toLong))
     }
 
     val crateChunks = containerChunks.map(_._3)

@@ -2,8 +2,6 @@ package stasis.test.specs.unit.core.persistence
 
 import java.util.concurrent.ThreadLocalRandom
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.util.Timeout
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.packaging.{Crate, Manifest}
@@ -43,9 +41,7 @@ object Generators {
     )
 
   def generateLocalNode(
-    implicit system: ActorSystem[SpawnProtocol.Command],
-    timeout: Timeout,
-    rnd: ThreadLocalRandom = ThreadLocalRandom.current()
+    implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()
   ): Node.Local =
     Node.Local(
       id = Node.generateId(),

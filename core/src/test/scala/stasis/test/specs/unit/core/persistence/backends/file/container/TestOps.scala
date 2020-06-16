@@ -56,7 +56,7 @@ object TestOps {
     val stream = Files.newInputStream(path)
 
     if (hasContainerHeader) {
-      val _ = stream.skip(bytesToRead)
+      val _ = stream.skip(bytesToRead.toLong)
     }
 
     @scala.annotation.tailrec
@@ -95,7 +95,7 @@ object TestOps {
   ): Seq[(UUID, CrateChunk, CrateChunkDescriptor)] =
     chunks.zipWithIndex.map {
       case ((crate, chunk), index) =>
-        val startOffset: Long = ChunkHeader.HEADER_SIZE + (index + indexOffset) * (ChunkHeader.HEADER_SIZE + maxChunkSize)
+        val startOffset = ChunkHeader.HEADER_SIZE + (index + indexOffset) * (ChunkHeader.HEADER_SIZE + maxChunkSize)
 
         val header = ChunkHeader(
           crateId = crate,
@@ -103,7 +103,7 @@ object TestOps {
           chunkSize = chunk.length
         )
 
-        (crate, CrateChunk(header, chunk), CrateChunkDescriptor(header, startOffset))
+        (crate, CrateChunk(header, chunk), CrateChunkDescriptor(header, startOffset.toLong))
     }
 
   def readLogEntries(
@@ -114,7 +114,7 @@ object TestOps {
     val buffer = ByteBuffer.allocate(bytesToRead).order(byteOrder)
     val stream = Files.newInputStream(path)
 
-    val _ = stream.skip(entrySize)
+    val _ = stream.skip(entrySize.toLong)
 
     @scala.annotation.tailrec
     def readNextBytes(entries: Seq[Array[Byte]]): Seq[Array[Byte]] =

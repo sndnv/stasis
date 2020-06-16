@@ -32,7 +32,13 @@ trait AuthorizationCodeGeneration extends EntityDiscardingDirectives {
       val code = authorizationCodeGenerator.generate()
       val storedCode = StoredAuthorizationCode(code, client, owner, scope)
 
-      storeCode(client, redirectUri, state, owner, scope, storedCode) { code =>
+      storeCode(
+        client = client,
+        redirectUri = redirectUri,
+        state = state,
+        owner = owner,
+        storedCode = storedCode
+      ) { code =>
         inner(Tuple1(code))
       }
     }
@@ -51,7 +57,13 @@ trait AuthorizationCodeGeneration extends EntityDiscardingDirectives {
       val codeChallenge = StoredAuthorizationCode.Challenge(challenge, challengeMethod)
       val storedCode = StoredAuthorizationCode(code, client, owner, scope, Some(codeChallenge))
 
-      storeCode(client, redirectUri, state, owner, scope, storedCode) { code =>
+      storeCode(
+        client = client,
+        redirectUri = redirectUri,
+        state = state,
+        owner = owner,
+        storedCode = storedCode
+      ) { code =>
         inner(Tuple1(code))
       }
     }
@@ -61,7 +73,6 @@ trait AuthorizationCodeGeneration extends EntityDiscardingDirectives {
     redirectUri: Uri,
     state: String,
     owner: ResourceOwner,
-    scope: Option[String],
     storedCode: StoredAuthorizationCode
   ): Directive1[AuthorizationCode] =
     Directive { inner =>

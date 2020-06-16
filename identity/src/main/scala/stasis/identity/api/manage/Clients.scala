@@ -14,8 +14,6 @@ import stasis.identity.model.clients.ClientStore
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.secrets.Secret
 
-import scala.concurrent.ExecutionContext
-
 class Clients(
   store: ClientStore,
   clientSecretConfig: Secret.ClientConfig
@@ -23,7 +21,6 @@ class Clients(
     extends EntityDiscardingDirectives {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  private implicit val ec: ExecutionContext = system.dispatcher
   private val log: LoggingAdapter = Logging(system, this.getClass.getName)
 
   private implicit val secretConfig: Secret.ClientConfig = clientSecretConfig

@@ -252,7 +252,7 @@ trait Service {
           case Success(_) =>
             log.info("Service API starting on [{}:{}]...", apiConfig.interface, apiConfig.port)
 
-            val api = apiServices.endpoint.start(
+            val _ = apiServices.endpoint.start(
               interface = apiConfig.interface,
               port = apiConfig.port,
               context = apiServices.context
@@ -260,7 +260,7 @@ trait Service {
 
             log.info("Service core starting on [{}:{}]...", coreConfig.interface, coreConfig.port)
 
-            val core = coreServices.endpoint.start(
+            val _ = coreServices.endpoint.start(
               interface = coreConfig.interface,
               port = coreConfig.port,
               context = coreServices.context
