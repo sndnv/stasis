@@ -64,33 +64,34 @@ object Secret {
   )
 
   object Config {
-    def apply(rawConfig: typesafe.Config, ivSize: Int): Config = Secret.Config(
-      derivation = Secret.DerivationConfig(
-        encryption = Secret.KeyDerivationConfig(
-          secretSize = rawConfig.getInt("derivation.encryption.secret-size"),
-          iterations = rawConfig.getInt("derivation.encryption.iterations"),
-          saltPrefix = rawConfig.getString("derivation.encryption.salt-prefix")
+    def apply(rawConfig: typesafe.Config, ivSize: Int): Config =
+      Secret.Config(
+        derivation = Secret.DerivationConfig(
+          encryption = Secret.KeyDerivationConfig(
+            secretSize = rawConfig.getInt("derivation.encryption.secret-size"),
+            iterations = rawConfig.getInt("derivation.encryption.iterations"),
+            saltPrefix = rawConfig.getString("derivation.encryption.salt-prefix")
+          ),
+          authentication = Secret.KeyDerivationConfig(
+            secretSize = rawConfig.getInt("derivation.authentication.secret-size"),
+            iterations = rawConfig.getInt("derivation.authentication.iterations"),
+            saltPrefix = rawConfig.getString("derivation.authentication.salt-prefix")
+          )
         ),
-        authentication = Secret.KeyDerivationConfig(
-          secretSize = rawConfig.getInt("derivation.authentication.secret-size"),
-          iterations = rawConfig.getInt("derivation.authentication.iterations"),
-          saltPrefix = rawConfig.getString("derivation.authentication.salt-prefix")
-        )
-      ),
-      encryption = Secret.EncryptionConfig(
-        file = Secret.EncryptionSecretConfig(
-          keySize = rawConfig.getInt("encryption.file.key-size"),
-          ivSize = ivSize
-        ),
-        metadata = Secret.EncryptionSecretConfig(
-          keySize = rawConfig.getInt("encryption.metadata.key-size"),
-          ivSize = ivSize
-        ),
-        deviceSecret = Secret.EncryptionSecretConfig(
-          keySize = rawConfig.getInt("encryption.device-secret.key-size"),
-          ivSize = ivSize
+        encryption = Secret.EncryptionConfig(
+          file = Secret.EncryptionSecretConfig(
+            keySize = rawConfig.getInt("encryption.file.key-size"),
+            ivSize = ivSize
+          ),
+          metadata = Secret.EncryptionSecretConfig(
+            keySize = rawConfig.getInt("encryption.metadata.key-size"),
+            ivSize = ivSize
+          ),
+          deviceSecret = Secret.EncryptionSecretConfig(
+            keySize = rawConfig.getInt("encryption.device-secret.key-size"),
+            ivSize = ivSize
+          )
         )
       )
-    )
   }
 }

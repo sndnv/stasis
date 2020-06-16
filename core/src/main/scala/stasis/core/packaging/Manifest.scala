@@ -40,13 +40,14 @@ object Manifest {
     origin: Node.Id,
     source: Node.Id,
     size: Long,
-    copies: Int,
-  ): Manifest = Manifest(
-    crate = crate,
-    size = size,
-    copies = copies,
-    origin = origin,
-    source = source,
-    destinations = Seq.empty
-  )
+    copies: Int
+  ): Manifest =
+    Manifest(
+      crate = crate,
+      size = size,
+      copies = copies,
+      origin = origin,
+      source = source,
+      destinations = Seq.empty
+    )
 }

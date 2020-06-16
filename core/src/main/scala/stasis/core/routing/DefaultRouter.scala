@@ -421,7 +421,7 @@ object DefaultRouter {
     manifests: ManifestStore,
     nodes: NodeStoreView,
     reservations: ReservationStore,
-    staging: Option[StagingStore],
+    staging: Option[StagingStore]
   )
 
   def apply(
@@ -438,20 +438,22 @@ object DefaultRouter {
   def distributeCopies(
     availableNodes: Seq[Node],
     request: CrateStorageRequest
-  ): Try[Map[Node, Int]] = distributeCopies(
-    availableNodes = availableNodes,
-    sourceNodes = Seq(request.source, request.origin),
-    copies = request.copies
-  )
+  ): Try[Map[Node, Int]] =
+    distributeCopies(
+      availableNodes = availableNodes,
+      sourceNodes = Seq(request.source, request.origin),
+      copies = request.copies
+    )
 
   def distributeCopies(
     availableNodes: Seq[Node],
     manifest: Manifest
-  ): Try[Map[Node, Int]] = distributeCopies(
-    availableNodes = availableNodes,
-    sourceNodes = Seq(manifest.source, manifest.origin),
-    copies = manifest.copies
-  )
+  ): Try[Map[Node, Int]] =
+    distributeCopies(
+      availableNodes = availableNodes,
+      sourceNodes = Seq(manifest.source, manifest.origin),
+      copies = manifest.copies
+    )
 
   def distributeCopies(
     availableNodes: Seq[Node],

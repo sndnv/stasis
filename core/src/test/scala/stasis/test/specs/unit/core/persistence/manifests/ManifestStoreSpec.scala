@@ -60,7 +60,8 @@ class ManifestStoreSpec extends AsyncUnitSpec {
     "ManifestStoreSpec"
   )
 
-  private def createStore(): ManifestStore = ManifestStore(
-    MemoryBackend[Crate.Id, Manifest](name = s"manifest-store-${java.util.UUID.randomUUID()}")
-  )
+  private def createStore(): ManifestStore =
+    ManifestStore(
+      MemoryBackend[Crate.Id, Manifest](name = s"manifest-store-${java.util.UUID.randomUUID()}")
+    )
 }

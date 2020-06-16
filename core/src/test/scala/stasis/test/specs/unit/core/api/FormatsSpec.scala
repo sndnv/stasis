@@ -30,7 +30,7 @@ class FormatsSpec extends UnitSpec {
     val uuids = Map[UUID, Int](
       uuid1 -> 1,
       uuid2 -> 2,
-      uuid3 -> 3,
+      uuid3 -> 3
     )
 
     val json = s"""{"$uuid1":1,"$uuid2":2,"$uuid3":3}"""

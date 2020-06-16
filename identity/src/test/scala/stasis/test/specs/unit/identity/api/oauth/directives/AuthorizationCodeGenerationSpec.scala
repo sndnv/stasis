@@ -113,14 +113,15 @@ class AuthorizationCodeGenerationSpec extends RouteTest {
 
   private def createDirective(
     codes: AuthorizationCodeStore
-  ) = new AuthorizationCodeGeneration {
-    override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
+  ) =
+    new AuthorizationCodeGeneration {
+      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
 
-    override protected def log: LoggingAdapter = createLogger()
+      override protected def log: LoggingAdapter = createLogger()
 
-    override protected def authorizationCodeGenerator: AuthorizationCodeGenerator =
-      new DefaultAuthorizationCodeGenerator(codeSize = 16)
+      override protected def authorizationCodeGenerator: AuthorizationCodeGenerator =
+        new DefaultAuthorizationCodeGenerator(codeSize = 16)
 
-    override protected def authorizationCodeStore: AuthorizationCodeStore = codes
-  }
+      override protected def authorizationCodeStore: AuthorizationCodeStore = codes
+    }
 }

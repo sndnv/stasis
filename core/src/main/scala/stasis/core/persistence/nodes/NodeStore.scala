@@ -17,11 +17,12 @@ trait NodeStore { store =>
   def contains(node: Node.Id): Future[Boolean]
   def nodes: Future[Map[Node.Id, Node]]
 
-  def view: NodeStoreView = new NodeStoreView {
-    override def get(node: Node.Id): Future[Option[Node]] = store.get(node)
-    override def contains(node: Node.Id): Future[Boolean] = store.contains(node)
-    override def nodes: Future[Map[Node.Id, Node]] = store.nodes
-  }
+  def view: NodeStoreView =
+    new NodeStoreView {
+      override def get(node: Node.Id): Future[Option[Node]] = store.get(node)
+      override def contains(node: Node.Id): Future[Boolean] = store.contains(node)
+      override def nodes: Future[Map[Node.Id, Node]] = store.nodes
+    }
 }
 
 object NodeStore {
@@ -38,16 +39,17 @@ object NodeStore {
         None
       }
 
-    def caching(): Future[Done] = cacheOpt match {
-      case Some(cache) =>
-        backend.entries.flatMap { entries =>
-          Future
-            .sequence(entries.map { case (id, node) => cache.put(id, node) })
-            .map(_ => Done)
-        }
+    def caching(): Future[Done] =
+      cacheOpt match {
+        case Some(cache) =>
+          backend.entries.flatMap { entries =>
+            Future
+              .sequence(entries.map { case (id, node) => cache.put(id, node) })
+              .map(_ => Done)
+          }
 
-      case None => Future.successful(Done)
-    }
+        case None => Future.successful(Done)
+      }
 
     val store: NodeStore = new NodeStore {
       override def put(node: Node): Future[Done] =

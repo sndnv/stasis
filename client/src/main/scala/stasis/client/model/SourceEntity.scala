@@ -7,11 +7,10 @@ final case class SourceEntity(
   existingMetadata: Option[EntityMetadata],
   currentMetadata: EntityMetadata
 ) {
-  existingMetadata.foreach(
-    existing =>
-      require(
-        existing.getClass == currentMetadata.getClass,
-        s"Mismatched current metadata for [${currentMetadata.path.toString}] and existing metadata for [${existing.path.toString}]"
+  existingMetadata.foreach(existing =>
+    require(
+      existing.getClass == currentMetadata.getClass,
+      s"Mismatched current metadata for [${currentMetadata.path.toString}] and existing metadata for [${existing.path.toString}]"
     )
   )
 

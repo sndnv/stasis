@@ -139,16 +139,17 @@ class MetadataCollectionSpec extends AsyncUnitSpec {
 
   private implicit val system: ActorSystem = ActorSystem(name = "MetadataCollectionSpec")
 
-  private def createProviders(tracker: BackupTracker): Providers = Providers(
-    checksum = Checksum.MD5,
-    staging = new MockFileStaging(),
-    compressor = new MockCompression(),
-    encryptor = new MockEncryption(),
-    decryptor = new MockEncryption(),
-    clients = Clients(
-      api = MockServerApiEndpointClient(),
-      core = MockServerCoreEndpointClient()
-    ),
-    track = tracker
-  )
+  private def createProviders(tracker: BackupTracker): Providers =
+    Providers(
+      checksum = Checksum.MD5,
+      staging = new MockFileStaging(),
+      compressor = new MockCompression(),
+      encryptor = new MockEncryption(),
+      decryptor = new MockEncryption(),
+      clients = Clients(
+        api = MockServerApiEndpointClient(),
+        core = MockServerCoreEndpointClient()
+      ),
+      track = tracker
+    )
 }

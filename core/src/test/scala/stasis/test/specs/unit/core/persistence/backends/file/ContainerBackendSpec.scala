@@ -11,6 +11,6 @@ class ContainerBackendSpec extends AsyncUnitSpec with StreamingBackendBehaviour 
         path = s"${System.getProperty("user.dir")}/target/container_backend_test",
         maxChunkSize = 100,
         maxChunks = 100
-    )
+      )
   )
 }

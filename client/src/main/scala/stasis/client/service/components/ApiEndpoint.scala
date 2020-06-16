@@ -32,12 +32,13 @@ object ApiEndpoint {
       tokenSize <- rawConfig.getInt("api.authentication.token-size").future
       frontendAuthenticator = DefaultFrontendAuthenticator(tokenSize)
       _ = log.debug("Creating API token file [{}]...", Files.ApiToken)
-      tokenFile <- directory
-        .pushFile(
-          file = Files.ApiToken,
-          content = frontendAuthenticator.token
-        )
-        .transformFailureTo(ServiceStartupFailure.file)
+      tokenFile <-
+        directory
+          .pushFile(
+            file = Files.ApiToken,
+            content = frontendAuthenticator.token
+          )
+          .transformFailureTo(ServiceStartupFailure.file)
     } yield {
       implicit val context: http.Context = http.Context(
         api = clients.api,
@@ -64,18 +65,17 @@ object ApiEndpoint {
               val apiInterface = rawConfig.getString("api.http.interface")
               val apiPort = rawConfig.getInt("api.http.port")
 
-              () =>
-                {
-                  log.info("Client HTTP API starting on [{}:{}]...", apiInterface, apiPort)
+              () => {
+                log.info("Client HTTP API starting on [{}:{}]...", apiInterface, apiPort)
 
-                  api
-                    .start(
-                      interface = apiInterface,
-                      port = apiPort,
-                      context = EndpointContext.fromConfig(rawConfig.getConfig("api.http.context"))
-                    )
-                    .transformFailureTo(ServiceStartupFailure.api)
-                }
+                api
+                  .start(
+                    interface = apiInterface,
+                    port = apiPort,
+                    context = EndpointContext.fromConfig(rawConfig.getConfig("api.http.context"))
+                  )
+                  .transformFailureTo(ServiceStartupFailure.api)
+              }
           }
       }
     }

@@ -69,12 +69,14 @@ class ContainerOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoCloseS
     val containerPath = Paths.get(s"$containersDir/${UUID.randomUUID}")
 
     for {
-      existing <- ContainerOps
-        .create(containerPath, maxChunkSize = 1024, maxChunks = 100)
-        .map(_ => TestOps.fileExists(containerPath))
-      missing <- ContainerOps
-        .destroy(containerPath)
-        .map(_ => TestOps.fileExists(containerPath))
+      existing <-
+        ContainerOps
+          .create(containerPath, maxChunkSize = 1024, maxChunks = 100)
+          .map(_ => TestOps.fileExists(containerPath))
+      missing <-
+        ContainerOps
+          .destroy(containerPath)
+          .map(_ => TestOps.fileExists(containerPath))
     } yield {
       existing should be(true)
       missing should be(false)

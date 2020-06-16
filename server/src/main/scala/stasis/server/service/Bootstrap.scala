@@ -37,9 +37,9 @@ object Bootstrap {
     bootstrapConfig: typesafe.Config,
     serverPersistence: ServerPersistence,
     corePersistence: CorePersistence
-  )(
-    implicit ec: ExecutionContext,
-    log: Logger,
+  )(implicit
+    ec: ExecutionContext,
+    log: Logger
   ): Future[Done] = {
     val enabled = bootstrapConfig.getBoolean("enabled")
     val configFile = bootstrapConfig.getString("config").trim

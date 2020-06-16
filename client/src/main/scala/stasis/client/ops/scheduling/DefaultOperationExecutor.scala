@@ -22,8 +22,8 @@ import scala.util.control.NonFatal
 class DefaultOperationExecutor(
   config: DefaultOperationExecutor.Config,
   secret: DeviceSecret
-)(
-  implicit system: ActorSystem[SpawnProtocol.Command],
+)(implicit
+  system: ActorSystem[SpawnProtocol.Command],
   parallelismConfig: ParallelismConfig,
   timeout: Timeout,
   backupProviders: backup.Providers,

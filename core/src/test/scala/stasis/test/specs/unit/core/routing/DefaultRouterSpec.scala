@@ -900,11 +900,12 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:9000"))
     )
 
-    def testNodes: Seq[Node] = Seq(
-      remoteNodes.head,
-      localNode,
-      remoteNodes.last
-    )
+    def testNodes: Seq[Node] =
+      Seq(
+        remoteNodes.head,
+        localNode,
+        remoteNodes.last
+      )
 
     Future.sequence(testNodes.map(node => nodeStore.put(node))).await
   }

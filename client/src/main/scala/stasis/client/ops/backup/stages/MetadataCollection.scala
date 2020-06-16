@@ -15,8 +15,8 @@ trait MetadataCollection {
   protected def latestMetadata: Option[DatasetMetadata]
   protected def providers: Providers
 
-  def metadataCollection(
-    implicit operation: Operation.Id
+  def metadataCollection(implicit
+    operation: Operation.Id
   ): Flow[Either[EntityMetadata, EntityMetadata], DatasetMetadata, NotUsed] =
     Flow[Either[EntityMetadata, EntityMetadata]]
       .fold((Map.empty[Path, EntityMetadata], Map.empty[Path, EntityMetadata])) {

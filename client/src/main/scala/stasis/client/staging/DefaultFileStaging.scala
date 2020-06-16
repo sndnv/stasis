@@ -13,22 +13,25 @@ class DefaultFileStaging(
   suffix: String
 )(implicit ec: ExecutionContext)
     extends FileStaging {
-  override def temporary(): Future[Path] = Future {
-    storeDirectory match {
-      case Some(dir) => Files.createTempFile(dir, prefix, suffix, temporaryFileAttributes)
-      case None      => Files.createTempFile(prefix, suffix, temporaryFileAttributes)
+  override def temporary(): Future[Path] =
+    Future {
+      storeDirectory match {
+        case Some(dir) => Files.createTempFile(dir, prefix, suffix, temporaryFileAttributes)
+        case None      => Files.createTempFile(prefix, suffix, temporaryFileAttributes)
+      }
     }
-  }
 
-  override def discard(file: Path): Future[Done] = Future {
-    val _ = Files.deleteIfExists(file)
-    Done
-  }
+  override def discard(file: Path): Future[Done] =
+    Future {
+      val _ = Files.deleteIfExists(file)
+      Done
+    }
 
-  override def destage(from: Path, to: Path): Future[Done] = Future {
-    val _ = Files.move(from, to, StandardCopyOption.REPLACE_EXISTING)
-    Done
-  }
+  override def destage(from: Path, to: Path): Future[Done] =
+    Future {
+      val _ = Files.move(from, to, StandardCopyOption.REPLACE_EXISTING)
+      Done
+    }
 
   private val temporaryFilePermissions = "rw-------"
 

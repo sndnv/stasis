@@ -36,18 +36,19 @@ class EntityCollectionSpec extends AsyncUnitSpec {
     val mockTracker = new MockBackupTracker
 
     val stage = new EntityCollection {
-      override protected def providers: Providers = Providers(
-        checksum = Checksum.MD5,
-        staging = new MockFileStaging(),
-        compressor = new MockCompression(),
-        encryptor = new MockEncryption(),
-        decryptor = new MockEncryption(),
-        clients = Clients(
-          api = MockServerApiEndpointClient(),
-          core = MockServerCoreEndpointClient()
-        ),
-        track = mockTracker
-      )
+      override protected def providers: Providers =
+        Providers(
+          checksum = Checksum.MD5,
+          staging = new MockFileStaging(),
+          compressor = new MockCompression(),
+          encryptor = new MockEncryption(),
+          decryptor = new MockEncryption(),
+          clients = Clients(
+            api = MockServerApiEndpointClient(),
+            core = MockServerCoreEndpointClient()
+          ),
+          track = mockTracker
+        )
 
       override protected def collector: BackupCollector =
         new MockBackupCollector(List(sourceFile1, sourceFile2, sourceFile3))

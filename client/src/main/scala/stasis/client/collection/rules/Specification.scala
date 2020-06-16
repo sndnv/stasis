@@ -9,7 +9,7 @@ import scala.util.control.NonFatal
 
 final case class Specification(
   entries: Map[Path, Specification.Entry],
-  unmatched: Seq[(Rule, Throwable)],
+  unmatched: Seq[(Rule, Throwable)]
 ) {
   lazy val explanation: Map[Path, Seq[Specification.Entry.Explanation]] =
     entries.map { case (path, entry) => (path, entry.reason) }
@@ -71,11 +71,12 @@ object Specification {
             .walk(directory, Seq.empty[FileVisitOption]: _*)
             .filter(path => matcher.matches(path))
 
-          val matches = try {
-            matchesStream.iterator.asScala.toList
-          } finally {
-            matchesStream.close()
-          }
+          val matches =
+            try {
+              matchesStream.iterator.asScala.toList
+            } finally {
+              matchesStream.close()
+            }
 
           if (matches.isEmpty) {
             spec.copy(unmatched = spec.unmatched :+ (rule, new RuleMatchingFailure("Rule matched no files")))

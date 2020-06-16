@@ -7,6 +7,8 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Flow, Source}
 import akka.stream.{ActorAttributes, Materializer, Supervision, SystemMaterializer}
 import akka.util.ByteString
+import org.scalatest.Assertion
+import org.scalatest.concurrent.Eventually
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.encryption.secrets.DeviceSecret
@@ -22,10 +24,11 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks.{MockBackupTracker, _}
 import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
+class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Eventually { spec =>
   "A Backup EntityProcessing stage" should "process files with changed content and metadata" in {
     val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(
       withChecksum = 1,
@@ -71,18 +74,19 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
     val stage = new EntityProcessing {
       override protected def targetDataset: DatasetDefinition = Fixtures.Datasets.Default
       override protected def deviceSecret: DeviceSecret = Fixtures.Secrets.Default
-      override protected def providers: Providers = Providers(
-        checksum = Checksum.MD5,
-        staging = mockStaging,
-        compressor = mockCompression,
-        encryptor = mockEncryption,
-        decryptor = mockEncryption,
-        clients = Clients(
-          api = MockServerApiEndpointClient(),
-          core = mockCoreClient
-        ),
-        track = mockTracker
-      )
+      override protected def providers: Providers =
+        Providers(
+          checksum = Checksum.MD5,
+          staging = mockStaging,
+          compressor = mockCompression,
+          encryptor = mockEncryption,
+          decryptor = mockEncryption,
+          clients = Clients(
+            api = MockServerApiEndpointClient(),
+            core = mockCoreClient
+          ),
+          track = mockTracker
+        )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
       override protected def maxChunkSize: Int = 8192
       override protected def maxPartSize: Long = 16384
@@ -96,9 +100,9 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
       .map { stageOutput =>
         stageOutput.toList match {
           case Left(actualSourceFile1Metadata: EntityMetadata.File) // content changed
-                :: Right(actualSourceFile2Metadata: EntityMetadata.File) // metadata changed
-                :: Left(actualSourceFile3Metadata: EntityMetadata.File) // content changed
-                :: Nil =>
+              :: Right(actualSourceFile2Metadata: EntityMetadata.File) // metadata changed
+              :: Left(actualSourceFile3Metadata: EntityMetadata.File) // content changed
+              :: Nil =>
             actualSourceFile1Metadata should be(sourceFile1Metadata.copy(crates = actualSourceFile1Metadata.crates))
             actualSourceFile2Metadata should be(sourceFile2Metadata.copy(crates = actualSourceFile2Metadata.crates))
             actualSourceFile3Metadata should be(sourceFile3Metadata.copy(crates = actualSourceFile3Metadata.crates))
@@ -111,28 +115,30 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
             fail(s"Unexpected result received: [$other]")
         }
 
-        mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(2)
-        mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(2)
-        mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
+        eventually[Assertion] {
+          mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(2)
+          mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(2)
+          mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
 
-        mockCompression.statistics(MockCompression.Statistic.Compressed) should be(2)
-        mockCompression.statistics(MockCompression.Statistic.Decompressed) should be(0)
+          mockCompression.statistics(MockCompression.Statistic.Compressed) should be(2)
+          mockCompression.statistics(MockCompression.Statistic.Decompressed) should be(0)
 
-        mockEncryption.statistics(MockEncryption.Statistic.FileEncrypted) should be(2)
-        mockEncryption.statistics(MockEncryption.Statistic.FileDecrypted) should be(0)
-        mockEncryption.statistics(MockEncryption.Statistic.MetadataEncrypted) should be(0)
-        mockEncryption.statistics(MockEncryption.Statistic.MetadataDecrypted) should be(0)
+          mockEncryption.statistics(MockEncryption.Statistic.FileEncrypted) should be(2)
+          mockEncryption.statistics(MockEncryption.Statistic.FileDecrypted) should be(0)
+          mockEncryption.statistics(MockEncryption.Statistic.MetadataEncrypted) should be(0)
+          mockEncryption.statistics(MockEncryption.Statistic.MetadataDecrypted) should be(0)
 
-        mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
-        mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(2)
+          mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
+          mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(2)
 
-        mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(3)
-        mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(3)
+          mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
+        }
       }
   }
 
@@ -161,18 +167,19 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
     val stage = new EntityProcessing {
       override protected def targetDataset: DatasetDefinition = Fixtures.Datasets.Default
       override protected def deviceSecret: DeviceSecret = Fixtures.Secrets.Default
-      override protected def providers: Providers = Providers(
-        checksum = Checksum.MD5,
-        staging = mockStaging,
-        compressor = mockCompression,
-        encryptor = mockEncryption,
-        decryptor = mockEncryption,
-        clients = Clients(
-          api = MockServerApiEndpointClient(),
-          core = mockCoreClient
-        ),
-        track = mockTracker
-      )
+      override protected def providers: Providers =
+        Providers(
+          checksum = Checksum.MD5,
+          staging = mockStaging,
+          compressor = mockCompression,
+          encryptor = mockEncryption,
+          decryptor = mockEncryption,
+          clients = Clients(
+            api = MockServerApiEndpointClient(),
+            core = mockCoreClient
+          ),
+          track = mockTracker
+        )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
       override protected def maxChunkSize: Int = 5
       override protected def maxPartSize: Long = 10
@@ -196,28 +203,30 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
             fail(s"Unexpected result received: [$other]")
         }
 
-        mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(expectedParts)
-        mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(expectedParts)
-        mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
+        eventually[Assertion] {
+          mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(expectedParts)
+          mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(expectedParts)
+          mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
 
-        mockCompression.statistics(MockCompression.Statistic.Compressed) should be(0) // compression is skipped
-        mockCompression.statistics(MockCompression.Statistic.Decompressed) should be(0)
+          mockCompression.statistics(MockCompression.Statistic.Compressed) should be(0) // compression is skipped
+          mockCompression.statistics(MockCompression.Statistic.Decompressed) should be(0)
 
-        mockEncryption.statistics(MockEncryption.Statistic.FileEncrypted) should be(expectedChunks)
-        mockEncryption.statistics(MockEncryption.Statistic.FileDecrypted) should be(0)
-        mockEncryption.statistics(MockEncryption.Statistic.MetadataEncrypted) should be(0)
-        mockEncryption.statistics(MockEncryption.Statistic.MetadataDecrypted) should be(0)
+          mockEncryption.statistics(MockEncryption.Statistic.FileEncrypted) should be(expectedChunks)
+          mockEncryption.statistics(MockEncryption.Statistic.FileDecrypted) should be(0)
+          mockEncryption.statistics(MockEncryption.Statistic.MetadataEncrypted) should be(0)
+          mockEncryption.statistics(MockEncryption.Statistic.MetadataDecrypted) should be(0)
 
-        mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
-        mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(expectedParts)
+          mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
+          mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(expectedParts)
 
-        mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(1)
-        mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(1)
+          mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
+        }
       }
   }
 
@@ -248,18 +257,19 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
     val stage = new EntityProcessing {
       override protected def targetDataset: DatasetDefinition = Fixtures.Datasets.Default
       override protected def deviceSecret: DeviceSecret = Fixtures.Secrets.Default
-      override protected def providers: Providers = Providers(
-        checksum = Checksum.MD5,
-        staging = mockStaging,
-        compressor = mockCompression,
-        encryptor = mockEncryption,
-        decryptor = mockEncryption,
-        clients = Clients(
-          api = MockServerApiEndpointClient(),
-          core = mockCoreClient
-        ),
-        track = mockTracker
-      )
+      override protected def providers: Providers =
+        Providers(
+          checksum = Checksum.MD5,
+          staging = mockStaging,
+          compressor = mockCompression,
+          encryptor = mockEncryption,
+          decryptor = mockEncryption,
+          clients = Clients(
+            api = MockServerApiEndpointClient(),
+            core = mockCoreClient
+          ),
+          track = mockTracker
+        )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
       override protected def maxChunkSize: Int = 8192
       override protected def maxPartSize: Long = 16384
@@ -278,28 +288,30 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
           e shouldBe a[RuntimeException]
           e.getMessage should be("[pushDisabled] is set to [true]")
 
-          mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(1)
-          mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(1)
-          mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
+          eventually[Assertion] {
+            mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(1)
+            mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(1)
+            mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
 
-          mockCompression.statistics(MockCompression.Statistic.Compressed) should be(1)
-          mockCompression.statistics(MockCompression.Statistic.Decompressed) should be(0)
+            mockCompression.statistics(MockCompression.Statistic.Compressed) should be(1)
+            mockCompression.statistics(MockCompression.Statistic.Decompressed) should be(0)
 
-          mockEncryption.statistics(MockEncryption.Statistic.FileEncrypted) should be(1)
-          mockEncryption.statistics(MockEncryption.Statistic.FileDecrypted) should be(0)
-          mockEncryption.statistics(MockEncryption.Statistic.MetadataEncrypted) should be(0)
-          mockEncryption.statistics(MockEncryption.Statistic.MetadataDecrypted) should be(0)
+            mockEncryption.statistics(MockEncryption.Statistic.FileEncrypted) should be(1)
+            mockEncryption.statistics(MockEncryption.Statistic.FileDecrypted) should be(0)
+            mockEncryption.statistics(MockEncryption.Statistic.MetadataEncrypted) should be(0)
+            mockEncryption.statistics(MockEncryption.Statistic.MetadataDecrypted) should be(0)
 
-          mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
-          mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
+            mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
+            mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
 
-          mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
+            mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+            mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+            mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
+            mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
+            mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
+            mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
+            mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
+          }
       }
   }
 
@@ -362,18 +374,19 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
     val stage = new EntityProcessing {
       override protected def targetDataset: DatasetDefinition = Fixtures.Datasets.Default
       override protected def deviceSecret: DeviceSecret = Fixtures.Secrets.Default
-      override protected def providers: Providers = Providers(
-        checksum = Checksum.MD5,
-        staging = mockStaging,
-        compressor = mockCompression,
-        encryptor = mockEncryption,
-        decryptor = mockEncryption,
-        clients = Clients(
-          api = MockServerApiEndpointClient(),
-          core = mockCoreClient
-        ),
-        track = mockTracker
-      )
+      override protected def providers: Providers =
+        Providers(
+          checksum = Checksum.MD5,
+          staging = mockStaging,
+          compressor = mockCompression,
+          encryptor = mockEncryption,
+          decryptor = mockEncryption,
+          clients = Clients(
+            api = MockServerApiEndpointClient(),
+            core = mockCoreClient
+          ),
+          track = mockTracker
+        )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
       override protected def maxChunkSize: Int = 5
       override protected def maxPartSize: Long = 10
@@ -393,27 +406,31 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
         val expectedParts = maxChunksBeforeFailure / 2 // each part is made of two chunks
         val expectedChunks = maxChunksBeforeFailure
 
-        mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(expectedParts)
-        mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(expectedParts)
-        mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
+        eventually[Assertion] {
+          mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(expectedParts)
+          mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(expectedParts)
+          mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
 
-        mockEncryption.statistics(MockEncryption.Statistic.FileEncrypted) should be(expectedChunks - 1)
-        mockEncryption.statistics(MockEncryption.Statistic.FileDecrypted) should be(0)
-        mockEncryption.statistics(MockEncryption.Statistic.MetadataEncrypted) should be(0)
-        mockEncryption.statistics(MockEncryption.Statistic.MetadataDecrypted) should be(0)
+          mockEncryption.statistics(MockEncryption.Statistic.FileEncrypted) should be(expectedChunks - 1)
+          mockEncryption.statistics(MockEncryption.Statistic.FileDecrypted) should be(0)
+          mockEncryption.statistics(MockEncryption.Statistic.MetadataEncrypted) should be(0)
+          mockEncryption.statistics(MockEncryption.Statistic.MetadataDecrypted) should be(0)
 
-        mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
-        mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
+          mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
+          mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
 
-        mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
+        }
       }
   }
+
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
   private implicit val system: ActorSystem = ActorSystem(name = "EntityProcessingSpec")
 }

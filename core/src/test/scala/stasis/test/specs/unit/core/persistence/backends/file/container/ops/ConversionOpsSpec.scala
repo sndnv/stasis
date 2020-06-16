@@ -61,7 +61,7 @@ class ConversionOpsSpec extends UnitSpec {
     val zeroHeader = MockHeader(
       a = 0,
       b = 0L,
-      c = 0.0D
+      c = 0.0d
     )
 
     val zeroHeaderAsBytes = Seq[Byte](
@@ -81,7 +81,7 @@ class ConversionOpsSpec extends UnitSpec {
     val header = MockHeader(
       a = 0,
       b = 0L,
-      c = 0.0D
+      c = 0.0d
     )
 
     Try(ConversionOps.toBytes(buffer => putHeaderFields(header, buffer), MOCK_HEADER_SIZE - 1)) should be(

@@ -72,7 +72,7 @@ object EntityMetadata {
           updated = directoryMetadata.updated.getEpochSecond,
           owner = directoryMetadata.owner,
           group = directoryMetadata.group,
-          permissions = directoryMetadata.permissions,
+          permissions = directoryMetadata.permissions
         )
 
         proto.metadata.EntityMetadata(entity = proto.metadata.EntityMetadata.Entity.Directory(metadata))

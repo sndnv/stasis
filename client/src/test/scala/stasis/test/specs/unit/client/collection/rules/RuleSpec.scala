@@ -65,7 +65,7 @@ class RuleSpec extends UnitSpec {
       "/directory-without-pattern",
       "/",
       ".*",
-      "",
+      ""
     )
 
     validDirectoryPatternRules.foreach {

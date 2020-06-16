@@ -96,9 +96,9 @@ class EntityAuthenticatorSpec extends AsyncUnitSpec {
     authenticationDelay = 50.millis
   )
 
-  private class MockEntityAuthenticator(secretConfig: Secret.Config, failingGet: Boolean = false)(
-    implicit protected val system: ActorSystem)
-      extends EntityAuthenticator[String] {
+  private class MockEntityAuthenticator(secretConfig: Secret.Config, failingGet: Boolean = false)(implicit
+    protected val system: ActorSystem
+  ) extends EntityAuthenticator[String] {
 
     override implicit protected def config: Secret.Config = secretConfig
 

@@ -34,28 +34,33 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
 
   def createLogger(): LoggingAdapter = Logging(system, this.getClass.getName)
 
-  def createApiStore(): ApiStore = ApiStore(
-    MemoryBackend[Api.Id, Api](name = s"api-store-${java.util.UUID.randomUUID()}")
-  )
+  def createApiStore(): ApiStore =
+    ApiStore(
+      MemoryBackend[Api.Id, Api](name = s"api-store-${java.util.UUID.randomUUID()}")
+    )
 
-  def createClientStore(): ClientStore = ClientStore(
-    MemoryBackend[Client.Id, Client](name = s"client-store-${java.util.UUID.randomUUID()}")
-  )
+  def createClientStore(): ClientStore =
+    ClientStore(
+      MemoryBackend[Client.Id, Client](name = s"client-store-${java.util.UUID.randomUUID()}")
+    )
 
-  def createCodeStore(expiration: FiniteDuration = 3.seconds): AuthorizationCodeStore = AuthorizationCodeStore(
-    expiration = expiration,
-    MemoryBackend[AuthorizationCode, StoredAuthorizationCode](name = s"code-store-${java.util.UUID.randomUUID()}")
-  )
+  def createCodeStore(expiration: FiniteDuration = 3.seconds): AuthorizationCodeStore =
+    AuthorizationCodeStore(
+      expiration = expiration,
+      MemoryBackend[AuthorizationCode, StoredAuthorizationCode](name = s"code-store-${java.util.UUID.randomUUID()}")
+    )
 
-  def createOwnerStore(): ResourceOwnerStore = ResourceOwnerStore(
-    MemoryBackend[ResourceOwner.Id, ResourceOwner](name = s"owner-store-${java.util.UUID.randomUUID()}")
-  )
+  def createOwnerStore(): ResourceOwnerStore =
+    ResourceOwnerStore(
+      MemoryBackend[ResourceOwner.Id, ResourceOwner](name = s"owner-store-${java.util.UUID.randomUUID()}")
+    )
 
-  def createTokenStore(expiration: FiniteDuration = 3.seconds): RefreshTokenStore = RefreshTokenStore(
-    expiration = expiration,
-    MemoryBackend[RefreshToken, StoredRefreshToken](name = s"token-store-${java.util.UUID.randomUUID()}"),
-    MemoryBackend[(Client.Id, ResourceOwner.Id), RefreshToken](name = s"token-directory-${java.util.UUID.randomUUID()}")
-  )
+  def createTokenStore(expiration: FiniteDuration = 3.seconds): RefreshTokenStore =
+    RefreshTokenStore(
+      expiration = expiration,
+      MemoryBackend[RefreshToken, StoredRefreshToken](name = s"token-store-${java.util.UUID.randomUUID()}"),
+      MemoryBackend[(Client.Id, ResourceOwner.Id), RefreshToken](name = s"token-directory-${java.util.UUID.randomUUID()}")
+    )
 
   def createFailingApiStore(
     failingPut: Boolean = false,
@@ -63,17 +68,18 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
     failingGet: Boolean = false,
     failingEntries: Boolean = false,
     failingContains: Boolean = false
-  ): ApiStore = ApiStore(
-    new FailingMemoryBackend[Api.Id, Api] {
-      override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
-      override def storeName: String = s"api-store-${java.util.UUID.randomUUID()}"
-      override def putFails: Boolean = failingPut
-      override def deleteFails: Boolean = failingDelete
-      override def getFails: Boolean = failingGet
-      override def entriesFails: Boolean = failingEntries
-      override def containsFails: Boolean = failingContains
-    }
-  )
+  ): ApiStore =
+    ApiStore(
+      new FailingMemoryBackend[Api.Id, Api] {
+        override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
+        override def storeName: String = s"api-store-${java.util.UUID.randomUUID()}"
+        override def putFails: Boolean = failingPut
+        override def deleteFails: Boolean = failingDelete
+        override def getFails: Boolean = failingGet
+        override def entriesFails: Boolean = failingEntries
+        override def containsFails: Boolean = failingContains
+      }
+    )
 
   def createFailingClientStore(
     failingPut: Boolean = false,
@@ -81,17 +87,18 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
     failingGet: Boolean = false,
     failingEntries: Boolean = false,
     failingContains: Boolean = false
-  ): ClientStore = ClientStore(
-    new FailingMemoryBackend[Client.Id, Client] {
-      override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
-      override def storeName: String = s"client-store-${java.util.UUID.randomUUID()}"
-      override def putFails: Boolean = failingPut
-      override def deleteFails: Boolean = failingDelete
-      override def getFails: Boolean = failingGet
-      override def entriesFails: Boolean = failingEntries
-      override def containsFails: Boolean = failingContains
-    }
-  )
+  ): ClientStore =
+    ClientStore(
+      new FailingMemoryBackend[Client.Id, Client] {
+        override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
+        override def storeName: String = s"client-store-${java.util.UUID.randomUUID()}"
+        override def putFails: Boolean = failingPut
+        override def deleteFails: Boolean = failingDelete
+        override def getFails: Boolean = failingGet
+        override def entriesFails: Boolean = failingEntries
+        override def containsFails: Boolean = failingContains
+      }
+    )
 
   def createFailingCodeStore(
     expiration: FiniteDuration = 3.second,
@@ -100,18 +107,19 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
     failingGet: Boolean = false,
     failingEntries: Boolean = false,
     failingContains: Boolean = false
-  ): AuthorizationCodeStore = AuthorizationCodeStore(
-    expiration = expiration,
-    new FailingMemoryBackend[AuthorizationCode, StoredAuthorizationCode] {
-      override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
-      override def storeName: String = s"code-store-${java.util.UUID.randomUUID()}"
-      override def putFails: Boolean = failingPut
-      override def deleteFails: Boolean = failingDelete
-      override def getFails: Boolean = failingGet
-      override def entriesFails: Boolean = failingEntries
-      override def containsFails: Boolean = failingContains
-    }
-  )
+  ): AuthorizationCodeStore =
+    AuthorizationCodeStore(
+      expiration = expiration,
+      new FailingMemoryBackend[AuthorizationCode, StoredAuthorizationCode] {
+        override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
+        override def storeName: String = s"code-store-${java.util.UUID.randomUUID()}"
+        override def putFails: Boolean = failingPut
+        override def deleteFails: Boolean = failingDelete
+        override def getFails: Boolean = failingGet
+        override def entriesFails: Boolean = failingEntries
+        override def containsFails: Boolean = failingContains
+      }
+    )
 
   def createFailingOwnerStore(
     failingPut: Boolean = false,
@@ -119,17 +127,18 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
     failingGet: Boolean = false,
     failingEntries: Boolean = false,
     failingContains: Boolean = false
-  ): ResourceOwnerStore = ResourceOwnerStore(
-    new FailingMemoryBackend[ResourceOwner.Id, ResourceOwner] {
-      override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
-      override def storeName: String = s"owner-store-${java.util.UUID.randomUUID()}"
-      override def putFails: Boolean = failingPut
-      override def deleteFails: Boolean = failingDelete
-      override def getFails: Boolean = failingGet
-      override def entriesFails: Boolean = failingEntries
-      override def containsFails: Boolean = failingContains
-    }
-  )
+  ): ResourceOwnerStore =
+    ResourceOwnerStore(
+      new FailingMemoryBackend[ResourceOwner.Id, ResourceOwner] {
+        override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
+        override def storeName: String = s"owner-store-${java.util.UUID.randomUUID()}"
+        override def putFails: Boolean = failingPut
+        override def deleteFails: Boolean = failingDelete
+        override def getFails: Boolean = failingGet
+        override def entriesFails: Boolean = failingEntries
+        override def containsFails: Boolean = failingContains
+      }
+    )
 
   def createFailingTokenStore(
     expiration: FiniteDuration = 3.seconds,
@@ -138,19 +147,20 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
     failingGet: Boolean = false,
     failingEntries: Boolean = false,
     failingContains: Boolean = false
-  ): RefreshTokenStore = RefreshTokenStore(
-    expiration = expiration,
-    new FailingMemoryBackend[RefreshToken, StoredRefreshToken] {
-      override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
-      override def storeName: String = s"token-store-${java.util.UUID.randomUUID()}"
-      override def putFails: Boolean = failingPut
-      override def deleteFails: Boolean = failingDelete
-      override def getFails: Boolean = failingGet
-      override def entriesFails: Boolean = failingEntries
-      override def containsFails: Boolean = failingContains
-    },
-    MemoryBackend[(Client.Id, ResourceOwner.Id), RefreshToken](name = s"token-directory-${java.util.UUID.randomUUID()}")
-  )
+  ): RefreshTokenStore =
+    RefreshTokenStore(
+      expiration = expiration,
+      new FailingMemoryBackend[RefreshToken, StoredRefreshToken] {
+        override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
+        override def storeName: String = s"token-store-${java.util.UUID.randomUUID()}"
+        override def putFails: Boolean = failingPut
+        override def deleteFails: Boolean = failingDelete
+        override def getFails: Boolean = failingGet
+        override def entriesFails: Boolean = failingEntries
+        override def containsFails: Boolean = failingContains
+      },
+      MemoryBackend[(Client.Id, ResourceOwner.Id), RefreshToken](name = s"token-directory-${java.util.UUID.randomUUID()}")
+    )
 }
 
 object RouteTest {

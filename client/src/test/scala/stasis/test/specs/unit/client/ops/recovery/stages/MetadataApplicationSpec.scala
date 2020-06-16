@@ -45,14 +45,15 @@ class MetadataApplicationSpec extends AsyncUnitSpec { spec =>
     val stage = new MetadataApplication {
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
 
-      override protected def providers: Providers = Providers(
-        checksum = Checksum.MD5,
-        staging = new MockFileStaging,
-        decompressor = new MockCompression,
-        decryptor = new MockEncryption,
-        clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
-        track = mockTracker
-      )
+      override protected def providers: Providers =
+        Providers(
+          checksum = Checksum.MD5,
+          staging = new MockFileStaging,
+          decompressor = new MockCompression,
+          decryptor = new MockEncryption,
+          clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
+          track = mockTracker
+        )
 
       override implicit protected def ec: ExecutionContext = spec.system.dispatcher
     }

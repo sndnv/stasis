@@ -38,16 +38,18 @@ class ApiClientsSpec extends AsyncUnitSpec with ResourceHelpers {
       apiClients <- ApiClients(
         base = Base(applicationDirectory = directory, terminate = () => ()).await,
         secrets = new Secrets {
-          override def deviceSecret: DeviceSecret = DeviceSecret(
-            user = User.generateId(),
-            device = deviceId,
-            secret = ByteString.empty
-          )
+          override def deviceSecret: DeviceSecret =
+            DeviceSecret(
+              user = User.generateId(),
+              device = deviceId,
+              secret = ByteString.empty
+            )
 
-          override def credentialsProvider: CredentialsProvider = new CredentialsProvider {
-            override def core: Future[HttpCredentials] = Future.successful(OAuth2BearerToken(token = "test-token"))
-            override def api: Future[HttpCredentials] = Future.successful(OAuth2BearerToken(token = "test-token"))
-          }
+          override def credentialsProvider: CredentialsProvider =
+            new CredentialsProvider {
+              override def core: Future[HttpCredentials] = Future.successful(OAuth2BearerToken(token = "test-token"))
+              override def api: Future[HttpCredentials] = Future.successful(OAuth2BearerToken(token = "test-token"))
+            }
         }
       )
       pingFailure <- apiClients.clients.api.ping().failed

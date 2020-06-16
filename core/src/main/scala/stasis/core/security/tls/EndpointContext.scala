@@ -96,7 +96,7 @@ object EndpointContext {
       StoreConfig(
         storePath = storeConfig.getString("path"),
         storeType = storeConfig.getString("type"),
-        storePassword = storeConfig.getString("password"),
+        storePassword = storeConfig.getString("password")
       )
   }
 

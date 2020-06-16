@@ -22,7 +22,7 @@ object ReservationStoreCacheSerdes extends KeyValueBackend.Serdes[(Crate.Id, Nod
       key.split(separator).toList match {
         case crate :: node :: Nil => (UUID.fromString(crate), UUID.fromString(node))
         case _                    => throw new IllegalArgumentException(s"Unexpected reservation cache key provided: [$key]")
-    }
+      }
 
   override implicit def serializeValue: CrateStorageReservation.Id => ByteString =
     reservation => ByteString(reservation.toString, StandardCharsets.UTF_8)

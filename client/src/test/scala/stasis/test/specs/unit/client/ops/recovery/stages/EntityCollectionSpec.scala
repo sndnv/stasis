@@ -41,14 +41,15 @@ class EntityCollectionSpec extends AsyncUnitSpec {
       override protected def collector: RecoveryCollector =
         new MockRecoveryCollector(List(targetFile1, targetFile2, targetFile3))
 
-      override protected def providers: Providers = Providers(
-        checksum = Checksum.MD5,
-        staging = new MockFileStaging(),
-        decompressor = new MockCompression(),
-        decryptor = new MockEncryption(),
-        clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
-        track = mockTracker
-      )
+      override protected def providers: Providers =
+        Providers(
+          checksum = Checksum.MD5,
+          staging = new MockFileStaging(),
+          decompressor = new MockCompression(),
+          decryptor = new MockEncryption(),
+          clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
+          track = mockTracker
+        )
     }
 
     implicit val operationId: Operation.Id = Operation.generateId()

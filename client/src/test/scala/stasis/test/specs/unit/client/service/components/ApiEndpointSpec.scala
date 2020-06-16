@@ -40,10 +40,11 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
     ApiEndpoint(
       base = Base(applicationDirectory = directory, terminate = () => ()).await,
       apiClients = new ApiClients {
-        override def clients: Clients = Clients(
-          api = MockServerApiEndpointClient(),
-          core = MockServerCoreEndpointClient()
-        )
+        override def clients: Clients =
+          Clients(
+            api = MockServerApiEndpointClient(),
+            core = MockServerCoreEndpointClient()
+          )
       },
       ops = new Ops {
         override def executor: OperationExecutor = MockOperationExecutor()
@@ -83,10 +84,11 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
         terminate = () => { val _ = terminationCounter.incrementAndGet() }
       ).await,
       apiClients = new ApiClients {
-        override def clients: Clients = Clients(
-          api = MockServerApiEndpointClient(),
-          core = MockServerCoreEndpointClient()
-        )
+        override def clients: Clients =
+          Clients(
+            api = MockServerApiEndpointClient(),
+            core = MockServerCoreEndpointClient()
+          )
       },
       ops = new Ops {
         override def executor: OperationExecutor = MockOperationExecutor()
@@ -124,10 +126,11 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
     ApiEndpoint(
       base = Base(applicationDirectory = directory, terminate = () => ()).await,
       apiClients = new ApiClients {
-        override def clients: Clients = Clients(
-          api = MockServerApiEndpointClient(),
-          core = MockServerCoreEndpointClient()
-        )
+        override def clients: Clients =
+          Clients(
+            api = MockServerApiEndpointClient(),
+            core = MockServerCoreEndpointClient()
+          )
       },
       ops = new Ops {
         override def executor: OperationExecutor = MockOperationExecutor()
@@ -162,10 +165,11 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
     val endpoint = ApiEndpoint(
       base = Base(applicationDirectory = directory, terminate = () => ()).await,
       apiClients = new ApiClients {
-        override def clients: Clients = Clients(
-          api = MockServerApiEndpointClient(),
-          core = MockServerCoreEndpointClient()
-        )
+        override def clients: Clients =
+          Clients(
+            api = MockServerApiEndpointClient(),
+            core = MockServerCoreEndpointClient()
+          )
       },
       ops = new Ops {
         override def executor: OperationExecutor = MockOperationExecutor()

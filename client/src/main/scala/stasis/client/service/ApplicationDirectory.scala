@@ -50,13 +50,14 @@ object ApplicationDirectory {
       configLocations.map(_.resolve(path)).find(Files.exists(_))
     }
 
-    override def requireFile(file: String): Future[Path] = findFile(file) match {
-      case Some(path) =>
-        Future.successful(path)
+    override def requireFile(file: String): Future[Path] =
+      findFile(file) match {
+        case Some(path) =>
+          Future.successful(path)
 
-      case None =>
-        Future.failed(new FileNotFoundException(s"File [$file] not found in [${configLocations.mkString(", ")}]"))
-    }
+        case None =>
+          Future.failed(new FileNotFoundException(s"File [$file] not found in [${configLocations.mkString(", ")}]"))
+      }
 
     override def pullFile[T](file: String)(implicit ec: ExecutionContext, um: ByteString => T): Future[T] =
       requireFile(file)

@@ -65,12 +65,14 @@ class ContainerLogOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoClo
     val containerHeader = ContainerHeader(maxChunkSize = 0, maxChunks = 0)
 
     for {
-      existing <- ContainerLogOps
-        .create(containerLogPath, containerHeader)
-        .map(_ => TestOps.fileExists(containerLogPath))
-      missing <- ContainerLogOps
-        .destroy(containerLogPath)
-        .map(_ => TestOps.fileExists(containerLogPath))
+      existing <-
+        ContainerLogOps
+          .create(containerLogPath, containerHeader)
+          .map(_ => TestOps.fileExists(containerLogPath))
+      missing <-
+        ContainerLogOps
+          .destroy(containerLogPath)
+          .map(_ => TestOps.fileExists(containerLogPath))
     } yield {
       existing should be(true)
       missing should be(false)

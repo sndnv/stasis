@@ -65,10 +65,11 @@ trait ResourceHelpers {
         s"Expected [$resourcePath] to be a child of $target/$testClasses"
       )
 
-      def deleteEntity(path: Path): Future[Done] = Future {
-        val _ = Files.deleteIfExists(path)
-        Done
-      }
+      def deleteEntity(path: Path): Future[Done] =
+        Future {
+          val _ = Files.deleteIfExists(path)
+          Done
+        }
 
       val stream: java.util.stream.Stream[Future[Done]] = Files
         .walk(resourcePath, Seq.empty[FileVisitOption]: _*)

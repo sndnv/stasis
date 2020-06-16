@@ -32,9 +32,10 @@ class DefaultUserAuthenticator(
 
   private def extractUserFromClaims(claims: JwtClaims): Future[User] =
     for {
-      identity <- Future
-        .fromTry(Try(claims.getClaimValue(underlying.identityClaim, classOf[String])))
-        .map(UUID.fromString)
+      identity <-
+        Future
+          .fromTry(Try(claims.getClaimValue(underlying.identityClaim, classOf[String])))
+          .map(UUID.fromString)
       userOpt <- store.get(identity)
       user <- userOpt match {
         case Some(user) if user.active => Future.successful(user)

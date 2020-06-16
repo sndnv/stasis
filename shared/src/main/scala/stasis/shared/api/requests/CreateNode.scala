@@ -13,24 +13,25 @@ object CreateNode {
   final case class CreateRemoteGrpcNode(address: GrpcEndpointAddress) extends CreateNode
 
   implicit class RequestToNode(request: CreateNode) {
-    def toNode: Node = request match {
-      case CreateLocalNode(storeDescriptor) =>
-        Node.Local(
-          id = Node.generateId(),
-          storeDescriptor = storeDescriptor
-        )
+    def toNode: Node =
+      request match {
+        case CreateLocalNode(storeDescriptor) =>
+          Node.Local(
+            id = Node.generateId(),
+            storeDescriptor = storeDescriptor
+          )
 
-      case CreateRemoteHttpNode(address) =>
-        Node.Remote.Http(
-          id = Node.generateId(),
-          address = address
-        )
+        case CreateRemoteHttpNode(address) =>
+          Node.Remote.Http(
+            id = Node.generateId(),
+            address = address
+          )
 
-      case CreateRemoteGrpcNode(address) =>
-        Node.Remote.Grpc(
-          id = Node.generateId(),
-          address = address
-        )
-    }
+        case CreateRemoteGrpcNode(address) =>
+          Node.Remote.Grpc(
+            id = Node.generateId(),
+            address = address
+          )
+      }
   }
 }

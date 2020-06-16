@@ -31,29 +31,30 @@ trait OAuthFixtures { _: RouteTest =>
     ),
     testSecretConfig: TestSecretConfig = TestSecretConfig(),
     withRefreshTokens: Boolean = true
-  ): (TestStores, TestSecretConfig, Config, Providers) = (
-    stores,
-    testSecretConfig,
-    Config(
-      realm = "test-realm",
-      refreshTokensAllowed = withRefreshTokens
-    ),
-    Providers(
-      apiStore = stores.apis.view,
-      clientStore = stores.clients.view,
-      refreshTokenStore = stores.tokens,
-      authorizationCodeStore = stores.codes,
-      accessTokenGenerator = new JwtBearerAccessTokenGenerator(
-        issuer = "test-issuer",
-        jwk = jwk,
-        jwtExpiration = 30.seconds
+  ): (TestStores, TestSecretConfig, Config, Providers) =
+    (
+      stores,
+      testSecretConfig,
+      Config(
+        realm = "test-realm",
+        refreshTokensAllowed = withRefreshTokens
       ),
-      authorizationCodeGenerator = new DefaultAuthorizationCodeGenerator(codeSize = 16),
-      refreshTokenGenerator = new RandomRefreshTokenGenerator(tokenSize = 16),
-      clientAuthenticator = new DefaultClientAuthenticator(stores.clients.view, testSecretConfig.client),
-      resourceOwnerAuthenticator = new DefaultResourceOwnerAuthenticator(stores.owners.view, testSecretConfig.owner)
+      Providers(
+        apiStore = stores.apis.view,
+        clientStore = stores.clients.view,
+        refreshTokenStore = stores.tokens,
+        authorizationCodeStore = stores.codes,
+        accessTokenGenerator = new JwtBearerAccessTokenGenerator(
+          issuer = "test-issuer",
+          jwk = jwk,
+          jwtExpiration = 30.seconds
+        ),
+        authorizationCodeGenerator = new DefaultAuthorizationCodeGenerator(codeSize = 16),
+        refreshTokenGenerator = new RandomRefreshTokenGenerator(tokenSize = 16),
+        clientAuthenticator = new DefaultClientAuthenticator(stores.clients.view, testSecretConfig.client),
+        resourceOwnerAuthenticator = new DefaultResourceOwnerAuthenticator(stores.owners.view, testSecretConfig.owner)
+      )
     )
-  )
 }
 
 object OAuthFixtures {

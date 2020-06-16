@@ -26,18 +26,19 @@ class MetadataPushSpec extends AsyncUnitSpec { spec =>
     val stage = new MetadataPush {
       override protected def targetDataset: DatasetDefinition = Fixtures.Datasets.Default
       override protected def deviceSecret: DeviceSecret = Fixtures.Secrets.Default
-      override protected def providers: Providers = Providers(
-        checksum = Checksum.MD5,
-        staging = new MockFileStaging(),
-        compressor = new MockCompression(),
-        encryptor = mockEncryption,
-        decryptor = mockEncryption,
-        clients = Clients(
-          api = mockApiClient,
-          core = mockCoreClient
-        ),
-        track = mockTracker
-      )
+      override protected def providers: Providers =
+        Providers(
+          checksum = Checksum.MD5,
+          staging = new MockFileStaging(),
+          compressor = new MockCompression(),
+          encryptor = mockEncryption,
+          decryptor = mockEncryption,
+          clients = Clients(
+            api = mockApiClient,
+            core = mockCoreClient
+          ),
+          track = mockTracker
+        )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
     }

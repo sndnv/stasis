@@ -152,11 +152,12 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
   private val provider = new KeyProvider {
     override def key(id: Option[String]): Future[Key] = Future.successful(jwk.getKey)
     override def issuer: String = test.issuer
-    override def allowedAlgorithms: Seq[String] = Seq(
-      AlgorithmIdentifiers.RSA_USING_SHA256,
-      AlgorithmIdentifiers.RSA_USING_SHA384,
-      AlgorithmIdentifiers.RSA_USING_SHA512
-    )
+    override def allowedAlgorithms: Seq[String] =
+      Seq(
+        AlgorithmIdentifiers.RSA_USING_SHA256,
+        AlgorithmIdentifiers.RSA_USING_SHA384,
+        AlgorithmIdentifiers.RSA_USING_SHA512
+      )
   }
 
   private val tokenGenerator = new JwtBearerAccessTokenGenerator(
@@ -165,7 +166,8 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
     jwtExpiration = 3.seconds
   )
 
-  private def createStore() = ResourceOwnerStore(
-    MemoryBackend[ResourceOwner.Id, ResourceOwner](name = s"owner-store-${java.util.UUID.randomUUID()}")
-  )
+  private def createStore() =
+    ResourceOwnerStore(
+      MemoryBackend[ResourceOwner.Id, ResourceOwner](name = s"owner-store-${java.util.UUID.randomUUID()}")
+    )
 }

@@ -1,7 +1,7 @@
 package stasis.identity.model.apis
 
 final case class Api(
-  id: Api.Id,
+  id: Api.Id
 ) {
   require(
     id.matches("^[a-zA-Z0-9\\-_]+$"),

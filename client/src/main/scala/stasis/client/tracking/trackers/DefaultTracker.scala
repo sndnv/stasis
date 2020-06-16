@@ -53,7 +53,7 @@ class DefaultTracker private (
 
         case Event.OperationCompleted(operationId) =>
           state.completed(operationId = operationId)
-    }
+      }
   )
 
   override def state: Future[TrackerView.State] = events.state

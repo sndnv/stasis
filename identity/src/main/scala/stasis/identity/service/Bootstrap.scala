@@ -27,8 +27,8 @@ object Bootstrap {
   def run(
     bootstrapConfig: typesafe.Config,
     persistence: Persistence
-  )(
-    implicit ec: ExecutionContext,
+  )(implicit
+    ec: ExecutionContext,
     log: Logger,
     clientSecretConfig: Secret.ClientConfig,
     ownerSecretConfig: Secret.ResourceOwnerConfig

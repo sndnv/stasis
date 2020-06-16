@@ -37,22 +37,25 @@ class OpsSpec extends AsyncUnitSpec with ResourceHelpers {
     Ops(
       base = Base(applicationDirectory = directory, terminate = () => ()).await,
       apiClients = new ApiClients {
-        override def clients: Clients = Clients(
-          api = MockServerApiEndpointClient(),
-          core = MockServerCoreEndpointClient()
-        )
+        override def clients: Clients =
+          Clients(
+            api = MockServerApiEndpointClient(),
+            core = MockServerCoreEndpointClient()
+          )
       },
       secrets = new Secrets {
-        override def deviceSecret: DeviceSecret = DeviceSecret(
-          user = User.generateId(),
-          device = Device.generateId(),
-          secret = ByteString.empty
-        )
+        override def deviceSecret: DeviceSecret =
+          DeviceSecret(
+            user = User.generateId(),
+            device = Device.generateId(),
+            secret = ByteString.empty
+          )
 
-        override def credentialsProvider: CredentialsProvider = new CredentialsProvider {
-          override def core: Future[HttpCredentials] = Future.successful(OAuth2BearerToken(token = "test-token"))
-          override def api: Future[HttpCredentials] = Future.successful(OAuth2BearerToken(token = "test-token"))
-        }
+        override def credentialsProvider: CredentialsProvider =
+          new CredentialsProvider {
+            override def core: Future[HttpCredentials] = Future.successful(OAuth2BearerToken(token = "test-token"))
+            override def api: Future[HttpCredentials] = Future.successful(OAuth2BearerToken(token = "test-token"))
+          }
       }
     ).map { ops =>
       ops.executor.operations.await shouldBe empty

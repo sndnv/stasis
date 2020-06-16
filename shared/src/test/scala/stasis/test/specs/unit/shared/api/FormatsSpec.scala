@@ -44,7 +44,7 @@ class FormatsSpec extends UnitSpec {
     val policies = Map(
       "at-most" -> (DatasetDefinition.Retention.Policy.AtMost(3), "{\"policy_type\":\"at-most\",\"versions\":3}"),
       "latest-only" -> (DatasetDefinition.Retention.Policy.LatestOnly, "{\"policy_type\":\"latest-only\"}"),
-      "all" -> (DatasetDefinition.Retention.Policy.All, "{\"policy_type\":\"all\"}"),
+      "all" -> (DatasetDefinition.Retention.Policy.All, "{\"policy_type\":\"all\"}")
     )
 
     policies.foreach {

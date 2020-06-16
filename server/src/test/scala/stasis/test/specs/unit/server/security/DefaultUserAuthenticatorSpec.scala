@@ -223,22 +223,25 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
   private val provider = new KeyProvider {
     override def key(id: Option[String]): Future[Key] = Future.successful(jwk.getKey)
     override def issuer: String = test.issuer
-    override def allowedAlgorithms: Seq[String] = Seq(
-      AlgorithmIdentifiers.RSA_USING_SHA256,
-      AlgorithmIdentifiers.RSA_USING_SHA384,
-      AlgorithmIdentifiers.RSA_USING_SHA512
-    )
+    override def allowedAlgorithms: Seq[String] =
+      Seq(
+        AlgorithmIdentifiers.RSA_USING_SHA256,
+        AlgorithmIdentifiers.RSA_USING_SHA384,
+        AlgorithmIdentifiers.RSA_USING_SHA512
+      )
   }
 
-  private def generateToken(subject: String): String = MockJwtGenerators.generateJwt(
-    issuer = issuer,
-    audience = audience,
-    subject = subject,
-    signatureKey = jwk
-  )
+  private def generateToken(subject: String): String =
+    MockJwtGenerators.generateJwt(
+      issuer = issuer,
+      audience = audience,
+      subject = subject,
+      signatureKey = jwk
+    )
 
-  private def createStore() = UserStore(
-    userSaltSize = 8,
-    backend = MemoryBackend[User.Id, User](name = s"user-store-${java.util.UUID.randomUUID()}")
-  )
+  private def createStore() =
+    UserStore(
+      userSaltSize = 8,
+      backend = MemoryBackend[User.Id, User](name = s"user-store-${java.util.UUID.randomUUID()}")
+    )
 }

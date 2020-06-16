@@ -198,13 +198,14 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
     }
   }
 
-  private def createTracker(): DefaultTracker = DefaultTracker(
-    createBackend = state =>
-      EventLogMemoryBackend(
-        name = s"test-tracker-${java.util.UUID.randomUUID()}",
-        initialState = state
+  private def createTracker(): DefaultTracker =
+    DefaultTracker(
+      createBackend = state =>
+        EventLogMemoryBackend(
+          name = s"test-tracker-${java.util.UUID.randomUUID()}",
+          initialState = state
+        )
     )
-  )
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 

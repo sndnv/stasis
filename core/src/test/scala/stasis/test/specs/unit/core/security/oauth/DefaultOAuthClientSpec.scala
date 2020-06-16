@@ -236,31 +236,33 @@ class DefaultOAuthClientSpec extends AsyncUnitSpec with BeforeAndAfterAll {
     endpoint: String,
     useQueryString: Boolean = true,
     context: Option[HttpsConnectionContext] = None
-  ): DefaultOAuthClient = new DefaultOAuthClient(
-    tokenEndpoint = endpoint,
-    client = clientId,
-    clientSecret = clientSecret,
-    useQueryString = useQueryString,
-    context = context
-  )
+  ): DefaultOAuthClient =
+    new DefaultOAuthClient(
+      tokenEndpoint = endpoint,
+      client = clientId,
+      clientSecret = clientSecret,
+      useQueryString = useQueryString,
+      context = context
+    )
 
   private def createEndpoint(
     port: Int,
     expirationSeconds: Int = 6000,
     keystoreConfig: Option[EndpointContext.StoreConfig] = None
-  ): MockJwtEndpoint = new MockJwtEndpoint(
-    port = port,
-    credentials = MockJwtEndpoint.ExpectedCredentials(
-      subject = clientId,
-      secret = clientSecret,
-      refreshToken = refreshToken,
-      user = user,
-      userPassword = userPassword
-    ),
-    expirationSeconds = expirationSeconds.toLong,
-    signatureKey = MockJwksGenerators.generateRandomRsaKey(keyId = Some("rsa-0")),
-    withKeystoreConfig = keystoreConfig
-  )
+  ): MockJwtEndpoint =
+    new MockJwtEndpoint(
+      port = port,
+      credentials = MockJwtEndpoint.ExpectedCredentials(
+        subject = clientId,
+        secret = clientSecret,
+        refreshToken = refreshToken,
+        user = user,
+        userPassword = userPassword
+      ),
+      expirationSeconds = expirationSeconds.toLong,
+      signatureKey = MockJwksGenerators.generateRandomRsaKey(keyId = Some("rsa-0")),
+      withKeystoreConfig = keystoreConfig
+    )
 
   private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],

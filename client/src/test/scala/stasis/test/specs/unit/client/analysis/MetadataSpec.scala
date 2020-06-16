@@ -119,7 +119,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
   it should "fail to collect file crate ID with directory metadata (target file)" in {
     Metadata
       .collectCratesForTargetFile(
-        existingMetadata = Fixtures.Metadata.DirectoryOneMetadata,
+        existingMetadata = Fixtures.Metadata.DirectoryOneMetadata
       )
       .map { result =>
         fail(s"Unexpected result received: [$result]")

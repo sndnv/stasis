@@ -40,20 +40,21 @@ final case class DatasetMetadata(
       case FilesystemMetadata.EntityState.Existing(entry) =>
         for {
           entryMetadata <- api.datasetMetadata(entry)
-          entityMetadata <- entryMetadata.contentChanged
-            .get(entity)
-            .orElse(entryMetadata.metadataChanged.get(entity)) match {
-            case Some(entityMetadata) =>
-              Future.successful(entityMetadata)
+          entityMetadata <-
+            entryMetadata.contentChanged
+              .get(entity)
+              .orElse(entryMetadata.metadataChanged.get(entity)) match {
+              case Some(entityMetadata) =>
+                Future.successful(entityMetadata)
 
-            case None =>
-              Future.failed(
-                new IllegalArgumentException(
-                  s"Expected metadata for entity [${entity.toAbsolutePath.toString}] " +
-                    s"but none was found in metadata for entry [${entry.toString}]"
+              case None =>
+                Future.failed(
+                  new IllegalArgumentException(
+                    s"Expected metadata for entity [${entity.toAbsolutePath.toString}] " +
+                      s"but none was found in metadata for entry [${entry.toString}]"
+                  )
                 )
-              )
-          }
+            }
         } yield {
           entityMetadata
         }
@@ -83,11 +84,12 @@ final case class DatasetMetadata(
 }
 
 object DatasetMetadata {
-  def empty: DatasetMetadata = DatasetMetadata(
-    contentChanged = Map.empty,
-    metadataChanged = Map.empty,
-    filesystem = FilesystemMetadata.empty
-  )
+  def empty: DatasetMetadata =
+    DatasetMetadata(
+      contentChanged = Map.empty,
+      metadataChanged = Map.empty,
+      filesystem = FilesystemMetadata.empty
+    )
 
   def toByteString(metadata: DatasetMetadata): akka.util.ByteString = {
     val data = proto.metadata.DatasetMetadata(

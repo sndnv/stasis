@@ -11,23 +11,24 @@ class ChunksToCrate() extends GraphStage[FlowShape[CrateChunk, ByteString]] {
 
   override val shape: FlowShape[CrateChunk, ByteString] = FlowShape.of(in, out)
 
-  override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = new GraphStageLogic(shape) {
-    setHandler(
-      in,
-      new InHandler {
-        override def onPush(): Unit =
-          push(out, grab(in).data)
-      }
-    )
+  override def createLogic(inheritedAttributes: Attributes): GraphStageLogic =
+    new GraphStageLogic(shape) {
+      setHandler(
+        in,
+        new InHandler {
+          override def onPush(): Unit =
+            push(out, grab(in).data)
+        }
+      )
 
-    setHandler(
-      out,
-      new OutHandler {
-        override def onPull(): Unit =
-          pull(in)
-      }
-    )
-  }
+      setHandler(
+        out,
+        new OutHandler {
+          override def onPull(): Unit =
+            pull(in)
+        }
+      )
+    }
 
 }
 

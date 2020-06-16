@@ -52,12 +52,13 @@ class DeviceSpec extends AsyncUnitSpec with ScalatestRouteTest {
     )
 
     val mockTracker = new MockTrackerView() {
-      override def state: Future[TrackerView.State] = Future.successful(
-        TrackerView.State(
-          operations = Map.empty,
-          servers = expectedServers
+      override def state: Future[TrackerView.State] =
+        Future.successful(
+          TrackerView.State(
+            operations = Map.empty,
+            servers = expectedServers
+          )
         )
-      )
     }
     val routes = createRoutes(tracker = mockTracker)
 
