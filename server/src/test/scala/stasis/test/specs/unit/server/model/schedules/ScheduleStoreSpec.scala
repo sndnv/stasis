@@ -151,8 +151,6 @@ class ScheduleStoreSpec extends AsyncUnitSpec {
     "ScheduleStoreSpec"
   )
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
-
   private val mockSchedule = Schedule(
     id = Schedule.generateId(),
     info = "test-schedule",

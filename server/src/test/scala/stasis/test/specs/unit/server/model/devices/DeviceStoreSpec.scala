@@ -283,8 +283,6 @@ class DeviceStoreSpec extends AsyncUnitSpec {
     "DeviceStoreSpec"
   )
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
-
   private val mockDevice = Device(
     id = Device.generateId(),
     node = Node.generateId(),

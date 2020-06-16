@@ -30,7 +30,7 @@ object Generators {
       interval = generateFiniteDuration
     )
 
-  def generateDevice(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Device =
+  def generateDevice: Device =
     Device(
       id = Device.generateId(),
       node = Node.generateId(),

@@ -2,10 +2,7 @@ package stasis.test.specs.unit.core.api
 
 import java.util.UUID
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.model.Uri
-import akka.util.Timeout
 import play.api.libs.json.Json
 import stasis.core.api.Formats._
 import stasis.core.networking.grpc.GrpcEndpointAddress
@@ -14,7 +11,6 @@ import stasis.core.persistence.crates.CrateStore
 import stasis.core.routing.Node
 import stasis.test.specs.unit.UnitSpec
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 class FormatsSpec extends UnitSpec {
@@ -128,12 +124,4 @@ class FormatsSpec extends UnitSpec {
         }
     }
   }
-
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
-    "FormatsSpec"
-  )
-
-  private implicit val ec: ExecutionContext = typedSystem.executionContext
-  private implicit val timeout: Timeout = 3.seconds
 }

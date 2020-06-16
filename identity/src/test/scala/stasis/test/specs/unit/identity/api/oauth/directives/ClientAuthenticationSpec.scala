@@ -7,7 +7,6 @@ import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpChallenges, O
 import akka.http.scaladsl.server.Directives
 import akka.stream.{Materializer, SystemMaterializer}
 import play.api.libs.json._
-import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.ClientAuthentication
 import stasis.identity.authentication.oauth.{ClientAuthenticator, DefaultClientAuthenticator}
 import stasis.identity.model.clients.ClientStore

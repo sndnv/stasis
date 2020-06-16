@@ -268,7 +268,6 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
   it should "be encryptable" in {
     DatasetMetadata
       .encrypt(
-        metadataCrate = metadataCrate,
         metadataSecret = deviceSecret.toMetadataSecret(metadataCrate),
         metadata = datasetMetadata,
         encoder = Aes

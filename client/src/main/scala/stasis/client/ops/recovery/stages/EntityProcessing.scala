@@ -95,7 +95,6 @@ trait EntityProcessing {
   private val targetDirectoryAttributes =
     PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(targetDirectoryPermissions))
 
-  private type CrateIds = Map[Path, Crate.Id]
   private type CratesSources = Iterable[(Path, Source[ByteString, NotUsed])]
   private type EntitySource = Source[ByteString, NotUsed]
 

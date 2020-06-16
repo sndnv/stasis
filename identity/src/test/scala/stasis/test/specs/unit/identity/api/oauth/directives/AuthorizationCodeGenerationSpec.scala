@@ -5,7 +5,6 @@ import akka.http.scaladsl.model
 import akka.http.scaladsl.model.{StatusCodes, Uri}
 import akka.http.scaladsl.server.Directives
 import akka.stream.{Materializer, SystemMaterializer}
-import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.AuthorizationCodeGeneration
 import stasis.identity.model.ChallengeMethod
 import stasis.identity.model.clients.Client

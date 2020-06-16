@@ -205,7 +205,7 @@ class ContainerOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoCloseS
     for {
       _ <- ContainerOps.create(containerPath, maxChunkSize, maxChunks = 100)
       _ <- TestOps.writeChunks(containerPath, testChunks.map(_._2), maxChunkSize)
-      _ <- TestOps.corruptHeader(containerPath, corruptEntry, entrySize, ChunkHeader.HEADER_SIZE)
+      _ <- TestOps.corruptHeader(containerPath, corruptEntry.toLong, entrySize.toLong, ChunkHeader.HEADER_SIZE)
       actualIndex <- ContainerOps.index(containerPath)
     } yield {
       TestOps.fileExists(containerPath) should be(true)

@@ -90,7 +90,7 @@ class ServerStagingStoreSpec extends AsyncUnitSpec {
 
   private val testManifest = Manifest(
     crate = Crate.generateId(),
-    size = testContent.size,
+    size = testContent.size.toLong,
     copies = 4,
     source = Node.generateId(),
     origin = Node.generateId()

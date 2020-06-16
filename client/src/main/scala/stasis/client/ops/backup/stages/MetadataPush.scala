@@ -35,7 +35,6 @@ trait MetadataPush {
 
     DatasetMetadata
       .encrypt(
-        metadataCrate = metadataCrate,
         metadataSecret = deviceSecret.toMetadataSecret(metadataCrate),
         metadata = metadata,
         encoder = providers.encryptor
@@ -47,7 +46,7 @@ trait MetadataPush {
           crate = metadataCrate,
           origin = providers.clients.core.self,
           source = providers.clients.core.self,
-          size = encryptedMetadata.size,
+          size = encryptedMetadata.size.toLong,
           copies = targetDataset.redundantCopies
         )
 

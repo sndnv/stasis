@@ -5,8 +5,8 @@ import java.nio.file.Paths
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.scaladsl.Sink
-import org.scalatest.{Assertion, BeforeAndAfterAll}
 import org.scalatest.concurrent.Eventually
+import org.scalatest.{Assertion, BeforeAndAfterAll}
 import stasis.client.tracking.TrackerView
 import stasis.client.tracking.trackers.DefaultTracker
 import stasis.core.persistence.backends.memory.EventLogMemoryBackend
@@ -104,7 +104,6 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
   it should "track server events" in {
     val tracker = createTracker()
 
-    implicit val operation: Operation.Id = Operation.generateId()
     val server1 = "test-server-01"
     val server2 = "test-server-02"
 
@@ -141,7 +140,7 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
     )
 
     val expectedUpdates = 3
-    val updates = tracker.stateUpdates.take(expectedUpdates).runWith(Sink.seq)
+    val updates = tracker.stateUpdates.take(expectedUpdates.toLong).runWith(Sink.seq)
 
     tracker.backup.entityExamined(entity = file, metadataChanged = true, contentChanged = false)
     await(50.millis, withSystem = system)
@@ -178,7 +177,7 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
     )
 
     val expectedUpdates = 2
-    val updates = tracker.operationUpdates(operation).take(expectedUpdates).runWith(Sink.seq)
+    val updates = tracker.operationUpdates(operation).take(expectedUpdates.toLong).runWith(Sink.seq)
 
     tracker.backup.entityExamined(entity = file, metadataChanged = true, contentChanged = false)
     await(50.millis, withSystem = system)

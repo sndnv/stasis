@@ -8,7 +8,6 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives
 import akka.stream.{Materializer, SystemMaterializer}
 import play.api.libs.json._
-import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.AuthorizationCodeConsumption
 import stasis.identity.api.oauth.directives.AuthorizationCodeConsumption.ChallengeVerification
 import stasis.identity.model.ChallengeMethod

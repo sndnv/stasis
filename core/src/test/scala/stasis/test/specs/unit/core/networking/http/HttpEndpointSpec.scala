@@ -299,7 +299,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   private val testReservation = CrateStorageReservation(
     id = CrateStorageReservation.generateId(),
     crate = Crate.generateId(),
-    size = crateContent.length,
+    size = crateContent.length.toLong,
     copies = 3,
     origin = Node.generateId(),
     target = Node.generateId()

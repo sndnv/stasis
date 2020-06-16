@@ -4,7 +4,6 @@ import java.nio.file.Path
 
 import akka.NotUsed
 import akka.actor.typed.scaladsl.LoggerOps
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.stream.scaladsl.Source
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.tracking.{BackupTracker, RecoveryTracker, ServerTracker, TrackerView}
@@ -17,8 +16,7 @@ import scala.concurrent.Future
 
 class DefaultTracker private (
   backend: EventLogBackend[DefaultTracker.Event, TrackerView.State]
-)(implicit system: ActorSystem[SpawnProtocol.Command])
-    extends TrackerView {
+) extends TrackerView {
   import DefaultTracker._
   import TrackerView._
 
@@ -277,7 +275,7 @@ class DefaultTracker private (
 object DefaultTracker {
   def apply(
     createBackend: TrackerView.State => EventLogBackend[DefaultTracker.Event, TrackerView.State]
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): DefaultTracker =
+  ): DefaultTracker =
     new DefaultTracker(
       backend = createBackend(TrackerView.State.empty)
     )

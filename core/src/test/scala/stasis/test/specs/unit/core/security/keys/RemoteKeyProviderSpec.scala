@@ -295,8 +295,6 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
     "RemoteKeyProviderSpec"
   )
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = system.classicSystem
-
   private val ports: mutable.Queue[Int] = (18000 to 18100).to(mutable.Queue)
 
   override protected def afterAll(): Unit =

@@ -282,8 +282,6 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
     "DatasetDefinitionStoreSpec"
   )
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
-
   private val ownDevices = Seq(Device.generateId(), Device.generateId())
 
   private val mockDefinition = DatasetDefinition(

@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.core.persistence.backends.slick
 
 import akka.Done
-import akka.actor.ActorSystem
 import akka.util.ByteString
 import slick.jdbc.H2Profile
 import stasis.core.persistence.backends.KeyValueBackend
@@ -12,8 +11,6 @@ import stasis.test.specs.unit.core.persistence.backends.KeyValueBackendBehaviour
 import scala.concurrent.Future
 
 class SlickBackendSpec extends AsyncUnitSpec with KeyValueBackendBehaviour {
-  private implicit val system: ActorSystem = ActorSystem(name = "SlickBackendSpec")
-
   private class TestSlickBackend extends KeyValueBackend[String, Int] {
     private val h2db = H2Profile.api.Database.forURL(url = "jdbc:h2:mem:SlickBackendSpec", keepAliveConnection = true)
 

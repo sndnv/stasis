@@ -61,7 +61,7 @@ class PartitionedByteStringSourceSpec extends AsyncUnitSpec {
     val extended = new PartitionedByteStringSource(original)
 
     extended
-      .partition(withMaximumPartSize = maxSize)
+      .partition(withMaximumPartSize = maxSize.toLong)
       .mergeSubstreams
       .runWith(Sink.seq)
       .map { result =>

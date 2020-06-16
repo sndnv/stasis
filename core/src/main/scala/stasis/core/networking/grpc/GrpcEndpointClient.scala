@@ -147,8 +147,6 @@ class GrpcEndpointClient(
   ): Future[Boolean] = {
     log.debugN("Discarding from endpoint [{}] crate with ID [{}]", address.host, crate)
 
-    val client = internal.Client(address, context)
-
     credentials
       .provide(address)
       .recoverWith {
@@ -160,6 +158,8 @@ class GrpcEndpointClient(
           Future.failed(CredentialsFailure(message))
       }
       .flatMap { endpointCredentials =>
+        val client = internal.Client(address, context)
+
         client
           .requestWithCredentials(_.discard(), endpointCredentials)
           .invoke(proto.DiscardRequest().withCrate(crate))
@@ -188,8 +188,6 @@ class GrpcEndpointClient(
     manifest: Manifest,
     endpointCredentials: HttpCredentials
   ): Future[CrateStorageReservation.Id] = {
-    val client = internal.Client(address, context)
-
     val storageRequest = CrateStorageRequest(manifest)
 
     client

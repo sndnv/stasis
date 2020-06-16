@@ -42,7 +42,7 @@ class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec {
           crate = crateId,
           origin = Node.generateId(),
           source = Node.generateId(),
-          size = crateContent.size,
+          size = crateContent.size.toLong,
           copies = 1
         ),
         content = Source.single(crateContent)
@@ -76,7 +76,7 @@ class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec {
           crate = crateId,
           origin = Node.generateId(),
           source = Node.generateId(),
-          size = crateContent.size,
+          size = crateContent.size.toLong,
           copies = 1
         ),
         content = Source.single(crateContent)
@@ -126,7 +126,7 @@ class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec {
           crate = crateId,
           origin = Node.generateId(),
           source = Node.generateId(),
-          size = crateContent.size,
+          size = crateContent.size.toLong,
           copies = 1
         ),
         content = Source.single(crateContent)

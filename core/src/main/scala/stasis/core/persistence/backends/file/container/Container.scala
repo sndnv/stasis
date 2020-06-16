@@ -56,7 +56,7 @@ class Container(
 
   def put(crate: UUID, crateData: ByteString): Future[Done] =
     for {
-      _ <- canStore(crateData.length).flatMap { canStore =>
+      _ <- canStore(crateData.length.toLong).flatMap { canStore =>
         if (canStore) {
           Future.successful(Done)
         } else {

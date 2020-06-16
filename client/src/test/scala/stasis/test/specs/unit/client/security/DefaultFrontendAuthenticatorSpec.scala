@@ -47,7 +47,7 @@ class DefaultFrontendAuthenticatorSpec extends AsyncUnitSpec { test =>
   it should "support generating authentication tokens" in {
     val expectedTokenSize = 12
     val token = DefaultFrontendAuthenticator.generateToken(withSize = expectedTokenSize)
-    token should have length expectedTokenSize
+    token should have length expectedTokenSize.toLong
   }
 
   private val token: String = "test-token"

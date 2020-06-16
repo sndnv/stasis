@@ -7,7 +7,6 @@ import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.server.security.{CurrentUser, Resource, ResourceProvider}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 trait ApiRoutes extends EntityDiscardingDirectives {

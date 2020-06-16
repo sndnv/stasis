@@ -141,7 +141,23 @@ lazy val commonSettings = Seq(
     val previous: Artifact = artifact.value
     previous.withName(name = s"$projectName-${previous.name}")
   },
-  scalacOptions := Seq("-unchecked", "-deprecation", "-feature")
+  scalacOptions := Seq(
+    "-encoding", "UTF-8",
+    "-unchecked",
+    "-deprecation",
+    "-feature",
+    "-Xcheckinit",
+    "-Ywarn-dead-code",
+    "-Ywarn-numeric-widen",
+    "-Ywarn-unused",
+    "-Ywarn-extra-implicit",
+    "-Ywarn-unused:implicits",
+    "-Xlint:constant",
+    "-Xlint:delayedinit-select",
+    "-Xlint:doc-detached",
+    "-Xlint:inaccessible",
+    "-Xlint:infer-any"
+  )
 )
 
 addCommandAlias("qa", "; clean; compile; coverage; test; coverageReport; coverageAggregate")

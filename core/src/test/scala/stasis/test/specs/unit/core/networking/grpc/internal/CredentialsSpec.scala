@@ -12,13 +12,6 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import scala.util.control.NonFatal
 
 class CredentialsSpec extends AsyncUnitSpec {
-  private val testNode = "test-node"
-  private val testSecret = "test-secret"
-  private val testToken = "test-token"
-
-  private val basicCredentials = s"Basic ${encode(s"$testNode:$testSecret")}"
-  private val tokenCredentials = s"Bearer $testToken"
-
   it should "successfully marshal credentials" in {
     Credentials.marshal(BasicHttpCredentials(testNode, testSecret)) should be(basicCredentials)
     Credentials.marshal(OAuth2BearerToken(testToken)) should be(tokenCredentials)
@@ -85,9 +78,13 @@ class CredentialsSpec extends AsyncUnitSpec {
       }
   }
 
+  private val testNode = "test-node"
+  private val testSecret = "test-secret"
+  private val testToken = "test-token"
+
+  private val basicCredentials = s"Basic ${encode(s"$testNode:$testSecret")}"
+  private val tokenCredentials = s"Bearer $testToken"
+
   private def encode(raw: String): String =
     Base64.rfc2045().encodeToString(raw.getBytes(StandardCharsets.UTF_8), false)
-
-  private def decode(raw: String): String =
-    new String(Base64.rfc2045().decodeFast(raw), StandardCharsets.UTF_8)
 }

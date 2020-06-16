@@ -11,8 +11,6 @@ import stasis.identity.api.manage.requests.{CreateOwner, UpdateOwner, UpdateOwne
 import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore}
 import stasis.identity.model.secrets.Secret
 
-import scala.concurrent.ExecutionContext
-
 class Owners(
   store: ResourceOwnerStore,
   ownerSecretConfig: Secret.ResourceOwnerConfig
@@ -21,7 +19,6 @@ class Owners(
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.identity.api.Formats._
 
-  private implicit val ec: ExecutionContext = system.dispatcher
   private val log: LoggingAdapter = Logging(system, this.getClass.getName)
 
   private implicit val secretConfig: Secret.ResourceOwnerConfig = ownerSecretConfig

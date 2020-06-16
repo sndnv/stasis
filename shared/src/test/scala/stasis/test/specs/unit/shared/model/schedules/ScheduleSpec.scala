@@ -28,7 +28,7 @@ class ScheduleSpec extends UnitSpec {
     val futureSchedule = pastSchedule.copy(start = now.plusSeconds((interval * startOffset).toSeconds))
 
     pastSchedule.nextInvocation should be(
-      pastSchedule.start.plusSeconds((interval * (startOffset + 1).toInt).toSeconds)
+      pastSchedule.start.plusSeconds((interval * (startOffset + 1).toLong).toSeconds)
     )
 
     recentSchedule.nextInvocation should be(

@@ -26,11 +26,8 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   "An GRPC Endpoint" should "successfully authenticate a client" in {
     val endpoint = new TestGrpcEndpoint()
 
-    def mockHandler(request: HttpRequest, node: Node.Id): Future[HttpResponse] =
-      Future.successful(HttpResponse(StatusCodes.Accepted))
-
     endpoint
-      .authenticated(mockHandler)(
+      .authenticated((_, _) => Future.successful(HttpResponse(StatusCodes.Accepted)))(
         Get(s"/${proto.StasisEndpoint.name}/method").addCredentials(testCredentials)
       )
       .map { response =>
@@ -41,11 +38,8 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   it should "fail to authenticate a client with no credentials" in {
     val endpoint = new TestGrpcEndpoint()
 
-    def mockHandler(request: HttpRequest, node: Node.Id): Future[HttpResponse] =
-      Future.successful(HttpResponse(StatusCodes.Accepted))
-
     endpoint
-      .authenticated(mockHandler)(
+      .authenticated((_, _) => Future.successful(HttpResponse(StatusCodes.Accepted)))(
         Get(s"/${proto.StasisEndpoint.name}/method")
       )
       .map { response =>
@@ -56,11 +50,8 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   it should "fail to authenticate a client with invalid credentials" in {
     val endpoint = new TestGrpcEndpoint()
 
-    def mockHandler(request: HttpRequest, node: Node.Id): Future[HttpResponse] =
-      Future.successful(HttpResponse(StatusCodes.Accepted))
-
     endpoint
-      .authenticated(mockHandler)(
+      .authenticated((_, _) => Future.successful(HttpResponse(StatusCodes.Accepted)))(
         Get(s"/${proto.StasisEndpoint.name}/method").addCredentials(testCredentials.copy(password = "invalid-secret"))
       )
       .map { response =>
@@ -480,7 +471,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   private val testReservation = CrateStorageReservation(
     id = CrateStorageReservation.generateId(),
     crate = Crate.generateId(),
-    size = crateContent.length,
+    size = crateContent.length.toLong,
     copies = 3,
     origin = testNode,
     target = Node.generateId()
