@@ -145,9 +145,10 @@ class FilesystemMetadataSpec extends UnitSpec {
     )
   )
 
-  private def protoEntityStateNew(): proto.metadata.EntityState = proto.metadata.EntityState(
-    proto.metadata.EntityState.State.PresentNew(proto.metadata.EntityState.PresentNew())
-  )
+  private def protoEntityStateNew(): proto.metadata.EntityState =
+    proto.metadata.EntityState(
+      proto.metadata.EntityState.State.PresentNew(proto.metadata.EntityState.PresentNew())
+    )
 
   private def protoEntityStateExisting(entry: Option[DatasetEntry.Id]): proto.metadata.EntityState =
     proto.metadata.EntityState(
@@ -164,11 +165,13 @@ class FilesystemMetadataSpec extends UnitSpec {
         )
     )
 
-  private def protoEntityStateUpdated(): proto.metadata.EntityState = proto.metadata.EntityState(
-    proto.metadata.EntityState.State.PresentUpdated(proto.metadata.EntityState.PresentUpdated())
-  )
+  private def protoEntityStateUpdated(): proto.metadata.EntityState =
+    proto.metadata.EntityState(
+      proto.metadata.EntityState.State.PresentUpdated(proto.metadata.EntityState.PresentUpdated())
+    )
 
-  private def protoEntityStateEmpty(): proto.metadata.EntityState = proto.metadata.EntityState(
-    proto.metadata.EntityState.State.Empty
-  )
+  private def protoEntityStateEmpty(): proto.metadata.EntityState =
+    proto.metadata.EntityState(
+      proto.metadata.EntityState.State.Empty
+    )
 }

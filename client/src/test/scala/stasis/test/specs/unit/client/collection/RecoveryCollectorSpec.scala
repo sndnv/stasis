@@ -109,7 +109,7 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
         entities = Map(
           Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.New,
           Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.New,
-          Fixtures.Metadata.FileThreeMetadata.path -> FilesystemMetadata.EntityState.Updated,
+          Fixtures.Metadata.FileThreeMetadata.path -> FilesystemMetadata.EntityState.Updated
         )
       )
     )

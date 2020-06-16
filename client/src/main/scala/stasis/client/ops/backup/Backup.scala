@@ -90,8 +90,8 @@ object Backup {
   ) {
     def toBackupCollector(
       checksum: Checksum
-    )(
-      implicit mat: Materializer,
+    )(implicit
+      mat: Materializer,
       ec: ExecutionContext,
       parallelism: ParallelismConfig,
       providers: Providers

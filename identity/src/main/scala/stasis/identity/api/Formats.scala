@@ -80,49 +80,45 @@ object Formats {
   implicit val apiFormat: Format[Api] = Json.format[Api]
 
   implicit val clientWrites: Writes[Client] =
-    Writes[Client](
-      client =>
-        Json.obj(
-          "id" -> Json.toJson(client.id),
-          "redirect_uri" -> Json.toJson(client.redirectUri),
-          "token_expiration" -> Json.toJson(client.tokenExpiration),
-          "active" -> Json.toJson(client.active),
-          "subject" -> Json.toJson(client.subject)
+    Writes[Client](client =>
+      Json.obj(
+        "id" -> Json.toJson(client.id),
+        "redirect_uri" -> Json.toJson(client.redirectUri),
+        "token_expiration" -> Json.toJson(client.tokenExpiration),
+        "active" -> Json.toJson(client.active),
+        "subject" -> Json.toJson(client.subject)
       )
     )
 
   implicit val storedAuthorizationCodeWrites: Writes[StoredAuthorizationCode] =
-    Writes[StoredAuthorizationCode](
-      code =>
-        Json.obj(
-          "code" -> Json.toJson(code.code),
-          "client" -> Json.toJson(code.client),
-          "owner" -> Json.toJson(code.owner.username),
-          "scope" -> Json.toJson(code.scope),
-          "challenge" -> Json.toJson(code.challenge)
+    Writes[StoredAuthorizationCode](code =>
+      Json.obj(
+        "code" -> Json.toJson(code.code),
+        "client" -> Json.toJson(code.client),
+        "owner" -> Json.toJson(code.owner.username),
+        "scope" -> Json.toJson(code.scope),
+        "challenge" -> Json.toJson(code.challenge)
       )
     )
 
   implicit val resourceOwnerWrites: Writes[ResourceOwner] =
-    Writes[ResourceOwner](
-      owner =>
-        Json.obj(
-          "username" -> Json.toJson(owner.username),
-          "allowed_scopes" -> Json.toJson(owner.allowedScopes),
-          "active" -> Json.toJson(owner.active),
-          "subject" -> Json.toJson(owner.subject)
+    Writes[ResourceOwner](owner =>
+      Json.obj(
+        "username" -> Json.toJson(owner.username),
+        "allowed_scopes" -> Json.toJson(owner.allowedScopes),
+        "active" -> Json.toJson(owner.active),
+        "subject" -> Json.toJson(owner.subject)
       )
     )
 
   implicit val storedRefreshTokenWrites: Writes[StoredRefreshToken] =
-    Writes[StoredRefreshToken](
-      token =>
-        Json.obj(
-          "token" -> Json.toJson(token.token),
-          "client" -> Json.toJson(token.client),
-          "owner" -> Json.toJson(token.owner.username),
-          "scope" -> Json.toJson(token.scope),
-          "expiration" -> Json.toJson(token.expiration)
+    Writes[StoredRefreshToken](token =>
+      Json.obj(
+        "token" -> Json.toJson(token.token),
+        "client" -> Json.toJson(token.client),
+        "owner" -> Json.toJson(token.owner.username),
+        "scope" -> Json.toJson(token.scope),
+        "expiration" -> Json.toJson(token.expiration)
       )
     )
 
@@ -153,35 +149,39 @@ object Formats {
   implicit val stringToRefreshToken: Unmarshaller[String, RefreshToken] =
     Unmarshaller.strict(RefreshToken)
 
-  private def convertStringToChallengeMethod(string: String): ChallengeMethod = string.toLowerCase match {
-    case "plain" => ChallengeMethod.Plain
-    case "s256"  => ChallengeMethod.S256
-  }
+  private def convertStringToChallengeMethod(string: String): ChallengeMethod =
+    string.toLowerCase match {
+      case "plain" => ChallengeMethod.Plain
+      case "s256"  => ChallengeMethod.S256
+    }
 
   private def convertChallengeMethodToString(challengeMethod: ChallengeMethod): String =
     challengeMethod.toString.toLowerCase
 
-  private def convertStringToResponseType(string: String): ResponseType = string match {
-    case "code"  => ResponseType.Code
-    case "token" => ResponseType.Token
-  }
+  private def convertStringToResponseType(string: String): ResponseType =
+    string match {
+      case "code"  => ResponseType.Code
+      case "token" => ResponseType.Token
+    }
 
   private def convertResponseTypeToString(responseType: ResponseType): String =
     responseType.toString.toLowerCase
 
-  private def convertStringToGrantType(string: String): GrantType = string match {
-    case "authorization_code" => GrantType.AuthorizationCode
-    case "client_credentials" => GrantType.ClientCredentials
-    case "implicit"           => GrantType.Implicit
-    case "refresh_token"      => GrantType.RefreshToken
-    case "password"           => GrantType.Password
-  }
+  private def convertStringToGrantType(string: String): GrantType =
+    string match {
+      case "authorization_code" => GrantType.AuthorizationCode
+      case "client_credentials" => GrantType.ClientCredentials
+      case "implicit"           => GrantType.Implicit
+      case "refresh_token"      => GrantType.RefreshToken
+      case "password"           => GrantType.Password
+    }
 
-  private def convertGrantTypeToString(grantType: GrantType): String = grantType match {
-    case GrantType.AuthorizationCode => "authorization_code"
-    case GrantType.ClientCredentials => "client_credentials"
-    case GrantType.Implicit          => "implicit"
-    case GrantType.RefreshToken      => "refresh_token"
-    case GrantType.Password          => "password"
-  }
+  private def convertGrantTypeToString(grantType: GrantType): String =
+    grantType match {
+      case GrantType.AuthorizationCode => "authorization_code"
+      case GrantType.ClientCredentials => "client_credentials"
+      case GrantType.Implicit          => "implicit"
+      case GrantType.RefreshToken      => "refresh_token"
+      case GrantType.Password          => "password"
+    }
 }

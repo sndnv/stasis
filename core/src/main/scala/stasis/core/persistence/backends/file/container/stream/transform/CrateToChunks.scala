@@ -28,104 +28,105 @@ class CrateToChunks(
 
   override def shape: FlowShape[ByteString, CrateChunk] = FlowShape.of(in, out)
 
-  override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = new GraphStageLogic(shape) {
-    val pending: mutable.Queue[CrateChunk] = mutable.Queue.empty
-    val partial: ByteBuffer = ByteBuffer.allocate(maxChunkSize).order(byteOrder)
-    var lastChunkId: Int = chunkIdStart
+  override def createLogic(inheritedAttributes: Attributes): GraphStageLogic =
+    new GraphStageLogic(shape) {
+      val pending: mutable.Queue[CrateChunk] = mutable.Queue.empty
+      val partial: ByteBuffer = ByteBuffer.allocate(maxChunkSize).order(byteOrder)
+      var lastChunkId: Int = chunkIdStart
 
-    setHandler(
-      in,
-      new InHandler {
-        override def onUpstreamFinish(): Unit = {
-          if (partial.position() != 0) {
-            partial.flip()
-            val data = ByteString.fromByteBuffer(partial)
+      setHandler(
+        in,
+        new InHandler {
+          override def onUpstreamFinish(): Unit = {
+            if (partial.position() != 0) {
+              partial.flip()
+              val data = ByteString.fromByteBuffer(partial)
 
-            pending.enqueue(
-              CrateChunk(
-                header = ChunkHeader(
-                  crateId = crate,
-                  chunkId = lastChunkId,
-                  chunkSize = data.length
-                ),
-                data
-              )
-            )
-          }
-
-          if (pending.nonEmpty) {
-            emitMultiple(out, pending.iterator)
-          }
-
-          completeStage()
-        }
-
-        override def onPush(): Unit = {
-          val (lastPartialRemaining, remaining) = grab(in).splitAt(partial.remaining())
-          val chunks = remaining.grouped(maxChunkSize)
-
-          partial.put(lastPartialRemaining.toArray)
-
-          if (!partial.hasRemaining) {
-            partial.flip()
-            val data = ByteString.fromByteBuffer(partial)
-
-            pending.enqueue(
-              CrateChunk(
-                header = ChunkHeader(
-                  crateId = crate,
-                  chunkId = lastChunkId,
-                  chunkSize = data.length
-                ),
-                data
-              )
-            )
-
-            lastChunkId += 1
-
-            partial.clear()
-          }
-
-          chunks.foreach[Unit] { chunk =>
-            if (chunk.lengthCompare(maxChunkSize) == 0) {
               pending.enqueue(
                 CrateChunk(
                   header = ChunkHeader(
                     crateId = crate,
                     chunkId = lastChunkId,
-                    chunkSize = chunk.length
+                    chunkSize = data.length
                   ),
-                  data = chunk
+                  data
+                )
+              )
+            }
+
+            if (pending.nonEmpty) {
+              emitMultiple(out, pending.iterator)
+            }
+
+            completeStage()
+          }
+
+          override def onPush(): Unit = {
+            val (lastPartialRemaining, remaining) = grab(in).splitAt(partial.remaining())
+            val chunks = remaining.grouped(maxChunkSize)
+
+            partial.put(lastPartialRemaining.toArray)
+
+            if (!partial.hasRemaining) {
+              partial.flip()
+              val data = ByteString.fromByteBuffer(partial)
+
+              pending.enqueue(
+                CrateChunk(
+                  header = ChunkHeader(
+                    crateId = crate,
+                    chunkId = lastChunkId,
+                    chunkSize = data.length
+                  ),
+                  data
                 )
               )
 
               lastChunkId += 1
+
+              partial.clear()
+            }
+
+            chunks.foreach[Unit] { chunk =>
+              if (chunk.lengthCompare(maxChunkSize) == 0) {
+                pending.enqueue(
+                  CrateChunk(
+                    header = ChunkHeader(
+                      crateId = crate,
+                      chunkId = lastChunkId,
+                      chunkSize = chunk.length
+                    ),
+                    data = chunk
+                  )
+                )
+
+                lastChunkId += 1
+              } else {
+                partial.put(chunk.toArray)
+              }
+            }
+
+            if (pending.nonEmpty) {
+              push(out, pending.dequeue())
             } else {
-              partial.put(chunk.toArray)
+              pull(in)
             }
           }
-
-          if (pending.nonEmpty) {
-            push(out, pending.dequeue())
-          } else {
-            pull(in)
-          }
         }
-      }
-    )
+      )
 
-    setHandler(
-      out,
-      new OutHandler {
-        override def onPull(): Unit =
-          if (pending.nonEmpty) {
-            push(out, pending.dequeue())
-          } else {
-            pull(in)
-          }
-      }
-    )
-  }
+      setHandler(
+        out,
+        new OutHandler {
+          override def onPull(): Unit =
+            if (pending.nonEmpty) {
+              push(out, pending.dequeue())
+            } else {
+              pull(in)
+            }
+        }
+      )
+    }
 }
 
 object CrateToChunks {

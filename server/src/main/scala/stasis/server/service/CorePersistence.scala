@@ -23,7 +23,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class CorePersistence(
-  persistenceConfig: typesafe.Config,
+  persistenceConfig: typesafe.Config
 )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout) { persistence =>
   private implicit val ec: ExecutionContext = system.executionContext
 
@@ -147,7 +147,7 @@ class CorePersistence(
 
 object CorePersistence {
   def apply(
-    persistenceConfig: typesafe.Config,
+    persistenceConfig: typesafe.Config
   )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): CorePersistence =
     new CorePersistence(persistenceConfig)
 }

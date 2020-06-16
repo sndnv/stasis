@@ -183,7 +183,7 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
             file = Paths.get(s"/tmp/file/one_$partId"),
             iv = ByteString.empty,
             key = ByteString.empty
-        )
+          )
       )
       .map { result =>
         result.toList match {

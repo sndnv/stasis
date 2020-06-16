@@ -141,10 +141,11 @@ class RefreshTokenConsumptionSpec extends RouteTest {
     }
   }
 
-  private def createDirective(tokens: RefreshTokenStore) = new RefreshTokenConsumption {
-    override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
-    override implicit protected def ec: ExecutionContext = system.dispatcher
-    override protected def log: LoggingAdapter = createLogger()
-    override protected def refreshTokenStore: RefreshTokenStore = tokens
-  }
+  private def createDirective(tokens: RefreshTokenStore) =
+    new RefreshTokenConsumption {
+      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
+      override implicit protected def ec: ExecutionContext = system.dispatcher
+      override protected def log: LoggingAdapter = createLogger()
+      override protected def refreshTokenStore: RefreshTokenStore = tokens
+    }
 }

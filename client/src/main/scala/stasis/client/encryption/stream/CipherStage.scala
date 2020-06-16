@@ -21,39 +21,40 @@ class CipherStage(
 
   override def shape: FlowShape[ByteString, ByteString] = FlowShape.of(in, out)
 
-  override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = new GraphStageLogic(shape) {
-    val cipher: Cipher = Cipher.getInstance(s"$algorithm/$cipherMode/$padding")
-    spec match {
-      case Some(params) => cipher.init(operationMode, key, params)
-      case None         => cipher.init(operationMode, key)
-    }
+  override def createLogic(inheritedAttributes: Attributes): GraphStageLogic =
+    new GraphStageLogic(shape) {
+      val cipher: Cipher = Cipher.getInstance(s"$algorithm/$cipherMode/$padding")
+      spec match {
+        case Some(params) => cipher.init(operationMode, key, params)
+        case None         => cipher.init(operationMode, key)
+      }
 
-    setHandler(
-      in,
-      new InHandler {
-        override def onUpstreamFinish(): Unit = {
-          val lastChunk = ByteString.fromArray(cipher.doFinal())
+      setHandler(
+        in,
+        new InHandler {
+          override def onUpstreamFinish(): Unit = {
+            val lastChunk = ByteString.fromArray(cipher.doFinal())
 
-          if (lastChunk.nonEmpty) {
-            emit(out, lastChunk)
+            if (lastChunk.nonEmpty) {
+              emit(out, lastChunk)
+            }
+
+            completeStage()
           }
 
-          completeStage()
+          override def onPush(): Unit =
+            Option(cipher.update(grab(in).toArray)).map(ByteString.fromArray) match {
+              case Some(nextChunk) => push(out, nextChunk)
+              case None            => pull(in)
+            }
         }
+      )
 
-        override def onPush(): Unit =
-          Option(cipher.update(grab(in).toArray)).map(ByteString.fromArray) match {
-            case Some(nextChunk) => push(out, nextChunk)
-            case None            => pull(in)
-          }
-      }
-    )
-
-    setHandler(
-      out,
-      new OutHandler {
-        override def onPull(): Unit = pull(in)
-      }
-    )
-  }
+      setHandler(
+        out,
+        new OutHandler {
+          override def onPull(): Unit = pull(in)
+        }
+      )
+    }
 }

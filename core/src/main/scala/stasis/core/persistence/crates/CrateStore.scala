@@ -68,10 +68,11 @@ class CrateStore(
   def canStore(request: CrateStorageRequest): Future[Boolean] =
     backend.canStore(request.size * request.copies)
 
-  def view: CrateStoreView = new CrateStoreView {
-    override def retrieve(crate: Crate.Id): Future[Option[Source[ByteString, NotUsed]]] =
-      store.retrieve(crate)
-  }
+  def view: CrateStoreView =
+    new CrateStoreView {
+      override def retrieve(crate: Crate.Id): Future[Option[Source[ByteString, NotUsed]]] =
+        store.retrieve(crate)
+    }
 }
 
 object CrateStore {

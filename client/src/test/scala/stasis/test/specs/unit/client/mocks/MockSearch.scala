@@ -30,7 +30,7 @@ class MockSearch() extends Search {
               matches = Map(
                 Paths.get("file-01") -> FilesystemMetadata.EntityState.New,
                 Paths.get("file-02") -> FilesystemMetadata.EntityState.Updated,
-                Paths.get("file-03") -> FilesystemMetadata.EntityState.Existing(entry = DatasetEntry.generateId()),
+                Paths.get("file-03") -> FilesystemMetadata.EntityState.Existing(entry = DatasetEntry.generateId())
               )
             )
           ),

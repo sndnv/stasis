@@ -14,12 +14,11 @@ trait EntityCollection {
   def entityCollection(implicit operation: Operation.Id): Source[TargetEntity, NotUsed] =
     collector
       .collect()
-      .wireTap(
-        entity =>
-          providers.track.entityExamined(
-            entity = entity.path,
-            metadataChanged = entity.hasChanged,
-            contentChanged = entity.hasContentChanged
+      .wireTap(entity =>
+        providers.track.entityExamined(
+          entity = entity.path,
+          metadataChanged = entity.hasChanged,
+          contentChanged = entity.hasContentChanged
         )
       )
       .filter(_.hasChanged)

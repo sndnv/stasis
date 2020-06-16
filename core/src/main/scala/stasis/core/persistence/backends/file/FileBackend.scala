@@ -15,10 +15,11 @@ class FileBackend(val parentDirectory: String)(implicit ec: ExecutionContext) ex
 
   private val parent: Path = Paths.get(parentDirectory)
 
-  override def init(): Future[Done] = Future {
-    val _ = Files.createDirectories(parent)
-    Done
-  }
+  override def init(): Future[Done] =
+    Future {
+      val _ = Files.createDirectories(parent)
+      Done
+    }
 
   override def drop(): Future[Done] =
     if (Files.exists(parent)) {
@@ -49,17 +50,20 @@ class FileBackend(val parentDirectory: String)(implicit ec: ExecutionContext) ex
     )
   }
 
-  override def delete(key: UUID): Future[Boolean] = Future {
-    Files.deleteIfExists(key.toPath)
-  }
+  override def delete(key: UUID): Future[Boolean] =
+    Future {
+      Files.deleteIfExists(key.toPath)
+    }
 
-  override def contains(key: UUID): Future[Boolean] = Future {
-    Files.exists(key.toPath)
-  }
+  override def contains(key: UUID): Future[Boolean] =
+    Future {
+      Files.exists(key.toPath)
+    }
 
-  override def canStore(bytes: Long): Future[Boolean] = Future {
-    parent.getFileSystem.getFileStores.asScala.exists(_.getUsableSpace >= bytes)
-  }
+  override def canStore(bytes: Long): Future[Boolean] =
+    Future {
+      parent.getFileSystem.getFileStores.asScala.exists(_.getUsableSpace >= bytes)
+    }
 
   private implicit class FileKey(key: UUID) {
     def toPath: Path = parent.resolve(key.toString)

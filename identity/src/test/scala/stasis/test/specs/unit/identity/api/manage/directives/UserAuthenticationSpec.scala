@@ -79,13 +79,14 @@ class UserAuthenticationSpec extends RouteTest {
     }
   }
 
-  private def createDirective(auth: OAuth2BearerToken => Future[ResourceOwner]) = new UserAuthentication {
-    override protected def realm: String = testRealm
-    override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
-    override protected def log: LoggingAdapter = createLogger()
-    override protected def authenticator: ResourceOwnerAuthenticator =
-      (credentials: OAuth2BearerToken) => auth(credentials)
-  }
+  private def createDirective(auth: OAuth2BearerToken => Future[ResourceOwner]) =
+    new UserAuthentication {
+      override protected def realm: String = testRealm
+      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
+      override protected def log: LoggingAdapter = createLogger()
+      override protected def authenticator: ResourceOwnerAuthenticator =
+        (credentials: OAuth2BearerToken) => auth(credentials)
+    }
 
   private val testRealm: String = "some-realm"
 }

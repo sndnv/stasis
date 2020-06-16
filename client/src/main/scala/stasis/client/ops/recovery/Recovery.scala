@@ -80,8 +80,8 @@ object Recovery {
     destination: Option[Destination],
     deviceSecret: DeviceSecret
   ) {
-    def toRecoveryCollector()(
-      implicit ec: ExecutionContext,
+    def toRecoveryCollector()(implicit
+      ec: ExecutionContext,
       mat: Materializer,
       parallelism: ParallelismConfig,
       providers: Providers

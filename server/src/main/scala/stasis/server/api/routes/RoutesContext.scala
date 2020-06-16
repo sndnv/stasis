@@ -14,8 +14,7 @@ final case class RoutesContext(
 )
 
 object RoutesContext {
-  def collect()(
-    implicit
+  def collect()(implicit
     resourceProvider: ResourceProvider,
     ec: ExecutionContext,
     mat: Materializer,

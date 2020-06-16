@@ -47,27 +47,28 @@ object MemoryBackend {
   private final case class GetAll[K, V](replyTo: ActorRef[Map[K, V]]) extends Message[K, V]
   private final case class Reset[K, V](replyTo: ActorRef[Done]) extends Message[K, V]
 
-  private def store[K, V](map: Map[K, V]): Behavior[Message[K, V]] = Behaviors.receive { (_, message) =>
-    message match {
-      case Put(key, value, replyTo) =>
-        replyTo ! Done
-        store(map = map + (key -> value))
+  private def store[K, V](map: Map[K, V]): Behavior[Message[K, V]] =
+    Behaviors.receive { (_, message) =>
+      message match {
+        case Put(key, value, replyTo) =>
+          replyTo ! Done
+          store(map = map + (key -> value))
 
-      case Remove(key, replyTo) =>
-        replyTo ! map.contains(key)
-        store(map = map - key)
+        case Remove(key, replyTo) =>
+          replyTo ! map.contains(key)
+          store(map = map - key)
 
-      case Get(key, replyTo) =>
-        replyTo ! map.get(key)
-        Behaviors.same
+        case Get(key, replyTo) =>
+          replyTo ! map.get(key)
+          Behaviors.same
 
-      case GetAll(replyTo) =>
-        replyTo ! map
-        Behaviors.same
+        case GetAll(replyTo) =>
+          replyTo ! map
+          Behaviors.same
 
-      case Reset(replyTo) =>
-        replyTo ! Done
-        store(map = Map.empty[K, V])
+        case Reset(replyTo) =>
+          replyTo ! Done
+          store(map = Map.empty[K, V])
+      }
     }
-  }
 }

@@ -49,7 +49,7 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
     val paths = Map[Path, Int](
       path1 -> 1,
       path2 -> 2,
-      path3 -> 3,
+      path3 -> 3
     )
 
     val json = s"""{"$path1":1,"$path2":2,"$path3":3}"""
@@ -76,7 +76,7 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
       ) -> s"""{"schedule":"$schedule","assignment_type":"validation"}""",
       OperationScheduleAssignment.KeyRotation(
         schedule = schedule
-      ) -> s"""{"schedule":"$schedule","assignment_type":"key-rotation"}""",
+      ) -> s"""{"schedule":"$schedule","assignment_type":"key-rotation"}"""
     )
 
     assignments.foreach {

@@ -29,12 +29,13 @@ object ContainerHeader {
   def apply(
     maxChunkSize: Int,
     maxChunks: Int
-  ): ContainerHeader = ContainerHeader(
-    containerId = UUID.randomUUID(),
-    containerVersion = CURRENT_VERSION,
-    maxChunkSize = maxChunkSize,
-    maxChunks = maxChunks
-  )
+  ): ContainerHeader =
+    ContainerHeader(
+      containerId = UUID.randomUUID(),
+      containerVersion = CURRENT_VERSION,
+      maxChunkSize = maxChunkSize,
+      maxChunks = maxChunks
+    )
 
   def toBytes(header: ContainerHeader)(implicit byteOrder: ByteOrder): Array[Byte] =
     ConversionOps.toBytes(

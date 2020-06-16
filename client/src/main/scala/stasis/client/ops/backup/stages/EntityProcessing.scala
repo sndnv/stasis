@@ -37,11 +37,10 @@ trait EntityProcessing {
         case entity if entity.hasContentChanged => processContentChanged(entity).map(Left.apply)
         case entity                             => processMetadataChanged(entity).map(Right.apply)
       }
-      .wireTap(
-        metadata =>
-          providers.track.entityProcessed(
-            entity = metadata.fold(_.path, _.path),
-            contentChanged = metadata.isLeft
+      .wireTap(metadata =>
+        providers.track.entityProcessed(
+          entity = metadata.fold(_.path, _.path),
+          contentChanged = metadata.isLeft
         )
       )
 

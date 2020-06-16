@@ -29,10 +29,11 @@ class MockRouter(
     crate: Crate.Id
   ): Future[Option[Source[ByteString, NotUsed]]] = store.retrieve(crate)
 
-  override def discard(crate: Crate.Id): Future[Done] = store.discard(crate).flatMap {
-    case true  => Future.successful(Done)
-    case false => Future.failed(DiscardFailure(s"Backing store could not find crate [$crate]"))
-  }
+  override def discard(crate: Crate.Id): Future[Done] =
+    store.discard(crate).flatMap {
+      case true  => Future.successful(Done)
+      case false => Future.failed(DiscardFailure(s"Backing store could not find crate [$crate]"))
+    }
 
   override def reserve(request: CrateStorageRequest): Future[Option[CrateStorageReservation]] =
     if (!reservationDisabled) {

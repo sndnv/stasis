@@ -34,13 +34,14 @@ object CrateStorageRequest {
   ): CrateStorageRequest =
     new CrateStorageRequest(id = generateId(), crate, size, copies, origin, source)
 
-  def apply(manifest: Manifest): CrateStorageRequest = CrateStorageRequest(
-    crate = manifest.crate,
-    size = manifest.size,
-    copies = manifest.copies,
-    origin = manifest.origin,
-    source = manifest.source
-  )
+  def apply(manifest: Manifest): CrateStorageRequest =
+    CrateStorageRequest(
+      crate = manifest.crate,
+      size = manifest.size,
+      copies = manifest.copies,
+      origin = manifest.origin,
+      source = manifest.source
+    )
 
   type Id = java.util.UUID
 

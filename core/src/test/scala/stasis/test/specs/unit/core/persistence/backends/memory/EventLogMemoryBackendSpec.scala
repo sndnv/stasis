@@ -22,7 +22,7 @@ class EventLogMemoryBackendSpec extends AsyncUnitSpec with EventLogBackendBehavi
         EventLogMemoryBackend(
           name = "log-store",
           initialState = Queue.empty[String]
-      )
+        )
     )
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)

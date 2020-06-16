@@ -44,7 +44,7 @@ class DecryptedCratesSpec extends AsyncUnitSpec {
             file = Paths.get(s"/tmp/file/one_$partId"),
             iv = ByteString.empty,
             key = ByteString.empty
-        )
+          )
       )
       .map { case (_, source) => source.runWith(Sink.head) }
 

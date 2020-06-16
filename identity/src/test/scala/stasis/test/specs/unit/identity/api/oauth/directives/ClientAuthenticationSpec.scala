@@ -110,19 +110,21 @@ class ClientAuthenticationSpec extends RouteTest {
 
   private def createDirective(
     clients: ClientStore
-  ) = new ClientAuthentication {
+  ) =
+    new ClientAuthentication {
 
-    override protected def realm: String = testRealm
+      override protected def realm: String = testRealm
 
-    override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
+      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
 
-    override protected def log: LoggingAdapter = createLogger()
+      override protected def log: LoggingAdapter = createLogger()
 
-    override protected def clientAuthenticator: ClientAuthenticator = new DefaultClientAuthenticator(
-      store = clients.view,
-      secretConfig = secretConfig
-    )
-  }
+      override protected def clientAuthenticator: ClientAuthenticator =
+        new DefaultClientAuthenticator(
+          store = clients.view,
+          secretConfig = secretConfig
+        )
+    }
 
   private val testRealm: String = "some-realm"
 }

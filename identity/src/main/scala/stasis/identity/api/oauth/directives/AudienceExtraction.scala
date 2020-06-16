@@ -127,7 +127,7 @@ trait AudienceExtraction extends EntityDiscardingDirectives {
           log.warning(
             "No {} audience found with provided identifiers [{}]",
             audienceType,
-            audience,
+            audience
           )
 
           discardEntity {

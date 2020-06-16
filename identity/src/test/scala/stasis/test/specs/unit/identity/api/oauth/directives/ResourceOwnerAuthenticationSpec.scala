@@ -205,11 +205,12 @@ class ResourceOwnerAuthenticationSpec extends RouteTest {
 
   private def createDirective(
     owners: ResourceOwnerStore
-  ) = new ResourceOwnerAuthentication {
-    override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
+  ) =
+    new ResourceOwnerAuthentication {
+      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
 
-    override protected def log: LoggingAdapter = createLogger()
-    override protected def resourceOwnerAuthenticator: ResourceOwnerAuthenticator =
-      new DefaultResourceOwnerAuthenticator(owners.view, secretConfig)
-  }
+      override protected def log: LoggingAdapter = createLogger()
+      override protected def resourceOwnerAuthenticator: ResourceOwnerAuthenticator =
+        new DefaultResourceOwnerAuthenticator(owners.view, secretConfig)
+    }
 }

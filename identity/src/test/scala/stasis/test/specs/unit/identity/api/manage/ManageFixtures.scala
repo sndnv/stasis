@@ -19,30 +19,31 @@ trait ManageFixtures { _: RouteTest =>
     expiration: FiniteDuration = 3.seconds,
     withOwnerScopes: Seq[String] =
       stasis.test.Generators.generateSeq(min = 1, g = stasis.test.Generators.generateString(withSize = 10))
-  ): Providers = Providers(
-    apiStore = ApiStore(
-      MemoryBackend[Api.Id, Api](name = s"api-store-${java.util.UUID.randomUUID()}")
-    ),
-    clientStore = ClientStore(
-      MemoryBackend[Client.Id, Client](name = s"client-store-${java.util.UUID.randomUUID()}")
-    ),
-    codeStore = AuthorizationCodeStore(
-      expiration = expiration,
-      MemoryBackend[AuthorizationCode, StoredAuthorizationCode](name = s"code-store-${java.util.UUID.randomUUID()}")
-    ),
-    ownerStore = ResourceOwnerStore(
-      MemoryBackend[ResourceOwner.Id, ResourceOwner](name = s"owner-store-${java.util.UUID.randomUUID()}")
-    ),
-    tokenStore = RefreshTokenStore(
-      expiration = expiration,
-      MemoryBackend[RefreshToken, StoredRefreshToken](
-        name = s"token-store-${java.util.UUID.randomUUID()}"
+  ): Providers =
+    Providers(
+      apiStore = ApiStore(
+        MemoryBackend[Api.Id, Api](name = s"api-store-${java.util.UUID.randomUUID()}")
       ),
-      MemoryBackend[(Client.Id, ResourceOwner.Id), RefreshToken](
-        name = s"token-directory-${java.util.UUID.randomUUID()}"
-      )
-    ),
-    ownerAuthenticator =
-      (_: OAuth2BearerToken) => Future.successful(Generators.generateResourceOwner.copy(allowedScopes = withOwnerScopes))
-  )
+      clientStore = ClientStore(
+        MemoryBackend[Client.Id, Client](name = s"client-store-${java.util.UUID.randomUUID()}")
+      ),
+      codeStore = AuthorizationCodeStore(
+        expiration = expiration,
+        MemoryBackend[AuthorizationCode, StoredAuthorizationCode](name = s"code-store-${java.util.UUID.randomUUID()}")
+      ),
+      ownerStore = ResourceOwnerStore(
+        MemoryBackend[ResourceOwner.Id, ResourceOwner](name = s"owner-store-${java.util.UUID.randomUUID()}")
+      ),
+      tokenStore = RefreshTokenStore(
+        expiration = expiration,
+        MemoryBackend[RefreshToken, StoredRefreshToken](
+          name = s"token-store-${java.util.UUID.randomUUID()}"
+        ),
+        MemoryBackend[(Client.Id, ResourceOwner.Id), RefreshToken](
+          name = s"token-directory-${java.util.UUID.randomUUID()}"
+        )
+      ),
+      ownerAuthenticator =
+        (_: OAuth2BearerToken) => Future.successful(Generators.generateResourceOwner.copy(allowedScopes = withOwnerScopes))
+    )
 }

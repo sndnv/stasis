@@ -64,8 +64,8 @@ object Base {
   def apply(
     applicationDirectory: ApplicationDirectory,
     terminate: () => Unit
-  )(
-    implicit typedSystem: ActorSystem[SpawnProtocol.Command],
+  )(implicit
+    typedSystem: ActorSystem[SpawnProtocol.Command],
     logger: Logger
   ): Future[Base] =
     Future.fromTry(

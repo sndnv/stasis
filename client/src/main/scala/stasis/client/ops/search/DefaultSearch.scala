@@ -16,22 +16,24 @@ class DefaultSearch(
 
     val metadataResult = for {
       definitions <- api.datasetDefinitions()
-      entries <- Future
-        .sequence(
-          definitions.map { definition =>
-            api.latestEntry(definition.id, until).map(entry => (definition, entry))
-          }
-        )
-      metadata <- Future
-        .sequence(
-          entries.map {
-            case (definition, Some(entry)) =>
-              api.datasetMetadata(entry).map(metadata => (definition, Some((entry, metadata))))
+      entries <-
+        Future
+          .sequence(
+            definitions.map { definition =>
+              api.latestEntry(definition.id, until).map(entry => (definition, entry))
+            }
+          )
+      metadata <-
+        Future
+          .sequence(
+            entries.map {
+              case (definition, Some(entry)) =>
+                api.datasetMetadata(entry).map(metadata => (definition, Some((entry, metadata))))
 
-            case (definition, None) =>
-              Future.successful((definition, None))
-          }
-        )
+              case (definition, None) =>
+                Future.successful((definition, None))
+            }
+          )
     } yield {
       metadata
     }

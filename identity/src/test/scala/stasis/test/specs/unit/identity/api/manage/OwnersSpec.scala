@@ -32,7 +32,8 @@ class OwnersSpec extends RouteTest {
     Get() ~> owners.routes(user) ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[PartialResourceOwner]].map(_.toOwner(secret, salt)).sortBy(_.username) should be(
-        expectedOwners.sortBy(_.username))
+        expectedOwners.sortBy(_.username)
+      )
     }
   }
 

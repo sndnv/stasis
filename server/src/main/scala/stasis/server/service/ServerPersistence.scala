@@ -18,7 +18,7 @@ import stasis.shared.model.users.User
 import scala.concurrent.{ExecutionContext, Future}
 
 class ServerPersistence(
-  persistenceConfig: typesafe.Config,
+  persistenceConfig: typesafe.Config
 )(implicit system: ActorSystem[SpawnProtocol.Command]) {
   private implicit val ec: ExecutionContext = system.executionContext
 
@@ -73,27 +73,28 @@ class ServerPersistence(
       Done
     }
 
-  def resources: Set[Resource] = Set(
-    datasetDefinitions.manage(),
-    datasetDefinitions.manageSelf(),
-    datasetDefinitions.view(),
-    datasetDefinitions.viewSelf(),
-    datasetEntries.manage(),
-    datasetEntries.manageSelf(),
-    datasetEntries.view(),
-    datasetEntries.viewSelf(),
-    devices.manage(),
-    devices.manageSelf(),
-    devices.view(),
-    devices.viewSelf(),
-    schedules.manage(),
-    schedules.view(),
-    schedules.viewPublic(),
-    users.manage(),
-    users.manageSelf(),
-    users.view(),
-    users.viewSelf()
-  )
+  def resources: Set[Resource] =
+    Set(
+      datasetDefinitions.manage(),
+      datasetDefinitions.manageSelf(),
+      datasetDefinitions.view(),
+      datasetDefinitions.viewSelf(),
+      datasetEntries.manage(),
+      datasetEntries.manageSelf(),
+      datasetEntries.view(),
+      datasetEntries.viewSelf(),
+      devices.manage(),
+      devices.manageSelf(),
+      devices.view(),
+      devices.viewSelf(),
+      schedules.manage(),
+      schedules.view(),
+      schedules.viewPublic(),
+      users.manage(),
+      users.manageSelf(),
+      users.view(),
+      users.viewSelf()
+    )
 
   private object backends {
     val definitions: SlickBackend[DatasetDefinition.Id, DatasetDefinition] = SlickBackend(

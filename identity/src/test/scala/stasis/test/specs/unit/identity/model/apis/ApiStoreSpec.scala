@@ -63,7 +63,8 @@ class ApiStoreSpec extends AsyncUnitSpec {
     "ApiStoreSpec"
   )
 
-  private def createStore() = ApiStore(
-    MemoryBackend[Api.Id, Api](name = s"api-store-${java.util.UUID.randomUUID()}")
-  )
+  private def createStore() =
+    ApiStore(
+      MemoryBackend[Api.Id, Api](name = s"api-store-${java.util.UUID.randomUUID()}")
+    )
 }

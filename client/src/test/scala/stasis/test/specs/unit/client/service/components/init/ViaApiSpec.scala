@@ -18,7 +18,7 @@ class ViaApiSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val states = Map(
       InitState.Pending -> """{"startup":"pending"}""",
       InitState.Completed -> """{"startup":"successful"}""",
-      InitState.Failed(cause = "api", message = "failure") -> """{"startup":"failed","cause":"api","message":"failure"}""",
+      InitState.Failed(cause = "api", message = "failure") -> """{"startup":"failed","cause":"api","message":"failure"}"""
     )
 
     states.foreach {

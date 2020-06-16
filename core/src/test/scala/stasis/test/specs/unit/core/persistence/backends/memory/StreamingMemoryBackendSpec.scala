@@ -19,6 +19,6 @@ class StreamingMemoryBackendSpec extends AsyncUnitSpec with StreamingBackendBeha
           "StreamingMemoryBackendSpec-Typed"
         ),
         t = timeout
-    )
+      )
   )
 }

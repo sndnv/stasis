@@ -80,9 +80,10 @@ class ClientRetrievalSpec extends RouteTest {
 
   private def createDirective(
     clients: ClientStore
-  ) = new ClientRetrieval {
-    override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
-    override protected def log: LoggingAdapter = createLogger()
-    override protected def clientStore: ClientStoreView = clients.view
-  }
+  ) =
+    new ClientRetrieval {
+      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
+      override protected def log: LoggingAdapter = createLogger()
+      override protected def clientStore: ClientStoreView = clients.view
+    }
 }

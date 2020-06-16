@@ -63,7 +63,8 @@ class ResourceOwnerStoreSpec extends AsyncUnitSpec {
     "ResourceOwnerStoreSpec"
   )
 
-  private def createStore() = ResourceOwnerStore(
-    MemoryBackend[ResourceOwner.Id, ResourceOwner](name = s"owner-store-${java.util.UUID.randomUUID()}")
-  )
+  private def createStore() =
+    ResourceOwnerStore(
+      MemoryBackend[ResourceOwner.Id, ResourceOwner](name = s"owner-store-${java.util.UUID.randomUUID()}")
+    )
 }

@@ -138,9 +138,10 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     )
 
     for {
-      reservationId <- endpoint
-        .reserve(testNode, Requests.Reserve.marshal(storageRequest))
-        .map(_.result.reservation)
+      reservationId <-
+        endpoint
+          .reserve(testNode, Requests.Reserve.marshal(storageRequest))
+          .map(_.result.reservation)
       reservation <- endpoint.testReservationStore.get(reservationId.get)
     } yield {
       reservation match {
@@ -339,22 +340,24 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     endpoint.testReservationStore.put(testReservation).await
 
     for {
-      pushResponse <- endpoint
-        .push(
-          testNode,
-          Source.single(
-            proto
-              .PushChunk()
-              .withReservation(testReservation.id)
-              .withContent(ByteString.fromString(crateContent))
+      pushResponse <-
+        endpoint
+          .push(
+            testNode,
+            Source.single(
+              proto
+                .PushChunk()
+                .withReservation(testReservation.id)
+                .withContent(ByteString.fromString(crateContent))
+            )
           )
-        )
       source <- endpoint.pull(testNode, proto.PullRequest().withCrate(testReservation.crate))
-      actualContent <- source
-        .runFold(ByteString.empty) {
-          case (folded, chunk) =>
-            folded.concat(chunk.content)
-        }
+      actualContent <-
+        source
+          .runFold(ByteString.empty) {
+            case (folded, chunk) =>
+              folded.concat(chunk.content)
+          }
     } yield {
       pushResponse.result.complete should be(defined)
       pushResponse.result.failure should be(None)
@@ -393,16 +396,17 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     endpoint.testReservationStore.put(testReservation).await
 
     for {
-      pushResponse <- endpoint
-        .push(
-          testNode,
-          Source.single(
-            proto
-              .PushChunk()
-              .withReservation(testReservation.id)
-              .withContent(ByteString.fromString(crateContent))
+      pushResponse <-
+        endpoint
+          .push(
+            testNode,
+            Source.single(
+              proto
+                .PushChunk()
+                .withReservation(testReservation.id)
+                .withContent(ByteString.fromString(crateContent))
+            )
           )
-        )
       discardResponse <- endpoint.discard(testNode, proto.DiscardRequest().withCrate(testReservation.crate))
     } yield {
       pushResponse.result.complete should be(defined)

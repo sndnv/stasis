@@ -88,22 +88,23 @@ object EventLogMemoryBackend {
   private def store[E, S](
     state: S,
     events: Queue[E]
-  ): Behavior[Message[E, S]] = Behaviors.receive { (context, message) =>
-    message match {
-      case StoreEventAndUpdateState(event, update, replyTo) =>
-        val updated = update(event, state)
-        context.system.classicSystem.eventStream.publish(updated)
+  ): Behavior[Message[E, S]] =
+    Behaviors.receive { (context, message) =>
+      message match {
+        case StoreEventAndUpdateState(event, update, replyTo) =>
+          val updated = update(event, state)
+          context.system.classicSystem.eventStream.publish(updated)
 
-        replyTo ! Done
-        store(state = updated, events = events :+ event)
+          replyTo ! Done
+          store(state = updated, events = events :+ event)
 
-      case GetState(replyTo) =>
-        replyTo ! state
-        Behaviors.same
+        case GetState(replyTo) =>
+          replyTo ! state
+          Behaviors.same
 
-      case GetEvents(replyTo) =>
-        replyTo ! events
-        Behaviors.same
+        case GetEvents(replyTo) =>
+          replyTo ! events
+          Behaviors.same
+      }
     }
-  }
 }

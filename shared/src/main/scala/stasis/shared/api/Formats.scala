@@ -83,7 +83,7 @@ object Formats {
       tjs = schedule =>
         writer.writes(schedule) ++ Json.obj(
           "next_invocation" -> Json.toJson(schedule.nextInvocation.truncatedTo(ChronoUnit.SECONDS))
-      )
+        )
     )
   }
 
@@ -257,41 +257,45 @@ object Formats {
   implicit val operationProgressFormat: Format[Operation.Progress] =
     Json.format[Operation.Progress]
 
-  private def stringToPermission(string: String): Permission = string.toLowerCase match {
-    case "view-self"         => Permission.View.Self
-    case "view-privileged"   => Permission.View.Privileged
-    case "view-public"       => Permission.View.Public
-    case "view-service"      => Permission.View.Service
-    case "manage-self"       => Permission.Manage.Self
-    case "manage-privileged" => Permission.Manage.Privileged
-    case "manage-service"    => Permission.Manage.Service
-  }
+  private def stringToPermission(string: String): Permission =
+    string.toLowerCase match {
+      case "view-self"         => Permission.View.Self
+      case "view-privileged"   => Permission.View.Privileged
+      case "view-public"       => Permission.View.Public
+      case "view-service"      => Permission.View.Service
+      case "manage-self"       => Permission.Manage.Self
+      case "manage-privileged" => Permission.Manage.Privileged
+      case "manage-service"    => Permission.Manage.Service
+    }
 
-  private def permissionToString(permission: Permission): String = permission match {
-    case Permission.View.Self         => "view-self"
-    case Permission.View.Privileged   => "view-privileged"
-    case Permission.View.Public       => "view-public"
-    case Permission.View.Service      => "view-service"
-    case Permission.Manage.Self       => "manage-self"
-    case Permission.Manage.Privileged => "manage-privileged"
-    case Permission.Manage.Service    => "manage-service"
-  }
+  private def permissionToString(permission: Permission): String =
+    permission match {
+      case Permission.View.Self         => "view-self"
+      case Permission.View.Privileged   => "view-privileged"
+      case Permission.View.Public       => "view-public"
+      case Permission.View.Service      => "view-service"
+      case Permission.Manage.Self       => "manage-self"
+      case Permission.Manage.Privileged => "manage-privileged"
+      case Permission.Manage.Service    => "manage-service"
+    }
 
-  private def stringToOperationType(string: String): Operation.Type = string.toLowerCase match {
-    case "client-backup"             => Operation.Type.Backup
-    case "client-recovery"           => Operation.Type.Recovery
-    case "client-expiration"         => Operation.Type.Expiration
-    case "client-validation"         => Operation.Type.Validation
-    case "client-key-rotation"       => Operation.Type.KeyRotation
-    case "server-garbage-collection" => Operation.Type.GarbageCollection
-  }
+  private def stringToOperationType(string: String): Operation.Type =
+    string.toLowerCase match {
+      case "client-backup"             => Operation.Type.Backup
+      case "client-recovery"           => Operation.Type.Recovery
+      case "client-expiration"         => Operation.Type.Expiration
+      case "client-validation"         => Operation.Type.Validation
+      case "client-key-rotation"       => Operation.Type.KeyRotation
+      case "server-garbage-collection" => Operation.Type.GarbageCollection
+    }
 
-  private def operationTypeToString(operationType: Operation.Type): String = operationType match {
-    case Operation.Type.Backup            => "client-backup"
-    case Operation.Type.Recovery          => "client-recovery"
-    case Operation.Type.Expiration        => "client-expiration"
-    case Operation.Type.Validation        => "client-validation"
-    case Operation.Type.KeyRotation       => "client-key-rotation"
-    case Operation.Type.GarbageCollection => "server-garbage-collection"
-  }
+  private def operationTypeToString(operationType: Operation.Type): String =
+    operationType match {
+      case Operation.Type.Backup            => "client-backup"
+      case Operation.Type.Recovery          => "client-recovery"
+      case Operation.Type.Expiration        => "client-expiration"
+      case Operation.Type.Validation        => "client-validation"
+      case Operation.Type.KeyRotation       => "client-key-rotation"
+      case Operation.Type.GarbageCollection => "server-garbage-collection"
+    }
 }

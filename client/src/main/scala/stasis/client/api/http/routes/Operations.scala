@@ -232,17 +232,18 @@ object Operations {
   def extractDestination(
     destinationParam: String,
     keepStructureParam: String
-  ): Directive1[Option[Recovery.Destination]] = Directive { inner =>
-    parameters(destinationParam.as[String].?, keepStructureParam.as[Boolean].?) {
-      case (Some(destination), keepStructure) =>
-        val recoveryDestination = Recovery.Destination(
-          path = destination,
-          keepStructure = keepStructure.getOrElse(true)
-        )
-        inner(Tuple1(Some(recoveryDestination)))
+  ): Directive1[Option[Recovery.Destination]] =
+    Directive { inner =>
+      parameters(destinationParam.as[String].?, keepStructureParam.as[Boolean].?) {
+        case (Some(destination), keepStructure) =>
+          val recoveryDestination = Recovery.Destination(
+            path = destination,
+            keepStructure = keepStructure.getOrElse(true)
+          )
+          inner(Tuple1(Some(recoveryDestination)))
 
-      case (None, _) =>
-        inner(Tuple1(None))
+        case (None, _) =>
+          inner(Tuple1(None))
+      }
     }
-  }
 }

@@ -139,7 +139,7 @@ trait Service {
         manifests = corePersistence.manifests,
         nodes = corePersistence.nodes.view,
         reservations = corePersistence.reservations,
-        staging = corePersistence.staging,
+        staging = corePersistence.staging
       ),
       nodeProxy = nodeProxy
     )

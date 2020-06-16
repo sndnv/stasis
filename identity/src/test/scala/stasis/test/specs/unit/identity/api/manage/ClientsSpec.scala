@@ -167,14 +167,15 @@ object ClientsSpec {
     active: Boolean,
     subject: Option[String]
   ) {
-    def toClient(secret: Secret, salt: String): Client = Client(
-      id = id,
-      redirectUri = redirectUri,
-      tokenExpiration = tokenExpiration,
-      secret = secret,
-      salt = salt,
-      active = active,
-      subject = subject
-    )
+    def toClient(secret: Secret, salt: String): Client =
+      Client(
+        id = id,
+        redirectUri = redirectUri,
+        tokenExpiration = tokenExpiration,
+        secret = secret,
+        salt = salt,
+        active = active,
+        subject = subject
+      )
   }
 }

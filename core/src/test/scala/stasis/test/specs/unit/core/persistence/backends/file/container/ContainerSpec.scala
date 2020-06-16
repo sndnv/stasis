@@ -406,7 +406,8 @@ class ContainerSpec extends AsyncUnitSpec with BeforeAndAfter {
                   .flatMap {
                     case Some(source) => source.runFold(ByteString.empty) { case (f, c) => f.concat(c) }.map(Some.apply)
                     case None         => Future.successful(None)
-                })
+                  }
+              )
               .map(result => (result, data))
         }
       )

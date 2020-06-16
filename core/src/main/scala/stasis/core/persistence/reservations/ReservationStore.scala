@@ -19,16 +19,17 @@ trait ReservationStore { store =>
   def existsFor(crate: Crate.Id, node: Node.Id): Future[Boolean]
   def reservations: Future[Map[CrateStorageReservation.Id, CrateStorageReservation]]
 
-  def view: ReservationStoreView = new ReservationStoreView {
-    override def get(reservation: CrateStorageReservation.Id): Future[Option[CrateStorageReservation]] =
-      store.get(reservation)
+  def view: ReservationStoreView =
+    new ReservationStoreView {
+      override def get(reservation: CrateStorageReservation.Id): Future[Option[CrateStorageReservation]] =
+        store.get(reservation)
 
-    override def existsFor(crate: Crate.Id, node: Node.Id): Future[Boolean] =
-      store.existsFor(crate, node)
+      override def existsFor(crate: Crate.Id, node: Node.Id): Future[Boolean] =
+        store.existsFor(crate, node)
 
-    override def reservations: Future[Map[CrateStorageReservation.Id, CrateStorageReservation]] =
-      store.reservations
-  }
+      override def reservations: Future[Map[CrateStorageReservation.Id, CrateStorageReservation]] =
+        store.reservations
+    }
 }
 
 object ReservationStore {

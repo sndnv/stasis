@@ -11,7 +11,7 @@ import scala.concurrent.Future
 
 class MockBackupMetadataCollector(metadata: Map[Path, EntityMetadata]) extends BackupMetadataCollector {
   private val stats: Map[Statistic, AtomicInteger] = Map(
-    Statistic.FileCollected -> new AtomicInteger(0),
+    Statistic.FileCollected -> new AtomicInteger(0)
   )
 
   override def collect(file: Path, existingMetadata: Option[EntityMetadata]): Future[SourceEntity] = {

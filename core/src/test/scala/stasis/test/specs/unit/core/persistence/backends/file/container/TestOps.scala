@@ -28,65 +28,67 @@ object TestOps {
     path: Path,
     chunks: Seq[CrateChunk],
     maxChunkSize: Int
-  )(implicit ec: ExecutionContext, byteOrder: ByteOrder): Future[Done] = Future {
-    val buffer = ByteBuffer.allocate(ChunkHeader.HEADER_SIZE + maxChunkSize)
-    val stream = Files.newOutputStream(path, StandardOpenOption.APPEND)
+  )(implicit ec: ExecutionContext, byteOrder: ByteOrder): Future[Done] =
+    Future {
+      val buffer = ByteBuffer.allocate(ChunkHeader.HEADER_SIZE + maxChunkSize)
+      val stream = Files.newOutputStream(path, StandardOpenOption.APPEND)
 
-    chunks.foreach {
-      case CrateChunk(header, chunk) =>
-        buffer.put(ChunkHeader.toBytes(header))
-        buffer.put(chunk.padTo(maxChunkSize, 0: Byte).toArray)
-        stream.write(buffer.array())
-        buffer.clear()
+      chunks.foreach {
+        case CrateChunk(header, chunk) =>
+          buffer.put(ChunkHeader.toBytes(header))
+          buffer.put(chunk.padTo(maxChunkSize, 0: Byte).toArray)
+          stream.write(buffer.array())
+          buffer.clear()
+      }
+
+      stream.flush()
+      stream.close()
+
+      Done
     }
-
-    stream.flush()
-    stream.close()
-
-    Done
-  }
 
   def readChunks(
     path: Path,
     maxChunkSize: Int,
     hasContainerHeader: Boolean
-  )(implicit ec: ExecutionContext, byteOrder: ByteOrder): Future[Seq[CrateChunk]] = Future {
-    val bytesToRead = ChunkHeader.HEADER_SIZE + maxChunkSize
-    val buffer = ByteBuffer.allocate(bytesToRead).order(byteOrder)
-    val stream = Files.newInputStream(path)
+  )(implicit ec: ExecutionContext, byteOrder: ByteOrder): Future[Seq[CrateChunk]] =
+    Future {
+      val bytesToRead = ChunkHeader.HEADER_SIZE + maxChunkSize
+      val buffer = ByteBuffer.allocate(bytesToRead).order(byteOrder)
+      val stream = Files.newInputStream(path)
 
-    if (hasContainerHeader) {
-      val _ = stream.skip(bytesToRead.toLong)
-    }
-
-    @scala.annotation.tailrec
-    def readNextBytes(partialChunks: Seq[Array[Byte]]): Seq[Array[Byte]] =
-      if (stream.available() > 0) {
-        val bytesRead = stream.read(buffer.array())
-        val currentChunk = new Array[Byte](bytesRead)
-        buffer.get(currentChunk)
-
-        val updatedChunks = partialChunks :+ currentChunk
-        buffer.clear()
-        readNextBytes(partialChunks = updatedChunks)
-      } else {
-        partialChunks
+      if (hasContainerHeader) {
+        val _ = stream.skip(bytesToRead.toLong)
       }
 
-    val partialChunks = readNextBytes(partialChunks = Seq.empty).flatten
-      .grouped(size = bytesToRead)
-      .map { chunk =>
-        val (headerBytes, chunkBytes) = chunk.splitAt(ChunkHeader.HEADER_SIZE)
-        val header = ChunkHeader.fromBytes(headerBytes.toArray) match {
-          case Left(e)      => throw e
-          case Right(value) => value
+      @scala.annotation.tailrec
+      def readNextBytes(partialChunks: Seq[Array[Byte]]): Seq[Array[Byte]] =
+        if (stream.available() > 0) {
+          val bytesRead = stream.read(buffer.array())
+          val currentChunk = new Array[Byte](bytesRead)
+          buffer.get(currentChunk)
+
+          val updatedChunks = partialChunks :+ currentChunk
+          buffer.clear()
+          readNextBytes(partialChunks = updatedChunks)
+        } else {
+          partialChunks
         }
 
-        CrateChunk(header, ByteString.fromArray(chunkBytes.take(header.chunkSize).toArray))
-      }
+      val partialChunks = readNextBytes(partialChunks = Seq.empty).flatten
+        .grouped(size = bytesToRead)
+        .map { chunk =>
+          val (headerBytes, chunkBytes) = chunk.splitAt(ChunkHeader.HEADER_SIZE)
+          val header = ChunkHeader.fromBytes(headerBytes.toArray) match {
+            case Left(e)      => throw e
+            case Right(value) => value
+          }
 
-    partialChunks.toSeq
-  }
+          CrateChunk(header, ByteString.fromArray(chunkBytes.take(header.chunkSize).toArray))
+        }
+
+      partialChunks.toSeq
+    }
 
   def prepareContainerChunks(
     chunks: Seq[(UUID, ByteString)],
@@ -108,54 +110,56 @@ object TestOps {
 
   def readLogEntries(
     path: Path
-  )(implicit ec: ExecutionContext, byteOrder: ByteOrder): Future[Seq[Container.LogEntry]] = Future {
-    val entrySize = math.max(Container.LogEntry.ENTRY_SIZE, ContainerLogHeader.HEADER_SIZE)
-    val bytesToRead = Container.LogEntry.ENTRY_SIZE
-    val buffer = ByteBuffer.allocate(bytesToRead).order(byteOrder)
-    val stream = Files.newInputStream(path)
+  )(implicit ec: ExecutionContext, byteOrder: ByteOrder): Future[Seq[Container.LogEntry]] =
+    Future {
+      val entrySize = math.max(Container.LogEntry.ENTRY_SIZE, ContainerLogHeader.HEADER_SIZE)
+      val bytesToRead = Container.LogEntry.ENTRY_SIZE
+      val buffer = ByteBuffer.allocate(bytesToRead).order(byteOrder)
+      val stream = Files.newInputStream(path)
 
-    val _ = stream.skip(entrySize.toLong)
+      val _ = stream.skip(entrySize.toLong)
 
-    @scala.annotation.tailrec
-    def readNextBytes(entries: Seq[Array[Byte]]): Seq[Array[Byte]] =
-      if (stream.available() > 0) {
-        val bytesRead = stream.read(buffer.array())
-        val currentEntry = new Array[Byte](bytesRead)
-        buffer.get(currentEntry)
+      @scala.annotation.tailrec
+      def readNextBytes(entries: Seq[Array[Byte]]): Seq[Array[Byte]] =
+        if (stream.available() > 0) {
+          val bytesRead = stream.read(buffer.array())
+          val currentEntry = new Array[Byte](bytesRead)
+          buffer.get(currentEntry)
 
-        val updatedEntries = entries :+ currentEntry
-        buffer.clear()
-        readNextBytes(entries = updatedEntries)
-      } else {
-        entries
-      }
-
-    val partialEntries = readNextBytes(entries = Seq.empty).flatten
-      .grouped(size = entrySize)
-      .map { entryBytes =>
-        Container.LogEntry.fromBytes(entryBytes.take(bytesToRead).toArray) match {
-          case Left(e)      => throw e
-          case Right(value) => value
+          val updatedEntries = entries :+ currentEntry
+          buffer.clear()
+          readNextBytes(entries = updatedEntries)
+        } else {
+          entries
         }
-      }
 
-    partialEntries.toSeq
-  }
+      val partialEntries = readNextBytes(entries = Seq.empty).flatten
+        .grouped(size = entrySize)
+        .map { entryBytes =>
+          Container.LogEntry.fromBytes(entryBytes.take(bytesToRead).toArray) match {
+            case Left(e)      => throw e
+            case Right(value) => value
+          }
+        }
+
+      partialEntries.toSeq
+    }
 
   def corruptHeader(
     path: Path,
     entryNumber: Long,
     entrySize: Long,
     headerSize: Int
-  )(implicit ec: ExecutionContext): Future[Done] = Future {
-    val container = new RandomAccessFile(path.toFile, "rws")
-    val entryHeaderStartOffset: Long = entryNumber * entrySize
-    val updatedHeader = Array.fill[Byte](headerSize)(1: Byte)
+  )(implicit ec: ExecutionContext): Future[Done] =
+    Future {
+      val container = new RandomAccessFile(path.toFile, "rws")
+      val entryHeaderStartOffset: Long = entryNumber * entrySize
+      val updatedHeader = Array.fill[Byte](headerSize)(1: Byte)
 
-    container.seek(entryHeaderStartOffset)
-    container.write(updatedHeader)
-    container.close()
+      container.seek(entryHeaderStartOffset)
+      container.write(updatedHeader)
+      container.close()
 
-    Done
-  }
+      Done
+    }
 }

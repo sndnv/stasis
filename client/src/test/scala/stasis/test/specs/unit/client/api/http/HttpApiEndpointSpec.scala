@@ -139,9 +139,10 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val expectedMessage = "test failure"
 
     val mockApiClient = new MockServerApiEndpointClient(self = Device.generateId()) {
-      override def user(): Future[User] = Future.failed(
-        new ServerApiFailure(status = expectedStatus, message = expectedMessage)
-      )
+      override def user(): Future[User] =
+        Future.failed(
+          new ServerApiFailure(status = expectedStatus, message = expectedMessage)
+        )
     }
 
     val endpoint = createEndpoint(api = mockApiClient)

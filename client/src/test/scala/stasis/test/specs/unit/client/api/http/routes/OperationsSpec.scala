@@ -181,12 +181,13 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val expectedProgress = Operation.Progress.empty
 
     val mockTracker = new MockTrackerView() {
-      override def state: Future[TrackerView.State] = Future.successful(
-        TrackerView.State(
-          operations = Map(operation -> expectedProgress),
-          servers = Map.empty
+      override def state: Future[TrackerView.State] =
+        Future.successful(
+          TrackerView.State(
+            operations = Map(operation -> expectedProgress),
+            servers = Map.empty
+          )
         )
-      )
     }
 
     val routes = createRoutes(tracker = mockTracker)

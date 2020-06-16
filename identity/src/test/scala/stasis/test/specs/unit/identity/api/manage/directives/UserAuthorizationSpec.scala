@@ -41,8 +41,9 @@ class UserAuthorizationSpec extends RouteTest {
     }
   }
 
-  private def createDirective() = new UserAuthorization {
-    override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
-    override protected def log: LoggingAdapter = createLogger()
-  }
+  private def createDirective() =
+    new UserAuthorization {
+      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
+      override protected def log: LoggingAdapter = createLogger()
+    }
 }

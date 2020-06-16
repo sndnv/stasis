@@ -17,39 +17,44 @@ class GeodeBackend[K, V](
 
   override def init(): Future[Done] = Future.successful(Done)
 
-  override def drop(): Future[Done] = Future {
-    region.clear()
-    Done
-  }
-
-  override def put(key: K, value: V): Future[Done] = Future {
-    val _ = region.put(key.asGeodeKey, value.asGeodeValue)
-    Done
-  }
-
-  override def delete(key: K): Future[Boolean] = Future {
-    Option(region.remove(key.asGeodeKey)).isDefined
-  }
-
-  override def get(key: K): Future[Option[V]] = Future {
-    Option(region.get(key.asGeodeKey)).map { result =>
-      ByteString.fromArray(result): V
+  override def drop(): Future[Done] =
+    Future {
+      region.clear()
+      Done
     }
-  }
+
+  override def put(key: K, value: V): Future[Done] =
+    Future {
+      val _ = region.put(key.asGeodeKey, value.asGeodeValue)
+      Done
+    }
+
+  override def delete(key: K): Future[Boolean] =
+    Future {
+      Option(region.remove(key.asGeodeKey)).isDefined
+    }
+
+  override def get(key: K): Future[Option[V]] =
+    Future {
+      Option(region.get(key.asGeodeKey)).map { result =>
+        ByteString.fromArray(result): V
+      }
+    }
 
   override def contains(key: K): Future[Boolean] =
     Future.successful(region.containsKey(key.asGeodeKey))
 
-  override def entries: Future[Map[K, V]] = Future {
-    region
-      .getAll(region.keySet())
-      .asScala
-      .toMap
-      .map {
-        case (k, v) =>
-          (k: K) -> (ByteString.fromArray(v): V)
-      }
-  }
+  override def entries: Future[Map[K, V]] =
+    Future {
+      region
+        .getAll(region.keySet())
+        .asScala
+        .toMap
+        .map {
+          case (k, v) =>
+            (k: K) -> (ByteString.fromArray(v): V)
+        }
+    }
 
   private implicit class GeodeKey(key: K) {
     def asGeodeKey: String = key: String

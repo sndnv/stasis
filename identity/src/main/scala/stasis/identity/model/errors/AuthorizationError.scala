@@ -7,11 +7,12 @@ sealed abstract class AuthorizationError(
   val error_description: String,
   val state: String
 ) {
-  def asQuery: Uri.Query = Uri.Query(
-    "error" -> error,
-    "error_description" -> error_description,
-    "state" -> state
-  )
+  def asQuery: Uri.Query =
+    Uri.Query(
+      "error" -> error,
+      "error_description" -> error_description,
+      "state" -> state
+    )
 }
 
 object AuthorizationError {

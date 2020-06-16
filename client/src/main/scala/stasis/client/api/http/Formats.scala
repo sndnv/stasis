@@ -49,10 +49,11 @@ object Formats {
     }
   )
 
-  implicit def pathMapFormat[V](implicit format: Format[V]): Format[Map[Path, V]] = Format(
-    fjs = _.validate[Map[String, V]].map(_.map { case (k, v) => Paths.get(k) -> v }),
-    tjs = map => JsObject(map.map { case (k, v) => k.toAbsolutePath.toString -> format.writes(v) })
-  )
+  implicit def pathMapFormat[V](implicit format: Format[V]): Format[Map[Path, V]] =
+    Format(
+      fjs = _.validate[Map[String, V]].map(_.map { case (k, v) => Paths.get(k) -> v }),
+      tjs = map => JsObject(map.map { case (k, v) => k.toAbsolutePath.toString -> format.writes(v) })
+    )
 
   implicit val backupScheduleAssignment: Format[OperationScheduleAssignment.Backup] =
     Json.format[OperationScheduleAssignment.Backup]

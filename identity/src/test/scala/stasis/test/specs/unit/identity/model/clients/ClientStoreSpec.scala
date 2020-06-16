@@ -55,7 +55,8 @@ class ClientStoreSpec extends AsyncUnitSpec {
     "ClientStoreSpec"
   )
 
-  private def createStore() = ClientStore(
-    MemoryBackend[Client.Id, Client](name = s"client-store-${java.util.UUID.randomUUID()}")
-  )
+  private def createStore() =
+    ClientStore(
+      MemoryBackend[Client.Id, Client](name = s"client-store-${java.util.UUID.randomUUID()}")
+    )
 }

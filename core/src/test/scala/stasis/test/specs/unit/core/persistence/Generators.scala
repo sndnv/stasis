@@ -40,8 +40,8 @@ object Generators {
       target = Node.generateId()
     )
 
-  def generateLocalNode(
-    implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()
+  def generateLocalNode(implicit
+    rnd: ThreadLocalRandom = ThreadLocalRandom.current()
   ): Node.Local =
     Node.Local(
       id = Node.generateId(),

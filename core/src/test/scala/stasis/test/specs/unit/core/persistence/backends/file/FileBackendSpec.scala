@@ -9,6 +9,6 @@ class FileBackendSpec extends AsyncUnitSpec with StreamingBackendBehaviour {
     createBackend = () =>
       new FileBackend(
         parentDirectory = s"${System.getProperty("user.dir")}/target/file_backend_test"
-    )
+      )
   )
 }

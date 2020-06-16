@@ -137,9 +137,10 @@ class RefreshTokenStoreSpec extends AsyncUnitSpec with Eventually {
     "RefreshTokenStoreSpec"
   )
 
-  private def createStore(expiration: FiniteDuration = 3.seconds): RefreshTokenStore = RefreshTokenStore(
-    expiration = expiration,
-    MemoryBackend[RefreshToken, StoredRefreshToken](name = s"token-store-${java.util.UUID.randomUUID()}"),
-    MemoryBackend[(Client.Id, ResourceOwner.Id), RefreshToken](name = s"token-directory-${java.util.UUID.randomUUID()}")
-  )
+  private def createStore(expiration: FiniteDuration = 3.seconds): RefreshTokenStore =
+    RefreshTokenStore(
+      expiration = expiration,
+      MemoryBackend[RefreshToken, StoredRefreshToken](name = s"token-store-${java.util.UUID.randomUUID()}"),
+      MemoryBackend[(Client.Id, ResourceOwner.Id), RefreshToken](name = s"token-directory-${java.util.UUID.randomUUID()}")
+    )
 }

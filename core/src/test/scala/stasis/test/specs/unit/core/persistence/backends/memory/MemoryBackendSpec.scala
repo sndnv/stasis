@@ -16,6 +16,6 @@ class MemoryBackendSpec extends AsyncUnitSpec with KeyValueBackendBehaviour {
           "MemoryBackendSpec-Typed"
         ),
         t = timeout
-    )
+      )
   )
 }

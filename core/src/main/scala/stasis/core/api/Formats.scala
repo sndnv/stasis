@@ -22,15 +22,17 @@ object Formats {
     tjs = duration => Json.toJson(duration.toSeconds)
   )
 
-  implicit def uuidMapFormat[V](implicit format: Format[V]): Format[Map[UUID, V]] = Format(
-    fjs = _.validate[Map[String, V]].map(_.map { case (k, v) => UUID.fromString(k) -> v }),
-    tjs = map => Json.toJson(map.map { case (k, v) => k.toString -> format.writes(v) })
-  )
+  implicit def uuidMapFormat[V](implicit format: Format[V]): Format[Map[UUID, V]] =
+    Format(
+      fjs = _.validate[Map[String, V]].map(_.map { case (k, v) => UUID.fromString(k) -> v }),
+      tjs = map => Json.toJson(map.map { case (k, v) => k.toString -> format.writes(v) })
+    )
 
-  implicit def optionFormat[V](implicit format: Format[V]): Format[Option[V]] = Format(
-    fjs = _.validateOpt[V],
-    tjs = _.map(Json.toJson(_)).getOrElse(JsNull)
-  )
+  implicit def optionFormat[V](implicit format: Format[V]): Format[Option[V]] =
+    Format(
+      fjs = _.validateOpt[V],
+      tjs = _.map(Json.toJson(_)).getOrElse(JsNull)
+    )
 
   implicit val uriFormat: Format[Uri] = Format(
     fjs = _.validate[String].map(Uri.apply),

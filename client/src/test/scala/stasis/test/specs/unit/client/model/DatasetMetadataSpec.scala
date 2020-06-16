@@ -65,28 +65,30 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
     )
 
     for {
-      _ <- metadata
-        .collect(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
-        .map { result =>
-          fail(s"Unexpected result received: [$result]")
-        }
-        .recover {
-          case NonFatal(e: IllegalArgumentException) =>
-            e.getMessage should be(
-              s"Metadata for entity [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] not found"
-            )
-        }
-      _ <- metadata
-        .collect(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
-        .map { result =>
-          fail(s"Unexpected result received: [$result]")
-        }
-        .recover {
-          case NonFatal(e: IllegalArgumentException) =>
-            e.getMessage should be(
-              s"Metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] not found"
-            )
-        }
+      _ <-
+        metadata
+          .collect(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
+          .map { result =>
+            fail(s"Unexpected result received: [$result]")
+          }
+          .recover {
+            case NonFatal(e: IllegalArgumentException) =>
+              e.getMessage should be(
+                s"Metadata for entity [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] not found"
+              )
+          }
+      _ <-
+        metadata
+          .collect(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+          .map { result =>
+            fail(s"Unexpected result received: [$result]")
+          }
+          .recover {
+            case NonFatal(e: IllegalArgumentException) =>
+              e.getMessage should be(
+                s"Metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] not found"
+              )
+          }
     } yield {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved) should be(0)
@@ -218,28 +220,30 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
     val metadata = DatasetMetadata.empty
 
     for {
-      _ <- metadata
-        .require(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
-        .map { result =>
-          fail(s"Unexpected result received: [$result]")
-        }
-        .recover {
-          case NonFatal(e: IllegalArgumentException) =>
-            e.getMessage should be(
-              s"Required metadata for entity [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] not found"
-            )
-        }
-      _ <- metadata
-        .require(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
-        .map { result =>
-          fail(s"Unexpected result received: [$result]")
-        }
-        .recover {
-          case NonFatal(e: IllegalArgumentException) =>
-            e.getMessage should be(
-              s"Required metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] not found"
-            )
-        }
+      _ <-
+        metadata
+          .require(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
+          .map { result =>
+            fail(s"Unexpected result received: [$result]")
+          }
+          .recover {
+            case NonFatal(e: IllegalArgumentException) =>
+              e.getMessage should be(
+                s"Required metadata for entity [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] not found"
+              )
+          }
+      _ <-
+        metadata
+          .require(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+          .map { result =>
+            fail(s"Unexpected result received: [$result]")
+          }
+          .recover {
+            case NonFatal(e: IllegalArgumentException) =>
+              e.getMessage should be(
+                s"Required metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] not found"
+              )
+          }
     } yield {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved) should be(0)

@@ -14,13 +14,15 @@ import scala.concurrent.Future
 class AesSpec extends AsyncUnitSpec with EncodingHelpers with ResourceHelpers {
   "An AES encoder/decoder implementation" should "encrypt files" in {
     for {
-      actualEncryptedContent <- FileIO
-        .fromPath(plaintextFile)
-        .via(Aes.encrypt(fileSecret = fileSecret))
-        .runFold(ByteString.empty)(_ concat _)
-      expectedEncryptedContent <- FileIO
-        .fromPath(encryptedFile)
-        .runFold(ByteString.empty)(_ concat _)
+      actualEncryptedContent <-
+        FileIO
+          .fromPath(plaintextFile)
+          .via(Aes.encrypt(fileSecret = fileSecret))
+          .runFold(ByteString.empty)(_ concat _)
+      expectedEncryptedContent <-
+        FileIO
+          .fromPath(encryptedFile)
+          .runFold(ByteString.empty)(_ concat _)
     } yield {
       actualEncryptedContent should be(expectedEncryptedContent)
     }
@@ -28,13 +30,15 @@ class AesSpec extends AsyncUnitSpec with EncodingHelpers with ResourceHelpers {
 
   it should "decrypt files" in {
     for {
-      actualDecryptedContent <- FileIO
-        .fromPath(encryptedFile)
-        .via(Aes.decrypt(fileSecret = fileSecret))
-        .runFold(ByteString.empty)(_ concat _)
-      expectedDecryptedContent <- FileIO
-        .fromPath(plaintextFile)
-        .runFold(ByteString.empty)(_ concat _)
+      actualDecryptedContent <-
+        FileIO
+          .fromPath(encryptedFile)
+          .via(Aes.decrypt(fileSecret = fileSecret))
+          .runFold(ByteString.empty)(_ concat _)
+      expectedDecryptedContent <-
+        FileIO
+          .fromPath(plaintextFile)
+          .runFold(ByteString.empty)(_ concat _)
     } yield {
       actualDecryptedContent should be(expectedDecryptedContent)
     }

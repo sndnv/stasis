@@ -208,8 +208,10 @@ object ContainerOps extends AutoCloseSupport {
     path: Path,
     chunkEntrySize: Int,
     expectedChunks: Long
-  )(implicit ec: ExecutionContext,
-    byteOrder: ByteOrder): Future[(Seq[CrateChunkDescriptor], Map[ChunkEntryNumber, IndexingFailure])] =
+  )(implicit
+    ec: ExecutionContext,
+    byteOrder: ByteOrder
+  ): Future[(Seq[CrateChunkDescriptor], Map[ChunkEntryNumber, IndexingFailure])] =
     Future {
       val buffer = ByteBuffer.allocate(ChunkHeader.HEADER_SIZE).order(byteOrder)
 

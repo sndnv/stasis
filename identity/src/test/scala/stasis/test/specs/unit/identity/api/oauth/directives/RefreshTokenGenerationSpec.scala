@@ -94,17 +94,18 @@ class RefreshTokenGenerationSpec extends RouteTest {
   private def createDirective(
     tokens: RefreshTokenStore,
     withRefreshTokens: Boolean = true
-  ) = new RefreshTokenGeneration {
+  ) =
+    new RefreshTokenGeneration {
 
-    override protected def refreshTokensAllowed: Boolean = withRefreshTokens
+      override protected def refreshTokensAllowed: Boolean = withRefreshTokens
 
-    override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
+      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
 
-    override protected def log: LoggingAdapter = createLogger()
+      override protected def log: LoggingAdapter = createLogger()
 
-    override protected def refreshTokenGenerator: RefreshTokenGenerator =
-      new RandomRefreshTokenGenerator(tokenSize = 16)
+      override protected def refreshTokenGenerator: RefreshTokenGenerator =
+        new RandomRefreshTokenGenerator(tokenSize = 16)
 
-    override protected def refreshTokenStore: RefreshTokenStore = tokens
-  }
+      override protected def refreshTokenStore: RefreshTokenStore = tokens
+    }
 }

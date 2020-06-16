@@ -10,8 +10,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 
 trait ApiRoutes extends EntityDiscardingDirectives {
-  def resource[R1 <: Resource](f: R1 => Future[Route])(
-    implicit
+  def resource[R1 <: Resource](f: R1 => Future[Route])(implicit
     provider: ResourceProvider,
     user: CurrentUser,
     ec: ExecutionContext,
@@ -24,8 +23,7 @@ trait ApiRoutes extends EntityDiscardingDirectives {
       } yield result
     )(identity)
 
-  def resources[R1 <: Resource, R2 <: Resource](f: (R1, R2) => Future[Route])(
-    implicit
+  def resources[R1 <: Resource, R2 <: Resource](f: (R1, R2) => Future[Route])(implicit
     provider: ResourceProvider,
     user: CurrentUser,
     ec: ExecutionContext,
@@ -40,8 +38,7 @@ trait ApiRoutes extends EntityDiscardingDirectives {
       } yield result
     )(identity)
 
-  def resources[R1 <: Resource, R2 <: Resource, R3 <: Resource](f: (R1, R2, R3) => Future[Route])(
-    implicit
+  def resources[R1 <: Resource, R2 <: Resource, R3 <: Resource](f: (R1, R2, R3) => Future[Route])(implicit
     provider: ResourceProvider,
     user: CurrentUser,
     ec: ExecutionContext,

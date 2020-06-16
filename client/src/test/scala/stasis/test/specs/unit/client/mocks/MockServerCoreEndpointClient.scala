@@ -60,10 +60,11 @@ class MockServerCoreEndpointClient(
 }
 
 object MockServerCoreEndpointClient {
-  def apply()(implicit mat: Materializer): MockServerCoreEndpointClient = new MockServerCoreEndpointClient(
-    self = Node.generateId(),
-    crates = Map.empty
-  )
+  def apply()(implicit mat: Materializer): MockServerCoreEndpointClient =
+    new MockServerCoreEndpointClient(
+      self = Node.generateId(),
+      crates = Map.empty
+    )
 
   sealed trait Statistic
   object Statistic {

@@ -50,11 +50,12 @@ class AccessTokenGenerationSpec extends RouteTest {
     }
   }
 
-  private def createGenerator(token: String) = new AccessTokenGenerator {
-    override def generate(client: Client, audience: Seq[Client]): AccessTokenWithExpiration =
-      AccessTokenWithExpiration(token = AccessToken(value = token), expiration = Seconds(42))
+  private def createGenerator(token: String) =
+    new AccessTokenGenerator {
+      override def generate(client: Client, audience: Seq[Client]): AccessTokenWithExpiration =
+        AccessTokenWithExpiration(token = AccessToken(value = token), expiration = Seconds(42))
 
-    override def generate(owner: ResourceOwner, audience: Seq[Api]): AccessTokenWithExpiration =
-      AccessTokenWithExpiration(token = AccessToken(value = token), expiration = Seconds(42))
-  }
+      override def generate(owner: ResourceOwner, audience: Seq[Api]): AccessTokenWithExpiration =
+        AccessTokenWithExpiration(token = AccessToken(value = token), expiration = Seconds(42))
+    }
 }
