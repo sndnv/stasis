@@ -4,6 +4,7 @@ import java.nio.ByteOrder
 import java.nio.file.{Files, Path, Paths}
 import java.util.UUID
 
+import akka.actor.typed.{ActorSystem, DispatcherSelector, SpawnProtocol}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.util.ByteString
@@ -20,9 +21,11 @@ class Container(
   path: String,
   val maxChunkSize: Int,
   val maxChunks: Int
-)(implicit ec: ExecutionContext, byteOrder: ByteOrder) {
+)(implicit system: ActorSystem[SpawnProtocol.Command], byteOrder: ByteOrder) {
   val containerPath: Path = Paths.get(path)
   val containerLogPath: Path = Paths.get(s"${path}_log")
+
+  private implicit val ec: ExecutionContext = system.dispatchers.lookup(DispatcherSelector.blocking())
 
   def create(): Future[Done] =
     for {

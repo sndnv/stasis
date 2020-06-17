@@ -5,7 +5,8 @@ import java.nio.file.Paths
 import java.util.UUID
 import java.util.concurrent.Executors
 
-import akka.actor.ActorSystem
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.scalatest.BeforeAndAfter
@@ -18,18 +19,6 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.control.NonFatal
 
 class ContainerSpec extends AsyncUnitSpec with BeforeAndAfter {
-  private implicit val system: ActorSystem = ActorSystem(name = "ContainerSpec")
-  private implicit val ec: ExecutionContext = system.dispatcher
-  private implicit val byteOrder: ByteOrder = ConversionOps.DEFAULT_BYTE_ORDER
-
-  private val containersDir = s"${System.getProperty("user.dir")}/target/containers_test"
-  private val maxChunkSize = 128
-  private val maxChunks = 10
-
-  after {
-    Paths.get(containersDir).toFile.listFiles().foreach(_.delete)
-  }
-
   "A Container" should "create new containers" in {
     val containerPath = s"$containersDir/${UUID.randomUUID}"
     val container = new Container(containerPath, maxChunkSize, maxChunks)
@@ -422,5 +411,21 @@ class ContainerSpec extends AsyncUnitSpec with BeforeAndAfter {
 
       crateData.nonEmpty should be(true)
     }
+  }
+
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    guardianBehavior = Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+    name = "ContainerSpec"
+  )
+
+  private implicit val ec: ExecutionContext = system.executionContext
+  private implicit val byteOrder: ByteOrder = ConversionOps.DEFAULT_BYTE_ORDER
+
+  private val containersDir = s"${System.getProperty("user.dir")}/target/containers_test"
+  private val maxChunkSize = 128
+  private val maxChunks = 10
+
+  after {
+    Paths.get(containersDir).toFile.listFiles().foreach(_.delete)
   }
 }

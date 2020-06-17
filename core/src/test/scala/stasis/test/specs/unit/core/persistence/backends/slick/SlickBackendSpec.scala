@@ -1,6 +1,8 @@
 package stasis.test.specs.unit.core.persistence.backends.slick
 
 import akka.Done
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.util.ByteString
 import slick.jdbc.H2Profile
 import stasis.core.persistence.backends.KeyValueBackend
@@ -11,6 +13,12 @@ import stasis.test.specs.unit.core.persistence.backends.KeyValueBackendBehaviour
 import scala.concurrent.Future
 
 class SlickBackendSpec extends AsyncUnitSpec with KeyValueBackendBehaviour {
+  "A SlickBackend" should behave like keyValueBackend[TestSlickBackend](
+    createBackend = () => new TestSlickBackend,
+    before = _.init(),
+    after = _.close()
+  )
+
   private class TestSlickBackend extends KeyValueBackend[String, Int] {
     private val h2db = H2Profile.api.Database.forURL(url = "jdbc:h2:mem:SlickBackendSpec", keepAliveConnection = true)
 
@@ -46,9 +54,8 @@ class SlickBackendSpec extends AsyncUnitSpec with KeyValueBackendBehaviour {
     }
   }
 
-  "A SlickBackend" should behave like keyValueBackend[TestSlickBackend](
-    createBackend = () => new TestSlickBackend,
-    before = _.init(),
-    after = _.close()
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    guardianBehavior = Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+    name = "SlickBackendSpec"
   )
 }

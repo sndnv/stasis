@@ -1,6 +1,7 @@
 package stasis.core.persistence.backends.geode
 
 import akka.Done
+import akka.actor.typed.{ActorSystem, DispatcherSelector, SpawnProtocol}
 import akka.util.ByteString
 import org.apache.geode.cache.Region
 import stasis.core.persistence.backends.KeyValueBackend
@@ -11,9 +12,11 @@ import scala.jdk.CollectionConverters._
 class GeodeBackend[K, V](
   protected val region: Region[String, Array[Byte]],
   protected val serdes: KeyValueBackend.Serdes[K, V]
-)(implicit ec: ExecutionContext)
+)(implicit system: ActorSystem[SpawnProtocol.Command])
     extends KeyValueBackend[K, V] {
   import serdes._
+
+  private implicit val ec: ExecutionContext = system.dispatchers.lookup(DispatcherSelector.blocking())
 
   override def init(): Future[Done] = Future.successful(Done)
 

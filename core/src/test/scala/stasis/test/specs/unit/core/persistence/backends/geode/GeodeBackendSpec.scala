@@ -1,6 +1,8 @@
 package stasis.test.specs.unit.core.persistence.backends.geode
 
 import akka.Done
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.util.ByteString
 import org.apache.geode.cache.Region
 import org.apache.geode.cache.client.{ClientCache, ClientCacheFactory, ClientRegionShortcut}
@@ -13,6 +15,12 @@ import stasis.test.specs.unit.core.persistence.backends.KeyValueBackendBehaviour
 import scala.concurrent.Future
 
 class GeodeBackendSpec extends AsyncUnitSpec with KeyValueBackendBehaviour {
+  "A GeodeBackend" should behave like keyValueBackend[TestGeodeBackend](
+    createBackend = () => new TestGeodeBackend,
+    before = _.init(),
+    after = _.close()
+  )
+
   private class TestGeodeBackend extends KeyValueBackend[String, Int] {
 
     private val serverLauncher: ServerLauncher =
@@ -67,9 +75,8 @@ class GeodeBackendSpec extends AsyncUnitSpec with KeyValueBackendBehaviour {
     }
   }
 
-  "A GeodeBackend" should behave like keyValueBackend[TestGeodeBackend](
-    createBackend = () => new TestGeodeBackend,
-    before = _.init(),
-    after = _.close()
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    guardianBehavior = Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+    name = "GeodeBackendSpec"
   )
 }

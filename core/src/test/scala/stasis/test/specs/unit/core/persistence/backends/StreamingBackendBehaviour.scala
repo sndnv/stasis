@@ -1,7 +1,8 @@
 package stasis.test.specs.unit.core.persistence.backends
 
 import akka.Done
-import akka.actor.ActorSystem
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import stasis.core.persistence.backends.StreamingBackend
@@ -10,7 +11,10 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import scala.concurrent.Future
 
 trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
-  protected implicit val system: ActorSystem = ActorSystem(name = "StreamingBackendBehaviour")
+  protected implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    guardianBehavior = Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+    name = "StreamingBackendBehaviour"
+  )
 
   def streamingBackend[B <: StreamingBackend](
     createBackend: () => B,

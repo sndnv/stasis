@@ -3,6 +3,7 @@ package stasis.core.persistence.backends.file
 import java.nio.ByteOrder
 import java.util.UUID
 
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
@@ -16,10 +17,11 @@ class ContainerBackend(
   val path: String,
   val maxChunkSize: Int,
   val maxChunks: Int
-)(implicit ec: ExecutionContext)
+)(implicit system: ActorSystem[SpawnProtocol.Command])
     extends StreamingBackend {
 
   private implicit val byteOrder: ByteOrder = ConversionOps.DEFAULT_BYTE_ORDER
+  private implicit val ec: ExecutionContext = system.executionContext
 
   private val container: Container = new Container(path, maxChunkSize, maxChunks)
 
