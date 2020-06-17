@@ -22,7 +22,7 @@ private[grpc] class Client(
 
     proto.StasisEndpointClient(
       settings = context match {
-        case Some(context) => baseSettings.withSSLContext(context.sslContext)
+        case Some(context) => baseSettings.withSslContext(context.sslContext)
         case None          => baseSettings
       }
     )
