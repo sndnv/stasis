@@ -1,0 +1,75 @@
+name: Stasis Builds
+
+on: [push, pull_request]
+
+jobs:
+  scala:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+          java-package: jdk
+
+      - name: Run QA
+        run: |
+          mkdir ${{ github.workspace }}/target
+          sbt qa
+
+      - name: Push Coverage Result
+        uses: codecov/codecov-action@v1
+        with:
+          flags: scala
+
+  python:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Python 3
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Run QA
+        run: |
+          cd client-cli
+          pip install -e .
+          pip install coverage pylint
+          ./qa.py
+          python -m coverage xml
+
+      - name: Push Coverage Result
+        uses: codecov/codecov-action@v1
+        with:
+          flags: python
+
+  node:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2-beta
+        with:
+          node-version: '12'
+
+      - name: Run QA
+        run: |
+          curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 1.16.0
+          export PATH=$HOME/.yarn/bin:$PATH
+          cd identity-ui
+          yarn install
+          yarn lint
+          yarn test
+
+      - name: Push Coverage Result
+        uses: codecov/codecov-action@v1
+        with:
+          flags: javascript
