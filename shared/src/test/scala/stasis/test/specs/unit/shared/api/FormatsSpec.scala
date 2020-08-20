@@ -4,6 +4,7 @@ import java.time.temporal.ChronoUnit
 import java.time.{Instant, LocalDateTime}
 
 import akka.actor.Cancellable
+import akka.util.ByteString
 import play.api.libs.json.Json
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
@@ -52,6 +53,14 @@ class FormatsSpec extends UnitSpec {
         retentionPolicyFormat.writes(policy).toString should be(json)
         retentionPolicyFormat.reads(Json.parse(json)).asOpt should be(Some(policy))
     }
+  }
+
+  they should "convert ByteStrings to/from JSON" in {
+    val original = ByteString("test-string")
+    val json = "\"dGVzdC1zdHJpbmc=\""
+
+    byteStringFormat.writes(original).toString() should be(json)
+    byteStringFormat.reads(Json.parse(json)).asOpt should be(Some(original))
   }
 
   they should "convert schedules to/from JSON with 'next_invocation' field" in {

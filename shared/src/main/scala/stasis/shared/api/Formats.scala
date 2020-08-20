@@ -1,7 +1,9 @@
 package stasis.shared.api
 
+import java.nio.charset.StandardCharsets
 import java.time.temporal.ChronoUnit
 
+import akka.util.ByteString
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.crates.CrateStore
@@ -11,7 +13,7 @@ import stasis.shared.api.requests.UpdateNode.{UpdateLocalNode, UpdateRemoteGrpcN
 import stasis.shared.api.requests._
 import stasis.shared.api.responses._
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
-import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.{Device, DeviceBootstrapCode, DeviceBootstrapParameters}
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 import stasis.shared.ops.Operation
@@ -73,6 +75,33 @@ object Formats {
 
   implicit val deviceFormat: Format[Device] =
     Json.format[Device]
+
+  implicit val deviceInitCodeFormat: Format[DeviceBootstrapCode] =
+    Json.format[DeviceBootstrapCode]
+
+  implicit val byteStringFormat: Format[ByteString] =
+    Format(
+      fjs = _.validate[String].map(ByteString.fromString(_, StandardCharsets.UTF_8).decodeBase64),
+      tjs = content => Json.toJson(content.encodeBase64.utf8String)
+    )
+
+  implicit val deviceBootstrapConfigScopesFormat: Format[DeviceBootstrapParameters.Scopes] =
+    Json.format[DeviceBootstrapParameters.Scopes]
+
+  implicit val deviceBootstrapConfigContextFormat: Format[DeviceBootstrapParameters.Context] =
+    Json.format[DeviceBootstrapParameters.Context]
+
+  implicit val deviceBootstrapConfigAuthenticationFormat: Format[DeviceBootstrapParameters.Authentication] =
+    Json.format[DeviceBootstrapParameters.Authentication]
+
+  implicit val deviceBootstrapConfigServerApiFormat: Format[DeviceBootstrapParameters.ServerApi] =
+    Json.format[DeviceBootstrapParameters.ServerApi]
+
+  implicit val deviceBootstrapConfigServerCoreFormat: Format[DeviceBootstrapParameters.ServerCore] =
+    Json.format[DeviceBootstrapParameters.ServerCore]
+
+  implicit val deviceBootstrapParametersFormat: Format[DeviceBootstrapParameters] =
+    Json.format[DeviceBootstrapParameters]
 
   implicit val scheduleFormat: Format[Schedule] = {
     val reader = Json.reads[Schedule]
