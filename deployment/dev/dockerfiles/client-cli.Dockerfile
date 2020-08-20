@@ -5,6 +5,8 @@ ARG CLIENT_PATH=/opt/docker/bin
 ARG CLIENT_CONFIG_PATH=/home/${CLIENT_USER}/.config/stasis-client
 ARG CLIENT_CERTS_PATH=/home/${CLIENT_USER}/.config/stasis-client/certs
 
+ENV PATH=${PATH}:/home/${CLIENT_USER}/.local/bin/:${CLIENT_PATH}
+
 USER root
 RUN apt-get update && apt-get install python3 python3-pip -y
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
@@ -27,8 +29,6 @@ RUN chmod +w ${CLIENT_CERTS_PATH}
 USER ${CLIENT_USER}
 WORKDIR ${CLIENT_PATH}
 RUN pip install .
-
-ENV PATH=${PATH}:/home/${CLIENT_USER}/.local/bin/:${CLIENT_PATH}
 
 ENTRYPOINT ["/bin/sh", "-c"]
 CMD ["/bin/sh"]
