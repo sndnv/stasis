@@ -6,7 +6,7 @@ import java.util.concurrent.ThreadLocalRandom
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
-import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.{Device, DeviceBootstrapCode}
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 import stasis.test.Generators._
@@ -28,6 +28,14 @@ object Generators {
       isPublic = rnd.nextBoolean(),
       start = LocalDateTime.now(),
       interval = generateFiniteDuration
+    )
+
+  def generateDeviceBootstrapCode(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): DeviceBootstrapCode =
+    DeviceBootstrapCode(
+      value = generateString(withSize = 16),
+      owner = User.generateId(),
+      device = Device.generateId(),
+      expiresAt = Instant.now().plusSeconds(rnd.nextLong(4L, 42L))
     )
 
   def generateDevice: Device =
