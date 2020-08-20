@@ -1,12 +1,9 @@
 package stasis.test.specs.unit.core.networking.http
 
-import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.ConnectionContext
-import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.headers.HttpCredentials
-import akka.stream.QueueOfferResult
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.typesafe.config.{Config, ConfigFactory}
@@ -25,7 +22,6 @@ import stasis.test.specs.unit.core.security.mocks.MockHttpAuthenticator
 
 import scala.collection.mutable
 import scala.concurrent.duration._
-import scala.concurrent.{Future, Promise}
 import scala.util.control.NonFatal
 
 class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
@@ -464,26 +460,6 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).map { _ =>
       endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
       endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-    }
-  }
-
-  it should "process http pool offer results" in {
-    val request = HttpRequest()
-    val promise = Promise.successful(Done)
-    val failure = new RuntimeException("test failure")
-
-    val process: QueueOfferResult => Future[Done] = HttpEndpointClient.processOfferResult(request = request, promise = promise)
-
-    for {
-      enqueued <- process(QueueOfferResult.Enqueued)
-      dropped <- process(QueueOfferResult.Dropped).failed
-      failed <- process(QueueOfferResult.Failure(failure)).failed
-      closed <- process(QueueOfferResult.QueueClosed).failed
-    } yield {
-      enqueued should be(Done)
-      dropped.getMessage should be("[GET] request for endpoint [/] failed; dropped by stream")
-      failed.getMessage should be(s"[GET] request for endpoint [/] failed; RuntimeException: ${failure.getMessage}")
-      closed.getMessage should be("[GET] request for endpoint [/] failed; stream closed")
     }
   }
 
