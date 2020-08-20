@@ -2,32 +2,33 @@ package stasis.core.networking.http
 
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
+import akka.http.scaladsl.HttpsConnectionContext
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.stream.{OverflowStrategy, QueueOfferResult}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import org.slf4j.LoggerFactory
+import stasis.core.api.PoolClient
 import stasis.core.networking.EndpointClient
-import stasis.core.networking.exceptions.{ClientFailure, CredentialsFailure, EndpointFailure, ReservationFailure}
+import stasis.core.networking.exceptions.{CredentialsFailure, EndpointFailure, ReservationFailure}
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.core.security.NodeCredentialsProvider
 
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
 class HttpEndpointClient(
   override protected val credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
-  context: Option[HttpsConnectionContext],
-  requestBufferSize: Int
-)(implicit system: ActorSystem[SpawnProtocol.Command])
-    extends EndpointClient[HttpEndpointAddress, HttpCredentials] {
+  override protected val context: Option[HttpsConnectionContext],
+  override protected val requestBufferSize: Int
+)(implicit override protected val system: ActorSystem[SpawnProtocol.Command])
+    extends EndpointClient[HttpEndpointAddress, HttpCredentials]
+    with PoolClient {
 
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.core.api.Formats._
@@ -35,34 +36,6 @@ class HttpEndpointClient(
   private implicit val ec: ExecutionContext = system.executionContext
 
   private val log = LoggerFactory.getLogger(this.getClass.getName)
-
-  private val http = Http()(system.classicSystem)
-
-  private val clientContext: HttpsConnectionContext = context match {
-    case Some(context) => context
-    case None          => http.defaultClientHttpsContext
-  }
-
-  private val queue = Source
-    .queue(
-      bufferSize = requestBufferSize,
-      overflowStrategy = OverflowStrategy.backpressure
-    )
-    .via(http.superPool[Promise[HttpResponse]](connectionContext = clientContext))
-    .to(
-      Sink.foreach {
-        case (response, promise) => val _ = promise.complete(response)
-      }
-    )
-    .run()
-
-  private def offer(request: HttpRequest): Future[HttpResponse] = {
-    val promise = Promise[HttpResponse]()
-
-    queue
-      .offer((request, promise))
-      .flatMap(HttpEndpointClient.processOfferResult(request, promise))
-  }
 
   override def push(
     address: HttpEndpointAddress,
@@ -331,16 +304,4 @@ object HttpEndpointClient {
       context = Some(context),
       requestBufferSize = requestBufferSize
     )
-
-  def processOfferResult[T](request: HttpRequest, promise: Promise[T])(result: QueueOfferResult): Future[T] = {
-    def clientFailure(cause: String): Future[T] =
-      Future.failed(ClientFailure(s"[${request.method.value}] request for endpoint [${request.uri.toString}] failed; $cause"))
-
-    result match {
-      case QueueOfferResult.Enqueued    => promise.future
-      case QueueOfferResult.Dropped     => clientFailure(cause = "dropped by stream")
-      case QueueOfferResult.Failure(e)  => clientFailure(cause = s"${e.getClass.getSimpleName}: ${e.getMessage}")
-      case QueueOfferResult.QueueClosed => clientFailure(cause = "stream closed")
-    }
-  }
 }
