@@ -1,4 +1,4 @@
-package stasis.test.specs.unit.server.security
+package stasis.test.specs.unit.server.security.authenticators
 
 import java.security.Key
 
@@ -11,7 +11,7 @@ import stasis.core.security.exceptions.AuthenticationFailure
 import stasis.core.security.jwt.DefaultJwtAuthenticator
 import stasis.core.security.keys.KeyProvider
 import stasis.server.model.users.UserStore
-import stasis.server.security.DefaultUserAuthenticator
+import stasis.server.security.authenticators.DefaultUserAuthenticator
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.security.mocks.{MockJwksGenerators, MockJwtGenerators}

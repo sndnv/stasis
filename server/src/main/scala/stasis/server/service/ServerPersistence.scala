@@ -2,16 +2,18 @@ package stasis.server.service
 
 import akka.Done
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
+import akka.util.Timeout
 import com.typesafe.{config => typesafe}
 import slick.jdbc.JdbcProfile
+import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.backends.slick.{SlickBackend, SlickProfile}
 import stasis.server.model.datasets._
-import stasis.server.model.devices.{DeviceStore, DeviceStoreSerdes}
+import stasis.server.model.devices.{DeviceBootstrapCodeStore, DeviceStore, DeviceStoreSerdes}
 import stasis.server.model.schedules.{ScheduleStore, ScheduleStoreSerdes}
 import stasis.server.model.users.{UserStore, UserStoreSerdes}
 import stasis.server.security.Resource
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
-import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.{Device, DeviceBootstrapCode}
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 
@@ -19,7 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ServerPersistence(
   persistenceConfig: typesafe.Config
-)(implicit system: ActorSystem[SpawnProtocol.Command]) {
+)(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout) {
   private implicit val ec: ExecutionContext = system.executionContext
 
   val profile: JdbcProfile = SlickProfile(profile = persistenceConfig.getString("database.profile"))
@@ -42,6 +44,8 @@ class ServerPersistence(
 
   val datasetEntries: DatasetEntryStore = DatasetEntryStore(backend = backends.entries)
 
+  val deviceBootstrapCodes: DeviceBootstrapCodeStore = DeviceBootstrapCodeStore(backend = backends.deviceBootstrapCodes)
+
   val devices: DeviceStore = DeviceStore(backend = backends.devices)
 
   val schedules: ScheduleStore = ScheduleStore(backend = backends.schedules)
@@ -55,6 +59,7 @@ class ServerPersistence(
     for {
       _ <- backends.definitions.init()
       _ <- backends.entries.init()
+      _ <- backends.deviceBootstrapCodes.init()
       _ <- backends.devices.init()
       _ <- backends.schedules.init()
       _ <- backends.users.init()
@@ -66,6 +71,7 @@ class ServerPersistence(
     for {
       _ <- backends.definitions.drop()
       _ <- backends.entries.drop()
+      _ <- backends.deviceBootstrapCodes.drop()
       _ <- backends.devices.drop()
       _ <- backends.schedules.drop()
       _ <- backends.users.drop()
@@ -83,6 +89,10 @@ class ServerPersistence(
       datasetEntries.manageSelf(),
       datasetEntries.view(),
       datasetEntries.viewSelf(),
+      deviceBootstrapCodes.manage(),
+      deviceBootstrapCodes.manageSelf(),
+      deviceBootstrapCodes.view(),
+      deviceBootstrapCodes.viewSelf(),
       devices.manage(),
       devices.manageSelf(),
       devices.view(),
@@ -111,6 +121,10 @@ class ServerPersistence(
       serdes = DatasetEntryStoreSerdes
     )
 
+    val deviceBootstrapCodes: MemoryBackend[String, DeviceBootstrapCode] = MemoryBackend(
+      name = s"device-bootstrap-code-store-${java.util.UUID.randomUUID().toString}"
+    )
+
     val devices: SlickBackend[Device.Id, Device] = SlickBackend(
       tableName = "DEVICES",
       profile = profile,
@@ -137,6 +151,6 @@ class ServerPersistence(
 object ServerPersistence {
   def apply(
     persistenceConfig: typesafe.Config
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): ServerPersistence =
+  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): ServerPersistence =
     new ServerPersistence(persistenceConfig)
 }

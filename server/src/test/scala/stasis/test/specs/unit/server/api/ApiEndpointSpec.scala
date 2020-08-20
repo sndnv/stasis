@@ -29,7 +29,8 @@ import stasis.server.model.reservations.ServerReservationStore
 import stasis.server.model.schedules.ScheduleStore
 import stasis.server.model.staging.ServerStagingStore
 import stasis.server.model.users.UserStore
-import stasis.server.security.{ResourceProvider, UserAuthenticator}
+import stasis.server.security.ResourceProvider
+import stasis.server.security.authenticators.UserAuthenticator
 import stasis.shared.api.responses.Ping
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.model.devices.Device
