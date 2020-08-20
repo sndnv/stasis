@@ -37,7 +37,9 @@ class StagedSubFlow(
     subFlow
       .via(partStaging(withPartSecret))
       .mergeSubstreams
-      .runForeach(element => { val _ = stagedParts.add(element) })
+      .runForeach { element =>
+        val _ = stagedParts.add(element)
+      }
       .map(_ => stagedParts.asScala.toSeq)
       .recoverWith(handleStagingFailure(stagedParts))
 
@@ -45,10 +47,10 @@ class StagedSubFlow(
     withPartSecret: Int => DeviceFileSecret
   )(implicit providers: Providers): Flow[ByteString, (Path, Path), Future[Done]] =
     Flow
-      .lazyFutureFlow(() => {
+      .lazyFutureFlow { () =>
         val partId = nextPartId.getAndIncrement()
         createStagingFlow(partSecret = withPartSecret(partId))
-      })
+      }
       .mapMaterializedValue(_.flatten.map(_ => Done))
 }
 

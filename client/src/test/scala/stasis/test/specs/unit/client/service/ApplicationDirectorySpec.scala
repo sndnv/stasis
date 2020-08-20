@@ -154,6 +154,11 @@ class ApplicationDirectorySpec extends AsyncUnitSpec with ResourceHelpers {
       }
   }
 
+  it should "provide a configuration directory" in {
+    val directory = createApplicationDirectory(init = _ => ())
+    directory.configDirectory.map(_.toString) should not be empty
+  }
+
   private val targetFile = "test-file"
   private val targetFileContent = "test-content-line-01\ntest-content-line-02"
 

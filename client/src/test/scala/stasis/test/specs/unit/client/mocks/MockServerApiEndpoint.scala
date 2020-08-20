@@ -24,7 +24,8 @@ import scala.util.{Failure, Success}
 
 class MockServerApiEndpoint(
   expectedCredentials: BasicHttpCredentials,
-  definitionsWithoutEntries: Seq[DatasetDefinition.Id] = Seq.empty
+  definitionsWithoutEntries: Seq[DatasetDefinition.Id] = Seq.empty,
+  withDefinitions: Option[Seq[DatasetDefinition]] = None
 )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout) {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
@@ -53,10 +54,16 @@ class MockServerApiEndpoint(
             pathEndOrSingleSlash {
               concat(
                 get {
-                  val definitions: Seq[DatasetDefinition] = Seq(
-                    Generators.generateDefinition,
-                    Generators.generateDefinition
-                  )
+                  val definitions: Seq[DatasetDefinition] = withDefinitions match {
+                    case Some(definitions) =>
+                      definitions
+
+                    case None =>
+                      Seq(
+                        Generators.generateDefinition,
+                        Generators.generateDefinition
+                      )
+                  }
 
                   log.infoN("Successfully retrieved definitions [{}]", definitions.map(_.id).mkString(", "))
 
@@ -78,12 +85,24 @@ class MockServerApiEndpoint(
                 }
               )
             },
-            path(JavaUUID) { definitionId =>
-              get {
-                val definition: DatasetDefinition = Generators.generateDefinition.copy(id = definitionId)
-                log.infoN("Successfully retrieved definition [{}]", definition.id)
-                complete(definition)
-              }
+            path(JavaUUID) {
+              definitionId =>
+                get {
+                  val definition: Option[DatasetDefinition] = withDefinitions match {
+                    case Some(definitions) => definitions.find(_.id == definitionId)
+                    case None              => Some(Generators.generateDefinition.copy(id = definitionId))
+                  }
+
+                  definition match {
+                    case Some(definition) =>
+                      log.infoN("Successfully retrieved definition [{}]", definition.id)
+                      complete(definition)
+
+                    case None =>
+                      log.warnN("Definition [{}] not found", definitionId)
+                      complete(StatusCodes.NotFound)
+                  }
+                }
             }
           )
         }

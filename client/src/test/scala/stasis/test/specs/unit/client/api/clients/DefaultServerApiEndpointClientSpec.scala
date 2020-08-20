@@ -2,21 +2,21 @@ package stasis.test.specs.unit.client.api.clients
 
 import java.time.Instant
 
+import akka.NotUsed
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.HttpsConnectionContext
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
-import akka.stream.QueueOfferResult
+import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.stream.scaladsl.{Flow, Source}
 import akka.util.ByteString
-import akka.{Done, NotUsed}
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.Config
 import org.scalatest.concurrent.Eventually
 import stasis.client.api.clients.DefaultServerApiEndpointClient
 import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.encryption.secrets.DeviceMetadataSecret
 import stasis.client.model.DatasetMetadata
+import stasis.core.networking.exceptions.ClientFailure
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
 import stasis.core.security.tls.EndpointContext
@@ -31,8 +31,8 @@ import stasis.test.specs.unit.client.mocks.{MockEncryption, MockServerApiEndpoin
 import stasis.test.specs.unit.shared.model.Generators
 
 import scala.collection.mutable
+import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.concurrent.{Future, Promise}
 import scala.util.control.NonFatal
 
 class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
@@ -65,6 +65,38 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
     }
   }
 
+  it should "fail to create dataset definitions if the provided device is not the current device" in {
+    val apiPort = ports.dequeue()
+    val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials)
+    api.start(port = apiPort)
+
+    val apiClient = createClient(apiPort)
+
+    val expectedRequest = CreateDatasetDefinition(
+      info = "test-definition",
+      device = Device.generateId(),
+      redundantCopies = 1,
+      existingVersions = DatasetDefinition.Retention(
+        policy = DatasetDefinition.Retention.Policy.All,
+        duration = 3.seconds
+      ),
+      removedVersions = DatasetDefinition.Retention(
+        policy = DatasetDefinition.Retention.Policy.All,
+        duration = 3.seconds
+      )
+    )
+
+    apiClient
+      .createDatasetDefinition(request = expectedRequest)
+      .map { result =>
+        fail(s"Unexpected result received: [$result]")
+      }
+      .recover {
+        case NonFatal(e: IllegalArgumentException) =>
+          e.getMessage should startWith("Cannot create dataset definition for a different device")
+      }
+  }
+
   it should "create dataset entries" in {
     val apiPort = ports.dequeue()
     val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials)
@@ -88,16 +120,50 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
   }
 
   it should "retrieve dataset definitions" in {
+    val device = Device.generateId()
+
     val apiPort = ports.dequeue()
-    val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials)
+    val api = new MockServerApiEndpoint(
+      expectedCredentials = apiCredentials,
+      withDefinitions = Some(
+        Seq(
+          Generators.generateDefinition.copy(device = device),
+          Generators.generateDefinition.copy(device = device)
+        )
+      )
+    )
     api.start(port = apiPort)
 
-    val apiClient = createClient(apiPort)
+    val apiClient = createClient(apiPort, self = device)
 
     apiClient
       .datasetDefinitions()
       .map { definitions =>
         definitions should not be empty
+      }
+  }
+
+  it should "not retrieve dataset definitions not for the current device" in {
+    val device = Device.generateId()
+
+    val apiPort = ports.dequeue()
+    val api = new MockServerApiEndpoint(
+      expectedCredentials = apiCredentials,
+      withDefinitions = Some(
+        Seq(
+          Generators.generateDefinition.copy(),
+          Generators.generateDefinition.copy(device = device)
+        )
+      )
+    )
+    api.start(port = apiPort)
+
+    val apiClient = createClient(apiPort, self = device)
+
+    apiClient
+      .datasetDefinitions()
+      .map { definitions =>
+        definitions.length should be(1)
       }
   }
 
@@ -116,18 +182,52 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
   }
 
   it should "retrieve individual dataset definitions" in {
+    val device = Device.generateId()
+    val expectedDefinition = DatasetEntry.generateId()
+
     val apiPort = ports.dequeue()
-    val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials)
+    val api = new MockServerApiEndpoint(
+      expectedCredentials = apiCredentials,
+      withDefinitions = Some(
+        Seq(
+          Generators.generateDefinition.copy(id = expectedDefinition, device = device)
+        )
+      )
+    )
     api.start(port = apiPort)
 
-    val apiClient = createClient(apiPort)
-
-    val expectedDefinition = DatasetEntry.generateId()
+    val apiClient = createClient(apiPort, self = device)
 
     apiClient
       .datasetDefinition(definition = expectedDefinition)
       .map { definition =>
         definition.id should be(expectedDefinition)
+      }
+  }
+
+  it should "not retrieve individual dataset definitions not for the current device" in {
+    val device = Device.generateId()
+    val definition = Generators.generateDefinition
+
+    val apiPort = ports.dequeue()
+    val api = new MockServerApiEndpoint(
+      expectedCredentials = apiCredentials,
+      withDefinitions = Some(Seq(definition))
+    )
+    api.start(port = apiPort)
+
+    val apiClient = createClient(apiPort, self = device)
+
+    apiClient
+      .datasetDefinition(definition = definition.id)
+      .map { result =>
+        fail(s"Unexpected result received: [$result]")
+      }
+      .recover {
+        case NonFatal(e: IllegalArgumentException) =>
+          e.getMessage should be(
+            "Cannot retrieve dataset definition for a different device"
+          )
       }
   }
 
@@ -337,11 +437,26 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
+  it should "handle pool client failures" in {
+    import DefaultServerApiEndpointClient._
+
+    val future: Future[HttpResponse] = Future.failed(ClientFailure("test failure"))
+
+    future.transformClientFailures().failed.map {
+      case e: ServerApiFailure =>
+        e.status should be(StatusCodes.InternalServerError)
+        e.getMessage should be("test failure")
+
+      case other =>
+        fail(s"Unexpected result received: [$other]")
+    }
+  }
+
   it should "support custom connection contexts" in {
     val apiPort = ports.dequeue()
     val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials)
 
-    val config: Config = ConfigFactory.load().getConfig("stasis.test.client.security.tls")
+    val config: Config = typedSystem.settings.config.getConfig("stasis.test.client.security.tls")
 
     val endpointContext = EndpointContext.create(
       contextConfig = EndpointContext.ContextConfig(config.getConfig("context-server"))
@@ -358,29 +473,9 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
     noException should be thrownBy apiClient.ping().await
   }
 
-  it should "process http pool offer results" in {
-    val request = HttpRequest()
-    val promise = Promise.successful(Done)
-    val failure = new RuntimeException("test failure")
-
-    val process: QueueOfferResult => Future[Done] =
-      DefaultServerApiEndpointClient.processOfferResult(request = request, promise = promise)
-
-    for {
-      enqueued <- process(QueueOfferResult.Enqueued)
-      dropped <- process(QueueOfferResult.Dropped).failed
-      failed <- process(QueueOfferResult.Failure(failure)).failed
-      closed <- process(QueueOfferResult.QueueClosed).failed
-    } yield {
-      enqueued should be(Done)
-      dropped.getMessage should be("[GET] request for endpoint [/] failed; dropped by stream")
-      failed.getMessage should be(s"[GET] request for endpoint [/] failed; RuntimeException: ${failure.getMessage}")
-      closed.getMessage should be("[GET] request for endpoint [/] failed; stream closed")
-    }
-  }
-
   private def createClient(
     apiPort: Int,
+    self: Device.Id = Device.generateId(),
     context: Option[HttpsConnectionContext] = None
   ): DefaultServerApiEndpointClient = {
     val client = new DefaultServerApiEndpointClient(
@@ -389,7 +484,7 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
         case None    => s"http://localhost:$apiPort"
       },
       credentials = Future.successful(apiCredentials),
-      self = Device.generateId(),
+      self = self,
       decryption = DefaultServerApiEndpointClient.DecryptionContext(
         core = new MockServerCoreEndpointClient(self = Node.generateId(), crates = Map.empty) {
           override def pull(crate: Crate.Id): Future[Option[Source[ByteString, NotUsed]]] =
@@ -418,7 +513,7 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
     "DefaultServerApiEndpointClientSpec"
   )
 
-  private val ports: mutable.Queue[Int] = (22000 to 22900).to(mutable.Queue)
+  private val ports: mutable.Queue[Int] = (22000 to 22100).to(mutable.Queue)
 
   private val apiCredentials = BasicHttpCredentials(username = "some-user", password = "some-password")
 
