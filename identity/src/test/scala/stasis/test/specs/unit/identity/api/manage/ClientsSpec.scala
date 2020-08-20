@@ -59,6 +59,45 @@ class ClientsSpec extends RouteTest {
     }
   }
 
+  they should "search clients by subject" in {
+    val store = createClientStore()
+    val clients = new Clients(store, secretConfig)
+
+    val testId = Client.generateId()
+    val testSubject = "test-subject"
+
+    val expectedClients = Seq(
+      Generators.generateClient,
+      Generators.generateClient.copy(id = testId),
+      Generators.generateClient.copy(subject = Some(testSubject))
+    )
+
+    Future.sequence(expectedClients.map(store.put)).await
+
+    Get(s"/search/by-subject/$testSubject") ~> clients.routes(user) ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[List[PartialClient]] match {
+        case clientWithSubject :: Nil =>
+          clientWithSubject.subject should be(Some(testSubject))
+
+        case other =>
+          fail(s"Unexpected response received; [$other]")
+      }
+    }
+
+    Get(s"/search/by-subject/$testId") ~> clients.routes(user) ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[List[PartialClient]] match {
+        case clientWithId :: Nil =>
+          clientWithId.id should be(testId)
+
+        case other =>
+          fail(s"Unexpected response received; [$other]")
+      }
+    }
+
+  }
+
   they should "update existing client credentials" in {
     val store = createClientStore()
     val clients = new Clients(store, secretConfig)
