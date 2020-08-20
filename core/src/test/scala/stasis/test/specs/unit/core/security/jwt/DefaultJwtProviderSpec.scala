@@ -15,7 +15,7 @@ import scala.concurrent.duration._
 class DefaultJwtProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
   "A DefaultJwtProvider" should "successfully provide cached tokens" in {
     val mockClient = new MockOAuthClient(token = Some(token))
-    val provider = new DefaultJwtProvider(client = mockClient, expirationTolerance = 3.seconds)
+    val provider = DefaultJwtProvider(client = mockClient, expirationTolerance = 3.seconds)
 
     for {
       response1 <- provider.provide(scope = client)
@@ -36,7 +36,7 @@ class DefaultJwtProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
     val waitDelay = ((expiration - tolerance) * 1.5).toMillis.millis
 
     val mockClient = new MockOAuthClient(token = Some(token.copy(expires_in = expiration.toSeconds)))
-    val provider = new DefaultJwtProvider(client = mockClient, expirationTolerance = 800.millis)
+    val provider = DefaultJwtProvider(client = mockClient, expirationTolerance = 800.millis)
 
     for {
       response1 <- provider.provide(scope = client)

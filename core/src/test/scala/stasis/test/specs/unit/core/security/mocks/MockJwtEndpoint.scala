@@ -16,6 +16,7 @@ class MockJwtEndpoint(
   private val config = withKeystoreConfig match {
     case Some(keystoreConfig) =>
       new WireMockConfiguration()
+        .httpDisabled(true)
         .httpsPort(port)
         .keystorePath(keystoreConfig.storePath)
         .keystoreType(keystoreConfig.storeType)

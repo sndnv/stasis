@@ -11,6 +11,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class DefaultJwtProvider(
   client: OAuthClient,
+  clientParameters: OAuthClient.GrantParameters,
   expirationTolerance: FiniteDuration
 )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout)
     extends JwtProvider {
@@ -28,7 +29,7 @@ class DefaultJwtProvider(
         for {
           response <- client.token(
             scope = Some(scope),
-            parameters = OAuthClient.GrantParameters.ClientCredentials()
+            parameters = clientParameters
           )
           _ <- cache.put(scope, response)
         } yield {
@@ -49,6 +50,18 @@ object DefaultJwtProvider {
   )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): DefaultJwtProvider =
     new DefaultJwtProvider(
       client = client,
+      clientParameters = OAuthClient.GrantParameters.ClientCredentials(),
+      expirationTolerance = expirationTolerance
+    )
+
+  def apply(
+    client: OAuthClient,
+    clientParameters: OAuthClient.GrantParameters,
+    expirationTolerance: FiniteDuration
+  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): DefaultJwtProvider =
+    new DefaultJwtProvider(
+      client = client,
+      clientParameters = clientParameters,
       expirationTolerance = expirationTolerance
     )
 }

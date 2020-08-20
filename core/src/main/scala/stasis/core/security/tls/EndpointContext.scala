@@ -101,7 +101,7 @@ object EndpointContext {
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-  private[stasis] def loadStore(config: StoreConfig): KeyStore =
+  def loadStore(config: StoreConfig): KeyStore =
     try {
       val rawStore = new FileInputStream(config.storePath)
       try {
