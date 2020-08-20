@@ -46,6 +46,20 @@ class Clients(
           }
         )
       },
+      pathPrefix("search") {
+        path("by-subject" / Segment) { subject =>
+          get {
+            onSuccess(store.clients) { clients =>
+              val matchingClients = clients.values.filter { client =>
+                client.subject.contains(subject) || client.id.toString == subject
+              }
+
+              log.debug("User [{}] found [{}] clients for subject [{}]", user, clients.size, subject)
+              discardEntity & complete(matchingClients)
+            }
+          }
+        }
+      },
       pathPrefix(JavaUUID) { clientId =>
         onSuccess(store.get(clientId)) {
           case Some(client) =>
