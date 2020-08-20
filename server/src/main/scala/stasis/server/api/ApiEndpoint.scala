@@ -1,8 +1,7 @@
 package stasis.server.api
 
-import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.{ConnectionContext, Http}
@@ -11,11 +10,10 @@ import akka.stream.{Materializer, SystemMaterializer}
 import akka.util.ByteString
 import org.slf4j.LoggerFactory
 import stasis.server.api.routes._
-import stasis.server.security.exceptions.AuthorizationFailure
-import stasis.server.security.{ResourceProvider, UserAuthenticator}
+import stasis.server.security.ResourceProvider
+import stasis.server.security.authenticators.UserAuthenticator
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
-import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 class ApiEndpoint(
@@ -39,56 +37,8 @@ class ApiEndpoint(
   private val staging = Staging()
   private val service = Service()
 
-  private implicit def sanitizingExceptionHandler: ExceptionHandler =
-    ExceptionHandler {
-      case e: AuthorizationFailure =>
-        extractRequestEntity { entity =>
-          val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
-          log.errorN("User authorization failed: [{}]", e.getMessage, e)
-          complete(StatusCodes.Forbidden)
-        }
-
-      case NonFatal(e) =>
-        extractRequestEntity { entity =>
-          val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
-          val failureReference = java.util.UUID.randomUUID()
-
-          log.error(
-            "Unhandled exception encountered: [{}]; failure reference is [{}]",
-            e.getMessage,
-            failureReference,
-            e
-          )
-
-          complete(
-            StatusCodes.InternalServerError,
-            HttpEntity(
-              ContentTypes.`text/plain(UTF-8)`,
-              s"Failed to process request; failure reference is [${failureReference.toString}]"
-            )
-          )
-        }
-    }
-
-  private implicit def rejectionHandler: RejectionHandler =
-    RejectionHandler
-      .newBuilder()
-      .handle {
-        case ValidationRejection(_, _) =>
-          extractRequestEntity { entity =>
-            val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
-
-            val message = "Provided data is invalid or malformed"
-            log.warn(message)
-
-            complete(
-              StatusCodes.BadRequest,
-              HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
-            )
-          }
-      }
-      .result()
-      .seal
+  private implicit def sanitizingExceptionHandler: ExceptionHandler = handlers.Sanitizing.create(log)
+  private implicit def rejectionHandler: RejectionHandler = handlers.Rejection.create(log)
 
   val endpointRoutes: Route =
     (extractMethod & extractUri & extractClientIP & extractRequest) { (method, uri, remoteAddress, request) =>

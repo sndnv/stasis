@@ -1,4 +1,5 @@
-package stasis.server.security
+package stasis.server.security.authenticators
+
 import java.util.UUID
 
 import akka.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
@@ -6,6 +7,7 @@ import org.jose4j.jwt.JwtClaims
 import stasis.core.security.exceptions.AuthenticationFailure
 import stasis.core.security.jwt.JwtAuthenticator
 import stasis.server.model.users.UserStore
+import stasis.server.security.CurrentUser
 import stasis.shared.model.users.User
 
 import scala.concurrent.{ExecutionContext, Future}

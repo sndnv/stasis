@@ -17,15 +17,19 @@ import javax.net.ssl.{SSLContext, TrustManagerFactory}
 import org.jose4j.jwk.JsonWebKey
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
+import play.api.libs.json.Json
 import stasis.core.networking.http.{HttpEndpointAddress, HttpEndpointClient}
 import stasis.core.packaging.Crate
 import stasis.core.security.tls.EndpointContext
 import stasis.server.service.{CorePersistence, ServerPersistence, Service}
 import stasis.shared.api.requests.CreateUser
+import stasis.shared.model.devices.{Device, DeviceBootstrapCode, DeviceBootstrapParameters}
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.security.mocks.{MockJwksEndpoint, MockJwtGenerators}
+import stasis.test.specs.unit.server.security.mocks.{MockIdentityManageEndpoint, MockSimpleJwtEndpoint}
+import stasis.test.specs.unit.shared.model.Generators
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -117,6 +121,93 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     }
   }
 
+  it should "handle device bootstrap requests" in {
+    implicit val trustedContext: HttpsConnectionContext = createTrustedContext()
+
+    val token = "test-token"
+
+    val jwtPort = 28998
+    val jwtEndpoint = new MockSimpleJwtEndpoint(jwtPort, token)
+
+    val defaultJwk = jwtEndpoint.jwks.getJsonWebKeys.asScala.find(_.getKeyType != "oct") match {
+      case Some(jwk) => jwk
+      case None      => fail("Expected at least one mock JWK but none were found")
+    }
+
+    jwtEndpoint.start()
+
+    val identityPort = 28997
+    val identityEndpoint =
+      MockIdentityManageEndpoint(
+        port = identityPort,
+        credentials = OAuth2BearerToken(token),
+        existingDevice = None
+      )
+
+    identityEndpoint.start()
+
+    val service = new Service {
+      override protected def systemConfig: Config = ConfigFactory.load("application-device-bootstrap")
+    }
+    val interface = "localhost"
+
+    val bootstrapPort = 48999
+    val bootstrapUrl = s"https://$interface:$bootstrapPort"
+
+    val (serverPersistence, corePersistence) = eventually[(ServerPersistence, CorePersistence)] {
+      service.state match {
+        case Service.State.Started(apiServices, coreServices) => (apiServices.persistence, coreServices.persistence)
+        case state                                            => fail(s"Unexpected service state encountered: [$state]")
+      }
+    }
+
+    val existingUser = UUID.fromString("749d8c0e-6105-4022-ae0e-39bd77752c5d")
+
+    val existingDevice = Generators.generateDevice.copy(owner = existingUser)
+    serverPersistence.devices.manage().create(existingDevice).await
+
+    for {
+      jwt <- getJwt(subject = existingUser.toString, signatureKey = defaultJwk)
+      code <- getBootstrapCode(bootstrapUrl, existingDevice.id, jwt)
+      bootstrapCodeExistsBeforeExec <- serverPersistence.deviceBootstrapCodes.view().get(code.value).map(_.isDefined)
+      params <- getBootstrapParams(bootstrapUrl, code.value)
+      bootstrapCodeExistsAfterExec <- serverPersistence.deviceBootstrapCodes.view().get(code.value).map(_.isDefined)
+      _ <- serverPersistence.drop()
+      _ <- corePersistence.drop()
+      _ = service.stop()
+      _ = jwtEndpoint.stop()
+      _ = identityEndpoint.stop()
+    } yield {
+      identityEndpoint.searched should be(1)
+      identityEndpoint.created should be(1)
+      identityEndpoint.updated should be(0)
+
+      bootstrapCodeExistsBeforeExec should be(true)
+      code.owner should be(existingUser)
+      code.device should be(existingDevice.id)
+
+      bootstrapCodeExistsAfterExec should be(false)
+      params.authentication.tokenEndpoint should be("http://localhost:28998/oauth/token")
+      params.authentication.clientId should be(existingDevice.node.toString)
+      params.authentication.clientSecret should not be empty
+      params.authentication.useQueryString should be(false)
+      params.authentication.scopes.api should be("urn:stasis:identity:audience:stasis-server-test")
+      params.authentication.scopes.core should be("urn:stasis:identity:audience:stasis-server-test")
+      params.authentication.context.enabled should be(true)
+      params.authentication.context.protocol should be("TLS")
+      params.serverApi.url should be("https://localhost:28999")
+      params.serverApi.user should be(existingUser.toString)
+      params.serverApi.userSalt should be("drzi1ZLxHq5MZ67M")
+      params.serverApi.device should be(existingDevice.id.toString)
+      params.serverApi.context.enabled should be(false)
+      params.serverApi.context.protocol should be("TLS")
+      params.serverCore.address should be("https://localhost:38999")
+      params.serverCore.context.enabled should be(false)
+      params.serverCore.context.protocol should be("TLS")
+      params.additionalConfig should be(Json.parse("""{"a":{"b":{"c":"d","e":1,"f":["g","h"]}}}"""))
+    }
+  }
+
   it should "handle bootstrap failures" in {
     val service = new Service {
       override protected def systemConfig: Config = ConfigFactory.load("application-invalid-bootstrap")
@@ -135,6 +226,59 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     eventually[Assertion] {
       service.state shouldBe a[Service.State.StartupFailed]
     }
+  }
+
+  it should "load device bootstrap params with additional config" in {
+    val params = Service.Config.DeviceBootstrap.params(
+      ConfigFactory
+        .load("application-device-bootstrap")
+        .getConfig("stasis.server.bootstrap.devices.parameters")
+    )
+
+    params.authentication.tokenEndpoint should be("http://localhost:28998/oauth/token")
+    params.authentication.clientId shouldBe empty
+    params.authentication.clientSecret shouldBe empty
+    params.authentication.useQueryString should be(false)
+    params.authentication.scopes.api should be("urn:stasis:identity:audience:stasis-server-test")
+    params.authentication.scopes.core should be("urn:stasis:identity:audience:stasis-server-test")
+    params.authentication.context.enabled should be(true)
+    params.authentication.context.protocol should be("TLS")
+    params.serverApi.url should be("https://localhost:28999")
+    params.serverApi.user shouldBe empty
+    params.serverApi.userSalt shouldBe empty
+    params.serverApi.device shouldBe empty
+    params.serverApi.context.enabled should be(false)
+    params.serverApi.context.protocol should be("TLS")
+    params.serverCore.address should be("https://localhost:38999")
+    params.serverCore.context.enabled should be(false)
+    params.serverCore.context.protocol should be("TLS")
+    params.additionalConfig should be(Json.parse("""{"a":{"b":{"c":"d","e":1,"f":["g","h"]}}}"""))
+  }
+
+  it should "load device bootstrap params without additional config" in {
+    val params = Service.Config.DeviceBootstrap.params(
+      typedSystem.settings.config
+        .getConfig("stasis.server.bootstrap.devices.parameters")
+    )
+
+    params.authentication.tokenEndpoint should be("http://localhost:29998/oauth/token")
+    params.authentication.clientId shouldBe empty
+    params.authentication.clientSecret shouldBe empty
+    params.authentication.useQueryString should be(false)
+    params.authentication.scopes.api should be("urn:stasis:identity:audience:stasis-server-test")
+    params.authentication.scopes.core should be("urn:stasis:identity:audience:stasis-server-test")
+    params.authentication.context.enabled should be(true)
+    params.authentication.context.protocol should be("TLS")
+    params.serverApi.url should be("https://localhost:29999")
+    params.serverApi.user shouldBe empty
+    params.serverApi.userSalt shouldBe empty
+    params.serverApi.device shouldBe empty
+    params.serverApi.context.enabled should be(false)
+    params.serverApi.context.protocol should be("TLS")
+    params.serverCore.address should be("https://localhost:39999")
+    params.serverCore.context.enabled should be(false)
+    params.serverCore.context.protocol should be("TLS")
+    params.additionalConfig should be(Json.parse("{}"))
   }
 
   private def getJwt(
@@ -186,6 +330,41 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
       )
       .flatMap {
         case HttpResponse(StatusCodes.OK, _, entity, _) => Unmarshal(entity).to[Seq[User]]
+        case response                                   => fail(s"Unexpected response received: [$response]")
+      }
+
+  private def getBootstrapCode(
+    bootstrapUrl: String,
+    device: Device.Id,
+    jwt: String
+  )(implicit trustedContext: HttpsConnectionContext): Future[DeviceBootstrapCode] =
+    Http()
+      .singleRequest(
+        request = HttpRequest(
+          method = HttpMethods.PUT,
+          uri = s"$bootstrapUrl/devices/codes/own/for-device/${device.toString}"
+        ).addCredentials(OAuth2BearerToken(token = jwt)),
+        connectionContext = trustedContext
+      )
+      .flatMap {
+        case HttpResponse(StatusCodes.OK, _, entity, _) => Unmarshal(entity).to[DeviceBootstrapCode]
+        case response                                   => fail(s"Unexpected response received: [$response]")
+      }
+
+  private def getBootstrapParams(
+    bootstrapUrl: String,
+    code: String
+  )(implicit trustedContext: HttpsConnectionContext): Future[DeviceBootstrapParameters] =
+    Http()
+      .singleRequest(
+        request = HttpRequest(
+          method = HttpMethods.PUT,
+          uri = s"$bootstrapUrl/devices/execute"
+        ).addCredentials(OAuth2BearerToken(token = code)),
+        connectionContext = trustedContext
+      )
+      .flatMap {
+        case HttpResponse(StatusCodes.OK, _, entity, _) => Unmarshal(entity).to[DeviceBootstrapParameters]
         case response                                   => fail(s"Unexpected response received: [$response]")
       }
 
