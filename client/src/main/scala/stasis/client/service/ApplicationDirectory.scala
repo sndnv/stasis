@@ -20,6 +20,8 @@ trait ApplicationDirectory {
     file: String,
     content: T
   )(implicit ec: ExecutionContext, m: T => ByteString): Future[Path]
+
+  def configDirectory: Option[Path]
 }
 
 object ApplicationDirectory {
@@ -96,6 +98,9 @@ object ApplicationDirectory {
           )
       }
     }
+
+    override val configDirectory: Option[Path] =
+      configLocations.headOption
   }
 
   object Default {

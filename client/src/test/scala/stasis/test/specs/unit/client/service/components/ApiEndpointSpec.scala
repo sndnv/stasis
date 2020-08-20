@@ -139,13 +139,12 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
         override def search: Search = MockSearch()
       }
     ).map { result =>
-        fail(s"Unexpected result received: [$result]")
-      }
-      .recover {
-        case NonFatal(e: ServiceStartupFailure) =>
-          e.cause should be("file")
-          e.message should include(s"File [${Files.ApiToken}] could not be created")
-      }
+      fail(s"Unexpected result received: [$result]")
+    }.recover {
+      case NonFatal(e: ServiceStartupFailure) =>
+        e.cause should be("file")
+        e.message should include(s"File [${Files.ApiToken}] could not be created")
+    }
   }
 
   it should "handle endpoint binding failures" in {

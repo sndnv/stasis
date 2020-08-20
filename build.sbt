@@ -49,6 +49,7 @@ lazy val client   = (project in file("./client"))
       "com.typesafe.akka" %% "akka-slf4j"              % akkaVersion,
       "com.typesafe.akka" %% "akka-http-caching"       % akkaHttpVersion,
       "ch.qos.logback"     % "logback-classic"         % logbackVersion,
+      "com.github.scopt"  %% "scopt"                   % "3.7.1",
       "com.google.jimfs"   % "jimfs"                   % "1.1"    % Test,
       "org.mockito"       %% "mockito-scala"           % "1.14.4" % Test,
       "org.mockito"       %% "mockito-scala-scalatest" % "1.14.4" % Test,

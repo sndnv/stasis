@@ -24,7 +24,7 @@ class PartitionedByteStringSourceSpec extends AsyncUnitSpec {
     val subFlowCounter = new AtomicInteger(0)
     val subFlowEntries = new ConcurrentHashMap[Int, ByteString]()
 
-    val flow = Flow.lazyFutureFlow(() => {
+    val flow = Flow.lazyFutureFlow { () =>
       val subFlowId = subFlowCounter.getAndIncrement()
       Future.successful(
         Flow[ByteString]
@@ -35,7 +35,7 @@ class PartitionedByteStringSourceSpec extends AsyncUnitSpec {
             )
           }
       )
-    })
+    }
 
     extended
       .partition(withMaximumPartSize = 3)

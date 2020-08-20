@@ -1,0 +1,118 @@
+stasis {
+  client {
+    api {
+      type = "http"
+
+      termination-delay = 250 millis
+
+      http {
+        interface = "localhost"
+        port = 29090
+
+        context {
+          enabled = true
+
+          type = "server"
+          protocol = "TLS"
+
+          keystore {
+            path = "$${CLIENT_API_HTTP_CONTEXT_KEYSTORE_PATH}"
+            type = "$${CLIENT_API_HTTP_CONTEXT_KEYSTORE_TYPE}"
+            password = "$${CLIENT_API_HTTP_CONTEXT_KEYSTORE_PASSWORD}"
+          }
+        }
+      }
+
+      init {
+        interface = "localhost"
+        port = 29190
+
+        context {
+          enabled = true
+
+          type = "server"
+          protocol = "TLS"
+
+          keystore {
+            path = "$${CLIENT_API_INIT_CONTEXT_KEYSTORE_PATH}"
+            type = "$${CLIENT_API_INIT_CONTEXT_KEYSTORE_TYPE}"
+            password = "$${CLIENT_API_INIT_CONTEXT_KEYSTORE_PASSWORD}"
+          }
+        }
+      }
+    }
+
+    server {
+      authentication {
+        token-endpoint = "$${AUTHENTICATION_TOKEN_ENDPOINT}"
+        client-id = "$${AUTHENTICATION_CLIENT_ID}"
+        client-secret = "$${AUTHENTICATION_CLIENT_SECRET}"
+        expiration-tolerance = 30 seconds
+        use-query-string = $${AUTHENTICATION_USE_QUERY_STRING}
+
+        scopes {
+          api = "$${AUTHENTICATION_SCOPES_API}"
+          core = "$${AUTHENTICATION_SCOPES_CORE}"
+        }
+
+        context {
+          enabled = $${AUTHENTICATION_CONTEXT_ENABLED}
+          type = "client"
+          protocol = "$${AUTHENTICATION_CONTEXT_PROTOCOL}"
+
+          truststore {
+            path = "$${AUTHENTICATION_CONTEXT_TRUSTSTORE_PATH}"
+            type = "$${AUTHENTICATION_CONTEXT_TRUSTSTORE_TYPE}"
+            password = "$${AUTHENTICATION_CONTEXT_TRUSTSTORE_PASSWORD}"
+          }
+        }
+      }
+
+      api {
+        url = "$${SERVER_API_URL}"
+        user = "$${SERVER_API_USER}"
+        user-salt = "$${SERVER_API_USER_SALT}"
+        device = "$${SERVER_API_DEVICE}"
+
+        request-buffer-size = 1000
+
+        cache {
+          initial-capacity = 10
+          maximum-capacity = 1000
+          time-to-live = 90 seconds
+          time-to-idle = 30 seconds
+        }
+
+        context {
+          enabled = $${SERVER_API_CONTEXT_ENABLED}
+          type = "client"
+          protocol = "$${SERVER_API_CONTEXT_PROTOCOL}"
+
+          truststore {
+            path = "$${SERVER_API_CONTEXT_TRUSTSTORE_PATH}"
+            type = "$${SERVER_API_CONTEXT_TRUSTSTORE_TYPE}"
+            password = "$${SERVER_API_CONTEXT_TRUSTSTORE_PASSWORD}"
+          }
+        }
+      }
+
+      core {
+        address = "$${SERVER_CORE_ADDRESS}"
+
+        request-buffer-size = 1000
+
+        context {
+          enabled = $${SERVER_CORE_CONTEXT_ENABLED}
+          type = "client"
+          protocol = "$${SERVER_CORE_CONTEXT_PROTOCOL}"
+
+          truststore {
+            path = "$${SERVER_CORE_CONTEXT_TRUSTSTORE_PATH}"
+            type = "$${SERVER_CORE_CONTEXT_TRUSTSTORE_TYPE}"
+            password = "$${SERVER_CORE_CONTEXT_TRUSTSTORE_PASSWORD}"
+          }
+        }
+      }
+    }
+  }
+}

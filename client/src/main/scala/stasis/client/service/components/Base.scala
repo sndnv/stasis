@@ -1,6 +1,5 @@
 package stasis.client.service.components
 
-import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
 
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
@@ -12,6 +11,7 @@ import stasis.client.analysis.Checksum
 import stasis.client.compression.{Compression, Decoder => CompressionDecoder, Encoder => CompressionEncoder}
 import stasis.client.encryption.{Aes, Decoder => EncryptionDecoder, Encoder => EncryptionEncoder}
 import stasis.client.service.ApplicationDirectory
+import stasis.client.service.components.internal.{ConfigOverride, FutureOps}
 import stasis.client.staging.{DefaultFileStaging, FileStaging}
 import stasis.client.tracking.TrackerView
 import stasis.client.tracking.trackers.DefaultTracker
@@ -21,9 +21,8 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 import scala.util.Try
-import scala.util.control.NonFatal
 
-trait Base {
+trait Base extends FutureOps {
   implicit def system: ActorSystem[SpawnProtocol.Command]
   implicit def ec: ExecutionContext
   implicit def untyped: akka.actor.ActorSystem
@@ -45,19 +44,6 @@ trait Base {
   def tracker: DefaultTracker
 
   def terminateService: () => Unit
-
-  implicit class OpToFuture[T](op: => T) {
-    def future: Future[T] = Future.fromTry(Try(op))
-  }
-
-  implicit class TryOpToFuture[T](op: => Try[T]) {
-    def future: Future[T] = Future.fromTry(op)
-  }
-
-  implicit class FutureOpWithTransformedFailures[T](op: => Future[T]) {
-    def transformFailureTo(transformer: Throwable => Throwable): Future[T] =
-      op.recoverWith { case NonFatal(e) => Future.failed(transformer(e)) }
-  }
 }
 
 object Base {
@@ -81,7 +67,7 @@ object Base {
             applicationDirectory
 
           override val configOverride: typesafe.Config =
-            loadConfigOverride(directory)
+            ConfigOverride.load(directory)
 
           override val rawConfig: typesafe.Config =
             configOverride.withFallback(system.settings.config).getConfig("stasis.client").resolve()
@@ -121,15 +107,4 @@ object Base {
         }
       }
     )
-
-  def loadConfigOverride(directory: ApplicationDirectory): typesafe.Config =
-    directory.findFile(file = Files.ConfigOverride) match {
-      case Some(configFile) =>
-        typesafe.ConfigFactory.parseString(
-          java.nio.file.Files.readString(configFile, StandardCharsets.UTF_8)
-        )
-
-      case None =>
-        typesafe.ConfigFactory.empty()
-    }
 }

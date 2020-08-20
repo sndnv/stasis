@@ -52,15 +52,14 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
         override def credentials(): Future[(String, Array[Char])] = Future.failed(new RuntimeException("test failure"))
       }
     ).map { result =>
-        fail(s"Unexpected result received: [$result]")
-      }
-      .recover {
-        case NonFatal(e: ServiceStartupFailure) =>
-          endpoint.stop()
+      fail(s"Unexpected result received: [$result]")
+    }.recover {
+      case NonFatal(e: ServiceStartupFailure) =>
+        endpoint.stop()
 
-          e.cause should be("credentials")
-          e.message should be("RuntimeException: test failure")
-      }
+        e.cause should be("credentials")
+        e.message should be("RuntimeException: test failure")
+    }
   }
 
   it should "handle device secret file retrieval failures" in {
@@ -77,15 +76,14 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
         override def credentials(): Future[(String, Array[Char])] = Future.successful((username, password))
       }
     ).map { result =>
-        fail(s"Unexpected result received: [$result]")
-      }
-      .recover {
-        case NonFatal(e: ServiceStartupFailure) =>
-          endpoint.stop()
+      fail(s"Unexpected result received: [$result]")
+    }.recover {
+      case NonFatal(e: ServiceStartupFailure) =>
+        endpoint.stop()
 
-          e.cause should be("file")
-          e.message should include(s"FileNotFoundException: File [${Files.DeviceSecret}] not found")
-      }
+        e.cause should be("file")
+        e.message should include(s"FileNotFoundException: File [${Files.DeviceSecret}] not found")
+    }
   }
 
   it should "handle device secret file decryption failures" in {
@@ -102,15 +100,14 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
         override def credentials(): Future[(String, Array[Char])] = Future.successful((username, password))
       }
     ).map { result =>
-        fail(s"Unexpected result received: [$result]")
-      }
-      .recover {
-        case NonFatal(e: ServiceStartupFailure) =>
-          endpoint.stop()
+      fail(s"Unexpected result received: [$result]")
+    }.recover {
+      case NonFatal(e: ServiceStartupFailure) =>
+        endpoint.stop()
 
-          e.cause should be("credentials")
-          e.message should include("BadTagException")
-      }
+        e.cause should be("credentials")
+        e.message should include("BadTagException")
+    }
   }
 
   it should "handle core token retrieval failures" in {
@@ -128,15 +125,14 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
         override def credentials(): Future[(String, Array[Char])] = Future.successful((username, password))
       }
     ).map { result =>
-        fail(s"Unexpected result received: [$result]")
-      }
-      .recover {
-        case NonFatal(e: ServiceStartupFailure) =>
-          endpoint.stop()
+      fail(s"Unexpected result received: [$result]")
+    }.recover {
+      case NonFatal(e: ServiceStartupFailure) =>
+        endpoint.stop()
 
-          e.cause should be("token")
-          e.message should include("400 Bad Request")
-      }
+        e.cause should be("token")
+        e.message should include("400 Bad Request")
+    }
   }
 
   it should "handle API token retrieval failures" in {
@@ -154,15 +150,14 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
         override def credentials(): Future[(String, Array[Char])] = Future.successful((username, password))
       }
     ).map { result =>
-        fail(s"Unexpected result received: [$result]")
-      }
-      .recover {
-        case NonFatal(e: ServiceStartupFailure) =>
-          endpoint.stop()
+      fail(s"Unexpected result received: [$result]")
+    }.recover {
+      case NonFatal(e: ServiceStartupFailure) =>
+        endpoint.stop()
 
-          e.cause should be("token")
-          e.message should include("400 Bad Request")
-      }
+        e.cause should be("token")
+        e.message should include("400 Bad Request")
+    }
   }
 
   private def createCustomApplicationDirectory(tokenEndpointPort: Int): ApplicationDirectory =

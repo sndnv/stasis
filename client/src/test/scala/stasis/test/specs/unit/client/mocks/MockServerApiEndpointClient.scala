@@ -7,7 +7,6 @@ import stasis.client.api.clients.ServerApiEndpointClient
 import stasis.client.model.DatasetMetadata
 import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}
 import stasis.shared.api.responses.{CreatedDatasetDefinition, CreatedDatasetEntry, Ping}
-import stasis.shared.model.datasets.DatasetDefinition.Id
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
@@ -82,7 +81,7 @@ class MockServerApiEndpointClient(
     Future.successful(Generators.generateEntry)
   }
 
-  override def latestEntry(definition: Id, until: Option[Instant]): Future[Option[DatasetEntry]] = {
+  override def latestEntry(definition: DatasetDefinition.Id, until: Option[Instant]): Future[Option[DatasetEntry]] = {
     stats(Statistic.DatasetEntryRetrievedLatest).getAndIncrement()
     Future.successful(Some(Generators.generateEntry))
   }
