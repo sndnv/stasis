@@ -26,8 +26,11 @@ services:
       - STASIS_SERVER_DEV_TEST_NODE_CLIENT_ID=b4885566-dd69-4b7f-be7f-0568611d1a20
       - STASIS_SERVER_DEV_TEST_NODE_CLIENT_SECRET=test-secret
       - STASIS_SERVER_DEV_TEST_USER_ID=b21c3f0c-0133-4fb5-883d-95ad3aaa1740
-      - STASIS_CLIENT_DEV_CLIENT_ID=1771f509-8020-4f9b-b4a3-0101e66068de
-      - STASIS_CLIENT_DEV_CLIENT_SECRET=test-secret
+      - STASIS_PRIMARY_CLIENT_DEV_CLIENT_ID=1771f509-8020-4f9b-b4a3-0101e66068de
+      - STASIS_PRIMARY_CLIENT_DEV_CLIENT_SECRET=test-secret
+      - STASIS_SECONDARY_CLIENT_DEV_CLIENT_ID=744395cd-9084-4c81-89ba-e81c96004223
+      - STASIS_SECONDARY_CLIENT_DEV_CLIENT_SECRET=test-secret
+      - STASIS_SERVER_DEV_MANAGEMENT_USER_PASSWORD=manage-passw0rd
     volumes:
       - ./config/identity-bootstrap.conf:/opt/docker/config/identity-bootstrap.conf
       - ./secrets/identity.p12:/opt/docker/certs/identity.p12
@@ -48,16 +51,29 @@ services:
     ports:
       - '19090:9090'
       - '19091:9091'
+      - '19190:9190'
     environment:
       - AKKA_HTTP_PARSING_MAX_CONTENT_LENGTH=4G
-      - STASIS_SERVER_BOOTSTRAP_ENABLED=true
-      - STASIS_SERVER_BOOTSTRAP_CONFIG=/opt/docker/config/server-bootstrap.conf
+      - STASIS_SERVER_SERVICE_BOOTSTRAP_ENABLED=true
+      - STASIS_SERVER_SERVICE_BOOTSTRAP_CONFIG=/opt/docker/config/server-bootstrap.conf
       - STASIS_SERVER_LOGLEVEL=INFO
       - STASIS_SERVER_SERVICE_API_INTERFACE=0.0.0.0
       - STASIS_SERVER_SERVICE_API_PORT=9090
       - STASIS_SERVER_SERVICE_API_CONTEXT_KEYSTORE_PATH=/opt/docker/certs/server.p12
       - STASIS_SERVER_SERVICE_CORE_INTERFACE=0.0.0.0
       - STASIS_SERVER_SERVICE_CORE_PORT=9091
+      - STASIS_SERVER_BOOTSTRAP_API_INTERFACE=0.0.0.0
+      - STASIS_SERVER_BOOTSTRAP_API_PORT=9190
+      - STASIS_SERVER_BOOTSTRAP_DEVICES_CREDENTIALS_MANAGER_IDENTITY_URL=https://identity:9090
+      - STASIS_SERVER_BOOTSTRAP_DEVICES_CREDENTIALS_MANAGER_IDENTITY_MANAGEMENT_USER=server-management-user
+      - STASIS_SERVER_BOOTSTRAP_DEVICES_CREDENTIALS_MANAGER_IDENTITY_MANAGEMENT_USER_PASSWORD=manage-passw0rd
+      - STASIS_SERVER_BOOTSTRAP_DEVICES_CREDENTIALS_MANAGER_IDENTITY_MANAGEMENT_SCOPE=urn:stasis:identity:audience:manage-identity
+      - STASIS_SERVER_BOOTSTRAP_DEVICES_CREDENTIALS_MANAGER_IDENTITY_CONTEXT_ENABLED=true
+      - STASIS_SERVER_BOOTSTRAP_DEVICES_CREDENTIALS_MANAGER_IDENTITY_CONTEXT_TRUSTSTORE_PATH=/opt/docker/certs/identity.p12
+      - STASIS_SERVER_BOOTSTRAP_DEVICES_PARAMETERS_SERVER_API_URL=https://server:9090
+      - STASIS_SERVER_BOOTSTRAP_DEVICES_PARAMETERS_SERVER_API_CONTEXT_ENABLED=true
+      - STASIS_SERVER_BOOTSTRAP_DEVICES_PARAMETERS_SERVER_CORE_ADDRESS=https://server:9091
+      - STASIS_SERVER_BOOTSTRAP_DEVICES_PARAMETERS_SERVER_CORE_CONTEXT_ENABLED=true
       - STASIS_SERVER_SERVICE_CORE_CONTEXT_KEYSTORE_PATH=/opt/docker/certs/server.p12
       - STASIS_SERVER_CLIENTS_AUTHENTICATION_CONTEXT_ENABLED=true
       - STASIS_SERVER_CLIENTS_AUTHENTICATION_CONTEXT_TRUSTSTORE_PATH=/opt/docker/certs/identity.p12
@@ -72,8 +88,10 @@ services:
       - STASIS_SERVER_PERSISTENCE_STAGING_ENABLED=false
       - STASIS_SERVER_PERSISTENCE_STAGING_STORE_TYPE=memory
       - STASIS_SERVER_PERSISTENCE_STAGING_STORE_MEMORY_MAX_SIZE=1M
-      - STASIS_SERVER_DEV_TEST_DEVICE_ID=519e0c7b-43d0-4df5-890a-dd0d86f56072
-      - STASIS_SERVER_DEV_TEST_DEVICE_NODE_ID=1771f509-8020-4f9b-b4a3-0101e66068de
+      - STASIS_SERVER_DEV_PRIMARY_TEST_DEVICE_ID=519e0c7b-43d0-4df5-890a-dd0d86f56072
+      - STASIS_SERVER_DEV_PRIMARY_TEST_DEVICE_NODE_ID=1771f509-8020-4f9b-b4a3-0101e66068de
+      - STASIS_SERVER_DEV_SECONDARY_TEST_DEVICE_ID=7dee7457-da81-48bb-aae0-7cfdb1f827a8
+      - STASIS_SERVER_DEV_SECONDARY_TEST_DEVICE_NODE_ID=744395cd-9084-4c81-89ba-e81c96004223
       - STASIS_SERVER_DEV_TEST_USER_ID=b21c3f0c-0133-4fb5-883d-95ad3aaa1740
       - STASIS_SERVER_DEV_TEST_USER_SALT=d92beb8f7c3b
       - STASIS_SMOKE_TEST_CLIENT_ID=ef1e47e0-3a55-492e-bf5d-3c09c10c394d
@@ -82,7 +100,7 @@ services:
       - ./secrets/identity.p12:/opt/docker/certs/identity.p12
       - ./secrets/server.p12:/opt/docker/certs/server.p12
 
-  client:
+  primary-client:
     image: stasis-client-cli:dev-latest
     command: tail -F /opt/docker/bin/logs/client.log
     tty: true
@@ -128,3 +146,8 @@ services:
       - ./config/client.rules:/home/demiourgos728/.config/stasis-client/client.rules
       - ./config/client.schedules:/home/demiourgos728/.config/stasis-client/client.schedules
       - ./secrets/client.secret:/home/demiourgos728/.config/stasis-client/device-secret
+
+  secondary-client:
+    image: stasis-client-cli:dev-latest
+    command: tail -F /opt/docker/bin/logs/client.log
+    tty: true
