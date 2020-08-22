@@ -2,7 +2,6 @@ package stasis.test.specs.unit.core.security.oauth
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.HttpsConnectionContext
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.BeforeAndAfterAll
 import stasis.core.security.oauth.DefaultOAuthClient
@@ -198,10 +197,10 @@ class DefaultOAuthClientSpec extends AsyncUnitSpec with BeforeAndAfterAll {
   it should "support custom connection contexts" in {
     val config: Config = ConfigFactory.load().getConfig("stasis.test.core.security.tls")
 
-    val serverContextConfig = EndpointContext.ContextConfig(config.getConfig("context-server-jks"))
+    val serverContextConfig = EndpointContext.Config(config.getConfig("context-server-jks"))
 
-    val clientContext = EndpointContext.create(
-      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-client"))
+    val clientContext = EndpointContext(
+      config = EndpointContext.Config(config.getConfig("context-client"))
     )
 
     val expiration = 42
@@ -235,7 +234,7 @@ class DefaultOAuthClientSpec extends AsyncUnitSpec with BeforeAndAfterAll {
   private def createClient(
     endpoint: String,
     useQueryString: Boolean = true,
-    context: Option[HttpsConnectionContext] = None
+    context: Option[EndpointContext] = None
   ): DefaultOAuthClient =
     new DefaultOAuthClient(
       tokenEndpoint = endpoint,

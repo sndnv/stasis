@@ -2,9 +2,9 @@ package stasis.test.specs.unit.server.security.devices
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.HttpsConnectionContext
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import stasis.core.security.jwt.JwtProvider
+import stasis.core.security.tls.EndpointContext
 import stasis.server.security.devices.IdentityDeviceCredentialsManager
 import stasis.shared.model.devices.Device
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -221,7 +221,7 @@ class IdentityDeviceCredentialsManagerSpec extends AsyncUnitSpec {
 
   private def createManager(
     identityUrl: String,
-    context: Option[HttpsConnectionContext] = None
+    context: Option[EndpointContext] = None
   ): IdentityDeviceCredentialsManager =
     new IdentityDeviceCredentialsManager(
       identityUrl = identityUrl,

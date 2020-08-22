@@ -4,7 +4,6 @@ import java.util.concurrent.atomic.AtomicReference
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.ConnectionContext
 import com.typesafe.{config => typesafe}
 import org.jose4j.jwk.JsonWebKey
 import org.slf4j.{Logger, LoggerFactory}
@@ -127,7 +126,7 @@ trait Service {
       manageProviders = manageProviders
     )
 
-    val context = EndpointContext.create(config.context)
+    val context = EndpointContext.apply(config.context)
 
     log.info(
       s"""
@@ -189,7 +188,7 @@ trait Service {
 
     (persistence, endpoint, context)
   } match {
-    case Success((persistence: Persistence, endpoint: IdentityEndpoint, context: ConnectionContext)) =>
+    case Success((persistence: Persistence, endpoint: IdentityEndpoint, context: EndpointContext)) =>
       Bootstrap
         .run(rawConfig.getConfig("bootstrap"), persistence)
         .onComplete {
@@ -199,7 +198,7 @@ trait Service {
             val _ = endpoint.start(
               interface = config.interface,
               port = config.port,
-              context = context
+              context = Some(context)
             )
 
           case Failure(e) =>
@@ -239,7 +238,7 @@ object Service {
     interface: String,
     port: Int,
     internalQueryTimeout: FiniteDuration,
-    context: EndpointContext.ContextConfig
+    context: EndpointContext.Config
   )
 
   object Config {
@@ -248,7 +247,7 @@ object Service {
         interface = config.getString("interface"),
         port = config.getInt("port"),
         internalQueryTimeout = config.getDuration("internal-query-timeout").toMillis.millis,
-        context = EndpointContext.ContextConfig(config.getConfig("context"))
+        context = EndpointContext.Config(config.getConfig("context"))
       )
 
     final case class AuthorizationCodes(

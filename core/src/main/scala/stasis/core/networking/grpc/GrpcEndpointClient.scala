@@ -4,7 +4,6 @@ import java.util.UUID
 
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.http.scaladsl.HttpsConnectionContext
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
@@ -16,13 +15,14 @@ import stasis.core.networking.grpc.internal.Client
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.core.security.NodeCredentialsProvider
+import stasis.core.security.tls.EndpointContext
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 class GrpcEndpointClient(
   override protected val credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials],
-  context: Option[HttpsConnectionContext]
+  context: Option[EndpointContext]
 )(implicit system: ActorSystem[SpawnProtocol.Command])
     extends EndpointClient[GrpcEndpointAddress, HttpCredentials] {
 
@@ -252,7 +252,7 @@ class GrpcEndpointClient(
 object GrpcEndpointClient {
   def apply(
     credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials],
-    context: Option[HttpsConnectionContext]
+    context: Option[EndpointContext]
   )(implicit system: ActorSystem[SpawnProtocol.Command]): GrpcEndpointClient =
     new GrpcEndpointClient(
       credentials = credentials,
@@ -269,7 +269,7 @@ object GrpcEndpointClient {
 
   def apply(
     credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials],
-    context: HttpsConnectionContext
+    context: EndpointContext
   )(implicit system: ActorSystem[SpawnProtocol.Command]): GrpcEndpointClient =
     GrpcEndpointClient(
       credentials = credentials,

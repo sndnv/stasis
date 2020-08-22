@@ -2,13 +2,13 @@ package stasis.test.specs.unit.core.networking.http
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{Behavior, SpawnProtocol}
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.server.MissingQueryParamRejection
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.util.ByteString
 import stasis.core.api.Formats._
 import stasis.core.networking.http.HttpEndpoint
@@ -213,7 +213,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       testCrateStore = Some(new MockCrateStore(persistDisabled = true))
     )
     val endpointPort = ports.dequeue()
-    val _ = endpoint.start(interface = "localhost", port = endpointPort, context = ConnectionContext.noEncryption())
+    val _ = endpoint.start(interface = "localhost", port = endpointPort, context = None)
 
     endpoint.testReservationStore.put(testReservation).await
 
@@ -235,7 +235,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   it should "reject requests with invalid query parameters" in {
     val endpoint = new TestHttpEndpoint()
     val endpointPort = ports.dequeue()
-    val _ = endpoint.start(interface = "localhost", port = endpointPort, context = ConnectionContext.noEncryption())
+    val _ = endpoint.start(interface = "localhost", port = endpointPort, context = None)
 
     Http()
       .singleRequest(
@@ -256,7 +256,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   it should "reject requests with invalid entities" in {
     val endpoint = new TestHttpEndpoint()
     val endpointPort = ports.dequeue()
-    val _ = endpoint.start(interface = "localhost", port = endpointPort, context = ConnectionContext.noEncryption())
+    val _ = endpoint.start(interface = "localhost", port = endpointPort, context = None)
 
     Http()
       .singleRequest(

@@ -24,6 +24,7 @@ class MockSimpleJwtEndpoint(
         .keystorePath(keystoreConfig.storePath)
         .keystoreType(keystoreConfig.storeType)
         .keystorePassword(keystoreConfig.storePassword)
+        .keyManagerPassword(keystoreConfig.storePassword)
 
     case None =>
       new WireMockConfiguration()

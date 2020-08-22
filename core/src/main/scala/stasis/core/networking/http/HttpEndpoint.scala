@@ -3,13 +3,12 @@ package stasis.core.networking.http
 import akka.NotUsed
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.stream.scaladsl.Sink
-import akka.stream.{Materializer, SystemMaterializer}
 import akka.util.ByteString
 import org.slf4j.LoggerFactory
 import stasis.core.networking.Endpoint
@@ -18,8 +17,9 @@ import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.reservations.ReservationStoreView
 import stasis.core.routing.Router
 import stasis.core.security.NodeAuthenticator
+import stasis.core.security.tls.EndpointContext
 
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.Future
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
@@ -34,23 +34,22 @@ class HttpEndpoint(
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.core.api.Formats._
 
-  private implicit val ec: ExecutionContextExecutor = system.executionContext
-
   private val log = LoggerFactory.getLogger(this.getClass.getName)
 
-  def start(interface: String, port: Int, context: ConnectionContext): Future[Http.ServerBinding] = {
-    implicit val mat: Materializer = SystemMaterializer(system).materializer
-    implicit val untyped: akka.actor.ActorSystem = system.classicSystem
+  def start(interface: String, port: Int, context: Option[EndpointContext]): Future[Http.ServerBinding] = {
+    import EndpointContext._
 
-    Http().bindAndHandle(
-      handler = routes,
-      interface = interface,
-      port = port,
-      connectionContext = context
-    )
+    Http()
+      .newServerAt(interface = interface, port = port)
+      .withContext(context = context)
+      .bindFlow(
+        handlerFlow = (handleExceptions(sanitizingExceptionHandler) & handleRejections(rejectionHandler)) {
+          routes
+        }
+      )
   }
 
-  private implicit def sanitizingExceptionHandler: ExceptionHandler =
+  private val sanitizingExceptionHandler: ExceptionHandler =
     ExceptionHandler {
       case NonFatal(e) =>
         extractRequestEntity { entity =>
@@ -74,7 +73,7 @@ class HttpEndpoint(
         }
     }
 
-  private implicit def rejectionHandler: RejectionHandler =
+  private val rejectionHandler: RejectionHandler =
     RejectionHandler
       .newBuilder()
       .handle {

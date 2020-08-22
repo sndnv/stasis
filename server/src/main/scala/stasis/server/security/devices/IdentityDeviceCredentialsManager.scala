@@ -3,7 +3,6 @@ package stasis.server.security.devices
 import akka.Done
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.http.scaladsl.HttpsConnectionContext
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
@@ -14,6 +13,7 @@ import org.slf4j.LoggerFactory
 import play.api.libs.json.Format
 import stasis.core.api.PoolClient
 import stasis.core.security.jwt.JwtProvider
+import stasis.core.security.tls.EndpointContext
 import stasis.server.security.exceptions.CredentialsManagementFailure
 import stasis.shared.model.devices.Device
 
@@ -26,7 +26,7 @@ class IdentityDeviceCredentialsManager(
   identityCredentials: IdentityDeviceCredentialsManager.CredentialsProvider,
   redirectUri: String,
   tokenExpiration: FiniteDuration,
-  override protected val context: Option[HttpsConnectionContext],
+  override protected val context: Option[EndpointContext],
   override protected val requestBufferSize: Int
 )(implicit override protected val system: ActorSystem[SpawnProtocol.Command])
     extends DeviceCredentialsManager
@@ -206,7 +206,7 @@ object IdentityDeviceCredentialsManager {
     identityCredentials: CredentialsProvider,
     redirectUri: String,
     tokenExpiration: FiniteDuration,
-    context: Option[HttpsConnectionContext],
+    context: Option[EndpointContext],
     requestBufferSize: Int
   )(implicit system: ActorSystem[SpawnProtocol.Command]): IdentityDeviceCredentialsManager =
     new IdentityDeviceCredentialsManager(

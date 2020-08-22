@@ -2,7 +2,6 @@ package stasis.test.specs.unit.core.networking.http
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.ConnectionContext
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -441,15 +440,15 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val config: Config = ConfigFactory.load().getConfig("stasis.test.core.security.tls")
 
-    val endpointContext = EndpointContext.create(
-      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-server"))
+    val endpointContext = EndpointContext(
+      config = EndpointContext.Config(config.getConfig("context-server"))
     )
 
-    val clientContext = EndpointContext.create(
-      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-client"))
+    val clientContext = EndpointContext(
+      config = EndpointContext.Config(config.getConfig("context-client"))
     )
 
-    val endpoint = new TestHttpEndpoint(port = endpointPort, context = endpointContext)
+    val endpoint = new TestHttpEndpoint(port = endpointPort, context = Some(endpointContext))
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
@@ -492,7 +491,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
   private class TestHttpEndpoint(
     val testAuthenticator: NodeAuthenticator[HttpCredentials] = new MockHttpAuthenticator(testUser, testPassword),
     val fixtures: TestFixtures = new TestFixtures {},
-    context: ConnectionContext = ConnectionContext.noEncryption(),
+    context: Option[EndpointContext] = None,
     port: Int
   ) extends HttpEndpoint(
         router = fixtures.router,

@@ -23,7 +23,7 @@ object SchedulingConfig {
   def parseEntries[T](file: Path)(parse: (String, Int) => Try[T])(implicit ec: ExecutionContext): Future[Seq[T]] =
     Future {
       val source = Source.fromFile(file.toFile)
-      val result = source.getLines.toList
+      val result = source.getLines().toList
       source.close
       result
     }.flatMap { lines =>

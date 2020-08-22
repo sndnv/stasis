@@ -2,13 +2,14 @@ package stasis.identity.api
 
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import org.jose4j.jwk.JsonWebKey
+import stasis.core.security.tls.EndpointContext
 import stasis.identity.api.manage.setup.{Config => ManageConfig, Providers => ManageProviders}
 import stasis.identity.api.oauth.setup.{Config => OAuthConfig, Providers => OAuthProviders}
 
@@ -29,7 +30,7 @@ class IdentityEndpoint(
   private val jwks = Jwks(keys)
   private val manage = Manage(manageProviders, manageConfig)
 
-  private implicit def sanitizingExceptionHandler: ExceptionHandler =
+  private val sanitizingExceptionHandler: ExceptionHandler =
     ExceptionHandler {
       case NonFatal(e) =>
         extractRequestEntity { entity =>
@@ -53,7 +54,7 @@ class IdentityEndpoint(
         }
     }
 
-  private implicit def rejectionHandler: RejectionHandler =
+  private val rejectionHandler: RejectionHandler =
     RejectionHandler
       .newBuilder()
       .handle {
@@ -94,13 +95,18 @@ class IdentityEndpoint(
       pathPrefix("manage") { manage.routes }
     )
 
-  def start(interface: String, port: Int, context: ConnectionContext): Future[Http.ServerBinding] =
-    Http().bindAndHandle(
-      handler = routes,
-      interface = interface,
-      port = port,
-      connectionContext = context
-    )
+  def start(interface: String, port: Int, context: Option[EndpointContext]): Future[Http.ServerBinding] = {
+    import EndpointContext._
+
+    Http()
+      .newServerAt(interface = interface, port = port)
+      .withContext(context = context)
+      .bindFlow(
+        handlerFlow = (handleExceptions(sanitizingExceptionHandler) & handleRejections(rejectionHandler)) {
+          routes
+        }
+      )
+  }
 }
 
 object IdentityEndpoint {

@@ -3,7 +3,6 @@ package stasis.client.api.clients
 import java.time.Instant
 
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.http.scaladsl.HttpsConnectionContext
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.HttpCredentials
@@ -17,6 +16,7 @@ import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.DatasetMetadata
 import stasis.core.api.PoolClient
 import stasis.core.networking.exceptions.ClientFailure
+import stasis.core.security.tls.EndpointContext
 import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}
 import stasis.shared.api.responses.{CreatedDatasetDefinition, CreatedDatasetEntry, Ping}
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
@@ -32,7 +32,7 @@ class DefaultServerApiEndpointClient(
   credentials: => Future[HttpCredentials],
   decryption: DefaultServerApiEndpointClient.DecryptionContext,
   override val self: Device.Id,
-  override protected val context: Option[HttpsConnectionContext],
+  override protected val context: Option[EndpointContext],
   override protected val requestBufferSize: Int
 )(implicit override protected val system: ActorSystem[SpawnProtocol.Command])
     extends ServerApiEndpointClient
@@ -272,7 +272,7 @@ object DefaultServerApiEndpointClient {
     credentials: => Future[HttpCredentials],
     decryption: DefaultServerApiEndpointClient.DecryptionContext,
     self: Device.Id,
-    context: Option[HttpsConnectionContext],
+    context: Option[EndpointContext],
     requestBufferSize: Int
   )(implicit system: ActorSystem[SpawnProtocol.Command]): DefaultServerApiEndpointClient =
     new DefaultServerApiEndpointClient(

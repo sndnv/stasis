@@ -29,7 +29,7 @@ object Secrets {
         client = rawConfig.getString("server.authentication.client-id"),
         clientSecret = rawConfig.getString("server.authentication.client-secret"),
         useQueryString = rawConfig.getBoolean("server.authentication.use-query-string"),
-        context = EndpointContext.fromConfig(rawConfig.getConfig("server.authentication.context"))
+        context = EndpointContext(rawConfig.getConfig("server.authentication.context"))
       )
     }
 

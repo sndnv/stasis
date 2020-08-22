@@ -258,10 +258,10 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
   it should "support custom connection contexts" in {
     val config: Config = ConfigFactory.load().getConfig("stasis.test.core.security.tls")
 
-    val serverContextConfig = EndpointContext.ContextConfig(config.getConfig("context-server-jks"))
+    val serverContextConfig = EndpointContext.Config(config.getConfig("context-server-jks"))
 
-    val clientContext = EndpointContext.create(
-      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-client"))
+    val clientContext = EndpointContext(
+      config = EndpointContext.Config(config.getConfig("context-client"))
     )
 
     val endpoint = new MockJwksEndpoint(

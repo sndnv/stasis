@@ -103,7 +103,7 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       .await
 
     stopResponse.status should be(StatusCodes.Accepted)
-    await(delay = apiTerminationDelay * 3, withSystem = untypedSystem)
+    await(delay = apiTerminationDelay * 3, withSystem = typedSystem)
 
     Http()
       .singleRequest(
@@ -122,7 +122,7 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
   }
 
   it should "support API init if a console/TTY is not available" in {
-    val initEndpointPort = untypedSystem.settings.config.getInt("stasis.client.api.init.port")
+    val initEndpointPort = typedSystem.settings.config.getInt("stasis.client.api.init.port")
 
     class ExtendedService extends Service with TestServiceArguments {
       def isConsoleAvailable: Boolean = console.isDefined
@@ -245,10 +245,10 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
   it should "support performing device bootstrap" in {
     val directory = createApplicationDirectory(init = dir => java.nio.file.Files.createDirectories(dir.config.get))
 
-    val config: Config = untypedSystem.settings.config.getConfig("stasis.test.client.security.tls")
+    val config: Config = typedSystem.settings.config.getConfig("stasis.test.client.security.tls")
 
-    val endpointContext = EndpointContext.create(
-      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-server"))
+    val endpointContext = EndpointContext(
+      config = EndpointContext.Config(config.getConfig("context-server"))
     )
 
     val endpointPort = ports.dequeue()
@@ -409,8 +409,6 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "ServiceSpec"
   )
-
-  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
 
   private val ports: mutable.Queue[Int] = (31000 to 31100).to(mutable.Queue)
 

@@ -6,15 +6,15 @@ name in ThisBuild := projectName
 licenses in ThisBuild := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
 homepage in ThisBuild := Some(url("https://github.com/sndnv/stasis"))
 
-lazy val defaultScalaVersion = "2.13.2"
-lazy val akkaVersion         = "2.6.6"
-lazy val akkaHttpVersion     = "10.1.12"
+lazy val defaultScalaVersion = "2.13.3"
+lazy val akkaVersion         = "2.6.8"
+lazy val akkaHttpVersion     = "10.2.0"
 lazy val geodeVersion        = "1.12.0"
 lazy val slickVersion        = "3.3.2"
 lazy val h2Version           = "1.4.200"
-lazy val postgresVersion     = "42.2.13"
-lazy val mariadbVersion      = "2.6.0"
-lazy val sqliteVersion       = "3.31.1"
+lazy val postgresVersion     = "42.2.16"
+lazy val mariadbVersion      = "2.6.2"
+lazy val sqliteVersion       = "3.32.3.2"
 lazy val logbackVersion      = "1.2.3"
 
 lazy val jdkDockerImage = "openjdk:11"
@@ -45,15 +45,15 @@ lazy val client   = (project in file("./client"))
   .settings(
     libraryDependencies ++= Seq(
       "at.favre.lib"       % "hkdf"                    % "1.1.0",
-      "net.harawata"       % "appdirs"                 % "1.1.0",
+      "net.harawata"       % "appdirs"                 % "1.2.0",
       "com.typesafe.akka" %% "akka-slf4j"              % akkaVersion,
       "com.typesafe.akka" %% "akka-http-caching"       % akkaHttpVersion,
       "ch.qos.logback"     % "logback-classic"         % logbackVersion,
       "com.github.scopt"  %% "scopt"                   % "3.7.1",
       "com.google.jimfs"   % "jimfs"                   % "1.1"    % Test,
-      "org.mockito"       %% "mockito-scala"           % "1.14.4" % Test,
-      "org.mockito"       %% "mockito-scala-scalatest" % "1.14.4" % Test,
-      "org.mockito"        % "mockito-inline"          % "3.3.3"  % Test
+      "org.mockito"       %% "mockito-scala"           % "1.14.8" % Test,
+      "org.mockito"       %% "mockito-scala-scalatest" % "1.14.8" % Test,
+      "org.mockito"        % "mockito-inline"          % "3.5.2"  % Test
     ),
     dockerBaseImage := jdkDockerImage,
     PB.targets in Compile := Seq(
@@ -97,17 +97,17 @@ lazy val core   = (project in file("./core"))
       "com.typesafe.akka"     %% "akka-http-core"      % akkaHttpVersion,
       "com.typesafe.akka"     %% "akka-http2-support"  % akkaHttpVersion,
       "com.typesafe.play"     %% "play-json"           % "2.9.0",
-      "de.heikoseeberger"     %% "akka-http-play-json" % "1.32.0",
-      "org.bitbucket.b_c"      % "jose4j"              % "0.7.1",
+      "de.heikoseeberger"     %% "akka-http-play-json" % "1.34.0",
+      "org.bitbucket.b_c"      % "jose4j"              % "0.7.2",
       "org.apache.geode"       % "geode-core"          % geodeVersion    % Provided,
       "com.typesafe.slick"    %% "slick"               % slickVersion    % Provided,
       "com.h2database"         % "h2"                  % h2Version       % Test,
       "org.scalacheck"        %% "scalacheck"          % "1.14.3"        % Test,
-      "org.scalatest"         %% "scalatest"           % "3.1.2"         % Test,
+      "org.scalatest"         %% "scalatest"           % "3.2.1"         % Test,
       "com.typesafe.akka"     %% "akka-testkit"        % akkaVersion     % Test,
       "com.typesafe.akka"     %% "akka-stream-testkit" % akkaVersion     % Test,
       "com.typesafe.akka"     %% "akka-http-testkit"   % akkaHttpVersion % Test,
-      "com.github.tomakehurst" % "wiremock-jre8"       % "2.26.3"        % Test
+      "com.github.tomakehurst" % "wiremock-jre8"       % "2.27.1"        % Test
     )
   )
   .dependsOn(proto)
@@ -163,11 +163,16 @@ lazy val commonSettings = Seq(
 )
 
 addCommandAlias(
-  "styleCheck",
-  "; scalafmtSbtCheck; scalafmtCheck; test:scalafmtCheck"
+  name = "prepare",
+  value = "; clean; compile; test:compile"
 )
 
 addCommandAlias(
-  "qa",
-  "; clean; compile; test:compile; styleCheck; coverage; test; coverageReport; coverageAggregate"
+  name = "check",
+  value = "; dependencyUpdates; scalafmtSbtCheck; scalafmtCheck; test:scalafmtCheck"
+)
+
+addCommandAlias(
+  name = "qa",
+  value = "; prepare; check; coverage; test; coverageReport; coverageAggregate"
 )

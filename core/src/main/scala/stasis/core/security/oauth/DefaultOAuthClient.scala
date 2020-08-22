@@ -9,6 +9,7 @@ import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import stasis.core.security.exceptions.ProviderFailure
 import stasis.core.security.oauth.OAuthClient.{AccessTokenResponse, GrantType}
+import stasis.core.security.tls.EndpointContext
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -18,7 +19,7 @@ class DefaultOAuthClient(
   client: String,
   clientSecret: String,
   useQueryString: Boolean,
-  context: Option[HttpsConnectionContext]
+  context: Option[EndpointContext]
 )(implicit system: ActorSystem[SpawnProtocol.Command])
     extends OAuthClient {
 
@@ -29,7 +30,7 @@ class DefaultOAuthClient(
   private val http = Http()(system.classicSystem)
 
   private val clientContext: HttpsConnectionContext = context match {
-    case Some(context) => context
+    case Some(context) => context.connection
     case None          => http.defaultClientHttpsContext
   }
 
@@ -118,7 +119,7 @@ object DefaultOAuthClient {
     client: String,
     clientSecret: String,
     useQueryString: Boolean,
-    context: Option[HttpsConnectionContext]
+    context: Option[EndpointContext]
   )(implicit system: ActorSystem[SpawnProtocol.Command]): DefaultOAuthClient =
     new DefaultOAuthClient(
       tokenEndpoint = tokenEndpoint,

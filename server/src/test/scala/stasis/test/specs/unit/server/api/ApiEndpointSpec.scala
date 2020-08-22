@@ -5,11 +5,11 @@ import java.util.UUID
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{Behavior, SpawnProtocol}
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import play.api.libs.json.JsArray
@@ -307,7 +307,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val _ = endpoint.start(
       interface = "localhost",
       port = endpointPort,
-      context = ConnectionContext.noEncryption()
+      context = None
     )
 
     Http()
@@ -334,7 +334,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val _ = endpoint.start(
       interface = "localhost",
       port = endpointPort,
-      context = ConnectionContext.noEncryption()
+      context = None
     )
 
     Http()
@@ -364,7 +364,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val _ = endpoint.start(
       interface = "localhost",
       port = endpointPort,
-      context = ConnectionContext.noEncryption()
+      context = None
     )
 
     Http()
@@ -387,8 +387,6 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "ApiEndpointSpec_Typed"
   )
-
-  private implicit val untypedSystem: akka.actor.ActorSystem = akka.actor.ActorSystem(name = "ApiEndpointSpec_Untyped")
 
   private trait TestFixtures {
     lazy val definitionStore: DatasetDefinitionStore = MockDatasetDefinitionStore()

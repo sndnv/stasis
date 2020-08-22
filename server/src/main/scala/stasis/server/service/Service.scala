@@ -6,7 +6,6 @@ import java.util.concurrent.atomic.AtomicReference
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.model.headers.HttpCredentials
-import akka.http.scaladsl.{ConnectionContext, HttpsConnectionContext}
 import akka.util.Timeout
 import com.typesafe.{config => typesafe}
 import org.slf4j.{Logger, LoggerFactory}
@@ -57,8 +56,8 @@ trait Service {
     val instanceAuthenticatorConfig = Config.InstanceAuthenticator(rawConfig.getConfig("authenticators.instance"))
     val serverId = UUID.fromString(instanceAuthenticatorConfig.clientId)
 
-    val authenticationEndpointContext: Option[HttpsConnectionContext] =
-      EndpointContext.fromConfig(rawConfig.getConfig("clients.authentication.context"))
+    val authenticationEndpointContext: Option[EndpointContext] =
+      EndpointContext(rawConfig.getConfig("clients.authentication.context"))
 
     val oauthClient = DefaultOAuthClient(
       tokenEndpoint = instanceAuthenticatorConfig.tokenEndpoint,
@@ -135,7 +134,7 @@ trait Service {
         ),
         redirectUri = deviceBootstrapConfig.credentialsManager.clientRedirectUri,
         tokenExpiration = deviceBootstrapConfig.credentialsManager.clientTokenExpiration,
-        context = EndpointContext.fromConfig(deviceBootstrapConfig.credentialsManager.contextConfig),
+        context = EndpointContext(deviceBootstrapConfig.credentialsManager.contextConfig),
         requestBufferSize = deviceBootstrapConfig.credentialsManager.requestBufferSize
       )
 
@@ -173,8 +172,8 @@ trait Service {
       )
     )
 
-    val clientEndpointContext: Option[HttpsConnectionContext] =
-      EndpointContext.fromConfig(rawConfig.getConfig("clients.core.context"))
+    val clientEndpointContext: Option[EndpointContext] =
+      EndpointContext(rawConfig.getConfig("clients.core.context"))
 
     val coreHttpEndpointClient = HttpEndpointClient(
       credentials = JwtNodeCredentialsProvider[HttpEndpointAddress](
@@ -216,7 +215,7 @@ trait Service {
         authenticator = userAuthenticator
       ),
       bootstrapEndpoint = bootstrapEndpoint,
-      context = EndpointContext.create(apiConfig.context)
+      context = EndpointContext(apiConfig.context)
     )
 
     val coreServices = CoreServices(
@@ -226,7 +225,7 @@ trait Service {
         reservationStore = corePersistence.reservations.view,
         authenticator = nodeAuthenticator
       ),
-      context = EndpointContext.create(coreConfig.context)
+      context = EndpointContext(coreConfig.context)
     )
 
     log.info(
@@ -359,7 +358,7 @@ trait Service {
             val _ = apiServices.apiEndpoint.start(
               interface = apiConfig.interface,
               port = apiConfig.port,
-              context = apiServices.context
+              context = Some(apiServices.context)
             )
 
             apiServices.bootstrapEndpoint.foreach { bootstrapEndpoint =>
@@ -368,7 +367,7 @@ trait Service {
               val _ = bootstrapEndpoint.start(
                 interface = bootstrapApiConfig.interface,
                 port = bootstrapApiConfig.port,
-                context = EndpointContext.create(bootstrapApiConfig.context)
+                context = Some(EndpointContext(bootstrapApiConfig.context))
               )
             }
 
@@ -377,7 +376,7 @@ trait Service {
             val _ = coreServices.endpoint.start(
               interface = coreConfig.interface,
               port = coreConfig.port,
-              context = coreServices.context
+              context = Some(coreServices.context)
             )
 
             serviceState.set(State.Started(apiServices, coreServices))
@@ -411,13 +410,13 @@ object Service {
     persistence: ServerPersistence,
     apiEndpoint: ApiEndpoint,
     bootstrapEndpoint: Option[BootstrapEndpoint],
-    context: ConnectionContext
+    context: EndpointContext
   )
 
   final case class CoreServices(
     persistence: CorePersistence,
     endpoint: HttpEndpoint,
-    context: ConnectionContext
+    context: EndpointContext
   )
 
   sealed trait State
@@ -437,7 +436,7 @@ object Service {
   final case class Config(
     interface: String,
     port: Int,
-    context: EndpointContext.ContextConfig
+    context: EndpointContext.Config
   )
 
   object Config {
@@ -445,7 +444,7 @@ object Service {
       Config(
         interface = config.getString("interface"),
         port = config.getInt("port"),
-        context = EndpointContext.ContextConfig(config.getConfig("context"))
+        context = EndpointContext.Config(config.getConfig("context"))
       )
 
     final case class UserAuthenticator(
@@ -517,7 +516,7 @@ object Service {
       enabled: Boolean,
       interface: String,
       port: Int,
-      context: EndpointContext.ContextConfig
+      context: EndpointContext.Config
     )
 
     object BootstrapApiConfig {
@@ -526,7 +525,7 @@ object Service {
           enabled = config.getBoolean("enabled"),
           interface = config.getString("interface"),
           port = config.getInt("port"),
-          context = EndpointContext.ContextConfig(config.getConfig("context"))
+          context = EndpointContext.Config(config.getConfig("context"))
         )
     }
 

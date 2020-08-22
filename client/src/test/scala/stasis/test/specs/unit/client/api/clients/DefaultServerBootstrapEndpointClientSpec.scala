@@ -76,8 +76,8 @@ class DefaultServerBootstrapEndpointClientSpec extends AsyncUnitSpec {
   it should "fail if invalid TLS certificate encountered" in {
     val config: Config = typedSystem.settings.config.getConfig("stasis.test.client.security.tls")
 
-    val endpointContext = EndpointContext.create(
-      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-server"))
+    val endpointContext = EndpointContext(
+      config = EndpointContext.Config(config.getConfig("context-server"))
     )
 
     val endpointPort = ports.dequeue()
@@ -104,8 +104,8 @@ class DefaultServerBootstrapEndpointClientSpec extends AsyncUnitSpec {
   it should "support accepting self-signed TLS certificate" in {
     val config: Config = typedSystem.settings.config.getConfig("stasis.test.client.security.tls")
 
-    val endpointContext = EndpointContext.create(
-      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-server"))
+    val endpointContext = EndpointContext(
+      config = EndpointContext.Config(config.getConfig("context-server"))
     )
 
     val endpointPort = ports.dequeue()

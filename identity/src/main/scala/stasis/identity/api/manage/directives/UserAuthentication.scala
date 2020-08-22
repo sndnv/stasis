@@ -65,8 +65,9 @@ trait UserAuthentication extends EntityDiscardingDirectives {
 
             discardEntity {
               complete(
-                StatusCodes.Unauthorized,
-                List(headers.`WWW-Authenticate`(HttpChallenges.oAuth2(realm)))
+                status = StatusCodes.Unauthorized,
+                headers = List(headers.`WWW-Authenticate`(HttpChallenges.oAuth2(realm))),
+                v = "" // empty response
               )
             }
         }

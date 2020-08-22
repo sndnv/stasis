@@ -25,7 +25,7 @@ object ApiClients {
           address = HttpEndpointAddress(rawConfig.getString("server.core.address")),
           credentials = credentialsProvider.core,
           self = UUID.fromString(rawConfig.getString("server.authentication.client-id")),
-          context = EndpointContext.fromConfig(rawConfig.getConfig("server.core.context")),
+          context = EndpointContext(rawConfig.getConfig("server.core.context")),
           requestBufferSize = rawConfig.getInt("server.core.request-buffer-size")
         )
 
@@ -38,7 +38,7 @@ object ApiClients {
             decoder = encryption
           ),
           self = deviceSecret.device,
-          context = EndpointContext.fromConfig(rawConfig.getConfig("server.api.context")),
+          context = EndpointContext(rawConfig.getConfig("server.api.context")),
           requestBufferSize = rawConfig.getInt("server.api.request-buffer-size")
         )
 

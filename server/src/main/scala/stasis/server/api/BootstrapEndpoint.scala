@@ -1,14 +1,15 @@
 package stasis.server.api
 
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{ExceptionHandler, RejectionHandler, Route}
-import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.stream.scaladsl.Sink
 import akka.stream.{Materializer, SystemMaterializer}
 import akka.util.ByteString
 import org.slf4j.LoggerFactory
+import stasis.core.security.tls.EndpointContext
 import stasis.server.api.routes.{DeviceBootstrap, RoutesContext}
 import stasis.server.security.ResourceProvider
 import stasis.server.security.authenticators.{BootstrapCodeAuthenticator, UserAuthenticator}
@@ -31,8 +32,8 @@ class BootstrapEndpoint(
 
   private val deviceBootstrap = DeviceBootstrap(deviceBootstrapContext)
 
-  private implicit def sanitizingExceptionHandler: ExceptionHandler = handlers.Sanitizing.create(log)
-  private implicit def rejectionHandler: RejectionHandler = handlers.Rejection.create(log)
+  private val sanitizingExceptionHandler: ExceptionHandler = handlers.Sanitizing.create(log)
+  private val rejectionHandler: RejectionHandler = handlers.Rejection.create(log)
 
   val endpointRoutes: Route =
     (extractMethod & extractUri & extractClientIP & extractRequest) { (method, uri, remoteAddress, request) =>
@@ -68,15 +69,17 @@ class BootstrapEndpoint(
       }
     }
 
-  def start(interface: String, port: Int, context: ConnectionContext): Future[Http.ServerBinding] = {
-    implicit val untyped: akka.actor.ActorSystem = system.classicSystem
+  def start(interface: String, port: Int, context: Option[EndpointContext]): Future[Http.ServerBinding] = {
+    import EndpointContext._
 
-    Http().bindAndHandle(
-      handler = endpointRoutes,
-      interface = interface,
-      port = port,
-      connectionContext = context
-    )
+    Http()
+      .newServerAt(interface = interface, port = port)
+      .withContext(context = context)
+      .bindFlow(
+        handlerFlow = (handleExceptions(sanitizingExceptionHandler) & handleRejections(rejectionHandler)) {
+          endpointRoutes
+        }
+      )
   }
 
   private def authenticated[T](handler: => Future[T])(route: T => Route): Route =
