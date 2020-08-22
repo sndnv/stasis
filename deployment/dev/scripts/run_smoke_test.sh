@@ -75,6 +75,8 @@ function now() {
   echo "${timestamp}"
 }
 
+TEST_START="$(date +%s)"
+
 echo "Started: [$(now)]"
 
 echo "[$(now)] Requesting client token for [${SMOKE_TEST_CLIENT_ID}]..."
@@ -620,4 +622,7 @@ else
   exit 1
 fi
 
-echo "Completed: [$(now)]"
+TEST_END="$(date +%s)"
+TEST_DURATION=$((TEST_END-TEST_START))
+
+echo "Completed in [${TEST_DURATION}] seconds: [$(now)]"

@@ -21,8 +21,8 @@ class BootstrapSpec extends AsyncUnitSpec with ResourceHelpers {
   "A Bootstrap component" should "support executing device bootstrap" in {
     val config: Config = typedSystem.settings.config.getConfig("stasis.test.client.security.tls")
 
-    val endpointContext = EndpointContext.create(
-      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-server"))
+    val endpointContext = EndpointContext(
+      config = EndpointContext.Config(config.getConfig("context-server"))
     )
 
     val endpointPort = ports.dequeue()

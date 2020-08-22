@@ -15,6 +15,7 @@ import org.jose4j.jws.AlgorithmIdentifiers
 import org.slf4j.LoggerFactory
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.security.exceptions.ProviderFailure
+import stasis.core.security.tls.EndpointContext
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -24,7 +25,7 @@ import scala.util.control.NonFatal
 
 final class RemoteKeyProvider(
   jwksEndpoint: String,
-  context: Option[HttpsConnectionContext],
+  context: Option[EndpointContext],
   refreshInterval: FiniteDuration,
   refreshRetryInterval: FiniteDuration,
   override val issuer: String,
@@ -112,7 +113,7 @@ final class RemoteKeyProvider(
 object RemoteKeyProvider {
   def apply(
     jwksEndpoint: String,
-    context: Option[HttpsConnectionContext],
+    context: Option[EndpointContext],
     refreshInterval: FiniteDuration,
     refreshRetryInterval: FiniteDuration,
     issuer: String
@@ -148,14 +149,14 @@ object RemoteKeyProvider {
 
   def getRawJwks(
     jwksEndpoint: String,
-    context: Option[HttpsConnectionContext]
+    context: Option[EndpointContext]
   )(implicit system: ActorSystem[SpawnProtocol.Command]): Future[String] = {
     import system.executionContext
 
     val http = Http()(system.classicSystem)
 
     val clientContext: HttpsConnectionContext = context match {
-      case Some(context) => context
+      case Some(context) => context.connection
       case None          => http.defaultClientHttpsContext
     }
 

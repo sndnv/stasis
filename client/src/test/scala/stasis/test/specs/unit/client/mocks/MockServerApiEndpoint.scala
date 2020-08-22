@@ -2,15 +2,15 @@ package stasis.test.specs.unit.client.mocks
 
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
-import akka.stream.{Materializer, SystemMaterializer}
 import akka.util.Timeout
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.persistence.backends.memory.MemoryBackend
+import stasis.core.security.tls.EndpointContext
 import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}
 import stasis.shared.api.responses.{CreatedDatasetDefinition, CreatedDatasetEntry, Ping}
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
@@ -19,7 +19,7 @@ import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.shared.model.Generators
 
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
 class MockServerApiEndpoint(
@@ -31,10 +31,6 @@ class MockServerApiEndpoint(
   import stasis.shared.api.Formats._
 
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
-
-  private implicit val ec: ExecutionContextExecutor = system.executionContext
-
-  private val http = Http()(system.classicSystem)
 
   private val entriesStore: MemoryBackend[DatasetEntry.Id, DatasetEntry] =
     MemoryBackend[DatasetDefinition.Id, DatasetEntry](
@@ -256,15 +252,16 @@ class MockServerApiEndpoint(
   def definitionExists(definition: DatasetDefinition.Id): Future[Boolean] =
     definitionsStore.contains(definition)
 
-  def start(port: Int, context: Option[HttpsConnectionContext] = None): Future[Http.ServerBinding] = {
-    implicit val untyped: akka.actor.ActorSystem = system.classicSystem
-    implicit val mat: Materializer = SystemMaterializer(system).materializer
+  def start(port: Int, context: Option[EndpointContext] = None): Future[Http.ServerBinding] = {
+    val server = {
+      val builder = Http().newServerAt(interface = "localhost", port = port)
 
-    http.bindAndHandle(
-      handler = routes,
-      interface = "localhost",
-      port = port,
-      connectionContext = context.getOrElse(ConnectionContext.noEncryption())
-    )
+      context match {
+        case Some(httpsContext) => builder.enableHttps(httpsContext.connection)
+        case None               => builder
+      }
+    }
+
+    server.bindFlow(handlerFlow = routes)
   }
 }

@@ -2,7 +2,6 @@ package stasis.core.networking.http
 
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.http.scaladsl.HttpsConnectionContext
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.HttpCredentials
@@ -17,6 +16,7 @@ import stasis.core.networking.exceptions.{CredentialsFailure, EndpointFailure, R
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.core.security.NodeCredentialsProvider
+import stasis.core.security.tls.EndpointContext
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -24,7 +24,7 @@ import scala.util.control.NonFatal
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
 class HttpEndpointClient(
   override protected val credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
-  override protected val context: Option[HttpsConnectionContext],
+  override protected val context: Option[EndpointContext],
   override protected val requestBufferSize: Int
 )(implicit override protected val system: ActorSystem[SpawnProtocol.Command])
     extends EndpointClient[HttpEndpointAddress, HttpCredentials]
@@ -275,7 +275,7 @@ class HttpEndpointClient(
 object HttpEndpointClient {
   def apply(
     credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
-    context: Option[HttpsConnectionContext],
+    context: Option[EndpointContext],
     requestBufferSize: Int
   )(implicit system: ActorSystem[SpawnProtocol.Command]): HttpEndpointClient =
     new HttpEndpointClient(
@@ -296,7 +296,7 @@ object HttpEndpointClient {
 
   def apply(
     credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
-    context: HttpsConnectionContext,
+    context: EndpointContext,
     requestBufferSize: Int
   )(implicit system: ActorSystem[SpawnProtocol.Command]): HttpEndpointClient =
     HttpEndpointClient(

@@ -1,19 +1,18 @@
 package stasis.test.specs.unit.server.service
 
-import java.security.SecureRandom
 import java.util.UUID
 
 import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.{Marshal, Marshaller}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import com.typesafe.config.{Config, ConfigFactory}
-import javax.net.ssl.{SSLContext, TrustManagerFactory}
+import javax.net.ssl.TrustManagerFactory
 import org.jose4j.jwk.JsonWebKey
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
@@ -42,7 +41,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
   "Service" should "handle API requests" in {
-    implicit val trustedContext: HttpsConnectionContext = createTrustedContext()
+    implicit val trustedContext: EndpointContext = createTrustedContext()
 
     val jwksPort = 29998
     val jwksEndpoint = new MockJwksEndpoint(port = jwksPort)
@@ -122,7 +121,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
   }
 
   it should "handle device bootstrap requests" in {
-    implicit val trustedContext: HttpsConnectionContext = createTrustedContext()
+    implicit val trustedContext: EndpointContext = createTrustedContext()
 
     val token = "test-token"
 
@@ -301,7 +300,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     serviceUrl: String,
     request: CreateUser,
     jwt: String
-  )(implicit trustedContext: HttpsConnectionContext): Future[Done] =
+  )(implicit trustedContext: EndpointContext): Future[Done] =
     Http()
       .singleRequest(
         request = HttpRequest(
@@ -309,7 +308,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
           uri = s"$serviceUrl/users",
           entity = request
         ).addCredentials(OAuth2BearerToken(token = jwt)),
-        connectionContext = trustedContext
+        connectionContext = trustedContext.connection
       )
       .flatMap {
         case HttpResponse(StatusCodes.OK, _, _, _) => Future.successful(Done)
@@ -319,14 +318,14 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
   private def getUsers(
     serviceUrl: String,
     jwt: String
-  )(implicit trustedContext: HttpsConnectionContext): Future[Seq[User]] =
+  )(implicit trustedContext: EndpointContext): Future[Seq[User]] =
     Http()
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.GET,
           uri = s"$serviceUrl/users"
         ).addCredentials(OAuth2BearerToken(token = jwt)),
-        connectionContext = trustedContext
+        connectionContext = trustedContext.connection
       )
       .flatMap {
         case HttpResponse(StatusCodes.OK, _, entity, _) => Unmarshal(entity).to[Seq[User]]
@@ -337,14 +336,14 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     bootstrapUrl: String,
     device: Device.Id,
     jwt: String
-  )(implicit trustedContext: HttpsConnectionContext): Future[DeviceBootstrapCode] =
+  )(implicit trustedContext: EndpointContext): Future[DeviceBootstrapCode] =
     Http()
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.PUT,
           uri = s"$bootstrapUrl/devices/codes/own/for-device/${device.toString}"
         ).addCredentials(OAuth2BearerToken(token = jwt)),
-        connectionContext = trustedContext
+        connectionContext = trustedContext.connection
       )
       .flatMap {
         case HttpResponse(StatusCodes.OK, _, entity, _) => Unmarshal(entity).to[DeviceBootstrapCode]
@@ -354,32 +353,34 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
   private def getBootstrapParams(
     bootstrapUrl: String,
     code: String
-  )(implicit trustedContext: HttpsConnectionContext): Future[DeviceBootstrapParameters] =
+  )(implicit trustedContext: EndpointContext): Future[DeviceBootstrapParameters] =
     Http()
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.PUT,
           uri = s"$bootstrapUrl/devices/execute"
         ).addCredentials(OAuth2BearerToken(token = code)),
-        connectionContext = trustedContext
+        connectionContext = trustedContext.connection
       )
       .flatMap {
         case HttpResponse(StatusCodes.OK, _, entity, _) => Unmarshal(entity).to[DeviceBootstrapParameters]
         case response                                   => fail(s"Unexpected response received: [$response]")
       }
 
-  private def createTrustedContext(): HttpsConnectionContext = {
+  private def createTrustedContext(): EndpointContext = {
     val config = defaultConfig.getConfig("stasis.test.server.service.context")
+    val storeConfig = EndpointContext.StoreConfig(config.getConfig("keystore"))
 
-    val keyStore = EndpointContext.loadStore(EndpointContext.StoreConfig(config.getConfig("keystore")))
+    val keyStore = EndpointContext.loadStore(storeConfig)
 
     val factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm)
     factory.init(keyStore)
 
-    val sslContext = SSLContext.getInstance(config.getString("protocol"))
-    sslContext.init(None.orNull, factory.getTrustManagers, new SecureRandom())
-
-    new HttpsConnectionContext(sslContext)
+    EndpointContext(
+      config = EndpointContext.Config(protocol = config.getString("protocol"), storeConfig = Right(storeConfig)),
+      keyManagers = None,
+      trustManagers = Option(factory.getTrustManagers)
+    )
   }
 
   private val defaultConfig: Config = ConfigFactory.load()

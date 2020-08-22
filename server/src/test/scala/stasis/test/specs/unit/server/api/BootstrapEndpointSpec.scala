@@ -4,11 +4,11 @@ import java.time.Instant
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials, OAuth2BearerToken}
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.{ConnectionContext, Http}
 import play.api.libs.json.Json
 import stasis.core.routing.Node
 import stasis.server.api.BootstrapEndpoint
@@ -107,7 +107,7 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val _ = fixtures.endpoint.start(
       interface = "localhost",
       port = endpointPort,
-      context = ConnectionContext.noEncryption()
+      context = None
     )
 
     Http()
@@ -132,7 +132,7 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val _ = fixtures.endpoint.start(
       interface = "localhost",
       port = endpointPort,
-      context = ConnectionContext.noEncryption()
+      context = None
     )
 
     Http()

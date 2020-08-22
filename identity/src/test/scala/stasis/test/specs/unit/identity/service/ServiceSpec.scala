@@ -5,7 +5,7 @@ import java.security.SecureRandom
 import akka.Done
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
-import akka.http.scaladsl.{Http, HttpsConnectionContext}
+import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
 import akka.util.ByteString
 import com.typesafe.config.{Config, ConfigFactory}
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
@@ -210,7 +210,7 @@ class ServiceSpec extends RouteTest with Eventually {
     val sslContext = SSLContext.getInstance(config.getString("protocol"))
     sslContext.init(None.orNull, factory.getTrustManagers, new SecureRandom())
 
-    new HttpsConnectionContext(sslContext)
+    ConnectionContext.httpsClient(sslContext)
   }
 }
 

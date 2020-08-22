@@ -2,13 +2,13 @@ package stasis.client.api.clients
 
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.scaladsl.model.headers.HttpCredentials
-import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import stasis.core.networking.http.{HttpEndpointAddress, HttpEndpointClient}
 import stasis.core.packaging
 import stasis.core.routing.Node
+import stasis.core.security.tls.EndpointContext
 
 import scala.concurrent.Future
 
@@ -16,21 +16,14 @@ class DefaultServerCoreEndpointClient(
   address: HttpEndpointAddress,
   credentials: => Future[HttpCredentials],
   override val self: Node.Id,
-  context: Option[HttpsConnectionContext],
+  context: Option[EndpointContext],
   requestBufferSize: Int
 )(implicit system: ActorSystem[SpawnProtocol.Command])
     extends ServerCoreEndpointClient {
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = system.classicSystem
-
-  private val clientContext: HttpsConnectionContext = context match {
-    case Some(context) => context
-    case None          => Http().defaultClientHttpsContext
-  }
-
   private val client: HttpEndpointClient = HttpEndpointClient(
     credentials = (_: HttpEndpointAddress) => credentials,
-    context = clientContext,
+    context = context,
     requestBufferSize = requestBufferSize
   )
 
@@ -48,7 +41,7 @@ object DefaultServerCoreEndpointClient {
     address: HttpEndpointAddress,
     credentials: => Future[HttpCredentials],
     self: Node.Id,
-    context: Option[HttpsConnectionContext],
+    context: Option[EndpointContext],
     requestBufferSize: Int
   )(implicit system: ActorSystem[SpawnProtocol.Command]): DefaultServerCoreEndpointClient =
     new DefaultServerCoreEndpointClient(

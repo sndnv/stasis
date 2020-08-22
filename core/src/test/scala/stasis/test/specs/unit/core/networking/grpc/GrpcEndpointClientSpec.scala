@@ -385,15 +385,15 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val config: Config = ConfigFactory.load().getConfig("stasis.test.core.security.tls")
 
-    val endpointContext = EndpointContext.create(
-      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-server"))
+    val endpointContext = EndpointContext(
+      config = EndpointContext.Config(config.getConfig("context-server"))
     )
 
-    val clientContext = EndpointContext.create(
-      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-client"))
+    val clientContext = EndpointContext(
+      config = EndpointContext.Config(config.getConfig("context-client"))
     )
 
-    val endpoint = new TestGrpcEndpoint(port = endpointPort, context = endpointContext)
+    val endpoint = new TestGrpcEndpoint(port = endpointPort, context = Some(endpointContext))
 
     val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret),
@@ -435,11 +435,15 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
   private class TestGrpcEndpoint(
     val testAuthenticator: MockGrpcAuthenticator = new MockGrpcAuthenticator(testNode, testSecret),
     val fixtures: TestFixtures = new TestFixtures {},
-    context: ConnectionContext = ConnectionContext.noEncryption(),
+    context: Option[EndpointContext] = None,
     port: Int
   ) extends GrpcEndpoint(fixtures.router, fixtures.reservationStore.view, testAuthenticator)(typedSystem.classicSystem) {
     locally {
-      val _ = start(interface = "localhost", port = port, connectionContext = context)
+      val _ = start(
+        interface = "localhost",
+        port = port,
+        connectionContext = context.map(_.connection).getOrElse(ConnectionContext.noEncryption())
+      )
     }
   }
 

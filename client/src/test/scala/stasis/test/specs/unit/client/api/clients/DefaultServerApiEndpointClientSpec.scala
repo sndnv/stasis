@@ -5,7 +5,6 @@ import java.time.Instant
 import akka.NotUsed
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.HttpsConnectionContext
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.stream.scaladsl.{Flow, Source}
@@ -458,12 +457,12 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val config: Config = typedSystem.settings.config.getConfig("stasis.test.client.security.tls")
 
-    val endpointContext = EndpointContext.create(
-      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-server"))
+    val endpointContext = EndpointContext(
+      config = EndpointContext.Config(config.getConfig("context-server"))
     )
 
-    val clientContext = EndpointContext.create(
-      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-client"))
+    val clientContext = EndpointContext(
+      config = EndpointContext.Config(config.getConfig("context-client"))
     )
 
     api.start(port = apiPort, context = Some(endpointContext))
@@ -476,7 +475,7 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
   private def createClient(
     apiPort: Int,
     self: Device.Id = Device.generateId(),
-    context: Option[HttpsConnectionContext] = None
+    context: Option[EndpointContext] = None
   ): DefaultServerApiEndpointClient = {
     val client = new DefaultServerApiEndpointClient(
       apiUrl = context match {

@@ -25,7 +25,6 @@ import scala.util.Try
 trait Base extends FutureOps {
   implicit def system: ActorSystem[SpawnProtocol.Command]
   implicit def ec: ExecutionContext
-  implicit def untyped: akka.actor.ActorSystem
   implicit def mat: Materializer
   implicit def log: Logger
 
@@ -59,7 +58,6 @@ object Base {
         new Base {
           override implicit val system: ActorSystem[SpawnProtocol.Command] = typedSystem
           override implicit val ec: ExecutionContext = typedSystem.executionContext
-          override implicit val untyped: akka.actor.ActorSystem = typedSystem.classicSystem
           override implicit val mat: Materializer = SystemMaterializer(system).materializer
           override implicit val log: Logger = logger
 

@@ -3,7 +3,6 @@ package stasis.test.specs.unit.core.api
 import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.HttpsConnectionContext
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, StatusCodes}
 import akka.stream.QueueOfferResult
 import com.typesafe.config.{Config, ConfigFactory}
@@ -40,10 +39,10 @@ class PoolClientSpec extends AsyncUnitSpec {
   it should "support custom connection contexts" in {
     val config: Config = ConfigFactory.load().getConfig("stasis.test.core.security.tls")
 
-    val serverContextConfig = EndpointContext.ContextConfig(config.getConfig("context-server-jks"))
+    val serverContextConfig = EndpointContext.Config(config.getConfig("context-server-jks"))
 
-    val clientContext = EndpointContext.create(
-      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-client"))
+    val clientContext = EndpointContext(
+      config = EndpointContext.Config(config.getConfig("context-client"))
     )
 
     val endpoint = new MockJwksEndpoint(
@@ -99,7 +98,7 @@ class PoolClientSpec extends AsyncUnitSpec {
 
 object PoolClientSpec {
   class TestClient(
-    override protected val context: Option[HttpsConnectionContext]
+    override protected val context: Option[EndpointContext]
   )(implicit override protected val system: ActorSystem[SpawnProtocol.Command])
       extends PoolClient {
     override protected def requestBufferSize: Int = 100

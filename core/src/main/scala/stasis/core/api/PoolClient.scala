@@ -6,12 +6,13 @@ import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{OverflowStrategy, QueueOfferResult}
 import stasis.core.networking.exceptions.ClientFailure
+import stasis.core.security.tls.EndpointContext
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
 trait PoolClient {
   protected implicit def system: ActorSystem[SpawnProtocol.Command]
-  protected def context: Option[HttpsConnectionContext]
+  protected def context: Option[EndpointContext]
   protected def requestBufferSize: Int
 
   private implicit val ec: ExecutionContext = system.executionContext
@@ -19,7 +20,7 @@ trait PoolClient {
   private val http = Http()(system.classicSystem)
 
   private val clientContext: HttpsConnectionContext = context match {
-    case Some(context) => context
+    case Some(context) => context.connection
     case None          => http.defaultClientHttpsContext
   }
 

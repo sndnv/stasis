@@ -6,7 +6,7 @@ import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse}
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.{Http, HttpsConnectionContext}
+import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
@@ -42,7 +42,7 @@ class DefaultServerBootstrapEndpointClient(
       new SecureRandom() // random
     )
 
-    new HttpsConnectionContext(sslContext = sslContext)
+    ConnectionContext.httpsClient(sslContext)
   } else {
     http.defaultClientHttpsContext
   }

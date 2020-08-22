@@ -49,7 +49,7 @@ object ApiEndpoint {
         terminateService = () => {
           val _ = akka.pattern.after(
             duration = terminationDelay,
-            using = untyped.scheduler
+            using = system.classicSystem.scheduler
           ) { Future.successful(base.terminateService()) }
         },
         log = LoggerFactory.getLogger(this.getClass.getName)
@@ -72,7 +72,7 @@ object ApiEndpoint {
                   .start(
                     interface = apiInterface,
                     port = apiPort,
-                    context = EndpointContext.fromConfig(rawConfig.getConfig("api.http.context"))
+                    context = EndpointContext(rawConfig.getConfig("api.http.context"))
                   )
                   .transformFailureTo(ServiceStartupFailure.api)
               }

@@ -3,84 +3,72 @@ package stasis.core.security.tls
 import java.io.{FileInputStream, FileNotFoundException}
 import java.security.{KeyStore, SecureRandom}
 
-import akka.http.scaladsl.HttpsConnectionContext
-import akka.stream.TLSClientAuth
+import akka.http.scaladsl.{ConnectionContext, HttpsConnectionContext, ServerBuilder}
 import com.typesafe.{config => typesafe}
-import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
+import javax.net.ssl._
 
 import scala.util.Try
 
+final case class EndpointContext(
+  config: EndpointContext.Config,
+  keyManagers: Option[Array[KeyManager]],
+  trustManagers: Option[Array[TrustManager]]
+) {
+  lazy val connection: HttpsConnectionContext =
+    EndpointContext.toConnectionContext(endpointContext = this)
+
+  lazy val ssl: SSLContext =
+    EndpointContext.toSslContext(endpointContext = this)
+}
+
 object EndpointContext {
-  def fromConfig(config: typesafe.Config): Option[HttpsConnectionContext] =
+  def apply(config: typesafe.Config): Option[EndpointContext] =
     if (Try(config.getBoolean("enabled")).getOrElse(true)) {
-      Some(create(contextConfig = EndpointContext.ContextConfig(config)))
+      Some(EndpointContext(config = EndpointContext.Config(config)))
     } else {
       None
     }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Null"))
-  def create(
-    contextConfig: ContextConfig
-  ): HttpsConnectionContext = {
-    val keyManagers = contextConfig.keyStoreConfig.map { config =>
-      val store = loadStore(config)
-      val factory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm)
-      factory.init(store, config.storePassword.toCharArray)
+  def apply(config: Config): EndpointContext =
+    EndpointContext(
+      config = config,
+      keyManagers = config.keyStoreConfig.map { config =>
+        val store = loadStore(config)
+        val factory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm)
+        factory.init(store, config.storePassword.toCharArray)
 
-      factory.getKeyManagers
-    }
+        factory.getKeyManagers
+      },
+      trustManagers = config.trustStoreConfig.map { config =>
+        val store = loadStore(config)
+        val factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm)
+        factory.init(store)
 
-    val trustManagers = contextConfig.trustStoreConfig.map { config =>
-      val store = loadStore(config)
-      val factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm)
-      factory.init(store)
-
-      factory.getTrustManagers
-    }
-
-    val sslContext = SSLContext.getInstance(contextConfig.protocol)
-    sslContext.init(
-      keyManagers.orNull, // km
-      trustManagers.orNull, // tm
-      new SecureRandom() // random
+        factory.getTrustManagers
+      }
     )
 
-    new HttpsConnectionContext(
-      sslContext = sslContext,
-      clientAuth = if (contextConfig.requireClientAuth) Some(TLSClientAuth.need) else None
-    )
-  }
-
-  final case class ContextConfig(
+  final case class Config(
     protocol: String,
-    keyStoreConfig: Option[StoreConfig],
-    trustStoreConfig: Option[StoreConfig]
+    storeConfig: Either[StoreConfig, StoreConfig] // Either[key, trust]
   ) {
-    val requireClientAuth: Boolean = keyStoreConfig.isDefined && trustStoreConfig.isDefined
+    def keyStoreConfig: Option[StoreConfig] = storeConfig.left.toOption
+    def trustStoreConfig: Option[StoreConfig] = storeConfig.toOption
   }
 
-  object ContextConfig {
-    def apply(config: typesafe.Config): ContextConfig =
+  object Config {
+    def apply(config: typesafe.Config): Config =
       config.getString("type").toLowerCase match {
         case "server" =>
-          ContextConfig(
+          Config(
             protocol = config.getString("protocol"),
-            keyStoreConfig = Some(StoreConfig(config.getConfig("keystore"))),
-            trustStoreConfig = None
+            storeConfig = Left(StoreConfig(config.getConfig("keystore")))
           )
 
         case "client" =>
-          ContextConfig(
+          Config(
             protocol = config.getString("protocol"),
-            keyStoreConfig = None,
-            trustStoreConfig = Some(StoreConfig(config.getConfig("truststore")))
-          )
-
-        case "mutual" =>
-          ContextConfig(
-            protocol = config.getString("protocol"),
-            keyStoreConfig = Some(StoreConfig(config.getConfig("keystore"))),
-            trustStoreConfig = Some(StoreConfig(config.getConfig("truststore")))
+            storeConfig = Right(StoreConfig(config.getConfig("truststore")))
           )
       }
   }
@@ -117,4 +105,30 @@ object EndpointContext {
           s"Store [${config.storePath}] with type [${config.storeType}] was not found"
         )
     }
+
+  private def toConnectionContext(endpointContext: EndpointContext): HttpsConnectionContext =
+    endpointContext.config.storeConfig match {
+      case Left(_)  => ConnectionContext.httpsServer(endpointContext.ssl)
+      case Right(_) => ConnectionContext.httpsClient(endpointContext.ssl)
+    }
+
+  @SuppressWarnings(Array("org.wartremover.warts.Null"))
+  private def toSslContext(endpointContext: EndpointContext): SSLContext = {
+    val sslContext = SSLContext.getInstance(endpointContext.config.protocol)
+    sslContext.init(
+      endpointContext.keyManagers.orNull, // km
+      endpointContext.trustManagers.orNull, // tm
+      new SecureRandom() // random
+    )
+
+    sslContext
+  }
+
+  implicit class RichServerBuilder(builder: ServerBuilder) {
+    def withContext(context: Option[EndpointContext]): ServerBuilder =
+      context match {
+        case Some(httpsContext) => builder.enableHttps(httpsContext.connection)
+        case None               => builder
+      }
+  }
 }

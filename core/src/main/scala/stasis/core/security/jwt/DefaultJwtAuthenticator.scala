@@ -73,7 +73,7 @@ class DefaultJwtAuthenticator(
         .setVerificationKey(key)
         .setJwsAlgorithmConstraints(
           new AlgorithmConstraints(
-            ConstraintType.WHITELIST,
+            ConstraintType.PERMIT,
             provider.allowedAlgorithms: _*
           )
         )

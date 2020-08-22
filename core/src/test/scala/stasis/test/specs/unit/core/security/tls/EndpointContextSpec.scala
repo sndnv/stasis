@@ -27,29 +27,26 @@ class EndpointContextSpec extends AsyncUnitSpec {
   }
 
   it should "load context config" in {
-    val expectedServerConfig = EndpointContext.ContextConfig(
+    val expectedServerConfig = EndpointContext.Config(
       protocol = "TLS",
-      keyStoreConfig = Some(
+      storeConfig = Left(
         EndpointContext.StoreConfig(
           storePath = "./core/src/test/resources/certs/localhost.p12",
           storeType = "PKCS12",
           storePassword = ""
         )
-      ),
-      trustStoreConfig = None
+      )
     )
 
-    val actualServerConfig = EndpointContext.ContextConfig(
+    val actualServerConfig = EndpointContext.Config(
       config = config.getConfig("context-server")
     )
 
     actualServerConfig should be(expectedServerConfig)
-    actualServerConfig.requireClientAuth should be(false)
 
-    val expectedClientConfig = EndpointContext.ContextConfig(
+    val expectedClientConfig = EndpointContext.Config(
       protocol = "TLS",
-      keyStoreConfig = None,
-      trustStoreConfig = Some(
+      storeConfig = Right(
         EndpointContext.StoreConfig(
           storePath = "./core/src/test/resources/certs/localhost.p12",
           storeType = "PKCS12",
@@ -58,51 +55,25 @@ class EndpointContextSpec extends AsyncUnitSpec {
       )
     )
 
-    val actualClientConfig = EndpointContext.ContextConfig(
+    val actualClientConfig = EndpointContext.Config(
       config = config.getConfig("context-client")
     )
 
     actualClientConfig should be(expectedClientConfig)
-    actualClientConfig.requireClientAuth should be(false)
-
-    val expectedMutualConfig = EndpointContext.ContextConfig(
-      protocol = "TLS",
-      keyStoreConfig = Some(
-        EndpointContext.StoreConfig(
-          storePath = "./core/src/test/resources/certs/localhost.p12",
-          storeType = "PKCS12",
-          storePassword = ""
-        )
-      ),
-      trustStoreConfig = Some(
-        EndpointContext.StoreConfig(
-          storePath = "./core/src/test/resources/certs/localhost.p12",
-          storeType = "PKCS12",
-          storePassword = ""
-        )
-      )
-    )
-
-    val actualMutualConfig = EndpointContext.ContextConfig(
-      config = config.getConfig("context-mutual")
-    )
-
-    actualMutualConfig should be(expectedMutualConfig)
-    actualMutualConfig.requireClientAuth should be(true)
   }
 
   it should "create connection contexts (server/client)" in {
     val interface = "localhost"
     val port = ports.dequeue()
 
-    val serverContext = EndpointContext.create(
-      contextConfig = EndpointContext.ContextConfig(
+    val serverContext = EndpointContext(
+      config = EndpointContext.Config(
         config = config.getConfig("context-server")
       )
     )
 
-    val clientContext = EndpointContext.create(
-      contextConfig = EndpointContext.ContextConfig(
+    val clientContext = EndpointContext(
+      config = EndpointContext.Config(
         config = config.getConfig("context-client")
       )
     )
@@ -111,44 +82,14 @@ class EndpointContextSpec extends AsyncUnitSpec {
 
     val endpointUrl = s"https://$interface:$port"
 
-    val _ = Http().bindAndHandle(
-      handler = get { Directives.complete(StatusCodes.OK) },
-      interface = interface,
-      port = port,
-      connectionContext = serverContext
-    )
-
-    Http()
-      .singleRequest(
-        request = HttpRequest(
-          method = HttpMethods.GET,
-          uri = endpointUrl
-        ),
-        connectionContext = clientContext
+    val _ = Http()
+      .newServerAt(interface = interface, port = port)
+      .enableHttps(serverContext.connection)
+      .bindFlow(
+        handlerFlow = get {
+          Directives.complete(StatusCodes.OK)
+        }
       )
-      .map {
-        case HttpResponse(status, _, _, _) => status should be(StatusCodes.OK)
-        case response                      => fail(s"Unexpected response received: [$response]")
-      }
-  }
-
-  it should "create connection contexts (mutual)" in {
-    val interface = "localhost"
-    val port = ports.dequeue()
-
-    val serverContext = EndpointContext.fromConfig(config = config.getConfig("context-mutual")).get
-    val clientContext = EndpointContext.fromConfig(config = config.getConfig("context-mutual")).get
-
-    implicit val system: ActorSystem = ActorSystem(name = "EndpointContextSpec")
-
-    val endpointUrl = s"https://$interface:$port"
-
-    val _ = Http().bindAndHandle(
-      handler = get { Directives.complete(StatusCodes.OK) },
-      interface = interface,
-      port = port,
-      connectionContext = serverContext
-    )
 
     Http()
       .singleRequest(
@@ -156,7 +97,7 @@ class EndpointContextSpec extends AsyncUnitSpec {
           method = HttpMethods.GET,
           uri = endpointUrl
         ),
-        connectionContext = clientContext
+        connectionContext = clientContext.connection
       )
       .map {
         case HttpResponse(status, _, _, _) => status should be(StatusCodes.OK)
@@ -169,14 +110,14 @@ class EndpointContextSpec extends AsyncUnitSpec {
 
     val actualException =
       intercept[FileNotFoundException] {
-        EndpointContext.fromConfig(config = config.getConfig("context-missing"))
+        EndpointContext(config = config.getConfig("context-missing"))
       }
 
     actualException.getMessage should be(expectedMessage)
   }
 
   it should "not create contexts if not enabled" in {
-    EndpointContext.fromConfig(config = config.getConfig("context-disabled")) should be(None)
+    EndpointContext(config = config.getConfig("context-disabled")) should be(None)
   }
 
   private val config: Config = ConfigFactory.load().getConfig("stasis.test.core.security.tls")

@@ -97,12 +97,12 @@ class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec {
 
     val config: Config = ConfigFactory.load().getConfig("stasis.test.client.security.tls")
 
-    val endpointContext = EndpointContext.create(
-      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-server"))
+    val endpointContext = EndpointContext(
+      config = EndpointContext.Config(config.getConfig("context-server"))
     )
 
-    val clientContext = EndpointContext.create(
-      contextConfig = EndpointContext.ContextConfig(config.getConfig("context-client"))
+    val clientContext = EndpointContext(
+      config = EndpointContext.Config(config.getConfig("context-client"))
     )
 
     val core = new MockServerCoreEndpoint(expectedCredentials = coreCredentials)

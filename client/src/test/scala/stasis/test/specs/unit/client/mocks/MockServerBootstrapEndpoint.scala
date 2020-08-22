@@ -4,16 +4,16 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
-import akka.stream.{Materializer, SystemMaterializer}
 import org.slf4j.{Logger, LoggerFactory}
+import stasis.core.security.tls.EndpointContext
 import stasis.shared.model.devices.DeviceBootstrapParameters
 
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.Future
 
 class MockServerBootstrapEndpoint(
   expectedCode: String,
@@ -25,10 +25,6 @@ class MockServerBootstrapEndpoint(
   private val bootstrapExecuted: AtomicInteger = new AtomicInteger(0)
 
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
-
-  private implicit val ec: ExecutionContextExecutor = system.executionContext
-
-  private val http = Http()(system.classicSystem)
 
   private val routes: Route =
     (extractMethod & extractUri & extractRequest) { (method, uri, request) =>
@@ -60,16 +56,17 @@ class MockServerBootstrapEndpoint(
 
   def start(
     port: Int,
-    context: Option[HttpsConnectionContext] = None
+    context: Option[EndpointContext] = None
   ): Future[Http.ServerBinding] = {
-    implicit val untyped: akka.actor.ActorSystem = system.classicSystem
-    implicit val mat: Materializer = SystemMaterializer(system).materializer
+    val server = {
+      val builder = Http().newServerAt(interface = "localhost", port = port)
 
-    http.bindAndHandle(
-      handler = routes,
-      interface = "localhost",
-      port = port,
-      connectionContext = context.getOrElse(ConnectionContext.noEncryption())
-    )
+      context match {
+        case Some(httpsContext) => builder.enableHttps(httpsContext.connection)
+        case None               => builder
+      }
+    }
+
+    server.bindFlow(handlerFlow = routes)
   }
 }

@@ -37,19 +37,20 @@ object Init {
     for {
       interface <- rawConfig.getString("api.init.interface").future
       port <- rawConfig.getInt("api.init.port").future
-      context <- EndpointContext.fromConfig(rawConfig.getConfig("api.init.context")).future
+      context <- EndpointContext(rawConfig.getConfig("api.init.context")).future
     } yield {
       val credentialsPromise = Promise[(String, Array[Char])]()
-      val http = Http()
 
       log.info("Client init API starting on [{}:{}]...", interface, port)
 
-      val binding = http.bindAndHandle(
-        handler = init.ViaApi.routes(credentials = credentialsPromise, startup = startup),
-        interface = interface,
-        port = port,
-        connectionContext = context.getOrElse(http.defaultServerHttpContext)
-      )
+      import EndpointContext._
+
+      val binding = Http()
+        .newServerAt(interface = interface, port = port)
+        .withContext(context = context)
+        .bindFlow(
+          handlerFlow = init.ViaApi.routes(credentials = credentialsPromise, startup = startup)
+        )
 
       startup.onComplete { _ =>
         binding.flatMap {
