@@ -1,22 +1,20 @@
 from setuptools import setup, find_packages
 
 install_requires = [
-    'requests==2.22.0',
+    'requests==2.25.1',
     'requests-oauthlib==1.3.0',
     'terminaltables==3.1.0',
     'hurry.filesize==0.9',
-    'pyhocon==0.3.54',
-    'click==7.0',
-    'pyparsing==2.4.5',
-    'psutil==5.6.7',
-    'cryptography==3.2',
+    'pyhocon==0.3.57',
+    'click==7.1.2',
+    'pyparsing==2.4.7',
+    'psutil==5.8.0',
+    'cryptography==3.3.1',
     'sseclient-py==1.7',
-    'tqdm==4.46.0',
+    'tqdm==4.56.0',
 ]
 
-tests_require = [
-    'pyjwt==1.7.1',
-]
+tests_require = []
 
 setup(
     name='stasis-client-cli',
