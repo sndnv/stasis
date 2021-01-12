@@ -33,12 +33,11 @@ object TestOps {
       val buffer = ByteBuffer.allocate(ChunkHeader.HEADER_SIZE + maxChunkSize)
       val stream = Files.newOutputStream(path, StandardOpenOption.APPEND)
 
-      chunks.foreach {
-        case CrateChunk(header, chunk) =>
-          buffer.put(ChunkHeader.toBytes(header))
-          buffer.put(chunk.padTo(maxChunkSize, 0: Byte).toArray)
-          stream.write(buffer.array())
-          buffer.clear()
+      chunks.foreach { case CrateChunk(header, chunk) =>
+        buffer.put(ChunkHeader.toBytes(header))
+        buffer.put(chunk.padTo(maxChunkSize, 0: Byte).toArray)
+        stream.write(buffer.array())
+        buffer.clear()
       }
 
       stream.flush()
@@ -95,17 +94,16 @@ object TestOps {
     maxChunkSize: Int,
     indexOffset: Int
   ): Seq[(UUID, CrateChunk, CrateChunkDescriptor)] =
-    chunks.zipWithIndex.map {
-      case ((crate, chunk), index) =>
-        val startOffset = ChunkHeader.HEADER_SIZE + (index + indexOffset) * (ChunkHeader.HEADER_SIZE + maxChunkSize)
+    chunks.zipWithIndex.map { case ((crate, chunk), index) =>
+      val startOffset = ChunkHeader.HEADER_SIZE + (index + indexOffset) * (ChunkHeader.HEADER_SIZE + maxChunkSize)
 
-        val header = ChunkHeader(
-          crateId = crate,
-          chunkId = 0,
-          chunkSize = chunk.length
-        )
+      val header = ChunkHeader(
+        crateId = crate,
+        chunkId = 0,
+        chunkSize = chunk.length
+      )
 
-        (crate, CrateChunk(header, chunk), CrateChunkDescriptor(header, startOffset.toLong))
+      (crate, CrateChunk(header, chunk), CrateChunkDescriptor(header, startOffset.toLong))
     }
 
   def readLogEntries(

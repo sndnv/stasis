@@ -69,122 +69,118 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
       },
       pathPrefix("own") {
         concat(
-          pathPrefix("for-definition" / JavaUUID) {
-            definitionId =>
-              concat(
-                pathEndOrSingleSlash {
-                  concat(
-                    get {
-                      resources[DeviceStore.View.Self, DatasetEntryStore.View.Self] { (deviceView, entryView) =>
-                        deviceView
-                          .list(currentUser)
-                          .flatMap(devices => entryView.list(devices.keys.toSeq, definitionId))
-                          .map { entries =>
-                            log.debugN(
-                              "User [{}] successfully retrieved [{}] entries for definition [{}]",
-                              currentUser,
-                              entries.size,
-                              definitionId
-                            )
-                            discardEntity & complete(entries.values)
-                          }
-                      }
-                    },
-                    post {
-                      entity(as[CreateDatasetEntry]) {
-                        case createRequest if createRequest.definition == definitionId =>
-                          resources[DeviceStore.View.Self, DatasetEntryStore.Manage.Self] { (deviceView, entryManage) =>
-                            val entry = createRequest.toEntry
-                            deviceView
-                              .list(currentUser)
-                              .flatMap(devices => entryManage.create(devices.keys.toSeq, entry))
-                              .map { _ =>
-                                log.debugN("User [{}] successfully created entry [{}]", currentUser, entry.id)
-                                complete(CreatedDatasetEntry(entry.id))
-                              }
-                          }
-
-                        case createRequest =>
-                          log.warnN(
-                            "User [{}] attempted to create entry for definition [{}] but definition [{}] expected",
+          pathPrefix("for-definition" / JavaUUID) { definitionId =>
+            concat(
+              pathEndOrSingleSlash {
+                concat(
+                  get {
+                    resources[DeviceStore.View.Self, DatasetEntryStore.View.Self] { (deviceView, entryView) =>
+                      deviceView
+                        .list(currentUser)
+                        .flatMap(devices => entryView.list(devices.keys.toSeq, definitionId))
+                        .map { entries =>
+                          log.debugN(
+                            "User [{}] successfully retrieved [{}] entries for definition [{}]",
                             currentUser,
-                            createRequest.definition,
+                            entries.size,
                             definitionId
                           )
-                          complete(StatusCodes.BadRequest)
-                      }
-                    }
-                  )
-                },
-                path("latest") {
-                  get {
-                    parameter("until".as[Instant].?) {
-                      until =>
-                        resources[DeviceStore.View.Self, DatasetEntryStore.View.Self] {
-                          (deviceView, entryView) =>
-                            deviceView
-                              .list(currentUser)
-                              .flatMap(devices => entryView.latest(devices.keys.toSeq, definitionId, until))
-                              .map {
-                                case Some(entry) =>
-                                  log.debugN(
-                                    "User [{}] successfully retrieved latest entry [{}] for definition [{}]",
-                                    currentUser,
-                                    entry.id,
-                                    definitionId
-                                  )
-                                  discardEntity & complete(entry)
-
-                                case None =>
-                                  log.warnN(
-                                    "User [{}] failed to retrieve latest entry for definition [{}]",
-                                    currentUser,
-                                    definitionId
-                                  )
-                                  discardEntity & complete(StatusCodes.NotFound)
-                              }
+                          discardEntity & complete(entries.values)
                         }
                     }
+                  },
+                  post {
+                    entity(as[CreateDatasetEntry]) {
+                      case createRequest if createRequest.definition == definitionId =>
+                        resources[DeviceStore.View.Self, DatasetEntryStore.Manage.Self] { (deviceView, entryManage) =>
+                          val entry = createRequest.toEntry
+                          deviceView
+                            .list(currentUser)
+                            .flatMap(devices => entryManage.create(devices.keys.toSeq, entry))
+                            .map { _ =>
+                              log.debugN("User [{}] successfully created entry [{}]", currentUser, entry.id)
+                              complete(CreatedDatasetEntry(entry.id))
+                            }
+                        }
+
+                      case createRequest =>
+                        log.warnN(
+                          "User [{}] attempted to create entry for definition [{}] but definition [{}] expected",
+                          currentUser,
+                          createRequest.definition,
+                          definitionId
+                        )
+                        complete(StatusCodes.BadRequest)
+                    }
                   }
-                }
-              )
-          },
-          path(JavaUUID) {
-            entryId =>
-              concat(
+                )
+              },
+              path("latest") {
                 get {
-                  resources[DeviceStore.View.Self, DatasetEntryStore.View.Self] { (deviceView, entryView) =>
-                    deviceView
-                      .list(currentUser)
-                      .flatMap(devices => entryView.get(devices.keys.toSeq, entryId))
-                      .map {
-                        case Some(entry) =>
-                          log.debugN("User [{}] successfully retrieved entry [{}]", currentUser, entryId)
-                          discardEntity & complete(entry)
+                  parameter("until".as[Instant].?) { until =>
+                    resources[DeviceStore.View.Self, DatasetEntryStore.View.Self] { (deviceView, entryView) =>
+                      deviceView
+                        .list(currentUser)
+                        .flatMap(devices => entryView.latest(devices.keys.toSeq, definitionId, until))
+                        .map {
+                          case Some(entry) =>
+                            log.debugN(
+                              "User [{}] successfully retrieved latest entry [{}] for definition [{}]",
+                              currentUser,
+                              entry.id,
+                              definitionId
+                            )
+                            discardEntity & complete(entry)
 
-                        case None =>
-                          log.warnN("User [{}] failed to retrieve entry [{}]", currentUser, entryId)
-                          discardEntity & complete(StatusCodes.NotFound)
-                      }
-                  }
-                },
-                delete {
-                  resources[DeviceStore.View.Self, DatasetEntryStore.Manage.Self] { (deviceView, entryManage) =>
-                    deviceView
-                      .list(currentUser)
-                      .flatMap(devices => entryManage.delete(devices.keys.toSeq, entryId))
-                      .map { deleted =>
-                        if (deleted) {
-                          log.debugN("User [{}] successfully deleted entry [{}]", currentUser, entryId)
-                        } else {
-                          log.warnN("User [{}] failed to delete entry [{}]", currentUser, entryId)
+                          case None =>
+                            log.warnN(
+                              "User [{}] failed to retrieve latest entry for definition [{}]",
+                              currentUser,
+                              definitionId
+                            )
+                            discardEntity & complete(StatusCodes.NotFound)
                         }
-
-                        discardEntity & complete(DeletedDatasetEntry(existing = deleted))
-                      }
+                    }
                   }
                 }
-              )
+              }
+            )
+          },
+          path(JavaUUID) { entryId =>
+            concat(
+              get {
+                resources[DeviceStore.View.Self, DatasetEntryStore.View.Self] { (deviceView, entryView) =>
+                  deviceView
+                    .list(currentUser)
+                    .flatMap(devices => entryView.get(devices.keys.toSeq, entryId))
+                    .map {
+                      case Some(entry) =>
+                        log.debugN("User [{}] successfully retrieved entry [{}]", currentUser, entryId)
+                        discardEntity & complete(entry)
+
+                      case None =>
+                        log.warnN("User [{}] failed to retrieve entry [{}]", currentUser, entryId)
+                        discardEntity & complete(StatusCodes.NotFound)
+                    }
+                }
+              },
+              delete {
+                resources[DeviceStore.View.Self, DatasetEntryStore.Manage.Self] { (deviceView, entryManage) =>
+                  deviceView
+                    .list(currentUser)
+                    .flatMap(devices => entryManage.delete(devices.keys.toSeq, entryId))
+                    .map { deleted =>
+                      if (deleted) {
+                        log.debugN("User [{}] successfully deleted entry [{}]", currentUser, entryId)
+                      } else {
+                        log.warnN("User [{}] failed to delete entry [{}]", currentUser, entryId)
+                      }
+
+                      discardEntity & complete(DeletedDatasetEntry(existing = deleted))
+                    }
+                }
+              }
+            )
           }
         )
       }

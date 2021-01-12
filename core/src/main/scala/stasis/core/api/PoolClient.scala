@@ -31,8 +31,8 @@ trait PoolClient {
     )
     .via(http.superPool[Promise[HttpResponse]](connectionContext = clientContext))
     .to(
-      Sink.foreach {
-        case (response, promise) => val _ = promise.complete(response)
+      Sink.foreach { case (response, promise) =>
+        val _ = promise.complete(response)
       }
     )
     .run()

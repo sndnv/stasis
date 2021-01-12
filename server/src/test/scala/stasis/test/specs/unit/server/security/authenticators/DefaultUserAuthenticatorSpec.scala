@@ -72,10 +72,9 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
       .map { response =>
         fail(s"Unexpected response received: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e shouldBe an[AuthenticationFailure]
-          e.getMessage should be("Unsupported user credentials provided: [Basic]")
+      .recover { case NonFatal(e) =>
+        e shouldBe an[AuthenticationFailure]
+        e.getMessage should be("Unsupported user credentials provided: [Basic]")
       }
   }
 
@@ -104,10 +103,9 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
       .map { response =>
         fail(s"Unexpected response received: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e shouldBe an[AuthenticationFailure]
-          e.getMessage should be(s"User [${expectedUser.id}] is not active")
+      .recover { case NonFatal(e) =>
+        e shouldBe an[AuthenticationFailure]
+        e.getMessage should be(s"User [${expectedUser.id}] is not active")
       }
   }
 
@@ -138,10 +136,9 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
       .map { response =>
         fail(s"Unexpected response received: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e shouldBe an[AuthenticationFailure]
-          e.getMessage.contains(s"Expected $invalidAudience as an aud value") should be(true)
+      .recover { case NonFatal(e) =>
+        e shouldBe an[AuthenticationFailure]
+        e.getMessage.contains(s"Expected $invalidAudience as an aud value") should be(true)
       }
   }
 
@@ -172,10 +169,9 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
       .map { response =>
         fail(s"Unexpected response received: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e shouldBe an[IllegalArgumentException]
-          e.getMessage should be(s"Invalid UUID string: $invalidUserId")
+      .recover { case NonFatal(e) =>
+        e shouldBe an[IllegalArgumentException]
+        e.getMessage should be(s"Invalid UUID string: $invalidUserId")
       }
   }
 
@@ -203,10 +199,9 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
       .map { response =>
         fail(s"Unexpected response received: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e shouldBe an[AuthenticationFailure]
-          e.getMessage should be(s"User [${expectedUser.id}] not found")
+      .recover { case NonFatal(e) =>
+        e shouldBe an[AuthenticationFailure]
+        e.getMessage should be(s"User [${expectedUser.id}] not found")
       }
   }
 

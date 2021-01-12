@@ -192,11 +192,10 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected push response from router: [$response]")
       }
-      .recover {
-        case PushFailure(message) =>
-          message should be(s"Push of crate [${testManifest.crate}] failed; unable to remove reservation for crate")
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+      .recover { case PushFailure(message) =>
+        message should be(s"Push of crate [${testManifest.crate}] failed; unable to remove reservation for crate")
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
       }
   }
 
@@ -212,15 +211,14 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected push response from router: [$response]")
       }
-      .recover {
-        case PushFailure(message) =>
-          message should be(
-            s"Push of crate [${testManifest.crate}] failed: [DistributionFailure: No nodes provided]"
-          )
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
+      .recover { case PushFailure(message) =>
+        message should be(
+          s"Push of crate [${testManifest.crate}] failed: [DistributionFailure: No nodes provided]"
+        )
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
       }
   }
 
@@ -232,15 +230,14 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected push response from router: [$response]")
       }
-      .recover {
-        case PushFailure(message) =>
-          message should be(
-            s"Push of crate [${testManifest.crate}] failed: [DistributionFailure: No copies requested]"
-          )
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
+      .recover { case PushFailure(message) =>
+        message should be(
+          s"Push of crate [${testManifest.crate}] failed: [DistributionFailure: No copies requested]"
+        )
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
       }
   }
 
@@ -296,18 +293,17 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected push response from router: [$response]")
       }
-      .recover {
-        case PushFailure(message) =>
-          message should be(
-            s"Crate [${testManifest.crate}] was not pushed; no content sinks retrieved"
-          )
+      .recover { case PushFailure(message) =>
+        message should be(
+          s"Crate [${testManifest.crate}] was not pushed; no content sinks retrieved"
+        )
 
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-          router.testClient.crateCopies(testManifest.crate).await should be(0)
-          router.testClient.crateNodes(testManifest.crate).await should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(fixtures.remoteNodes.size)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+        router.testClient.crateCopies(testManifest.crate).await should be(0)
+        router.testClient.crateNodes(testManifest.crate).await should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(fixtures.remoteNodes.size)
       }
   }
 
@@ -399,15 +395,14 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected pull response from router: [$response]")
       }
-      .recover {
-        case PullFailure(message) =>
-          message should be(s"Crate [${testManifest.crate}] was not pulled; no destinations found")
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(0)
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(0)
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedWithData) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedEmpty) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.PullFailed) should be(0)
+      .recover { case PullFailure(message) =>
+        message should be(s"Crate [${testManifest.crate}] was not pulled; no destinations found")
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedWithData) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedEmpty) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.PullFailed) should be(0)
       }
   }
 
@@ -594,18 +589,17 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected response from router: [$response]")
       }
-      .recover {
-        case DiscardFailure(message) =>
-          message should be(s"Crate [${testManifest.crate}] was not discarded; failed to retrieve manifest")
+      .recover { case DiscardFailure(message) =>
+        message should be(s"Crate [${testManifest.crate}] was not discarded; failed to retrieve manifest")
 
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(0)
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
       }
   }
 
@@ -619,18 +613,17 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected pull response from router: [$response]")
       }
-      .recover {
-        case DiscardFailure(message) =>
-          message should be(s"Crate [${testManifest.crate}] was not discarded; no destinations found")
+      .recover { case DiscardFailure(message) =>
+        message should be(s"Crate [${testManifest.crate}] was not discarded; no destinations found")
 
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(0)
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
       }
   }
 
@@ -659,20 +652,19 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected pull response from router: [$response]")
       }
-      .recover {
-        case DiscardFailure(message) =>
-          message should be(
-            s"Crate [${testManifest.crate}] was not discarded; crate or nodes missing"
-          )
+      .recover { case DiscardFailure(message) =>
+        message should be(
+          s"Crate [${testManifest.crate}] was not discarded; crate or nodes missing"
+        )
 
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(1)
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(2)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(2)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(1)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(2)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(2)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
       }
   }
 
@@ -699,20 +691,19 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected pull response from router: [$response]")
       }
-      .recover {
-        case DiscardFailure(message) =>
-          message should be(
-            s"Crate [${testManifest.crate}] was not discarded; crate or nodes missing"
-          )
+      .recover { case DiscardFailure(message) =>
+        message should be(
+          s"Crate [${testManifest.crate}] was not discarded; crate or nodes missing"
+        )
 
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(0)
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(2)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(2)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
       }
   }
 
@@ -736,26 +727,25 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected pull response from router: [$response]")
       }
-      .recover {
-        case DiscardFailure(message) =>
-          message should be(
-            s"Crate [${testManifest.crate}] was not discarded; crate or nodes missing"
-          )
+      .recover { case DiscardFailure(message) =>
+        message should be(
+          s"Crate [${testManifest.crate}] was not discarded; crate or nodes missing"
+        )
 
-          router.fixtures.manifestStore.get(testManifest.crate).await match {
-            case Some(manifest) =>
-              manifest.destinations should be(Seq(router.fixtures.localNode.id))
+        router.fixtures.manifestStore.get(testManifest.crate).await match {
+          case Some(manifest) =>
+            manifest.destinations should be(Seq(router.fixtures.localNode.id))
 
-            case None =>
-              fail(s"Expected manifest for crate [${testManifest.crate}] from store but none was found")
-          }
+          case None =>
+            fail(s"Expected manifest for crate [${testManifest.crate}] from store but none was found")
+        }
 
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(0)
-          router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(1)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(2)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(2)
-          router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(0)
+        router.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(1)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(2)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(2)
+        router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
       }
   }
 

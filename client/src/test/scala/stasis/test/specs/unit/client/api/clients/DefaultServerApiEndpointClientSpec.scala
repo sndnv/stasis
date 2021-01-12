@@ -90,9 +90,8 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e: IllegalArgumentException) =>
-          e.getMessage should startWith("Cannot create dataset definition for a different device")
+      .recover { case NonFatal(e: IllegalArgumentException) =>
+        e.getMessage should startWith("Cannot create dataset definition for a different device")
       }
   }
 
@@ -222,11 +221,10 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e: IllegalArgumentException) =>
-          e.getMessage should be(
-            "Cannot retrieve dataset definition for a different device"
-          )
+      .recover { case NonFatal(e: IllegalArgumentException) =>
+        e.getMessage should be(
+          "Cannot retrieve dataset definition for a different device"
+        )
       }
   }
 
@@ -403,13 +401,12 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e: ServerApiFailure) =>
-          e.status should be(StatusCodes.InternalServerError)
+      .recover { case NonFatal(e: ServerApiFailure) =>
+        e.status should be(StatusCodes.InternalServerError)
 
-          e.getMessage should be(
-            "Server API request unmarshalling failed with: [Unsupported Content-Type [Some(text/plain; charset=UTF-8)], supported: application/json]"
-          )
+        e.getMessage should be(
+          "Server API request unmarshalling failed with: [Unsupported Content-Type [Some(text/plain; charset=UTF-8)], supported: application/json]"
+        )
       }
   }
 
@@ -426,13 +423,12 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e: ServerApiFailure) =>
-          e.status should be(status)
+      .recover { case NonFatal(e: ServerApiFailure) =>
+        e.status should be(status)
 
-          e.getMessage should be(
-            s"Server API request failed with [$status]: [$message]"
-          )
+        e.getMessage should be(
+          s"Server API request failed with [$status]: [$message]"
+        )
       }
   }
 

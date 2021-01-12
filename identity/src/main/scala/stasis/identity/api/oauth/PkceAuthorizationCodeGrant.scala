@@ -39,65 +39,64 @@ class PkceAuthorizationCodeGrant(
         "state".as[String],
         "code_challenge".as[String],
         "code_challenge_method".as[ChallengeMethod].?
-      ).as(AuthorizationRequest) & parameter("no_redirect".as[Boolean] ? false)) {
-        case (request, noRedirect) =>
-          retrieveClient(request.client_id) {
-            case client if request.redirect_uri.forall(_ == client.redirectUri) =>
-              val redirectUri = Uri(request.redirect_uri.getOrElse(client.redirectUri))
+      ).as(AuthorizationRequest) & parameter("no_redirect".as[Boolean] ? false)) { case (request, noRedirect) =>
+        retrieveClient(request.client_id) {
+          case client if request.redirect_uri.forall(_ == client.redirectUri) =>
+            val redirectUri = Uri(request.redirect_uri.getOrElse(client.redirectUri))
 
-              (authenticateResourceOwner(redirectUri, request.state, noRedirect) & extractApiAudience(request.scope)) {
-                (owner, audience) =>
-                  val scope = apiAudienceToScope(audience)
+            (authenticateResourceOwner(redirectUri, request.state, noRedirect) & extractApiAudience(request.scope)) {
+              (owner, audience) =>
+                val scope = apiAudienceToScope(audience)
 
-                  generateAuthorizationCode(
-                    client = client.id,
-                    redirectUri = redirectUri,
-                    state = request.state,
-                    owner = owner,
-                    scope = scope,
-                    challenge = request.code_challenge,
-                    challengeMethod = request.code_challenge_method
-                  ) { code =>
-                    log.debug(
-                      "Successfully generated authorization code for client [{}] and owner [{}]",
-                      client.id,
-                      owner.username
+                generateAuthorizationCode(
+                  client = client.id,
+                  redirectUri = redirectUri,
+                  state = request.state,
+                  owner = owner,
+                  scope = scope,
+                  challenge = request.code_challenge,
+                  challengeMethod = request.code_challenge_method
+                ) { code =>
+                  log.debug(
+                    "Successfully generated authorization code for client [{}] and owner [{}]",
+                    client.id,
+                    owner.username
+                  )
+
+                  val response = AuthorizationResponse(code, request.state, scope)
+
+                  if (noRedirect) {
+                    discardEntity & complete(
+                      StatusCodes.OK,
+                      AuthorizationResponseWithRedirectUri(
+                        response = response,
+                        responseRedirectUri = redirectUri.withQuery(response.asQuery)
+                      )
                     )
-
-                    val response = AuthorizationResponse(code, request.state, scope)
-
-                    if (noRedirect) {
-                      discardEntity & complete(
-                        StatusCodes.OK,
-                        AuthorizationResponseWithRedirectUri(
-                          response = response,
-                          responseRedirectUri = redirectUri.withQuery(response.asQuery)
-                        )
-                      )
-                    } else {
-                      discardEntity & redirect(
-                        redirectUri.withQuery(response.asQuery),
-                        StatusCodes.Found
-                      )
-                    }
+                  } else {
+                    discardEntity & redirect(
+                      redirectUri.withQuery(response.asQuery),
+                      StatusCodes.Found
+                    )
                   }
-              }
+                }
+            }
 
-            case client =>
-              log.warning(
-                "Redirect URI [{}] for client [{}] did not match URI provided in request: [{}]",
-                client.redirectUri,
-                client.id,
-                request.redirect_uri
+          case client =>
+            log.warning(
+              "Redirect URI [{}] for client [{}] did not match URI provided in request: [{}]",
+              client.redirectUri,
+              client.id,
+              request.redirect_uri
+            )
+
+            discardEntity {
+              complete(
+                StatusCodes.BadRequest,
+                AuthorizationError.InvalidRequest(withState = request.state): AuthorizationError
               )
-
-              discardEntity {
-                complete(
-                  StatusCodes.BadRequest,
-                  AuthorizationError.InvalidRequest(withState = request.state): AuthorizationError
-                )
-              }
-          }
+            }
+        }
       }
     }
 

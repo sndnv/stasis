@@ -75,41 +75,38 @@ trait EntityProcessing {
   private def push(staged: Seq[(Path, Path)]): Future[Seq[(Path, Crate.Id)]] =
     Future
       .sequence(
-        staged.map {
-          case (partFile, staged) =>
-            val crate = Crate.generateId()
+        staged.map { case (partFile, staged) =>
+          val crate = Crate.generateId()
 
-            val content: Source[ByteString, NotUsed] =
-              FileIO
-                .fromPath(staged)
-                .mapMaterializedValue(_ => NotUsed)
+          val content: Source[ByteString, NotUsed] =
+            FileIO
+              .fromPath(staged)
+              .mapMaterializedValue(_ => NotUsed)
 
-            val manifest: Manifest = Manifest(
-              crate = crate,
-              origin = providers.clients.core.self,
-              source = providers.clients.core.self,
-              size = Files.size(staged),
-              copies = targetDataset.redundantCopies
-            )
+          val manifest: Manifest = Manifest(
+            crate = crate,
+            origin = providers.clients.core.self,
+            source = providers.clients.core.self,
+            size = Files.size(staged),
+            copies = targetDataset.redundantCopies
+          )
 
-            providers.clients.core
-              .push(manifest, content)
-              .map(_ => (partFile, crate))
+          providers.clients.core
+            .push(manifest, content)
+            .map(_ => (partFile, crate))
         }
       )
       .recoverWith(discardOnPushFailure(staged))
 
-  private def discardOnPushFailure[T](staged: Seq[(Path, Path)]): PartialFunction[Throwable, Future[T]] = {
-    case NonFatal(e) =>
-      discard(staged).flatMap(_ => Future.failed(e))
+  private def discardOnPushFailure[T](staged: Seq[(Path, Path)]): PartialFunction[Throwable, Future[T]] = { case NonFatal(e) =>
+    discard(staged).flatMap(_ => Future.failed(e))
   }
 
   private def discard(staged: Seq[(Path, Path)]): Future[Done] =
     Future
       .sequence(
-        staged.map {
-          case (_, staged) =>
-            providers.staging.discard(staged)
+        staged.map { case (_, staged) =>
+          providers.staging.discard(staged)
         }
       )
       .map(_ => Done)

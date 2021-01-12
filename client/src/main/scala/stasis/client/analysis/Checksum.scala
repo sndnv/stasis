@@ -44,10 +44,9 @@ object Checksum {
 
     FileIO
       .fromPath(file)
-      .runFold(new CRC32) {
-        case (checksum, chunk) =>
-          chunk.asByteBuffers.foreach(checksum.update)
-          checksum
+      .runFold(new CRC32) { case (checksum, chunk) =>
+        chunk.asByteBuffers.foreach(checksum.update)
+        checksum
       }
       .map { checksum =>
         BigInt(checksum.getValue)
@@ -68,10 +67,9 @@ object Checksum {
 
     FileIO
       .fromPath(file)
-      .runFold(MessageDigest.getInstance(algorithm)) {
-        case (checksum, chunk) =>
-          chunk.asByteBuffers.foreach(checksum.update)
-          checksum
+      .runFold(MessageDigest.getInstance(algorithm)) { case (checksum, chunk) =>
+        chunk.asByteBuffers.foreach(checksum.update)
+        checksum
       }
       .map { checksum =>
         BigInt(signum = 1, checksum.digest())

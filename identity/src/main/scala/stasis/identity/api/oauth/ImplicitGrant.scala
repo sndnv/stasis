@@ -35,58 +35,57 @@ class ImplicitGrant(
         "redirect_uri".as[String].?,
         "scope".as[String].?,
         "state".as[String]
-      ).as(AuthorizationRequest) & parameter("no_redirect".as[Boolean] ? false)) {
-        case (request, noRedirect) =>
-          retrieveClient(request.client_id) {
-            case client if request.redirect_uri.forall(_ == client.redirectUri) =>
-              val redirectUri = Uri(request.redirect_uri.getOrElse(client.redirectUri))
+      ).as(AuthorizationRequest) & parameter("no_redirect".as[Boolean] ? false)) { case (request, noRedirect) =>
+        retrieveClient(request.client_id) {
+          case client if request.redirect_uri.forall(_ == client.redirectUri) =>
+            val redirectUri = Uri(request.redirect_uri.getOrElse(client.redirectUri))
 
-              (authenticateResourceOwner(redirectUri, request.state, noRedirect) & extractApiAudience(request.scope)) {
-                (owner, audience) =>
-                  generateAccessToken(owner, audience) { accessToken =>
-                    val scope = apiAudienceToScope(audience)
+            (authenticateResourceOwner(redirectUri, request.state, noRedirect) & extractApiAudience(request.scope)) {
+              (owner, audience) =>
+                generateAccessToken(owner, audience) { accessToken =>
+                  val scope = apiAudienceToScope(audience)
 
-                    val response = AccessTokenResponse(
-                      access_token = accessToken.token,
-                      token_type = TokenType.Bearer,
-                      expires_in = accessToken.expiration,
-                      state = request.state,
-                      scope = scope
+                  val response = AccessTokenResponse(
+                    access_token = accessToken.token,
+                    token_type = TokenType.Bearer,
+                    expires_in = accessToken.expiration,
+                    state = request.state,
+                    scope = scope
+                  )
+
+                  log.debug("Successfully generated access token for client [{}]", client.id)
+
+                  if (noRedirect) {
+                    discardEntity & complete(
+                      StatusCodes.OK,
+                      AccessTokenResponseWithRedirectUri(
+                        response = response,
+                        responseRedirectUri = redirectUri.withQuery(response.asQuery)
+                      )
                     )
-
-                    log.debug("Successfully generated access token for client [{}]", client.id)
-
-                    if (noRedirect) {
-                      discardEntity & complete(
-                        StatusCodes.OK,
-                        AccessTokenResponseWithRedirectUri(
-                          response = response,
-                          responseRedirectUri = redirectUri.withQuery(response.asQuery)
-                        )
-                      )
-                    } else {
-                      discardEntity & redirect(
-                        redirectUri.withQuery(response.asQuery),
-                        StatusCodes.Found
-                      )
-                    }
+                  } else {
+                    discardEntity & redirect(
+                      redirectUri.withQuery(response.asQuery),
+                      StatusCodes.Found
+                    )
                   }
-              }
+                }
+            }
 
-            case client =>
-              log.warning(
-                "Encountered mismatched redirect URIs (expected [{}], found [{}])",
-                client.redirectUri,
-                request.redirect_uri
+          case client =>
+            log.warning(
+              "Encountered mismatched redirect URIs (expected [{}], found [{}])",
+              client.redirectUri,
+              request.redirect_uri
+            )
+
+            discardEntity {
+              complete(
+                StatusCodes.BadRequest,
+                AuthorizationError.InvalidRequest(withState = request.state): AuthorizationError
               )
-
-              discardEntity {
-                complete(
-                  StatusCodes.BadRequest,
-                  AuthorizationError.InvalidRequest(withState = request.state): AuthorizationError
-                )
-              }
-          }
+            }
+        }
       }
     }
 }

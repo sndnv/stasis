@@ -57,13 +57,12 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should startWith(
-            s"Endpoint [http://localhost:$endpointPort] was unable to reserve enough storage for request"
-          )
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+      .recover { case NonFatal(e) =>
+        e.getMessage should startWith(
+          s"Endpoint [http://localhost:$endpointPort] was unable to reserve enough storage for request"
+        )
+        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
+        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
       }
   }
 
@@ -83,13 +82,12 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Endpoint [http://localhost:$endpointPort/invalid] responded to storage request with unexpected status: [404 Not Found]"
-          )
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Endpoint [http://localhost:$endpointPort/invalid] responded to storage request with unexpected status: [404 Not Found]"
+        )
+        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
+        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
       }
   }
 
@@ -114,14 +112,13 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Endpoint [http://localhost:$endpointPort] responded to push for crate [${testManifest.crate}] " +
-              s"with unexpected status: [500 Internal Server Error]"
-          )
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(1)
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Endpoint [http://localhost:$endpointPort] responded to push for crate [${testManifest.crate}] " +
+            s"with unexpected status: [500 Internal Server Error]"
+        )
+        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
+        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(1)
       }
   }
 
@@ -164,9 +161,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       client.pull(endpointAddress, testManifest.crate).flatMap {
         case Some(source) =>
           source
-            .runFold(ByteString.empty) {
-              case (folded, chunk) =>
-                folded.concat(chunk)
+            .runFold(ByteString.empty) { case (folded, chunk) =>
+              folded.concat(chunk)
             }
             .map { result =>
               result.utf8String should be(crateContent)
@@ -217,12 +213,11 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Endpoint [http://localhost:$endpointPort] responded to pull for crate [$crate] " +
-              s"with unexpected status: [401 Unauthorized]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Endpoint [http://localhost:$endpointPort] responded to pull for crate [$crate] " +
+            s"with unexpected status: [401 Unauthorized]"
+        )
       }
   }
 
@@ -281,12 +276,11 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Push to endpoint [${endpointAddress.uri}] failed for crate [${testManifest.crate}]; " +
-              s"unable to retrieve credentials: [No credentials found for [HttpEndpointAddress(http://localhost:$endpointPort)]]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Push to endpoint [${endpointAddress.uri}] failed for crate [${testManifest.crate}]; " +
+            s"unable to retrieve credentials: [No credentials found for [HttpEndpointAddress(http://localhost:$endpointPort)]]"
+        )
       }
   }
 
@@ -306,12 +300,11 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Push to endpoint [${endpointAddress.uri}] via sink failed for crate [${testManifest.crate}]; " +
-              s"unable to retrieve credentials: [No credentials found for [HttpEndpointAddress(http://localhost:$endpointPort)]]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Push to endpoint [${endpointAddress.uri}] via sink failed for crate [${testManifest.crate}]; " +
+            s"unable to retrieve credentials: [No credentials found for [HttpEndpointAddress(http://localhost:$endpointPort)]]"
+        )
       }
   }
 
@@ -333,12 +326,11 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Pull from endpoint [${endpointAddress.uri}] failed for crate [$crateId]; " +
-              s"unable to retrieve credentials: [No credentials found for [HttpEndpointAddress(http://localhost:$endpointPort)]]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Pull from endpoint [${endpointAddress.uri}] failed for crate [$crateId]; " +
+            s"unable to retrieve credentials: [No credentials found for [HttpEndpointAddress(http://localhost:$endpointPort)]]"
+        )
       }
   }
 
@@ -382,12 +374,11 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Discard from endpoint [${endpointAddress.uri}] failed for crate [$crateId]; " +
-              s"unable to retrieve credentials: [No credentials found for [HttpEndpointAddress(http://localhost:$endpointPort)]]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Discard from endpoint [${endpointAddress.uri}] failed for crate [$crateId]; " +
+            s"unable to retrieve credentials: [No credentials found for [HttpEndpointAddress(http://localhost:$endpointPort)]]"
+        )
       }
   }
 
@@ -425,12 +416,11 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Endpoint [${endpointAddress.uri}] responded to discard for crate [$crate] " +
-              s"with unexpected status: [401 Unauthorized]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Endpoint [${endpointAddress.uri}] responded to discard for crate [$crate] " +
+            s"with unexpected status: [401 Unauthorized]"
+        )
       }
   }
 

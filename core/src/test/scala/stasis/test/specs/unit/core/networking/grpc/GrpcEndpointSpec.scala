@@ -354,9 +354,8 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       source <- endpoint.pull(testNode, proto.PullRequest().withCrate(testReservation.crate))
       actualContent <-
         source
-          .runFold(ByteString.empty) {
-            case (folded, chunk) =>
-              folded.concat(chunk.content)
+          .runFold(ByteString.empty) { case (folded, chunk) =>
+            folded.concat(chunk.content)
           }
     } yield {
       pushResponse.result.complete should be(defined)
@@ -383,11 +382,10 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       .map { response =>
         fail(s"Unexpected response provided: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Node [$testNode] made pull request with missing crate: [None]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Node [$testNode] made pull request with missing crate: [None]"
+        )
       }
   }
 

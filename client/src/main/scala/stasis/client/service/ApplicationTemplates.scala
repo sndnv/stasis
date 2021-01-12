@@ -107,15 +107,14 @@ object ApplicationTemplates {
 
   def expand(content: String, params: Map[String, String]): Try[String] =
     params
-      .foldLeft[Try[String]](Success(content)) {
-        case (tryExpanded, (placeholder, value)) =>
-          tryExpanded.flatMap { expanded =>
-            ApplicationTemplates.expand(
-              content = expanded,
-              placeholder = placeholder,
-              value = value
-            )
-          }
+      .foldLeft[Try[String]](Success(content)) { case (tryExpanded, (placeholder, value)) =>
+        tryExpanded.flatMap { expanded =>
+          ApplicationTemplates.expand(
+            content = expanded,
+            placeholder = placeholder,
+            value = value
+          )
+        }
       }
       .map(content => (content, unexpanded(content)))
       .flatMap {

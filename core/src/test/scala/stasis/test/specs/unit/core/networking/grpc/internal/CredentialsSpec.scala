@@ -59,9 +59,8 @@ class CredentialsSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Unexpected response provided: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(s"Unexpected credentials format encountered")
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(s"Unexpected credentials format encountered")
       }
   }
 
@@ -72,9 +71,8 @@ class CredentialsSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Unexpected response provided: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(s"No credentials provided")
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(s"No credentials provided")
       }
   }
 

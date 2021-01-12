@@ -53,9 +53,8 @@ class MockSimpleJwtEndpoint(
   val keys: Map[String, PublicKey] = {
     jwks.getJsonWebKeys.asScala
       .map(c => (c.getKeyId, c.getKey))
-      .collect {
-        case (keyId: String, key: PublicKey) =>
-          (keyId, key)
+      .collect { case (keyId: String, key: PublicKey) =>
+        (keyId, key)
       }
       .toMap
   }

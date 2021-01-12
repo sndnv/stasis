@@ -65,11 +65,10 @@ class DeviceBootstrapCodeStoreSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Expected to retrieve own device bootstrap code but code for device [${mockBootstrapCode.device}] found"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Expected to retrieve own device bootstrap code but code for device [${mockBootstrapCode.device}] found"
+        )
       }
   }
 
@@ -166,11 +165,10 @@ class DeviceBootstrapCodeStoreSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Expected to put own device bootstrap code but code for device [${mockBootstrapCode.device}] provided"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Expected to put own device bootstrap code but code for device [${mockBootstrapCode.device}] provided"
+        )
       }
   }
 
@@ -203,11 +201,10 @@ class DeviceBootstrapCodeStoreSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Expected to delete own device bootstrap code but code for device [${mockBootstrapCode.device}] provided"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Expected to delete own device bootstrap code but code for device [${mockBootstrapCode.device}] provided"
+        )
       }
   }
 

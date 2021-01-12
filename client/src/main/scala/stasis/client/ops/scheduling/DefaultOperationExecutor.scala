@@ -166,16 +166,15 @@ class DefaultOperationExecutor(
       log.debugN("Starting operation [{}]", operation.id)
       operation
         .start()
-        .recover {
-          case NonFatal(e) =>
-            log.errorN(
-              "Failure encountered when running operation [{}]: [{}: {}]",
-              operation.id,
-              e.getClass.getSimpleName,
-              e.getMessage,
-              e
-            )
-            Done
+        .recover { case NonFatal(e) =>
+          log.errorN(
+            "Failure encountered when running operation [{}]: [{}: {}]",
+            operation.id,
+            e.getClass.getSimpleName,
+            e.getMessage,
+            e
+          )
+          Done
         }
         .flatMap { _ =>
           activeOperations.delete(operation.id).map(_ => Done)

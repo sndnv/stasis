@@ -81,24 +81,23 @@ class MockServerApiEndpoint(
                 }
               )
             },
-            path(JavaUUID) {
-              definitionId =>
-                get {
-                  val definition: Option[DatasetDefinition] = withDefinitions match {
-                    case Some(definitions) => definitions.find(_.id == definitionId)
-                    case None              => Some(Generators.generateDefinition.copy(id = definitionId))
-                  }
-
-                  definition match {
-                    case Some(definition) =>
-                      log.infoN("Successfully retrieved definition [{}]", definition.id)
-                      complete(definition)
-
-                    case None =>
-                      log.warnN("Definition [{}] not found", definitionId)
-                      complete(StatusCodes.NotFound)
-                  }
+            path(JavaUUID) { definitionId =>
+              get {
+                val definition: Option[DatasetDefinition] = withDefinitions match {
+                  case Some(definitions) => definitions.find(_.id == definitionId)
+                  case None              => Some(Generators.generateDefinition.copy(id = definitionId))
                 }
+
+                definition match {
+                  case Some(definition) =>
+                    log.infoN("Successfully retrieved definition [{}]", definition.id)
+                    complete(definition)
+
+                  case None =>
+                    log.warnN("Definition [{}] not found", definitionId)
+                    complete(StatusCodes.NotFound)
+                }
+              }
             }
           )
         }

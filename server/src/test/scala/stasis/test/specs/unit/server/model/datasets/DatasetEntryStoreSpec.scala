@@ -108,11 +108,10 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Expected to retrieve entry for own device but device [${mockEntry.device}] found"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Expected to retrieve entry for own device but device [${mockEntry.device}] found"
+        )
       }
   }
 
@@ -273,11 +272,10 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Expected to create entry for own device but device [${mockEntry.device}] provided"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Expected to create entry for own device but device [${mockEntry.device}] provided"
+        )
       }
   }
 
@@ -310,11 +308,10 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Expected to delete entry for own device but device [${mockEntry.device}] provided"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Expected to delete entry for own device but device [${mockEntry.device}] provided"
+        )
       }
   }
 

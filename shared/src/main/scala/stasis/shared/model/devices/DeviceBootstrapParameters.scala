@@ -131,9 +131,8 @@ object DeviceBootstrapParameters {
 
       store.aliases().asScala.foreach {
         case alias if store.isKeyEntry(alias) =>
-          store.getCertificateChain(alias).zipWithIndex.foreach {
-            case (certificate, index) =>
-              rebuiltStore.setCertificateEntry(s"$alias-${index.toString}", certificate)
+          store.getCertificateChain(alias).zipWithIndex.foreach { case (certificate, index) =>
+            rebuiltStore.setCertificateEntry(s"$alias-${index.toString}", certificate)
           }
 
         case alias =>

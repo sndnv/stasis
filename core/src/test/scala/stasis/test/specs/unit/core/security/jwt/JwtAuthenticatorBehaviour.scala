@@ -55,13 +55,12 @@ trait JwtAuthenticatorBehaviour {
         .map { response =>
           fail(s"Received unexpected response from authenticator: [$response]")
         }
-        .recover {
-          case NonFatal(e) =>
-            e.getMessage should startWith("Failed to authenticate token")
+        .recover { case NonFatal(e) =>
+          e.getMessage should startWith("Failed to authenticate token")
 
-            e.getMessage should include(
-              s"Audience (aud) claim [$actualAudience] doesn't contain an acceptable identifier"
-            )
+          e.getMessage should include(
+            s"Audience (aud) claim [$actualAudience] doesn't contain an acceptable identifier"
+          )
         }
     }
 
@@ -115,13 +114,12 @@ trait JwtAuthenticatorBehaviour {
         .map { response =>
           fail(s"Received unexpected response from authenticator: [$response]")
         }
-        .recover {
-          case NonFatal(e) =>
-            e.getMessage should startWith("Failed to authenticate token")
+        .recover { case NonFatal(e) =>
+          e.getMessage should startWith("Failed to authenticate token")
 
-            e.getMessage should include(
-              s"Required identity claim [$customIdentityClaim] was not found"
-            )
+          e.getMessage should include(
+            s"Required identity claim [$customIdentityClaim] was not found"
+          )
         }
 
     }

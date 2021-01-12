@@ -25,12 +25,11 @@ class CrateToChunksSpec extends AsyncUnitSpec {
     parts.flatten
       .grouped(maxChunkSize)
       .zipWithIndex
-      .map {
-        case (chunkData, chunkId) =>
-          CrateChunk(
-            ChunkHeader(crateId, chunkId, chunkData.length),
-            ByteString.fromArray(chunkData.toArray)
-          )
+      .map { case (chunkData, chunkId) =>
+        CrateChunk(
+          ChunkHeader(crateId, chunkId, chunkData.length),
+          ByteString.fromArray(chunkData.toArray)
+        )
       }
       .toList
 

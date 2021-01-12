@@ -81,14 +81,13 @@ object DefaultServerBootstrapEndpointClient {
 
         Unmarshal(response)
           .to[M]
-          .recoverWith {
-            case NonFatal(e) =>
-              val _ = response.entity.dataBytes.runWith(Sink.cancelled[ByteString])
-              Future.failed(
-                new ServerBootstrapFailure(
-                  message = s"Server bootstrap request unmarshalling failed with: [${e.getMessage}]"
-                )
+          .recoverWith { case NonFatal(e) =>
+            val _ = response.entity.dataBytes.runWith(Sink.cancelled[ByteString])
+            Future.failed(
+              new ServerBootstrapFailure(
+                message = s"Server bootstrap request unmarshalling failed with: [${e.getMessage}]"
               )
+            )
           }
       } else {
         Unmarshal(response)

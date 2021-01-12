@@ -42,8 +42,8 @@ class CrateChunkSinkSpec extends AsyncUnitSpec with BeforeAndAfter {
       ByteString("crate-1/c3"),
       ByteString("1/4"),
       ByteString("crate-1/chunk-5")
-    ).zipWithIndex.map {
-      case (chunk, index) => CrateChunk(ChunkHeader(crateId, index, chunk.length), chunk)
+    ).zipWithIndex.map { case (chunk, index) =>
+      CrateChunk(ChunkHeader(crateId, index, chunk.length), chunk)
     }
 
     for {
@@ -64,11 +64,10 @@ class CrateChunkSinkSpec extends AsyncUnitSpec with BeforeAndAfter {
       .map { _ =>
         fail("Received unexpected successful result")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Failed to open channel for file [$path]: [NoSuchFileException: $path]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Failed to open channel for file [$path]: [NoSuchFileException: $path]"
+        )
       }
 
   }
@@ -85,11 +84,10 @@ class CrateChunkSinkSpec extends AsyncUnitSpec with BeforeAndAfter {
       .map { _ =>
         fail("Received unexpected successful result")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Failed to write chunk [0] for crate [$crateId] to file [$path]: [BufferOverflowException: null]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Failed to write chunk [0] for crate [$crateId] to file [$path]: [BufferOverflowException: null]"
+        )
       }
   }
 
@@ -106,12 +104,11 @@ class CrateChunkSinkSpec extends AsyncUnitSpec with BeforeAndAfter {
       .map { _ =>
         fail("Received unexpected successful result")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Failed to write chunk [0] for crate [$crateId] to file [$path]: " +
-              s"[IllegalArgumentException: requirement failed: Cannot store empty chunks]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Failed to write chunk [0] for crate [$crateId] to file [$path]: " +
+            s"[IllegalArgumentException: requirement failed: Cannot store empty chunks]"
+        )
       }
   }
 }

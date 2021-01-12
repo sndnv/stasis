@@ -63,12 +63,11 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
       .map { response =>
         fail(s"Received unexpected response from provider: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          endpoint.stop()
+      .recover { case NonFatal(e) =>
+        endpoint.stop()
 
-          endpoint.count(path = jwksPath) should be(1)
-          e.getMessage should be(s"Key [$expectedKeyId] was not found")
+        endpoint.count(path = jwksPath) should be(1)
+        e.getMessage should be(s"Key [$expectedKeyId] was not found")
       }
   }
 
@@ -86,9 +85,8 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
       .map { response =>
         fail(s"Received unexpected response from provider: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be("Key expected but none was provided")
+      .recover { case NonFatal(e) =>
+        e.getMessage should be("Key expected but none was provided")
       }
   }
 
@@ -213,12 +211,11 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          endpoint.stop()
+      .recover { case NonFatal(e) =>
+        endpoint.stop()
 
-          endpoint.count(path = jwksPath) should be(1)
-          e.getMessage should be("Endpoint responded with unexpected status: [500 Internal Server Error]")
+        endpoint.count(path = jwksPath) should be(1)
+        e.getMessage should be("Endpoint responded with unexpected status: [500 Internal Server Error]")
       }
   }
 
@@ -246,12 +243,11 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
       .map { response =>
         fail(s"Received unexpected response from provider: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          endpoint.stop()
+      .recover { case NonFatal(e) =>
+        endpoint.stop()
 
-          endpoint.count(path = jwksPath) should be >= 2
-          e.getMessage should be(s"Key [$expectedKeyId] was not found")
+        endpoint.count(path = jwksPath) should be >= 2
+        e.getMessage should be(s"Key [$expectedKeyId] was not found")
       }
   }
 

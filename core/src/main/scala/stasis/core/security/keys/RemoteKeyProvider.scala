@@ -62,17 +62,16 @@ final class RemoteKeyProvider(
         scheduleKeysRefresh(delay = refreshInterval)
         Done
       }
-      .recover {
-        case NonFatal(e) =>
-          log.error(
-            "Failed to load keys from JWKs endpoint [{}]: [{}: {}]",
-            jwksEndpoint,
-            e.getClass.getSimpleName,
-            e.getMessage,
-            e
-          )
-          scheduleKeysRefresh(delay = refreshRetryInterval)
-          Done
+      .recover { case NonFatal(e) =>
+        log.error(
+          "Failed to load keys from JWKs endpoint [{}]: [{}: {}]",
+          jwksEndpoint,
+          e.getClass.getSimpleName,
+          e.getMessage,
+          e
+        )
+        scheduleKeysRefresh(delay = refreshRetryInterval)
+        Done
       }
 
   private def scheduleKeysRefresh(delay: FiniteDuration): Unit = {
@@ -168,16 +167,15 @@ object RemoteKeyProvider {
         ),
         connectionContext = clientContext
       )
-      .flatMap {
-        case HttpResponse(status, _, entity, _) =>
-          status match {
-            case StatusCodes.OK =>
-              Unmarshal(entity).to[String]
+      .flatMap { case HttpResponse(status, _, entity, _) =>
+        status match {
+          case StatusCodes.OK =>
+            Unmarshal(entity).to[String]
 
-            case _ =>
-              val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
-              Future.failed(ProviderFailure(s"Endpoint responded with unexpected status: [${status.value}]"))
-          }
+          case _ =>
+            val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
+            Future.failed(ProviderFailure(s"Endpoint responded with unexpected status: [${status.value}]"))
+        }
       }
   }
 }

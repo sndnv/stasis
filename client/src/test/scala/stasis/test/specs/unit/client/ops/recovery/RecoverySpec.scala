@@ -271,18 +271,17 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e shouldBe a[RuntimeException]
+      .recover { case NonFatal(e) =>
+        e shouldBe a[RuntimeException]
 
-          eventually[Assertion] {
-            mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(0)
-            mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(0)
-            mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(0)
-            mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
-            mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(1)
-            mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(1)
-          }
+        eventually[Assertion] {
+          mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(1)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(1)
+        }
       }
   }
 
@@ -429,9 +428,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e: IllegalStateException) =>
-          e.getMessage should be(s"Expected dataset entry for definition [${dataset.id}] but none was found")
+      .recover { case NonFatal(e: IllegalStateException) =>
+        e.getMessage should be(s"Expected dataset entry for definition [${dataset.id}] but none was found")
       }
   }
 

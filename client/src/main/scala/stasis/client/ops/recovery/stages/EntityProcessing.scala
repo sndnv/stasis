@@ -72,21 +72,20 @@ trait EntityProcessing {
   private def pull(crates: Map[Path, Crate.Id], entity: Path): Future[Iterable[(Path, Source[ByteString, NotUsed])]] =
     Future
       .sequence(
-        crates.map {
-          case (partPath, crate) =>
-            providers.clients.core
-              .pull(crate)
-              .flatMap {
-                case Some(source) =>
-                  Future.successful((partPath, source))
+        crates.map { case (partPath, crate) =>
+          providers.clients.core
+            .pull(crate)
+            .flatMap {
+              case Some(source) =>
+                Future.successful((partPath, source))
 
-                case None =>
-                  Future.failed(
-                    PullFailure(
-                      s"Failed to pull crate [${crate.toString}] for entity [${entity.toString}]"
-                    )
+              case None =>
+                Future.failed(
+                  PullFailure(
+                    s"Failed to pull crate [${crate.toString}] for entity [${entity.toString}]"
                   )
-              }
+                )
+            }
         }
       )
 

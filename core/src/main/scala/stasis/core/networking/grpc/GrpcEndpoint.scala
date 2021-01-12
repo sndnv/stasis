@@ -1,16 +1,14 @@
 package stasis.core.networking.grpc
 
-import java.util.UUID
-
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.grpc.scaladsl.{GrpcExceptionHandler, GrpcMarshalling}
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.model.Uri.Path.Segment
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
-import akka.http.scaladsl.{ConnectionContext, Http, Http2}
 import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{Materializer, SystemMaterializer}
 import org.slf4j.LoggerFactory
@@ -20,7 +18,10 @@ import stasis.core.packaging.Manifest
 import stasis.core.persistence.reservations.ReservationStoreView
 import stasis.core.routing.{Node, Router}
 import stasis.core.security.NodeAuthenticator
+import stasis.core.security.tls.EndpointContext
+import stasis.core.security.tls.EndpointContext.RichServerBuilder
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -38,13 +39,14 @@ class GrpcEndpoint(
 
   private val log = LoggerFactory.getLogger(this.getClass.getName)
 
-  def start(interface: String, port: Int, connectionContext: ConnectionContext): Future[Http.ServerBinding] =
-    Http2().bindAndHandleAsync(
-      handler = authenticated(grpcHandler),
-      interface = interface,
-      port = port,
-      connectionContext = connectionContext
-    )
+  def start(interface: String, port: Int, context: Option[EndpointContext]): Future[Http.ServerBinding] =
+    Http()
+      .newServerAt(
+        interface = interface,
+        port = port
+      )
+      .withContext(context)
+      .bind(authenticated(grpcHandler))
 
   def reserve(node: Node.Id, reserveRequest: proto.ReserveRequest): Future[proto.ReserveResponse] =
     internal.Requests.Reserve.unmarshal(reserveRequest) match {
@@ -61,11 +63,10 @@ class GrpcEndpoint(
               log.warn(message)
               proto.ReserveResponse().withFailure(ReservationFailure(message))
           }
-          .recover {
-            case NonFatal(e) =>
-              val message = s"Reservation failed for node [${node.toString}]: [${e.getClass.getSimpleName}: ${e.getMessage}]"
-              log.error(message)
-              proto.ReserveResponse().withFailure(ReservationFailure(message))
+          .recover { case NonFatal(e) =>
+            val message = s"Reservation failed for node [${node.toString}]: [${e.getClass.getSimpleName}: ${e.getMessage}]"
+            log.error(message)
+            proto.ReserveResponse().withFailure(ReservationFailure(message))
           }
 
       case Left(failure) =>
@@ -101,11 +102,10 @@ class GrpcEndpoint(
                     log.debug("Crate created with manifest: [{}]", manifest)
                     proto.PushResponse().withComplete(proto.Complete())
                   }
-                  .recover {
-                    case NonFatal(e) =>
-                      val message = s"Push failed for node [${node.toString}]: [${e.getClass.getSimpleName}: ${e.getMessage}]"
-                      log.error(message)
-                      proto.PushResponse().withFailure(EndpointFailure(message))
+                  .recover { case NonFatal(e) =>
+                    val message = s"Push failed for node [${node.toString}]: [${e.getClass.getSimpleName}: ${e.getMessage}]"
+                    log.error(message)
+                    proto.PushResponse().withFailure(EndpointFailure(message))
                   }
 
               case None =>
@@ -152,11 +152,10 @@ class GrpcEndpoint(
             log.debugN("Node [{}] discarded crate [{}]", node, crateId)
             proto.DiscardResponse().withComplete(proto.Complete())
           }
-          .recover {
-            case NonFatal(e) =>
-              val message = s"Discard failed for node [${node.toString}]: [${e.getMessage}]"
-              log.error(message)
-              proto.DiscardResponse().withFailure(EndpointFailure(message))
+          .recover { case NonFatal(e) =>
+            val message = s"Discard failed for node [${node.toString}]: [${e.getMessage}]"
+            log.error(message)
+            proto.DiscardResponse().withFailure(EndpointFailure(message))
           }
 
       case None =>
@@ -225,10 +224,9 @@ class GrpcEndpoint(
     }
 
     response
-      .recover {
-        case CredentialsFailure(failure) =>
-          log.warnN("Rejecting request for [{}]: [{}]", request.uri, failure)
-          HttpResponse(StatusCodes.Unauthorized)
+      .recover { case CredentialsFailure(failure) =>
+        log.warnN("Rejecting request for [{}]: [{}]", request.uri, failure)
+        HttpResponse(StatusCodes.Unauthorized)
       }
 
   }

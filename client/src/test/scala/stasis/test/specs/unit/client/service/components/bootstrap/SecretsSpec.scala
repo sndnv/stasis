@@ -60,10 +60,9 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e: ServiceStartupFailure) =>
-          e.cause should be("credentials")
-          e.message should be("RuntimeException: test failure")
+      .recover { case NonFatal(e: ServiceStartupFailure) =>
+        e.cause should be("credentials")
+        e.message should be("RuntimeException: test failure")
       }
   }
 
@@ -89,10 +88,9 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e: ServiceStartupFailure) =>
-          e.cause should be("config")
-          e.message should startWith("FileNotFoundException: File [client.conf] not found")
+      .recover { case NonFatal(e: ServiceStartupFailure) =>
+        e.cause should be("config")
+        e.message should startWith("FileNotFoundException: File [client.conf] not found")
       }
   }
 
@@ -129,10 +127,9 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e: ServiceStartupFailure) =>
-          e.cause should be("file")
-          e.message should startWith("RuntimeException: test failure")
+      .recover { case NonFatal(e: ServiceStartupFailure) =>
+        e.cause should be("file")
+        e.message should startWith("RuntimeException: test failure")
       }
   }
 

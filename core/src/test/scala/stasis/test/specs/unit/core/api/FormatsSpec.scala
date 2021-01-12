@@ -75,13 +75,12 @@ class FormatsSpec extends UnitSpec {
       )
     )
 
-    descriptors.foreach {
-      case (_, (descriptor, json)) =>
-        crateStoreDescriptorWrites.writes(descriptor).toString should be(json)
-        crateStoreDescriptorReads.reads(Json.parse(json)).asOpt match {
-          case Some(createdDescriptor) => createdDescriptor should be(descriptor)
-          case None                    => fail("Expected result but none was returned")
-        }
+    descriptors.foreach { case (_, (descriptor, json)) =>
+      crateStoreDescriptorWrites.writes(descriptor).toString should be(json)
+      crateStoreDescriptorReads.reads(Json.parse(json)).asOpt match {
+        case Some(createdDescriptor) => createdDescriptor should be(descriptor)
+        case None                    => fail("Expected result but none was returned")
+      }
     }
   }
 
@@ -115,13 +114,12 @@ class FormatsSpec extends UnitSpec {
       )
     )
 
-    nodes.foreach {
-      case (_, (node, json)) =>
-        nodeWrites.writes(node).toString should be(json)
-        nodeReads.reads(Json.parse(json)).asOpt match {
-          case Some(createdNode) => createdNode should be(node)
-          case None              => fail("Expected result but none was returned")
-        }
+    nodes.foreach { case (_, (node, json)) =>
+      nodeWrites.writes(node).toString should be(json)
+      nodeReads.reads(Json.parse(json)).asOpt match {
+        case Some(createdNode) => createdNode should be(node)
+        case None              => fail("Expected result but none was returned")
+      }
     }
   }
 }

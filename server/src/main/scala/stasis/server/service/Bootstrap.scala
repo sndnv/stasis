@@ -216,14 +216,13 @@ object Bootstrap {
 
         result
       }
-      .recoverWith {
-        case NonFatal(e) =>
-          log.error(
-            "Failed to add entity [{}]: [{}: {}]",
-            entity.getClass.getName,
-            e.getClass.getSimpleName,
-            e.getMessage
-          )
-          Future.failed(e)
+      .recoverWith { case NonFatal(e) =>
+        log.error(
+          "Failed to add entity [{}]: [{}: {}]",
+          entity.getClass.getName,
+          e.getClass.getSimpleName,
+          e.getMessage
+        )
+        Future.failed(e)
       }
 }

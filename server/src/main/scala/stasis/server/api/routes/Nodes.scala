@@ -61,21 +61,20 @@ class Nodes()(implicit ctx: RoutesContext) extends ApiRoutes {
             }
           },
           put {
-            entity(as[UpdateNode]) {
-              updateRequest =>
-                resources[ServerNodeStore.View.Service, ServerNodeStore.Manage.Service] { (view, manage) =>
-                  view.get(nodeId).flatMap {
-                    case Some(node) =>
-                      manage.update(updateRequest.toUpdatedNode(node)).map { _ =>
-                        log.debugN("User [{}] successfully updated node [{}]", currentUser, nodeId)
-                        complete(StatusCodes.OK)
-                      }
+            entity(as[UpdateNode]) { updateRequest =>
+              resources[ServerNodeStore.View.Service, ServerNodeStore.Manage.Service] { (view, manage) =>
+                view.get(nodeId).flatMap {
+                  case Some(node) =>
+                    manage.update(updateRequest.toUpdatedNode(node)).map { _ =>
+                      log.debugN("User [{}] successfully updated node [{}]", currentUser, nodeId)
+                      complete(StatusCodes.OK)
+                    }
 
-                    case None =>
-                      log.warnN("User [{}] failed to update missing node [{}]", currentUser, nodeId)
-                      Future.successful(complete(StatusCodes.BadRequest))
-                  }
+                  case None =>
+                    log.warnN("User [{}] failed to update missing node [{}]", currentUser, nodeId)
+                    Future.successful(complete(StatusCodes.BadRequest))
                 }
+              }
             }
           },
           delete {

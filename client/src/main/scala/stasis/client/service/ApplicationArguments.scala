@@ -75,31 +75,35 @@ object ApplicationArguments {
         .children(
           opt[String]("server")
             .valueName("<url>")
-            .action {
-              case (server, args @ ApplicationArguments(mode: Mode.Bootstrap)) =>
-                args.copy(mode = mode.copy(serverBootstrapUrl = server))
+            .action { case (server, args) =>
+              (args.mode: @unchecked) match {
+                case mode: Mode.Bootstrap => args.copy(mode = mode.copy(serverBootstrapUrl = server))
+              }
             }
             .optional()
             .text("Server bootstrap URL."),
           opt[String]("code")
             .valueName("<code>")
-            .action {
-              case (code, args @ ApplicationArguments(mode: Mode.Bootstrap)) =>
-                args.copy(mode = mode.copy(bootstrapCode = code))
+            .action { case (code, args) =>
+              (args.mode: @unchecked) match {
+                case mode: Mode.Bootstrap => args.copy(mode = mode.copy(bootstrapCode = code))
+              }
             }
             .optional()
             .text("Bootstrap code."),
           opt[Unit]("accept-self-signed")
-            .action {
-              case (_, args @ ApplicationArguments(mode: Mode.Bootstrap)) =>
-                args.copy(mode = mode.copy(acceptSelfSignedCertificates = true))
+            .action { case (_, args) =>
+              (args.mode: @unchecked) match {
+                case mode: Mode.Bootstrap => args.copy(mode = mode.copy(acceptSelfSignedCertificates = true))
+              }
             }
             .optional()
             .text("Accept any self-signed server TLS certificate (NOT recommended)."),
           opt[String]("user-password")
-            .action {
-              case (password, args @ ApplicationArguments(mode: Mode.Bootstrap)) =>
-                args.copy(mode = mode.copy(userPassword = password.toCharArray))
+            .action { case (password, args) =>
+              (args.mode: @unchecked) match {
+                case mode: Mode.Bootstrap => args.copy(mode = mode.copy(userPassword = password.toCharArray))
+              }
             }
             .optional()
             .text("User password (for encrypting new device secret).")

@@ -12,11 +12,10 @@ class DecryptedCrates(crates: Iterable[(Path, Source[ByteString, NotUsed])]) {
   def decrypt(
     withPartSecret: Path => DeviceFileSecret
   )(implicit providers: Providers): Iterable[(Path, Source[ByteString, NotUsed])] =
-    crates.map {
-      case (partPath, source) =>
-        val decryptedSource = source
-          .via(providers.decryptor.decrypt(withPartSecret(partPath)))
+    crates.map { case (partPath, source) =>
+      val decryptedSource = source
+        .via(providers.decryptor.decrypt(withPartSecret(partPath)))
 
-        (partPath, decryptedSource)
+      (partPath, decryptedSource)
     }
 }

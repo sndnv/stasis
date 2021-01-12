@@ -74,9 +74,8 @@ class ApplicationDirectorySpec extends AsyncUnitSpec with ResourceHelpers {
       .map { result =>
         fail(s"Unexpected result received [$result]")
       }
-      .recover {
-        case e: FileNotFoundException =>
-          e.getMessage should startWith(s"File [$targetFile] not found")
+      .recover { case e: FileNotFoundException =>
+        e.getMessage should startWith(s"File [$targetFile] not found")
       }
   }
 
@@ -88,9 +87,8 @@ class ApplicationDirectorySpec extends AsyncUnitSpec with ResourceHelpers {
       .map { result =>
         fail(s"Unexpected result received [$result]")
       }
-      .recover {
-        case e: FileNotFoundException =>
-          e.getMessage should startWith(s"File [$targetFile] not found")
+      .recover { case e: FileNotFoundException =>
+        e.getMessage should startWith(s"File [$targetFile] not found")
       }
   }
 
@@ -148,9 +146,8 @@ class ApplicationDirectorySpec extends AsyncUnitSpec with ResourceHelpers {
       .map { result =>
         fail(s"Unexpected result received [$result]")
       }
-      .recover {
-        case e: IllegalStateException =>
-          e.getMessage should be(s"File [$targetFile] could not be created; no suitable directory available")
+      .recover { case e: IllegalStateException =>
+        e.getMessage should be(s"File [$targetFile] could not be created; no suitable directory available")
       }
   }
 

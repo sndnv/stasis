@@ -72,39 +72,37 @@ class DeviceBootstrap(
               }
             }
           },
-          path("for-device" / JavaUUID) {
-            deviceId =>
-              concat(
-                put {
-                  resources[DeviceStore.View.Self, DeviceBootstrapCodeStore.Manage.Self] { (deviceView, bootstrapCodeManage) =>
-                    for {
-                      devices <- deviceView.list(currentUser).map(_.keys.toSeq)
-                      code <- context.bootstrapCodeGenerator.generate(currentUser, deviceId)
-                      _ <- bootstrapCodeManage.put(devices, code)
-                    } yield {
-                      log.debugN("User [{}] successfully created bootstrap code for own device [{}]", currentUser, deviceId)
-                      discardEntity & complete(code)
-                    }
-                  }
-                },
-                delete {
-                  resources[DeviceStore.View.Self, DeviceBootstrapCodeStore.Manage.Self] {
-                    (deviceView, bootstrapCodeManage) =>
-                      for {
-                        devices <- deviceView.list(currentUser).map(_.keys.toSeq)
-                        deleted <- bootstrapCodeManage.delete(devices, deviceId)
-                      } yield {
-                        if (deleted) {
-                          log.debugN("User [{}] successfully deleted bootstrap code for own device [{}]", currentUser, deviceId)
-                        } else {
-                          log.warnN("User [{}] failed to delete bootstrap code for own device [{}]", currentUser, deviceId)
-                        }
-
-                        discardEntity & complete(StatusCodes.OK)
-                      }
+          path("for-device" / JavaUUID) { deviceId =>
+            concat(
+              put {
+                resources[DeviceStore.View.Self, DeviceBootstrapCodeStore.Manage.Self] { (deviceView, bootstrapCodeManage) =>
+                  for {
+                    devices <- deviceView.list(currentUser).map(_.keys.toSeq)
+                    code <- context.bootstrapCodeGenerator.generate(currentUser, deviceId)
+                    _ <- bootstrapCodeManage.put(devices, code)
+                  } yield {
+                    log.debugN("User [{}] successfully created bootstrap code for own device [{}]", currentUser, deviceId)
+                    discardEntity & complete(code)
                   }
                 }
-              )
+              },
+              delete {
+                resources[DeviceStore.View.Self, DeviceBootstrapCodeStore.Manage.Self] { (deviceView, bootstrapCodeManage) =>
+                  for {
+                    devices <- deviceView.list(currentUser).map(_.keys.toSeq)
+                    deleted <- bootstrapCodeManage.delete(devices, deviceId)
+                  } yield {
+                    if (deleted) {
+                      log.debugN("User [{}] successfully deleted bootstrap code for own device [{}]", currentUser, deviceId)
+                    } else {
+                      log.warnN("User [{}] failed to delete bootstrap code for own device [{}]", currentUser, deviceId)
+                    }
+
+                    discardEntity & complete(StatusCodes.OK)
+                  }
+                }
+              }
+            )
           }
         )
       }
@@ -154,16 +152,15 @@ class DeviceBootstrap(
 
               discardEntity & complete(config)
             }
-            .recover {
-              case NonFatal(e: IllegalStateException) =>
-                log.warnN(
-                  "User [{}] failed to execute bootstrap for device [{}]: [{}]",
-                  currentUser,
-                  code.device,
-                  e.getMessage
-                )
+            .recover { case NonFatal(e: IllegalStateException) =>
+              log.warnN(
+                "User [{}] failed to execute bootstrap for device [{}]: [{}]",
+                currentUser,
+                code.device,
+                e.getMessage
+              )
 
-                discardEntity & complete(StatusCodes.Conflict)
+              discardEntity & complete(StatusCodes.Conflict)
             }
         }
       }

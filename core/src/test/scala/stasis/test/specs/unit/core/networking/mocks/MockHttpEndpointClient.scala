@@ -55,9 +55,8 @@ class MockHttpEndpointClient(
       case None =>
         stats(Statistic.PushCompleted).incrementAndGet()
         content
-          .runFold(ByteString.empty) {
-            case (folded, chunk) =>
-              folded.concat(chunk)
+          .runFold(ByteString.empty) { case (folded, chunk) =>
+            folded.concat(chunk)
           }
           .flatMap { data =>
             store.put((address, manifest.crate), (data, manifest.copies))
@@ -73,9 +72,8 @@ class MockHttpEndpointClient(
       case None =>
         Future.successful(
           Flow[ByteString]
-            .fold(ByteString.empty) {
-              case (folded, chunk) =>
-                folded.concat(chunk)
+            .fold(ByteString.empty) { case (folded, chunk) =>
+              folded.concat(chunk)
             }
             .mapAsyncUnordered(parallelism = 1) { data =>
               stats(Statistic.PushCompleted).incrementAndGet()

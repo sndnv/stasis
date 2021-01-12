@@ -36,9 +36,8 @@ object FilesystemMetadata {
 
   def toProto(filesystem: FilesystemMetadata): proto.metadata.FilesystemMetadata =
     proto.metadata.FilesystemMetadata(
-      entities = filesystem.entities.map {
-        case (entity, state) =>
-          entity.toAbsolutePath.toString -> EntityState.toProto(state)
+      entities = filesystem.entities.map { case (entity, state) =>
+        entity.toAbsolutePath.toString -> EntityState.toProto(state)
       }
     )
 
@@ -46,8 +45,8 @@ object FilesystemMetadata {
     filesystem match {
       case Some(filesystem) =>
         val entities = foldTryMap(
-          filesystem.entities.map {
-            case (entity, state) => Paths.get(entity) -> EntityState.fromProto(state)
+          filesystem.entities.map { case (entity, state) =>
+            Paths.get(entity) -> EntityState.fromProto(state)
           }
         )
 
@@ -117,10 +116,9 @@ object FilesystemMetadata {
   }
 
   private def foldTryMap[K, V](source: Map[K, Try[V]]): Try[Map[K, V]] =
-    source.foldLeft(Try(Map.empty[K, V])) {
-      case (tryCollected, (key, tryCurrent)) =>
-        tryCollected.flatMap { collected =>
-          tryCurrent.map(current => collected + (key -> current))
-        }
+    source.foldLeft(Try(Map.empty[K, V])) { case (tryCollected, (key, tryCurrent)) =>
+      tryCollected.flatMap { collected =>
+        tryCurrent.map(current => collected + (key -> current))
+      }
     }
 }

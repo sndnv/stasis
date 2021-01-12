@@ -296,19 +296,18 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e shouldBe a[RuntimeException]
+      .recover { case NonFatal(e) =>
+        e shouldBe a[RuntimeException]
 
-          eventually[Assertion] {
-            mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
-            mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
-            mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
-            mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
-            mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
-            mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(1)
-            mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
-          }
+        eventually[Assertion] {
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(1)
+          mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
+        }
       }
   }
 

@@ -65,11 +65,10 @@ class DeviceStoreSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Expected to retrieve own [${self.id}] device but device for user [${mockDevice.owner}] found"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Expected to retrieve own [${self.id}] device but device for user [${mockDevice.owner}] found"
+        )
       }
   }
 
@@ -184,11 +183,10 @@ class DeviceStoreSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Expected to create own [${self.id}] device but device for user [${mockDevice.owner}] provided"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Expected to create own [${self.id}] device but device for user [${mockDevice.owner}] provided"
+        )
       }
   }
 
@@ -221,11 +219,10 @@ class DeviceStoreSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Expected to update own [${self.id}] device but device for user [${mockDevice.owner}] provided"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Expected to update own [${self.id}] device but device for user [${mockDevice.owner}] provided"
+        )
       }
   }
 
@@ -258,11 +255,10 @@ class DeviceStoreSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Expected to delete own [${self.id}] device but device for user [${mockDevice.owner}] provided"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Expected to delete own [${self.id}] device but device for user [${mockDevice.owner}] provided"
+        )
       }
   }
 

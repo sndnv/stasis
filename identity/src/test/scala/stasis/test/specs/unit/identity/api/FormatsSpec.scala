@@ -47,10 +47,9 @@ class FormatsSpec extends UnitSpec {
       GrantType.Password -> "\"password\""
     )
 
-    grants.foreach {
-      case (grant, json) =>
-        grantTypeFormat.writes(grant).toString should be(json)
-        grantTypeFormat.reads(Json.parse(json)).asOpt should be(Some(grant))
+    grants.foreach { case (grant, json) =>
+      grantTypeFormat.writes(grant).toString should be(json)
+      grantTypeFormat.reads(Json.parse(json)).asOpt should be(Some(grant))
     }
   }
 
@@ -60,10 +59,9 @@ class FormatsSpec extends UnitSpec {
       ChallengeMethod.S256 -> "\"s256\""
     )
 
-    challenges.foreach {
-      case (challenge, json) =>
-        challengeMethodFormat.writes(challenge).toString should be(json)
-        challengeMethodFormat.reads(Json.parse(json)).asOpt should be(Some(challenge))
+    challenges.foreach { case (challenge, json) =>
+      challengeMethodFormat.writes(challenge).toString should be(json)
+      challengeMethodFormat.reads(Json.parse(json)).asOpt should be(Some(challenge))
     }
   }
 
@@ -73,10 +71,9 @@ class FormatsSpec extends UnitSpec {
       ResponseType.Token -> "\"token\""
     )
 
-    responses.foreach {
-      case (response, json) =>
-        responseTypeFormat.writes(response).toString should be(json)
-        responseTypeFormat.reads(Json.parse(json)).asOpt should be(Some(response))
+    responses.foreach { case (response, json) =>
+      responseTypeFormat.writes(response).toString should be(json)
+      responseTypeFormat.reads(Json.parse(json)).asOpt should be(Some(response))
     }
   }
 

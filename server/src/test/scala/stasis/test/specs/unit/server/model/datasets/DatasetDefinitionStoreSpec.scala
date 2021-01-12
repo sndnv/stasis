@@ -64,11 +64,10 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Expected to retrieve definition for own device but device [${mockDefinition.device}] found"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Expected to retrieve definition for own device but device [${mockDefinition.device}] found"
+        )
       }
   }
 
@@ -183,11 +182,10 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Expected to create definition for own device but device [${mockDefinition.device}] provided"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Expected to create definition for own device but device [${mockDefinition.device}] provided"
+        )
       }
   }
 
@@ -220,11 +218,10 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Expected to update definition for own device but device [${mockDefinition.device}] provided"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Expected to update definition for own device but device [${mockDefinition.device}] provided"
+        )
       }
   }
 
@@ -257,11 +254,10 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Expected to delete definition for own device but device [${mockDefinition.device}] provided"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Expected to delete definition for own device but device [${mockDefinition.device}] provided"
+        )
       }
   }
 

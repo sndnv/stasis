@@ -35,9 +35,8 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
           case Some(source) => source
           case None         => fail("Failed to retrieve source")
         }
-        result <- source.runFold(ByteString.empty) {
-          case (folded, chunk) =>
-            folded.concat(chunk)
+        result <- source.runFold(ByteString.empty) { case (folded, chunk) =>
+          folded.concat(chunk)
         }
         _ <- after(store)
       } yield {

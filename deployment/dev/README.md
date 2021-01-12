@@ -1,6 +1,7 @@
 # deployment / dev
 
-The provided `docker-compose.yml` defines all `stasis` services and their configuration, for testing and development purposes.
+The provided `docker-compose.yml` defines all `stasis` services and their configuration, for testing and development
+purposes.
 
 ## Getting Started
 
@@ -26,8 +27,8 @@ For example, a single image with `client` and `client-cli` is built to test both
 
 ### [`secrets`](./secrets)
 
-Contains secrets used by `stasis` services; **files in this directory must be generated locally and should not
-be part of any commits**.
+Contains secrets used by `stasis` services; **files in this directory must be generated locally and should not be part
+of any commits**.
 
 ### [`scripts`](./scripts)
 
@@ -42,8 +43,8 @@ Contains scripts that run tests and help with setting up the test environment.
 ./generate_artifacts.py -p client # generates artifact for "client" submodule
 ```
 
-By default, Docker images for `identity`, `identity-ui`, `server`, `client` and `client-cli` will be
-generated; they are necessary for running the services in the provided `docker-compose.yml` file.
+By default, Docker images for `identity`, `identity-ui`, `server`, `client` and `client-cli` will be generated; they are
+necessary for running the services in the provided `docker-compose.yml` file.
 
 #### `generate_device_secret.py`
 
@@ -53,8 +54,8 @@ generated; they are necessary for running the services in the provided `docker-c
 ./generate_device_secret.py --user-id <user-id-on-server> --user-salt <user-salt-on-server>
 ```
 
-To run the `client` background service, a client/device secret needs to be created. The password of the user
-needs to be provided as it is used for encrypting the secret.
+To run the `client` background service, a client/device secret needs to be created. The password of the user needs to be
+provided as it is used for encrypting the secret.
 
 #### `generate_self_signed_cert.py`
 
@@ -64,8 +65,8 @@ needs to be provided as it is used for encrypting the secret.
 ./generate_self_signed_cert.py <country> <location> <organization>
 ```
 
-The communication between all services is based on HTTPS and certificates are needed to properly setup the
-relevant endpoints.
+The communication between all services is based on HTTPS and certificates are needed to properly setup the relevant
+endpoints.
 
 #### `generate_user_password.py`
 
@@ -97,8 +98,8 @@ generating all artifacts via `generate_artifacts.py`.
 ./run_smoke_test.sh
 ```
 
-Runs a sequence of commands against the `stasis` services, ranging from simple token retrievals to full backup and recovery
-operations, and performs basic sanity checks on the output of those commands.
+Runs a sequence of commands against the `stasis` services, ranging from simple token retrievals to full backup and
+recovery operations, and performs basic sanity checks on the output of those commands.
 
 This script is meant to provide both a limited integration test, and an example of how all services should be configured
 and used together.

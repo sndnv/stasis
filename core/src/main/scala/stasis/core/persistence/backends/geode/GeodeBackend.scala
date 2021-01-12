@@ -53,9 +53,8 @@ class GeodeBackend[K, V](
         .getAll(region.keySet())
         .asScala
         .toMap
-        .map {
-          case (k, v) =>
-            (k: K) -> (ByteString.fromArray(v): V)
+        .map { case (k, v) =>
+          (k: K) -> (ByteString.fromArray(v): V)
         }
     }
 

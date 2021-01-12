@@ -67,11 +67,10 @@ class PartitionedByteStringSourceSpec extends AsyncUnitSpec {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recoverWith {
-        case NonFatal(e: IllegalArgumentException) =>
-          e.getMessage should be(
-            s"requirement failed: Stream element size [${element.length}] is above maximum part size [$maxSize]"
-          )
+      .recoverWith { case NonFatal(e: IllegalArgumentException) =>
+        e.getMessage should be(
+          s"requirement failed: Stream element size [${element.length}] is above maximum part size [$maxSize]"
+        )
       }
   }
 

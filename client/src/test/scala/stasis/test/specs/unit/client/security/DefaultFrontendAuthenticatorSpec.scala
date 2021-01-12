@@ -24,9 +24,8 @@ class DefaultFrontendAuthenticatorSpec extends AsyncUnitSpec { test =>
       .map { result =>
         fail(s"Received unexpected result: [$result]")
       }
-      .recover {
-        case NonFatal(e: AuthenticationFailure) =>
-          e.message should be("Invalid credentials provided")
+      .recover { case NonFatal(e: AuthenticationFailure) =>
+        e.message should be("Invalid credentials provided")
       }
   }
 
@@ -38,9 +37,8 @@ class DefaultFrontendAuthenticatorSpec extends AsyncUnitSpec { test =>
       .map { result =>
         fail(s"Received unexpected result: [$result]")
       }
-      .recover {
-        case NonFatal(e: AuthenticationFailure) =>
-          e.message should be("Unsupported credentials provided: [Basic]")
+      .recover { case NonFatal(e: AuthenticationFailure) =>
+        e.message should be("Unsupported credentials provided: [Basic]")
       }
   }
 

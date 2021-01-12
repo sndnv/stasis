@@ -41,13 +41,12 @@ class GrpcEndpointClient(
 
     credentials
       .provide(address)
-      .recoverWith {
-        case NonFatal(e) =>
-          val message =
-            s"Push to endpoint [${address.host}] failed for crate [${manifest.crate.toString}];" +
-              s" unable to retrieve credentials: [${e.getMessage}]"
-          log.error(message)
-          Future.failed(CredentialsFailure(message))
+      .recoverWith { case NonFatal(e) =>
+        val message =
+          s"Push to endpoint [${address.host}] failed for crate [${manifest.crate.toString}];" +
+            s" unable to retrieve credentials: [${e.getMessage}]"
+        log.error(message)
+        Future.failed(CredentialsFailure(message))
       }
       .flatMap { endpointCredentials =>
         val client = internal.Client(address, context)
@@ -69,13 +68,12 @@ class GrpcEndpointClient(
 
     credentials
       .provide(address)
-      .recoverWith {
-        case NonFatal(e) =>
-          val message =
-            s"Push to endpoint [${address.host}] via sink failed for crate [${manifest.crate.toString}];" +
-              s" unable to retrieve credentials: [${e.getMessage}]"
-          log.error(message)
-          Future.failed(CredentialsFailure(message))
+      .recoverWith { case NonFatal(e) =>
+        val message =
+          s"Push to endpoint [${address.host}] via sink failed for crate [${manifest.crate.toString}];" +
+            s" unable to retrieve credentials: [${e.getMessage}]"
+        log.error(message)
+        Future.failed(CredentialsFailure(message))
       }
       .flatMap { endpointCredentials =>
         val client = internal.Client(address, context)
@@ -83,9 +81,8 @@ class GrpcEndpointClient(
         val (sink, content) = Source
           .asSubscriber[ByteString]
           .toMat(Sink.asPublisher[ByteString](fanout = false))(Keep.both)
-          .mapMaterializedValue {
-            case (subscriber, publisher) =>
-              (Sink.fromSubscriber(subscriber), Source.fromPublisher(publisher))
+          .mapMaterializedValue { case (subscriber, publisher) =>
+            (Sink.fromSubscriber(subscriber), Source.fromPublisher(publisher))
           }
           .run()
 
@@ -106,13 +103,12 @@ class GrpcEndpointClient(
 
     credentials
       .provide(address)
-      .recoverWith {
-        case NonFatal(e) =>
-          val message =
-            s"Pull from endpoint [${address.host}] failed for crate [${crate.toString}];" +
-              s" unable to retrieve credentials: [${e.getMessage}]"
-          log.error(message)
-          Future.failed(CredentialsFailure(message))
+      .recoverWith { case NonFatal(e) =>
+        val message =
+          s"Pull from endpoint [${address.host}] failed for crate [${crate.toString}];" +
+            s" unable to retrieve credentials: [${e.getMessage}]"
+        log.error(message)
+        Future.failed(CredentialsFailure(message))
       }
       .flatMap { endpointCredentials =>
         client
@@ -131,12 +127,11 @@ class GrpcEndpointClient(
               Future.successful(None)
           }
           .runWith(Sink.head)
-          .recoverWith {
-            case NonFatal(e) =>
-              val exceptionMessage = e.getMessage.replaceAll("\r", "").replaceAll("\n", "; ")
-              val message = s"Pull from endpoint [${address.host}] failed for crate [${crate.toString}]: [$exceptionMessage]"
-              log.warn(message)
-              Future.failed(EndpointFailure(message))
+          .recoverWith { case NonFatal(e) =>
+            val exceptionMessage = e.getMessage.replaceAll("\r", "").replaceAll("\n", "; ")
+            val message = s"Pull from endpoint [${address.host}] failed for crate [${crate.toString}]: [$exceptionMessage]"
+            log.warn(message)
+            Future.failed(EndpointFailure(message))
           }
       }
   }
@@ -149,13 +144,12 @@ class GrpcEndpointClient(
 
     credentials
       .provide(address)
-      .recoverWith {
-        case NonFatal(e) =>
-          val message =
-            s"Discard from endpoint [${address.host}] failed for crate [${crate.toString}];" +
-              s" unable to retrieve credentials: [${e.getMessage}]"
-          log.error(message)
-          Future.failed(CredentialsFailure(message))
+      .recoverWith { case NonFatal(e) =>
+        val message =
+          s"Discard from endpoint [${address.host}] failed for crate [${crate.toString}];" +
+            s" unable to retrieve credentials: [${e.getMessage}]"
+        log.error(message)
+        Future.failed(CredentialsFailure(message))
       }
       .flatMap { endpointCredentials =>
         val client = internal.Client(address, context)
@@ -173,11 +167,10 @@ class GrpcEndpointClient(
                 Future.failed(response.result.failure)
             }
           }
-          .recoverWith {
-            case NonFatal(e) =>
-              val message = s"Discard from endpoint [${address.host}] failed for crate [${crate.toString}]: [${e.getMessage}]"
-              log.warnN(message)
-              Future.successful(false)
+          .recoverWith { case NonFatal(e) =>
+            val message = s"Discard from endpoint [${address.host}] failed for crate [${crate.toString}]: [${e.getMessage}]"
+            log.warnN(message)
+            Future.successful(false)
           }
       }
   }
@@ -210,12 +203,11 @@ class GrpcEndpointClient(
             Future.failed(response.result.failure)
         }
       }
-      .recoverWith {
-        case NonFatal(e) =>
-          val message =
-            s"Reservation on endpoint [${address.host}] failed for crate [${manifest.crate.toString}]: [${e.getMessage}]"
-          log.warn(message)
-          Future.failed(EndpointFailure(message))
+      .recoverWith { case NonFatal(e) =>
+        val message =
+          s"Reservation on endpoint [${address.host}] failed for crate [${manifest.crate.toString}]: [${e.getMessage}]"
+        log.warn(message)
+        Future.failed(EndpointFailure(message))
       }
   }
 
@@ -240,12 +232,11 @@ class GrpcEndpointClient(
             Future.failed(response.result.failure)
         }
       }
-      .recoverWith {
-        case NonFatal(e) =>
-          val message =
-            s"Push to endpoint [${address.host}] failed for crate [${manifest.crate.toString}]: [${e.getMessage}]"
-          log.warn(message)
-          Future.failed(EndpointFailure(message))
+      .recoverWith { case NonFatal(e) =>
+        val message =
+          s"Push to endpoint [${address.host}] failed for crate [${manifest.crate.toString}]: [${e.getMessage}]"
+        log.warn(message)
+        Future.failed(EndpointFailure(message))
       }
 }
 

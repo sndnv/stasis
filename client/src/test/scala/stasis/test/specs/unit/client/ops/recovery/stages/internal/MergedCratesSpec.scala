@@ -69,9 +69,8 @@ class MergedCratesSpec extends AsyncUnitSpec {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recoverWith {
-        case NonFatal(e: EntityProcessingFailure) =>
-          e.getMessage should be("Expected at least one crate but none were found")
+      .recoverWith { case NonFatal(e: EntityProcessingFailure) =>
+        e.getMessage should be("Expected at least one crate but none were found")
       }
   }
 

@@ -2,26 +2,23 @@ import sbt.Keys._
 
 lazy val projectName = "stasis"
 
-name in ThisBuild := projectName
-licenses in ThisBuild := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
-homepage in ThisBuild := Some(url("https://github.com/sndnv/stasis"))
+name := projectName
+licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
+homepage := Some(url("https://github.com/sndnv/stasis"))
 
-lazy val defaultScalaVersion = "2.13.3"
-lazy val akkaVersion         = "2.6.8"
-lazy val akkaHttpVersion     = "10.2.0"
-lazy val geodeVersion        = "1.12.0"
-lazy val slickVersion        = "3.3.2"
-lazy val h2Version           = "1.4.200"
-lazy val postgresVersion     = "42.2.16"
-lazy val mariadbVersion      = "2.6.2"
-lazy val sqliteVersion       = "3.32.3.2"
-lazy val logbackVersion      = "1.2.3"
+scalaVersion in ThisBuild := "2.13.4"
+
+lazy val akkaVersion     = "2.6.10"
+lazy val akkaHttpVersion = "10.2.2"
+lazy val geodeVersion    = "1.13.1"
+lazy val slickVersion    = "3.3.3"
+lazy val h2Version       = "1.4.200"
+lazy val postgresVersion = "42.2.18"
+lazy val mariadbVersion  = "2.7.1"
+lazy val sqliteVersion   = "3.32.3.2"
+lazy val logbackVersion  = "1.2.3"
 
 lazy val jdkDockerImage = "openjdk:11"
-
-lazy val crossVersions = Seq(defaultScalaVersion)
-
-scalaVersion in ThisBuild := defaultScalaVersion
 
 lazy val server   = (project in file("./server"))
   .settings(commonSettings)
@@ -49,11 +46,11 @@ lazy val client   = (project in file("./client"))
       "com.typesafe.akka" %% "akka-slf4j"              % akkaVersion,
       "com.typesafe.akka" %% "akka-http-caching"       % akkaHttpVersion,
       "ch.qos.logback"     % "logback-classic"         % logbackVersion,
-      "com.github.scopt"  %% "scopt"                   % "3.7.1",
-      "com.google.jimfs"   % "jimfs"                   % "1.1"    % Test,
-      "org.mockito"       %% "mockito-scala"           % "1.14.8" % Test,
-      "org.mockito"       %% "mockito-scala-scalatest" % "1.14.8" % Test,
-      "org.mockito"        % "mockito-inline"          % "3.5.2"  % Test
+      "com.github.scopt"  %% "scopt"                   % "4.0.0",
+      "com.google.jimfs"   % "jimfs"                   % "1.2"     % Test,
+      "org.mockito"       %% "mockito-scala"           % "1.16.15" % Test,
+      "org.mockito"       %% "mockito-scala-scalatest" % "1.16.15" % Test,
+      "org.mockito"        % "mockito-inline"          % "3.7.0"   % Test
     ),
     dockerBaseImage := jdkDockerImage,
     PB.targets in Compile := Seq(
@@ -96,25 +93,24 @@ lazy val core   = (project in file("./core"))
       "com.typesafe.akka"     %% "akka-http"           % akkaHttpVersion,
       "com.typesafe.akka"     %% "akka-http-core"      % akkaHttpVersion,
       "com.typesafe.akka"     %% "akka-http2-support"  % akkaHttpVersion,
-      "com.typesafe.play"     %% "play-json"           % "2.9.0",
-      "de.heikoseeberger"     %% "akka-http-play-json" % "1.34.0",
-      "org.bitbucket.b_c"      % "jose4j"              % "0.7.2",
+      "com.typesafe.play"     %% "play-json"           % "2.9.2",
+      "de.heikoseeberger"     %% "akka-http-play-json" % "1.35.3",
+      "org.bitbucket.b_c"      % "jose4j"              % "0.7.4",
       "org.apache.geode"       % "geode-core"          % geodeVersion    % Provided,
       "com.typesafe.slick"    %% "slick"               % slickVersion    % Provided,
       "com.h2database"         % "h2"                  % h2Version       % Test,
-      "org.scalacheck"        %% "scalacheck"          % "1.14.3"        % Test,
-      "org.scalatest"         %% "scalatest"           % "3.2.1"         % Test,
+      "org.scalacheck"        %% "scalacheck"          % "1.15.2"        % Test,
+      "org.scalatest"         %% "scalatest"           % "3.2.3"         % Test,
       "com.typesafe.akka"     %% "akka-testkit"        % akkaVersion     % Test,
       "com.typesafe.akka"     %% "akka-stream-testkit" % akkaVersion     % Test,
       "com.typesafe.akka"     %% "akka-http-testkit"   % akkaHttpVersion % Test,
-      "com.github.tomakehurst" % "wiremock-jre8"       % "2.27.1"        % Test
+      "com.github.tomakehurst" % "wiremock-jre8"       % "2.27.2"        % Test
     )
   )
   .dependsOn(proto)
 
 lazy val proto = (project in file("./proto"))
   .settings(
-    crossScalaVersions := crossVersions,
     libraryDependencies ++= Seq(
       "com.typesafe.akka" %% "akka-stream"        % akkaVersion,
       "com.typesafe.akka" %% "akka-http"          % akkaHttpVersion,
@@ -131,18 +127,16 @@ lazy val excludedWarts = Seq(
 )
 
 lazy val commonSettings = Seq(
-  crossScalaVersions := crossVersions,
   logBuffered in Test := false,
   parallelExecution in Test := false,
   wartremoverWarnings in (Compile, compile) ++= Warts.unsafe.filterNot(excludedWarts.contains),
-  wartremoverExcluded in (Compile, compile) += sourceManaged.value,
   packageName := s"$projectName-${name.value}",
   executableScriptName := s"$projectName-${name.value}",
   artifact := {
     val previous: Artifact = artifact.value
     previous.withName(name = s"$projectName-${previous.name}")
   },
-  scalacOptions := Seq(
+  scalacOptions ++= Seq(
     "-encoding",
     "UTF-8",
     "-unchecked",
@@ -158,7 +152,8 @@ lazy val commonSettings = Seq(
     "-Xlint:delayedinit-select",
     "-Xlint:doc-detached",
     "-Xlint:inaccessible",
-    "-Xlint:infer-any"
+    "-Xlint:infer-any",
+    s"-P:wartremover:excluded:${(sourceManaged in Compile).value}"
   )
 )
 

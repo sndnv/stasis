@@ -12,8 +12,8 @@ import stasis.core.routing.Node
 object ReservationStoreCacheSerdes extends KeyValueBackend.Serdes[(Crate.Id, Node.Id), CrateStorageReservation.Id] {
   private val separator: String = ":"
 
-  override implicit def serializeKey: ((Crate.Id, Node.Id)) => String = {
-    case (crate, node) => s"${crate.toString}$separator${node.toString}"
+  override implicit def serializeKey: ((Crate.Id, Node.Id)) => String = { case (crate, node) =>
+    s"${crate.toString}$separator${node.toString}"
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))

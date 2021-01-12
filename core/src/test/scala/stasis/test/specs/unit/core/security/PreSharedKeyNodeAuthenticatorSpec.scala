@@ -37,9 +37,8 @@ class PreSharedKeyNodeAuthenticatorSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from authenticator: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(s"Node [${node.id}] not found")
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(s"Node [${node.id}] not found")
       }
   }
 
@@ -55,9 +54,8 @@ class PreSharedKeyNodeAuthenticatorSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from authenticator: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(s"Invalid secret supplied for node [${node.id}]")
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(s"Invalid secret supplied for node [${node.id}]")
       }
   }
 
@@ -75,9 +73,8 @@ class PreSharedKeyNodeAuthenticatorSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from authenticator: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(s"Invalid node ID encountered: [$otherNode]")
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(s"Invalid node ID encountered: [$otherNode]")
       }
   }
 
@@ -94,9 +91,8 @@ class PreSharedKeyNodeAuthenticatorSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from authenticator: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(s"Credentials for node [${node.id}] not found")
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(s"Credentials for node [${node.id}] not found")
       }
   }
 

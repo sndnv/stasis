@@ -60,10 +60,9 @@ class DefaultClientAuthenticatorSpec extends AsyncUnitSpec {
         authenticator.authenticate(BasicHttpCredentials(expectedClient.id.toString, clientPassword))
       }
       .map(result => fail(s"Unexpected result received: [$result]"))
-      .recoverWith {
-        case NonFatal(e) =>
-          e shouldBe an[AuthenticationFailure]
-          e.getMessage.contains(s"Client [${expectedClient.id}] is not active") should be(true)
+      .recoverWith { case NonFatal(e) =>
+        e shouldBe an[AuthenticationFailure]
+        e.getMessage.contains(s"Client [${expectedClient.id}] is not active") should be(true)
       }
   }
 
@@ -85,10 +84,9 @@ class DefaultClientAuthenticatorSpec extends AsyncUnitSpec {
     authenticator
       .authenticate(BasicHttpCredentials(expectedClient.id.toString, clientPassword))
       .map(result => fail(s"Unexpected result received: [$result]"))
-      .recoverWith {
-        case NonFatal(e) =>
-          e shouldBe an[AuthenticationFailure]
-          e.getMessage.contains(s"Client [${expectedClient.id}] was not found") should be(true)
+      .recoverWith { case NonFatal(e) =>
+        e shouldBe an[AuthenticationFailure]
+        e.getMessage.contains(s"Client [${expectedClient.id}] was not found") should be(true)
       }
   }
 
@@ -107,10 +105,9 @@ class DefaultClientAuthenticatorSpec extends AsyncUnitSpec {
     authenticator
       .authenticate(BasicHttpCredentials(clientId, clientPassword))
       .map(result => fail(s"Unexpected result received: [$result]"))
-      .recoverWith {
-        case NonFatal(e) =>
-          e shouldBe an[AuthenticationFailure]
-          e.getMessage.contains(s"Invalid client identifier provided: [$clientId]") should be(true)
+      .recoverWith { case NonFatal(e) =>
+        e shouldBe an[AuthenticationFailure]
+        e.getMessage.contains(s"Invalid client identifier provided: [$clientId]") should be(true)
       }
   }
 

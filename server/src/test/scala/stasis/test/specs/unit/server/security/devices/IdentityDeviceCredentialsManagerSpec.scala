@@ -69,17 +69,16 @@ class IdentityDeviceCredentialsManagerSpec extends AsyncUnitSpec {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e) =>
-          endpoint.stop()
+      .recover { case NonFatal(e) =>
+        endpoint.stop()
 
-          e.getMessage should startWith(
-            s"Expected only one client to match node [${device.node}] but [2] clients found"
-          )
+        e.getMessage should startWith(
+          s"Expected only one client to match node [${device.node}] but [2] clients found"
+        )
 
-          endpoint.created should be(0)
-          endpoint.updated should be(0)
-          endpoint.searched should be(1)
+        endpoint.created should be(0)
+        endpoint.updated should be(0)
+        endpoint.searched should be(1)
       }
   }
 
@@ -100,15 +99,14 @@ class IdentityDeviceCredentialsManagerSpec extends AsyncUnitSpec {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e) =>
-          endpoint.stop()
+      .recover { case NonFatal(e) =>
+        endpoint.stop()
 
-          e.getMessage should startWith("Identity response unmarshalling failed")
+        e.getMessage should startWith("Identity response unmarshalling failed")
 
-          endpoint.created should be(0)
-          endpoint.updated should be(0)
-          endpoint.searched should be(1)
+        endpoint.created should be(0)
+        endpoint.updated should be(0)
+        endpoint.searched should be(1)
       }
   }
 
@@ -129,15 +127,14 @@ class IdentityDeviceCredentialsManagerSpec extends AsyncUnitSpec {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e) =>
-          endpoint.stop()
+      .recover { case NonFatal(e) =>
+        endpoint.stop()
 
-          e.getMessage should startWith("Identity request failed with [500 Internal Server Error]")
+        e.getMessage should startWith("Identity request failed with [500 Internal Server Error]")
 
-          endpoint.created should be(0)
-          endpoint.updated should be(0)
-          endpoint.searched should be(1)
+        endpoint.created should be(0)
+        endpoint.updated should be(0)
+        endpoint.searched should be(1)
       }
   }
 
@@ -158,15 +155,14 @@ class IdentityDeviceCredentialsManagerSpec extends AsyncUnitSpec {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e) =>
-          endpoint.stop()
+      .recover { case NonFatal(e) =>
+        endpoint.stop()
 
-          e.getMessage should startWith("Identity request failed with [500 Internal Server Error]")
+        e.getMessage should startWith("Identity request failed with [500 Internal Server Error]")
 
-          endpoint.created should be(1)
-          endpoint.updated should be(0)
-          endpoint.searched should be(1)
+        endpoint.created should be(1)
+        endpoint.updated should be(0)
+        endpoint.searched should be(1)
       }
   }
 
@@ -187,15 +183,14 @@ class IdentityDeviceCredentialsManagerSpec extends AsyncUnitSpec {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e) =>
-          endpoint.stop()
+      .recover { case NonFatal(e) =>
+        endpoint.stop()
 
-          e.getMessage should startWith("Identity request failed with [500 Internal Server Error]")
+        e.getMessage should startWith("Identity request failed with [500 Internal Server Error]")
 
-          endpoint.created should be(0)
-          endpoint.updated should be(1)
-          endpoint.searched should be(1)
+        endpoint.created should be(0)
+        endpoint.updated should be(1)
+        endpoint.searched should be(1)
       }
   }
 

@@ -47,9 +47,8 @@ class BootstrapEndpoint(
                 }
               },
               pathPrefix("execute") {
-                authenticated(bootstrapCodeAuthenticator.authenticate(credentials)) {
-                  case (code, user) =>
-                    deviceBootstrap.execute(code)(currentUser = user)
+                authenticated(bootstrapCodeAuthenticator.authenticate(credentials)) { case (code, user) =>
+                  deviceBootstrap.execute(code)(currentUser = user)
                 }
               }
             )

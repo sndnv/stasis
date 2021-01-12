@@ -12,19 +12,18 @@ object Rejection {
   def create(log: Logger)(implicit mat: Materializer): RejectionHandler =
     RejectionHandler
       .newBuilder()
-      .handle {
-        case ValidationRejection(_, _) =>
-          extractRequestEntity { entity =>
-            val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
+      .handle { case ValidationRejection(_, _) =>
+        extractRequestEntity { entity =>
+          val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
-            val message = "Provided data is invalid or malformed"
-            log.warn(message)
+          val message = "Provided data is invalid or malformed"
+          log.warn(message)
 
-            complete(
-              StatusCodes.BadRequest,
-              HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
-            )
-          }
+          complete(
+            StatusCodes.BadRequest,
+            HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
+          )
+        }
       }
       .result()
       .seal
