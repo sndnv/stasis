@@ -28,18 +28,17 @@ class DatasetMetadata()(implicit override val mat: Materializer, context: Contex
           parameters(
             "query".as[String],
             "until".as[Instant].?
-          ) {
-            case (query, until) =>
-              onSuccess(context.search.search(query.r, until)) { result =>
-                log.debugN(
-                  "API found [{}] matches for [{}] definitions with query [{}]",
-                  result.definitions.count(_._2.nonEmpty),
-                  result.definitions.size,
-                  query
-                )
+          ) { case (query, until) =>
+            onSuccess(context.search.search(query.r, until)) { result =>
+              log.debugN(
+                "API found [{}] matches for [{}] definitions with query [{}]",
+                result.definitions.count(_._2.nonEmpty),
+                result.definitions.size,
+                query
+              )
 
-                discardEntity & complete(result)
-              }
+              discardEntity & complete(result)
+            }
           }
         }
       }

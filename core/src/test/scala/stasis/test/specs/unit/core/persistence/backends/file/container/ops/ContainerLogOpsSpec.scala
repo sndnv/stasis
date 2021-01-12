@@ -51,11 +51,10 @@ class ContainerLogOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoClo
         .map { response =>
           fail(s"Received unexpected response: [$response]")
         }
-        .recover {
-          case NonFatal(e) =>
-            e.getMessage should be(
-              s"Failed to create container log [$containerLogPath]: [FileAlreadyExistsException: $containerLogPath]"
-            )
+        .recover { case NonFatal(e) =>
+          e.getMessage should be(
+            s"Failed to create container log [$containerLogPath]: [FileAlreadyExistsException: $containerLogPath]"
+          )
         }
     }
   }
@@ -102,11 +101,10 @@ class ContainerLogOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoClo
       .map { response =>
         fail(s"Received unexpected response: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Failed to destroy container log [$containerLogPath]: [NoSuchFileException: $containerLogPath]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Failed to destroy container log [$containerLogPath]: [NoSuchFileException: $containerLogPath]"
+        )
       }
   }
 
@@ -147,11 +145,10 @@ class ContainerLogOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoClo
       .map { response =>
         fail(s"Received unexpected response: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Failed to update container log [$containerLogPath] with event [Add]: [NoSuchFileException: $containerLogPath]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Failed to update container log [$containerLogPath] with event [Add]: [NoSuchFileException: $containerLogPath]"
+        )
       }
   }
 
@@ -185,11 +182,10 @@ class ContainerLogOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoClo
       .map { response =>
         fail(s"Received unexpected response: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Failed to retrieve crates from container log [$containerLogPath]: [NoSuchFileException: $containerLogPath]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Failed to retrieve crates from container log [$containerLogPath]: [NoSuchFileException: $containerLogPath]"
+        )
       }
   }
 }

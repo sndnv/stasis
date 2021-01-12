@@ -60,10 +60,9 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec {
         authenticator.authenticate(BasicHttpCredentials(expectedOwner.username, ownerPassword))
       }
       .map(result => fail(s"Unexpected result received: [$result]"))
-      .recoverWith {
-        case NonFatal(e) =>
-          e shouldBe an[AuthenticationFailure]
-          e.getMessage.contains(s"Resource owner [${expectedOwner.username}] is not active") should be(true)
+      .recoverWith { case NonFatal(e) =>
+        e shouldBe an[AuthenticationFailure]
+        e.getMessage.contains(s"Resource owner [${expectedOwner.username}] is not active") should be(true)
       }
   }
 
@@ -85,10 +84,9 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec {
     authenticator
       .authenticate(BasicHttpCredentials(expectedOwner.username, ownerPassword))
       .map(result => fail(s"Unexpected result received: [$result]"))
-      .recoverWith {
-        case NonFatal(e) =>
-          e shouldBe an[AuthenticationFailure]
-          e.getMessage.contains(s"Resource owner [${expectedOwner.username}] was not found") should be(true)
+      .recoverWith { case NonFatal(e) =>
+        e shouldBe an[AuthenticationFailure]
+        e.getMessage.contains(s"Resource owner [${expectedOwner.username}] was not found") should be(true)
       }
   }
 

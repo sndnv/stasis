@@ -44,11 +44,10 @@ class DefaultServerBootstrapEndpointClientSpec extends AsyncUnitSpec {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e: ServerBootstrapFailure) =>
-          e.getMessage should be(
-            "Server bootstrap request unmarshalling failed with: [Unsupported Content-Type [Some(text/plain; charset=UTF-8)], supported: application/json]"
-          )
+      .recover { case NonFatal(e: ServerBootstrapFailure) =>
+        e.getMessage should be(
+          "Server bootstrap request unmarshalling failed with: [Unsupported Content-Type [Some(text/plain; charset=UTF-8)], supported: application/json]"
+        )
       }
   }
 
@@ -65,11 +64,10 @@ class DefaultServerBootstrapEndpointClientSpec extends AsyncUnitSpec {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e: ServerBootstrapFailure) =>
-          e.getMessage should be(
-            s"Server bootstrap request failed with [$status]: [$message]"
-          )
+      .recover { case NonFatal(e: ServerBootstrapFailure) =>
+        e.getMessage should be(
+          s"Server bootstrap request failed with [$status]: [$message]"
+        )
       }
   }
 
@@ -94,10 +92,9 @@ class DefaultServerBootstrapEndpointClientSpec extends AsyncUnitSpec {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e) =>
-          endpoint.bootstrapExecutedCount() should be(0)
-          e.getMessage should startWith("PKIX path building failed")
+      .recover { case NonFatal(e) =>
+        endpoint.bootstrapExecutedCount() should be(0)
+        e.getMessage should startWith("PKIX path building failed")
       }
   }
 

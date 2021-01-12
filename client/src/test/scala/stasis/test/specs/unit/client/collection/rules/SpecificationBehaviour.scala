@@ -47,17 +47,16 @@ trait SpecificationBehaviour { _: UnitSpec with ResourceHelpers =>
         rule5 -> RuleExpectation(excluded = 0, included = acChildFiles + acChildDirs + workRoot),
         rule6 -> RuleExpectation(excluded = parent0Files + parent0Dirs, included = 0),
         rule7 -> RuleExpectation(excluded = qFiles, included = 0)
-      ).zipWithIndex.map {
-        case ((rule, expectations), lineNumber) => (Rule(line = rule, lineNumber = lineNumber).get, expectations)
+      ).zipWithIndex.map { case ((rule, expectations), lineNumber) =>
+        (Rule(line = rule, lineNumber = lineNumber).get, expectations)
       }
 
-      rules.foreach {
-        case (rule, expectation) =>
-          val spec = Specification(Seq(rule), filesystem)
-          withClue(s"Specification for rule [${rule.original.line}] on line [${rule.original.lineNumber}]") {
-            spec.excluded.size should be(expectation.excluded)
-            spec.included.size should be(expectation.included)
-          }
+      rules.foreach { case (rule, expectation) =>
+        val spec = Specification(Seq(rule), filesystem)
+        withClue(s"Specification for rule [${rule.original.line}] on line [${rule.original.lineNumber}]") {
+          spec.excluded.size should be(expectation.excluded)
+          spec.included.size should be(expectation.included)
+        }
       }
 
       val spec = Specification(rules = rules.map(_._1), filesystem = filesystem)

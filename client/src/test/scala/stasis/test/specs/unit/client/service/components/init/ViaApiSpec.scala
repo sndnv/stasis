@@ -21,10 +21,9 @@ class ViaApiSpec extends AsyncUnitSpec with ScalatestRouteTest {
       InitState.Failed(cause = "api", message = "failure") -> """{"startup":"failed","cause":"api","message":"failure"}"""
     )
 
-    states.foreach {
-      case (state, json) =>
-        initStateFormat.writes(state).toString should be(json)
-        initStateFormat.reads(Json.parse(json)).asOpt should be(Some(state))
+    states.foreach { case (state, json) =>
+      initStateFormat.writes(state).toString should be(json)
+      initStateFormat.reads(Json.parse(json)).asOpt should be(Some(state))
     }
 
     succeed

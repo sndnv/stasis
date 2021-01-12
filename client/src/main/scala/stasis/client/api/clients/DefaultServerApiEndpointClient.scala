@@ -304,15 +304,14 @@ object DefaultServerApiEndpointClient {
 
         Unmarshal(response)
           .to[M]
-          .recoverWith {
-            case NonFatal(e) =>
-              val _ = response.entity.dataBytes.runWith(Sink.cancelled[ByteString])
-              Future.failed(
-                new ServerApiFailure(
-                  status = StatusCodes.InternalServerError,
-                  message = s"Server API request unmarshalling failed with: [${e.getMessage}]"
-                )
+          .recoverWith { case NonFatal(e) =>
+            val _ = response.entity.dataBytes.runWith(Sink.cancelled[ByteString])
+            Future.failed(
+              new ServerApiFailure(
+                status = StatusCodes.InternalServerError,
+                message = s"Server API request unmarshalling failed with: [${e.getMessage}]"
               )
+            )
           }
       } else {
         Unmarshal(response)
@@ -330,14 +329,13 @@ object DefaultServerApiEndpointClient {
 
   implicit class HttpResponseWithTransformedFailures(op: => Future[HttpResponse]) {
     def transformClientFailures()(implicit ec: ExecutionContext): Future[HttpResponse] =
-      op.recoverWith {
-        case NonFatal(e: ClientFailure) =>
-          Future.failed(
-            new ServerApiFailure(
-              status = StatusCodes.InternalServerError,
-              message = e.getMessage
-            )
+      op.recoverWith { case NonFatal(e: ClientFailure) =>
+        Future.failed(
+          new ServerApiFailure(
+            status = StatusCodes.InternalServerError,
+            message = e.getMessage
           )
+        )
       }
   }
 }

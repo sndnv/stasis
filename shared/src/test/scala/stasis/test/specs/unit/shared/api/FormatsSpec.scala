@@ -34,10 +34,9 @@ class FormatsSpec extends UnitSpec {
       Permission.Manage.Service -> "\"manage-service\""
     )
 
-    permissions.foreach {
-      case (permission, json) =>
-        permissionFormat.writes(permission).toString should be(json)
-        permissionFormat.reads(Json.parse(json)).asOpt should be(Some(permission))
+    permissions.foreach { case (permission, json) =>
+      permissionFormat.writes(permission).toString should be(json)
+      permissionFormat.reads(Json.parse(json)).asOpt should be(Some(permission))
     }
   }
 
@@ -48,10 +47,9 @@ class FormatsSpec extends UnitSpec {
       "all" -> (DatasetDefinition.Retention.Policy.All, "{\"policy_type\":\"all\"}")
     )
 
-    policies.foreach {
-      case (_, (policy, json)) =>
-        retentionPolicyFormat.writes(policy).toString should be(json)
-        retentionPolicyFormat.reads(Json.parse(json)).asOpt should be(Some(policy))
+    policies.foreach { case (_, (policy, json)) =>
+      retentionPolicyFormat.writes(policy).toString should be(json)
+      retentionPolicyFormat.reads(Json.parse(json)).asOpt should be(Some(policy))
     }
   }
 
@@ -104,10 +102,9 @@ class FormatsSpec extends UnitSpec {
       )
     )
 
-    requests.foreach {
-      case (_, (request, json)) =>
-        createNodeFormat.writes(request).toString should be(json)
-        createNodeFormat.reads(Json.parse(json)).asOpt should be(Some(request))
+    requests.foreach { case (_, (request, json)) =>
+      createNodeFormat.writes(request).toString should be(json)
+      createNodeFormat.reads(Json.parse(json)).asOpt should be(Some(request))
     }
   }
 
@@ -127,10 +124,9 @@ class FormatsSpec extends UnitSpec {
       )
     )
 
-    requests.foreach {
-      case (_, (request, json)) =>
-        updateNodeFormat.writes(request).toString should be(json)
-        updateNodeFormat.reads(Json.parse(json)).asOpt should be(Some(request))
+    requests.foreach { case (_, (request, json)) =>
+      updateNodeFormat.writes(request).toString should be(json)
+      updateNodeFormat.reads(Json.parse(json)).asOpt should be(Some(request))
     }
   }
 
@@ -164,10 +160,9 @@ class FormatsSpec extends UnitSpec {
       Operation.Type.GarbageCollection -> "\"server-garbage-collection\""
     )
 
-    operationTypes.foreach {
-      case (operationType, json) =>
-        operationTypeFormat.writes(operationType).toString should be(json)
-        operationTypeFormat.reads(Json.parse(json)).asOpt should be(Some(operationType))
+    operationTypes.foreach { case (operationType, json) =>
+      operationTypeFormat.writes(operationType).toString should be(json)
+      operationTypeFormat.reads(Json.parse(json)).asOpt should be(Some(operationType))
     }
   }
 }

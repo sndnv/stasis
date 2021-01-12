@@ -38,8 +38,8 @@ object InsecureX509TrustManager {
 
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def requireX509TrustManager(fromFactory: TrustManagerFactory): X509TrustManager =
-    fromFactory.getTrustManagers.collectFirst {
-      case trustManager: X509TrustManager => trustManager
+    fromFactory.getTrustManagers.collectFirst { case trustManager: X509TrustManager =>
+      trustManager
     } match {
       case Some(defaultTrustManager) => defaultTrustManager
       case None                      => throw new IllegalStateException("No X.509 trust manager found")

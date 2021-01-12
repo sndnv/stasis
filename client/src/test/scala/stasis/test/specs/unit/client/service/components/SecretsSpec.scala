@@ -53,12 +53,11 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       }
     ).map { result =>
       fail(s"Unexpected result received: [$result]")
-    }.recover {
-      case NonFatal(e: ServiceStartupFailure) =>
-        endpoint.stop()
+    }.recover { case NonFatal(e: ServiceStartupFailure) =>
+      endpoint.stop()
 
-        e.cause should be("credentials")
-        e.message should be("RuntimeException: test failure")
+      e.cause should be("credentials")
+      e.message should be("RuntimeException: test failure")
     }
   }
 
@@ -77,12 +76,11 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       }
     ).map { result =>
       fail(s"Unexpected result received: [$result]")
-    }.recover {
-      case NonFatal(e: ServiceStartupFailure) =>
-        endpoint.stop()
+    }.recover { case NonFatal(e: ServiceStartupFailure) =>
+      endpoint.stop()
 
-        e.cause should be("file")
-        e.message should include(s"FileNotFoundException: File [${Files.DeviceSecret}] not found")
+      e.cause should be("file")
+      e.message should include(s"FileNotFoundException: File [${Files.DeviceSecret}] not found")
     }
   }
 
@@ -101,12 +99,11 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       }
     ).map { result =>
       fail(s"Unexpected result received: [$result]")
-    }.recover {
-      case NonFatal(e: ServiceStartupFailure) =>
-        endpoint.stop()
+    }.recover { case NonFatal(e: ServiceStartupFailure) =>
+      endpoint.stop()
 
-        e.cause should be("credentials")
-        e.message should include("BadTagException")
+      e.cause should be("credentials")
+      e.message should include("BadTagException")
     }
   }
 
@@ -126,12 +123,11 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       }
     ).map { result =>
       fail(s"Unexpected result received: [$result]")
-    }.recover {
-      case NonFatal(e: ServiceStartupFailure) =>
-        endpoint.stop()
+    }.recover { case NonFatal(e: ServiceStartupFailure) =>
+      endpoint.stop()
 
-        e.cause should be("token")
-        e.message should include("400 Bad Request")
+      e.cause should be("token")
+      e.message should include("400 Bad Request")
     }
   }
 
@@ -151,12 +147,11 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       }
     ).map { result =>
       fail(s"Unexpected result received: [$result]")
-    }.recover {
-      case NonFatal(e: ServiceStartupFailure) =>
-        endpoint.stop()
+    }.recover { case NonFatal(e: ServiceStartupFailure) =>
+      endpoint.stop()
 
-        e.cause should be("token")
-        e.message should include("400 Bad Request")
+      e.cause should be("token")
+      e.message should include("400 Bad Request")
     }
   }
 

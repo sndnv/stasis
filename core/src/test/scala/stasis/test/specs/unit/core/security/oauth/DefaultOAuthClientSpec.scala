@@ -141,10 +141,9 @@ class DefaultOAuthClientSpec extends AsyncUnitSpec with BeforeAndAfterAll {
       .map { response =>
         fail(s"Unexpected response received: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should startWith("Failed to retrieve token")
-          e.getMessage should include("Connection refused")
+      .recover { case NonFatal(e) =>
+        e.getMessage should startWith("Failed to retrieve token")
+        e.getMessage should include("Connection refused")
       }
   }
 
@@ -162,11 +161,10 @@ class DefaultOAuthClientSpec extends AsyncUnitSpec with BeforeAndAfterAll {
       .map { response =>
         fail(s"Unexpected response received: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          endpoint.stop()
-          e.getMessage should startWith("Failed to unmarshal response [200 OK]")
-          e.getMessage should include("Unsupported Content-Type")
+      .recover { case NonFatal(e) =>
+        endpoint.stop()
+        e.getMessage should startWith("Failed to unmarshal response [200 OK]")
+        e.getMessage should include("Unsupported Content-Type")
       }
   }
 
@@ -185,12 +183,11 @@ class DefaultOAuthClientSpec extends AsyncUnitSpec with BeforeAndAfterAll {
       .map { response =>
         fail(s"Unexpected response received: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          endpoint.stop()
-          e.getMessage should startWith(
-            s"Token retrieval from [$tokenEndpoint] failed with [500 Internal Server Error]"
-          )
+      .recover { case NonFatal(e) =>
+        endpoint.stop()
+        e.getMessage should startWith(
+          s"Token retrieval from [$tokenEndpoint] failed with [500 Internal Server Error]"
+        )
       }
   }
 

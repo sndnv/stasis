@@ -33,14 +33,13 @@ object ContainerOps extends AutoCloseSupport {
     }
 
     result
-      .recoverWith {
-        case NonFatal(e) =>
-          Future.failed(
-            new ContainerFailure(
-              s"Failed to create container [${path.toString}]: " +
-                s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
-            )
+      .recoverWith { case NonFatal(e) =>
+        Future.failed(
+          new ContainerFailure(
+            s"Failed to create container [${path.toString}]: " +
+              s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
           )
+        )
       }
   }
 
@@ -49,14 +48,13 @@ object ContainerOps extends AutoCloseSupport {
   )(implicit ec: ExecutionContext): Future[Done] =
     FileOps
       .destroyFile(path)
-      .recoverWith {
-        case NonFatal(e) =>
-          Future.failed(
-            new ContainerFailure(
-              s"Failed to destroy container [${path.toString}]: " +
-                s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
-            )
+      .recoverWith { case NonFatal(e) =>
+        Future.failed(
+          new ContainerFailure(
+            s"Failed to destroy container [${path.toString}]: " +
+              s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
           )
+        )
       }
 
   def exists(path: Path)(implicit ec: ExecutionContext, byteOrder: ByteOrder): Future[Boolean] =
@@ -78,23 +76,21 @@ object ContainerOps extends AutoCloseSupport {
         val containerHeaderSize = chunkEntrySize
         val expectedChunks = (Files.size(path) - containerHeaderSize) / chunkEntrySize
 
-        readChunkHeaders(path, chunkEntrySize, expectedChunks).map {
-          case (chunks, failed) =>
-            Container.Index(
-              container = containerHeader,
-              crates = chunks.groupBy(_.header.crateId),
-              failed = failed
-            )
+        readChunkHeaders(path, chunkEntrySize, expectedChunks).map { case (chunks, failed) =>
+          Container.Index(
+            container = containerHeader,
+            crates = chunks.groupBy(_.header.crateId),
+            failed = failed
+          )
         }
       }
-      .recoverWith {
-        case NonFatal(e) =>
-          Future.failed(
-            new ContainerFailure(
-              s"Failed to load container [${path.toString}]: " +
-                s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
-            )
+      .recoverWith { case NonFatal(e) =>
+        Future.failed(
+          new ContainerFailure(
+            s"Failed to load container [${path.toString}]: " +
+              s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
           )
+        )
       }
 
   def put(
@@ -111,21 +107,20 @@ object ContainerOps extends AutoCloseSupport {
           crateData
             .grouped(containerHeader.maxChunkSize)
             .zipWithIndex
-            .foreach {
-              case (chunk, index) =>
-                val header = ChunkHeader(
-                  crateId = crate,
-                  chunkId = index,
-                  chunkSize = chunk.length
-                )
+            .foreach { case (chunk, index) =>
+              val header = ChunkHeader(
+                crateId = crate,
+                chunkId = index,
+                chunkSize = chunk.length
+              )
 
-                buffer
-                  .put(ChunkHeader.toBytes(header))
-                  .put(chunk.padTo(containerHeader.maxChunkSize, 0: Byte).toArray)
+              buffer
+                .put(ChunkHeader.toBytes(header))
+                .put(chunk.padTo(containerHeader.maxChunkSize, 0: Byte).toArray)
 
-                stream.write(buffer.array())
+              stream.write(buffer.array())
 
-                buffer.clear()
+              buffer.clear()
             }
 
           stream.flush()
@@ -133,14 +128,13 @@ object ContainerOps extends AutoCloseSupport {
           Done
         }
       }
-      .recoverWith {
-        case NonFatal(e) =>
-          Future.failed(
-            new ContainerFailure(
-              s"Failed to read container header [${path.toString}]: " +
-                s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
-            )
+      .recoverWith { case NonFatal(e) =>
+        Future.failed(
+          new ContainerFailure(
+            s"Failed to read container header [${path.toString}]: " +
+              s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
           )
+        )
       }
 
   def get(
@@ -152,13 +146,12 @@ object ContainerOps extends AutoCloseSupport {
         val buffer = ByteBuffer.allocate(index.container.maxChunkSize).order(byteOrder)
 
         using(new RandomAccessFile(path.toFile, "r")) { container =>
-          val crateChunks = chunks.map {
-            case CrateChunkDescriptor(chunkHeader, dataStartOffset) =>
-              container.seek(dataStartOffset)
-              container.readFully(buffer.array(), 0, chunkHeader.chunkSize)
-              val chunk = ByteString.fromArray(buffer.array(), 0, chunkHeader.chunkSize)
-              buffer.clear()
-              chunk
+          val crateChunks = chunks.map { case CrateChunkDescriptor(chunkHeader, dataStartOffset) =>
+            container.seek(dataStartOffset)
+            container.readFully(buffer.array(), 0, chunkHeader.chunkSize)
+            val chunk = ByteString.fromArray(buffer.array(), 0, chunkHeader.chunkSize)
+            buffer.clear()
+            chunk
           }
 
           crateChunks.reduceOption(_.concat(_))
@@ -175,11 +168,10 @@ object ContainerOps extends AutoCloseSupport {
       .flatMap { sourceIndex =>
         Future
           .sequence(
-            sourceIndex.crates.map {
-              case (crate, chunks) =>
-                CrateChunkSource(source, sourceIndex.container.maxChunkSize, chunks)
-                  .filter(chunk => p(chunk.header))
-                  .runWith(CrateChunkSink(target, crate, sourceIndex.container.maxChunkSize))
+            sourceIndex.crates.map { case (crate, chunks) =>
+              CrateChunkSource(source, sourceIndex.container.maxChunkSize, chunks)
+                .filter(chunk => p(chunk.header))
+                .runWith(CrateChunkSink(target, crate, sourceIndex.container.maxChunkSize))
             }
           )
       }
@@ -194,14 +186,13 @@ object ContainerOps extends AutoCloseSupport {
       require(occupiedChunks >= 0, "Provided container is not valid")
 
       occupiedChunks.toInt
-    }.recoverWith {
-      case NonFatal(e) =>
-        Future.failed(
-          new ContainerFailure(
-            s"Failed to calculate occupied chunks for container [${path.toString}]: " +
-              s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
-          )
+    }.recoverWith { case NonFatal(e) =>
+      Future.failed(
+        new ContainerFailure(
+          s"Failed to calculate occupied chunks for container [${path.toString}]: " +
+            s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
         )
+      )
     }
 
   private def readChunkHeaders(
@@ -230,14 +221,12 @@ object ContainerOps extends AutoCloseSupport {
               (entry, dataStartOffset, parsed)
             }
 
-        val chunks = chunkEntries.collect {
-          case (_, dataStartOffset, Right(header)) =>
-            CrateChunkDescriptor(header, dataStartOffset)
+        val chunks = chunkEntries.collect { case (_, dataStartOffset, Right(header)) =>
+          CrateChunkDescriptor(header, dataStartOffset)
         }
 
-        val failed = chunkEntries.collect {
-          case (entry, _, Left(e)) =>
-            (entry, e.getMessage)
+        val failed = chunkEntries.collect { case (entry, _, Left(e)) =>
+          (entry, e.getMessage)
         }.toMap
 
         (chunks, failed)

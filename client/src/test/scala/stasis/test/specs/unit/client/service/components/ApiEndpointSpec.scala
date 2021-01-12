@@ -140,10 +140,9 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
       }
     ).map { result =>
       fail(s"Unexpected result received: [$result]")
-    }.recover {
-      case NonFatal(e: ServiceStartupFailure) =>
-        e.cause should be("file")
-        e.message should include(s"File [${Files.ApiToken}] could not be created")
+    }.recover { case NonFatal(e: ServiceStartupFailure) =>
+      e.cause should be("file")
+      e.message should include(s"File [${Files.ApiToken}] could not be created")
     }
   }
 
@@ -183,10 +182,9 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e: ServiceStartupFailure) =>
-          e.cause should be("api")
-          e.message should include("SocketException: Permission denied")
+      .recover { case NonFatal(e: ServiceStartupFailure) =>
+        e.cause should be("api")
+        e.message should include("SocketException: Permission denied")
       }
   }
 

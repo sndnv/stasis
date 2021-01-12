@@ -72,10 +72,9 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
         authenticator.authenticate(credentials = OAuth2BearerToken(accessToken.token.value))
       }
       .map(result => fail(s"Unexpected result received: [$result]"))
-      .recoverWith {
-        case NonFatal(e) =>
-          e shouldBe an[AuthenticationFailure]
-          e.getMessage.contains(s"Resource owner [${expectedOwner.username}] is not active") should be(true)
+      .recoverWith { case NonFatal(e) =>
+        e shouldBe an[AuthenticationFailure]
+        e.getMessage.contains(s"Resource owner [${expectedOwner.username}] is not active") should be(true)
       }
   }
 
@@ -105,10 +104,9 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
         authenticator.authenticate(credentials = OAuth2BearerToken(accessToken.token.value))
       }
       .map(result => fail(s"Unexpected result received: [$result]"))
-      .recoverWith {
-        case NonFatal(e) =>
-          e shouldBe an[AuthenticationFailure]
-          e.getMessage.contains(s"Expected $invalidAudience as an aud value") should be(true)
+      .recoverWith { case NonFatal(e) =>
+        e shouldBe an[AuthenticationFailure]
+        e.getMessage.contains(s"Expected $invalidAudience as an aud value") should be(true)
       }
   }
 
@@ -133,10 +131,9 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
     authenticator
       .authenticate(credentials = OAuth2BearerToken(accessToken.token.value))
       .map(result => fail(s"Unexpected result received: [$result]"))
-      .recoverWith {
-        case NonFatal(e) =>
-          e shouldBe an[AuthenticationFailure]
-          e.getMessage.contains(s"Resource owner [${expectedOwner.username}] not found") should be(true)
+      .recoverWith { case NonFatal(e) =>
+        e shouldBe an[AuthenticationFailure]
+        e.getMessage.contains(s"Resource owner [${expectedOwner.username}] not found") should be(true)
       }
   }
 

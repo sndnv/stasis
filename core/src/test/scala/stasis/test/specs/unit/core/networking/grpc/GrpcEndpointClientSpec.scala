@@ -2,7 +2,6 @@ package stasis.test.specs.unit.core.networking.grpc
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.ConnectionContext
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.typesafe.config.{Config, ConfigFactory}
@@ -54,14 +53,13 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Reservation on endpoint [${endpointAddress.host}] failed for crate [${testManifest.crate}]: " +
-              s"[Reservation rejected for node [$testNode]]"
-          )
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Reservation on endpoint [${endpointAddress.host}] failed for crate [${testManifest.crate}]: " +
+            s"[Reservation rejected for node [$testNode]]"
+        )
+        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
+        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
       }
   }
 
@@ -85,14 +83,13 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Push to endpoint [${endpointAddress.host}] failed for crate [${testManifest.crate}]: " +
-              s"[Push failed for node [$testNode]: [PersistenceFailure: [persistDisabled] is set to [true]]]"
-          )
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
-          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(1)
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Push to endpoint [${endpointAddress.host}] failed for crate [${testManifest.crate}]: " +
+            s"[Push failed for node [$testNode]: [PersistenceFailure: [persistDisabled] is set to [true]]]"
+        )
+        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
+        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(1)
       }
   }
 
@@ -133,9 +130,8 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       client.pull(endpointAddress, testManifest.crate).flatMap {
         case Some(source) =>
           source
-            .runFold(ByteString.empty) {
-              case (folded, chunk) =>
-                folded.concat(chunk)
+            .runFold(ByteString.empty) { case (folded, chunk) =>
+              folded.concat(chunk)
             }
             .map { result =>
               result.utf8String should be(crateContent)
@@ -184,9 +180,8 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should startWith(s"Pull from endpoint [${endpointAddress.host}] failed for crate [$crateId]")
+      .recover { case NonFatal(e) =>
+        e.getMessage should startWith(s"Pull from endpoint [${endpointAddress.host}] failed for crate [$crateId]")
       }
   }
 
@@ -243,12 +238,11 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Push to endpoint [${endpointAddress.host}] failed for crate [${testManifest.crate}]; " +
-              s"unable to retrieve credentials: [No credentials found for [GrpcEndpointAddress(localhost,$endpointPort,false)]]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Push to endpoint [${endpointAddress.host}] failed for crate [${testManifest.crate}]; " +
+            s"unable to retrieve credentials: [No credentials found for [GrpcEndpointAddress(localhost,$endpointPort,false)]]"
+        )
       }
   }
 
@@ -267,12 +261,11 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Push to endpoint [${endpointAddress.host}] via sink failed for crate [${testManifest.crate}]; " +
-              s"unable to retrieve credentials: [No credentials found for [GrpcEndpointAddress(localhost,$endpointPort,false)]]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Push to endpoint [${endpointAddress.host}] via sink failed for crate [${testManifest.crate}]; " +
+            s"unable to retrieve credentials: [No credentials found for [GrpcEndpointAddress(localhost,$endpointPort,false)]]"
+        )
       }
   }
 
@@ -293,12 +286,11 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Pull from endpoint [${endpointAddress.host}] failed for crate [$crateId]; " +
-              s"unable to retrieve credentials: [No credentials found for [GrpcEndpointAddress(localhost,$endpointPort,false)]]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Pull from endpoint [${endpointAddress.host}] failed for crate [$crateId]; " +
+            s"unable to retrieve credentials: [No credentials found for [GrpcEndpointAddress(localhost,$endpointPort,false)]]"
+        )
       }
   }
 
@@ -340,12 +332,11 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Discard from endpoint [${endpointAddress.host}] failed for crate [$crateId]; " +
-              s"unable to retrieve credentials: [No credentials found for [GrpcEndpointAddress(localhost,$endpointPort,false)]]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Discard from endpoint [${endpointAddress.host}] failed for crate [$crateId]; " +
+            s"unable to retrieve credentials: [No credentials found for [GrpcEndpointAddress(localhost,$endpointPort,false)]]"
+        )
       }
   }
 
@@ -442,7 +433,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       val _ = start(
         interface = "localhost",
         port = port,
-        connectionContext = context.map(_.connection).getOrElse(ConnectionContext.noEncryption())
+        context = context
       )
     }
   }

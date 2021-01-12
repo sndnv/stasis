@@ -122,9 +122,8 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e: ExecutionException) =>
-          e.getCause.getMessage should be("Expiration is not supported")
+      .recover { case NonFatal(e: ExecutionException) =>
+        e.getCause.getMessage should be("Expiration is not supported")
       }
   }
 
@@ -136,9 +135,8 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e: ExecutionException) =>
-          e.getCause.getMessage should be("Validation is not supported")
+      .recover { case NonFatal(e: ExecutionException) =>
+        e.getCause.getMessage should be("Validation is not supported")
       }
   }
 
@@ -150,9 +148,8 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e: ExecutionException) =>
-          e.getCause.getMessage should be("Key rotation is not supported")
+      .recover { case NonFatal(e: ExecutionException) =>
+        e.getCause.getMessage should be("Key rotation is not supported")
       }
   }
 
@@ -178,9 +175,8 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e: OperationExecutionFailure) =>
-          e.getMessage should be(s"Failed to stop [$operation]; operation not found")
+      .recover { case NonFatal(e: OperationExecutionFailure) =>
+        e.getMessage should be(s"Failed to stop [$operation]; operation not found")
       }
   }
 
@@ -249,10 +245,9 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
         .map { result =>
           fail(s"Unexpected result received: [$result]")
         }
-        .recover {
-          case NonFatal(e) =>
-            e.getMessage should startWith("Cannot start [Backup] operation")
-            e.getMessage should include("already active")
+        .recover { case NonFatal(e) =>
+          e.getMessage should startWith("Cannot start [Backup] operation")
+          e.getMessage should include("already active")
         }
     }
   }

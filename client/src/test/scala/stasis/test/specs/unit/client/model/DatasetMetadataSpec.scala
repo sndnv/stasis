@@ -71,11 +71,10 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
           .map { result =>
             fail(s"Unexpected result received: [$result]")
           }
-          .recover {
-            case NonFatal(e: IllegalArgumentException) =>
-              e.getMessage should be(
-                s"Metadata for entity [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] not found"
-              )
+          .recover { case NonFatal(e: IllegalArgumentException) =>
+            e.getMessage should be(
+              s"Metadata for entity [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] not found"
+            )
           }
       _ <-
         metadata
@@ -83,11 +82,10 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
           .map { result =>
             fail(s"Unexpected result received: [$result]")
           }
-          .recover {
-            case NonFatal(e: IllegalArgumentException) =>
-              e.getMessage should be(
-                s"Metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] not found"
-              )
+          .recover { case NonFatal(e: IllegalArgumentException) =>
+            e.getMessage should be(
+              s"Metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] not found"
+            )
           }
     } yield {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved) should be(0)
@@ -226,11 +224,10 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
           .map { result =>
             fail(s"Unexpected result received: [$result]")
           }
-          .recover {
-            case NonFatal(e: IllegalArgumentException) =>
-              e.getMessage should be(
-                s"Required metadata for entity [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] not found"
-              )
+          .recover { case NonFatal(e: IllegalArgumentException) =>
+            e.getMessage should be(
+              s"Required metadata for entity [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] not found"
+            )
           }
       _ <-
         metadata
@@ -238,11 +235,10 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
           .map { result =>
             fail(s"Unexpected result received: [$result]")
           }
-          .recover {
-            case NonFatal(e: IllegalArgumentException) =>
-              e.getMessage should be(
-                s"Required metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] not found"
-              )
+          .recover { case NonFatal(e: IllegalArgumentException) =>
+            e.getMessage should be(
+              s"Required metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] not found"
+            )
           }
     } yield {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved) should be(0)
@@ -305,9 +301,8 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
       .map { other =>
         fail(s"Unexpected result received: [$other]")
       }
-      .recoverWith {
-        case NonFatal(e: IllegalArgumentException) =>
-          e.getMessage should be(s"Cannot decrypt metadata crate [$metadataCrate]; no data provided")
+      .recoverWith { case NonFatal(e: IllegalArgumentException) =>
+        e.getMessage should be(s"Cannot decrypt metadata crate [$metadataCrate]; no data provided")
       }
   }
 

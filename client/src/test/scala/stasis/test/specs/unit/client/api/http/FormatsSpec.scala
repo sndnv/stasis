@@ -34,10 +34,9 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
       FilesystemMetadata.EntityState.Updated -> """{"entity_state":"updated"}"""
     )
 
-    entityStates.foreach {
-      case (state, json) =>
-        entityStateFormat.writes(state).toString should be(json)
-        entityStateFormat.reads(Json.parse(json)).asOpt should be(Some(state))
+    entityStates.foreach { case (state, json) =>
+      entityStateFormat.writes(state).toString should be(json)
+      entityStateFormat.reads(Json.parse(json)).asOpt should be(Some(state))
     }
   }
 
@@ -79,10 +78,9 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
       ) -> s"""{"schedule":"$schedule","assignment_type":"key-rotation"}"""
     )
 
-    assignments.foreach {
-      case (assignment, json) =>
-        scheduleAssignmentFormat.writes(assignment).toString should be(json)
-        scheduleAssignmentFormat.reads(Json.parse(json)).asOpt should be(Some(assignment))
+    assignments.foreach { case (assignment, json) =>
+      scheduleAssignmentFormat.writes(assignment).toString should be(json)
+      scheduleAssignmentFormat.reads(Json.parse(json)).asOpt should be(Some(assignment))
     }
   }
 
@@ -96,10 +94,9 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
       Left(ScheduleRetrievalFailure("test failure")) -> """{"retrieval":"failed","message":"test failure"}"""
     )
 
-    results.foreach {
-      case (result, json) =>
-        activeScheduleRetrievalResultFormat.writes(result).toString should be(json)
-        activeScheduleRetrievalResultFormat.reads(Json.parse(json)).asOpt should be(Some(result))
+    results.foreach { case (result, json) =>
+      activeScheduleRetrievalResultFormat.writes(result).toString should be(json)
+      activeScheduleRetrievalResultFormat.reads(Json.parse(json)).asOpt should be(Some(result))
     }
   }
 
@@ -144,10 +141,9 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
       directoryMetadata -> baseDirectoryMetadataJson.toString
     )
 
-    metadata.foreach {
-      case (entity, json) =>
-        entityMetadataFormat.writes(entity).toString should be(json)
-        entityMetadataFormat.reads(Json.parse(json)).asOpt should be(Some(entity))
+    metadata.foreach { case (entity, json) =>
+      entityMetadataFormat.writes(entity).toString should be(json)
+      entityMetadataFormat.reads(Json.parse(json)).asOpt should be(Some(entity))
     }
   }
 
@@ -157,10 +153,9 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
       Rule.Operation.Exclude -> """"exclude""""
     )
 
-    operations.foreach {
-      case (operation, json) =>
-        ruleOperationFormat.writes(operation).toString should be(json)
-        ruleOperationFormat.reads(Json.parse(json)).asOpt should be(Some(operation))
+    operations.foreach { case (operation, json) =>
+      ruleOperationFormat.writes(operation).toString should be(json)
+      ruleOperationFormat.reads(Json.parse(json)).asOpt should be(Some(operation))
     }
   }
 }

@@ -143,11 +143,10 @@ class UserStoreSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Expected user [${self.id}] not found"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Expected user [${self.id}] not found"
+        )
       }
   }
 

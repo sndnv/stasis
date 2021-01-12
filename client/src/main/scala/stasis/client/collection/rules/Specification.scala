@@ -54,60 +54,59 @@ object Specification {
     apply(rules, filesystem = FileSystems.getDefault)
 
   def apply(rules: Seq[Rule], filesystem: FileSystem): Specification =
-    rules.foldLeft(Specification.empty) {
-      case (spec, rule) =>
-        val ruleDirectory = if (rule.directory.endsWith(filesystem.getSeparator)) {
-          rule.directory
+    rules.foldLeft(Specification.empty) { case (spec, rule) =>
+      val ruleDirectory = if (rule.directory.endsWith(filesystem.getSeparator)) {
+        rule.directory
+      } else {
+        s"${rule.directory}${filesystem.getSeparator}"
+      }
+
+      val directory = filesystem.getPath(ruleDirectory)
+
+      val matcher = filesystem.getPathMatcher(s"glob:$ruleDirectory${rule.pattern}")
+
+      try {
+        val matchesStream = Files
+          .walk(directory, Seq.empty[FileVisitOption]: _*)
+          .filter(path => matcher.matches(path))
+
+        val matches =
+          try {
+            matchesStream.iterator.asScala.toList
+          } finally {
+            matchesStream.close()
+          }
+
+        if (matches.isEmpty) {
+          spec.copy(unmatched = spec.unmatched :+ (rule, new RuleMatchingFailure("Rule matched no files")))
         } else {
-          s"${rule.directory}${filesystem.getSeparator}"
-        }
+          val updatedFiles = matches
+            .map { file =>
+              val entry = spec.entries.get(file) match {
+                case Some(existing) =>
+                  existing.copy(
+                    operation = rule.operation,
+                    reason = existing.reason :+ Entry.Explanation(rule.operation, rule.original)
+                  )
 
-        val directory = filesystem.getPath(ruleDirectory)
-
-        val matcher = filesystem.getPathMatcher(s"glob:$ruleDirectory${rule.pattern}")
-
-        try {
-          val matchesStream = Files
-            .walk(directory, Seq.empty[FileVisitOption]: _*)
-            .filter(path => matcher.matches(path))
-
-          val matches =
-            try {
-              matchesStream.iterator.asScala.toList
-            } finally {
-              matchesStream.close()
-            }
-
-          if (matches.isEmpty) {
-            spec.copy(unmatched = spec.unmatched :+ (rule, new RuleMatchingFailure("Rule matched no files")))
-          } else {
-            val updatedFiles = matches
-              .map { file =>
-                val entry = spec.entries.get(file) match {
-                  case Some(existing) =>
-                    existing.copy(
-                      operation = rule.operation,
-                      reason = existing.reason :+ Entry.Explanation(rule.operation, rule.original)
-                    )
-
-                  case None =>
-                    Entry(
-                      file = file,
-                      directory = directory,
-                      operation = rule.operation,
-                      reason = Seq(Entry.Explanation(rule.operation, rule.original))
-                    )
-                }
-
-                file -> entry
+                case None =>
+                  Entry(
+                    file = file,
+                    directory = directory,
+                    operation = rule.operation,
+                    reason = Seq(Entry.Explanation(rule.operation, rule.original))
+                  )
               }
 
-            spec.copy(entries = spec.entries ++ updatedFiles)
-          }
-        } catch {
-          case NonFatal(e) =>
-            spec.copy(unmatched = spec.unmatched :+ (rule, e))
+              file -> entry
+            }
+
+          spec.copy(entries = spec.entries ++ updatedFiles)
         }
+      } catch {
+        case NonFatal(e) =>
+          spec.copy(unmatched = spec.unmatched :+ (rule, e))
+      }
     }
 
   def collectRelativeParents(from: Path, to: Path): Seq[Path] = {

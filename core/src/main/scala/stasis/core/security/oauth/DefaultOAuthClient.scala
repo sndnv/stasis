@@ -84,10 +84,9 @@ class DefaultOAuthClient(
         request = request.addCredentials(credentials),
         connectionContext = clientContext
       )
-      .recoverWith {
-        case NonFatal(e) =>
-          val message = s"Failed to retrieve token from [$tokenEndpoint]: [${e.getClass.getSimpleName}: ${e.getMessage}]"
-          Future.failed(ProviderFailure(message))
+      .recoverWith { case NonFatal(e) =>
+        val message = s"Failed to retrieve token from [$tokenEndpoint]: [${e.getClass.getSimpleName}: ${e.getMessage}]"
+        Future.failed(ProviderFailure(message))
       }
       .flatMap {
         case HttpResponse(code, _, entity, _) if code.isSuccess() =>
@@ -95,12 +94,11 @@ class DefaultOAuthClient(
 
           Unmarshal(entity)
             .to[AccessTokenResponse]
-            .recoverWith {
-              case NonFatal(e) =>
-                val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
-                val message = s"Failed to unmarshal response [${code.value}] from [$tokenEndpoint]: " +
-                  s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
-                Future.failed(ProviderFailure(message))
+            .recoverWith { case NonFatal(e) =>
+              val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
+              val message = s"Failed to unmarshal response [${code.value}] from [$tokenEndpoint]: " +
+                s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
+              Future.failed(ProviderFailure(message))
             }
 
         case HttpResponse(code, _, entity, _) =>

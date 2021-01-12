@@ -68,12 +68,11 @@ class RuleSpec extends UnitSpec {
       ""
     )
 
-    validDirectoryPatternRules.foreach {
-      case (rule, (directory, pattern)) =>
-        val actualDirectoryPattern = Rule.extractDirectoryPattern(rule, lineNumber = 0)
-        withClue(s"Extracted directory/pattern rule [$rule] to [$actualDirectoryPattern]") {
-          actualDirectoryPattern should be(Success((directory, pattern)))
-        }
+    validDirectoryPatternRules.foreach { case (rule, (directory, pattern)) =>
+      val actualDirectoryPattern = Rule.extractDirectoryPattern(rule, lineNumber = 0)
+      withClue(s"Extracted directory/pattern rule [$rule] to [$actualDirectoryPattern]") {
+        actualDirectoryPattern should be(Success((directory, pattern)))
+      }
     }
 
     invalidDirectoryPatternsRules.foreach { rule =>
@@ -136,13 +135,12 @@ class RuleSpec extends UnitSpec {
       ""
     )
 
-    validRules.foreach {
-      case (ruleString, expectedRule) =>
-        withClue(s"Parsing valid rule [$ruleString]") {
-          Rule(line = ruleString, lineNumber = 0) should be(
-            Success(expectedRule.copy(original = Rule.Original(line = ruleString, lineNumber = 0)))
-          )
-        }
+    validRules.foreach { case (ruleString, expectedRule) =>
+      withClue(s"Parsing valid rule [$ruleString]") {
+        Rule(line = ruleString, lineNumber = 0) should be(
+          Success(expectedRule.copy(original = Rule.Original(line = ruleString, lineNumber = 0)))
+        )
+      }
     }
 
     invalidRules.foreach { ruleString =>

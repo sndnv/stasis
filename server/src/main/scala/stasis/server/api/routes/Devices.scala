@@ -33,27 +33,25 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
             }
           },
           post {
-            entity(as[CreateDevicePrivileged]) {
-              createRequest =>
-                resources[UserStore.View.Privileged, DeviceStore.Manage.Privileged] {
-                  (userView, deviceManage) =>
-                    userView.get(createRequest.owner).flatMap {
-                      case Some(owner) =>
-                        val device = createRequest.toDevice(owner)
-                        deviceManage.create(device).map { _ =>
-                          log.debugN("User [{}] successfully created device [{}]", currentUser, device.id)
-                          complete(CreatedDevice(device.id))
-                        }
-
-                      case None =>
-                        log.warnN(
-                          "User [{}] failed to retrieve device owner data for user [{}]",
-                          currentUser,
-                          createRequest.owner
-                        )
-                        Future.successful(complete(StatusCodes.BadRequest))
+            entity(as[CreateDevicePrivileged]) { createRequest =>
+              resources[UserStore.View.Privileged, DeviceStore.Manage.Privileged] { (userView, deviceManage) =>
+                userView.get(createRequest.owner).flatMap {
+                  case Some(owner) =>
+                    val device = createRequest.toDevice(owner)
+                    deviceManage.create(device).map { _ =>
+                      log.debugN("User [{}] successfully created device [{}]", currentUser, device.id)
+                      complete(CreatedDevice(device.id))
                     }
+
+                  case None =>
+                    log.warnN(
+                      "User [{}] failed to retrieve device owner data for user [{}]",
+                      currentUser,
+                      createRequest.owner
+                    )
+                    Future.successful(complete(StatusCodes.BadRequest))
                 }
+              }
             }
           }
         )
@@ -120,75 +118,72 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                 }
               },
               post {
-                entity(as[CreateDeviceOwn]) {
-                  createRequest =>
-                    resources[UserStore.View.Self, DeviceStore.Manage.Self] {
-                      (userView, deviceManage) =>
-                        userView.get(currentUser).flatMap {
-                          case Some(owner) =>
-                            val device = createRequest.toDevice(owner)
-                            deviceManage.create(currentUser, device).map { _ =>
-                              log.debugN("User [{}] successfully created device [{}]", currentUser, device.id)
-                              complete(CreatedDevice(device.id))
-                            }
-
-                          case None =>
-                            log.warnN("User [{}] failed to retrieve own data", currentUser)
-                            Future.successful(complete(StatusCodes.BadRequest))
+                entity(as[CreateDeviceOwn]) { createRequest =>
+                  resources[UserStore.View.Self, DeviceStore.Manage.Self] { (userView, deviceManage) =>
+                    userView.get(currentUser).flatMap {
+                      case Some(owner) =>
+                        val device = createRequest.toDevice(owner)
+                        deviceManage.create(currentUser, device).map { _ =>
+                          log.debugN("User [{}] successfully created device [{}]", currentUser, device.id)
+                          complete(CreatedDevice(device.id))
                         }
+
+                      case None =>
+                        log.warnN("User [{}] failed to retrieve own data", currentUser)
+                        Future.successful(complete(StatusCodes.BadRequest))
                     }
+                  }
                 }
               }
             )
           },
-          pathPrefix(JavaUUID) {
-            deviceId =>
-              concat(
-                pathEndOrSingleSlash {
-                  concat(
-                    get {
-                      resource[DeviceStore.View.Self] { view =>
-                        view.get(currentUser, deviceId).map {
-                          case Some(device) =>
-                            log.debugN("User [{}] successfully retrieved device [{}]", currentUser, deviceId)
-                            discardEntity & complete(device)
+          pathPrefix(JavaUUID) { deviceId =>
+            concat(
+              pathEndOrSingleSlash {
+                concat(
+                  get {
+                    resource[DeviceStore.View.Self] { view =>
+                      view.get(currentUser, deviceId).map {
+                        case Some(device) =>
+                          log.debugN("User [{}] successfully retrieved device [{}]", currentUser, deviceId)
+                          discardEntity & complete(device)
 
-                          case None =>
-                            log.warnN("User [{}] failed to retrieve device [{}]", currentUser, deviceId)
-                            discardEntity & complete(StatusCodes.NotFound)
-                        }
-                      }
-                    },
-                    delete {
-                      resource[DeviceStore.Manage.Self] { manage =>
-                        manage.delete(currentUser, deviceId).map { deleted =>
-                          if (deleted) {
-                            log.debugN("User [{}] successfully deleted device [{}]", currentUser, deviceId)
-                          } else {
-                            log.warnN("User [{}] failed to delete device [{}]", currentUser, deviceId)
-                          }
-
-                          discardEntity & complete(DeletedDevice(existing = deleted))
-                        }
+                        case None =>
+                          log.warnN("User [{}] failed to retrieve device [{}]", currentUser, deviceId)
+                          discardEntity & complete(StatusCodes.NotFound)
                       }
                     }
-                  )
-                },
-                path("limits") {
-                  put {
-                    entity(as[UpdateDeviceLimits]) { updateRequest =>
-                      updateOwn(updateRequest, deviceId)
+                  },
+                  delete {
+                    resource[DeviceStore.Manage.Self] { manage =>
+                      manage.delete(currentUser, deviceId).map { deleted =>
+                        if (deleted) {
+                          log.debugN("User [{}] successfully deleted device [{}]", currentUser, deviceId)
+                        } else {
+                          log.warnN("User [{}] failed to delete device [{}]", currentUser, deviceId)
+                        }
+
+                        discardEntity & complete(DeletedDevice(existing = deleted))
+                      }
                     }
                   }
-                },
-                path("state") {
-                  put {
-                    entity(as[UpdateDeviceState]) { updateRequest =>
-                      updateOwn(updateRequest, deviceId)
-                    }
+                )
+              },
+              path("limits") {
+                put {
+                  entity(as[UpdateDeviceLimits]) { updateRequest =>
+                    updateOwn(updateRequest, deviceId)
                   }
                 }
-              )
+              },
+              path("state") {
+                put {
+                  entity(as[UpdateDeviceState]) { updateRequest =>
+                    updateOwn(updateRequest, deviceId)
+                  }
+                }
+              }
+            )
           }
         )
       }

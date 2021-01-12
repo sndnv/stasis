@@ -5,7 +5,7 @@ import subprocess
 import sys
 
 identity_ui_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-identity_ui_image = 'stasis-identity-ui:latest'
+identity_ui_image = 'stasis-identity-ui:dev-latest'
 
 result = subprocess.run(
     [
@@ -19,4 +19,3 @@ result = subprocess.run(
 ).returncode
 
 sys.exit(result)
-

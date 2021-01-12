@@ -106,11 +106,10 @@ class ContainerSpec extends AsyncUnitSpec with BeforeAndAfter {
       .map { _ =>
         fail("Received unexpected successful result")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Cannot put crate [$testCrate] in container [$containerPath]; not enough storage available"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Cannot put crate [$testCrate] in container [$containerPath]; not enough storage available"
+        )
       }
   }
 
@@ -230,11 +229,10 @@ class ContainerSpec extends AsyncUnitSpec with BeforeAndAfter {
       .map { _ =>
         fail("Received unexpected successful result")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Cannot create sink for crate [$testCrate] in container [$containerPath]; not enough storage available"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Cannot create sink for crate [$testCrate] in container [$containerPath]; not enough storage available"
+        )
       }
   }
 
@@ -348,21 +346,19 @@ class ContainerSpec extends AsyncUnitSpec with BeforeAndAfter {
     for {
       _ <- container.create()
       crateData <- Future.sequence(
-        testCrates.map {
-          case (crate, data) =>
-            container
-              .put(crate, data)
-              .flatMap(_ => container.get(crate))
-              .map(result => (result, data))
+        testCrates.map { case (crate, data) =>
+          container
+            .put(crate, data)
+            .flatMap(_ => container.get(crate))
+            .map(result => (result, data))
         }
       )
       crates <- ContainerLogOps.crates(container.containerLogPath)
     } yield {
       crates should be(testCrates.map(_._1).toSet)
 
-      crateData.foreach {
-        case (actual, expected) =>
-          actual should be(Some(expected))
+      crateData.foreach { case (actual, expected) =>
+        actual should be(Some(expected))
       }
 
       crateData.nonEmpty should be(true)
@@ -384,29 +380,27 @@ class ContainerSpec extends AsyncUnitSpec with BeforeAndAfter {
     for {
       _ <- container.create()
       crateData <- Future.sequence(
-        testCrates.map {
-          case (crate, data) =>
-            container
-              .sink(crate)
-              .flatMap(sink => Source.single(data).runWith(sink))
-              .flatMap(_ =>
-                container
-                  .source(crate)
-                  .flatMap {
-                    case Some(source) => source.runFold(ByteString.empty) { case (f, c) => f.concat(c) }.map(Some.apply)
-                    case None         => Future.successful(None)
-                  }
-              )
-              .map(result => (result, data))
+        testCrates.map { case (crate, data) =>
+          container
+            .sink(crate)
+            .flatMap(sink => Source.single(data).runWith(sink))
+            .flatMap(_ =>
+              container
+                .source(crate)
+                .flatMap {
+                  case Some(source) => source.runFold(ByteString.empty) { case (f, c) => f.concat(c) }.map(Some.apply)
+                  case None         => Future.successful(None)
+                }
+            )
+            .map(result => (result, data))
         }
       )
       crates <- ContainerLogOps.crates(container.containerLogPath)
     } yield {
       crates should be(testCrates.map(_._1).toSet)
 
-      crateData.foreach {
-        case (actual, expected) =>
-          actual should be(Some(expected))
+      crateData.foreach { case (actual, expected) =>
+        actual should be(Some(expected))
       }
 
       crateData.nonEmpty should be(true)

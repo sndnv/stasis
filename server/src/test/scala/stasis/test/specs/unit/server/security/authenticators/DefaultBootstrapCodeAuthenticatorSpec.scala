@@ -25,10 +25,9 @@ class DefaultBootstrapCodeAuthenticatorSpec extends AsyncUnitSpec {
       .authenticate(
         credentials = OAuth2BearerToken(token = expectedCode.value)
       )
-      .map {
-        case (actualCode, actualUser) =>
-          actualCode should be(expectedCode)
-          actualUser.id should be(expectedCode.owner)
+      .map { case (actualCode, actualUser) =>
+        actualCode should be(expectedCode)
+        actualUser.id should be(expectedCode.owner)
       }
   }
 
@@ -44,10 +43,9 @@ class DefaultBootstrapCodeAuthenticatorSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Unexpected response received: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e shouldBe an[AuthenticationFailure]
-          e.getMessage should be("Unsupported bootstrap credentials provided: [Basic]")
+      .recover { case NonFatal(e) =>
+        e shouldBe an[AuthenticationFailure]
+        e.getMessage should be("Unsupported bootstrap credentials provided: [Basic]")
       }
   }
 
@@ -63,10 +61,9 @@ class DefaultBootstrapCodeAuthenticatorSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Unexpected response received: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e shouldBe an[AuthenticationFailure]
-          e.getMessage should be("Invalid bootstrap code provided")
+      .recover { case NonFatal(e) =>
+        e shouldBe an[AuthenticationFailure]
+        e.getMessage should be("Invalid bootstrap code provided")
       }
   }
 

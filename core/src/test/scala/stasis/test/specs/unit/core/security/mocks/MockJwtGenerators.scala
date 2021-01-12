@@ -21,8 +21,8 @@ object MockJwtGenerators {
     jwt.setIssuedAtToNow()
     jwt.setSubject(subject)
 
-    customClaims.foreach {
-      case (name, value) => jwt.setStringClaim(name, value)
+    customClaims.foreach { case (name, value) =>
+      jwt.setStringClaim(name, value)
     }
 
     val jws = new JsonWebSignature

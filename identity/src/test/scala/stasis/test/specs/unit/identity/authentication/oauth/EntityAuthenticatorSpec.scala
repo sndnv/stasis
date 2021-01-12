@@ -34,10 +34,9 @@ class EntityAuthenticatorSpec extends AsyncUnitSpec {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recoverWith {
-        case NonFatal(e) =>
-          e shouldBe an[AuthenticationFailure]
-          e.getMessage should be(s"Credentials for entity [$entity] do not match")
+      .recoverWith { case NonFatal(e) =>
+        e shouldBe an[AuthenticationFailure]
+        e.getMessage should be(s"Credentials for entity [$entity] do not match")
       }
   }
 
@@ -76,13 +75,12 @@ class EntityAuthenticatorSpec extends AsyncUnitSpec {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e) =>
-          val end = System.currentTimeMillis()
-          val duration = (end - start).millis
+      .recover { case NonFatal(e) =>
+        val end = System.currentTimeMillis()
+        val duration = (end - start).millis
 
-          e.getMessage should be("failure")
-          duration should be >= expectedDelay
+        e.getMessage should be("failure")
+        duration should be >= expectedDelay
       }
   }
 

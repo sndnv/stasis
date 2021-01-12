@@ -81,9 +81,8 @@ class MockCrateStore(
     override def sink(key: StoreKey): Future[Sink[StoreValue, Future[Done]]] =
       Future.successful(
         Flow[ByteString]
-          .fold(ByteString.empty) {
-            case (folded, chunk) =>
-              folded.concat(chunk)
+          .fold(ByteString.empty) { case (folded, chunk) =>
+            folded.concat(chunk)
           }
           .mapAsyncUnordered(parallelism = 1) { data =>
             stats(Statistic.PersistCompleted).incrementAndGet()

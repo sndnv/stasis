@@ -283,35 +283,34 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
       .map { stageOutput =>
         fail(s"Unexpected result received: [$stageOutput]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e shouldBe a[RuntimeException]
-          e.getMessage should be("[pushDisabled] is set to [true]")
+      .recover { case NonFatal(e) =>
+        e shouldBe a[RuntimeException]
+        e.getMessage should be("[pushDisabled] is set to [true]")
 
-          eventually[Assertion] {
-            mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(1)
-            mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(1)
-            mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
+        eventually[Assertion] {
+          mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(1)
+          mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(1)
+          mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
 
-            mockCompression.statistics(MockCompression.Statistic.Compressed) should be(1)
-            mockCompression.statistics(MockCompression.Statistic.Decompressed) should be(0)
+          mockCompression.statistics(MockCompression.Statistic.Compressed) should be(1)
+          mockCompression.statistics(MockCompression.Statistic.Decompressed) should be(0)
 
-            mockEncryption.statistics(MockEncryption.Statistic.FileEncrypted) should be(1)
-            mockEncryption.statistics(MockEncryption.Statistic.FileDecrypted) should be(0)
-            mockEncryption.statistics(MockEncryption.Statistic.MetadataEncrypted) should be(0)
-            mockEncryption.statistics(MockEncryption.Statistic.MetadataDecrypted) should be(0)
+          mockEncryption.statistics(MockEncryption.Statistic.FileEncrypted) should be(1)
+          mockEncryption.statistics(MockEncryption.Statistic.FileDecrypted) should be(0)
+          mockEncryption.statistics(MockEncryption.Statistic.MetadataEncrypted) should be(0)
+          mockEncryption.statistics(MockEncryption.Statistic.MetadataDecrypted) should be(0)
 
-            mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
-            mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
+          mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
+          mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
 
-            mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
-            mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
-            mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
-            mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
-            mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
-            mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
-            mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
-          }
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
+        }
       }
   }
 
@@ -327,9 +326,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e: IllegalArgumentException) =>
-          e.getMessage should be(s"Expected metadata for file but directory metadata for [${entity.path}] provided")
+      .recover { case NonFatal(e: IllegalArgumentException) =>
+        e.getMessage should be(s"Expected metadata for file but directory metadata for [${entity.path}] provided")
       }
   }
 

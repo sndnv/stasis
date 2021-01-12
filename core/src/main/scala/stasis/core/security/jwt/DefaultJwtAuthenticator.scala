@@ -41,13 +41,12 @@ class DefaultJwtAuthenticator(
     }
 
     result
-      .recoverWith {
-        case NonFatal(e) =>
-          Future.failed(
-            AuthenticationFailure(
-              s"Failed to authenticate token: [${e.getClass.getSimpleName}: ${e.getMessage}]"
-            )
+      .recoverWith { case NonFatal(e) =>
+        Future.failed(
+          AuthenticationFailure(
+            s"Failed to authenticate token: [${e.getClass.getSimpleName}: ${e.getMessage}]"
           )
+        )
       }
   }
 

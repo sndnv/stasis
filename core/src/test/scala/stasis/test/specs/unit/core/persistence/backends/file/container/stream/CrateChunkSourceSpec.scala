@@ -94,17 +94,16 @@ class CrateChunkSourceSpec extends AsyncUnitSpec with BeforeAndAfter {
 
     val containerChunks = Seq(
       (crateId, ByteString("crate-1/chunk-1"))
-    ).zipWithIndex.map {
-      case ((crate, chunk), index) =>
-        val startOffset = ChunkHeader.HEADER_SIZE + index * (ChunkHeader.HEADER_SIZE + maxChunkSize)
+    ).zipWithIndex.map { case ((crate, chunk), index) =>
+      val startOffset = ChunkHeader.HEADER_SIZE + index * (ChunkHeader.HEADER_SIZE + maxChunkSize)
 
-        val header = ChunkHeader(
-          crateId = crate,
-          chunkId = 0,
-          chunkSize = invalidChunkSize
-        )
+      val header = ChunkHeader(
+        crateId = crate,
+        chunkId = 0,
+        chunkSize = invalidChunkSize
+      )
 
-        (crate, CrateChunk(header, chunk), CrateChunkDescriptor(header, startOffset.toLong))
+      (crate, CrateChunk(header, chunk), CrateChunkDescriptor(header, startOffset.toLong))
     }
 
     val crateChunks = containerChunks.map(_._3)
@@ -119,13 +118,12 @@ class CrateChunkSourceSpec extends AsyncUnitSpec with BeforeAndAfter {
       .map { result =>
         fail(s"Received unexpected result: [$result]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Failed to read chunk [0] for crate [$crateId] from file [$path] at offset [${ChunkHeader.HEADER_SIZE}]: " +
-              s"[IllegalArgumentException: requirement failed:" +
-              s" Expected chunk with size [$invalidChunkSize] but only [$maxChunkSize] byte(s) were read]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Failed to read chunk [0] for crate [$crateId] from file [$path] at offset [${ChunkHeader.HEADER_SIZE}]: " +
+            s"[IllegalArgumentException: requirement failed:" +
+            s" Expected chunk with size [$invalidChunkSize] but only [$maxChunkSize] byte(s) were read]"
+        )
       }
   }
 
@@ -151,13 +149,12 @@ class CrateChunkSourceSpec extends AsyncUnitSpec with BeforeAndAfter {
       .map { result =>
         fail(s"Received unexpected result: [$result]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Failed to read chunk [0] for crate [$crateId] from file [$path] at offset [${ChunkHeader.HEADER_SIZE}]: " +
-              s"[IllegalArgumentException: requirement failed:" +
-              s" Expected chunk with size [$maxChunkSize] but no bytes were read]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Failed to read chunk [0] for crate [$crateId] from file [$path] at offset [${ChunkHeader.HEADER_SIZE}]: " +
+            s"[IllegalArgumentException: requirement failed:" +
+            s" Expected chunk with size [$maxChunkSize] but no bytes were read]"
+        )
       }
   }
 
@@ -170,11 +167,10 @@ class CrateChunkSourceSpec extends AsyncUnitSpec with BeforeAndAfter {
       .map { result =>
         fail(s"Received unexpected result: [$result]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Failed to open channel for file [$path]: [NoSuchFileException: $path]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Failed to open channel for file [$path]: [NoSuchFileException: $path]"
+        )
       }
   }
 
@@ -189,15 +185,14 @@ class CrateChunkSourceSpec extends AsyncUnitSpec with BeforeAndAfter {
 
     val containerChunks = Seq(
       (crateId, ByteString("crate-1/chunk-1"))
-    ).zipWithIndex.map {
-      case ((crate, chunk), _) =>
-        val header = ChunkHeader(
-          crateId = crate,
-          chunkId = 0,
-          chunkSize = chunk.length
-        )
+    ).zipWithIndex.map { case ((crate, chunk), _) =>
+      val header = ChunkHeader(
+        crateId = crate,
+        chunkId = 0,
+        chunkSize = chunk.length
+      )
 
-        (crate, CrateChunk(header, chunk), CrateChunkDescriptor(header, invalidStartOffset))
+      (crate, CrateChunk(header, chunk), CrateChunkDescriptor(header, invalidStartOffset))
     }
 
     val crateChunks = containerChunks.map(_._3)
@@ -212,12 +207,11 @@ class CrateChunkSourceSpec extends AsyncUnitSpec with BeforeAndAfter {
       .map { result =>
         fail(s"Received unexpected result: [$result]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Failed to read chunk [0] for crate [$crateId] from file [$path] at offset [-1]: " +
-              s"[IllegalArgumentException: Negative position]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Failed to read chunk [0] for crate [$crateId] from file [$path] at offset [-1]: " +
+            s"[IllegalArgumentException: Negative position]"
+        )
       }
   }
 }

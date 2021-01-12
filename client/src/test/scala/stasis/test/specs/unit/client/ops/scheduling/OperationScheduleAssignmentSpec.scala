@@ -37,13 +37,12 @@ class OperationScheduleAssignmentSpec extends UnitSpec {
       None
     )
 
-    validParameters.foreach {
-      case (parameters, expectedAssignment) =>
-        val actualAssignment =
-          OperationScheduleAssignment.Backup(schedule = scheduleId, parameters = Some(parameters), lineNumber = 0)
-        withClue(s"Extracted backup schedule assignment parameters [$parameters] to [$actualAssignment]") {
-          actualAssignment should be(Success(expectedAssignment))
-        }
+    validParameters.foreach { case (parameters, expectedAssignment) =>
+      val actualAssignment =
+        OperationScheduleAssignment.Backup(schedule = scheduleId, parameters = Some(parameters), lineNumber = 0)
+      withClue(s"Extracted backup schedule assignment parameters [$parameters] to [$actualAssignment]") {
+        actualAssignment should be(Success(expectedAssignment))
+      }
     }
 
     invalidParameters.foreach { parameters =>
@@ -92,11 +91,10 @@ class OperationScheduleAssignmentSpec extends UnitSpec {
       ""
     )
 
-    validAssignments.foreach {
-      case (assignmentString, expectedAssignment) =>
-        withClue(s"Parsing valid schedule assignment [$assignmentString]") {
-          OperationScheduleAssignment(line = assignmentString, lineNumber = 0) should be(Success(expectedAssignment))
-        }
+    validAssignments.foreach { case (assignmentString, expectedAssignment) =>
+      withClue(s"Parsing valid schedule assignment [$assignmentString]") {
+        OperationScheduleAssignment(line = assignmentString, lineNumber = 0) should be(Success(expectedAssignment))
+      }
     }
 
     invalidAssignments.foreach { assignmentString =>

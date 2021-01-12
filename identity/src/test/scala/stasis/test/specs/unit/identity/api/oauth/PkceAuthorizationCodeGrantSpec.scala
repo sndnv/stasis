@@ -237,11 +237,10 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
       }
     )
 
-    requests.foreach {
-      case (credentials, request) =>
-        Get(request).addCredentials(credentials) ~> grant.authorization() ~> check {
-          status should be(StatusCodes.Found)
-        }
+    requests.foreach { case (credentials, request) =>
+      Get(request).addCredentials(credentials) ~> grant.authorization() ~> check {
+        status should be(StatusCodes.Found)
+      }
     }
 
     val codes = stores.codes.codes.await

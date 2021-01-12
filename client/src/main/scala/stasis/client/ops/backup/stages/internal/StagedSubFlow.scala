@@ -73,19 +73,17 @@ object StagedSubFlow {
 
   def handleStagingFailure[T](
     stagedParts: java.util.Queue[(Path, Path)]
-  )(implicit providers: Providers, ec: ExecutionContext): PartialFunction[Throwable, Future[T]] = {
-    case NonFatal(e) =>
-      Future
-        .sequence(stagedParts.asScala.map(_._2).toSeq.map(providers.staging.discard))
-        .recoverWith {
-          case NonFatal(e) =>
-            Future.failed(
-              new EntityProcessingFailure(
-                s"Encountered discarding failure [${e.getMessage}] while processing staging failure: [${e.getMessage}]"
-              )
-            )
-        }
-        .flatMap(_ => Future.failed(e))
+  )(implicit providers: Providers, ec: ExecutionContext): PartialFunction[Throwable, Future[T]] = { case NonFatal(e) =>
+    Future
+      .sequence(stagedParts.asScala.map(_._2).toSeq.map(providers.staging.discard))
+      .recoverWith { case NonFatal(e) =>
+        Future.failed(
+          new EntityProcessingFailure(
+            s"Encountered discarding failure [${e.getMessage}] while processing staging failure: [${e.getMessage}]"
+          )
+        )
+      }
+      .flatMap(_ => Future.failed(e))
   }
 
 }

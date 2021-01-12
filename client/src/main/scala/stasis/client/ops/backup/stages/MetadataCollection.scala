@@ -26,23 +26,22 @@ trait MetadataCollection {
             case Right(metadata) => (contentChanged, metadataChanged + (metadata.path -> metadata))
           }
       }
-      .map {
-        case (contentChanged, metadataChanged) =>
-          DatasetMetadata(
-            contentChanged = contentChanged,
-            metadataChanged = metadataChanged,
-            filesystem = (latestMetadata, latestEntry) match {
-              case (Some(metadata), Some(entry)) =>
-                metadata.filesystem
-                  .updated(
-                    changes = contentChanged.keys ++ metadataChanged.keys,
-                    latestEntry = entry.id
-                  )
+      .map { case (contentChanged, metadataChanged) =>
+        DatasetMetadata(
+          contentChanged = contentChanged,
+          metadataChanged = metadataChanged,
+          filesystem = (latestMetadata, latestEntry) match {
+            case (Some(metadata), Some(entry)) =>
+              metadata.filesystem
+                .updated(
+                  changes = contentChanged.keys ++ metadataChanged.keys,
+                  latestEntry = entry.id
+                )
 
-              case _ =>
-                FilesystemMetadata(contentChanged.keys ++ metadataChanged.keys)
-            }
-          )
+            case _ =>
+              FilesystemMetadata(contentChanged.keys ++ metadataChanged.keys)
+          }
+        )
       }
       .wireTap(_ => providers.track.metadataCollected())
 }

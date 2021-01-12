@@ -32,11 +32,10 @@ object SchedulingConfig {
         .zipWithIndex
         .filter { case (line, _) => keepLine(line) }
         .map { case (line, number) => parse(line, number) }
-        .foldLeft(Try(Seq.empty[T])) {
-          case (tryCollected, tryEntry) =>
-            tryCollected.flatMap { collected =>
-              tryEntry.map(entry => collected :+ entry)
-            }
+        .foldLeft(Try(Seq.empty[T])) { case (tryCollected, tryEntry) =>
+          tryCollected.flatMap { collected =>
+            tryEntry.map(entry => collected :+ entry)
+          }
         }
 
       Future.fromTry(result)

@@ -18,9 +18,8 @@ class SlickProfileSpec extends UnitSpec {
       "SQLServerProfile" -> SQLServerProfile
     )
 
-    profiles.foreach {
-      case (name, profile) =>
-        SlickProfile(profile = name) should be(profile)
+    profiles.foreach { case (name, profile) =>
+      SlickProfile(profile = name) should be(profile)
     }
   }
 }

@@ -30,15 +30,14 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     val code = Generators.generateAuthorizationCode
     val scope = "some-scope"
 
-    val routes = directive.consumeAuthorizationCode(client, code) {
-      case (extractedOwner, extractedScope) =>
-        Directives.complete(
-          StatusCodes.OK,
-          Json.obj(
-            "owner" -> Json.toJson(extractedOwner.username),
-            "scope" -> Json.toJson(extractedScope)
-          )
+    val routes = directive.consumeAuthorizationCode(client, code) { case (extractedOwner, extractedScope) =>
+      Directives.complete(
+        StatusCodes.OK,
+        Json.obj(
+          "owner" -> Json.toJson(extractedOwner.username),
+          "scope" -> Json.toJson(extractedScope)
         )
+      )
     }
 
     codes.put(StoredAuthorizationCode(code, client, owner, scope = Some(scope))).await
@@ -64,15 +63,14 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
       method = None
     )
 
-    val routes = directive.consumeAuthorizationCode(client, code) {
-      case (extractedOwner, extractedScope) =>
-        Directives.complete(
-          StatusCodes.OK,
-          Json.obj(
-            "owner" -> Json.toJson(extractedOwner.username),
-            "scope" -> Json.toJson(extractedScope)
-          )
+    val routes = directive.consumeAuthorizationCode(client, code) { case (extractedOwner, extractedScope) =>
+      Directives.complete(
+        StatusCodes.OK,
+        Json.obj(
+          "owner" -> Json.toJson(extractedOwner.username),
+          "scope" -> Json.toJson(extractedScope)
         )
+      )
     }
 
     codes.put(StoredAuthorizationCode(code, client, owner, scope = Some(scope), challenge = Some(challenge))).await
@@ -93,15 +91,14 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     val verifier = stasis.test.Generators.generateString(withSize = 128)
     val challenge = StoredAuthorizationCode.Challenge(value = verifier, method = Some(ChallengeMethod.Plain))
 
-    val routes = directive.consumeAuthorizationCode(client, code, verifier) {
-      case (extractedOwner, extractedScope) =>
-        Directives.complete(
-          StatusCodes.OK,
-          Json.obj(
-            "owner" -> Json.toJson(extractedOwner.username),
-            "scope" -> Json.toJson(extractedScope)
-          )
+    val routes = directive.consumeAuthorizationCode(client, code, verifier) { case (extractedOwner, extractedScope) =>
+      Directives.complete(
+        StatusCodes.OK,
+        Json.obj(
+          "owner" -> Json.toJson(extractedOwner.username),
+          "scope" -> Json.toJson(extractedScope)
         )
+      )
     }
 
     codes.put(StoredAuthorizationCode(code, client, owner, scope = Some(scope), challenge = Some(challenge))).await
@@ -135,15 +132,14 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
 
     val challenge = StoredAuthorizationCode.Challenge(value = encodedVerifier, method = Some(ChallengeMethod.S256))
 
-    val routes = directive.consumeAuthorizationCode(client, code, verifier) {
-      case (extractedOwner, extractedScope) =>
-        Directives.complete(
-          StatusCodes.OK,
-          Json.obj(
-            "owner" -> Json.toJson(extractedOwner.username),
-            "scope" -> Json.toJson(extractedScope)
-          )
+    val routes = directive.consumeAuthorizationCode(client, code, verifier) { case (extractedOwner, extractedScope) =>
+      Directives.complete(
+        StatusCodes.OK,
+        Json.obj(
+          "owner" -> Json.toJson(extractedOwner.username),
+          "scope" -> Json.toJson(extractedScope)
         )
+      )
     }
 
     codes.put(StoredAuthorizationCode(code, client, owner, scope = Some(scope), challenge = Some(challenge))).await
@@ -173,15 +169,14 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
       client = client,
       providedCode = code,
       stasis.test.Generators.generateString(withSize = 128)
-    ) {
-      case (extractedOwner, extractedScope) =>
-        Directives.complete(
-          StatusCodes.OK,
-          Json.obj(
-            "owner" -> Json.toJson(extractedOwner.username),
-            "scope" -> Json.toJson(extractedScope)
-          )
+    ) { case (extractedOwner, extractedScope) =>
+      Directives.complete(
+        StatusCodes.OK,
+        Json.obj(
+          "owner" -> Json.toJson(extractedOwner.username),
+          "scope" -> Json.toJson(extractedScope)
         )
+      )
     }
 
     codes.put(StoredAuthorizationCode(code, client, owner, scope = Some(scope), challenge = Some(challenge))).await
@@ -201,15 +196,14 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     val scope = "some-scope"
     val verifier = stasis.test.Generators.generateString(withSize = 128)
 
-    val routes = directive.consumeAuthorizationCode(client, code, verifier) {
-      case (extractedOwner, extractedScope) =>
-        Directives.complete(
-          StatusCodes.OK,
-          Json.obj(
-            "owner" -> Json.toJson(extractedOwner.username),
-            "scope" -> Json.toJson(extractedScope)
-          )
+    val routes = directive.consumeAuthorizationCode(client, code, verifier) { case (extractedOwner, extractedScope) =>
+      Directives.complete(
+        StatusCodes.OK,
+        Json.obj(
+          "owner" -> Json.toJson(extractedOwner.username),
+          "scope" -> Json.toJson(extractedScope)
         )
+      )
     }
 
     codes.put(StoredAuthorizationCode(code, client, owner, scope = Some(scope), challenge = None)).await
@@ -228,9 +222,8 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     val code = Generators.generateAuthorizationCode
     val scope = "some-scope"
 
-    val routes = directive.consumeAuthorizationCode(client, code) {
-      case (_, _) =>
-        Directives.complete(StatusCodes.OK)
+    val routes = directive.consumeAuthorizationCode(client, code) { case (_, _) =>
+      Directives.complete(StatusCodes.OK)
     }
 
     codes.put(StoredAuthorizationCode(Generators.generateAuthorizationCode, client, owner, scope = Some(scope))).await
@@ -249,9 +242,8 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     val code = Generators.generateAuthorizationCode
     val scope = "some-scope"
 
-    val routes = directive.consumeAuthorizationCode(client, code) {
-      case (_, _) =>
-        Directives.complete(StatusCodes.OK)
+    val routes = directive.consumeAuthorizationCode(client, code) { case (_, _) =>
+      Directives.complete(StatusCodes.OK)
     }
 
     codes.put(StoredAuthorizationCode(code, Client.generateId(), owner, scope = Some(scope))).await
@@ -270,15 +262,14 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     val code = Generators.generateAuthorizationCode
     val scope = "some-scope"
 
-    val routes = directive.consumeAuthorizationCode(client, code) {
-      case (extractedOwner, extractedScope) =>
-        Directives.complete(
-          StatusCodes.OK,
-          Json.obj(
-            "owner" -> Json.toJson(extractedOwner.username),
-            "scope" -> Json.toJson(extractedScope)
-          )
+    val routes = directive.consumeAuthorizationCode(client, code) { case (extractedOwner, extractedScope) =>
+      Directives.complete(
+        StatusCodes.OK,
+        Json.obj(
+          "owner" -> Json.toJson(extractedOwner.username),
+          "scope" -> Json.toJson(extractedScope)
         )
+      )
     }
 
     codes.put(StoredAuthorizationCode(code, client, owner, scope = Some(scope))).await

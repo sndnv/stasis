@@ -106,11 +106,10 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Failed to stage crate [${testManifest.crate}]; no destinations specified"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Failed to stage crate [${testManifest.crate}]; no destinations specified"
+        )
       }
   }
 
@@ -133,11 +132,10 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Failed to stage crate [${testManifest.crate}]; storage not available"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Failed to stage crate [${testManifest.crate}]; storage not available"
+        )
       }
   }
 

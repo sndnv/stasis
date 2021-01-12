@@ -159,33 +159,32 @@ object Parameters {
   ): Try[(String, String)] =
     SelfSignedCertificateGenerator
       .generate(distinguishedName = s"CN=$commonName")
-      .map {
-        case (privateKey, certificate) =>
-          val extension = storeType.toLowerCase match {
-            case "pkcs12" => "p12"
-            case "jks"    => "jks"
-          }
+      .map { case (privateKey, certificate) =>
+        val extension = storeType.toLowerCase match {
+          case "pkcs12" => "p12"
+          case "jks"    => "jks"
+        }
 
-          val path = parent.resolve(s"$file.$extension")
+        val path = parent.resolve(s"$file.$extension")
 
-          val rnd: Random = ThreadLocalRandom.current()
-          val password = rnd.alphanumeric.take(passwordSize).mkString
+        val rnd: Random = ThreadLocalRandom.current()
+        val password = rnd.alphanumeric.take(passwordSize).mkString
 
-          val store = java.security.KeyStore.getInstance(storeType)
-          store.load(None.orNull, None.orNull)
-          store.setKeyEntry(file, privateKey, password.toCharArray, Array(certificate))
+        val store = java.security.KeyStore.getInstance(storeType)
+        store.load(None.orNull, None.orNull)
+        store.setKeyEntry(file, privateKey, password.toCharArray, Array(certificate))
 
-          val permissions = PosixFilePermissions.fromString(ApplicationDirectory.Default.CreatedFilePermissions)
+        val permissions = PosixFilePermissions.fromString(ApplicationDirectory.Default.CreatedFilePermissions)
 
-          val _ = Files.createFile(path, PosixFilePermissions.asFileAttribute(permissions))
+        val _ = Files.createFile(path, PosixFilePermissions.asFileAttribute(permissions))
 
-          val out = Files.newOutputStream(path)
-          try {
-            store.store(out, password.toCharArray)
-          } finally {
-            out.close()
-          }
+        val out = Files.newOutputStream(path)
+        try {
+          store.store(out, password.toCharArray)
+        } finally {
+          out.close()
+        }
 
-          (path.toString, password)
+        (path.toString, password)
       }
 }

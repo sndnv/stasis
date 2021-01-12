@@ -27,11 +27,10 @@ class DefaultResourceProviderSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from provider: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"User [${testUser.id}] does not have permission [${viewPrivilegedResource.requiredPermission}] for resource [$viewPrivilegedResource]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"User [${testUser.id}] does not have permission [${viewPrivilegedResource.requiredPermission}] for resource [$viewPrivilegedResource]"
+        )
       }
   }
 
@@ -41,11 +40,10 @@ class DefaultResourceProviderSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from provider: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Resource [${classOf[ManageServiceResource].getName}] requested by user [${testUser.id}] was not found"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Resource [${classOf[ManageServiceResource].getName}] requested by user [${testUser.id}] was not found"
+        )
       }
   }
 
@@ -57,9 +55,8 @@ class DefaultResourceProviderSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from provider: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(s"User [${otherUser.id}] not found")
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(s"User [${otherUser.id}] not found")
       }
   }
 

@@ -55,10 +55,9 @@ class StagingStore(
 
             val cancellable = system.classicSystem.scheduler.scheduleOnce(destagingDelay) {
               val _ = destage(manifest, destinations, viaProxy)
-                .recover {
-                  case NonFatal(e) =>
-                    log.error(s"Scheduled action failed: [${e.getClass.getSimpleName}: ${e.getMessage}]")
-                    Done
+                .recover { case NonFatal(e) =>
+                  log.error(s"Scheduled action failed: [${e.getClass.getSimpleName}: ${e.getMessage}]")
+                  Done
                 }
             }
 
@@ -128,9 +127,8 @@ class StagingStore(
           case Some(content) =>
             val destinationSinks =
               Future.sequence(
-                destinations.map {
-                  case (node, copies) =>
-                    viaProxy.sink(node, manifest.copy(copies = copies))
+                destinations.map { case (node, copies) =>
+                  viaProxy.sink(node, manifest.copy(copies = copies))
                 }
               )
 

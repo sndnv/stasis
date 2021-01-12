@@ -46,13 +46,12 @@ class HttpEndpointClient(
 
     credentials
       .provide(address)
-      .recoverWith {
-        case NonFatal(e) =>
-          val message =
-            s"Push to endpoint [${address.uri.toString()}] failed for crate [${manifest.crate.toString}];" +
-              s" unable to retrieve credentials: [${e.getMessage}]"
-          log.error(message)
-          Future.failed(CredentialsFailure(message))
+      .recoverWith { case NonFatal(e) =>
+        val message =
+          s"Push to endpoint [${address.uri.toString()}] failed for crate [${manifest.crate.toString}];" +
+            s" unable to retrieve credentials: [${e.getMessage}]"
+        log.error(message)
+        Future.failed(CredentialsFailure(message))
       }
       .flatMap { endpointCredentials =>
         for {
@@ -70,21 +69,19 @@ class HttpEndpointClient(
     val (sink, content) = Source
       .asSubscriber[ByteString]
       .toMat(Sink.asPublisher[ByteString](fanout = false))(Keep.both)
-      .mapMaterializedValue {
-        case (subscriber, publisher) =>
-          (Sink.fromSubscriber(subscriber), Source.fromPublisher(publisher))
+      .mapMaterializedValue { case (subscriber, publisher) =>
+        (Sink.fromSubscriber(subscriber), Source.fromPublisher(publisher))
       }
       .run()
 
     credentials
       .provide(address)
-      .recoverWith {
-        case NonFatal(e) =>
-          val message =
-            s"Push to endpoint [${address.uri.toString()}] via sink failed for crate [${manifest.crate.toString}];" +
-              s" unable to retrieve credentials: [${e.getMessage}]"
-          log.error(message)
-          Future.failed(CredentialsFailure(message))
+      .recoverWith { case NonFatal(e) =>
+        val message =
+          s"Push to endpoint [${address.uri.toString()}] via sink failed for crate [${manifest.crate.toString}];" +
+            s" unable to retrieve credentials: [${e.getMessage}]"
+        log.error(message)
+        Future.failed(CredentialsFailure(message))
       }
       .flatMap { endpointCredentials =>
         reserveStorage(address, manifest, endpointCredentials).map { reservation =>
@@ -102,13 +99,12 @@ class HttpEndpointClient(
 
     credentials
       .provide(address)
-      .recoverWith {
-        case NonFatal(e) =>
-          val message =
-            s"Pull from endpoint [${address.uri.toString}] failed for crate [${crate.toString}];" +
-              s" unable to retrieve credentials: [${e.getMessage}]"
-          log.error(message)
-          Future.failed(CredentialsFailure(message))
+      .recoverWith { case NonFatal(e) =>
+        val message =
+          s"Pull from endpoint [${address.uri.toString}] failed for crate [${crate.toString}];" +
+            s" unable to retrieve credentials: [${e.getMessage}]"
+        log.error(message)
+        Future.failed(CredentialsFailure(message))
       }
       .flatMap { endpointCredentials =>
         pullCrate(address, crate, endpointCredentials)
@@ -120,13 +116,12 @@ class HttpEndpointClient(
 
     credentials
       .provide(address)
-      .recoverWith {
-        case NonFatal(e) =>
-          val message =
-            s"Discard from endpoint [${address.uri.toString}] failed for crate [${crate.toString}];" +
-              s" unable to retrieve credentials: [${e.getMessage}]"
-          log.error(message)
-          Future.failed(CredentialsFailure(message))
+      .recoverWith { case NonFatal(e) =>
+        val message =
+          s"Discard from endpoint [${address.uri.toString}] failed for crate [${crate.toString}];" +
+            s" unable to retrieve credentials: [${e.getMessage}]"
+        log.error(message)
+        Future.failed(CredentialsFailure(message))
       }
       .flatMap { endpointCredentials =>
         discardCrate(address, crate, endpointCredentials)
@@ -147,33 +142,32 @@ class HttpEndpointClient(
           uri = address.uri.withPath(address.uri.path ?/ "reservations"),
           entity = requestEntity
         ).addCredentials(endpointCredentials)
-      ).flatMap {
-        case HttpResponse(status, _, entity, _) =>
-          status match {
-            case StatusCodes.OK =>
-              Unmarshal(entity).to[CrateStorageReservation].map { reservation =>
-                log.debug(
-                  "Endpoint [{}] responded to storage request [{}] with: [{}]",
-                  address.uri,
-                  storageRequest,
-                  reservation
-                )
-
+      ).flatMap { case HttpResponse(status, _, entity, _) =>
+        status match {
+          case StatusCodes.OK =>
+            Unmarshal(entity).to[CrateStorageReservation].map { reservation =>
+              log.debug(
+                "Endpoint [{}] responded to storage request [{}] with: [{}]",
+                address.uri,
+                storageRequest,
                 reservation
-              }
+              )
 
-            case StatusCodes.InsufficientStorage =>
-              val message =
-                s"Endpoint [${address.uri.toString}] was unable to reserve enough storage for request [${storageRequest.toString}]"
-              log.warn(message)
-              Future.failed(ReservationFailure(message))
+              reservation
+            }
 
-            case _ =>
-              val message =
-                s"Endpoint [${address.uri.toString}] responded to storage request with unexpected status: [${status.value}]"
-              log.warn(message)
-              Future.failed(EndpointFailure(message))
-          }
+          case StatusCodes.InsufficientStorage =>
+            val message =
+              s"Endpoint [${address.uri.toString}] was unable to reserve enough storage for request [${storageRequest.toString}]"
+            log.warn(message)
+            Future.failed(ReservationFailure(message))
+
+          case _ =>
+            val message =
+              s"Endpoint [${address.uri.toString}] responded to storage request with unexpected status: [${status.value}]"
+            log.warn(message)
+            Future.failed(EndpointFailure(message))
+        }
       }
     }
   }
@@ -218,26 +212,25 @@ class HttpEndpointClient(
         method = HttpMethods.GET,
         uri = address.uri.withPath(address.uri.path ?/ "crates" / crate.toString)
       ).addCredentials(endpointCredentials)
-    ).flatMap {
-      case HttpResponse(status, _, entity, _) =>
-        status match {
-          case StatusCodes.OK =>
-            log.debugN("Endpoint [{}] responded to pull with content for crate [{}]", address.uri, crate)
-            Future.successful(Some(entity.dataBytes.mapMaterializedValue(_ => NotUsed)))
+    ).flatMap { case HttpResponse(status, _, entity, _) =>
+      status match {
+        case StatusCodes.OK =>
+          log.debugN("Endpoint [{}] responded to pull with content for crate [{}]", address.uri, crate)
+          Future.successful(Some(entity.dataBytes.mapMaterializedValue(_ => NotUsed)))
 
-          case StatusCodes.NotFound =>
-            val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
-            log.warnN("Endpoint [{}] responded to pull with no content for crate [{}]", address.uri, crate)
-            Future.successful(None)
+        case StatusCodes.NotFound =>
+          val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
+          log.warnN("Endpoint [{}] responded to pull with no content for crate [{}]", address.uri, crate)
+          Future.successful(None)
 
-          case _ =>
-            val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
-            val message =
-              s"Endpoint [${address.uri.toString}] responded to pull for crate [${crate.toString}] " +
-                s"with unexpected status: [${status.value}]"
-            log.warn(message)
-            Future.failed(EndpointFailure(message))
-        }
+        case _ =>
+          val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
+          val message =
+            s"Endpoint [${address.uri.toString}] responded to pull for crate [${crate.toString}] " +
+              s"with unexpected status: [${status.value}]"
+          log.warn(message)
+          Future.failed(EndpointFailure(message))
+      }
     }
 
   private def discardCrate(
@@ -250,25 +243,24 @@ class HttpEndpointClient(
         method = HttpMethods.DELETE,
         uri = address.uri.withPath(address.uri.path ?/ "crates" / crate.toString)
       ).addCredentials(endpointCredentials)
-    ).flatMap {
-      case HttpResponse(status, _, entity, _) =>
-        val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
-        status match {
-          case StatusCodes.OK =>
-            log.debugN("Endpoint [{}] responded to discard for crate [{}] with OK", address.uri, crate)
-            Future.successful(true)
+    ).flatMap { case HttpResponse(status, _, entity, _) =>
+      val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
+      status match {
+        case StatusCodes.OK =>
+          log.debugN("Endpoint [{}] responded to discard for crate [{}] with OK", address.uri, crate)
+          Future.successful(true)
 
-          case StatusCodes.InternalServerError =>
-            log.errorN("Endpoint [{}] failed to discard crate [{}]", address.uri, crate)
-            Future.successful(false)
+        case StatusCodes.InternalServerError =>
+          log.errorN("Endpoint [{}] failed to discard crate [{}]", address.uri, crate)
+          Future.successful(false)
 
-          case _ =>
-            val message =
-              s"Endpoint [${address.uri.toString}] responded to discard for crate [${crate.toString}] " +
-                s"with unexpected status: [${status.value}]"
-            log.warn(message)
-            Future.failed(EndpointFailure(message))
-        }
+        case _ =>
+          val message =
+            s"Endpoint [${address.uri.toString}] responded to discard for crate [${crate.toString}] " +
+              s"with unexpected status: [${status.value}]"
+          log.warn(message)
+          Future.failed(EndpointFailure(message))
+      }
     }
 }
 

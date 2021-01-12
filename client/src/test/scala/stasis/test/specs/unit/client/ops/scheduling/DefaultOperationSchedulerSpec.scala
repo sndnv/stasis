@@ -108,9 +108,8 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should (startWith("Ask timed out") or include("had already been terminated"))
+      .recover { case NonFatal(e) =>
+        e.getMessage should (startWith("Ask timed out") or include("had already been terminated"))
       }
   }
 

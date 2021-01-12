@@ -65,11 +65,10 @@ class DestagedByteStringSourceSpec extends AsyncUnitSpec {
       .map { _ =>
         fail("Unexpected successful result received")
       }
-      .recoverWith {
-        case NonFatal(_) =>
-          mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(1)
-          mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(1)
-          mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
+      .recoverWith { case NonFatal(_) =>
+        mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(1)
+        mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(1)
+        mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
       }
   }
 

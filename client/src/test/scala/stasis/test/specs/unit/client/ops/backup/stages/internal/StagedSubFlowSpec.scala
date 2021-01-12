@@ -100,13 +100,12 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recoverWith {
-        case NonFatal(e) =>
-          e.getMessage should be(failure.getMessage)
+      .recoverWith { case NonFatal(e) =>
+        e.getMessage should be(failure.getMessage)
 
-          mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(0)
-          mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(3)
-          mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
+        mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(0)
+        mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(3)
+        mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
       }
   }
 
@@ -140,15 +139,14 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recoverWith {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Encountered discarding failure [${failure.getMessage}] while processing staging failure: [${failure.getMessage}]"
-          )
+      .recoverWith { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Encountered discarding failure [${failure.getMessage}] while processing staging failure: [${failure.getMessage}]"
+        )
 
-          mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(0)
-          mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(0)
-          mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
+        mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(0)
+        mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(0)
+        mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
       }
   }
 

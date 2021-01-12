@@ -98,11 +98,10 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e: IllegalArgumentException) =>
-          e.getMessage should be(
-            s"Expected metadata for file but directory metadata for [${Fixtures.Metadata.DirectoryOneMetadata.path}] provided"
-          )
+      .recover { case NonFatal(e: IllegalArgumentException) =>
+        e.getMessage should be(
+          s"Expected metadata for file but directory metadata for [${Fixtures.Metadata.DirectoryOneMetadata.path}] provided"
+        )
       }
   }
 
@@ -124,11 +123,10 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e: IllegalArgumentException) =>
-          e.getMessage should be(
-            s"Expected metadata for file but directory metadata for [${Fixtures.Metadata.DirectoryOneMetadata.path}] provided"
-          )
+      .recover { case NonFatal(e: IllegalArgumentException) =>
+        e.getMessage should be(
+          s"Expected metadata for file but directory metadata for [${Fixtures.Metadata.DirectoryOneMetadata.path}] provided"
+        )
       }
   }
 

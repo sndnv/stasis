@@ -142,14 +142,13 @@ class IdentityDeviceCredentialsManager(
 
     Unmarshal(response)
       .to[T]
-      .recoverWith {
-        case NonFatal(e) =>
-          val _ = response.entity.dataBytes.runWith(Sink.cancelled[ByteString])
-          Future.failed(
-            CredentialsManagementFailure(
-              message = s"Identity response unmarshalling failed with: [${e.getMessage}]"
-            )
+      .recoverWith { case NonFatal(e) =>
+        val _ = response.entity.dataBytes.runWith(Sink.cancelled[ByteString])
+        Future.failed(
+          CredentialsManagementFailure(
+            message = s"Identity response unmarshalling failed with: [${e.getMessage}]"
           )
+        )
       }
   }
 

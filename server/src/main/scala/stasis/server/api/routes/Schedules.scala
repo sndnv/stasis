@@ -89,21 +89,20 @@ class Schedules()(implicit ctx: RoutesContext) extends ApiRoutes {
             }
           },
           put {
-            entity(as[UpdateSchedule]) {
-              updateRequest =>
-                resources[ScheduleStore.View.Service, ScheduleStore.Manage.Service] { (view, manage) =>
-                  view.get(scheduleId).flatMap {
-                    case Some(schedule) =>
-                      manage.update(updateRequest.toUpdatedSchedule(schedule)).map { _ =>
-                        log.debugN("User [{}] successfully updated schedule [{}]", currentUser, scheduleId)
-                        complete(StatusCodes.OK)
-                      }
+            entity(as[UpdateSchedule]) { updateRequest =>
+              resources[ScheduleStore.View.Service, ScheduleStore.Manage.Service] { (view, manage) =>
+                view.get(scheduleId).flatMap {
+                  case Some(schedule) =>
+                    manage.update(updateRequest.toUpdatedSchedule(schedule)).map { _ =>
+                      log.debugN("User [{}] successfully updated schedule [{}]", currentUser, scheduleId)
+                      complete(StatusCodes.OK)
+                    }
 
-                    case None =>
-                      log.warnN("User [{}] failed to update missing schedule [{}]", currentUser, scheduleId)
-                      Future.successful(complete(StatusCodes.BadRequest))
-                  }
+                  case None =>
+                    log.warnN("User [{}] failed to update missing schedule [{}]", currentUser, scheduleId)
+                    Future.successful(complete(StatusCodes.BadRequest))
                 }
+              }
             }
           },
           delete {

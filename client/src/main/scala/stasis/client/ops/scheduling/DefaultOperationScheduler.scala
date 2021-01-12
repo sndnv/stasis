@@ -92,155 +92,153 @@ object DefaultOperationScheduler {
     api: ServerApiEndpointClient,
     executor: OperationExecutor
   ): Behavior[Message] =
-    Behaviors.receive {
-      case (ctx, message) =>
-        message match {
-          case GetSchedules(replyTo) =>
-            ctx.log.debugN("Responding with [{}] active schedule(s)", activeSchedules.size)
-            replyTo ! activeSchedules
-            Behaviors.same
+    Behaviors.receive { case (ctx, message) =>
+      message match {
+        case GetSchedules(replyTo) =>
+          ctx.log.debugN("Responding with [{}] active schedule(s)", activeSchedules.size)
+          replyTo ! activeSchedules
+          Behaviors.same
 
-          case RefreshSchedules(replyTo) =>
-            val log = ctx.log
-            val self = ctx.self
-            log.debugN("Refreshing schedules from [{}]", config.schedulesFile.toAbsolutePath)
+        case RefreshSchedules(replyTo) =>
+          val log = ctx.log
+          val self = ctx.self
+          log.debugN("Refreshing schedules from [{}]", config.schedulesFile.toAbsolutePath)
 
-            val _ = for {
-              configuredSchedules <- SchedulingConfig.schedules(file = config.schedulesFile)
-              loadedSchedules <- Future.sequence(
-                configuredSchedules.map { assignment =>
-                  api
-                    .publicSchedule(assignment.schedule)
-                    .map { schedule =>
-                      log.debugN(
-                        "Loaded [{}] schedule for [{}]",
-                        assignment.getClass.getSimpleName,
-                        assignment.schedule
-                      )
-                      ActiveSchedule(assignment = assignment, schedule = Right(schedule))
-                    }
-                    .recover {
-                      case NonFatal(e) =>
-                        val operation = assignment.getClass.getSimpleName
-                        val schedule = assignment.schedule.toString
-                        val message = s"Failed to load [$operation] schedule for [$schedule]: [${e.getMessage}]"
-                        log.errorN(message, e)
-                        ActiveSchedule(assignment = assignment, schedule = Left(ScheduleRetrievalFailure(message)))
-                    }
-                }
-              )
-            } yield {
-              self ! UpdateActiveSchedules(loadedSchedules)
-              replyTo ! Done
-            }
-
-            Behaviors.same
-
-          case UpdateActiveSchedules(schedules) =>
-            ctx.log.debugN("Loaded [{}] schedule(s)", schedules.size)
-            ctx.self ! SetupNextScheduleExecution
-            scheduler(activeSchedules = schedules, activeOperations = activeOperations)
-
-          case SetupNextScheduleExecution =>
-            val next = activeSchedules
-              .collect { case ActiveSchedule(assignment, Right(schedule)) => (assignment, schedule.nextInvocation) }
-              .sortBy(_._2)
-              .headOption
-
-            timers.cancel(key = PendingScheduleKey)
-
-            next match {
-              case Some((assignment, nextInvocation)) =>
-                val executionDelay = math.max(
-                  LocalDateTime.now().until(nextInvocation, ChronoUnit.MILLIS),
-                  config.minDelay.toMillis
-                )
-
-                val randomDelay = ThreadLocalRandom.current().nextLong(0, config.maxExtraDelay.toMillis)
-
-                val actualDelay = (executionDelay + randomDelay).millis
-
-                ctx.log.debugN(
-                  "Scheduling execution of [{}] in [{}] second(s)",
-                  assignment.schedule,
-                  actualDelay.toSeconds
-                )
-
-                timers.startSingleTimer(key = PendingScheduleKey, msg = ExecuteSchedule(assignment), delay = actualDelay)
-
-                scheduler(activeSchedules = activeSchedules, activeOperations = activeOperations)
-
-              case None =>
-                ctx.log.warnN("No active schedules found")
-                Behaviors.same
-            }
-
-          case ExecuteSchedule(assignment) if activeOperations.contains(assignment) =>
-            ctx.log.warnN(
-              "[{}] operation with schedule [{}] is already running; execution skipped",
-              assignment.getClass.getSimpleName,
-              assignment.schedule
+          val _ = for {
+            configuredSchedules <- SchedulingConfig.schedules(file = config.schedulesFile)
+            loadedSchedules <- Future.sequence(
+              configuredSchedules.map { assignment =>
+                api
+                  .publicSchedule(assignment.schedule)
+                  .map { schedule =>
+                    log.debugN(
+                      "Loaded [{}] schedule for [{}]",
+                      assignment.getClass.getSimpleName,
+                      assignment.schedule
+                    )
+                    ActiveSchedule(assignment = assignment, schedule = Right(schedule))
+                  }
+                  .recover { case NonFatal(e) =>
+                    val operation = assignment.getClass.getSimpleName
+                    val schedule = assignment.schedule.toString
+                    val message = s"Failed to load [$operation] schedule for [$schedule]: [${e.getMessage}]"
+                    log.errorN(message, e)
+                    ActiveSchedule(assignment = assignment, schedule = Left(ScheduleRetrievalFailure(message)))
+                  }
+              }
             )
-            Behaviors.same
-
-          case ExecuteSchedule(assignment) =>
-            val log = ctx.log
-            val self = ctx.self
-
-            log.debugN(
-              "Starting [{}] operation with schedule [{}]",
-              assignment.getClass.getSimpleName,
-              assignment.schedule
-            )
-
-            val result = assignment match {
-              case OperationScheduleAssignment.Backup(_, definition, entities) if entities.nonEmpty =>
-                executor.startBackupWithEntities(definition, entities)
-
-              case OperationScheduleAssignment.Backup(_, definition, _) =>
-                executor.startBackupWithRules(definition)
-
-              case OperationScheduleAssignment.Expiration(_) =>
-                executor.startExpiration()
-
-              case OperationScheduleAssignment.Validation(_) =>
-                executor.startValidation()
-
-              case OperationScheduleAssignment.KeyRotation(_) =>
-                executor.startKeyRotation()
-            }
-
-            result.onComplete {
-              case Success(operation) =>
-                log.debugN(
-                  "[{}] operation [{}] with schedule [{}] completed successfully",
-                  assignment.getClass.getSimpleName,
-                  operation,
-                  assignment.schedule
-                )
-                self ! ScheduleExecuted(assignment)
-
-              case Failure(e) =>
-                log.errorN(
-                  "[{}] operation with schedule [{}] failed: [{}]",
-                  assignment.getClass.getSimpleName,
-                  assignment.schedule,
-                  e.getMessage,
-                  e
-                )
-                self ! ScheduleExecuted(assignment)
-            }
-
-            scheduler(activeSchedules = activeSchedules, activeOperations = activeOperations + assignment)
-
-          case ScheduleExecuted(assignment) =>
-            ctx.self ! SetupNextScheduleExecution
-            scheduler(activeSchedules = activeSchedules, activeOperations = activeOperations - assignment)
-
-          case StopScheduler(replyTo) =>
-            ctx.log.debugN("Stopping scheduler")
+          } yield {
+            self ! UpdateActiveSchedules(loadedSchedules)
             replyTo ! Done
-            Behaviors.stopped
-        }
+          }
+
+          Behaviors.same
+
+        case UpdateActiveSchedules(schedules) =>
+          ctx.log.debugN("Loaded [{}] schedule(s)", schedules.size)
+          ctx.self ! SetupNextScheduleExecution
+          scheduler(activeSchedules = schedules, activeOperations = activeOperations)
+
+        case SetupNextScheduleExecution =>
+          val next = activeSchedules
+            .collect { case ActiveSchedule(assignment, Right(schedule)) => (assignment, schedule.nextInvocation) }
+            .sortBy(_._2)
+            .headOption
+
+          timers.cancel(key = PendingScheduleKey)
+
+          next match {
+            case Some((assignment, nextInvocation)) =>
+              val executionDelay = math.max(
+                LocalDateTime.now().until(nextInvocation, ChronoUnit.MILLIS),
+                config.minDelay.toMillis
+              )
+
+              val randomDelay = ThreadLocalRandom.current().nextLong(0, config.maxExtraDelay.toMillis)
+
+              val actualDelay = (executionDelay + randomDelay).millis
+
+              ctx.log.debugN(
+                "Scheduling execution of [{}] in [{}] second(s)",
+                assignment.schedule,
+                actualDelay.toSeconds
+              )
+
+              timers.startSingleTimer(key = PendingScheduleKey, msg = ExecuteSchedule(assignment), delay = actualDelay)
+
+              scheduler(activeSchedules = activeSchedules, activeOperations = activeOperations)
+
+            case None =>
+              ctx.log.warnN("No active schedules found")
+              Behaviors.same
+          }
+
+        case ExecuteSchedule(assignment) if activeOperations.contains(assignment) =>
+          ctx.log.warnN(
+            "[{}] operation with schedule [{}] is already running; execution skipped",
+            assignment.getClass.getSimpleName,
+            assignment.schedule
+          )
+          Behaviors.same
+
+        case ExecuteSchedule(assignment) =>
+          val log = ctx.log
+          val self = ctx.self
+
+          log.debugN(
+            "Starting [{}] operation with schedule [{}]",
+            assignment.getClass.getSimpleName,
+            assignment.schedule
+          )
+
+          val result = assignment match {
+            case OperationScheduleAssignment.Backup(_, definition, entities) if entities.nonEmpty =>
+              executor.startBackupWithEntities(definition, entities)
+
+            case OperationScheduleAssignment.Backup(_, definition, _) =>
+              executor.startBackupWithRules(definition)
+
+            case OperationScheduleAssignment.Expiration(_) =>
+              executor.startExpiration()
+
+            case OperationScheduleAssignment.Validation(_) =>
+              executor.startValidation()
+
+            case OperationScheduleAssignment.KeyRotation(_) =>
+              executor.startKeyRotation()
+          }
+
+          result.onComplete {
+            case Success(operation) =>
+              log.debugN(
+                "[{}] operation [{}] with schedule [{}] completed successfully",
+                assignment.getClass.getSimpleName,
+                operation,
+                assignment.schedule
+              )
+              self ! ScheduleExecuted(assignment)
+
+            case Failure(e) =>
+              log.errorN(
+                "[{}] operation with schedule [{}] failed: [{}]",
+                assignment.getClass.getSimpleName,
+                assignment.schedule,
+                e.getMessage,
+                e
+              )
+              self ! ScheduleExecuted(assignment)
+          }
+
+          scheduler(activeSchedules = activeSchedules, activeOperations = activeOperations + assignment)
+
+        case ScheduleExecuted(assignment) =>
+          ctx.self ! SetupNextScheduleExecution
+          scheduler(activeSchedules = activeSchedules, activeOperations = activeOperations - assignment)
+
+        case StopScheduler(replyTo) =>
+          ctx.log.debugN("Stopping scheduler")
+          replyTo ! Done
+          Behaviors.stopped
+      }
     }
 }

@@ -66,9 +66,8 @@ class LocalKeyProviderSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from provider: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(s"Key [$keyId] was not expected")
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(s"Key [$keyId] was not expected")
       }
   }
 }

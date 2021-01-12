@@ -57,8 +57,8 @@ class MockReservationStore(
 
   override def reservations: Future[Map[StoreKey, StoreValue]] =
     storeData.map { result =>
-      (result.view.mapValues(value => Some(value)) ++ missingReservations.map(_.id -> None)).collect {
-        case (k, Some(v)) => k -> v
+      (result.view.mapValues(value => Some(value)) ++ missingReservations.map(_.id -> None)).collect { case (k, Some(v)) =>
+        k -> v
       }.toMap
     }
 

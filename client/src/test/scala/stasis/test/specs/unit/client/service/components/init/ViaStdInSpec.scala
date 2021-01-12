@@ -17,10 +17,9 @@ class ViaStdInSpec extends AsyncUnitSpec with AsyncMockitoSugar {
 
     ViaStdIn
       .retrieve(console)
-      .map {
-        case (actualUsername, actualPassword) =>
-          actualUsername should be(expectedUsername)
-          expectedPassword should be(new String(actualPassword))
+      .map { case (actualUsername, actualPassword) =>
+        actualUsername should be(expectedUsername)
+        expectedPassword should be(new String(actualPassword))
       }
   }
 
@@ -34,9 +33,8 @@ class ViaStdInSpec extends AsyncUnitSpec with AsyncMockitoSugar {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e: IllegalArgumentException) =>
-          e.getMessage should be("Empty username and/or password provided")
+      .recover { case NonFatal(e: IllegalArgumentException) =>
+        e.getMessage should be("Empty username and/or password provided")
       }
   }
 
@@ -50,9 +48,8 @@ class ViaStdInSpec extends AsyncUnitSpec with AsyncMockitoSugar {
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e: IllegalArgumentException) =>
-          e.getMessage should be("Empty username and/or password provided")
+      .recover { case NonFatal(e: IllegalArgumentException) =>
+        e.getMessage should be("Empty username and/or password provided")
       }
   }
 }

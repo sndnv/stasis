@@ -59,39 +59,37 @@ class DefaultRouter(
                 case None =>
                   Future
                     .sequence(
-                      distribution.map {
-                        case (node, copies) =>
-                          log.debugN(
-                            "Distributing [{}] copies of crate [{}] on node [{}]",
-                            copies,
-                            manifest.crate,
-                            node.id
-                          )
+                      distribution.map { case (node, copies) =>
+                        log.debugN(
+                          "Distributing [{}] copies of crate [{}] on node [{}]",
+                          copies,
+                          manifest.crate,
+                          node.id
+                        )
 
-                          persistence.reservations.delete(manifest.crate, node.id).flatMap { _ =>
-                            nodeProxy
-                              .sink(node, manifest.copy(copies = copies))
-                              .map { sink =>
-                                log.debugN(
-                                  "Content sink retrieved for node [{}] while pushing crate [{}]",
-                                  node,
-                                  manifest.crate
-                                )
+                        persistence.reservations.delete(manifest.crate, node.id).flatMap { _ =>
+                          nodeProxy
+                            .sink(node, manifest.copy(copies = copies))
+                            .map { sink =>
+                              log.debugN(
+                                "Content sink retrieved for node [{}] while pushing crate [{}]",
+                                node,
+                                manifest.crate
+                              )
 
-                                Some((sink, node))
-                              }
-                              .recover {
-                                case NonFatal(e) =>
-                                  log.error(
-                                    "Failed to retrieve content sink for node [{}] while pushing crate [{}]: [{}]",
-                                    node,
-                                    manifest.crate,
-                                    e
-                                  )
+                              Some((sink, node))
+                            }
+                            .recover { case NonFatal(e) =>
+                              log.error(
+                                "Failed to retrieve content sink for node [{}] while pushing crate [{}]: [{}]",
+                                node,
+                                manifest.crate,
+                                e
+                              )
 
-                                  None
-                              }
-                          }
+                              None
+                            }
+                        }
                       }
                     )
                     .flatMap { results =>
@@ -163,16 +161,15 @@ class DefaultRouter(
 
                     pullFromNodes(remainingNodes, crate)
                 }
-                .recoverWith {
-                  case NonFatal(e) =>
-                    log.error(
-                      "Pull of crate [{}] from node [{}] failed: [{}]",
-                      crate,
-                      node,
-                      e
-                    )
+                .recoverWith { case NonFatal(e) =>
+                  log.error(
+                    "Pull of crate [{}] from node [{}] failed: [{}]",
+                    crate,
+                    node,
+                    e
+                  )
 
-                    pullFromNodes(remainingNodes, crate)
+                  pullFromNodes(remainingNodes, crate)
                 }
 
             case None =>
@@ -210,12 +207,11 @@ class DefaultRouter(
               .map { destination =>
                 (destination, availableNodes.get(destination))
               }
-              .partition {
-                case (_, nodeOpt) =>
-                  nodeOpt.exists {
-                    case _: Node.Local => true
-                    case _             => false
-                  }
+              .partition { case (_, nodeOpt) =>
+                nodeOpt.exists {
+                  case _: Node.Local => true
+                  case _             => false
+                }
               }
 
             pullFromNodes((local ++ remote).toList, crate)
@@ -284,33 +280,31 @@ class DefaultRouter(
           case Success(distribution) =>
             Future
               .sequence(
-                distribution.map {
-                  case (node, copies) =>
-                    persistence.reservations.existsFor(request.crate, node.id).flatMap {
-                      exists =>
-                        if (!exists) {
-                          nodeProxy.canStore(node, request.copy(copies = copies)).flatMap { storageAvailable =>
-                            if (storageAvailable) {
-                              val reservation = CrateStorageReservation(request, target = node.id)
-                              persistence.reservations.put(reservation).map { _ =>
-                                Some(reservation)
-                              }
-                            } else {
-                              log.warnN(
-                                "Storage request [{}] for crate [{}] cannot be fulfilled; storage not available",
-                                request,
-                                request.crate
-                              )
-                              Future.successful(None)
-                            }
+                distribution.map { case (node, copies) =>
+                  persistence.reservations.existsFor(request.crate, node.id).flatMap { exists =>
+                    if (!exists) {
+                      nodeProxy.canStore(node, request.copy(copies = copies)).flatMap { storageAvailable =>
+                        if (storageAvailable) {
+                          val reservation = CrateStorageReservation(request, target = node.id)
+                          persistence.reservations.put(reservation).map { _ =>
+                            Some(reservation)
                           }
                         } else {
-                          val message = s"Failed to process reservation request [${request.toString}]; " +
-                            s"reservation already exists for crate [${request.crate.toString}]"
-                          log.error(message)
-                          Future.failed(ReservationFailure(message))
+                          log.warnN(
+                            "Storage request [{}] for crate [{}] cannot be fulfilled; storage not available",
+                            request,
+                            request.crate
+                          )
+                          Future.successful(None)
                         }
+                      }
+                    } else {
+                      val message = s"Failed to process reservation request [${request.toString}]; " +
+                        s"reservation already exists for crate [${request.crate.toString}]"
+                      log.error(message)
+                      Future.failed(ReservationFailure(message))
                     }
+                  }
                 }
               )
               .flatMap { responses =>
@@ -341,10 +335,9 @@ class DefaultRouter(
             Future.failed(e)
         }
 
-      distributionResult.recover {
-        case NonFatal(e) =>
-          log.errorN("Storage reservation failed for request [{}]: [{}]", request.id, e)
-          None
+      distributionResult.recover { case NonFatal(e) =>
+        log.errorN("Storage reservation failed for request [{}]: [{}]", request.id, e)
+        None
       }
     }
 
@@ -489,9 +482,8 @@ object DefaultRouter {
     val localNodesStream = LazyList.continually(nodes).flatten
     val copyIndexes = 0 until copies
 
-    val localNodesDistribution = localNodesStream.zip(copyIndexes).foldLeft(Map.empty[Node, Int]) {
-      case (reduced, (node, _)) =>
-        reduced + (node -> (reduced.getOrElse(node, 0) + 1))
+    val localNodesDistribution = localNodesStream.zip(copyIndexes).foldLeft(Map.empty[Node, Int]) { case (reduced, (node, _)) =>
+      reduced + (node -> (reduced.getOrElse(node, 0) + 1))
     }
 
     localNodesDistribution

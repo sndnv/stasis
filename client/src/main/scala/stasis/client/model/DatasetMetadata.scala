@@ -93,11 +93,11 @@ object DatasetMetadata {
 
   def toByteString(metadata: DatasetMetadata): akka.util.ByteString = {
     val data = proto.metadata.DatasetMetadata(
-      contentChanged = metadata.contentChanged.map {
-        case (entity, metadata) => entity.toAbsolutePath.toString -> EntityMetadata.toProto(metadata)
+      contentChanged = metadata.contentChanged.map { case (entity, metadata) =>
+        entity.toAbsolutePath.toString -> EntityMetadata.toProto(metadata)
       },
-      metadataChanged = metadata.metadataChanged.map {
-        case (entity, metadata) => entity.toAbsolutePath.toString -> EntityMetadata.toProto(metadata)
+      metadataChanged = metadata.metadataChanged.map { case (entity, metadata) =>
+        entity.toAbsolutePath.toString -> EntityMetadata.toProto(metadata)
       },
       filesystem = Some(FilesystemMetadata.toProto(metadata.filesystem))
     )
@@ -111,13 +111,13 @@ object DatasetMetadata {
     }.flatMap { data =>
       for {
         contentChanged <- foldTryMap(
-          source = data.contentChanged.map {
-            case (entity, metadata) => Paths.get(entity) -> EntityMetadata.fromProto(metadata)
+          source = data.contentChanged.map { case (entity, metadata) =>
+            Paths.get(entity) -> EntityMetadata.fromProto(metadata)
           }
         )
         metadataChanged <- foldTryMap(
-          source = data.metadataChanged.map {
-            case (entity, metadata) => Paths.get(entity) -> EntityMetadata.fromProto(metadata)
+          source = data.metadataChanged.map { case (entity, metadata) =>
+            Paths.get(entity) -> EntityMetadata.fromProto(metadata)
           }
         )
         filesystem <- FilesystemMetadata.fromProto(data.filesystem)
@@ -166,10 +166,9 @@ object DatasetMetadata {
     }
 
   private def foldTryMap[K, V](source: Map[K, Try[V]]): Try[Map[K, V]] =
-    source.foldLeft(Try(Map.empty[K, V])) {
-      case (tryCollected, (key, tryCurrent)) =>
-        tryCollected.flatMap { collected =>
-          tryCurrent.map(current => collected + (key -> current))
-        }
+    source.foldLeft(Try(Map.empty[K, V])) { case (tryCollected, (key, tryCurrent)) =>
+      tryCollected.flatMap { collected =>
+        tryCurrent.map(current => collected + (key -> current))
+      }
     }
 }

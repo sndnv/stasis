@@ -64,9 +64,8 @@ class ScheduleStoreSpec extends AsyncUnitSpec {
       .map { result =>
         fail(s"Received unexpected result: [$result]")
       }
-      .recover {
-        case NonFatal(e: IllegalArgumentException) =>
-          e.getMessage should be(s"Schedule [${mockSchedule.id}] is not public")
+      .recover { case NonFatal(e: IllegalArgumentException) =>
+        e.getMessage should be(s"Schedule [${mockSchedule.id}] is not public")
       }
   }
 

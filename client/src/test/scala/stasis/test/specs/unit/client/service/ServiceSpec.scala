@@ -115,9 +115,8 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should include("Connection refused")
+      .recover { case NonFatal(e) =>
+        e.getMessage should include("Connection refused")
       }
   }
 
@@ -144,9 +143,8 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
         .map { result =>
           fail(s"Unexpected result received: [$result]")
         }
-        .recover {
-          case NonFatal(e) =>
-            e.getMessage should include("Connection refused")
+        .recover { case NonFatal(e) =>
+          e.getMessage should include("Connection refused")
         }
     }
   }

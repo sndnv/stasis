@@ -51,43 +51,42 @@ object DefaultServerMonitor {
     Behaviors.withTimers[Message] { timers =>
       timers.startSingleTimer(PingTimerKey, PingServer, interval)
 
-      Behaviors.receive {
-        case (ctx, message) =>
-          message match {
-            case PingServer =>
-              val log = ctx.log
-              val self = ctx.self
+      Behaviors.receive { case (ctx, message) =>
+        message match {
+          case PingServer =>
+            val log = ctx.log
+            val self = ctx.self
 
-              api
-                .ping()
-                .onComplete {
-                  case Success(Ping(id)) =>
-                    log.debugN("Server [{}] responded to ping with [{}]", api.server, id)
-                    tracker.reachable(api.server)
-                    self ! ScheduleNextPing
+            api
+              .ping()
+              .onComplete {
+                case Success(Ping(id)) =>
+                  log.debugN("Server [{}] responded to ping with [{}]", api.server, id)
+                  tracker.reachable(api.server)
+                  self ! ScheduleNextPing
 
-                  case Failure(e) =>
-                    log.errorN("Failed to reach server [{}]: [{}]", api.server, e.getMessage, e)
-                    tracker.unreachable(api.server)
-                    self ! ScheduleNextPing
-                }(ctx.executionContext)
+                case Failure(e) =>
+                  log.errorN("Failed to reach server [{}]: [{}]", api.server, e.getMessage, e)
+                  tracker.unreachable(api.server)
+                  self ! ScheduleNextPing
+              }(ctx.executionContext)
 
-              Behaviors.same
+            Behaviors.same
 
-            case ScheduleNextPing =>
-              ctx.log.debugN(
-                "Scheduling next ping for server [{}] in [{}] second(s)",
-                api.server,
-                interval.toSeconds
-              )
-              timers.startSingleTimer(PingTimerKey, PingServer, interval)
-              Behaviors.same
+          case ScheduleNextPing =>
+            ctx.log.debugN(
+              "Scheduling next ping for server [{}] in [{}] second(s)",
+              api.server,
+              interval.toSeconds
+            )
+            timers.startSingleTimer(PingTimerKey, PingServer, interval)
+            Behaviors.same
 
-            case Stop(replyTo) =>
-              ctx.log.debugN("Stopping monitor for server [{}]", api.server)
-              replyTo ! Done
-              Behaviors.stopped
-          }
+          case Stop(replyTo) =>
+            ctx.log.debugN("Stopping monitor for server [{}]", api.server)
+            replyTo ! Done
+            Behaviors.stopped
+        }
       }
     }
 }

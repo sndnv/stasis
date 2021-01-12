@@ -108,9 +108,8 @@ class NodeProxySpec extends AsyncUnitSpec {
         .map { response =>
           fail(s"Unexpected response received: [$response]")
         }
-        .recover {
-          case e: PersistenceFailure =>
-            e.getMessage should be("[persistDisabled] is set to [true]")
+        .recover { case e: PersistenceFailure =>
+          e.getMessage should be("[persistDisabled] is set to [true]")
         }
     }
 
@@ -122,9 +121,8 @@ class NodeProxySpec extends AsyncUnitSpec {
         .map { response =>
           fail(s"Unexpected response received: [$response]")
         }
-        .recover {
-          case e: PersistenceFailure =>
-            e.getMessage should be("[sinkDisabled] is set to [true]")
+        .recover { case e: PersistenceFailure =>
+          e.getMessage should be("[sinkDisabled] is set to [true]")
         }
     }
 
@@ -136,9 +134,8 @@ class NodeProxySpec extends AsyncUnitSpec {
         .map { response =>
           fail(s"Unexpected response received: [$response]")
         }
-        .recover {
-          case e: PersistenceFailure =>
-            e.getMessage should be("[retrieveDisabled] is set to [true]")
+        .recover { case e: PersistenceFailure =>
+          e.getMessage should be("[retrieveDisabled] is set to [true]")
         }
     }
 
@@ -172,9 +169,8 @@ class NodeProxySpec extends AsyncUnitSpec {
         .map { response =>
           fail(s"Unexpected response received: [$response]")
         }
-        .recover {
-          case ExpectedFailure(actualAddress) =>
-            actualAddress should be(node.address)
+        .recover { case ExpectedFailure(actualAddress) =>
+          actualAddress should be(node.address)
         }
     }
 
@@ -186,9 +182,8 @@ class NodeProxySpec extends AsyncUnitSpec {
         .map { response =>
           fail(s"Unexpected response received: [$response]")
         }
-        .recover {
-          case ExpectedFailure(actualAddress) =>
-            actualAddress should be(node.address)
+        .recover { case ExpectedFailure(actualAddress) =>
+          actualAddress should be(node.address)
         }
     }
 
@@ -200,9 +195,8 @@ class NodeProxySpec extends AsyncUnitSpec {
         .map { response =>
           fail(s"Unexpected response received: [$response]")
         }
-        .recover {
-          case ExpectedFailure(actualAddress) =>
-            actualAddress should be(node.address)
+        .recover { case ExpectedFailure(actualAddress) =>
+          actualAddress should be(node.address)
         }
     }
 
@@ -224,9 +218,8 @@ class NodeProxySpec extends AsyncUnitSpec {
         .map { response =>
           fail(s"Unexpected response received: [$response]")
         }
-        .recover {
-          case ExpectedFailure(actualAddress) =>
-            actualAddress should be(node.address)
+        .recover { case ExpectedFailure(actualAddress) =>
+          actualAddress should be(node.address)
         }
     }
   }

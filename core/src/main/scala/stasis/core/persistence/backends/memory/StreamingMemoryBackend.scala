@@ -23,9 +23,8 @@ class StreamingMemoryBackend private (
   override def sink(key: UUID): Future[Sink[ByteString, Future[Done]]] =
     Future.successful(
       Flow[ByteString]
-        .fold(ByteString.empty) {
-          case (folded, chunk) =>
-            folded.concat(chunk)
+        .fold(ByteString.empty) { case (folded, chunk) =>
+          folded.concat(chunk)
         }
         .mapAsyncUnordered(parallelism = 1) { data =>
           backend.put(key, data)

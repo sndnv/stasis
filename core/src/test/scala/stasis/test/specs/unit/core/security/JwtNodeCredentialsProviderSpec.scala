@@ -41,9 +41,8 @@ class JwtNodeCredentialsProviderSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Unexpected response received: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e should be(ProviderFailure(s"Failed to find node with address [$otherAddress]"))
+      .recover { case NonFatal(e) =>
+        e should be(ProviderFailure(s"Failed to find node with address [$otherAddress]"))
       }
   }
 

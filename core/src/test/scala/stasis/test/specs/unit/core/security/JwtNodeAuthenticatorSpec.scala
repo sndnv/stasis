@@ -56,9 +56,8 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Unexpected response received: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e should be(AuthenticationFailure(s"Node [${node.id}] not found"))
+      .recover { case NonFatal(e) =>
+        e should be(AuthenticationFailure(s"Node [${node.id}] not found"))
       }
   }
 
@@ -82,9 +81,8 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from authenticator: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(s"Invalid node ID encountered: [$otherNode]")
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(s"Invalid node ID encountered: [$otherNode]")
       }
   }
 
@@ -100,9 +98,8 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
       .map { response =>
         fail(s"Received unexpected response from authenticator: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be("Unsupported node credentials provided: [Basic]")
+      .recover { case NonFatal(e) =>
+        e.getMessage should be("Unsupported node credentials provided: [Basic]")
       }
   }
 

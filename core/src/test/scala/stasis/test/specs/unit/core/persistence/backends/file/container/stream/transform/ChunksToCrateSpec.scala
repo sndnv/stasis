@@ -19,12 +19,11 @@ class ChunksToCrateSpec extends AsyncUnitSpec {
       ByteString("1/1"),
       ByteString("crate-1/part-2"),
       ByteString("crate-1/p3")
-    ).zipWithIndex.map {
-      case (data, index) =>
-        CrateChunk(
-          ChunkHeader(crateId, index, data.length),
-          data
-        )
+    ).zipWithIndex.map { case (data, index) =>
+      CrateChunk(
+        ChunkHeader(crateId, index, data.length),
+        data
+      )
     }
 
     val expectedParts = chunks.map(_.data)

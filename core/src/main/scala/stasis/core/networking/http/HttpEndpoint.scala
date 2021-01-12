@@ -50,59 +50,56 @@ class HttpEndpoint(
   }
 
   private val sanitizingExceptionHandler: ExceptionHandler =
-    ExceptionHandler {
-      case NonFatal(e) =>
-        extractRequestEntity { entity =>
-          val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
-          val failureReference = java.util.UUID.randomUUID()
+    ExceptionHandler { case NonFatal(e) =>
+      extractRequestEntity { entity =>
+        val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
+        val failureReference = java.util.UUID.randomUUID()
 
-          log.error(
-            "Unhandled exception encountered: [{}]; failure reference is [{}]",
-            e.getMessage,
-            failureReference,
-            e
-          )
+        log.error(
+          "Unhandled exception encountered: [{}]; failure reference is [{}]",
+          e.getMessage,
+          failureReference,
+          e
+        )
 
-          complete(
-            StatusCodes.InternalServerError,
-            HttpEntity(
-              ContentTypes.`text/plain(UTF-8)`,
-              s"Failed to process request; failure reference is [${failureReference.toString}]"
-            )
+        complete(
+          StatusCodes.InternalServerError,
+          HttpEntity(
+            ContentTypes.`text/plain(UTF-8)`,
+            s"Failed to process request; failure reference is [${failureReference.toString}]"
           )
-        }
+        )
+      }
     }
 
   private val rejectionHandler: RejectionHandler =
     RejectionHandler
       .newBuilder()
-      .handle {
-        case MissingQueryParamRejection(parameterName) =>
-          extractRequestEntity { entity =>
-            val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
+      .handle { case MissingQueryParamRejection(parameterName) =>
+        extractRequestEntity { entity =>
+          val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
-            val message = s"Parameter [$parameterName] is missing, invalid or malformed"
-            log.warn(message)
+          val message = s"Parameter [$parameterName] is missing, invalid or malformed"
+          log.warn(message)
 
-            complete(
-              StatusCodes.BadRequest,
-              HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
-            )
-          }
+          complete(
+            StatusCodes.BadRequest,
+            HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
+          )
+        }
       }
-      .handle {
-        case ValidationRejection(_, _) =>
-          extractRequestEntity { entity =>
-            val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
+      .handle { case ValidationRejection(_, _) =>
+        extractRequestEntity { entity =>
+          val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
-            val message = "Provided data is invalid or malformed"
-            log.warn(message)
+          val message = "Provided data is invalid or malformed"
+          log.warn(message)
 
-            complete(
-              StatusCodes.BadRequest,
-              HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
-            )
-          }
+          complete(
+            StatusCodes.BadRequest,
+            HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
+          )
+        }
       }
       .result()
       .seal
@@ -132,45 +129,44 @@ class HttpEndpoint(
                 path("crates" / JavaUUID) { crateId: Crate.Id =>
                   concat(
                     put {
-                      parameters("reservation".as[java.util.UUID]) {
-                        reservationId =>
-                          onSuccess(reservationStore.get(reservationId)) {
-                            case Some(reservation) if reservation.crate == crateId =>
-                              extractDataBytes { stream =>
-                                val manifest = Manifest(source = node, reservation = reservation)
-                                onSuccess(
-                                  router.push(manifest, stream.mapMaterializedValue(_ => NotUsed))
-                                ) { _ =>
-                                  log.debug("Crate created with manifest: [{}]", manifest)
-                                  complete(StatusCodes.OK)
-                                }
+                      parameters("reservation".as[java.util.UUID]) { reservationId =>
+                        onSuccess(reservationStore.get(reservationId)) {
+                          case Some(reservation) if reservation.crate == crateId =>
+                            extractDataBytes { stream =>
+                              val manifest = Manifest(source = node, reservation = reservation)
+                              onSuccess(
+                                router.push(manifest, stream.mapMaterializedValue(_ => NotUsed))
+                              ) { _ =>
+                                log.debug("Crate created with manifest: [{}]", manifest)
+                                complete(StatusCodes.OK)
                               }
+                            }
 
-                            case Some(reservation) =>
-                              val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
+                          case Some(reservation) =>
+                            val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
-                              log.error(
-                                "Node [{}] failed to push crate with ID [{}]; reservation [{}] is for crate [{}]",
-                                node,
-                                crateId,
-                                reservationId,
-                                reservation.crate
-                              )
+                            log.error(
+                              "Node [{}] failed to push crate with ID [{}]; reservation [{}] is for crate [{}]",
+                              node,
+                              crateId,
+                              reservationId,
+                              reservation.crate
+                            )
 
-                              complete(StatusCodes.BadRequest)
+                            complete(StatusCodes.BadRequest)
 
-                            case None =>
-                              val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
+                          case None =>
+                            val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
-                              log.error(
-                                "Node [{}] failed to push crate with ID [{}]; reservation [{}] not found",
-                                node,
-                                crateId,
-                                reservationId
-                              )
+                            log.error(
+                              "Node [{}] failed to push crate with ID [{}]; reservation [{}] not found",
+                              node,
+                              crateId,
+                              reservationId
+                            )
 
-                              complete(StatusCodes.FailedDependency)
-                          }
+                            complete(StatusCodes.FailedDependency)
+                        }
                       }
                     },
                     get {

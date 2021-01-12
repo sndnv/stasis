@@ -39,15 +39,14 @@ class EntityMetadataSpec extends UnitSpec {
     group = Fixtures.Metadata.FileOneMetadata.group,
     permissions = Fixtures.Metadata.FileOneMetadata.permissions,
     checksum = com.google.protobuf.ByteString.copyFrom(Fixtures.Metadata.FileOneMetadata.checksum.toByteArray),
-    crates = Fixtures.Metadata.FileOneMetadata.crates.map {
-      case (path, uuid) =>
-        (
-          path.toString,
-          proto.metadata.Uuid(
-            mostSignificantBits = uuid.getMostSignificantBits,
-            leastSignificantBits = uuid.getLeastSignificantBits
-          )
+    crates = Fixtures.Metadata.FileOneMetadata.crates.map { case (path, uuid) =>
+      (
+        path.toString,
+        proto.metadata.Uuid(
+          mostSignificantBits = uuid.getMostSignificantBits,
+          leastSignificantBits = uuid.getLeastSignificantBits
         )
+      )
     }
   )
 
@@ -62,15 +61,14 @@ class EntityMetadataSpec extends UnitSpec {
     group = Fixtures.Metadata.FileTwoMetadata.group,
     permissions = Fixtures.Metadata.FileTwoMetadata.permissions,
     checksum = com.google.protobuf.ByteString.copyFrom(Fixtures.Metadata.FileTwoMetadata.checksum.toByteArray),
-    crates = Fixtures.Metadata.FileTwoMetadata.crates.map {
-      case (path, uuid) =>
-        (
-          path.toString,
-          proto.metadata.Uuid(
-            mostSignificantBits = uuid.getMostSignificantBits,
-            leastSignificantBits = uuid.getLeastSignificantBits
-          )
+    crates = Fixtures.Metadata.FileTwoMetadata.crates.map { case (path, uuid) =>
+      (
+        path.toString,
+        proto.metadata.Uuid(
+          mostSignificantBits = uuid.getMostSignificantBits,
+          leastSignificantBits = uuid.getLeastSignificantBits
         )
+      )
     }
   )
 

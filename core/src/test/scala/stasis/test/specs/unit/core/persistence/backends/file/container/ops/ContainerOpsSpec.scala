@@ -56,11 +56,10 @@ class ContainerOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoCloseS
         .map { response =>
           fail(s"Received unexpected response: [$response]")
         }
-        .recover {
-          case NonFatal(e) =>
-            e.getMessage should be(
-              s"Failed to create container [$containerPath]: [FileAlreadyExistsException: $containerPath]"
-            )
+        .recover { case NonFatal(e) =>
+          e.getMessage should be(
+            s"Failed to create container [$containerPath]: [FileAlreadyExistsException: $containerPath]"
+          )
         }
     }
   }
@@ -91,11 +90,10 @@ class ContainerOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoCloseS
       .map { response =>
         fail(s"Received unexpected response: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Failed to destroy container [$containerPath]: [NoSuchFileException: $containerPath]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Failed to destroy container [$containerPath]: [NoSuchFileException: $containerPath]"
+        )
       }
   }
 
@@ -242,13 +240,12 @@ class ContainerOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoCloseS
       .map { response =>
         fail(s"Received unexpected response: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Failed to load container [$containerPath]: " +
-              s"[IllegalArgumentException: requirement failed:" +
-              s" Unsupported container version found [0]; supported versions are: [1]]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Failed to load container [$containerPath]: " +
+            s"[IllegalArgumentException: requirement failed:" +
+            s" Unsupported container version found [0]; supported versions are: [1]]"
+        )
       }
   }
 
@@ -283,13 +280,12 @@ class ContainerOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoCloseS
       .map { response =>
         fail(s"Received unexpected response: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Failed to read container header [$containerPath]: " +
-              s"[IllegalArgumentException: requirement failed:" +
-              s" Unsupported container version found [0]; supported versions are: [1]]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Failed to read container header [$containerPath]: " +
+            s"[IllegalArgumentException: requirement failed:" +
+            s" Unsupported container version found [0]; supported versions are: [1]]"
+        )
       }
   }
 
@@ -348,13 +344,12 @@ class ContainerOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoCloseS
       .map { response =>
         fail(s"Received unexpected response: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Failed to load container [$containerPath]: " +
-              s"[IllegalArgumentException: requirement failed:" +
-              s" Unsupported container version found [0]; supported versions are: [1]]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Failed to load container [$containerPath]: " +
+            s"[IllegalArgumentException: requirement failed:" +
+            s" Unsupported container version found [0]; supported versions are: [1]]"
+        )
       }
   }
 
@@ -449,12 +444,11 @@ class ContainerOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoCloseS
       .map { response =>
         fail(s"Received unexpected response: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Failed to calculate occupied chunks for container [$containerPath]: " +
-              s"[NoSuchFileException: $containerPath]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Failed to calculate occupied chunks for container [$containerPath]: " +
+            s"[NoSuchFileException: $containerPath]"
+        )
       }
   }
 
@@ -467,12 +461,11 @@ class ContainerOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoCloseS
       .map { response =>
         fail(s"Received unexpected response: [$response]")
       }
-      .recover {
-        case NonFatal(e) =>
-          e.getMessage should be(
-            s"Failed to calculate occupied chunks for container [$containerPath]: " +
-              s"[IllegalArgumentException: requirement failed: Provided container is not valid]"
-          )
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Failed to calculate occupied chunks for container [$containerPath]: " +
+            s"[IllegalArgumentException: requirement failed: Provided container is not valid]"
+        )
       }
   }
 }

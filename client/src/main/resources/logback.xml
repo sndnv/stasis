@@ -18,7 +18,7 @@
     <appender name="FILE" class="ch.qos.logback.classic.AsyncAppender">
         <queueSize>8192</queueSize>
         <neverBlock>true</neverBlock>
-        <appender-ref ref="SYNC_FILE" />
+        <appender-ref ref="SYNC_FILE"/>
     </appender>
 
     <appender name="SYNC_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
@@ -30,11 +30,11 @@
     <appender name="CONSOLE" class="ch.qos.logback.classic.AsyncAppender">
         <queueSize>8192</queueSize>
         <neverBlock>true</neverBlock>
-        <appender-ref ref="SYNC_CONSOLE" />
+        <appender-ref ref="SYNC_CONSOLE"/>
     </appender>
 
-    <variable name="CLIENT_LOGLEVEL" value="${STASIS_CLIENT_LOGLEVEL:-INFO}" />
-    <variable name="CLIENT_LOG_TARGET" value="${STASIS_CLIENT_LOG_TARGET:-FILE}" />
+    <variable name="CLIENT_LOGLEVEL" value="${STASIS_CLIENT_LOGLEVEL:-INFO}"/>
+    <variable name="CLIENT_LOG_TARGET" value="${STASIS_CLIENT_LOG_TARGET:-FILE}"/>
 
     <root level="${CLIENT_LOGLEVEL}">
         <appender-ref ref="${CLIENT_LOG_TARGET}"/>

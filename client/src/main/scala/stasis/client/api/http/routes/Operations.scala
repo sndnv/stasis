@@ -34,18 +34,17 @@ class Operations()(implicit override val mat: Materializer, context: Context) ex
             operations <- context.executor.operations
             progress <- context.tracker.state.map(_.operations)
           } yield {
-            operations.map {
-              case (operation, operationType) =>
-                val operationProgress = progress.getOrElse(
-                  operation,
-                  Operation.Progress.empty
-                )
+            operations.map { case (operation, operationType) =>
+              val operationProgress = progress.getOrElse(
+                operation,
+                Operation.Progress.empty
+              )
 
-                OperationState(
-                  operation = operation,
-                  `type` = operationType,
-                  progress = operationProgress
-                )
+              OperationState(
+                operation = operation,
+                `type` = operationType,
+                progress = operationProgress
+              )
             }
           }
 
@@ -77,67 +76,65 @@ class Operations()(implicit override val mat: Materializer, context: Context) ex
       },
       pathPrefix("recover" / JavaUUID) { definition =>
         put {
-          parameter("query".as[Recovery.PathQuery].?) {
-            query =>
-              extractDestination(destinationParam = "destination", keepStructureParam = "keep_structure") {
-                destination =>
-                  concat(
-                    path("latest") {
-                      val result = context.executor.startRecoveryWithDefinition(
-                        definition = definition,
-                        until = None,
-                        query = query,
-                        destination = destination
-                      )
-
-                      onSuccess(result) { operation =>
-                        log.debugN(
-                          "API started recovery operation [{}] for definition [{}] with latest entry",
-                          operation,
-                          definition
-                        )
-                        discardEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
-                      }
-
-                    },
-                    path("until" / IsoInstant) { until =>
-                      val result = context.executor.startRecoveryWithDefinition(
-                        definition = definition,
-                        until = Some(until),
-                        query = query,
-                        destination = destination
-                      )
-
-                      onSuccess(result) { operation =>
-                        log.debugN(
-                          "API started recovery operation [{}] for definition [{}] until [{}]",
-                          operation,
-                          definition,
-                          until
-                        )
-                        discardEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
-                      }
-
-                    },
-                    path("from" / JavaUUID) { entry =>
-                      val result = context.executor.startRecoveryWithEntry(
-                        entry = entry,
-                        query = query,
-                        destination = destination
-                      )
-
-                      onSuccess(result) { operation =>
-                        log.debugN(
-                          "API started recovery operation [{}] for definition [{}] with entry [{}]",
-                          operation,
-                          definition,
-                          entry
-                        )
-                        discardEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
-                      }
-                    }
+          parameter("query".as[Recovery.PathQuery].?) { query =>
+            extractDestination(destinationParam = "destination", keepStructureParam = "keep_structure") { destination =>
+              concat(
+                path("latest") {
+                  val result = context.executor.startRecoveryWithDefinition(
+                    definition = definition,
+                    until = None,
+                    query = query,
+                    destination = destination
                   )
-              }
+
+                  onSuccess(result) { operation =>
+                    log.debugN(
+                      "API started recovery operation [{}] for definition [{}] with latest entry",
+                      operation,
+                      definition
+                    )
+                    discardEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
+                  }
+
+                },
+                path("until" / IsoInstant) { until =>
+                  val result = context.executor.startRecoveryWithDefinition(
+                    definition = definition,
+                    until = Some(until),
+                    query = query,
+                    destination = destination
+                  )
+
+                  onSuccess(result) { operation =>
+                    log.debugN(
+                      "API started recovery operation [{}] for definition [{}] until [{}]",
+                      operation,
+                      definition,
+                      until
+                    )
+                    discardEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
+                  }
+
+                },
+                path("from" / JavaUUID) { entry =>
+                  val result = context.executor.startRecoveryWithEntry(
+                    entry = entry,
+                    query = query,
+                    destination = destination
+                  )
+
+                  onSuccess(result) { operation =>
+                    log.debugN(
+                      "API started recovery operation [{}] for definition [{}] with entry [{}]",
+                      operation,
+                      definition,
+                      entry
+                    )
+                    discardEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
+                  }
+                }
+              )
+            }
           }
         }
       },
@@ -211,8 +208,8 @@ object Operations {
         included = specification.included,
         excluded = specification.excluded,
         explanation = specification.explanation,
-        unmatched = specification.unmatched.map {
-          case (rule, reason) => (rule.original, s"${reason.getClass.getSimpleName}: ${reason.getMessage}")
+        unmatched = specification.unmatched.map { case (rule, reason) =>
+          (rule.original, s"${reason.getClass.getSimpleName}: ${reason.getMessage}")
         }
       )
   }

@@ -30,28 +30,26 @@ object ContainerLogOps extends AutoCloseSupport {
       header
     }
 
-    result.recoverWith {
-      case NonFatal(e) =>
-        Future.failed(
-          new ContainerFailure(
-            s"Failed to create container log [${path.toString}]: " +
-              s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
-          )
+    result.recoverWith { case NonFatal(e) =>
+      Future.failed(
+        new ContainerFailure(
+          s"Failed to create container log [${path.toString}]: " +
+            s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
         )
+      )
     }
   }
 
   def destroy(path: Path)(implicit ec: ExecutionContext): Future[Done] =
     FileOps
       .destroyFile(path)
-      .recoverWith {
-        case NonFatal(e) =>
-          Future.failed(
-            new ContainerFailure(
-              s"Failed to destroy container log [${path.toString}]: " +
-                s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
-            )
+      .recoverWith { case NonFatal(e) =>
+        Future.failed(
+          new ContainerFailure(
+            s"Failed to destroy container log [${path.toString}]: " +
+              s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
           )
+        )
       }
 
   def exists(path: Path)(implicit ec: ExecutionContext, byteOrder: ByteOrder): Future[Boolean] =
@@ -72,25 +70,23 @@ object ContainerLogOps extends AutoCloseSupport {
   def crates(path: Path)(implicit ec: ExecutionContext, byteOrder: ByteOrder): Future[Set[UUID]] =
     readLogEntries(path)
       .map { entries =>
-        entries.foldLeft(Set.empty[UUID]) {
-          case (crates, entry) =>
-            entry.event match {
-              case Container.LogEntry.Add =>
-                crates + entry.crate
+        entries.foldLeft(Set.empty[UUID]) { case (crates, entry) =>
+          entry.event match {
+            case Container.LogEntry.Add =>
+              crates + entry.crate
 
-              case Container.LogEntry.Remove =>
-                crates - entry.crate
-            }
+            case Container.LogEntry.Remove =>
+              crates - entry.crate
+          }
         }
       }
-      .recoverWith {
-        case NonFatal(e) =>
-          Future.failed(
-            new ContainerFailure(
-              s"Failed to retrieve crates from container log [${path.toString}]: " +
-                s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
-            )
+      .recoverWith { case NonFatal(e) =>
+        Future.failed(
+          new ContainerFailure(
+            s"Failed to retrieve crates from container log [${path.toString}]: " +
+              s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
           )
+        )
       }
 
   private def addLogEntry(
@@ -110,14 +106,13 @@ object ContainerLogOps extends AutoCloseSupport {
 
         Done
       }
-    }.recoverWith {
-      case NonFatal(e) =>
-        Future.failed(
-          new ContainerFailure(
-            s"Failed to update container log [${path.toString}] with event [${event.toString}]: " +
-              s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
-          )
+    }.recoverWith { case NonFatal(e) =>
+      Future.failed(
+        new ContainerFailure(
+          s"Failed to update container log [${path.toString}] with event [${event.toString}]: " +
+            s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
         )
+      )
     }
 
   private def readLogEntries(
