@@ -9,7 +9,7 @@ install_requires = [
     'click==7.1.2',
     'pyparsing==2.4.7',
     'psutil==5.8.0',
-    'cryptography==3.3.1',
+    'cryptography==3.3.2',
     'sseclient-py==1.7',
     'tqdm==4.56.0',
 ]
