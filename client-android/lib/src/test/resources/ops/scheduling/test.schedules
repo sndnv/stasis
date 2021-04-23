@@ -1,0 +1,9 @@
+# backups
+# operation     # schedule-id                        # definition-id                      # target files (optional)
+backup          c7a1a7c4-94e1-44a8-8365-9fc44c8f51ea ea371971-adc5-44ba-9d93-6f65507d6967                                # schedule-1: backup with definition-1 using rules
+backup          b859d9fb-1962-4a29-b18d-2c7c835cf18b a1a55d45-b3b2-48df-b628-2fb2e7e022a4 /work/file-01, /work/file-02   # schedule-2: backup with definition-2 using files
+
+// maintenance
+expiration      4bb8ab15-e8ba-40dd-b814-b8b112a79147    // schedule-3: run expiration
+validation      ce849f2c-e170-427c-8e9d-0e3d8cdcf700    // schedule-4: run validation
+key-rotation    2f059ab6-3db2-4a34-8082-780d673f6519    // schedule-5: run key rotation

@@ -1,0 +1,38 @@
+package stasis.test.client_android.lib.encryption.secrets
+
+import io.kotest.core.spec.style.WordSpec
+import io.kotest.matchers.shouldBe
+import okio.ByteString.Companion.decodeBase64
+import stasis.client_android.lib.encryption.secrets.UserEncryptionSecret
+import stasis.client_android.lib.encryption.secrets.UserHashedEncryptionPassword
+
+class UserHashedEncryptionPasswordSpec : WordSpec({
+    "A UserHashedEncryptionPassword" should {
+        val hashedPassword =
+            "US794fdkdF/LvnVnSo4LjD78QhaT0iUTaQA1u78vz+z6MGagfoHbcFpgtdhTDz2IM5zTL0LFOh0cZmghGfu8jQ=="
+
+        val encryptionPassword = UserHashedEncryptionPassword(
+            user = SecretsConfig.testUser,
+            hashedPassword = hashedPassword.decodeBase64()!!,
+            target = SecretsConfig.testConfig
+        )
+
+        "support generating user encryption secrets" {
+            val iv = "J9vRvveXTnC0iF4ymYbIo5racLWx60CGxcOlklH/qH4xqIKvlsZQyr66bGFxzpYrayRS7iipCVimlYt7BCj7uQ=="
+            val key = "nXT1Bw0YCrk79xgnvlUJ5CZByYD9nuSZo9XQghf1xQU="
+
+            encryptionPassword.toEncryptionSecret() shouldBe (
+                    UserEncryptionSecret(
+                        user = SecretsConfig.testUser,
+                        iv = iv.decodeBase64()!!,
+                        key = key.decodeBase64()!!,
+                        target = SecretsConfig.testConfig
+                    )
+                    )
+        }
+
+        "not render its content via toString" {
+            encryptionPassword.toString() shouldBe ("Secret(${encryptionPassword.javaClass.name})")
+        }
+    }
+})
