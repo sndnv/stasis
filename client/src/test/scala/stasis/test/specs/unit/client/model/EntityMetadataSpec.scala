@@ -22,7 +22,7 @@ class EntityMetadataSpec extends UnitSpec {
   }
 
   it should "fail to be deserialized when empty entity is provided" in {
-    EntityMetadata.fromProto(entityMetadata = emtpyMetadataProto) match {
+    EntityMetadata.fromProto(entityMetadata = emptyMetadataProto) match {
       case Success(metadata) => fail(s"Unexpected successful result received: [$metadata]")
       case Failure(e)        => e shouldBe a[IllegalArgumentException]
     }
@@ -114,7 +114,7 @@ class EntityMetadataSpec extends UnitSpec {
     )
   )
 
-  private val emtpyMetadataProto = proto.metadata.EntityMetadata(
+  private val emptyMetadataProto = proto.metadata.EntityMetadata(
     entity = proto.metadata.EntityMetadata.Entity.Empty
   )
 }

@@ -30,8 +30,8 @@ class DecompressedByteStringSourceSpec extends AsyncUnitSpec {
     extended
       .decompress()
       .runWith(Sink.head)
-      .map { compressed =>
-        compressed should be(ByteString("decompressed"))
+      .map { decompressed =>
+        decompressed should be(ByteString("decompressed"))
       }
   }
 
