@@ -1,14 +1,13 @@
 package stasis.client.encryption
 
-import java.security.SecureRandom
-
 import akka.NotUsed
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
-import javax.crypto.spec.{GCMParameterSpec, SecretKeySpec}
-import javax.crypto.{Cipher, KeyGenerator}
 import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceMetadataSecret}
 import stasis.client.encryption.stream.CipherStage
+
+import javax.crypto.Cipher
+import javax.crypto.spec.{GCMParameterSpec, SecretKeySpec}
 
 object Aes extends Encoder with Decoder {
   // recommended IV size for GCM (96 bits); for more info see https://crypto.stackexchange.com/a/41610
@@ -21,13 +20,6 @@ object Aes extends Encoder with Decoder {
   // the limit here is set as 4 GB, well below all suggested maximum sizes
   // for more info see https://crypto.stackexchange.com/q/31793 and https://crypto.stackexchange.com/q/44113
   final val MaximumPlaintextSize: Long = 4L * 1024 * 1024 * 1024
-
-  def generateKey(): ByteString = {
-    val generator = KeyGenerator.getInstance("AES")
-    generator.init(new SecureRandom())
-
-    ByteString(generator.generateKey().getEncoded)
-  }
 
   override def encrypt(fileSecret: DeviceFileSecret): Flow[ByteString, ByteString, NotUsed] =
     Flow.fromGraph(fileSecret.encryption)

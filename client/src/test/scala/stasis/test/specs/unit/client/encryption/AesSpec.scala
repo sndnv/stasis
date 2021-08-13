@@ -65,10 +65,6 @@ class AesSpec extends AsyncUnitSpec with EncodingHelpers with ResourceHelpers {
       }
   }
 
-  it should "generate AES keys" in {
-    Aes.generateKey().size should be(16)
-  }
-
   private implicit val system: ActorSystem = ActorSystem(name = "AesSpec")
 
   private val plaintextFile = "/encryption/plaintext-file".asTestResource

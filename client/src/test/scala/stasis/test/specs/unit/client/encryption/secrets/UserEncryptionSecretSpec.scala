@@ -17,7 +17,6 @@ class UserEncryptionSecretSpec extends AsyncUnitSpec with SecretsConfig with Enc
   }
 
   it should "decrypt device secrets" in {
-
     encryptionSecret
       .decryptDeviceSecret(
         device = testDevice,
