@@ -1,5 +1,6 @@
 package stasis.client_android.lib.model.server.schedules
 
+import com.squareup.moshi.Json
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -9,6 +10,7 @@ import kotlin.math.max
 data class Schedule(
     val id: ScheduleId,
     val info: String,
+    @Json(name = "is_public")
     val isPublic: Boolean,
     val start: LocalDateTime,
     val interval: Duration

@@ -7,6 +7,10 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okio.Buffer
 import okio.Source
+import stasis.client_android.lib.api.clients.exceptions.AccessDeniedFailure
+import stasis.client_android.lib.api.clients.exceptions.EndpointFailure
+import stasis.client_android.lib.api.clients.exceptions.ResourceMissingFailure
+import stasis.client_android.lib.api.clients.internal.ClientExtensions
 import stasis.client_android.lib.security.HttpCredentials
 
 class ClientExtensionsSpec : WordSpec({
@@ -39,7 +43,11 @@ class ClientExtensionsSpec : WordSpec({
             val data = """{"int":1,"bool":false,"string":"other"}"""
 
             client.read() shouldBe (null)
-            client.read(from = data) shouldBe (TestDataClass(int = 1, bool = false, string = "other"))
+            client.read(from = data) shouldBe (TestDataClass(
+                int = 1,
+                bool = false,
+                string = "other"
+            ))
         }
 
         "convert response data to lists of model classes" {
@@ -69,7 +77,11 @@ class ClientExtensionsSpec : WordSpec({
             val e = shouldThrow<IllegalArgumentException> { client.readRequired() }
             e.message shouldBe ("Expected data but none was found")
 
-            client.readRequired(from = data) shouldBe (TestDataClass(int = -1, bool = true, string = "test-123"))
+            client.readRequired(from = data) shouldBe (TestDataClass(
+                int = -1,
+                bool = true,
+                string = "test-123"
+            ))
         }
 
         "convert response data to required lists of model classes" {
@@ -101,7 +113,8 @@ class ClientExtensionsSpec : WordSpec({
             server.enqueue(MockResponse().setBody(expectedResponse))
             server.start()
 
-            val client = TestClient(providedCredentials = HttpCredentials.OAuth2BearerToken(token = expectedToken))
+            val client =
+                TestClient(providedCredentials = HttpCredentials.OAuth2BearerToken(token = expectedToken))
 
             val response = client.makeRequest(server.url("/test").toString())
             response.body?.string() shouldBe (expectedResponse)
@@ -125,7 +138,8 @@ class ClientExtensionsSpec : WordSpec({
 
             server.enqueue(
                 MockResponse().setBody(
-                    """[{"int":42,"bool":false,"string":"some-string"},{"int":84,"bool":true,"string":"other-string"}]""".trimMargin()
+                    """[{"int":42,"bool":false,"string":"some-string"},{"int":84,"bool":true,"string":"other-string"}]"""
+                        .trimMargin()
                 )
             )
 
@@ -141,6 +155,36 @@ class ClientExtensionsSpec : WordSpec({
             request.headers[HttpCredentials.AuthorizationHeader] shouldBe (null)
 
             server.shutdown()
+        }
+
+        "support handling response failures" {
+            val client = TestClient(providedCredentials = HttpCredentials.None)
+
+            val server = MockWebServer()
+            server.start()
+
+            server.enqueue(MockResponse().setResponseCode(ClientExtensions.StatusUnauthorized))
+            server.enqueue(MockResponse().setResponseCode(ClientExtensions.StatusForbidden))
+            server.enqueue(MockResponse().setResponseCode(ClientExtensions.StatusNotFound))
+            server.enqueue(MockResponse().setResponseCode(500))
+
+            shouldThrow<AccessDeniedFailure> {
+                client.makeJsonRequest(server.url("/test").toString())
+            }
+
+            shouldThrow<AccessDeniedFailure> {
+                client.makeJsonRequest(server.url("/test").toString())
+            }
+
+            shouldThrow<ResourceMissingFailure> {
+                client.makeJsonRequest(server.url("/test").toString())
+            }
+
+            val e = shouldThrow<EndpointFailure> {
+                client.makeJsonRequest(server.url("/test").toString())
+            }
+
+            e.message shouldBe ("Server responded with [500 - Server Error]")
         }
     }
 })

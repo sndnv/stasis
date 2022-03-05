@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import okio.Source
+import okio.buffer
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.model.EntityMetadata
 import stasis.client_android.lib.model.TargetEntity
@@ -29,7 +30,11 @@ interface EntityProcessing {
         get() = "rwx------"
 
     private val targetDirectoryAttributes: FileAttribute<Set<PosixFilePermission>>
-        get() = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(targetDirectoryPermissions))
+        get() = PosixFilePermissions.asFileAttribute(
+            PosixFilePermissions.fromString(
+                targetDirectoryPermissions
+            )
+        )
 
     fun entityProcessing(operation: OperationId, flow: Flow<TargetEntity>): Flow<TargetEntity> =
         flow.map {

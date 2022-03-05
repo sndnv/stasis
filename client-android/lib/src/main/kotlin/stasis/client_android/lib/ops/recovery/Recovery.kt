@@ -1,11 +1,12 @@
 package stasis.client_android.lib.ops.recovery
 
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.plus
 import stasis.client_android.lib.collection.DefaultRecoveryCollector
 import stasis.client_android.lib.collection.RecoveryCollector
 import stasis.client_android.lib.collection.RecoveryMetadataCollector
@@ -20,6 +21,11 @@ import stasis.client_android.lib.ops.recovery.Recovery.Destination.Companion.toT
 import stasis.client_android.lib.ops.recovery.stages.EntityCollection
 import stasis.client_android.lib.ops.recovery.stages.EntityProcessing
 import stasis.client_android.lib.ops.recovery.stages.MetadataApplication
+import stasis.client_android.lib.utils.Try
+import stasis.client_android.lib.utils.Try.Companion.flatMap
+import stasis.client_android.lib.utils.Try.Companion.map
+import stasis.client_android.lib.utils.Try.Failure
+import stasis.client_android.lib.utils.Try.Success
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
 import java.nio.file.Path
@@ -34,23 +40,28 @@ class Recovery(
 
     override fun type(): Operation.Type = Operation.Type.Recovery
 
-    override suspend fun start() {
+    override fun start(withScope: CoroutineScope, f: (Throwable?) -> Unit) {
         require(jobRef.get() == null) { "Recovery [$id] already started" }
 
-        val job = withContext(Dispatchers.IO) {
-            launch {
-                try {
-                    stages.entityCollection(id)
-                        .let { flow -> stages.entityProcessing(id, flow) }
-                        .let { flow -> stages.metadataApplication(id, flow) }
-                        .collect()
-                } catch (e: Throwable) {
-                    providers.track.failureEncountered(id, e)
-                    throw e
-                } finally {
-                    providers.track.completed(id)
-                }
+        val supervisor = SupervisorJob()
+
+        val job = (withScope + supervisor).async {
+            try {
+                stages.entityCollection(id)
+                    .let { flow -> stages.entityProcessing(id, flow) }
+                    .let { flow -> stages.metadataApplication(id, flow) }
+                    .collect()
+            } catch (e: Throwable) {
+                providers.track.failureEncountered(id, e)
+                throw e
+            } finally {
+                providers.track.completed(id)
             }
+        }
+
+        job.invokeOnCompletion { e ->
+            supervisor.cancel()
+            f(e)
         }
 
         jobRef.set(job)
@@ -68,7 +79,8 @@ class Recovery(
     private val stages = object : EntityCollection, EntityProcessing, MetadataApplication {
         override val deviceSecret: DeviceSecret = descriptor.deviceSecret
         override val providers: Providers = this@Recovery.providers
-        override val collector: RecoveryCollector = descriptor.toRecoveryCollector(this@Recovery.providers)
+        override val collector: RecoveryCollector =
+            descriptor.toRecoveryCollector(this@Recovery.providers)
     }
 
     data class Descriptor(
@@ -87,7 +99,9 @@ class Recovery(
             )
 
         sealed class Collector {
-            data class WithDefinition(val definition: DatasetDefinitionId, val until: Instant?) : Collector()
+            data class WithDefinition(val definition: DatasetDefinitionId, val until: Instant?) :
+                Collector()
+
             data class WithEntry(val entry: DatasetEntryId) : Collector()
         }
 
@@ -98,27 +112,33 @@ class Recovery(
                 collector: Collector,
                 deviceSecret: DeviceSecret,
                 providers: Providers
-            ): Descriptor {
+            ): Try<Descriptor> {
                 val entry = when (collector) {
-                    is Collector.WithDefinition -> when (val entry =
-                        providers.clients.api.latestEntry(collector.definition, collector.until)
-                    ) {
-                        null -> throw IllegalStateException(
-                            "Expected dataset entry for definition [${collector.definition}] but none was found"
-                        )
-                        else -> entry
+                    is Collector.WithDefinition -> providers.clients.api.latestEntry(
+                        definition = collector.definition,
+                        until = collector.until
+                    ).flatMap { entry ->
+                        entry
+                            ?.let { Success(it) }
+                            ?: Failure(
+                                IllegalStateException(
+                                    "Expected dataset entry for definition [${collector.definition}] but none was found"
+                                )
+                            )
                     }
                     is Collector.WithEntry -> providers.clients.api.datasetEntry(collector.entry)
                 }
 
-                val metadata = providers.clients.api.datasetMetadata(entry)
-
-                return Descriptor(
-                    targetMetadata = metadata,
-                    query = query,
-                    destination = destination,
-                    deviceSecret = deviceSecret
-                )
+                return entry
+                    .flatMap { providers.clients.api.datasetMetadata(it) }
+                    .map { metadata ->
+                        Descriptor(
+                            targetMetadata = metadata,
+                            query = query,
+                            destination = destination,
+                            deviceSecret = deviceSecret
+                        )
+                    }
             }
         }
     }
@@ -153,7 +173,11 @@ class Recovery(
     ) {
         companion object {
             operator fun invoke(path: String, keepStructure: Boolean): Destination =
-                Destination(path = path, keepStructure = keepStructure, filesystem = FileSystems.getDefault())
+                Destination(
+                    path = path,
+                    keepStructure = keepStructure,
+                    filesystem = FileSystems.getDefault()
+                )
 
             fun Destination?.toTargetEntityDestination(): TargetEntity.Destination =
                 when (this) {

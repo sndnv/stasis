@@ -27,15 +27,17 @@ class PartitionedSourceSpec : WordSpec({
 
         "support data stream partitioning" {
             val staging = MockFileStaging()
+            val compression = MockCompression()
+            val encryption = MockEncryption()
 
             val original = Buffer().writeUtf8("original")
 
             val providers = Providers(
                 checksum = MockChecksum(checksums = emptyMap()),
                 staging = staging,
-                compressor = MockCompression(),
-                encryptor = MockEncryption(),
-                decryptor = MockEncryption(),
+                compressor = compression,
+                encryptor = encryption,
+                decryptor = encryption,
                 clients = Clients(
                     api = MockServerApiEndpointClient(),
                     core = MockServerCoreEndpointClient()
@@ -54,6 +56,11 @@ class PartitionedSourceSpec : WordSpec({
 
             entries shouldBe (listOf("ori", "gin", "al"))
 
+            encryption.statistics[MockEncryption.Statistic.FileEncrypted] shouldBe (3)
+            encryption.statistics[MockEncryption.Statistic.MetadataEncrypted] shouldBe (0)
+            encryption.statistics[MockEncryption.Statistic.FileDecrypted] shouldBe (0)
+            encryption.statistics[MockEncryption.Statistic.MetadataDecrypted] shouldBe (0)
+
             staging.statistics[MockFileStaging.Statistic.TemporaryCreated] shouldBe (3)
             staging.statistics[MockFileStaging.Statistic.TemporaryDiscarded] shouldBe (0)
             staging.statistics[MockFileStaging.Statistic.Destaged] shouldBe (0)
@@ -65,7 +72,9 @@ class PartitionedSourceSpec : WordSpec({
             val original: Source = object : Source {
                 private var remainingReads: Int = 2
 
-                override fun close() {}
+                override fun close() {
+                    // do nothing
+                }
 
                 override fun read(sink: Buffer, byteCount: Long): Long {
                     if (remainingReads > 0) {

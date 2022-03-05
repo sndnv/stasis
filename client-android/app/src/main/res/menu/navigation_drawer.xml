@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group
+        android:id="@+id/group_primary"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/item_home"
+            android:checked="true"
+            android:icon="@drawable/ic_home"
+            android:title="@string/navigation_item_home" />
+        <item
+            android:id="@+id/item_backup"
+            android:checked="true"
+            android:icon="@drawable/ic_backup"
+            android:title="@string/navigation_item_backup" />
+        <item
+            android:id="@+id/item_recover"
+            android:icon="@drawable/ic_recover"
+            android:title="@string/navigation_item_recover" />
+        <item
+            android:id="@+id/item_search"
+            android:icon="@drawable/ic_search"
+            android:title="@string/navigation_item_search" />
+    </group>
+
+    <group
+        android:id="@+id/group_info"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/item_operations"
+            android:icon="@drawable/ic_operations"
+            android:title="@string/navigation_item_operations" />
+        <item
+            android:id="@+id/item_status"
+            android:icon="@drawable/ic_status"
+            android:title="@string/navigation_item_status" />
+        <item
+            android:id="@+id/item_rules"
+            android:icon="@drawable/ic_rules"
+            android:title="@string/navigation_item_rules" />
+        <item
+            android:id="@+id/item_schedules"
+            android:icon="@drawable/ic_schedules"
+            android:title="@string/navigation_item_schedules" />
+    </group>
+
+    <group
+        android:id="@+id/group_config"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/item_settings"
+            android:icon="@drawable/ic_settings"
+            android:title="@string/navigation_item_settings" />
+        <item
+            android:id="@+id/item_about"
+            android:icon="@drawable/ic_about"
+            android:title="@string/navigation_item_about" />
+    </group>
+
+    <group
+        android:id="@+id/group_logout"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/item_logout"
+            android:icon="@drawable/ic_logout"
+            android:title="@string/navigation_item_logout" />
+    </group>
+</menu>

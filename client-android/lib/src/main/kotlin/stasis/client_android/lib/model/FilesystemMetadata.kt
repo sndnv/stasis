@@ -4,6 +4,8 @@ import stasis.client_android.lib.model.FilesystemMetadata.EntityState.Companion.
 import stasis.client_android.lib.model.FilesystemMetadata.EntityState.Companion.toProto
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.utils.Try
+import stasis.client_android.lib.utils.Try.Companion.flatMap
+import stasis.client_android.lib.utils.Try.Companion.map
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
 import java.nio.file.Path

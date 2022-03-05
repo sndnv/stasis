@@ -87,6 +87,7 @@ class MetadataCollectionSpec : WordSpec({
                     )
                     )
 
+            mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (0)
@@ -147,6 +148,7 @@ class MetadataCollectionSpec : WordSpec({
                     )
                     )
 
+            mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (0)

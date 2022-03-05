@@ -16,6 +16,8 @@ import stasis.client_android.lib.model.FilesystemMetadata.Companion.toModel
 import stasis.client_android.lib.model.FilesystemMetadata.Companion.toProto
 import stasis.client_android.lib.model.core.CrateId
 import stasis.client_android.lib.utils.Try
+import stasis.client_android.lib.utils.Try.Companion.flatMap
+import stasis.client_android.lib.utils.Try.Companion.map
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -24,6 +26,15 @@ data class DatasetMetadata(
     val metadataChanged: Map<Path, EntityMetadata>,
     val filesystem: FilesystemMetadata
 ) {
+    val contentChangedBytes: Long by lazy {
+        contentChanged.values.sumOf {
+            when (it) {
+                is EntityMetadata.File -> it.size
+                else -> 0L
+            }
+        }
+    }
+
     suspend fun collect(
         entity: Path,
         api: ServerApiEndpointClient
@@ -40,8 +51,9 @@ data class DatasetMetadata(
                 }
 
                 is FilesystemMetadata.EntityState.Existing -> {
-                    val entryMetadata = api.datasetMetadata(state.entry)
-                    when (val metadata = entryMetadata.contentChanged[entity] ?: entryMetadata.metadataChanged[entity]) {
+                    val entryMetadata = api.datasetMetadata(state.entry).get()
+                    when (val metadata = entryMetadata.contentChanged[entity]
+                        ?: entryMetadata.metadataChanged[entity]) {
                         null -> throw IllegalArgumentException(
                             "Expected metadata for entity [${entity.toAbsolutePath()}] " +
                                     "but none was found in metadata for entry [${state.entry}]"

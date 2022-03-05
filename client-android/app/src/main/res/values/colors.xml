@@ -1,10 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <color name="primary">#f5a50e</color>
+    <color name="primary_variant">#bd7600</color>
+    <color name="secondary">#362f4d</color>
+    <color name="secondary_variant">#110625</color>
+    <color name="secondary_light">#8f85a8</color>
+    <color name="secondary_light_variant">#615879</color>
+
+    <color name="launcher_border">@color/black</color>
+    <color name="launcher_primary_1">@color/primary</color>
+    <color name="launcher_primary_2">#874a00</color>
+    <color name="launcher_primary_3">@color/primary_variant</color>
+    <color name="launcher_secondary_1">@color/secondary_light_variant</color>
+    <color name="launcher_secondary_2">@color/secondary_light</color>
+    <color name="launcher_secondary_3">#bfb5da</color>
+    <color name="launcher_secondary_4">@color/secondary</color>
+    <color name="launcher_tertiary_1">#00796b</color>
+    <color name="launcher_tertiary_2">#48a999</color>
 </resources>

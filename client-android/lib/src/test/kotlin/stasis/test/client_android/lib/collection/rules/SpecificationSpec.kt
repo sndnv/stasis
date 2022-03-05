@@ -23,13 +23,13 @@ class SpecificationSpec : WordSpec({
             objects.rootDirs shouldBeGreaterThan (0)
             objects.nestedDirs shouldBeGreaterThan (0)
 
-            val rule1 = "+ /work      ?                  # incl all files in the root work directory"
-            val rule2 = "- /work      [a-z]              # excl all files in the root work directory in the range"
-            val rule3 = "- /work      {0|1}              # excl all files in the root work directory in the list"
-            val rule4 = "+ /work      root-dir-?/*       # incl all files under root-dir-? directories"
-            val rule5 = "+ /work/root **/child-*[a-c]/a  # incl all 'a' files under 'child-' directories ending in a, b or c"
-            val rule6 = "- /work/root parent-0/**        # excl all files under the 'parent-0' directory"
-            val rule7 = "- /work/root **/q               # excl all 'q' files under root and its subdirectories"
+            val rule1 = Rule(id = 1, operation = Rule.Operation.Include, directory = "/work", pattern = "?")
+            val rule2 = Rule(id = 2, operation = Rule.Operation.Exclude, directory = "/work", pattern = "[a-z]")
+            val rule3 = Rule(id = 3, operation = Rule.Operation.Exclude, directory = "/work", pattern = "{0|1}")
+            val rule4 = Rule(id = 4, operation = Rule.Operation.Include, directory = "/work", pattern = "root-dir-?/*")
+            val rule5 = Rule(id = 5, operation = Rule.Operation.Include, directory = "/work/root", pattern = "**/child-*[a-c]/a")
+            val rule6 = Rule(id = 6, operation = Rule.Operation.Exclude, directory = "/work/root", pattern = "parent-0/**")
+            val rule7 = Rule(id = 7, operation = Rule.Operation.Exclude, directory = "/work/root", pattern = "**/q")
 
             val azRangeSize = ('a'..'z').toList().size
             val zeroOneListSize = listOf('0', '1').size
@@ -52,16 +52,12 @@ class SpecificationSpec : WordSpec({
                 rule5 to RuleExpectation(excluded = 0, included = acChildFiles + acChildDirs + workRoot),
                 rule6 to RuleExpectation(excluded = parent0Files + parent0Dirs, included = 0),
                 rule7 to RuleExpectation(excluded = qFiles, included = 0)
-            ).withIndex().map {
-                val (rule, expectations) = it.value
-                val lineNumber = it.index
-                Pair(Rule(line = rule, lineNumber = lineNumber).get(), expectations)
-            }
+            )
 
             rules.forEach {
                 val (rule, expectation) = it
 
-                withClue("Specification for rule [${rule.original.line}] on line [${rule.original.lineNumber}]") {
+                withClue("Specification for rule [${rule.id}]: [${rule.operation} ${rule.directory} ${rule.pattern}]") {
                     val spec = Specification(listOf(rule), filesystem)
                     spec.excluded.size shouldBe (expectation.excluded)
                     spec.included.size shouldBe (expectation.included)
@@ -102,8 +98,8 @@ class SpecificationSpec : WordSpec({
         "provide list of unmatched rules" {
             val (filesystem, _) = createMockFileSystem(setup = FileSystemSetup.empty())
 
-            val rule1 = Rule(line = "+ /test/ **                # include all files in directory", lineNumber = 0).get()
-            val rule2 = Rule(line = "+ /work  missing-test-file # include specific file", lineNumber = 0).get()
+            val rule1 = Rule(id = 1, operation = Rule.Operation.Include, directory = "/test/", pattern = "**")
+            val rule2 = Rule(id = 2, operation = Rule.Operation.Include, directory = "/work", pattern = "missing-test-file")
 
             val spec = Specification(listOf(rule1, rule2), filesystem)
 
@@ -125,11 +121,11 @@ class SpecificationSpec : WordSpec({
                 setup = setup.copy(chars = FileSystemSetup.AlphaNumericChars, nestedParentDirs = 0)
             )
 
-            val rule1 = Rule("+ /work      ?      # incl all files in the root work directory", 0).get()
-            val rule2 = Rule("- /work      a      # excl file 'a'", 0).get()
-            val rule3 = Rule("- /work      b      # excl file 'b'", 0).get()
-            val rule4 = Rule("- /work      c      # excl file 'c'", 0).get()
-            val rule5 = Rule("+ /work      [c-f]  # incl files 'c' to 'f'", 0).get()
+            val rule1 = Rule(id = 1, operation = Rule.Operation.Include, directory = "/work", pattern = "?")
+            val rule2 = Rule(id = 2, operation = Rule.Operation.Exclude, directory = "/work", pattern = "a")
+            val rule3 = Rule(id = 3, operation = Rule.Operation.Exclude, directory = "/work", pattern = "b")
+            val rule4 = Rule(id = 4, operation = Rule.Operation.Exclude, directory = "/work", pattern = "c")
+            val rule5 = Rule(id = 5, operation = Rule.Operation.Include, directory = "/work", pattern = "[c-f]")
 
             val rules = listOf(rule1, rule2, rule3, rule4, rule5)
 
@@ -159,49 +155,49 @@ class SpecificationSpec : WordSpec({
             fileA.operation shouldBe (Rule.Operation.Exclude)
             fileA.reason shouldBe (
                     listOf(
-                        Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule1.original),
-                        Specification.Entry.Explanation(operation = Rule.Operation.Exclude, original = rule2.original)
+                        Specification.Entry.Explanation(operation = Rule.Operation.Include),
+                        Specification.Entry.Explanation(operation = Rule.Operation.Exclude)
                     )
                     )
 
             fileB.operation shouldBe (Rule.Operation.Exclude)
             fileB.reason shouldBe (
                     listOf(
-                        Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule1.original),
-                        Specification.Entry.Explanation(operation = Rule.Operation.Exclude, original = rule3.original)
+                        Specification.Entry.Explanation(operation = Rule.Operation.Include),
+                        Specification.Entry.Explanation(operation = Rule.Operation.Exclude)
                     )
                     )
 
             fileC.operation shouldBe (Rule.Operation.Include)
             fileC.reason shouldBe (
                     listOf(
-                        Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule1.original),
-                        Specification.Entry.Explanation(operation = Rule.Operation.Exclude, original = rule4.original),
-                        Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule5.original)
+                        Specification.Entry.Explanation(operation = Rule.Operation.Include),
+                        Specification.Entry.Explanation(operation = Rule.Operation.Exclude),
+                        Specification.Entry.Explanation(operation = Rule.Operation.Include)
                     )
                     )
 
             fileD.operation shouldBe (Rule.Operation.Include)
             fileD.reason shouldBe (
                     listOf(
-                        Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule1.original),
-                        Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule5.original)
+                        Specification.Entry.Explanation(operation = Rule.Operation.Include),
+                        Specification.Entry.Explanation(operation = Rule.Operation.Include)
                     )
                     )
 
             fileE.operation shouldBe (Rule.Operation.Include)
             fileE.reason shouldBe (
                     listOf(
-                        Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule1.original),
-                        Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule5.original)
+                        Specification.Entry.Explanation(operation = Rule.Operation.Include),
+                        Specification.Entry.Explanation(operation = Rule.Operation.Include)
                     )
                     )
 
             fileF.operation shouldBe (Rule.Operation.Include)
             fileF.reason shouldBe (
                     listOf(
-                        Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule1.original),
-                        Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule5.original)
+                        Specification.Entry.Explanation(operation = Rule.Operation.Include),
+                        Specification.Entry.Explanation(operation = Rule.Operation.Include)
                     )
                     )
         }
@@ -213,7 +209,7 @@ class SpecificationSpec : WordSpec({
         "handle matching failures" {
             val (filesystem, _) = createMockFileSystem(setup = FileSystemSetup.empty())
 
-            val rule1 = Rule("+ /work/missing-dir *", 0).get()
+            val rule1 = Rule(id = 1, operation = Rule.Operation.Include, directory = "/work/missing-dir", pattern = "*")
 
             val spec = Specification(rules = listOf(rule1), filesystem = filesystem)
 

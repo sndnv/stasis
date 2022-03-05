@@ -28,7 +28,9 @@ class SourceEntitySpec : WordSpec({
             sourceFileWithExistingMetadata.copy(existingMetadata = Fixtures.Metadata.FileOneMetadata.copy(size = 0))
 
         val sourceFileWithUpdatedExistingChecksum =
-            sourceFileWithExistingMetadata.copy(existingMetadata = Fixtures.Metadata.FileOneMetadata.copy(checksum = BigInteger("0")))
+            sourceFileWithExistingMetadata.copy(
+                existingMetadata = Fixtures.Metadata.FileOneMetadata.copy(checksum = BigInteger("0"))
+            )
 
         val directoryEntity = SourceEntity(
             path = Fixtures.Metadata.DirectoryOneMetadata.path,
@@ -43,7 +45,9 @@ class SourceEntitySpec : WordSpec({
             sourceDirectoryWithoutExistingMetadata.copy(existingMetadata = Fixtures.Metadata.DirectoryOneMetadata)
 
         val sourceDirectoryWithUpdatedExistingGroup =
-            sourceDirectoryWithExistingMetadata.copy(existingMetadata = Fixtures.Metadata.DirectoryOneMetadata.copy(group = "none"))
+            sourceDirectoryWithExistingMetadata.copy(
+                existingMetadata = Fixtures.Metadata.DirectoryOneMetadata.copy(group = "none")
+            )
 
         "fail if different entity types provided for current and existing metadata" {
             shouldThrow<IllegalArgumentException> {

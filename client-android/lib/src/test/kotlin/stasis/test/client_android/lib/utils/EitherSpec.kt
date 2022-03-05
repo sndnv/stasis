@@ -9,20 +9,20 @@ import stasis.client_android.lib.utils.Either.Right
 class EitherSpec : WordSpec({
     "Either" should {
         "support mapping" {
-            Right<String, String>(value = "test").map { it.toUpperCase() } shouldBe (Right("TEST"))
-            Left<String, String>(value = "test").map { it.toUpperCase() } shouldBe (Left("test"))
+            Right<String, String>(value = "test").map { it.uppercase() } shouldBe (Right("TEST"))
+            Left<String, String>(value = "test").map { it.uppercase() } shouldBe (Left("test"))
         }
 
         "support flat-mapping" {
-            Right<String, String>(value = "test").flatMap { Right(it.toUpperCase()) } shouldBe (Right("TEST"))
-            Right<String, String>(value = "test").flatMap { Left<String, String>(it.toUpperCase()) } shouldBe (Left("TEST"))
-            Left<String, String>(value = "test").flatMap { Right(it.toUpperCase()) } shouldBe (Left("test"))
-            Left<String, String>(value = "test").flatMap { Left<String, String>(it.toUpperCase()) } shouldBe (Left("test"))
+            Right<String, String>(value = "test").flatMap { Right(it.uppercase()) } shouldBe (Right("TEST"))
+            Right<String, String>(value = "test").flatMap { Left<String, String>(it.uppercase()) } shouldBe (Left("TEST"))
+            Left<String, String>(value = "test").flatMap { Right(it.uppercase()) } shouldBe (Left("test"))
+            Left<String, String>(value = "test").flatMap { Left<String, String>(it.uppercase()) } shouldBe (Left("test"))
         }
 
         "support folding" {
-            Right<String, String>(value = "tESt").fold(fl = { it.toLowerCase() }, fr = { it.toUpperCase() }) shouldBe ("TEST")
-            Left<String, String>(value = "tESt").fold(fl = { it.toLowerCase() }, fr = { it.toUpperCase() }) shouldBe ("test")
+            Right<String, String>(value = "tESt").fold(fl = { it.lowercase() }, fr = { it.uppercase() }) shouldBe ("TEST")
+            Left<String, String>(value = "tESt").fold(fl = { it.lowercase() }, fr = { it.uppercase() }) shouldBe ("test")
         }
 
         "support retrieving 'left' on a 'Left'" {

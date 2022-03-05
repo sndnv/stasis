@@ -119,7 +119,10 @@ object Fixtures {
             id = UUID.randomUUID(),
             definition = Datasets.Default.id,
             device = Datasets.Default.device,
-            data = (Metadata.FileOneMetadata.crates.values + Metadata.FileTwoMetadata.crates.values + Metadata.FileThreeMetadata.crates.values).toSet(),
+            data = (Metadata.FileOneMetadata.crates.values
+                    + Metadata.FileTwoMetadata.crates.values
+                    + Metadata.FileThreeMetadata.crates.values)
+                .toSet(),
             metadata = UUID.randomUUID(),
             created = Instant.now()
         )

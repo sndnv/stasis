@@ -1,11 +1,12 @@
 package stasis.client_android.lib.ops.backup
 
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.plus
 import stasis.client_android.lib.collection.BackupCollector
 import stasis.client_android.lib.collection.BackupMetadataCollector
 import stasis.client_android.lib.collection.DefaultBackupCollector
@@ -21,6 +22,10 @@ import stasis.client_android.lib.ops.backup.stages.EntityCollection
 import stasis.client_android.lib.ops.backup.stages.EntityProcessing
 import stasis.client_android.lib.ops.backup.stages.MetadataCollection
 import stasis.client_android.lib.ops.backup.stages.MetadataPush
+import stasis.client_android.lib.utils.Try
+import stasis.client_android.lib.utils.Try.Companion.flatMap
+import stasis.client_android.lib.utils.Try.Companion.map
+import stasis.client_android.lib.utils.Try.Success
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicReference
 
@@ -32,24 +37,39 @@ class Backup(
 
     override fun type(): Operation.Type = Operation.Type.Backup
 
-    override suspend fun start() {
+    override fun start(withScope: CoroutineScope, f: (Throwable?) -> Unit) {
         require(jobRef.get() == null) { "Backup [$id] already started" }
 
-        val job = withContext(Dispatchers.IO) {
-            launch {
-                try {
-                    stages.entityCollection(id)
-                        .let { flow -> stages.entityProcessing(id, flow) }
-                        .let { flow -> stages.metadataCollection(id, flow) }
-                        .let { flow -> stages.metadataPush(id, flow) }
-                        .collect()
-                } catch (e: Throwable) {
-                    providers.track.failureEncountered(id, e)
-                    throw e
-                } finally {
-                    providers.track.completed(id)
+        val supervisor = SupervisorJob()
+
+        val job = (withScope + supervisor).async {
+            try {
+
+                when (val collector = descriptor.collector) {
+                    is Descriptor.Collector.WithRules -> providers.track.specificationProcessed(
+                        operation = id,
+                        unmatched = collector.spec.unmatched
+                    )
+                    else -> Unit // do nothing
                 }
+
+
+                stages.entityCollection(id)
+                    .let { flow -> stages.entityProcessing(id, flow) }
+                    .let { flow -> stages.metadataCollection(id, flow) }
+                    .let { flow -> stages.metadataPush(id, flow) }
+                    .collect()
+            } catch (e: Throwable) {
+                providers.track.failureEncountered(id, e)
+                throw e
+            } finally {
+                providers.track.completed(id)
             }
+        }
+
+        job.invokeOnCompletion { e ->
+            supervisor.cancel()
+            f(e)
         }
 
         jobRef.set(job)
@@ -64,15 +84,16 @@ class Backup(
 
     private val jobRef: AtomicReference<Job> = AtomicReference()
 
-    private val stages = object : EntityCollection, EntityProcessing, MetadataCollection, MetadataPush {
-        override val targetDataset: DatasetDefinition = descriptor.targetDataset
-        override val latestEntry: DatasetEntry? = descriptor.latestEntry
-        override val latestMetadata: DatasetMetadata? = descriptor.latestMetadata
-        override val deviceSecret: DeviceSecret = descriptor.deviceSecret
-        override val providers: Providers = this@Backup.providers
-        override val collector: BackupCollector = descriptor.toBackupCollector(providers = this@Backup.providers)
-        override val maxPartSize: Long = descriptor.limits.maxPartSize
-    }
+    private val stages =
+        object : EntityCollection, EntityProcessing, MetadataCollection, MetadataPush {
+            override val targetDataset: DatasetDefinition = descriptor.targetDataset
+            override val latestEntry: DatasetEntry? = descriptor.latestEntry
+            override val latestMetadata: DatasetMetadata? = descriptor.latestMetadata
+            override val deviceSecret: DeviceSecret = descriptor.deviceSecret
+            override val providers: Providers = this@Backup.providers
+            override val collector: BackupCollector = descriptor.toBackupCollector(providers = this@Backup.providers)
+            override val maxPartSize: Long = descriptor.limits.maxPartSize
+        }
 
     data class Descriptor(
         val targetDataset: DatasetDefinition,
@@ -106,20 +127,27 @@ class Backup(
                 deviceSecret: DeviceSecret,
                 limits: Limits,
                 providers: Providers
-            ): Descriptor {
-                val targetDataset = providers.clients.api.datasetDefinition(definition = definition)
-                val latestEntry = providers.clients.api.latestEntry(definition = definition, until = null)
-                val latestMetadata = latestEntry?.let { providers.clients.api.datasetMetadata(entry = it) }
+            ): Try<Descriptor> =
+                providers.clients.api.datasetDefinition(definition = definition)
+                    .flatMap { targetDataset ->
+                        providers.clients.api.latestEntry(definition = definition, until = null)
+                            .flatMap { latestEntry ->
+                                val metadata = latestEntry?.let {
+                                    providers.clients.api.datasetMetadata(entry = latestEntry)
+                                } ?: Success<DatasetMetadata?>(null)
 
-                return Descriptor(
-                    targetDataset = targetDataset,
-                    latestEntry = latestEntry,
-                    latestMetadata = latestMetadata,
-                    deviceSecret = deviceSecret,
-                    collector = collector,
-                    limits = limits
-                )
-            }
+                                metadata.map { latestMetadata ->
+                                    Descriptor(
+                                        targetDataset = targetDataset,
+                                        latestEntry = latestEntry,
+                                        latestMetadata = latestMetadata,
+                                        deviceSecret = deviceSecret,
+                                        collector = collector,
+                                        limits = limits
+                                    )
+                                }
+                            }
+                    }
         }
 
         sealed class Collector {

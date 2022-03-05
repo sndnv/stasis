@@ -1,10 +1,11 @@
 package stasis.test.client_android.lib.ops.backup
 
 import io.kotest.assertions.fail
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import okio.ByteString
 import okio.ByteString.Companion.toByteString
 import okio.Source
@@ -26,10 +27,12 @@ import stasis.client_android.lib.model.server.datasets.DatasetEntry
 import stasis.client_android.lib.ops.backup.Backup
 import stasis.client_android.lib.ops.backup.Providers
 import stasis.client_android.lib.staging.DefaultFileStaging
+import stasis.client_android.lib.utils.Try
 import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
 import stasis.test.client_android.lib.ResourceHelpers.extractDirectoryMetadata
 import stasis.test.client_android.lib.ResourceHelpers.extractFileMetadata
+import stasis.test.client_android.lib.eventually
 import stasis.test.client_android.lib.mocks.MockBackupTracker
 import stasis.test.client_android.lib.mocks.MockEncryption
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
@@ -37,15 +40,27 @@ import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
 import java.math.BigInteger
 import java.nio.file.Paths
 import java.time.Instant
-import java.util.UUID
+import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 class BackupSpec : WordSpec({
+    val operationScope = CoroutineScope(Dispatchers.IO)
+
     val checksum = Checksum.Companion.SHA256
 
     val secretsConfig: Secret.Config = Secret.Config(
         derivation = Secret.Config.DerivationConfig(
-            encryption = Secret.KeyDerivationConfig(secretSize = 64, iterations = 100000, saltPrefix = "unit-test"),
-            authentication = Secret.KeyDerivationConfig(secretSize = 64, iterations = 100000, saltPrefix = "unit-test")
+            encryption = Secret.KeyDerivationConfig(
+                secretSize = 64,
+                iterations = 100000,
+                saltPrefix = "unit-test"
+            ),
+            authentication = Secret.KeyDerivationConfig(
+                secretSize = 64,
+                iterations = 100000,
+                saltPrefix = "unit-test"
+            )
         ),
         encryption = Secret.Config.EncryptionConfig(
             file = Secret.EncryptionSecretConfig(keySize = 16, ivSize = 16),
@@ -98,10 +113,15 @@ class BackupSpec : WordSpec({
         }
 
         "process backups for entire configured file collection" {
+            val operationCompleted = AtomicBoolean(false)
+
             val sourceDirectory1Metadata = "/ops".asTestResource().extractDirectoryMetadata()
-            val sourceFile1Metadata = "/ops/source-file-1".asTestResource().extractFileMetadata(checksum)
-            val sourceFile2Metadata = "/ops/source-file-2".asTestResource().extractFileMetadata(checksum)
-            val sourceFile3Metadata = "/ops/source-file-3".asTestResource().extractFileMetadata(checksum)
+            val sourceFile1Metadata =
+                "/ops/source-file-1".asTestResource().extractFileMetadata(checksum)
+            val sourceFile2Metadata =
+                "/ops/source-file-2".asTestResource().extractFileMetadata(checksum)
+            val sourceFile3Metadata =
+                "/ops/source-file-3".asTestResource().extractFileMetadata(checksum)
 
             val sourceDirectory2Metadata = "/ops/nested".asTestResource().extractDirectoryMetadata()
 
@@ -114,13 +134,19 @@ class BackupSpec : WordSpec({
                     spec = Specification(
                         rules = listOf(
                             Rule(
-                                line = "+ ${sourceDirectory1Metadata.path.toAbsolutePath()} source-file-*",
-                                lineNumber = 0
-                            ).get(),
+                                id = 1,
+                                operation = Rule.Operation.Include,
+                                directory = sourceDirectory1Metadata.path.toAbsolutePath()
+                                    .toString(),
+                                pattern = "source-file-*"
+                            ),
                             Rule(
-                                line = "+ ${sourceDirectory2Metadata.path.toAbsolutePath()} source-file-*",
-                                lineNumber = 0
-                            ).get()
+                                id = 2,
+                                operation = Rule.Operation.Include,
+                                directory = sourceDirectory2Metadata.path.toAbsolutePath()
+                                    .toString(),
+                                pattern = "source-file-*",
+                            )
                         )
                     )
                 ),
@@ -149,7 +175,13 @@ class BackupSpec : WordSpec({
                 tracker = mockTracker
             )
 
-            backup.start()
+            backup.start(withScope = operationScope) {
+                operationCompleted.set(true)
+            }
+
+            eventually {
+                operationCompleted.get() shouldBe (true)
+            }
 
             // dataset entry for backup created; metadata crate pushed
             // /ops directory is unchanged
@@ -174,6 +206,7 @@ class BackupSpec : WordSpec({
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (4)
 
+            mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (1)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (7) // 2 directories + 5 files
             mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (5) // 2 unchanged + 5 changed entities
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (5) // 2 unchanged + 5 changed entities
@@ -184,9 +217,14 @@ class BackupSpec : WordSpec({
         }
 
         "process backups for specific files" {
-            val sourceFile1Metadata = "/ops/source-file-1".asTestResource().extractFileMetadata(checksum)
-            val sourceFile2Metadata = "/ops/source-file-2".asTestResource().extractFileMetadata(checksum)
-            val sourceFile3Metadata = "/ops/source-file-3".asTestResource().extractFileMetadata(checksum)
+            val operationCompleted = AtomicBoolean(false)
+
+            val sourceFile1Metadata =
+                "/ops/source-file-1".asTestResource().extractFileMetadata(checksum)
+            val sourceFile2Metadata =
+                "/ops/source-file-2".asTestResource().extractFileMetadata(checksum)
+            val sourceFile3Metadata =
+                "/ops/source-file-3".asTestResource().extractFileMetadata(checksum)
 
             val mockApiClient = MockServerApiEndpointClient()
             val mockCoreClient = MockServerCoreEndpointClient()
@@ -222,7 +260,13 @@ class BackupSpec : WordSpec({
                 tracker = mockTracker
             )
 
-            backup.start()
+            backup.start(withScope = operationScope) {
+                operationCompleted.set(true)
+            }
+
+            eventually {
+                operationCompleted.get() shouldBe (true)
+            }
 
             // dataset entry for backup created; metadata crate pushed
             // source-file-1 has metadata changes only; source-file-2 is unchanged; crate for source-file-3 pushed;
@@ -244,6 +288,7 @@ class BackupSpec : WordSpec({
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (2)
 
+            mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (3)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (2)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (2)
@@ -254,8 +299,12 @@ class BackupSpec : WordSpec({
         }
 
         "handle failures of backups for individual files" {
-            val sourceFile1Metadata = "/ops/source-file-1".asTestResource().extractFileMetadata(checksum)
-            val sourceFile2Metadata = "/ops/source-file-2".asTestResource().extractFileMetadata(checksum)
+            val operationResult = AtomicReference<Throwable>()
+
+            val sourceFile1Metadata =
+                "/ops/source-file-1".asTestResource().extractFileMetadata(checksum)
+            val sourceFile2Metadata =
+                "/ops/source-file-2".asTestResource().extractFileMetadata(checksum)
 
             val mockApiClient = MockServerApiEndpointClient()
             val mockCoreClient = MockServerCoreEndpointClient()
@@ -289,8 +338,13 @@ class BackupSpec : WordSpec({
                 tracker = mockTracker
             )
 
-            val e = shouldThrow<java.nio.file.NoSuchFileException> { backup.start() }
-            e.message shouldBe ("/ops/invalid-file")
+            backup.start(withScope = operationScope) { e ->
+                operationResult.set(e)
+            }
+
+            eventually {
+                operationResult.get()?.message shouldBe ("/ops/invalid-file")
+            }
 
             // dataset entry for backup created; metadata crate pushed
             // source-file-1 has metadata changes only; source-file-2 is unchanged; third file is invalid/missing;
@@ -312,6 +366,7 @@ class BackupSpec : WordSpec({
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (1)
 
+            mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (2)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (1)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (1)
@@ -322,7 +377,10 @@ class BackupSpec : WordSpec({
         }
 
         "allow stopping a running backup" {
-            val sourceFile1Metadata = "/ops/source-file-1".asTestResource().extractFileMetadata(checksum)
+            val operationCompleted = AtomicBoolean(false)
+
+            val sourceFile1Metadata =
+                "/ops/source-file-1".asTestResource().extractFileMetadata(checksum)
 
             val mockTracker = MockBackupTracker()
 
@@ -338,11 +396,17 @@ class BackupSpec : WordSpec({
                 tracker = mockTracker
             )
 
-            backup.start()
+            backup.start(withScope = operationScope) {
+                operationCompleted.set(it != null)
+            }
 
             backup.stop()
 
-            mockTracker.statistics[MockBackupTracker.Statistic.Completed] shouldBe (1)
+            eventually {
+                operationCompleted.get() shouldBe (true)
+            }
+
+            mockTracker.statistics[MockBackupTracker.Statistic.Completed] shouldBe (0)
         }
     }
 
@@ -364,21 +428,28 @@ class BackupSpec : WordSpec({
                 compressor = Gzip,
                 encryptor = MockEncryption(),
                 decryptor = object : MockEncryption() {
-                    override fun decrypt(source: Source, metadataSecret: DeviceMetadataSecret): Source =
+                    override fun decrypt(
+                        source: Source,
+                        metadataSecret: DeviceMetadataSecret
+                    ): Source =
                         source
                 },
                 clients = Clients(
                     api = object : MockServerApiEndpointClient(self = UUID.randomUUID()) {
-                        override suspend fun datasetDefinition(definition: DatasetDefinitionId): DatasetDefinition {
-                            return when (definition) {
-                                datasetWithEntry.id -> datasetWithEntry
-                                datasetWithoutEntry.id -> datasetWithoutEntry
-                                else -> fail("Unexpected definition requested: [$definition]")
+                        override suspend fun datasetDefinition(definition: DatasetDefinitionId): Try<DatasetDefinition> =
+                            Try {
+                                when (definition) {
+                                    datasetWithEntry.id -> datasetWithEntry
+                                    datasetWithoutEntry.id -> datasetWithoutEntry
+                                    else -> fail("Unexpected definition requested: [$definition]")
+                                }
                             }
-                        }
 
-                        override suspend fun latestEntry(definition: DatasetDefinitionId, until: Instant?): DatasetEntry? {
-                            return if (definition == datasetWithEntry.id) {
+                        override suspend fun latestEntry(
+                            definition: DatasetDefinitionId,
+                            until: Instant?
+                        ): Try<DatasetEntry?> = Try {
+                            if (definition == datasetWithEntry.id) {
                                 entry
                             } else {
                                 null
@@ -393,7 +464,8 @@ class BackupSpec : WordSpec({
                 track = MockBackupTracker()
             )
 
-            val collectorDescriptor = Backup.Descriptor.Collector.WithEntities(entities = emptyList())
+            val collectorDescriptor =
+                Backup.Descriptor.Collector.WithEntities(entities = emptyList())
 
             val limits = Backup.Descriptor.Limits(
                 maxPartSize = 16384
@@ -405,7 +477,7 @@ class BackupSpec : WordSpec({
                 deviceSecret = secret,
                 limits = limits,
                 providers = providers
-            )
+            ).get()
 
             val descriptorWithoutLatestEntry = Backup.Descriptor(
                 definition = datasetWithoutEntry.id,
@@ -413,7 +485,7 @@ class BackupSpec : WordSpec({
                 deviceSecret = secret,
                 limits = limits,
                 providers = providers
-            )
+            ).get()
 
             descriptorWithLatestEntry.targetDataset shouldBe (datasetWithEntry)
             descriptorWithLatestEntry.latestEntry shouldBe (entry)
@@ -473,8 +545,10 @@ class BackupSpec : WordSpec({
 
 
 
-            descriptorWithFiles.toBackupCollector(providers).shouldBeInstanceOf<DefaultBackupCollector>()
-            descriptorWithRules.toBackupCollector(providers).shouldBeInstanceOf<DefaultBackupCollector>()
+            descriptorWithFiles.toBackupCollector(providers)
+                .shouldBeInstanceOf<DefaultBackupCollector>()
+            descriptorWithRules.toBackupCollector(providers)
+                .shouldBeInstanceOf<DefaultBackupCollector>()
         }
     }
 })

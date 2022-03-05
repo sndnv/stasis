@@ -16,9 +16,11 @@ import stasis.client_android.lib.model.server.devices.DeviceId
 import stasis.client_android.lib.model.server.schedules.Schedule
 import stasis.client_android.lib.model.server.schedules.ScheduleId
 import stasis.client_android.lib.model.server.users.User
+import stasis.client_android.lib.utils.Try
+import stasis.client_android.lib.utils.Try.Success
 import stasis.test.client_android.lib.model.Generators
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 open class MockServerApiEndpointClient(
@@ -43,85 +45,94 @@ open class MockServerApiEndpointClient(
 
     override val server: String = "mock-api-server"
 
-    override suspend fun datasetDefinitions(): List<DatasetDefinition> {
+    override suspend fun datasetDefinitions(): Try<List<DatasetDefinition>> {
         stats[Statistic.DatasetDefinitionsRetrieved]?.getAndIncrement()
-        return listOf(
-            Generators.generateDefinition(),
-            Generators.generateDefinition()
+        return Success(
+            listOf(
+                Generators.generateDefinition(),
+                Generators.generateDefinition()
+            )
         )
     }
 
-    override suspend fun datasetDefinition(definition: DatasetDefinitionId): DatasetDefinition {
+    override suspend fun datasetDefinition(definition: DatasetDefinitionId): Try<DatasetDefinition> {
         stats[Statistic.DatasetDefinitionRetrieved]?.getAndIncrement()
-        return Generators.generateDefinition()
+        return Success(Generators.generateDefinition())
     }
 
-    override suspend fun createDatasetDefinition(request: CreateDatasetDefinition): CreatedDatasetDefinition {
+    override suspend fun createDatasetDefinition(request: CreateDatasetDefinition): Try<CreatedDatasetDefinition> {
         stats[Statistic.DatasetDefinitionCreated]?.getAndIncrement()
-        return CreatedDatasetDefinition(definition = UUID.randomUUID())
+        return Success(CreatedDatasetDefinition(definition = UUID.randomUUID()))
     }
 
-    override suspend fun datasetEntries(definition: DatasetDefinitionId): List<DatasetEntry> {
+    override suspend fun datasetEntries(definition: DatasetDefinitionId): Try<List<DatasetEntry>> {
         stats[Statistic.DatasetEntriesRetrieved]?.getAndIncrement()
-        return listOf(
-            Generators.generateEntry(),
-            Generators.generateEntry(),
-            Generators.generateEntry()
+        return Success(
+            listOf(
+                Generators.generateEntry(),
+                Generators.generateEntry(),
+                Generators.generateEntry()
+            )
         )
     }
 
-    override suspend fun datasetEntry(entry: DatasetEntryId): DatasetEntry {
+    override suspend fun datasetEntry(entry: DatasetEntryId): Try<DatasetEntry> {
         stats[Statistic.DatasetEntryRetrieved]?.getAndIncrement()
-        return Generators.generateEntry()
+        return Success(Generators.generateEntry())
     }
 
-    override suspend fun latestEntry(definition: DatasetDefinitionId, until: Instant?): DatasetEntry? {
+    override suspend fun latestEntry(
+        definition: DatasetDefinitionId,
+        until: Instant?
+    ): Try<DatasetEntry?> {
         stats[Statistic.DatasetEntryRetrievedLatest]?.getAndIncrement()
-        return Generators.generateEntry()
+        return Success(Generators.generateEntry())
     }
 
-    override suspend fun createDatasetEntry(request: CreateDatasetEntry): CreatedDatasetEntry {
+    override suspend fun createDatasetEntry(request: CreateDatasetEntry): Try<CreatedDatasetEntry> {
         stats[Statistic.DatasetEntryCreated]?.getAndIncrement()
-        return CreatedDatasetEntry(entry = UUID.randomUUID())
+        return Success(CreatedDatasetEntry(entry = UUID.randomUUID()))
     }
 
-    override suspend fun publicSchedules(): List<Schedule> {
+    override suspend fun publicSchedules(): Try<List<Schedule>> {
         stats[Statistic.PublicSchedulesRetrieved]?.getAndIncrement()
-        return listOf(
-            Generators.generateSchedule().copy(isPublic = true),
-            Generators.generateSchedule().copy(isPublic = true),
-            Generators.generateSchedule().copy(isPublic = true)
+        return Success(
+            listOf(
+                Generators.generateSchedule().copy(isPublic = true),
+                Generators.generateSchedule().copy(isPublic = true),
+                Generators.generateSchedule().copy(isPublic = true)
+            )
         )
     }
 
-    override suspend fun publicSchedule(schedule: ScheduleId): Schedule {
+    override suspend fun publicSchedule(schedule: ScheduleId): Try<Schedule> {
         stats[Statistic.PublicScheduleRetrieved]?.getAndIncrement()
-        return Generators.generateSchedule().copy(id = schedule, isPublic = true)
+        return Success(Generators.generateSchedule().copy(id = schedule, isPublic = true))
     }
 
-    override suspend fun datasetMetadata(entry: DatasetEntryId): DatasetMetadata {
+    override suspend fun datasetMetadata(entry: DatasetEntryId): Try<DatasetMetadata> {
         stats[Statistic.DatasetMetadataWithEntryIdRetrieved]?.getAndIncrement()
-        return DatasetMetadata.empty()
+        return Success(DatasetMetadata.empty())
     }
 
-    override suspend fun datasetMetadata(entry: DatasetEntry): DatasetMetadata {
+    override suspend fun datasetMetadata(entry: DatasetEntry): Try<DatasetMetadata> {
         stats[Statistic.DatasetMetadataWithEntryRetrieved]?.getAndIncrement()
-        return DatasetMetadata.empty()
+        return Success(DatasetMetadata.empty())
     }
 
-    override suspend fun user(): User {
+    override suspend fun user(): Try<User> {
         stats[Statistic.UserRetrieved]?.getAndIncrement()
-        return Generators.generateUser()
+        return Success(Generators.generateUser())
     }
 
-    override suspend fun device(): Device {
+    override suspend fun device(): Try<Device> {
         stats[Statistic.DeviceRetrieved]?.getAndIncrement()
-        return Generators.generateDevice()
+        return Success(Generators.generateDevice())
     }
 
-    override suspend fun ping(): Ping {
+    override suspend fun ping(): Try<Ping> {
         stats[Statistic.Ping]?.getAndIncrement()
-        return Ping(id = UUID.randomUUID())
+        return Success(Ping(id = UUID.randomUUID()))
     }
 
     val statistics: Map<Statistic, Int>
@@ -145,6 +156,7 @@ open class MockServerApiEndpointClient(
     }
 
     companion object {
-        operator fun invoke(): MockServerApiEndpointClient = MockServerApiEndpointClient(self = UUID.randomUUID())
+        operator fun invoke(): MockServerApiEndpointClient =
+            MockServerApiEndpointClient(self = UUID.randomUUID())
     }
 }

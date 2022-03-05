@@ -17,7 +17,7 @@ import java.nio.file.Path
 data class DeviceSecret(
     val user: UserId,
     val device: DeviceId,
-    private val secret: ByteString,
+    val secret: ByteString,
     val target: Config
 ) : Secret() {
     suspend fun encrypted(encryptionStage: (Source) -> Source): ByteString =

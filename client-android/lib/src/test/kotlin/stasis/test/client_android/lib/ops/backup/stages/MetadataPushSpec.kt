@@ -92,6 +92,7 @@ class MetadataPushSpec : WordSpec({
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (1)
 
+            mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (0)

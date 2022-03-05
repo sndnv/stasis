@@ -15,8 +15,11 @@ class DeflateSpec : WordSpec({
         "compress data" {
             val source = Buffer().write(decompressedData.toByteArray())
 
-            val actualCompressedData = Deflate.compress(source).buffer().readUtf8()
-            actualCompressedData shouldBe (compressedData.decodeBase64()?.utf8())
+            val actualCompressedData = Deflate.compress(source).buffer().use {
+                it.readByteString()
+            }
+
+            actualCompressedData.base64() shouldBe (compressedData)
         }
 
         "decompress data" {

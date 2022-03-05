@@ -3,13 +3,21 @@ package stasis.test.client_android.lib.api.clients
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import io.kotest.core.spec.style.WordSpec
+import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.beInstanceOf
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import org.junit.jupiter.api.fail
 import stasis.client_android.lib.api.clients.DefaultServerBootstrapEndpointClient
+import stasis.client_android.lib.api.clients.exceptions.EndpointFailure
+import stasis.client_android.lib.api.clients.exceptions.InvalidBootstrapCodeFailure
 import stasis.client_android.lib.model.server.devices.DeviceBootstrapParameters
 import stasis.client_android.lib.security.HttpCredentials
-import java.util.UUID
+import stasis.client_android.lib.utils.Try.Failure
+import stasis.client_android.lib.utils.Try.Success
+import java.util.*
 
 class DefaultServerBootstrapEndpointClientSpec : WordSpec({
     "DefaultServerBootstrapEndpointClient" should {
@@ -21,7 +29,6 @@ class DefaultServerBootstrapEndpointClientSpec : WordSpec({
                     tokenEndpoint = "http://localhost:1234",
                     clientId = UUID.randomUUID().toString(),
                     clientSecret = "test-secret",
-                    useQueryString = true,
                     scopes = DeviceBootstrapParameters.Scopes(
                         api = "urn:stasis:identity:audience:server-api",
                         core = "urn:stasis:identity:audience:${UUID.randomUUID()}"
@@ -39,7 +46,8 @@ class DefaultServerBootstrapEndpointClientSpec : WordSpec({
             )
 
             val moshi: Moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
-            val expectedResponse = moshi.adapter(DeviceBootstrapParameters::class.java).toJson(testParams)
+            val expectedResponse =
+                moshi.adapter(DeviceBootstrapParameters::class.java).toJson(testParams)
 
             val server = MockWebServer()
             server.enqueue(MockResponse().setBody(expectedResponse))
@@ -50,13 +58,50 @@ class DefaultServerBootstrapEndpointClientSpec : WordSpec({
             )
 
             val actualParams = endpointClient.execute(testCode)
-            actualParams shouldBe (testParams)
+            actualParams shouldBe (Success(testParams))
 
             val request = server.takeRequest()
             request.path shouldBe ("/devices/execute")
             request.method shouldBe ("PUT")
             request.body.size shouldBe (0)
             request.headers[HttpCredentials.AuthorizationHeader] shouldBe ("Bearer $testCode")
+
+            server.shutdown()
+        }
+
+        "handle boostrap request failures (unauthorized)" {
+            val server = MockWebServer()
+            server.enqueue(MockResponse().setResponseCode(401))
+            server.start()
+
+            val endpointClient = DefaultServerBootstrapEndpointClient(
+                serverBootstrapUrl = server.url("/").toString()
+            )
+
+            when (val result = endpointClient.execute(bootstrapCode = "test-code")) {
+                is Success -> fail("Unexpected successful result received: [$result]")
+                is Failure -> result.exception should beInstanceOf<InvalidBootstrapCodeFailure>()
+            }
+
+            server.shutdown()
+        }
+
+        "handle boostrap request failures (server failures)" {
+            val server = MockWebServer()
+            server.enqueue(MockResponse().setResponseCode(500))
+            server.start()
+
+            val endpointClient = DefaultServerBootstrapEndpointClient(
+                serverBootstrapUrl = server.url("/").toString()
+            )
+
+            when (val result = endpointClient.execute(bootstrapCode = "test-code")) {
+                is Success -> fail("Unexpected successful result received: [$result]")
+                is Failure -> {
+                    result.exception should beInstanceOf<EndpointFailure>()
+                    result.exception.message shouldContain ("responded with [500 - Server Error]")
+                }
+            }
 
             server.shutdown()
         }

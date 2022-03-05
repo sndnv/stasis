@@ -59,6 +59,8 @@ class DefaultServerCoreEndpointClient(
                 .put(content.toBody())
         }
 
+        response.body?.close()
+
         when (val code = response.code) {
             StatusOk -> return
             else -> throw EndpointFailure(

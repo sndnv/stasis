@@ -20,18 +20,18 @@ object Adapters {
 
     object ForDuration {
         @ToJson
-        fun toJson(duration: Duration): Long = duration.toMillis()
+        fun toJson(duration: Duration): Long = duration.seconds
 
         @FromJson
-        fun fromJson(duration: Long): Duration = Duration.ofMillis(duration)
+        fun fromJson(duration: Long): Duration = Duration.ofSeconds(duration)
     }
 
     object ForInstant {
         @ToJson
-        fun toJson(instant: Instant): Long = instant.toEpochMilli()
+        fun toJson(instant: Instant): String = instant.toString()
 
         @FromJson
-        fun fromJson(instant: Long): Instant = Instant.ofEpochMilli(instant)
+        fun fromJson(instant: String): Instant = Instant.parse(instant)
     }
 
     object ForLocalDateTime {

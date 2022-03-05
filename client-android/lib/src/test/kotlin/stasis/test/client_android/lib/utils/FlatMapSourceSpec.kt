@@ -9,6 +9,7 @@ import stasis.client_android.lib.utils.FlatMapSource
 import stasis.client_android.lib.utils.FlatMapSource.Companion.flatMap
 import stasis.client_android.lib.utils.FlatMapSource.Companion.map
 import stasis.test.client_android.lib.utils.mock.MockSource
+import java.util.Locale
 
 class FlatMapSourceSpec : WordSpec({
     "FlatMapSource" should {
@@ -18,8 +19,8 @@ class FlatMapSourceSpec : WordSpec({
             val updated = source
                 .flatMap {
                     val original = it.readByteString().utf8()
-                    val lowercase = original.toLowerCase().toByteArray()
-                    val uppercase = original.toUpperCase().toByteArray()
+                    val lowercase = original.lowercase().toByteArray()
+                    val uppercase = original.uppercase().toByteArray()
 
                     val separator = ",".toByteArray()
 
@@ -41,7 +42,7 @@ class FlatMapSourceSpec : WordSpec({
             val updated = source
                 .map {
                     val original = it.readByteString().utf8()
-                    val updated = original.toUpperCase().toByteArray()
+                    val updated = original.uppercase().toByteArray()
 
                     Buffer().write(updated)
                 }

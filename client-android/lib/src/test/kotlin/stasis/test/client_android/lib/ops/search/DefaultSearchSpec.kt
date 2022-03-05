@@ -9,6 +9,9 @@ import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.model.server.datasets.DatasetEntry
 import stasis.client_android.lib.ops.search.DefaultSearch
+import stasis.client_android.lib.utils.Try
+import stasis.client_android.lib.utils.Try.Companion.map
+import stasis.client_android.lib.utils.Try.Success
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
 import stasis.test.client_android.lib.model.Generators
 import java.nio.file.Paths
@@ -44,26 +47,32 @@ class DefaultSearchSpec : WordSpec({
             )
 
             val mockApiClient = object : MockServerApiEndpointClient(self = UUID.randomUUID()) {
-                override suspend fun datasetDefinitions(): List<DatasetDefinition> {
+                override suspend fun datasetDefinitions(): Try<List<DatasetDefinition>> {
                     super.datasetDefinitions()
-                    return definitions
+                    return Success(definitions)
                 }
 
-                override suspend fun latestEntry(definition: DatasetDefinitionId, until: Instant?): DatasetEntry? {
-                    return super.latestEntry(definition, until)?.let { entry ->
-                        when (definition) {
-                            matchingDefinition -> entry.copy(id = matchingEntry) // match
-                            nonMatchingDefinition -> entry
-                            else -> null
+                override suspend fun latestEntry(
+                    definition: DatasetDefinitionId,
+                    until: Instant?
+                ): Try<DatasetEntry?> =
+                    super.latestEntry(definition, until).map {
+                        it?.let { entry ->
+                            when (definition) {
+                                matchingDefinition -> entry.copy(id = matchingEntry) // match
+                                nonMatchingDefinition -> entry
+                                else -> null
+                            }
                         }
                     }
-                }
 
-                override suspend fun datasetMetadata(entry: DatasetEntry): DatasetMetadata {
+                override suspend fun datasetMetadata(entry: DatasetEntry): Try<DatasetMetadata> {
                     return if (entry.id == matchingEntry) {
-                        super.datasetMetadata(entry).copy(
-                            filesystem = FilesystemMetadata(entities = matchingFiles + nonMatchingFiles)
-                        )
+                        super.datasetMetadata(entry).map {
+                            it.copy(
+                                filesystem = FilesystemMetadata(entities = matchingFiles + nonMatchingFiles)
+                            )
+                        }
                     } else {
                         super.datasetMetadata(entry)
                     }
@@ -77,16 +86,18 @@ class DefaultSearchSpec : WordSpec({
                 until = null
             )
 
-            result.definitions.size shouldBe (definitions.size)
+            result.get().definitions.size shouldBe (definitions.size)
 
-            when (val datasetDefinitionResult = result.definitions[matchingDefinition]) {
+            when (val datasetDefinitionResult = result.get().definitions[matchingDefinition]) {
                 null -> fail("Expected result but none was found")
-                else -> datasetDefinitionResult.matches shouldBe (matchingFiles)
+                else -> datasetDefinitionResult.matches.mapKeys { it.toString() } shouldBe (
+                        matchingFiles.mapKeys { it.toString() }
+                        )
             }
 
-            result.definitions[nonMatchingDefinition] shouldBe (null)
+            result.get().definitions[nonMatchingDefinition] shouldBe (null)
 
-            result.definitions[missingEntryDefinition] shouldBe (null)
+            result.get().definitions[missingEntryDefinition] shouldBe (null)
 
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest] shouldBe (3)

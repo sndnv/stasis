@@ -6,6 +6,8 @@ import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import okio.ByteString
 import okio.ByteString.Companion.toByteString
 import okio.Source
@@ -25,6 +27,9 @@ import stasis.client_android.lib.ops.recovery.Providers
 import stasis.client_android.lib.ops.recovery.Recovery
 import stasis.client_android.lib.ops.recovery.Recovery.Destination.Companion.toTargetEntityDestination
 import stasis.client_android.lib.staging.DefaultFileStaging
+import stasis.client_android.lib.utils.Try
+import stasis.client_android.lib.utils.Try.Success
+import stasis.client_android.lib.utils.Try.Failure
 import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.ResourceHelpers
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
@@ -33,23 +38,32 @@ import stasis.test.client_android.lib.ResourceHelpers.createMockFileSystem
 import stasis.test.client_android.lib.ResourceHelpers.extractDirectoryMetadata
 import stasis.test.client_android.lib.ResourceHelpers.extractFileMetadata
 import stasis.test.client_android.lib.ResourceHelpers.withRootAt
-import stasis.test.client_android.lib.mocks.MockCompression
-import stasis.test.client_android.lib.mocks.MockEncryption
-import stasis.test.client_android.lib.mocks.MockRecoveryTracker
-import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
-import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
+import stasis.test.client_android.lib.eventually
+import stasis.test.client_android.lib.mocks.*
 import java.math.BigInteger
 import java.nio.file.Paths
 import java.time.Instant
-import java.util.UUID
+import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 class RecoverySpec : WordSpec({
+    val operationScope = CoroutineScope(Dispatchers.IO)
+
     val checksum: Checksum = Checksum.Companion.SHA256
 
     val secretsConfig: Secret.Config = Secret.Config(
         derivation = Secret.Config.DerivationConfig(
-            encryption = Secret.KeyDerivationConfig(secretSize = 64, iterations = 100000, saltPrefix = "unit-test"),
-            authentication = Secret.KeyDerivationConfig(secretSize = 64, iterations = 100000, saltPrefix = "unit-test")
+            encryption = Secret.KeyDerivationConfig(
+                secretSize = 64,
+                iterations = 100000,
+                saltPrefix = "unit-test"
+            ),
+            authentication = Secret.KeyDerivationConfig(
+                secretSize = 64,
+                iterations = 100000,
+                saltPrefix = "unit-test"
+            )
         ),
         encryption = Secret.Config.EncryptionConfig(
             file = Secret.EncryptionSecretConfig(keySize = 16, ivSize = 16),
@@ -116,17 +130,24 @@ class RecoverySpec : WordSpec({
         }
 
         "process recovery of files" {
-            val currentSourceFile1Metadata = "/ops/source-file-1".asTestResource().extractFileMetadata(checksum)
-            val currentSourceFile2Metadata = "/ops/source-file-2".asTestResource().extractFileMetadata(checksum)
-            val currentSourceFile3Metadata = "/ops/source-file-3".asTestResource().extractFileMetadata(checksum)
+            val operationCompleted = AtomicBoolean(false)
+
+            val currentSourceFile1Metadata =
+                "/ops/source-file-1".asTestResource().extractFileMetadata(checksum)
+            val currentSourceFile2Metadata =
+                "/ops/source-file-2".asTestResource().extractFileMetadata(checksum)
+            val currentSourceFile3Metadata =
+                "/ops/source-file-3".asTestResource().extractFileMetadata(checksum)
 
             // metadata represents file state during previous backup
             val originalSourceFile1Metadata = currentSourceFile1Metadata.copy(
                 checksum = BigInteger("0")
             ) // file changed since backup
 
-            val originalSourceFile2Metadata = currentSourceFile2Metadata // file not changed since backup
-            val originalSourceFile3Metadata = currentSourceFile3Metadata.copy(isHidden = true) // file changed since backup
+            val originalSourceFile2Metadata =
+                currentSourceFile2Metadata // file not changed since backup
+            val originalSourceFile3Metadata =
+                currentSourceFile3Metadata.copy(isHidden = true) // file changed since backup
 
             val originalMetadata = DatasetMetadata(
                 contentChanged = mapOf(
@@ -148,7 +169,9 @@ class RecoverySpec : WordSpec({
 
             val mockCoreClient = MockServerCoreEndpointClient(
                 self = UUID.randomUUID(),
-                crates = (originalSourceFile1Metadata.crates + originalSourceFile2Metadata.crates + originalSourceFile3Metadata.crates)
+                crates = (originalSourceFile1Metadata.crates
+                        + originalSourceFile2Metadata.crates
+                        + originalSourceFile3Metadata.crates)
                     .values
                     .map { Pair(it, "dummy-encrypted-data".toByteArray().toByteString()) }
                     .toMap()
@@ -161,7 +184,13 @@ class RecoverySpec : WordSpec({
                 tracker = mockTracker
             )
 
-            recovery.start()
+            recovery.start(withScope = operationScope) {
+                operationCompleted.set(true)
+            }
+
+            eventually {
+                operationCompleted.get() shouldBe (true)
+            }
 
             // data pulled for source-file-1; source-file-2 is unchanged; source-file-3 has only metadata changes;
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (1)
@@ -176,19 +205,31 @@ class RecoverySpec : WordSpec({
         }
 
         "support recovering to a different destination" {
+            val operationCompleted = AtomicBoolean(false)
+
             val targetDirectory = "/ops/recovery".asTestResource()
             targetDirectory.clear()
 
-            val sourceDirectory1Metadata = "/ops".asTestResource().extractDirectoryMetadata().withRootAt("/ops")
-            val sourceDirectory2Metadata = "/ops/nested".asTestResource().extractDirectoryMetadata().withRootAt("/ops")
+            val sourceDirectory1Metadata =
+                "/ops".asTestResource().extractDirectoryMetadata().withRootAt("/ops")
+            val sourceDirectory2Metadata =
+                "/ops/nested".asTestResource().extractDirectoryMetadata().withRootAt("/ops")
 
-            val sourceFile1Metadata = "/ops/source-file-1".asTestResource().extractFileMetadata(checksum).withRootAt("/ops")
-            val sourceFile2Metadata = "/ops/source-file-2".asTestResource().extractFileMetadata(checksum).withRootAt("/ops")
-            val sourceFile3Metadata = "/ops/source-file-3".asTestResource().extractFileMetadata(checksum).withRootAt("/ops")
+            val sourceFile1Metadata =
+                "/ops/source-file-1".asTestResource().extractFileMetadata(checksum)
+                    .withRootAt("/ops")
+            val sourceFile2Metadata =
+                "/ops/source-file-2".asTestResource().extractFileMetadata(checksum)
+                    .withRootAt("/ops")
+            val sourceFile3Metadata =
+                "/ops/source-file-3".asTestResource().extractFileMetadata(checksum)
+                    .withRootAt("/ops")
             val sourceFile4Metadata =
-                "/ops/nested/source-file-4".asTestResource().extractFileMetadata(checksum).withRootAt("/ops")
+                "/ops/nested/source-file-4".asTestResource().extractFileMetadata(checksum)
+                    .withRootAt("/ops")
             val sourceFile5Metadata =
-                "/ops/nested/source-file-5".asTestResource().extractFileMetadata(checksum).withRootAt("/ops")
+                "/ops/nested/source-file-5".asTestResource().extractFileMetadata(checksum)
+                    .withRootAt("/ops")
 
             val metadata = DatasetMetadata(
                 contentChanged = mapOf(
@@ -232,7 +273,10 @@ class RecoverySpec : WordSpec({
 
             val mockTracker = MockRecoveryTracker()
 
-            val destination = Recovery.Destination(path = targetDirectory.toAbsolutePath().toString(), keepStructure = true)
+            val destination = Recovery.Destination(
+                path = targetDirectory.toAbsolutePath().toString(),
+                keepStructure = true
+            )
 
             val recovery = createRecovery(
                 metadata = metadata,
@@ -241,7 +285,13 @@ class RecoverySpec : WordSpec({
                 destination = destination
             )
 
-            recovery.start()
+            recovery.start(withScope = operationScope) {
+                operationCompleted.set(true)
+            }
+
+            eventually {
+                operationCompleted.get() shouldBe (true)
+            }
 
             // data pulled for all entities; 2 directories and 5 files
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (5)
@@ -256,9 +306,14 @@ class RecoverySpec : WordSpec({
         }
 
         "handle failures of specific files" {
-            val currentSourceFile1Metadata = "/ops/source-file-1".asTestResource().extractFileMetadata(checksum)
-            val currentSourceFile2Metadata = "/ops/source-file-2".asTestResource().extractFileMetadata(checksum)
-            val currentSourceFile3Metadata = "/ops/source-file-3".asTestResource().extractFileMetadata(checksum)
+            val operationResult = AtomicReference<Throwable>()
+
+            val currentSourceFile1Metadata =
+                "/ops/source-file-1".asTestResource().extractFileMetadata(checksum)
+            val currentSourceFile2Metadata =
+                "/ops/source-file-2".asTestResource().extractFileMetadata(checksum)
+            val currentSourceFile3Metadata =
+                "/ops/source-file-3".asTestResource().extractFileMetadata(checksum)
 
             // metadata represents file state during previous backup
             val originalSourceFile1Metadata =
@@ -300,8 +355,13 @@ class RecoverySpec : WordSpec({
                 tracker = mockTracker
             )
 
-            val e = shouldThrow<RuntimeException> { recovery.start() }
-            e.message shouldContain ("Failed to pull crate")
+            recovery.start(withScope = operationScope) { e ->
+                operationResult.set(e)
+            }
+
+            eventually {
+                operationResult.get()?.message shouldContain ("Failed to pull crate")
+            }
 
             // data pulled for source-file-1, source-file-2; source-file-3 has not data and will fail
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (2)
@@ -316,7 +376,10 @@ class RecoverySpec : WordSpec({
         }
 
         "allow stopping a running recovery" {
-            val currentSourceFile1Metadata = "/ops/source-file-1".asTestResource().extractFileMetadata(checksum)
+            val operationCompleted = AtomicBoolean(false)
+
+            val currentSourceFile1Metadata =
+                "/ops/source-file-1".asTestResource().extractFileMetadata(checksum)
 
             // metadata represents file state during previous backup
             val originalSourceFile1Metadata =
@@ -345,11 +408,17 @@ class RecoverySpec : WordSpec({
                 tracker = mockTracker
             )
 
-            recovery.start()
+            recovery.start(withScope = operationScope) {
+                operationCompleted.set(it != null)
+            }
 
             recovery.stop()
 
-            mockTracker.statistics[MockRecoveryTracker.Statistic.Completed] shouldBe (1)
+            eventually {
+                operationCompleted.get() shouldBe (true)
+            }
+
+            mockTracker.statistics[MockRecoveryTracker.Statistic.Completed] shouldBe (0)
         }
     }
 
@@ -368,26 +437,31 @@ class RecoverySpec : WordSpec({
                 ),
                 decompressor = MockCompression(),
                 decryptor = object : MockEncryption() {
-                    override fun decrypt(source: Source, metadataSecret: DeviceMetadataSecret): Source =
+                    override fun decrypt(
+                        source: Source,
+                        metadataSecret: DeviceMetadataSecret
+                    ): Source =
                         source
                 },
                 clients = Clients(
                     api = object : MockServerApiEndpointClient(self = UUID.randomUUID()) {
-                        override suspend fun latestEntry(definition: DatasetDefinitionId, until: Instant?): DatasetEntry? {
-                            return if (definition == dataset.id) {
+                        override suspend fun latestEntry(
+                            definition: DatasetDefinitionId,
+                            until: Instant?
+                        ): Try<DatasetEntry?> = Try {
+                            if (definition == dataset.id) {
                                 actualEntry
                             } else {
                                 null
                             }
                         }
 
-                        override suspend fun datasetEntry(entry: DatasetEntryId): DatasetEntry {
+                        override suspend fun datasetEntry(entry: DatasetEntryId): Try<DatasetEntry> =
                             if (entry == actualEntry.id) {
-                                return actualEntry
+                                Success(actualEntry)
                             } else {
-                                throw IllegalArgumentException("Invalid entry ID provided: [$entry]")
+                                Failure(IllegalArgumentException("Invalid entry ID provided: [$entry]"))
                             }
-                        }
                     },
                     core = MockServerCoreEndpointClient(
                         self = UUID.randomUUID(),
@@ -406,7 +480,7 @@ class RecoverySpec : WordSpec({
                 ),
                 deviceSecret = secret,
                 providers = providers
-            )
+            ).get()
 
             val descriptorWithEntry = Recovery.Descriptor(
                 query = null,
@@ -416,7 +490,7 @@ class RecoverySpec : WordSpec({
                 ),
                 deviceSecret = secret,
                 providers = providers
-            )
+            ).get()
 
             descriptorWithDefinition.targetMetadata shouldBe (metadata)
             descriptorWithDefinition.deviceSecret shouldBe (secret)
@@ -439,7 +513,10 @@ class RecoverySpec : WordSpec({
                 decryptor = MockEncryption(),
                 clients = Clients(
                     api = object : MockServerApiEndpointClient(self = UUID.randomUUID()) {
-                        override suspend fun latestEntry(definition: DatasetDefinitionId, until: Instant?): DatasetEntry? = null
+                        override suspend fun latestEntry(
+                            definition: DatasetDefinitionId,
+                            until: Instant?
+                        ): Try<DatasetEntry?> = Success(null)
                     },
                     core = MockServerCoreEndpointClient()
                 ),
@@ -457,7 +534,7 @@ class RecoverySpec : WordSpec({
                         ),
                         deviceSecret = secret,
                         providers = providers
-                    )
+                    ).get()
             }
 
             e.message shouldBe ("Expected dataset entry for definition [${dataset.id}] but none was found")
@@ -519,7 +596,8 @@ class RecoverySpec : WordSpec({
         }
 
         "create path queries from regex strings" {
-            Recovery.PathQuery("/tmp/some-file.txt").shouldBeInstanceOf<Recovery.PathQuery.ForAbsolutePath>()
+            Recovery.PathQuery("/tmp/some-file.txt")
+                .shouldBeInstanceOf<Recovery.PathQuery.ForAbsolutePath>()
             Recovery.PathQuery("some-file.txt").shouldBeInstanceOf<Recovery.PathQuery.ForFileName>()
         }
     }

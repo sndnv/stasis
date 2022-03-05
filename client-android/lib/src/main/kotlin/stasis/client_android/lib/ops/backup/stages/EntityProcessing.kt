@@ -77,7 +77,7 @@ interface EntityProcessing {
         PartitionedSource(
             source = entity.source()
                 .buffer()
-                .apply { providers.compressor.compress(this) },
+                .let { providers.compressor.compress(it).buffer() },
             providers = providers,
             withPartSecret = ::createPartSecret,
             withMaximumPartSize = maximumPartSize

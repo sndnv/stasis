@@ -50,7 +50,8 @@ object ResourceHelpers {
         val pathIsUnderTestResources = resourcePathAsString.contains(testResources)
         require(pathIsUnderBuild && pathIsUnderTestResources) { "Expected [$this] to be under $build/$testResources" }
 
-        val pathEndsInBuild = resourcePathAsString.endsWith(build) || resourcePathAsString.endsWith("$build/")
+        val pathEndsInBuild =
+            resourcePathAsString.endsWith(build) || resourcePathAsString.endsWith("$build/")
         val pathEndsInTestResources =
             resourcePathAsString.endsWith(testResources) || resourcePathAsString.endsWith("$testResources/")
         require(!pathEndsInBuild && !pathEndsInTestResources) { "Expected [$this] to be a child of $build/$testResources" }
@@ -167,7 +168,7 @@ object ResourceHelpers {
 
         val chars: Set<Char> = setup.chars
             .map { char ->
-                if (setup.caseSensitive) char else char.toLowerCase()
+                if (setup.caseSensitive) char else char.lowercaseChar()
             }
             .filterNot { setup.disallowedChars.contains(it) }
             .toSet()

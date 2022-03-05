@@ -3,6 +3,8 @@ package stasis.test.client_android.lib.ops.recovery.stages.internal
 import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.shouldBe
 import okio.Buffer
+import okio.Sink
+import okio.Source
 import okio.buffer
 import stasis.client_android.lib.analysis.Checksum
 import stasis.client_android.lib.api.clients.Clients
@@ -21,7 +23,10 @@ class DecompressedSourceSpec : WordSpec({
             val providers: Providers = Providers(
                 checksum = Checksum.Companion.MD5,
                 staging = MockFileStaging(),
-                decompressor = MockCompression(),
+                decompressor = object: MockCompression() {
+                    override fun decompress(source: Source): Source =
+                        Buffer().writeUtf8("decompressed")
+                },
                 decryptor = MockEncryption(),
                 clients = Clients(
                     api = MockServerApiEndpointClient(),

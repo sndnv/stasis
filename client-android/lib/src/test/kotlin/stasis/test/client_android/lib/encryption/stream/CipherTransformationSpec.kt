@@ -18,8 +18,7 @@ class CipherTransformationSpec : WordSpec({
 
         val plaintextData = "some-plaintext-data"
 
-        val aesEncryptedData =
-            "DW/YzX/aXwio9P25x8XgNKHaDgKcEHyjBgIkVXPY2Acxt/s="
+        val aesEncryptedData = "DW/YzX/aXwio9P25x8XgNKHaDgKcEHyjBgIkVXPY2Acxt/s="
 
         "encrypt data (AES via source)" {
             val source = Buffer().write(plaintextData.toByteArray())
@@ -92,7 +91,8 @@ class CipherTransformationSpec : WordSpec({
         "encrypt data (AES / ECB)" {
             // warning: for testing purposes only; do not use AES in ECB mode!
 
-            val source = Buffer().write("1234567890ABCDEF".toByteArray()) // 16 bytes in size, to avoid using padding
+            val source =
+                Buffer().write("1234567890ABCDEF".toByteArray()) // 16 bytes in size, to avoid using padding
 
             val transformation = CipherTransformation.process(
                 source = source,

@@ -5,6 +5,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
 import stasis.client_android.lib.model.server.api.responses.Ping
 import stasis.client_android.lib.ops.monitoring.DefaultServerMonitor
+import stasis.client_android.lib.utils.Try
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
 import stasis.test.client_android.lib.mocks.MockServerTracker
 import java.time.Duration
@@ -27,10 +28,11 @@ class DefaultServerMonitorSpec : WordSpec({
             val mockTracker = MockServerTracker()
 
             val monitor = DefaultServerMonitor(
+                initialDelay = Duration.ZERO,
                 interval = defaultInterval,
                 api = mockApiClient,
                 tracker = mockTracker,
-                scope = context
+                scope = testScope
             )
 
             managedMonitor(monitor) {
@@ -49,9 +51,9 @@ class DefaultServerMonitorSpec : WordSpec({
                 mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved] shouldBe (0)
                 mockApiClient.statistics[MockServerApiEndpointClient.Statistic.UserRetrieved] shouldBe (0)
                 mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
-                mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
+                mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (1)
 
-                mockTracker.statistics[MockServerTracker.Statistic.ServerReachable] shouldBe (0)
+                mockTracker.statistics[MockServerTracker.Statistic.ServerReachable] shouldBe (1)
                 mockTracker.statistics[MockServerTracker.Statistic.ServerUnreachable] shouldBe (0)
 
                 delay(defaultInterval.toMillis())
@@ -69,34 +71,34 @@ class DefaultServerMonitorSpec : WordSpec({
                 mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved] shouldBe (0)
                 mockApiClient.statistics[MockServerApiEndpointClient.Statistic.UserRetrieved] shouldBe (0)
                 mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
-                mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (1)
+                mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (2)
 
-                mockTracker.statistics[MockServerTracker.Statistic.ServerReachable] shouldBe (1)
+                mockTracker.statistics[MockServerTracker.Statistic.ServerReachable] shouldBe (2)
                 mockTracker.statistics[MockServerTracker.Statistic.ServerUnreachable] shouldBe (0)
             }
         }
 
         "handle ping failures" {
             val mockApiClient = object : MockServerApiEndpointClient(self = UUID.randomUUID()) {
-                override suspend fun ping(): Ping {
-                    throw RuntimeException("test failure")
-                }
+                override suspend fun ping(): Try<Ping> =
+                    Try.Failure(RuntimeException("test failure"))
             }
 
             val mockTracker = MockServerTracker()
 
             val monitor = DefaultServerMonitor(
+                initialDelay = Duration.ZERO,
                 interval = defaultInterval.dividedBy(2),
                 api = mockApiClient,
                 tracker = mockTracker,
-                scope = context
+                scope = testScope
             )
 
             managedMonitor(monitor) {
                 delay(defaultInterval.toMillis())
 
                 mockTracker.statistics[MockServerTracker.Statistic.ServerReachable] shouldBe (0)
-                mockTracker.statistics[MockServerTracker.Statistic.ServerUnreachable] shouldBe (1)
+                mockTracker.statistics[MockServerTracker.Statistic.ServerUnreachable] shouldBe (4)
             }
         }
 
@@ -104,22 +106,23 @@ class DefaultServerMonitorSpec : WordSpec({
             val mockTracker = MockServerTracker()
 
             val monitor = DefaultServerMonitor(
+                initialDelay = Duration.ZERO,
                 interval = defaultInterval.dividedBy(2),
                 api = MockServerApiEndpointClient(),
                 tracker = mockTracker,
-                scope = context
+                scope = testScope
             )
 
             delay(defaultInterval.toMillis())
 
-            mockTracker.statistics[MockServerTracker.Statistic.ServerReachable] shouldBe (1)
+            mockTracker.statistics[MockServerTracker.Statistic.ServerReachable] shouldBe (2)
             mockTracker.statistics[MockServerTracker.Statistic.ServerUnreachable] shouldBe (0)
 
             monitor.stop()
 
             delay(defaultInterval.toMillis() * 2)
 
-            mockTracker.statistics[MockServerTracker.Statistic.ServerReachable] shouldBe (1)
+            mockTracker.statistics[MockServerTracker.Statistic.ServerReachable] shouldBe (2)
             mockTracker.statistics[MockServerTracker.Statistic.ServerUnreachable] shouldBe (0)
         }
     }

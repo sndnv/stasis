@@ -23,6 +23,7 @@ import stasis.client_android.lib.model.server.devices.DeviceId
 import stasis.client_android.lib.model.server.schedules.Schedule
 import stasis.client_android.lib.model.server.users.User
 import stasis.client_android.lib.security.HttpCredentials
+import stasis.client_android.lib.utils.Try.Success
 import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.mocks.MockEncryption
 import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
@@ -33,7 +34,8 @@ import java.util.UUID
 
 class DefaultServerApiEndpointClientSpec : WordSpec({
     "DefaultServerApiEndpointClient" should {
-        val apiCredentials = HttpCredentials.BasicHttpCredentials(username = "some-user", password = "some-password")
+        val apiCredentials =
+            HttpCredentials.BasicHttpCredentials(username = "some-user", password = "some-password")
 
         fun createClient(
             serverApiUrl: String,
@@ -43,13 +45,17 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             credentials = { apiCredentials },
             self = self,
             decryption = DefaultServerApiEndpointClient.DecryptionContext(
-                core = object : MockServerCoreEndpointClient(self = UUID.randomUUID(), crates = emptyMap()) {
+                core = object :
+                    MockServerCoreEndpointClient(self = UUID.randomUUID(), crates = emptyMap()) {
                     override suspend fun pull(crate: CrateId): Source =
                         Buffer().writeUtf8("test-crate")
                 },
-                deviceSecret = Fixtures.Secrets.Default,
+                deviceSecret = { Fixtures.Secrets.Default },
                 decoder = object : MockEncryption() {
-                    override fun decrypt(source: Source, metadataSecret: DeviceMetadataSecret): Source =
+                    override fun decrypt(
+                        source: Source,
+                        metadataSecret: DeviceMetadataSecret
+                    ): Source =
                         Buffer().write(DatasetMetadata.empty().toByteString())
                 }
             )
@@ -66,7 +72,8 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
         "create dataset definitions" {
             val expectedDefinition = UUID.randomUUID()
 
-            val api = createServer(withResponse = MockResponse().setBody("""{"definition":"$expectedDefinition"}"""))
+            val api =
+                createServer(withResponse = MockResponse().setBody("""{"definition":"$expectedDefinition"}"""))
             val apiClient = createClient(api.url("/").toString())
 
             val expectedRequest = CreateDatasetDefinition(
@@ -84,12 +91,15 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             )
 
             val createdDefinition = apiClient.createDatasetDefinition(request = expectedRequest)
+                .get()
+
             createdDefinition.definition shouldBe (expectedDefinition)
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("POST")
             actualRequest.path shouldBe ("/datasets/definitions/own")
-            apiClient.moshi.adapter(CreateDatasetDefinition::class.java).fromJson(actualRequest.body) shouldBe (expectedRequest)
+            apiClient.moshi.adapter(CreateDatasetDefinition::class.java)
+                .fromJson(actualRequest.body) shouldBe (expectedRequest)
 
             api.shutdown()
         }
@@ -114,7 +124,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             )
 
             val e = shouldThrow<IllegalArgumentException> {
-                apiClient.createDatasetDefinition(request = expectedRequest)
+                apiClient.createDatasetDefinition(request = expectedRequest).get()
             }
 
             e.message shouldBe ("Cannot create dataset definition for a different device: [${expectedRequest.device}]")
@@ -125,7 +135,8 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
         "create dataset entries" {
             val expectedEntry = UUID.randomUUID()
 
-            val api = createServer(withResponse = MockResponse().setBody("""{"entry":"$expectedEntry"}"""))
+            val api =
+                createServer(withResponse = MockResponse().setBody("""{"entry":"$expectedEntry"}"""))
             val apiClient = createClient(api.url("/").toString())
 
             val expectedRequest = CreateDatasetEntry(
@@ -135,13 +146,14 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
                 metadata = UUID.randomUUID()
             )
 
-            val createdEntry = apiClient.createDatasetEntry(request = expectedRequest)
+            val createdEntry = apiClient.createDatasetEntry(request = expectedRequest).get()
             createdEntry.entry shouldBe (expectedEntry)
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("POST")
             actualRequest.path shouldBe ("/datasets/entries/own/for-definition/${expectedRequest.definition}")
-            apiClient.moshi.adapter(CreateDatasetEntry::class.java).fromJson(actualRequest.body) shouldBe (expectedRequest)
+            apiClient.moshi.adapter(CreateDatasetEntry::class.java)
+                .fromJson(actualRequest.body) shouldBe (expectedRequest)
 
             api.shutdown()
         }
@@ -169,7 +181,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
                 )
             )
 
-            apiClient.datasetDefinitions() shouldBe (expectedDefinitions)
+            apiClient.datasetDefinitions() shouldBe (Success(expectedDefinitions))
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
@@ -202,7 +214,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             )
 
             val actualDefinitions = apiClient.datasetDefinitions()
-            actualDefinitions shouldBe (expectedDefinitions.drop(1))
+            actualDefinitions shouldBe (Success(expectedDefinitions.drop(1)))
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
@@ -236,7 +248,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             )
 
             val actualEntries = apiClient.datasetEntries(definition = definition)
-            actualEntries shouldBe (expectedEntries)
+            actualEntries shouldBe (Success(expectedEntries))
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
@@ -255,12 +267,13 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
 
             api.enqueue(
                 MockResponse().setBody(
-                    apiClient.moshi.adapter(DatasetDefinition::class.java).toJson(expectedDefinition)
+                    apiClient.moshi.adapter(DatasetDefinition::class.java)
+                        .toJson(expectedDefinition)
                 )
             )
 
             val actualDefinition = apiClient.datasetDefinition(definition = expectedDefinition.id)
-            actualDefinition shouldBe (expectedDefinition)
+            actualDefinition shouldBe (Success(expectedDefinition))
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
@@ -279,12 +292,13 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
 
             api.enqueue(
                 MockResponse().setBody(
-                    apiClient.moshi.adapter(DatasetDefinition::class.java).toJson(expectedDefinition)
+                    apiClient.moshi.adapter(DatasetDefinition::class.java)
+                        .toJson(expectedDefinition)
                 )
             )
 
             val e = shouldThrow<IllegalArgumentException> {
-                apiClient.datasetDefinition(definition = expectedDefinition.id)
+                apiClient.datasetDefinition(definition = expectedDefinition.id).get()
             }
 
             e.message shouldBe ("Cannot retrieve dataset definition for a different device")
@@ -310,7 +324,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             )
 
             val actualEntry = apiClient.datasetEntry(entry = expectedEntry.id)
-            actualEntry shouldBe (expectedEntry)
+            actualEntry shouldBe (Success(expectedEntry))
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
@@ -334,7 +348,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             )
 
             val actualEntry = apiClient.latestEntry(definition = definition, until = null)
-            actualEntry shouldBe (expectedEntry)
+            actualEntry shouldBe (Success(expectedEntry))
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
@@ -355,7 +369,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             )
 
             val actualEntry = apiClient.latestEntry(definition = definition, until = null)
-            actualEntry shouldBe (null)
+            actualEntry shouldBe (Success(null))
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
@@ -381,7 +395,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             val instant = Instant.now()
 
             val actualEntry = apiClient.latestEntry(definition = definition, until = instant)
-            actualEntry shouldBe (expectedEntry)
+            actualEntry shouldBe (Success(expectedEntry))
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
@@ -413,7 +427,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             )
 
             val actualSchedules = apiClient.publicSchedules()
-            actualSchedules shouldBe (expectedSchedules)
+            actualSchedules shouldBe (Success(expectedSchedules))
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
@@ -436,7 +450,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             )
 
             val actualSchedule = apiClient.publicSchedule(schedule = expectedSchedule.id)
-            actualSchedule shouldBe (expectedSchedule)
+            actualSchedule shouldBe (Success(expectedSchedule))
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
@@ -459,7 +473,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             )
 
             val metadata = apiClient.datasetMetadata(entry = expectedEntry.id)
-            metadata shouldBe (DatasetMetadata.empty())
+            metadata shouldBe (Success(DatasetMetadata.empty()))
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
@@ -474,7 +488,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             val apiClient = createClient(api.url("/").toString())
 
             val metadata = apiClient.datasetMetadata(entry = Generators.generateEntry())
-            metadata shouldBe (DatasetMetadata.empty())
+            metadata shouldBe (Success(DatasetMetadata.empty()))
 
             api.shutdown()
         }
@@ -493,7 +507,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             )
 
             val actualUser = apiClient.user()
-            actualUser shouldBe (expectedUser)
+            actualUser shouldBe (Success(expectedUser))
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
@@ -516,7 +530,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             )
 
             val actualDevice = apiClient.device()
-            actualDevice shouldBe (expectedDevice)
+            actualDevice shouldBe (Success(expectedDevice))
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
@@ -539,7 +553,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             )
 
             val actualPing = apiClient.ping()
-            actualPing shouldBe (expectedPing)
+            actualPing shouldBe (Success(expectedPing))
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
