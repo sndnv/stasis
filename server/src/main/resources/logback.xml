@@ -13,6 +13,11 @@
     </appender>
 
     <variable name="SERVER_LOGLEVEL" value="${STASIS_SERVER_LOGLEVEL:-INFO}"/>
+    <variable name="SLICK_LOGLEVEL" value="${STASIS_SERVER_SLICK_LOGLEVEL:-INFO}"/>
+
+    <logger name="slick" level="${SLICK_LOGLEVEL}" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
 
     <root level="${SERVER_LOGLEVEL}">
         <appender-ref ref="CONSOLE"/>
