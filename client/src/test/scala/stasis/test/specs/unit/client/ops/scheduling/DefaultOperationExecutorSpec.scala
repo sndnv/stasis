@@ -203,18 +203,20 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       }
   }
 
-  it should "provide a list of active operations" in {
-    val executor = createExecutor(slowEncryption = true)
+  it should "provide a list of active and completed operations" in {
+    val executor = createExecutor()
 
-    executor.operations.await should be(empty)
+    executor.active.await should be(empty)
+    executor.completed.await should be(empty)
 
     eventually[Assertion] {
       val backup = executor.startBackupWithRules(definition = DatasetDefinition.generateId()).await
-      executor.operations.await.get(backup) should be(Some(Operation.Type.Backup))
+      executor.active.await.get(backup) should be(Some(Operation.Type.Backup))
     }
 
     eventually[Assertion] {
-      executor.operations.await should be(empty)
+      executor.active.await should be(empty)
+      executor.completed.await.values.toSeq should be(Seq(Operation.Type.Backup))
     }
   }
 
@@ -233,11 +235,11 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     val executor = createExecutor(slowEncryption = true)
 
     eventually[Future[Assertion]] {
-      executor.operations.await should be(empty)
+      executor.active.await should be(empty)
 
       eventually[Assertion] {
         val backup = executor.startBackupWithRules(definition = DatasetDefinition.generateId()).await
-        executor.operations.await.get(backup) should be(Some(Operation.Type.Backup))
+        executor.active.await.get(backup) should be(Some(Operation.Type.Backup))
       }
 
       executor

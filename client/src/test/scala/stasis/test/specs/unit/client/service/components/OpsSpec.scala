@@ -58,7 +58,7 @@ class OpsSpec extends AsyncUnitSpec with ResourceHelpers {
           }
       }
     ).map { ops =>
-      ops.executor.operations.await shouldBe empty
+      ops.executor.active.await shouldBe empty
       ops.scheduler.schedules.await shouldBe empty
     }
   }

@@ -2,7 +2,7 @@
 
 Linux / macOS backup client, using [`server`](../server) for management and storage.
 
-This submodule represent the client's background service, responsible for performing all client operations
+This submodule represents the client's background service, responsible for performing all client operations
 (backup, recovery, maintenance).
 
 To allow for a frontend (such as [`client-cli`](../client-cli)) to

@@ -13,7 +13,8 @@ import scala.concurrent.Future
 
 trait OperationExecutor {
 
-  def operations: Future[Map[Operation.Id, Operation.Type]]
+  def active: Future[Map[Operation.Id, Operation.Type]]
+  def completed: Future[Map[Operation.Id, Operation.Type]]
   def rules: Future[Specification]
 
   def startBackupWithRules(
