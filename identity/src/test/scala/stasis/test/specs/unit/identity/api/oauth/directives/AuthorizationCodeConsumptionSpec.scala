@@ -3,10 +3,12 @@ package stasis.test.specs.unit.identity.api.oauth.directives
 import java.security.MessageDigest
 import java.util.Base64
 
-import akka.event.LoggingAdapter
+import scala.concurrent.ExecutionContext
+
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives
 import akka.stream.{Materializer, SystemMaterializer}
+import org.slf4j.Logger
 import play.api.libs.json._
 import stasis.identity.api.oauth.directives.AuthorizationCodeConsumption
 import stasis.identity.api.oauth.directives.AuthorizationCodeConsumption.ChallengeVerification
@@ -15,8 +17,6 @@ import stasis.identity.model.clients.Client
 import stasis.identity.model.codes.{AuthorizationCodeStore, StoredAuthorizationCode}
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
-
-import scala.concurrent.ExecutionContext
 
 class AuthorizationCodeConsumptionSpec extends RouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
@@ -284,7 +284,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     new AuthorizationCodeConsumption {
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
       override implicit protected def ec: ExecutionContext = system.dispatcher
-      override protected def log: LoggingAdapter = createLogger()
+      override protected def log: Logger = createLogger()
       override protected def authorizationCodeStore: AuthorizationCodeStore = codes
     }
 }

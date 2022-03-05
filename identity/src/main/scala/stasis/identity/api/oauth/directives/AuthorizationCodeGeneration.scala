@@ -1,9 +1,12 @@
 package stasis.identity.api.oauth.directives
 
-import akka.event.LoggingAdapter
+import scala.util.{Failure, Success}
+
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.{StatusCodes, Uri}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Directive, Directive1}
+import org.slf4j.Logger
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.model.ChallengeMethod
 import stasis.identity.model.clients.Client
@@ -12,11 +15,9 @@ import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, S
 import stasis.identity.model.errors.AuthorizationError
 import stasis.identity.model.owners.ResourceOwner
 
-import scala.util.{Failure, Success}
-
 trait AuthorizationCodeGeneration extends EntityDiscardingDirectives {
 
-  protected def log: LoggingAdapter
+  protected def log: Logger
 
   protected def authorizationCodeGenerator: AuthorizationCodeGenerator
   protected def authorizationCodeStore: AuthorizationCodeStore
@@ -81,12 +82,12 @@ trait AuthorizationCodeGeneration extends EntityDiscardingDirectives {
           inner(Tuple1(storedCode.code))
 
         case Failure(e) =>
-          log.error(
-            e,
+          log.errorN(
             "Failed to store authorization code for client [{}] and owner [{}]: [{}]",
             client,
             owner.username,
-            e.getMessage
+            e.getMessage,
+            e
           )
 
           discardEntity {

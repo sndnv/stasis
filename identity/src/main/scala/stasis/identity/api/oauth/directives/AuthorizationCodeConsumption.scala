@@ -4,10 +4,14 @@ import java.nio.charset.{Charset, StandardCharsets}
 import java.security.MessageDigest
 import java.util.Base64
 
-import akka.event.LoggingAdapter
+import scala.concurrent.ExecutionContext
+import scala.util.{Failure, Success, Try}
+
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Directive, Route}
+import org.slf4j.Logger
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.api.Formats._
 import stasis.identity.model.ChallengeMethod
@@ -16,15 +20,12 @@ import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, S
 import stasis.identity.model.errors.TokenError
 import stasis.identity.model.owners.ResourceOwner
 
-import scala.concurrent.ExecutionContext
-import scala.util.{Failure, Success, Try}
-
 trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
   import AuthorizationCodeConsumption._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
   protected implicit def ec: ExecutionContext
-  protected def log: LoggingAdapter
+  protected def log: Logger
 
   protected def authorizationCodeStore: AuthorizationCodeStore
 
@@ -40,7 +41,7 @@ trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
           inner(Tuple2(owner, scope))
 
         case Success(Some(StoredAuthorizationCode(`providedCode`, `client`, owner, _, Some(_)))) =>
-          log.warning(
+          log.warnN(
             "Authorization code for client [{}] and owner [{}] has challenge but none was expected",
             client,
             owner.username
@@ -80,7 +81,7 @@ trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
               encodedVerifier == challenge.value
 
             case Some(ChallengeMethod.Plain) | None =>
-              log.warning(
+              log.warnN(
                 "Plain code verifier transformation method used for client [{}] and owner [{}]",
                 client,
                 owner.username
@@ -92,7 +93,7 @@ trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
           if (verifierMatchesChallenge) {
             inner(Tuple2(owner, scope))
           } else {
-            log.warning(
+            log.warnN(
               "Authorization code for client [{}] and owner [{}] did not have matching challenge and verifier",
               client,
               owner.username
@@ -107,7 +108,7 @@ trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
           }
 
         case Success(Some(StoredAuthorizationCode(`providedCode`, `client`, owner, _, None))) =>
-          log.warning(
+          log.warnN(
             "Authorization code for client [{}] and owner [{}] has no challenge but one was expected",
             client,
             owner.username
@@ -140,7 +141,7 @@ trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
       ) {
         handler(inner).orElse {
           case Success(Some(StoredAuthorizationCode(storedCode, storedClient, owner, _, _))) =>
-            log.warning(
+            log.warnN(
               "Authorization code [{}] stored for client [{}] and owner [{}] did not have expected client [{}]",
               storedCode.value,
               client,
@@ -156,7 +157,7 @@ trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
             }
 
           case Success(None) =>
-            log.warning(
+            log.warnN(
               "Authorization code [{}] was not found",
               providedCode.value
             )
@@ -169,11 +170,11 @@ trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
             }
 
           case Failure(e) =>
-            log.error(
-              e,
+            log.errorN(
               "Failed to consume authorization code for client [{}]: [{}]",
               client,
-              e.getMessage
+              e.getMessage,
+              e
             )
 
             discardEntity {

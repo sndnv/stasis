@@ -1,28 +1,27 @@
 package stasis.identity.api.manage
 
-import akka.actor.ActorSystem
-import akka.event.{Logging, LoggingAdapter}
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.tokens.{RefreshToken, RefreshTokenStore}
 
-class Tokens(store: RefreshTokenStore)(implicit system: ActorSystem, override val mat: Materializer)
-    extends EntityDiscardingDirectives {
+class Tokens(store: RefreshTokenStore)(implicit override val mat: Materializer) extends EntityDiscardingDirectives {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.identity.api.Formats._
 
-  private val log: LoggingAdapter = Logging(system, this.getClass.getName)
+  private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   def routes(user: ResourceOwner.Id): Route =
     concat(
       pathEndOrSingleSlash {
         get {
           onSuccess(store.tokens) { tokens =>
-            log.debug("User [{}] successfully retrieved [{}] refresh tokens", user, tokens.size)
+            log.debugN("User [{}] successfully retrieved [{}] refresh tokens", user, tokens.size)
             discardEntity & complete(tokens.values)
           }
         }
@@ -32,7 +31,7 @@ class Tokens(store: RefreshTokenStore)(implicit system: ActorSystem, override va
           get {
             onSuccess(store.get(RefreshToken(token))) {
               case Some(storedToken) =>
-                log.debug(
+                log.debugN(
                   "User [{}] successfully retrieved refresh token for client [{}] and owner [{}]",
                   user,
                   storedToken.client,
@@ -41,7 +40,7 @@ class Tokens(store: RefreshTokenStore)(implicit system: ActorSystem, override va
                 discardEntity & complete(storedToken)
 
               case None =>
-                log.warning(
+                log.warnN(
                   "User [{}] requested refresh token [{}] but it was not found",
                   user,
                   token
@@ -52,10 +51,10 @@ class Tokens(store: RefreshTokenStore)(implicit system: ActorSystem, override va
           delete {
             onSuccess(store.delete(RefreshToken(token))) { deleted =>
               if (deleted) {
-                log.debug("User [{}] successfully deleted refresh token [{}]", user, token)
+                log.debugN("User [{}] successfully deleted refresh token [{}]", user, token)
                 discardEntity & complete(StatusCodes.OK)
               } else {
-                log.warning("User [{}] failed to delete refresh token [{}]", user, token)
+                log.warnN("User [{}] failed to delete refresh token [{}]", user, token)
                 discardEntity & complete(StatusCodes.NotFound)
               }
             }
@@ -66,7 +65,7 @@ class Tokens(store: RefreshTokenStore)(implicit system: ActorSystem, override va
 }
 
 object Tokens {
-  def apply(store: RefreshTokenStore)(implicit system: ActorSystem, mat: Materializer): Tokens =
+  def apply(store: RefreshTokenStore)(implicit mat: Materializer): Tokens =
     new Tokens(
       store = store
     )

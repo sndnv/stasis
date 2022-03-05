@@ -1,11 +1,12 @@
 package stasis.identity.api
 
 import akka.actor.ActorSystem
-import akka.event.{Logging, LoggingAdapter}
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.api.oauth._
 import stasis.identity.api.oauth.setup.{Config, Providers}
@@ -16,7 +17,7 @@ class OAuth(
 )(implicit system: ActorSystem, override val mat: Materializer)
     extends EntityDiscardingDirectives {
 
-  private val log: LoggingAdapter = Logging(system, this.getClass.getName)
+  private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private val authorizationCodeGrant = AuthorizationCodeGrant(config, providers)
   private val pkceAuthorizationCodeGrant = PkceAuthorizationCodeGrant(config, providers)
@@ -40,12 +41,12 @@ class OAuth(
 
           case responseType =>
             val message = s"The request includes an invalid response type: [$responseType]"
-            log.warning(message)
+            log.warnN(message)
             discardEntity & complete(StatusCodes.BadRequest, message)
         }
       },
       path("token") {
-        parameter("grant_type".as[String]) {
+        parameter("grant_type".as[String]).or(formField("grant_type".as[String])) {
           case "authorization_code" =>
             parameter("code_verifier".as[String].?) {
               case Some(_) => pkceAuthorizationCodeGrant.token()
@@ -63,7 +64,7 @@ class OAuth(
 
           case grantType =>
             val message = s"The request includes an invalid grant type: [$grantType]"
-            log.warning(message)
+            log.warnN(message)
             discardEntity & complete(StatusCodes.BadRequest, message)
         }
       }

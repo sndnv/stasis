@@ -2,7 +2,7 @@ package stasis.test.specs.unit.identity.api.oauth
 
 import akka.http.scaladsl.model
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, CacheDirectives}
-import akka.http.scaladsl.model.{StatusCodes, Uri}
+import akka.http.scaladsl.model.{FormData, StatusCodes, Uri}
 import play.api.libs.json._
 import stasis.identity.api.oauth.PkceAuthorizationCodeGrant
 import stasis.identity.api.oauth.PkceAuthorizationCodeGrant._
@@ -117,7 +117,16 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.clients.put(client).await
     stores.owners.put(owner).await
     stores.apis.put(api).await
-    Get(request).addCredentials(credentials) ~> grant.authorization() ~> check {
+    Get(
+      s"/" +
+        s"?response_type=${request.response_type.toString.toLowerCase}" +
+        s"&client_id=${request.client_id}" +
+        s"&redirect_uri=${request.redirect_uri.getOrElse("")}" +
+        s"&scope=${request.scope.getOrElse("")}" +
+        s"&state=${request.state}" +
+        s"&code_challenge=${request.code_challenge}" +
+        request.code_challenge_method.fold("")(m => s"&code_challenge_method=$m")
+    ).addCredentials(credentials) ~> grant.authorization() ~> check {
       status should be(StatusCodes.Found)
       stores.codes.codes.await.headOption match {
         case Some((_, storedCode)) =>
@@ -170,7 +179,17 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.clients.put(client).await
     stores.owners.put(owner).await
     stores.apis.put(api).await
-    Get(request.withoutRedirect).addCredentials(credentials) ~> grant.authorization() ~> check {
+    Get(
+      s"/" +
+        s"?response_type=${request.response_type.toString.toLowerCase}" +
+        s"&client_id=${request.client_id}" +
+        s"&redirect_uri=${request.redirect_uri.getOrElse("")}" +
+        s"&scope=${request.scope.getOrElse("")}" +
+        s"&state=${request.state}" +
+        s"&code_challenge=${request.code_challenge}" +
+        request.code_challenge_method.fold("")(m => s"&code_challenge_method=$m") +
+        s"&no_redirect=true"
+    ).addCredentials(credentials) ~> grant.authorization() ~> check {
       status should be(StatusCodes.OK)
       stores.codes.codes.await.headOption match {
         case Some((AuthorizationCode(code), storedCode)) =>
@@ -238,7 +257,16 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     )
 
     requests.foreach { case (credentials, request) =>
-      Get(request).addCredentials(credentials) ~> grant.authorization() ~> check {
+      Get(
+        s"/" +
+          s"?response_type=${request.response_type.toString.toLowerCase}" +
+          s"&client_id=${request.client_id}" +
+          s"&redirect_uri=${request.redirect_uri.getOrElse("")}" +
+          s"&scope=${request.scope.getOrElse("")}" +
+          s"&state=${request.state}" +
+          s"&code_challenge=${request.code_challenge}" +
+          request.code_challenge_method.fold("")(m => s"&code_challenge_method=$m")
+      ).addCredentials(credentials) ~> grant.authorization() ~> check {
         status should be(StatusCodes.Found)
       }
     }
@@ -277,14 +305,23 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.clients.put(client).await
     stores.owners.put(owner).await
     stores.apis.put(api).await
-    Get(request).addCredentials(credentials) ~> grant.authorization() ~> check {
+    Get(
+      s"/" +
+        s"?response_type=${request.response_type.toString.toLowerCase}" +
+        s"&client_id=${request.client_id}" +
+        s"&redirect_uri=${request.redirect_uri.getOrElse("")}" +
+        s"&scope=${request.scope.getOrElse("")}" +
+        s"&state=${request.state}" +
+        s"&code_challenge=${request.code_challenge}" +
+        request.code_challenge_method.fold("")(m => s"&code_challenge_method=$m")
+    ).addCredentials(credentials) ~> grant.authorization() ~> check {
       status should be(StatusCodes.BadRequest)
       responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_request"))
       stores.codes.codes.await should be(Map.empty)
     }
   }
 
-  they should "generate access and refresh tokens for valid authorization codes" in {
+  they should "generate access and refresh tokens for valid authorization codes (with URL parameters)" in {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val grant = new PkceAuthorizationCodeGrant(config, providers)
 
@@ -325,7 +362,79 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.owners.put(owner).await
     stores.apis.put(api).await
     stores.codes.put(storedCode).await
-    Post(request).addCredentials(credentials) ~> grant.token() ~> check {
+    Post(
+      s"/" +
+        s"?grant_type=authorization_code" +
+        s"&code=${request.code.value}" +
+        s"&redirect_uri=${request.redirect_uri.getOrElse("")}" +
+        s"&client_id=${request.client_id}" +
+        s"&code_verifier=${request.code_verifier}"
+    ).addCredentials(credentials) ~> grant.token() ~> check {
+      status should be(StatusCodes.OK)
+      headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
+
+      val actualResponse = responseAs[AccessTokenResponse]
+      actualResponse.access_token.value.nonEmpty should be(true)
+      actualResponse.token_type should be(TokenType.Bearer)
+      actualResponse.expires_in.value should be > 0L
+      actualResponse.refresh_token.exists(_.value.nonEmpty) should be(true)
+
+      val refreshTokenGenerated = stores.tokens.tokens.await.headOption.nonEmpty
+      refreshTokenGenerated should be(true)
+    }
+  }
+
+  they should "generate access and refresh tokens for valid authorization codes (with form fields)" in {
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val grant = new PkceAuthorizationCodeGrant(config, providers)
+
+    val owner = Generators.generateResourceOwner
+    val code = Generators.generateAuthorizationCode
+    val api = Generators.generateApi
+
+    val rawPassword = "some-password"
+    val salt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
+    val client = Generators.generateClient.copy(
+      secret = Secret.derive(rawPassword, salt)(secrets.client),
+      salt = salt
+    )
+    val credentials = BasicHttpCredentials(client.id.toString, rawPassword)
+
+    val challenge = StoredAuthorizationCode.Challenge(
+      value = stasis.test.Generators.generateString(withSize = 128),
+      method = Some(ChallengeMethod.Plain)
+    )
+
+    val storedCode = StoredAuthorizationCode(
+      code = code,
+      client = client.id,
+      owner = owner,
+      scope = grant.apiAudienceToScope(Seq(api)),
+      challenge = Some(challenge)
+    )
+
+    val request = AccessTokenRequest(
+      grant_type = GrantType.AuthorizationCode,
+      code = code,
+      redirect_uri = Some(client.redirectUri),
+      client_id = client.id,
+      code_verifier = challenge.value
+    )
+
+    stores.clients.put(client).await
+    stores.owners.put(owner).await
+    stores.apis.put(api).await
+    stores.codes.put(storedCode).await
+    Post(
+      "/",
+      FormData(
+        "grant_type" -> "authorization_code",
+        "code" -> request.code.value,
+        "redirect_uri" -> request.redirect_uri.getOrElse(""),
+        "client_id" -> request.client_id.toString,
+        "code_verifier" -> request.code_verifier
+      )
+    ).addCredentials(credentials) ~> grant.token() ~> check {
       status should be(StatusCodes.OK)
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
 
@@ -381,7 +490,14 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.owners.put(owner).await
     stores.apis.put(api).await
     stores.codes.put(storedCode).await
-    Post(request).addCredentials(credentials) ~> grant.token() ~> check {
+    Post(
+      s"/" +
+        s"?grant_type=authorization_code" +
+        s"&code=${request.code.value}" +
+        s"&redirect_uri=${request.redirect_uri.getOrElse("")}" +
+        s"&client_id=${request.client_id}" +
+        s"&code_verifier=${request.code_verifier}"
+    ).addCredentials(credentials) ~> grant.token() ~> check {
       status should be(StatusCodes.OK)
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
 
@@ -437,7 +553,14 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.owners.put(owner).await
     stores.apis.put(api).await
     stores.codes.put(storedCode).await
-    Post(request).addCredentials(credentials) ~> grant.token() ~> check {
+    Post(
+      s"/" +
+        s"?grant_type=authorization_code" +
+        s"&code=${request.code.value}" +
+        s"&redirect_uri=${request.redirect_uri.getOrElse("")}" +
+        s"&client_id=${request.client_id}" +
+        s"&code_verifier=${request.code_verifier}"
+    ).addCredentials(credentials) ~> grant.token() ~> check {
       status should be(StatusCodes.BadRequest)
       responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_request"))
     }
@@ -484,38 +607,16 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.owners.put(owner).await
     stores.apis.put(api).await
     stores.codes.put(storedCode).await
-    Post(request).addCredentials(credentials) ~> grant.token() ~> check {
-      status should be(StatusCodes.BadRequest)
-      responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_grant"))
-    }
-  }
-
-  import scala.language.implicitConversions
-
-  implicit def authorizationRequestToLocalUri(request: AuthorizationRequest): Uri =
-    Uri(authorizationRequestToQueryString(request))
-
-  implicit class AuthorizationRequestWithNoRedirect(request: AuthorizationRequest) {
-    def withoutRedirect: Uri = Uri(s"${authorizationRequestToQueryString(request)}&no_redirect=true")
-  }
-
-  private def authorizationRequestToQueryString(request: AuthorizationRequest): String =
-    s"/" +
-      s"?response_type=${request.response_type.toString.toLowerCase}" +
-      s"&client_id=${request.client_id}" +
-      s"&redirect_uri=${request.redirect_uri.getOrElse("")}" +
-      s"&scope=${request.scope.getOrElse("")}" +
-      s"&state=${request.state}" +
-      s"&code_challenge=${request.code_challenge}" +
-      request.code_challenge_method.fold("")(m => s"&code_challenge_method=$m")
-
-  implicit def accessTokenRequestToLocalUri(request: AccessTokenRequest): Uri =
-    Uri(
+    Post(
       s"/" +
         s"?grant_type=authorization_code" +
         s"&code=${request.code.value}" +
         s"&redirect_uri=${request.redirect_uri.getOrElse("")}" +
         s"&client_id=${request.client_id}" +
         s"&code_verifier=${request.code_verifier}"
-    )
+    ).addCredentials(credentials) ~> grant.token() ~> check {
+      status should be(StatusCodes.BadRequest)
+      responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_grant"))
+    }
+  }
 }

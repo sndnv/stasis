@@ -1,17 +1,18 @@
 package stasis.identity.api.oauth.directives
 
-import akka.event.LoggingAdapter
+import scala.util.{Failure, Success}
+
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Directive, Directive1}
+import org.slf4j.Logger
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.model.clients.{Client, ClientStoreView}
 
-import scala.util.{Failure, Success}
-
 trait ClientRetrieval extends EntityDiscardingDirectives {
 
-  protected def log: LoggingAdapter
+  protected def log: Logger
 
   protected def clientStore: ClientStoreView
 
@@ -22,7 +23,7 @@ trait ClientRetrieval extends EntityDiscardingDirectives {
           inner(Tuple1(client))
 
         case Success(Some(client)) =>
-          log.warning(
+          log.warnN(
             "Retrieval of client [{}] failed; client is not active",
             client.id
           )
@@ -35,7 +36,7 @@ trait ClientRetrieval extends EntityDiscardingDirectives {
           }
 
         case Success(None) =>
-          log.warning("Client [{}] was not found", clientId)
+          log.warnN("Client [{}] was not found", clientId)
 
           discardEntity {
             complete(
@@ -45,11 +46,11 @@ trait ClientRetrieval extends EntityDiscardingDirectives {
           }
 
         case Failure(e) =>
-          log.error(
-            e,
+          log.errorN(
             "Failed to retrieve client [{}]: [{}]",
             clientId,
-            e.getMessage
+            e.getMessage,
+            e
           )
 
           discardEntity {

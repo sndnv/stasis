@@ -1,26 +1,25 @@
 package stasis.identity.api
 
-import akka.actor.ActorSystem
-import akka.event.{Logging, LoggingAdapter}
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
 import org.jose4j.jwk.JsonWebKey
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.api.directives.EntityDiscardingDirectives
 
-class Jwks(keys: Seq[JsonWebKey])(implicit system: ActorSystem, override val mat: Materializer)
-    extends EntityDiscardingDirectives {
+class Jwks(keys: Seq[JsonWebKey])(implicit override val mat: Materializer) extends EntityDiscardingDirectives {
   import Jwks._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  private val log: LoggingAdapter = Logging(system, this.getClass.getName)
+  private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   def routes: Route =
     path("jwks.json") {
       get {
         extractClientIP { remoteAddress =>
-          log.debug("Successfully provided [{}] JWKs to [{}]", keys.size, remoteAddress)
+          log.debugN("Successfully provided [{}] JWKs to [{}]", keys.size, remoteAddress)
 
           discardEntity {
             complete(
@@ -36,7 +35,7 @@ class Jwks(keys: Seq[JsonWebKey])(implicit system: ActorSystem, override val mat
 object Jwks {
   import play.api.libs.json._
 
-  def apply(keys: Seq[JsonWebKey])(implicit system: ActorSystem, mat: Materializer): Jwks =
+  def apply(keys: Seq[JsonWebKey])(implicit mat: Materializer): Jwks =
     new Jwks(
       keys = keys
     )

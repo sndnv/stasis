@@ -1,7 +1,7 @@
 package stasis.identity.api
 
 import akka.actor.ActorSystem
-import akka.event.{Logging, LoggingAdapter}
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
@@ -9,6 +9,8 @@ import akka.http.scaladsl.server._
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import org.jose4j.jwk.JsonWebKey
+import org.slf4j.{Logger, LoggerFactory}
+import stasis.core.api.directives.LoggingDirectives
 import stasis.core.security.tls.EndpointContext
 import stasis.identity.api.manage.setup.{Config => ManageConfig, Providers => ManageProviders}
 import stasis.identity.api.oauth.setup.{Config => OAuthConfig, Providers => OAuthProviders}
@@ -22,9 +24,10 @@ class IdentityEndpoint(
   oauthProviders: OAuthProviders,
   manageConfig: ManageConfig,
   manageProviders: ManageProviders
-)(implicit system: ActorSystem) {
+)(implicit system: ActorSystem)
+    extends LoggingDirectives {
 
-  private val log: LoggingAdapter = Logging(system, this.getClass.getName)
+  override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private val oauth = OAuth(oauthConfig, oauthProviders)
   private val jwks = Jwks(keys)
@@ -36,11 +39,11 @@ class IdentityEndpoint(
         val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
         val failureReference = java.util.UUID.randomUUID()
 
-        log.error(
-          e,
+        log.errorN(
           "Unhandled exception encountered: [{}]; failure reference is [{}]",
           e.getMessage,
-          failureReference
+          failureReference,
+          e
         )
 
         complete(
@@ -61,7 +64,7 @@ class IdentityEndpoint(
           val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
           val message = s"Parameter [$parameterName] is missing, invalid or malformed"
-          log.warning(message)
+          log.warnN(message)
 
           complete(
             StatusCodes.BadRequest,
@@ -74,7 +77,7 @@ class IdentityEndpoint(
           val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
           val message = "Provided data is invalid or malformed"
-          log.warning(message)
+          log.warnN(message)
 
           complete(
             StatusCodes.BadRequest,
@@ -99,8 +102,10 @@ class IdentityEndpoint(
       .newServerAt(interface = interface, port = port)
       .withContext(context = context)
       .bindFlow(
-        handlerFlow = (handleExceptions(sanitizingExceptionHandler) & handleRejections(rejectionHandler)) {
-          routes
+        handlerFlow = withLoggedRequestAndResponse {
+          (handleExceptions(sanitizingExceptionHandler) & handleRejections(rejectionHandler)) {
+            routes
+          }
         }
       )
   }

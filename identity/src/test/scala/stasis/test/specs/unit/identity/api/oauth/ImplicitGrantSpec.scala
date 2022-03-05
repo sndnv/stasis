@@ -101,7 +101,14 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
     stores.clients.put(client).await
     stores.owners.put(owner).await
     stores.apis.put(api).await
-    Get(request).addCredentials(credentials) ~> grant.authorization() ~> check {
+    Get(
+      s"/" +
+        s"?response_type=token" +
+        s"&client_id=${request.client_id}" +
+        s"&redirect_uri=${request.redirect_uri.getOrElse("")}" +
+        s"&scope=${request.scope.getOrElse("")}" +
+        s"&state=${request.state}"
+    ).addCredentials(credentials) ~> grant.authorization() ~> check {
       status should be(StatusCodes.Found)
 
       headers.find(_.is("location")) match {
@@ -147,7 +154,15 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
     stores.clients.put(client).await
     stores.owners.put(owner).await
     stores.apis.put(api).await
-    Get(request.withoutRedirect).addCredentials(credentials) ~> grant.authorization() ~> check {
+    Get(
+      s"/" +
+        s"?response_type=token" +
+        s"&client_id=${request.client_id}" +
+        s"&redirect_uri=${request.redirect_uri.getOrElse("")}" +
+        s"&scope=${request.scope.getOrElse("")}" +
+        s"&state=${request.state}" +
+        s"&no_redirect=true"
+    ).addCredentials(credentials) ~> grant.authorization() ~> check {
       status should be(StatusCodes.OK)
 
       val response = responseAs[JsObject]
@@ -195,26 +210,16 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
     stores.clients.put(client).await
     stores.owners.put(owner).await
     stores.apis.put(api).await
-    Get(request).addCredentials(credentials) ~> grant.authorization() ~> check {
+    Get(
+      s"/" +
+        s"?response_type=token" +
+        s"&client_id=${request.client_id}" +
+        s"&redirect_uri=${request.redirect_uri.getOrElse("")}" +
+        s"&scope=${request.scope.getOrElse("")}" +
+        s"&state=${request.state}"
+    ).addCredentials(credentials) ~> grant.authorization() ~> check {
       status should be(StatusCodes.BadRequest)
       responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_request"))
     }
   }
-
-  import scala.language.implicitConversions
-
-  implicit def authorizationRequestToLocalUri(request: AuthorizationRequest): Uri =
-    Uri(authorizationRequestToQueryString(request))
-
-  implicit class AuthorizationRequestWithNoRedirect(request: AuthorizationRequest) {
-    def withoutRedirect: Uri = Uri(s"${authorizationRequestToQueryString(request)}&no_redirect=true")
-  }
-
-  private def authorizationRequestToQueryString(request: AuthorizationRequest): String =
-    s"/" +
-      s"?response_type=token" +
-      s"&client_id=${request.client_id}" +
-      s"&redirect_uri=${request.redirect_uri.getOrElse("")}" +
-      s"&scope=${request.scope.getOrElse("")}" +
-      s"&state=${request.state}"
 }

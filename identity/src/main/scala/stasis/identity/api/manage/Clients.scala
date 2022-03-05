@@ -1,11 +1,11 @@
 package stasis.identity.api.manage
 
-import akka.actor.ActorSystem
-import akka.event.{Logging, LoggingAdapter}
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.api.Formats._
 import stasis.identity.api.manage.requests.{CreateClient, UpdateClient, UpdateClientCredentials}
@@ -17,11 +17,11 @@ import stasis.identity.model.secrets.Secret
 class Clients(
   store: ClientStore,
   clientSecretConfig: Secret.ClientConfig
-)(implicit system: ActorSystem, override val mat: Materializer)
+)(implicit override val mat: Materializer)
     extends EntityDiscardingDirectives {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  private val log: LoggingAdapter = Logging(system, this.getClass.getName)
+  private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private implicit val secretConfig: Secret.ClientConfig = clientSecretConfig
 
@@ -31,7 +31,7 @@ class Clients(
         concat(
           get {
             onSuccess(store.clients) { clients =>
-              log.debug("User [{}] successfully retrieved [{}] clients", user, clients.size)
+              log.debugN("User [{}] successfully retrieved [{}] clients", user, clients.size)
               discardEntity & complete(clients.values)
             }
           },
@@ -39,7 +39,7 @@ class Clients(
             entity(as[CreateClient]) { request =>
               val client = request.toClient
               onSuccess(store.put(client)) { _ =>
-                log.debug("User [{}] successfully created client [{}]", user, client.id)
+                log.debugN("User [{}] successfully created client [{}]", user, client.id)
                 complete(CreatedClient(client.id))
               }
             }
@@ -54,7 +54,7 @@ class Clients(
                 client.subject.contains(subject) || client.id.toString == subject
               }
 
-              log.debug("User [{}] found [{}] clients for subject [{}]", user, clients.size, subject)
+              log.debugN("User [{}] found [{}] clients for subject [{}]", user, clients.size, subject)
               discardEntity & complete(matchingClients)
             }
           }
@@ -70,7 +70,7 @@ class Clients(
                     val (secret, salt) = request.toSecret()
 
                     onSuccess(store.put(client.copy(secret = secret, salt = salt))) { _ =>
-                      log.debug("User [{}] successfully updated credentials for client [{}]", user, clientId)
+                      log.debugN("User [{}] successfully updated credentials for client [{}]", user, clientId)
                       complete(StatusCodes.OK)
                     }
                   }
@@ -79,7 +79,7 @@ class Clients(
               pathEndOrSingleSlash {
                 concat(
                   get {
-                    log.debug("User [{}] successfully retrieved client [{}]", user, clientId)
+                    log.debugN("User [{}] successfully retrieved client [{}]", user, clientId)
                     discardEntity & complete(client)
                   },
                   put {
@@ -92,14 +92,14 @@ class Clients(
                           )
                         )
                       ) { _ =>
-                        log.debug("User [{}] successfully updated client [{}]", user, clientId)
+                        log.debugN("User [{}] successfully updated client [{}]", user, clientId)
                         complete(StatusCodes.OK)
                       }
                     }
                   },
                   delete {
                     onSuccess(store.delete(clientId)) { _ =>
-                      log.debug("User [{}] successfully deleted client [{}]", user, clientId)
+                      log.debugN("User [{}] successfully deleted client [{}]", user, clientId)
                       discardEntity & complete(StatusCodes.OK)
                     }
                   }
@@ -108,7 +108,7 @@ class Clients(
             )
 
           case None =>
-            log.warning("User [{}] made request for client [{}] but it was not found", user, clientId)
+            log.warnN("User [{}] made request for client [{}] but it was not found", user, clientId)
             discardEntity & complete(StatusCodes.NotFound)
         }
       }
@@ -119,7 +119,7 @@ object Clients {
   def apply(
     store: ClientStore,
     clientSecretConfig: Secret.ClientConfig
-  )(implicit system: ActorSystem, mat: Materializer): Clients =
+  )(implicit mat: Materializer): Clients =
     new Clients(
       store = store,
       clientSecretConfig = clientSecretConfig

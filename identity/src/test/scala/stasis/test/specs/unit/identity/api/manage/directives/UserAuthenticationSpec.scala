@@ -1,18 +1,18 @@
 package stasis.test.specs.unit.identity.api.manage.directives
 
-import akka.event.LoggingAdapter
+import scala.concurrent.Future
+
 import akka.http.scaladsl.model
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpChallenges, OAuth2BearerToken}
 import akka.http.scaladsl.server.Directives
 import akka.stream.{Materializer, SystemMaterializer}
+import org.slf4j.Logger
 import stasis.identity.api.manage.directives.UserAuthentication
 import stasis.identity.authentication.manage.ResourceOwnerAuthenticator
 import stasis.identity.model.owners.ResourceOwner
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
-
-import scala.concurrent.Future
 
 class UserAuthenticationSpec extends RouteTest {
   "A UserAuthentication directive" should "authenticate users with valid bearer tokens" in {
@@ -83,7 +83,7 @@ class UserAuthenticationSpec extends RouteTest {
     new UserAuthentication {
       override protected def realm: String = testRealm
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
-      override protected def log: LoggingAdapter = createLogger()
+      override protected def log: Logger = createLogger()
       override protected def authenticator: ResourceOwnerAuthenticator =
         (credentials: OAuth2BearerToken) => auth(credentials)
     }

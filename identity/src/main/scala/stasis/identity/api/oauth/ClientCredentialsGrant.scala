@@ -1,20 +1,21 @@
 package stasis.identity.api.oauth
 
+import scala.concurrent.ExecutionContext
+
 import akka.actor.ActorSystem
-import akka.event.{Logging, LoggingAdapter}
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.CacheDirectives
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
+import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.{Format, Json}
 import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.AuthDirectives
 import stasis.identity.api.oauth.setup.{Config, Providers}
 import stasis.identity.model.tokens.{AccessToken, TokenType}
 import stasis.identity.model.{GrantType, Seconds}
-
-import scala.concurrent.ExecutionContext
 
 class ClientCredentialsGrant(
   override val config: Config,
@@ -25,19 +26,28 @@ class ClientCredentialsGrant(
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
   override implicit protected def ec: ExecutionContext = system.dispatcher
-  override protected def log: LoggingAdapter = Logging(system, this.getClass.getName)
+  override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
+
+  private val tokenParams =
+    parameters(
+      "grant_type".as[GrantType],
+      "scope".as[String].?
+    )
+      .or(
+        formFields(
+          "grant_type".as[GrantType],
+          "scope".as[String].?
+        )
+      )
 
   def token(): Route =
     post {
-      parameters(
-        "grant_type".as[GrantType],
-        "scope".as[String].?
-      ).as(AccessTokenRequest) { request =>
+      tokenParams.as(AccessTokenRequest) { request =>
         (authenticateClient() & extractClientAudience(request.scope)) { (client, audience) =>
           generateAccessToken(client, audience) { accessToken =>
             val scope = clientAudienceToScope(audience)
 
-            log.debug("Successfully generated access token for client [{}]", client.id)
+            log.debugN("Successfully generated access token for client [{}]", client.id)
 
             discardEntity {
               complete(

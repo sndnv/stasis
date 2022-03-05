@@ -1,22 +1,23 @@
 package stasis.identity.api.oauth.directives
 
-import akka.event.LoggingAdapter
+import scala.util.{Failure, Success}
+
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpChallenges}
 import akka.http.scaladsl.model.{headers, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Directive, Directive1}
+import org.slf4j.Logger
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.api.Formats._
 import stasis.identity.authentication.oauth.ClientAuthenticator
 import stasis.identity.model.clients.Client
 import stasis.identity.model.errors.TokenError
 
-import scala.util.{Failure, Success}
-
 trait ClientAuthentication extends EntityDiscardingDirectives {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  protected def log: LoggingAdapter
+  protected def log: Logger
 
   protected def clientAuthenticator: ClientAuthenticator
 
@@ -32,7 +33,7 @@ trait ClientAuthentication extends EntityDiscardingDirectives {
                 inner(Tuple1(client))
 
               case Failure(e) =>
-                log.warning(
+                log.warnN(
                   "Authentication failed for client [{}]: [{}]",
                   clientCredentials.username,
                   e.getMessage
@@ -48,7 +49,7 @@ trait ClientAuthentication extends EntityDiscardingDirectives {
             }
 
           case Some(unsupportedCredentials) =>
-            log.warning(
+            log.warnN(
               "Client with address [{}] provided unsupported credentials: [{}]",
               remoteAddress,
               unsupportedCredentials.scheme()
@@ -63,7 +64,7 @@ trait ClientAuthentication extends EntityDiscardingDirectives {
             }
 
           case None =>
-            log.warning(
+            log.warnN(
               "Client with address [{}] provided no credentials",
               remoteAddress
             )
