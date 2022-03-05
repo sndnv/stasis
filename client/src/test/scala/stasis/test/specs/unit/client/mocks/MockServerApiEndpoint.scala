@@ -42,7 +42,7 @@ class MockServerApiEndpoint(
       s"mock-server-api-definitions-store-${java.util.UUID.randomUUID()}"
     )
 
-  private val definitions: Route = {
+  private val definitions: Route =
     pathPrefix("definitions") {
       concat(
         pathPrefix("own") {
@@ -103,9 +103,8 @@ class MockServerApiEndpoint(
         }
       )
     }
-  }
 
-  private val entries: Route = {
+  private val entries: Route =
     pathPrefix("entries") {
       pathPrefix("own") {
         concat(
@@ -176,9 +175,8 @@ class MockServerApiEndpoint(
         )
       }
     }
-  }
 
-  private val schedules: Route = {
+  private val schedules: Route =
     pathPrefix("public") {
       concat(
         pathEndOrSingleSlash {
@@ -199,7 +197,6 @@ class MockServerApiEndpoint(
         }
       )
     }
-  }
 
   private val users: Route =
     path("self") {

@@ -50,14 +50,13 @@ class MockSimpleJwtEndpoint(
     secretKeysCount = 0
   )
 
-  val keys: Map[String, PublicKey] = {
+  val keys: Map[String, PublicKey] =
     jwks.getJsonWebKeys.asScala
       .map(c => (c.getKeyId, c.getKey))
       .collect { case (keyId: String, key: PublicKey) =>
         (keyId, key)
       }
       .toMap
-  }
 
   wireMockServer.stubFor(
     get(urlEqualTo("/valid/jwks.json"))
