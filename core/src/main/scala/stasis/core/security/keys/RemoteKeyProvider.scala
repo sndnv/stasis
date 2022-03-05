@@ -93,7 +93,7 @@ final class RemoteKeyProvider(
             jwks.map {
               case Right(jwk) =>
                 log.debugN(
-                  "JWKs endpoint [{}] provided key [{}] with algorithm [{}}]",
+                  "JWKs endpoint [{}] provided key [{}] with algorithm [{}]",
                   jwksEndpoint,
                   jwk.id,
                   jwk.key.getAlgorithm

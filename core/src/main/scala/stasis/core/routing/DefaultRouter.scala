@@ -81,9 +81,11 @@ class DefaultRouter(
                             }
                             .recover { case NonFatal(e) =>
                               log.error(
-                                "Failed to retrieve content sink for node [{}] while pushing crate [{}]: [{}]",
+                                "Failed to retrieve content sink for node [{}] while pushing crate [{}]: [{} - {}]",
                                 node,
                                 manifest.crate,
+                                e.getClass.getSimpleName,
+                                e.getMessage,
                                 e
                               )
 

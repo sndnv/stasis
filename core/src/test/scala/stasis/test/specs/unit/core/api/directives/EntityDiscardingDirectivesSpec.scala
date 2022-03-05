@@ -12,7 +12,7 @@ import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.test.specs.unit.AsyncUnitSpec
 
 class EntityDiscardingDirectivesSpec extends AsyncUnitSpec with ScalatestRouteTest {
-  "A EntityDiscardingDirectives" should "discard entities" in {
+  "EntityDiscardingDirectives" should "discard entities" in {
     val directive = new EntityDiscardingDirectives {
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
     }
