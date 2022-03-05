@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import os
 import shutil
 import subprocess
 import sys
@@ -59,6 +60,25 @@ def main():
         )
     )
 
+    x509_config_file_path = '{}/{}.tmp.cfg'.format(output_path, common_name)
+
+    with open(x509_config_file_path, 'w') as configFile:
+        configFile.write(
+            '\n'.join(
+                [
+                    '[dn]',
+                    'CN={}'.format(common_name),
+                    '[req]',
+                    'distinguished_name=dn',
+                    '[EXT]',
+                    'subjectAltName=DNS:{}'.format(common_name),
+                    'keyUsage=digitalSignature',
+                    'extendedKeyUsage=serverAuth',
+                    'basicConstraints=CA:TRUE,pathlen:0'
+                ]
+            )
+        )
+
     x509_result = subprocess.run(
         [
             openssl_path,
@@ -70,8 +90,12 @@ def main():
             '-keyout', private_key_path,
             '-out', x509_cert_path,
             '-days', '{}'.format(x509_cert_validity),
+            '-extensions', 'EXT',
+            '-config', x509_config_file_path,
         ]
     ).returncode
+
+    os.remove(x509_config_file_path)
 
     if x509_result == 0:
         pkcs12_result = subprocess.run(

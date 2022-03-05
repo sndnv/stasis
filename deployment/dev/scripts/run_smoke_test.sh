@@ -25,10 +25,10 @@ OAUTH_URN="urn:stasis:identity:audience"
 SERVER_API="server-api"
 SERVER_NODE="b4885566-dd69-4b7f-be7f-0568611d1a20"
 
-SERVER_API_URL="https://localhost:19090"
-SERVER_CORE_URL="https://localhost:19091"
-SERVER_BOOTSTRAP_URL="https://localhost:19190"
-SERVER_BOOTSTRAP_URL_INTERNAL="https://server:9190"
+SERVER_API_URL="https://localhost:20000"
+SERVER_CORE_URL="https://localhost:20001"
+SERVER_BOOTSTRAP_URL="https://localhost:20002"
+SERVER_BOOTSTRAP_URL_INTERNAL="https://server:20002"
 
 HEADER_JSON="Content-Type: application/json"
 HEADER_DATA="Content-Type: application/octet-stream"
@@ -36,7 +36,7 @@ HEADER_DATA="Content-Type: application/octet-stream"
 PRIMARY_CLIENT_CONTAINER_NAME="dev_primary-client"
 SECONDARY_CLIENT_CONTAINER_NAME="dev_secondary-client"
 CLIENT_CONTAINER_HOME="/home/demiourgos728"
-CLIENT_CONTAINER_CONFIG="${CLIENT_CONTAINER_HOME}/.config/stasis-client"
+CLIENT_CONTAINER_CONFIG="${CLIENT_CONTAINER_OME}/.config/stasis-client"
 
 CLIENT_CONFIG_FILES=()
 CLIENT_CONFIG_FILES+=("${CLIENT_CONTAINER_CONFIG}/authentication.p12")
@@ -154,7 +154,7 @@ else
 fi
 
 echo -n "[$(now)] Retrieving users..."
-EXPECTED_USERS_COUNT=1
+EXPECTED_USERS_COUNT=2
 ACTUAL_USERS_COUNT=$(curl -sk -H "Authorization: Bearer ${USER_TOKEN}" -X GET "${SERVER_API_URL}/users" | jq ". | length")
 if [ "${ACTUAL_USERS_COUNT}" = "${EXPECTED_USERS_COUNT}" ]
 then
@@ -164,7 +164,7 @@ else
 fi
 
 echo -n "[$(now)] Retrieving devices..."
-EXPECTED_DEVICES_COUNT=1
+EXPECTED_DEVICES_COUNT=3
 ACTUAL_DEVICES_COUNT=$(curl -sk -H "Authorization: Bearer ${USER_TOKEN}" -X GET "${SERVER_API_URL}/devices" | jq ". | length")
 if [ "${ACTUAL_DEVICES_COUNT}" = "${EXPECTED_DEVICES_COUNT}" ]
 then
@@ -174,7 +174,7 @@ else
 fi
 
 echo -n "[$(now)] Retrieving nodes..."
-EXPECTED_NODES_COUNT=3
+EXPECTED_NODES_COUNT=5
 ACTUAL_NODES_COUNT=$(curl -sk -H "Authorization: Bearer ${USER_TOKEN}" -X GET "${SERVER_API_URL}/nodes" | jq ". | length")
 if [ "${ACTUAL_NODES_COUNT}" = "${EXPECTED_NODES_COUNT}" ]
 then
