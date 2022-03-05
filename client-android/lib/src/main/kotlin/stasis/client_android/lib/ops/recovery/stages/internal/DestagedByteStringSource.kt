@@ -6,6 +6,7 @@ import okio.Source
 import okio.buffer
 import okio.sink
 import stasis.client_android.lib.ops.recovery.Providers
+import java.nio.file.Files
 import java.nio.file.Path
 
 object DestagedByteStringSource {
@@ -13,7 +14,9 @@ object DestagedByteStringSource {
         val staged = providers.staging.temporary()
 
         try {
-            staged.sink().buffer().writeAll(this@destage)
+            staged.sink().buffer().use {
+                it.writeAll(this@destage)
+            }
 
             providers.staging.destage(from = staged, to = to)
         } catch (e: Throwable) {

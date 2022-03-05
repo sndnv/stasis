@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="@string/settings_category_date_time">
+        <DropDownPreference
+            app:entries="@array/settings_date_time_format_entries"
+            app:entryValues="@array/settings_date_time_format_values"
+            app:key="date_time_format"
+            app:title="@string/settings_date_time_format_title" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/settings_category_secrets">
+        <Preference
+            app:key="manage_device_secret"
+            app:summary="@string/settings_manage_device_secret_summary"
+            app:title="@string/settings_manage_device_secret_title" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/settings_category_debug">
+        <SwitchPreference
+            app:defaultValue="true"
+            app:key="scheduling_enabled"
+            app:title="@string/settings_scheduling_enabled_title" />
+
+        <DropDownPreference
+            app:entries="@array/settings_ping_interval_entries"
+            app:entryValues="@array/settings_ping_interval_values"
+            app:key="ping_interval"
+            app:title="@string/settings_ping_interval_title" />
+
+        <Preference
+            app:key="reset_config"
+            app:summary="@string/settings_reset_config_summary"
+            app:title="@string/settings_reset_config_title" />
+    </PreferenceCategory>
+</PreferenceScreen>

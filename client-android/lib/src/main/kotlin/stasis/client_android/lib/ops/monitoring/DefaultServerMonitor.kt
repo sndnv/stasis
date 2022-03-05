@@ -12,6 +12,7 @@ import stasis.client_android.lib.tracking.ServerTracker
 import java.time.Duration
 
 class DefaultServerMonitor(
+    private val initialDelay: Duration,
     private val interval: Duration,
     private val api: ServerApiEndpointClient,
     private val tracker: ServerTracker,
@@ -20,18 +21,22 @@ class DefaultServerMonitor(
     private val job: Job
 
     init {
-        job = scope.launch { scheduleNextPing() }
+        job = scope.launch {
+            delay(timeMillis = initialDelay.toMillis())
+            scheduleNextPing()
+        }
     }
 
     private suspend fun scheduleNextPing(): Unit = withContext(Dispatchers.IO) {
         try {
-            delay(timeMillis = interval.toMillis())
-            api.ping()
+            api.ping().get()
             tracker.reachable(api.server)
+            delay(timeMillis = interval.toMillis())
         } catch (_: CancellationException) {
             // do nothing
-        } catch (_: Throwable) {
+        } catch (e: Throwable) {
             tracker.unreachable(api.server)
+            delay(timeMillis = interval.toMillis() / 2)
         } finally {
             scheduleNextPing()
         }

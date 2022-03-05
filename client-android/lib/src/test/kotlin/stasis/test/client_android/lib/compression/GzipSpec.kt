@@ -15,8 +15,11 @@ class GzipSpec : WordSpec({
         "compress data" {
             val source = Buffer().write(decompressedData.toByteArray())
 
-            val actualCompressedData = Gzip.compress(source).buffer().readUtf8()
-            actualCompressedData shouldBe (compressedData.decodeBase64()?.utf8())
+            val actualCompressedData = Gzip.compress(source).buffer().use {
+                it.readByteString()
+            }
+
+            actualCompressedData.base64() shouldBe (compressedData)
         }
 
         "decompress data" {

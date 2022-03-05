@@ -1,12 +1,12 @@
 package stasis.test.client_android.lib.mocks
 
-import okio.Buffer
+import okio.Sink
 import okio.Source
 import stasis.client_android.lib.compression.Decoder
 import stasis.client_android.lib.compression.Encoder
 import java.util.concurrent.atomic.AtomicInteger
 
-open class MockCompression() : Encoder, Decoder {
+open class MockCompression : Encoder, Decoder {
     private val stats: Map<Statistic, AtomicInteger> = mapOf(
         Statistic.Compressed to AtomicInteger(0),
         Statistic.Decompressed to AtomicInteger(0)
@@ -14,12 +14,12 @@ open class MockCompression() : Encoder, Decoder {
 
     override fun compress(source: Source): Source {
         stats[Statistic.Compressed]?.getAndIncrement()
-        return Buffer().writeUtf8("compressed")
+        return source
     }
 
     override fun decompress(source: Source): Source {
         stats[Statistic.Decompressed]?.getAndIncrement()
-        return Buffer().writeUtf8("decompressed")
+        return source
     }
 
     val statistics: Map<Statistic, Int>

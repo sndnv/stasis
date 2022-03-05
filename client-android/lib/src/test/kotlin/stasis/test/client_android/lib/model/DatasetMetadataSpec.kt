@@ -14,6 +14,7 @@ import stasis.client_android.lib.model.DatasetMetadata.Companion.toByteString
 import stasis.client_android.lib.model.DatasetMetadata.Companion.toDatasetMetadata
 import stasis.client_android.lib.model.FilesystemMetadata
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
+import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Success
 import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
@@ -129,6 +130,8 @@ class DatasetMetadataSpec : WordSpec({
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved] shouldBe (0)
 
+            metadata.contentChangedBytes shouldBe(Fixtures.Metadata.FileOneMetadata.size)
+
             fileOneMetadata shouldBe (Fixtures.Metadata.FileOneMetadata)
             fileTwoMetadata shouldBe (Fixtures.Metadata.FileTwoMetadata)
         }
@@ -151,13 +154,15 @@ class DatasetMetadataSpec : WordSpec({
                 metadata.collect(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
             }
 
-            fileOneFailure.message shouldBe ("Metadata for entity [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath()}] not found")
+            fileOneFailure
+                .message shouldBe ("Metadata for entity [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath()}] not found")
 
             val fileTwoFailure = shouldThrow<IllegalArgumentException> {
                 metadata.collect(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
             }
 
-            fileTwoFailure.message shouldBe ("Metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath()}] not found")
+            fileTwoFailure
+                .message shouldBe ("Metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath()}] not found")
 
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved] shouldBe (0)
@@ -193,10 +198,10 @@ class DatasetMetadataSpec : WordSpec({
             )
 
             val mockApiClient = object : MockServerApiEndpointClient(self = UUID.randomUUID()) {
-                override suspend fun datasetMetadata(entry: DatasetEntryId): DatasetMetadata {
+                override suspend fun datasetMetadata(entry: DatasetEntryId): Try<DatasetMetadata> {
                     val defaultMetadata = super.datasetMetadata(entry)
                     return if (entry == previousEntry) {
-                        previousMetadata
+                        Success(previousMetadata)
                     } else {
                         defaultMetadata
                     }

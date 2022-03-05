@@ -15,29 +15,30 @@ import stasis.client_android.lib.model.server.devices.DeviceId
 import stasis.client_android.lib.model.server.schedules.Schedule
 import stasis.client_android.lib.model.server.schedules.ScheduleId
 import stasis.client_android.lib.model.server.users.User
+import stasis.client_android.lib.utils.Try
 import java.time.Instant
 
 interface ServerApiEndpointClient {
     val self: DeviceId
     val server: String
 
-    suspend fun datasetDefinitions(): List<DatasetDefinition>
-    suspend fun datasetDefinition(definition: DatasetDefinitionId): DatasetDefinition
-    suspend fun createDatasetDefinition(request: CreateDatasetDefinition): CreatedDatasetDefinition
+    suspend fun datasetDefinitions(): Try<List<DatasetDefinition>>
+    suspend fun datasetDefinition(definition: DatasetDefinitionId): Try<DatasetDefinition>
+    suspend fun createDatasetDefinition(request: CreateDatasetDefinition): Try<CreatedDatasetDefinition>
 
-    suspend fun datasetEntries(definition: DatasetDefinitionId): List<DatasetEntry>
-    suspend fun datasetEntry(entry: DatasetEntryId): DatasetEntry
-    suspend fun latestEntry(definition: DatasetDefinitionId, until: Instant?): DatasetEntry?
-    suspend fun createDatasetEntry(request: CreateDatasetEntry): CreatedDatasetEntry
+    suspend fun datasetEntries(definition: DatasetDefinitionId): Try<List<DatasetEntry>>
+    suspend fun datasetEntry(entry: DatasetEntryId): Try<DatasetEntry>
+    suspend fun latestEntry(definition: DatasetDefinitionId, until: Instant?): Try<DatasetEntry?>
+    suspend fun createDatasetEntry(request: CreateDatasetEntry): Try<CreatedDatasetEntry>
 
-    suspend fun publicSchedules(): List<Schedule>
-    suspend fun publicSchedule(schedule: ScheduleId): Schedule
+    suspend fun publicSchedules(): Try<List<Schedule>>
+    suspend fun publicSchedule(schedule: ScheduleId): Try<Schedule>
 
-    suspend fun datasetMetadata(entry: DatasetEntryId): DatasetMetadata
-    suspend fun datasetMetadata(entry: DatasetEntry): DatasetMetadata
+    suspend fun datasetMetadata(entry: DatasetEntryId): Try<DatasetMetadata>
+    suspend fun datasetMetadata(entry: DatasetEntry): Try<DatasetMetadata>
 
-    suspend fun user(): User
-    suspend fun device(): Device
+    suspend fun user(): Try<User>
+    suspend fun device(): Try<Device>
 
-    suspend fun ping(): Ping
+    suspend fun ping(): Try<Ping>
 }

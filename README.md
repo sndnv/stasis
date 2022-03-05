@@ -49,9 +49,10 @@ Official images and binaries are not yet available, but they can be created loca
 The majority of the code is [Scala](https://scala-lang.org/) so, at the very least, Java (JDK11) and SBT need to be
 available on your dev machine.
 
-Some submodules use Python (ex: [`client-cli`](client-cli)) and [Vue.js](https://vuejs.org/) (ex: [`identity-ui`](identity-ui)),
-so the appropriate tools for those platforms need to be available as well (for `identity-ui` there's support for doing
-development via a [Docker](https://www.docker.com/) container with the needed tools pre-installed).
+Some submodules use Python (ex: [`client-cli`](client-cli)), [Vue.js](https://vuejs.org/) (ex: [`identity-ui`](identity-ui))
+or Kotlin for Android (ex: [`client-android`](client-android)) so the appropriate tools for those platforms need to be
+available as well (for `identity-ui` there's support for doing development via a [Docker](https://www.docker.com/) container
+with the needed tools pre-installed).
 
 [Protobuf](https://developers.google.com/protocol-buffers) is also used, however, it is handled by an
 [sbt plugin](https://scalapb.github.io/) and no additional tools are needed.
@@ -66,6 +67,7 @@ There are also some Python and Bash [scripts](deployment/dev/scripts) to help wi
 * [Pylint](https://www.pylint.org/#install)
 * [Vue.js](https://vuejs.org/v2/guide/installation.html)
 * [Docker](https://www.docker.com/get-started)
+* [AndroidStudio](https://developer.android.com/studio)
 
 ### Getting Started
 
@@ -141,6 +143,14 @@ Command-line interface for [`client`](client).
 * **Testing** - `cd ./client-cli && source venv/bin/activate && ./qa.py`
 * **Packaging** - `cd ./client-cli && source venv/bin/activate && pip install .`
 
+#### [`client-android`](client-android)
+
+Android backup client, using `server` for management and storage.
+
+* **Kotlin** code
+* **Testing** - `cd ./client-android && ./gradlew qa`
+* **Packaging** - via `AndroidStudio` - `Build` > `Build Bundle(s)/APK(s)` > `Build APK(s)`
+
 #### [`deployment`](deployment)
 
 Deployment, artifact and certificate generation scripts and configuration.
@@ -156,6 +166,7 @@ Deployment, artifact and certificate generation scripts and configuration.
 * `identity` / `identity-ui` - *authentication service and web UI* - **complete**
 * `server` - *backup server* - **operational**; some features are not yet available; a web UI is not available
 * `client` / `client-cli`- *Linux / macOS client and CLI* - **operational**; some features are not yet available; a desktop UI is not available
+* `client-android` - *Android client* - **operational**; some features are not yet available;
 
 ## Contributing
 

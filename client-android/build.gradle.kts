@@ -3,28 +3,28 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 buildscript {
     repositories {
         gradlePluginPortal()
-        jcenter()
         google()
         mavenCentral()
     }
+
     dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.21")
-        classpath("com.android.tools.build:gradle:4.1.3")
-        classpath("com.squareup.wire:wire-gradle-plugin:3.5.0")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.6.10")
+        classpath("com.android.tools.build:gradle:7.1.2")
+        classpath("com.squareup.wire:wire-gradle-plugin:4.1.0")
+        classpath("com.google.dagger:hilt-android-gradle-plugin:2.40.5")
+        classpath("androidx.navigation:navigation-safe-args-gradle-plugin:2.4.1")
     }
 }
 
 allprojects {
     repositories {
         google()
-        jcenter()
         mavenCentral()
     }
 }
 
 plugins {
-    id("io.gitlab.arturbosch.detekt") version "1.12.0-RC1"
-    jacoco
+    id("io.gitlab.arturbosch.detekt") version "1.19.0"
 }
 
 subprojects {

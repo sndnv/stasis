@@ -1,5 +1,7 @@
 package stasis.test.client_android.lib.mocks
 
+import stasis.client_android.lib.collection.rules.Rule
+import stasis.client_android.lib.collection.rules.Specification
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.tracking.BackupTracker
@@ -8,6 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class MockBackupTracker : BackupTracker {
     private val stats: Map<Statistic, AtomicInteger> = mapOf(
+        Statistic.SpecificationProcessed to AtomicInteger(0),
         Statistic.EntityExamined to AtomicInteger(0),
         Statistic.EntityCollected to AtomicInteger(0),
         Statistic.EntityProcessed to AtomicInteger(0),
@@ -17,7 +20,19 @@ class MockBackupTracker : BackupTracker {
         Statistic.Completed to AtomicInteger(0)
     )
 
-    override fun entityExamined(operation: OperationId, entity: Path, metadataChanged: Boolean, contentChanged: Boolean) {
+    override fun specificationProcessed(
+        operation: OperationId,
+        unmatched: List<Pair<Rule, Throwable>>
+    ) {
+        stats[Statistic.SpecificationProcessed]?.getAndIncrement()
+    }
+
+    override fun entityExamined(
+        operation: OperationId,
+        entity: Path,
+        metadataChanged: Boolean,
+        contentChanged: Boolean
+    ) {
         stats[Statistic.EntityExamined]?.getAndIncrement()
     }
 
@@ -49,6 +64,7 @@ class MockBackupTracker : BackupTracker {
         get() = stats.mapValues { it.value.get() }
 
     sealed class Statistic {
+        object SpecificationProcessed : Statistic()
         object EntityExamined : Statistic()
         object EntityCollected : Statistic()
         object EntityProcessed : Statistic()

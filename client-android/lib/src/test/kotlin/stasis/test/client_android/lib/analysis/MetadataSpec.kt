@@ -85,7 +85,10 @@ class MetadataSpec : WordSpec({
                 )
             }
 
-            e.message shouldBe ("Expected metadata for file but directory metadata for [${Fixtures.Metadata.DirectoryOneMetadata.path}] provided")
+            e.message shouldBe (
+                    "Expected metadata for file but directory metadata for " +
+                            "[${Fixtures.Metadata.DirectoryOneMetadata.path}] provided"
+                    )
         }
 
         "collect file crate ID (target file)" {
@@ -102,7 +105,10 @@ class MetadataSpec : WordSpec({
                 )
             }
 
-            e.message shouldBe ("Expected metadata for file but directory metadata for [${Fixtures.Metadata.DirectoryOneMetadata.path}] provided")
+            e.message shouldBe (
+                    "Expected metadata for file but directory metadata for " +
+                            "[${Fixtures.Metadata.DirectoryOneMetadata.path}] provided"
+                    )
         }
 
         "extract metadata from a file" {

@@ -17,7 +17,7 @@ interface Checksum {
 
     companion object {
         fun apply(checksum: String): Checksum =
-            when (checksum.toLowerCase(Locale.getDefault())) {
+            when (checksum.lowercase(Locale.getDefault())) {
                 "crc32" -> CRC32
                 "md5" -> MD5
                 "sha1" -> SHA1

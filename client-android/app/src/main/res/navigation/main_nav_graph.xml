@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main_nav_graph"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="stasis.client_android.activities.fragments.HomeFragment"
+        android:label="HomeFragment">
+
+        <action
+            android:id="@+id/action_homeFragment_to_operationsFragment"
+            app:destination="@id/operationsFragment" />
+
+        <action
+            android:id="@+id/action_homeFragment_to_backupFragment"
+            app:destination="@id/backupFragment" />
+
+        <action
+            android:id="@+id/action_homeFragment_to_operationDetailsFragment"
+            app:destination="@id/operationDetailsFragment" />
+
+        <action
+            android:id="@+id/action_homeFragment_to_datasetEntryDetailsFragment"
+            app:destination="@id/datasetEntryDetailsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/backupFragment"
+        android:name="stasis.client_android.activities.fragments.backup.DatasetDefinitionListFragment"
+        android:label="BackupFragment">
+
+        <action
+            android:id="@+id/action_backupFragment_to_datasetDefinitionDetailsFragment"
+            app:destination="@id/datasetDefinitionDetailsFragment" />
+
+        <action
+            android:id="@+id/action_backupFragment_to_newDatasetDefinitionFragment"
+            app:destination="@id/newDatasetDefinitionFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/recoverFragment"
+        android:name="stasis.client_android.activities.fragments.recover.RecoverFragment"
+        android:label="RecoverFragment" />
+
+    <fragment
+        android:id="@+id/searchFragment"
+        android:name="stasis.client_android.activities.fragments.search.SearchFragment"
+        android:label="SearchFragment">
+
+        <action
+            android:id="@+id/action_searchFragment_to_datasetEntryDetailsFragment"
+            app:destination="@id/datasetEntryDetailsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/operationsFragment"
+        android:name="stasis.client_android.activities.fragments.operations.OperationsFragment"
+        android:label="OperationsFragment">
+
+        <action
+            android:id="@+id/action_operationsFragment_to_operationDetailsFragment"
+            app:destination="@id/operationDetailsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/statusFragment"
+        android:name="stasis.client_android.activities.fragments.status.StatusFragment"
+        android:label="StatusFragment" />
+
+    <fragment
+        android:id="@+id/rulesFragment"
+        android:name="stasis.client_android.activities.fragments.rules.RulesFragment"
+        android:label="RulesFragment" />
+
+    <fragment
+        android:id="@+id/schedulesFragment"
+        android:name="stasis.client_android.activities.fragments.schedules.SchedulesFragment"
+        android:label="SchedulesFragment" />
+
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="stasis.client_android.activities.fragments.SettingsFragment"
+        android:label="SettingsFragment" />
+
+    <fragment
+        android:id="@+id/aboutFragment"
+        android:name="stasis.client_android.activities.fragments.AboutFragment"
+        android:label="AboutFragment" />
+
+    <action
+        android:id="@+id/action_global_welcomeActivity"
+        app:destination="@id/welcomeActivity"
+        app:popUpTo="@id/homeFragment"
+        app:popUpToInclusive="true" />
+
+    <action
+        android:id="@+id/action_global_homeFragment"
+        app:destination="@id/homeFragment"
+        app:enterAnim="@android:anim/fade_in"
+        app:exitAnim="@android:anim/fade_out"
+        app:popEnterAnim="@android:anim/fade_in"
+        app:popExitAnim="@android:anim/fade_out"
+        app:popUpTo="@id/homeFragment"
+        app:popUpToInclusive="true" />
+
+    <action
+        android:id="@+id/action_global_backupFragment"
+        app:destination="@id/backupFragment"
+        app:enterAnim="@android:anim/fade_in"
+        app:exitAnim="@android:anim/fade_out"
+        app:popEnterAnim="@android:anim/fade_in"
+        app:popExitAnim="@android:anim/fade_out"
+        app:popUpTo="@id/homeFragment" />
+
+    <action
+        android:id="@+id/action_global_recoverFragment"
+        app:destination="@id/recoverFragment"
+        app:enterAnim="@android:anim/fade_in"
+        app:exitAnim="@android:anim/fade_out"
+        app:popEnterAnim="@android:anim/fade_in"
+        app:popExitAnim="@android:anim/fade_out"
+        app:popUpTo="@id/homeFragment" />
+
+    <action
+        android:id="@+id/action_global_searchFragment"
+        app:destination="@id/searchFragment"
+        app:enterAnim="@android:anim/fade_in"
+        app:exitAnim="@android:anim/fade_out"
+        app:popEnterAnim="@android:anim/fade_in"
+        app:popExitAnim="@android:anim/fade_out"
+        app:popUpTo="@id/homeFragment" />
+
+    <action
+        android:id="@+id/action_global_operationsFragment"
+        app:destination="@id/operationsFragment"
+        app:enterAnim="@android:anim/fade_in"
+        app:exitAnim="@android:anim/fade_out"
+        app:popEnterAnim="@android:anim/fade_in"
+        app:popExitAnim="@android:anim/fade_out"
+        app:popUpTo="@id/homeFragment" />
+
+    <action
+        android:id="@+id/action_global_statusFragment"
+        app:destination="@id/statusFragment"
+        app:enterAnim="@android:anim/fade_in"
+        app:exitAnim="@android:anim/fade_out"
+        app:popEnterAnim="@android:anim/fade_in"
+        app:popExitAnim="@android:anim/fade_out"
+        app:popUpTo="@id/homeFragment" />
+
+    <action
+        android:id="@+id/action_global_rulesFragment"
+        app:destination="@id/rulesFragment"
+        app:enterAnim="@android:anim/fade_in"
+        app:exitAnim="@android:anim/fade_out"
+        app:popEnterAnim="@android:anim/fade_in"
+        app:popExitAnim="@android:anim/fade_out"
+        app:popUpTo="@id/homeFragment" />
+
+    <action
+        android:id="@+id/action_global_schedulesFragment"
+        app:destination="@id/schedulesFragment"
+        app:enterAnim="@android:anim/fade_in"
+        app:exitAnim="@android:anim/fade_out"
+        app:popEnterAnim="@android:anim/fade_in"
+        app:popExitAnim="@android:anim/fade_out"
+        app:popUpTo="@id/homeFragment" />
+
+    <action
+        android:id="@+id/action_global_settingsFragment"
+        app:destination="@id/settingsFragment"
+        app:enterAnim="@android:anim/fade_in"
+        app:exitAnim="@android:anim/fade_out"
+        app:popEnterAnim="@android:anim/fade_in"
+        app:popExitAnim="@android:anim/fade_out"
+        app:popUpTo="@id/homeFragment" />
+
+    <action
+        android:id="@+id/action_global_aboutFragment"
+        app:destination="@id/aboutFragment"
+        app:enterAnim="@android:anim/fade_in"
+        app:exitAnim="@android:anim/fade_out"
+        app:popEnterAnim="@android:anim/fade_in"
+        app:popExitAnim="@android:anim/fade_out"
+        app:popUpTo="@id/homeFragment" />
+
+    <fragment
+        android:id="@+id/operationDetailsFragment"
+        android:name="stasis.client_android.activities.fragments.operations.OperationDetailsFragment"
+        android:label="OperationDetailsFragment">
+
+        <argument
+            android:name="operation"
+            app:argType="java.util.UUID" />
+
+        <argument
+            android:name="operationType"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/datasetDefinitionDetailsFragment"
+        android:name="stasis.client_android.activities.fragments.backup.DatasetDefinitionDetailsFragment"
+        android:label="DatasetDefinitionDetailsFragment">
+
+        <argument
+            android:name="definition"
+            app:argType="java.util.UUID" />
+
+        <action
+            android:id="@+id/action_datasetDefinitionDetailsFragment_to_datasetEntryDetailsFragment"
+            app:destination="@id/datasetEntryDetailsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/datasetEntryDetailsFragment"
+        android:name="stasis.client_android.activities.fragments.backup.DatasetEntryDetailsFragment"
+        android:label="DatasetEntryDetailsFragment">
+
+        <argument
+            android:name="entry"
+            app:argType="java.util.UUID" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/newDatasetDefinitionFragment"
+        android:name="stasis.client_android.activities.fragments.backup.NewDatasetDefinitionFragment"
+        android:label="NewDatasetDefinitionFragment" />
+
+    <activity
+        android:id="@+id/welcomeActivity"
+        android:name="stasis.client_android.activities.WelcomeActivity"
+        android:label="WelcomeActivity" />
+</navigation>

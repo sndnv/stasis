@@ -27,7 +27,9 @@ class ScheduleSpec : WordSpec({
 
             val futureSchedule = pastSchedule.copy(start = now.plusSeconds((interval.multipliedBy(startOffset.toLong())).seconds))
 
-            pastSchedule.nextInvocation() shouldBe (pastSchedule.start.plusSeconds((interval.multipliedBy((startOffset + 1).toLong())).seconds))
+            pastSchedule.nextInvocation() shouldBe (
+                    pastSchedule.start.plusSeconds((interval.multipliedBy((startOffset + 1).toLong())).seconds)
+                    )
 
             recentSchedule.nextInvocation() shouldBe (recentSchedule.start.plusSeconds(recentSchedule.interval.seconds))
 

@@ -1,15 +1,16 @@
 package stasis.client_android.lib.collection.rules
 
 import stasis.client_android.lib.collection.rules.exceptions.RuleMatchingFailure
+import stasis.client_android.lib.collection.rules.internal.FilesWalker
 import stasis.client_android.lib.utils.NonFatal.nonFatal
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
-import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.PathMatcher
 
 data class Specification(
     val entries: Map<Path, Entry>,
-    val unmatched: List<Pair<Rule, Throwable>>
+    val failures: List<FailedMatch>
 ) {
     val explanation: Map<Path, List<Entry.Explanation>> by lazy {
         entries.map { (path, entry) -> path to entry.reason }.toMap()
@@ -18,6 +19,10 @@ data class Specification(
     val included: List<Path> by lazy { (includedEntries + includedParents).distinct() }
 
     val excluded: List<Path> by lazy { excludedEntries }
+
+    val unmatched: List<Pair<Rule, Throwable>> by lazy {
+        failures.map { it.rule to it.failure }
+    }
 
     private val splitEntries by lazy {
         val (included, excluded) = entries.values.partition { it.operation == Rule.Operation.Include }
@@ -42,64 +47,122 @@ data class Specification(
         val reason: List<Explanation>
     ) {
         data class Explanation(
-            val operation: Rule.Operation,
-            val original: Rule.Original
+            val operation: Rule.Operation
         )
     }
 
+    data class RuleMatcher(
+        val rule: Rule,
+        val matcher: PathMatcher
+    )
+
+    data class FailedMatch(
+        val rule: Rule,
+        val path: Path,
+        val failure: Throwable
+    )
+
     companion object {
-        fun empty(): Specification = Specification(entries = emptyMap(), unmatched = emptyList())
+        fun empty(): Specification = Specification(entries = emptyMap(), failures = emptyList())
 
         operator fun invoke(rules: List<Rule>): Specification = invoke(rules, filesystem = FileSystems.getDefault())
 
-        operator fun invoke(rules: List<Rule>, filesystem: FileSystem): Specification =
-            rules.fold(empty()) { spec, rule ->
-                val ruleDirectory = if (rule.directory.endsWith(filesystem.separator)) {
-                    rule.directory
-                } else {
-                    "${rule.directory}${filesystem.separator}"
-                }
-
-                val directory = filesystem.getPath(ruleDirectory)
-
-                val matcher = filesystem.getPathMatcher("glob:$ruleDirectory${rule.pattern}")
+        operator fun invoke(rules: List<Rule>, filesystem: FileSystem): Specification {
+            val (matchers, spec) = rules.fold(emptyList<RuleMatcher>() to empty()) { (matchers, spec), rule ->
+                val (directory, matcher) = rule.asMatcher(withFilesystem = filesystem)
 
                 try {
-                    val matchesStream = Files
-                        .walk(directory)
-                        .filter { path -> matcher.matches(path) }
+                    val result = FilesWalker.filter(start = directory, matcher = matcher)
 
-                    val matches = matchesStream.use {
-                        it.iterator().asSequence().toList()
-                    }
-
-                    if (matches.isEmpty()) {
-                        spec.copy(unmatched = spec.unmatched + (rule to RuleMatchingFailure("Rule matched no files")))
+                    val updated = if (result.isEmpty()) {
+                        spec.copy(
+                            failures = spec.failures + FailedMatch(
+                                rule = rule,
+                                path = directory,
+                                failure = RuleMatchingFailure("Rule matched no files")
+                            )
+                        )
                     } else {
-                        val updatedFiles = matches
-                            .map { file ->
-                                val entry = when (val existing = spec.entries[file]) {
-                                    null -> Entry(
-                                        file = file,
-                                        directory = directory,
-                                        operation = rule.operation,
-                                        reason = listOf(Entry.Explanation(rule.operation, rule.original))
-                                    )
-                                    else -> existing.copy(
-                                        operation = rule.operation,
-                                        reason = existing.reason + Entry.Explanation(rule.operation, rule.original)
-                                    )
-                                }
-
-                                file to entry
-                            }
-
-                        spec.copy(entries = spec.entries + updatedFiles)
+                        spec
+                            .withMatches(result.matches, rule, directory)
+                            .withFailures(result.failures, rule)
                     }
+
+                    (matchers + RuleMatcher(rule, matcher)) to updated
                 } catch (e: Throwable) {
-                    spec.copy(unmatched = spec.unmatched + (rule to e.nonFatal()))
+                    val updated = spec.copy(
+                        failures = spec.failures + FailedMatch(
+                            rule = rule,
+                            path = directory,
+                            failure = e.nonFatal()
+                        )
+                    )
+
+                    (matchers + RuleMatcher(rule, matcher)) to updated
                 }
             }
+
+            return spec.dropExcludedFailures(matchers)
+        }
+
+        private fun Rule.asMatcher(withFilesystem: FileSystem): Pair<Path, PathMatcher> {
+            val ruleDirectory = if (this.directory.endsWith(withFilesystem.separator)) {
+                this.directory
+            } else {
+                "${this.directory}${withFilesystem.separator}"
+            }
+
+            val directory = withFilesystem.getPath(ruleDirectory)
+
+            val matcher = withFilesystem.getPathMatcher("glob:$ruleDirectory${this.pattern}")
+
+            return directory to matcher
+        }
+
+        private fun Specification.withMatches(matches: List<Path>, rule: Rule, directory: Path): Specification {
+            val updatedFiles = matches
+                .map { file ->
+                    val entry = when (val existing = this.entries[file]) {
+                        null -> Entry(
+                            file = file,
+                            directory = directory,
+                            operation = rule.operation,
+                            reason = listOf(Entry.Explanation(rule.operation))
+                        )
+                        else -> existing.copy(
+                            operation = rule.operation,
+                            reason = existing.reason + Entry.Explanation(rule.operation)
+                        )
+                    }
+
+                    file to entry
+                }
+
+            return this.copy(entries = this.entries + updatedFiles)
+        }
+
+        private fun Specification.withFailures(failures: Map<Path, Throwable>, rule: Rule): Specification =
+            failures.toList().fold(this) { current, (path, failure) ->
+                current.copy(
+                    failures = current.failures + FailedMatch(
+                        rule = rule,
+                        path = path,
+                        failure = failure
+                    )
+                )
+            }
+
+        private fun Specification.dropExcludedFailures(matchers: List<RuleMatcher>): Specification {
+            val exclusionMatchers = matchers.filter { it.rule.operation == Rule.Operation.Exclude }
+
+            return this.copy(
+                failures = this.failures.filterNot { failure ->
+                    exclusionMatchers.any {
+                        it.matcher.matches(failure.path)
+                    }
+                }
+            )
+        }
 
         fun collectRelativeParents(from: Path, to: Path): List<Path> {
             tailrec fun collect(current: Path, collected: List<Path>): List<Path> {

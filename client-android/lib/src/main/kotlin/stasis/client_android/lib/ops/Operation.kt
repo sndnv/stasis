@@ -1,11 +1,12 @@
 package stasis.client_android.lib.ops
 
+import kotlinx.coroutines.CoroutineScope
 import java.time.Instant
 import java.util.UUID
 
 interface Operation {
     val id: OperationId
-    suspend fun start()
+    fun start(withScope: CoroutineScope, f: (Throwable?) -> Unit)
     fun stop()
     fun type(): Type
 
@@ -14,12 +15,27 @@ interface Operation {
     }
 
     sealed class Type {
+        override fun toString(): String = javaClass.simpleName
+
         object Backup : Type()
         object Recovery : Type()
         object Expiration : Type()
         object Validation : Type()
         object KeyRotation : Type()
         object GarbageCollection : Type()
+
+        companion object {
+            fun fromString(string: String): Type =
+                when (string) {
+                    "Backup" -> Backup
+                    "Recovery" -> Recovery
+                    "Expiration" -> Expiration
+                    "Validation" -> Validation
+                    "KeyRotation" -> KeyRotation
+                    "GarbageCollection" -> GarbageCollection
+                    else -> throw IllegalArgumentException("Unexpected operation type provided: [$string]")
+                }
+        }
     }
 
     data class Progress(
@@ -27,17 +43,19 @@ interface Operation {
         val failures: List<String>,
         val completed: Instant?
     ) {
-        fun empty(): Progress =
-            Progress(
-                failures = emptyList(),
-                stages = emptyMap(),
-                completed = null
-            )
-
         data class Stage(val steps: List<Step>) {
             fun withStep(step: Step): Stage = copy(steps = steps + step)
 
             data class Step(val name: String, val completed: Instant)
+        }
+
+        companion object {
+            fun empty(): Progress =
+                Progress(
+                    failures = emptyList(),
+                    stages = emptyMap(),
+                    completed = null
+                )
         }
     }
 }

@@ -7,7 +7,7 @@ import java.nio.file.Path
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
-open class MockFileStaging() : FileStaging {
+open class MockFileStaging : FileStaging {
     private val stats: Map<Statistic, AtomicInteger> = mapOf(
         Statistic.TemporaryCreated to AtomicInteger(0),
         Statistic.TemporaryDiscarded to AtomicInteger(0),

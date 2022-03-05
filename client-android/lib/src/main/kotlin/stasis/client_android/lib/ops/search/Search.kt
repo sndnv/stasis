@@ -3,11 +3,12 @@ package stasis.client_android.lib.ops.search
 import stasis.client_android.lib.model.FilesystemMetadata
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
+import stasis.client_android.lib.utils.Try
 import java.nio.file.Path
 import java.time.Instant
 
 interface Search {
-    suspend fun search(query: Regex, until: Instant?): Result
+    suspend fun search(query: Regex, until: Instant?): Try<Result>
 
     data class Result(
         val definitions: Map<DatasetDefinitionId, DatasetDefinitionResult?>

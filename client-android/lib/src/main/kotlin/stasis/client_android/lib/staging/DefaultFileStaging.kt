@@ -30,5 +30,9 @@ class DefaultFileStaging(
     private val temporaryFilePermissions = "rw-------"
 
     private val temporaryFileAttributes =
-        PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(temporaryFilePermissions))
+        PosixFilePermissions.asFileAttribute(
+            PosixFilePermissions.fromString(
+                temporaryFilePermissions
+            )
+        )
 }

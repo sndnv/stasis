@@ -76,11 +76,13 @@ class TestClient(providedCredentials: HttpCredentials = HttpCredentials.None) : 
         builder.url(url)
     }
 
-    suspend fun makeJsonRequest(url: String): TestDataClass = jsonRequest { builder ->
-        builder.url(url)
-    }
+    suspend fun makeJsonRequest(url: String): TestDataClass =
+        jsonRequest<TestDataClass> { builder ->
+            builder.url(url)
+        }.get()
 
-    suspend fun makeJsonListRequest(url: String): List<TestDataClass> = jsonListRequest { builder ->
-        builder.url(url)
-    }
+    suspend fun makeJsonListRequest(url: String): List<TestDataClass> =
+        jsonListRequest<TestDataClass> { builder ->
+            builder.url(url)
+        }.get()
 }

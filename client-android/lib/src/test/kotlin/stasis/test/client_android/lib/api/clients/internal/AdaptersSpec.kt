@@ -23,7 +23,7 @@ class AdaptersSpec : WordSpec({
 
         "convert Duration to/from JSON" {
             val duration = Duration.ofMinutes(42)
-            val json = duration.toMillis()
+            val json = duration.seconds
 
             Adapters.ForDuration.toJson(duration) shouldBe (json)
             Adapters.ForDuration.fromJson(json) shouldBe (duration)
@@ -31,7 +31,7 @@ class AdaptersSpec : WordSpec({
 
         "convert Instant to/from JSON" {
             val instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
-            val json = instant.toEpochMilli()
+            val json = instant.toString()
 
             Adapters.ForInstant.toJson(instant) shouldBe (json)
             Adapters.ForInstant.fromJson(json) shouldBe (instant)

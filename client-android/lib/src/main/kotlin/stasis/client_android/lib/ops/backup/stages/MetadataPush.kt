@@ -15,7 +15,7 @@ import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.ops.backup.Providers
-import java.util.UUID
+import java.util.*
 
 interface MetadataPush {
     val targetDataset: DatasetDefinition
@@ -30,38 +30,39 @@ interface MetadataPush {
         }
     }
 
-    private suspend fun pushMetadata(metadata: DatasetMetadata): DatasetEntryId = withContext(Dispatchers.IO) {
-        val metadataCrate = UUID.randomUUID()
+    private suspend fun pushMetadata(metadata: DatasetMetadata): DatasetEntryId =
+        withContext(Dispatchers.IO) {
+            val metadataCrate = UUID.randomUUID()
 
-        val encryptedMetadata = DatasetMetadata.encrypt(
-            metadataSecret = deviceSecret.toMetadataSecret(metadataCrate),
-            metadata = metadata,
-            encoder = providers.encryptor
-        )
+            val encryptedMetadata = DatasetMetadata.encrypt(
+                metadataSecret = deviceSecret.toMetadataSecret(metadataCrate),
+                metadata = metadata,
+                encoder = providers.encryptor
+            )
 
-        val content = Buffer().write(encryptedMetadata)
+            val content = Buffer().write(encryptedMetadata)
 
-        val metadataManifest = Manifest(
-            crate = metadataCrate,
-            origin = providers.clients.core.self,
-            source = providers.clients.core.self,
-            size = encryptedMetadata.size.toLong(),
-            copies = targetDataset.redundantCopies
-        )
+            val metadataManifest = Manifest(
+                crate = metadataCrate,
+                origin = providers.clients.core.self,
+                source = providers.clients.core.self,
+                size = encryptedMetadata.size.toLong(),
+                copies = targetDataset.redundantCopies
+            )
 
-        val request = CreateDatasetEntry(
-            definition = targetDataset.id,
-            device = providers.clients.api.self,
-            data = metadata.contentChanged.values
-                .filterIsInstance<EntityMetadata.File>()
-                .flatMap { it.crates.values }
-                .toSet(),
-            metadata = metadataManifest.crate
-        )
+            val request = CreateDatasetEntry(
+                definition = targetDataset.id,
+                device = providers.clients.api.self,
+                data = metadata.contentChanged.values
+                    .filterIsInstance<EntityMetadata.File>()
+                    .flatMap { it.crates.values }
+                    .toSet(),
+                metadata = metadataManifest.crate
+            )
 
-        providers.clients.core.push(metadataManifest, content)
-        val created = providers.clients.api.createDatasetEntry(request)
+            providers.clients.core.push(metadataManifest, content)
+            val created = providers.clients.api.createDatasetEntry(request).get()
 
-        created.entry
-    }
+            created.entry
+        }
 }

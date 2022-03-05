@@ -136,6 +136,7 @@ class EntityProcessingSpec : WordSpec({
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (2)
 
+            mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (3)
@@ -146,7 +147,7 @@ class EntityProcessingSpec : WordSpec({
         }
 
         "process files with changed content size above maximum part size" {
-            val largeSourceFileMetadata = "/ops/large-source-file".asTestResource().extractFileMetadata(
+            val largeSourceFileMetadata = "/ops/large-source-file-1".asTestResource().extractFileMetadata(
                 withChecksum = BigInteger("1"),
                 withCrate = UUID.randomUUID()
             )
@@ -217,6 +218,7 @@ class EntityProcessingSpec : WordSpec({
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (expectedParts)
 
+            mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (1)
@@ -292,6 +294,7 @@ class EntityProcessingSpec : WordSpec({
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (0)
 
+            mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (0)
@@ -316,7 +319,7 @@ class EntityProcessingSpec : WordSpec({
         }
 
         "fail processing a file if processing for a part fails" {
-            val largeSourceFileMetadata = "/ops/large-source-file".asTestResource().extractFileMetadata(
+            val largeSourceFileMetadata = "/ops/large-source-file-1".asTestResource().extractFileMetadata(
                 withChecksum = BigInteger("1"),
                 withCrate = UUID.randomUUID()
             )
@@ -390,6 +393,7 @@ class EntityProcessingSpec : WordSpec({
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (0)
 
+            mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (0)

@@ -2,8 +2,8 @@ package stasis.client_android.lib.encryption.stream
 
 import okio.Sink
 import okio.Source
-import okio.cipherSink
-import okio.cipherSource
+import stasis.client_android.lib.encryption.stream.CipherSink.Companion.cipherSink
+import stasis.client_android.lib.encryption.stream.CipherSource.Companion.cipherSource
 import java.security.Key
 import java.security.spec.AlgorithmParameterSpec
 import javax.crypto.Cipher

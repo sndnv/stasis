@@ -1,3 +1,526 @@
 <resources>
-    <string name="app_name">client-android</string>
+    <string name="app_name">stasis-client-android</string>
+    <string name="empty_value">-</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+
+    <!-- About -->
+    <string name="about_version">Version %1$s</string>
+    <string name="license_header">This project is licensed under the Apache License, Version 2.0</string>
+    <string name="license_copyright">Copyright 2018 https://github.com/sndnv</string>
+    <string name="license_info">
+        Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License.
+        You may obtain a copy of the License at
+        \n\n
+        http://www.apache.org/licenses/LICENSE-2.0
+        \n\n
+        Unless required by applicable law or agreed to in writing, software
+        distributed under the License is distributed on an "AS IS" BASIS,
+        WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        See the License for the specific language governing permissions and
+        limitations under the License.
+    </string>
+    <string name="license_footer">
+        For more information, visit
+        \n
+        https://github.com/sndnv/stasis
+    </string>
+
+    <!-- Navigation -->
+    <string name="navigation_item_home_first_time_hint_title">Navigation</string>
+    <string name="navigation_item_home_first_time_hint_description">
+        You can get started by opening the navigation menu and exploring the various sections of the app.
+    </string>
+    <string name="navigation_item_home">Home</string>
+    <string name="navigation_item_backup">Backup</string>
+    <string name="navigation_item_recover">Recover</string>
+    <string name="navigation_item_search">Search</string>
+    <string name="navigation_item_operations">Operations</string>
+    <string name="navigation_item_status">Status</string>
+    <string name="navigation_item_rules">Rules</string>
+    <string name="navigation_item_schedules">Schedules</string>
+    <string name="navigation_item_settings">Settings</string>
+    <string name="navigation_item_about">About</string>
+    <string name="navigation_item_logout">Logout</string>
+    <string name="navigation_subtitle_home">Home</string>
+    <string name="navigation_subtitle_backup_definitions">Backup definitions</string>
+    <string name="navigation_subtitle_backup_definition_details">Backup definition details</string>
+    <string name="navigation_subtitle_backup_entry_details">Backup entry details</string>
+    <string name="navigation_subtitle_backup_new_definition">New backup definition</string>
+    <string name="navigation_subtitle_recover">Recover</string>
+    <string name="navigation_subtitle_search">Search</string>
+    <string name="navigation_subtitle_operations">Operations</string>
+    <string name="navigation_subtitle_operation_details">Operation details</string>
+    <string name="navigation_subtitle_status">Status</string>
+    <string name="navigation_subtitle_rules">Rules</string>
+    <string name="navigation_subtitle_schedules">Schedules</string>
+    <string name="navigation_subtitle_settings">Settings</string>
+    <string name="navigation_subtitle_about">About</string>
+
+    <!-- Context Help -->
+    <string name="context_help_first_time_hint_title">Help</string>
+    <string name="context_help_first_time_hint_description">
+        In case something is unclear, more information can be found by tapping on this button.
+    </string>
+    <string name="context_help_button_hint">Help</string>
+    <string name="context_help_dialog_title">Help</string>
+    <string name="context_help_backup_definitions">
+        Showing all available backup definitions.\n\n
+        In order to perform backups, a definition needs to be created first, which is then associated with each backup entry.\n\n
+        Backup definitions allow for grouping and configuration of backups - how many copies should be kept, for how long and how to version them.
+    </string>
+    <string name="context_help_backup_definition_details">
+        Showing all available backup entries for the selected definition.\n\n
+        Each item represents an individual backup that was performed and shows information about when it was done,
+        how much data was stored and what changed since the last backup.
+    </string>
+    <string name="context_help_backup_entry_details">
+        Showing backup metadata information for the selected entry.\n\n
+        Each item represents an individual piece of information that was backed up (photo, file, directory, etc) and shows
+        details about what changed since the last backup.\n\n
+        An item can be expanded to show additional metadata.
+    </string>
+    <string name="context_help_backup_new_definition">
+        Creating a new backup definition.\n\n
+        For each definition,the retention policies for existing and removed file versions can be specified.\n\n
+        Retention policies:\n\n
+        - at-most - keep at most N number of versions\n\n
+        - latest-only - keep only latest version\n\n
+        - all - keep all versions
+    </string>
+    <string name="context_help_recover">
+        Configuring and starting a recovery process.
+    </string>
+    <string name="context_help_search">
+        Searching available metadata for backup information matching the provided query (as a regular expression).\n\n
+        Results can be restricted by searching entries only up to the provided timestamp.
+    </string>
+    <string name="context_help_operations">
+        Showing and stopping operations.\n\n
+        Each item represents an individual operation and shows what its current state is and how many stages or steps have already been performed.
+    </string>
+    <string name="context_help_operation_details">
+        Showing operation details.\n\n
+        An operation is made up of individual stages and each stage can have one or more steps. Along with this information,
+        any failures or errors will also be shown.
+    </string>
+    <string name="context_help_status">
+        Showing current user and device details, along with the client\'s connection state.
+    </string>
+    <string name="context_help_rules">
+        Showing configured backup rules.\n\n
+        Each rule determines whether matching files and directories are included (✓) or excluded (✗) during backups.
+    </string>
+    <string name="context_help_schedules">
+        Showing and managing client scheduling.\n\n
+        Each item represents a public schedule provided by the server. One or more assignments can be created for each schedule
+        so that the client can execute the specified actions at the appropriate time.\n\n
+        A schedule can be expanded to show all assignments associated with it.
+    </string>
+
+    <!-- API Failures -->
+    <string name="api_resource_missing_failure">The requested resource could not be found</string>
+    <string name="api_access_denied_failure">Authentication failed; try to log in again…</string>
+    <string name="api_other_failure">Failed to process request: %1$s</string>
+
+    <!-- Bootstrap -->
+    <string name="bootstrap_logo">Application logo</string>
+    <string name="bootstrap_server_prefix">https://</string>
+    <string name="bootstrap_server_hint">Bootstrap Server URL</string>
+    <string name="bootstrap_server_hint_extra">Make sure you are entering the URL of a trusted server and that it is entered exactly as shown by that server.</string>
+    <string name="bootstrap_server_error">Server cannot be empty</string>
+    <string name="bootstrap_server_next_button">Next</string>
+    <string name="bootstrap_password_hint">User Password</string>
+    <string name="bootstrap_password_hint_extra">This password is required for encrypting the secrets used by this device. Your password is never stored, sent to the server or shared with other services.</string>
+    <string name="bootstrap_password_error">Password cannot be empty</string>
+    <string name="bootstrap_password_previous_button">Back</string>
+    <string name="bootstrap_password_next_button">Next</string>
+    <string name="bootstrap_code_hint">Bootstrap Code</string>
+    <string name="bootstrap_code_hint_extra">This code is required for securely initializing the device and should be entered exactly as shown by the server.</string>
+    <string name="bootstrap_code_error">Code cannot be empty</string>
+    <string name="bootstrap_code_previous_button">Back</string>
+    <string name="bootstrap_code_next_button">Finish</string>
+    <string name="bootstrap_failed_dismiss">OK</string>
+    <string name="bootstrap_failed_title">Boostrap Failed</string>
+    <string name="bootstrap_failed_invalid_code">An invalid bootstrap code was provided.\n\nVerify that the code is entered correctly or obtain a new one.</string>
+    <string name="bootstrap_failed_details">%1$s</string>
+
+    <!-- Login -->
+    <string name="login_logo">Application logo</string>
+    <string name="login_username_hint">User</string>
+    <string name="login_username_error">User cannot be empty</string>
+    <string name="login_password_hint">User Password</string>
+    <string name="login_password_error">User password cannot be empty</string>
+    <string name="login_save_username">Remember me</string>
+    <string name="login_successful">Login successful</string>
+    <string name="login_button">Login</string>
+    <string name="login_failed_dismiss">OK</string>
+    <string name="login_failed_title">Login Failed</string>
+    <string name="login_failed_details">%1$s</string>
+    <string name="login_failed_invalid_credentials">Invalid user and/or password provided</string>
+
+    <!-- Welcome -->
+    <string name="welcome_message">Welcome</string>
+
+    <!-- Home -->
+    <string name="home_last_backup_label">Last Backup</string>
+    <string name="home_last_operation_label">Last Operation</string>
+    <string name="home_last_backup_no_data">No Data</string>
+    <string name="home_last_operation_no_data">No Data</string>
+
+    <!-- Backup -->
+    <string name="new_dataset_definition_field_title_info">Description</string>
+    <string name="new_dataset_definition_field_help_info">Any information or description that uniquely identifies the backup definition.</string>
+    <string name="new_dataset_definition_field_title_existing_versions">Existing Versions</string>
+    <string name="new_dataset_definition_field_help_existing_versions">Retention policy and duration for existing files.</string>
+    <string name="new_dataset_definition_field_title_removed_versions">Removed Versions</string>
+    <string name="new_dataset_definition_field_help_removed_versions">Retention policy and duration for removed files.</string>
+    <string name="new_dataset_definition_retention_field_title_duration">Duration (required)</string>
+    <string name="new_dataset_definition_retention_field_title_policy">Policy</string>
+    <string name="new_dataset_definition_field_error_info">Info cannot be empty</string>
+    <string name="new_dataset_definition_field_error_existing_versions_duration">Duration cannot be empty or 0</string>
+    <string name="new_dataset_definition_field_error_existing_versions_duration_padding"> </string>
+    <string name="new_dataset_definition_field_error_existing_versions_policy_versions">Versions cannot be empty or 0</string>
+    <string name="new_dataset_definition_field_error_removed_versions_duration">Duration cannot be empty or 0</string>
+    <string name="new_dataset_definition_field_error_removed_versions_duration_padding"> </string>
+    <string name="new_dataset_definition_field_error_removed_versions_policy_versions">Versions cannot be empty or 0</string>
+    <string name="new_dataset_definition_create">Create</string>
+
+    <string name="dataset_definition_field_title_retention">Retention</string>
+    <string name="dataset_definition_field_content_info">%1$s (%2$s)</string>
+    <string name="dataset_definition_field_content_copies">Redundant copies: %1$s</string>
+    <string name="dataset_definition_field_content_existing_versions">Existing data: %1$s</string>
+    <string name="dataset_definition_field_content_removed_versions">Removed data: %1$s</string>
+    <string name="dataset_definitions_list_empty">No Definitions</string>
+    <string name="dataset_definition_add_button_title">Add definition</string>
+    <string name="dataset_definition_add_button_hint">Create new backup definition</string>
+    <string name="dataset_definition_start_backup">Start backup</string>
+    <string name="dataset_definition_start_backup_disabled_title">Cannot start backup</string>
+    <string name="dataset_definition_start_backup_disabled_content">A new backup operation cannot be started while other operations are running.</string>
+    <string name="dataset_definition_entries_list_empty">No Entries</string>
+    <string name="backup_operation">Backup</string>
+
+    <string name="dataset_entry_field_content_title">%1$s, %2$s (%3$s)"</string>
+    <string name="dataset_entry_field_content_info">Crates: %1$s, Changes: %2$s, Size: %3$s"</string>
+    <string name="dataset_entry_details_metadata_empty">No Additional Metadata</string>
+    <string name="dataset_entry_details_metadata_filter_toggle_button_hint">Show/hide data saved in previous backups</string>
+
+    <string name="dataset_metadata_entry_state_icon_hint">Metadata entry state</string>
+    <string name="dataset_metadata_field_content_summary_file_parent">%1$s/</string>
+    <string name="dataset_metadata_field_content_summary_file_name">%1$s</string>
+    <string name="dataset_metadata_field_content_summary_updated">%1$s</string>
+    <string name="dataset_metadata_field_content_summary_size">%1$s</string>
+    <string name="dataset_metadata_field_content_summary_changed">%1$s</string>
+    <string name="dataset_metadata_field_content_summary_changed_content">content</string>
+    <string name="dataset_metadata_field_content_summary_changed_metadata">metadata</string>
+
+    <string name="dataset_metadata_field_title_path">Path</string>
+    <string name="dataset_metadata_field_title_link">Link</string>
+    <string name="dataset_metadata_field_title_hidden">Hidden</string>
+    <string name="dataset_metadata_field_title_created">Created</string>
+    <string name="dataset_metadata_field_title_updated">Updated</string>
+    <string name="dataset_metadata_field_title_owner">Owner</string>
+    <string name="dataset_metadata_field_title_group">Group</string>
+    <string name="dataset_metadata_field_title_permissions">Permissions</string>
+    <string name="dataset_metadata_field_title_size">Size</string>
+    <string name="dataset_metadata_field_title_checksum">Checksum</string>
+    <string name="dataset_metadata_field_title_crates">Crates</string>
+    <string name="dataset_metadata_field_content_path">%1$s</string>
+    <string name="dataset_metadata_field_content_link">%1$s</string>
+    <string name="dataset_metadata_field_content_hidden">%1$s</string>
+    <string name="dataset_metadata_field_content_created">%1$s</string>
+    <string name="dataset_metadata_field_content_updated">%1$s</string>
+    <string name="dataset_metadata_field_content_owner">%1$s</string>
+    <string name="dataset_metadata_field_content_group">%1$s</string>
+    <string name="dataset_metadata_field_content_permissions">%1$s</string>
+    <string name="dataset_metadata_field_content_size">%1$s</string>
+    <string name="dataset_metadata_field_content_checksum">%1$s</string>
+    <string name="dataset_metadata_field_content_crates">%1$s</string>
+
+    <!-- Search -->
+    <string name="search_field_title_query">Search</string>
+    <string name="search_field_title_until">Until</string>
+    <string name="search_field_error_query_empty">Search query cannot be empty</string>
+    <string name="search_run">Search</string>
+    <string name="search_result_empty">No results found for %1$s</string>
+    <string name="search_result_matches_empty">No Matches</string>
+    <string name="search_result_match_state_icon_hint">Search result match state</string>
+
+    <!-- Recovery -->
+    <string name="recovery_picker_previous">Previous</string>
+    <string name="recovery_picker_next">Next</string>
+    <string name="recovery_picker_run_recover">Recover</string>
+    <string name="recovery_picker_run_recover_missing_entry">Select an entry</string>
+    <string name="recovery_picker_run_recover_missing_definition">Select a definition first</string>
+    <string name="recovery_picker_run_recover_disabled_title">Cannot start recovery</string>
+    <string name="recovery_picker_run_recover_disabled_content">A new recovery operation cannot be started while other operations are running.</string>
+    <string name="recovery_pick_definition_title">Backup Definition</string>
+    <string name="recovery_pick_definition_info">%1$s (%2$s)</string>
+    <string name="recovery_pick_definition_hint">Start the recovery process of a dataset</string>
+    <string name="recovery_pick_definition_hint_extra" />
+    <string name="recovery_pick_entry_source_type_latest">From Latest</string>
+    <string name="recovery_pick_entry_source_type_entry">From Entry</string>
+    <string name="recovery_pick_entry_source_type_until">Until</string>
+    <string name="recovery_pick_entry_info">%1$s (%2$s)</string>
+    <string name="recovery_pick_entry_hint">Data source</string>
+    <string name="recovery_pick_entry_hint_extra">Data is recovered from the latest entry, an explicitly provided entry or until a specified timestamp.</string>
+    <string name="recovery_pick_path_query_title">Query</string>
+    <string name="recovery_pick_path_query_hint">File/path query to use for limiting recovery</string>
+    <string name="recovery_pick_path_query_hint_extra">Only files and directories that match the provided (partial) query will be recovered.</string>
+    <string name="recovery_operation">Recovery</string>
+
+    <!-- Rules -->
+    <string name="rule_add_button_title">Add rule</string>
+    <string name="rule_add_button_hint">Add rule</string>
+    <string name="rule_reset_button_hint">Reset to default rules</string>
+    <string name="rule_operation_hint">Rule operation</string>
+    <string name="rule_remove_button_title">Remove</string>
+    <string name="rule_remove_button_hint">Remove rule</string>
+    <string name="rule_field_title_operation_include">Include</string>
+    <string name="rule_field_title_operation_exclude">Exclude</string>
+    <string name="rule_field_title_directory">Directory</string>
+    <string name="rule_field_title_pattern">Pattern</string>
+    <string name="rule_field_error_directory">Directory cannot be empty</string>
+    <string name="rule_field_error_pattern">Pattern cannot be empty</string>
+    <string name="rule_field_content_directory">%1$s</string>
+    <string name="rule_field_content_pattern">%1$s</string>
+    <string name="rule_remove_confirm_title">Remove rule for directory [%1$s]?</string>
+    <string name="rule_remove_confirm_cancel_button_title">Cancel</string>
+    <string name="rule_remove_confirm_ok_button_title">OK</string>
+    <string name="rules_reset_confirm_title">Remove all existing rules and reset to defaults?</string>
+    <string name="rules_reset_confirm_cancel_button_title">Cancel</string>
+    <string name="rules_reset_confirm_ok_button_title">OK</string>
+    <string name="rules_list_empty">No Rules</string>
+
+    <!-- Schedules -->
+    <string name="schedule_field_content_info">%1$s</string>
+    <string name="schedule_field_content_active">Active assignments: %1$s</string>
+    <string name="schedule_field_content_active_none">None</string>
+    <string name="schedule_field_content_next">Next run on %1$s at %2$s</string>
+    <string name="schedule_field_content_interval">Running every %1$s %2$s</string>
+    <string name="schedules_list_empty">No Schedules</string>
+    <string name="schedule_assignment_field_title_assignment_type">Assignment Type</string>
+    <string name="schedule_assignment_field_title_backup_definition">Backup definition</string>
+    <string name="schedule_assignment_field_error_backup_definition">Definition cannot be empty</string>
+    <string name="schedule_assignment_add_button_title">Assign</string>
+    <string name="schedule_assignment_add_button_hint">Assign</string>
+    <string name="schedule_assignment_remove_button_title">Remove</string>
+    <string name="schedule_assignment_remove_button_hint">Remove assignment</string>
+    <string name="schedule_assignment_remove_confirm_title">Remove schedule assignment for [%1$s]?</string>
+    <string name="schedule_assignment_remove_confirm_cancel_button_title">Cancel</string>
+    <string name="schedule_assignment_remove_confirm_ok_button_title">OK</string>
+    <string name="schedule_assignments_list_empty">No Assignments</string>
+
+    <!-- Operations -->
+    <string name="operations_list_empty">No Operations</string>
+    <string name="operation_stop_button_title">Stop</string>
+    <string name="operation_stop_button_hint">Stop operation</string>
+    <string name="operation_type_backup">Backup</string>
+    <string name="operation_type_recovery">Recovery</string>
+    <string name="operation_type_expiration">Expiration</string>
+    <string name="operation_type_validation">Validation</string>
+    <string name="operation_type_key_rotation">Key Rotation</string>
+    <string name="operation_type_garbage_collection">Garbage Collection</string>
+    <string name="operation_type_garbage_unknown">Unknown</string>
+    <string name="operation_field_content_info">%1$s (%2$s)</string>
+    <string name="operation_field_content_details">Stages: %1$s, Steps: %2$s</string>
+    <string name="operation_field_content_details_with_failures">Stages: %1$s, Steps: %2$s, Errors: %3$s</string>
+    <string name="operation_field_content_completed">Completed: %1$s</string>
+    <string name="operation_field_content_stage_info">%1$s (steps: %2$s)</string>
+    <string name="operation_field_content_failure_info">%1$s</string>
+    <string name="operation_stop_confirm_title">Stop operation [%1$s]?</string>
+    <string name="operation_stop_confirm_cancel_button_title">Cancel</string>
+    <string name="operation_stop_confirm_ok_button_title">OK</string>
+    <string name="operation_field_title_errors">Errors</string>
+    <string name="operation_field_title_stages">Stages</string>
+    <string name="operation_no_progress">No Data</string>
+    <string name="operation_stage_title">%1$s</string>
+    <string name="operation_stage_message">%1$s (%2$s)</string>
+    <string name="operation_failure_title">Error</string>
+    <string name="operation_failure_message">%1$s</string>
+
+    <!-- Operation Stages/Steps -->
+    <string name="operation_stage_specification">Specification</string>
+    <string name="operation_stage_examination">Examination</string>
+    <string name="operation_stage_collection">Collection</string>
+    <string name="operation_stage_processing">Processing</string>
+    <string name="operation_stage_metadata">Metadata</string>
+    <string name="operation_stage_metadata_applied">Metadata Applied</string>
+    <string name="operation_stage_unknown">%1$s</string>
+    <string name="operation_step_processing">Processing</string>
+    <string name="operation_step_collection">Collection</string>
+    <string name="operation_step_push">Push</string>
+    <string name="operation_step_unknown">%1$s</string>
+
+    <!-- Status -->
+    <string name="device_header_title">Device</string>
+    <string name="device_field_title_node">Node</string>
+    <string name="device_field_title_limits">Limits</string>
+    <string name="device_field_content_node">%1$s</string>
+    <string name="device_field_content_info_active">%1$s (active)</string>
+    <string name="device_field_content_info_inactive">%1$s (inactive)</string>
+    <string name="device_field_content_limits_none">None</string>
+    <string name="device_limits_label_max_crates">Crates</string>
+    <string name="device_limits_label_max_storage">Storage</string>
+    <string name="device_limits_label_max_storage_per_crate" />
+    <string name="device_limits_label_max_retention">Retention</string>
+    <string name="device_limits_label_min_retention" />
+    <string name="device_limits_content_max_crates">%1$s</string>
+    <string name="device_limits_content_max_storage">%1$s (total)</string>
+    <string name="device_limits_content_max_storage_per_crate">%1$s (per crate)</string>
+    <string name="device_limits_content_max_retention">%1$s (max)</string>
+    <string name="device_limits_content_min_retention">%1$s (min)</string>
+    <string name="user_header_title">User</string>
+    <string name="user_field_title_limits">Limits</string>
+    <string name="user_field_title_permissions">Permissions</string>
+    <string name="user_field_content_info_active">%1$s (active)</string>
+    <string name="user_field_content_info_inactive">%1$s (inactive)</string>
+    <string name="user_field_content_limits_none">None</string>
+    <string name="user_field_content_permission">%1$s</string>
+    <string name="user_limits_label_max_devices">Devices</string>
+    <string name="user_limits_label_max_crates">Crates</string>
+    <string name="user_limits_label_max_storage">Storage</string>
+    <string name="user_limits_label_max_storage_per_crate" />
+    <string name="user_limits_label_max_retention">Retention</string>
+    <string name="user_limits_label_min_retention" />
+    <string name="user_limits_content_max_devices">%1$s</string>
+    <string name="user_limits_content_max_crates">%1$s</string>
+    <string name="user_limits_content_max_storage">%1$s (total)</string>
+    <string name="user_limits_content_max_storage_per_crate">%1$s (per crate)</string>
+    <string name="user_limits_content_max_retention">%1$s (max)</string>
+    <string name="user_limits_content_min_retention">%1$s (min)</string>
+    <string name="server_list_empty">No Connections</string>
+    <string name="server_header_title">Servers</string>
+    <string name="server_field_content_info_reachable">%1$s (reachable)</string>
+    <string name="server_field_content_info_unreachable">%1$s (unreachable)</string>
+    <string name="server_field_content_last_update">Last updated: %1$s</string>
+
+    <!-- Notification Channels -->
+    <string name="notification_channel_foreground_service_name">Scheduler Service</string>
+    <string name="notification_channel_scheduling_name">Scheduling Notifications</string>
+
+    <!-- Notifications -->
+    <string name="notification_foreground_service_title">Background Scheduler Running</string>
+    <string name="notification_public_schedule_not_found_title">Missing schedule</string>
+    <string name="notification_public_schedule_not_found_text">%1$s operation is not associated with a valid schedule</string>
+    <string name="notification_active_schedule_not_found_title">Invalid scheduled operation</string>
+    <string name="notification_active_schedule_not_found_text">Attempted to execute a schedule with ID [%1$s] but it was not available</string>
+    <string name="notification_operation_started_title">%1$s started</string>
+    <string name="notification_operation_started_text">Running a new %1$s operation</string>
+    <string name="notification_operation_completed_title">%1$s completed</string>
+    <string name="notification_operation_completed_text">%1$s operation completed successfully</string>
+    <string name="notification_operation_failed_title">%1$s operation failed</string>
+    <string name="notification_operation_failed_text">%1$s</string>
+
+    <!-- Toasts -->
+    <string name="toast_dataset_definition_created">Backup definition %1$s created</string>
+    <string name="toast_rule_created">Rule created</string>
+    <string name="toast_rule_removed">Rule removed</string>
+    <string name="toast_rules_reset">Rules reset</string>
+    <string name="toast_schedule_assignment_created">Schedule assignment created</string>
+    <string name="toast_schedule_assignment_removed">Schedule assignment removed</string>
+    <string name="toast_operation_stopped">Operation stopped</string>
+    <string name="toast_restart_required_for_setting">The application needs to be restarted for this change to take effect</string>
+
+    <!-- Retention -->
+    <plurals name="dataset_definition_retention_at_most">
+        <item quantity="one">%1$s, at most %2$s version</item>
+        <item quantity="other">%1$s, at most %2$s versions</item>
+    </plurals>
+    <string name="dataset_definition_retention_latest_only">%1$s, latest version only</string>
+    <string name="dataset_definition_retention_all">%1$s, all versions</string>
+
+    <!-- Policies -->
+    <string name="policy_at_most">At most</string>
+    <string name="policy_latest_only">Latest-only</string>
+    <string name="policy_all">All</string>
+
+    <!-- Assignments -->
+    <string name="assignment_type_backup">Backup</string>
+    <string name="assignment_type_expiration">Expiration</string>
+    <string name="assignment_type_validation">Validation</string>
+    <string name="assignment_type_key_rotation">Key Rotation</string>
+    <string name="assignment_field_content_backup">Backup for (%1$s)</string>
+    <string name="assignment_field_content_backup_entities">%1$s</string>
+    <string name="assignment_field_content_backup_entities_any">*</string>
+    <string name="assignment_field_content_expiration">Expiration</string>
+    <string name="assignment_field_content_validation">Validation</string>
+    <string name="assignment_field_content_key_rotation">Key Rotation</string>
+
+    <!-- Settings -->
+    <string name="settings_category_date_time">Date/Time</string>
+    <string name="settings_category_secrets">Secrets</string>
+    <string name="settings_category_debug">Debug</string>
+    <string name="settings_date_time_format_title">Format</string>
+    <string name="settings_date_time_format_hint">Show dates as %1$s and time as %2$s</string>
+    <string name="settings_ping_interval_hint">The client will contact the server every %1$s</string>
+    <string name="settings_manage_device_secret_title">Manage device secret</string>
+    <string name="settings_manage_device_secret_summary">Allows importing and exporting of the secret used by this device to encrypt and decrypt data</string>
+    <string name="settings_manage_device_secret_confirm_title">Warning</string>
+    <string name="settings_manage_device_secret_confirm_text">
+        This secret is used for encrypting and decrypting data for this device. It should be kept in a secure location and it should not be shared with anyone!\n\n
+        - If the secret is lost, existing data cannot be decrypted.\n\n
+        - If the secret is compromised, anyone will be able to decrypt the data coming from this device.
+    </string>
+    <string name="settings_manage_device_secret_confirm_cancel_button_title">Cancel</string>
+    <string name="settings_manage_device_secret_confirm_ok_button_title">Continue</string>
+    <string name="settings_manage_device_secret_export">Export</string>
+    <string name="settings_manage_device_secret_import">Import</string>
+    <string name="settings_manage_device_secret_export_title">Export device secret</string>
+    <string name="settings_manage_device_secret_export_copy">Copy</string>
+    <string name="settings_manage_device_secret_import_title">Import device secret</string>
+    <string name="settings_manage_device_secret_import_load">Import</string>
+    <string name="settings_manage_device_secret_import_password_hint">User Password</string>
+    <string name="settings_manage_device_secret_import_password_hint_extra">This password is required for encrypting the device secret. Your password is never stored, sent to the server or shared with other services.</string>
+    <string name="settings_manage_device_secret_import_password_confirmation_hint">Confirm Password</string>
+    <string name="settings_manage_device_secret_import_password_confirmation_hint_extra">Confirming your password ensures that the imported device secret is correctly encrypted.</string>
+    <string name="settings_manage_device_secret_export_clip_label">Device secret export</string>
+    <string name="settings_manage_device_secret_export_clip_created">Device secret copied to clipboard</string>
+    <string name="settings_manage_device_secret_import_empty_password">A password needs to be provided</string>
+    <string name="settings_manage_device_secret_import_mismatched_passwords">The provided passwords do not match</string>
+    <string name="settings_manage_device_secret_import_data_invalid">Invalid data provided</string>
+    <string name="settings_manage_device_secret_import_successful">Device secret imported</string>
+    <string name="settings_manage_device_secret_import_failed">Device secret import failed with: %1$s</string>
+    <string name="settings_scheduling_enabled_title">Enable operation scheduling</string>
+    <string name="settings_ping_interval_title">Server ping interval</string>
+    <string name="settings_reset_config_title">Reset configuration</string>
+    <string name="settings_reset_config_summary">Clears the client\'s configuration and device secret</string>
+    <string name="settings_reset_config_confirm_title">Clear all configuration and log out?</string>
+    <string name="settings_reset_config_confirm_cancel_button_title">Cancel</string>
+    <string name="settings_reset_config_confirm_ok_button_title">OK</string>
+
+    <!-- Transitions -->
+    <string name="dataset_definition_summary_transition_name">dataset_definition_%1$s</string>
+    <string name="dataset_definition_details_transition_name">dataset_definition_details</string>
+    <string name="dataset_entry_summary_transition_name">dataset_entry_%1$s</string>
+    <string name="dataset_entry_details_transition_name">dataset_entry_details</string>
+    <string name="operation_details_transition_name">operation_details_%1$s</string>
+    <string name="operations_transition_name">operations</string>
+
+    <!-- Date/Time -->
+    <string name="date_time_format_yesterday">Yesterday</string>
+    <string name="date_time_format_today">Today</string>
+    <string name="date_time_format_tomorrow">Tomorrow</string>
+    <string name="duration">%1$s %2$s</string>
+    <plurals name="duration_days">
+        <item quantity="one">day</item>
+        <item quantity="other">days</item>
+    </plurals>
+    <plurals name="duration_hours">
+        <item quantity="one">hour</item>
+        <item quantity="other">hours</item>
+    </plurals>
+    <plurals name="duration_minutes">
+        <item quantity="one">minute</item>
+        <item quantity="other">minutes</item>
+    </plurals>
+    <plurals name="duration_seconds">
+        <item quantity="one">second</item>
+        <item quantity="other">seconds</item>
+    </plurals>
+    <string name="duration_plural_days">days</string>
+    <string name="duration_plural_hours">hours</string>
+    <string name="duration_plural_minutes">minutes</string>
+    <string name="duration_plural_seconds">seconds</string>
 </resources>
