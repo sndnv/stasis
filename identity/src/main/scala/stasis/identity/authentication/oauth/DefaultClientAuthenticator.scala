@@ -29,8 +29,8 @@ class DefaultClientAuthenticator(
           .get(clientId)
           .flatMap {
             case Some(client) if client.active => Future.successful(client)
-            case Some(_)                       => Future.failed(AuthenticationFailure(s"Client [${clientId.toString}] is not active"))
-            case None                          => Future.failed(AuthenticationFailure(s"Client [${clientId.toString}] was not found"))
+            case Some(_) => Future.failed(AuthenticationFailure(s"Client [${clientId.toString}] is not active"))
+            case None    => Future.failed(AuthenticationFailure(s"Client [${clientId.toString}] was not found"))
           }
 
       case Failure(_) =>

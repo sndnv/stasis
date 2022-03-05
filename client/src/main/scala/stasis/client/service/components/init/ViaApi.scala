@@ -45,7 +45,7 @@ object ViaApi {
             onComplete(startup) {
               case Success(_)                        => complete(InitState.Completed: InitState)
               case Failure(e: ServiceStartupFailure) => complete(InitState.Failed(e.cause, e.message): InitState)
-              case Failure(e)                        => complete(InitState.Failed(cause = "unknown", message = e.getMessage): InitState)
+              case Failure(e) => complete(InitState.Failed(cause = "unknown", message = e.getMessage): InitState)
             }
           } else {
             complete(InitState.Pending: InitState)

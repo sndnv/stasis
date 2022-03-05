@@ -140,32 +140,30 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
   }
 
   it should "fail to stage crates if crate content is missing" in {
-    {
-      val fixtures = new TestFixtures {
-        override lazy val stagingCrateStore: MockCrateStore =
-          new MockCrateStore(retrieveEmpty = true)
-      }
-      val store = new TestStagingStore(fixtures)
-      val destinations: Map[Node, Int] = (fixtures.remoteNodes ++ fixtures.localNodes).toMap
-
-      store
-        .stage(
-          manifest = testManifest,
-          destinations = destinations,
-          content = Source.single(testContent),
-          viaProxy = fixtures.proxy
-        )
-        .map { _ =>
-          eventually[Assertion] {
-            fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(0)
-            fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(1)
-            fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
-
-            fixtures.nodeCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
-            fixtures.nodeCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-          }
-        }
+    val fixtures = new TestFixtures {
+      override lazy val stagingCrateStore: MockCrateStore =
+        new MockCrateStore(retrieveEmpty = true)
     }
+    val store = new TestStagingStore(fixtures)
+    val destinations: Map[Node, Int] = (fixtures.remoteNodes ++ fixtures.localNodes).toMap
+
+    store
+      .stage(
+        manifest = testManifest,
+        destinations = destinations,
+        content = Source.single(testContent),
+        viaProxy = fixtures.proxy
+      )
+      .map { _ =>
+        eventually[Assertion] {
+          fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(0)
+          fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(1)
+          fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
+
+          fixtures.nodeCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
+          fixtures.nodeCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+        }
+      }
   }
 
   it should "successfully drop scheduled crate destage operations" in {

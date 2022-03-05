@@ -10,7 +10,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.security.jwt.DefaultJwtAuthenticator
 import stasis.core.security.keys.LocalKeyProvider
 import stasis.core.security.tls.EndpointContext
-import stasis.identity.api.{IdentityEndpoint, manage => manageApi, oauth => oauthApi}
+import stasis.identity.api.{manage => manageApi, oauth => oauthApi, IdentityEndpoint}
 import stasis.identity.authentication.{manage, oauth}
 import stasis.identity.model.apis.Api
 import stasis.identity.model.codes.generators.DefaultAuthorizationCodeGenerator
