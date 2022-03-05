@@ -8,7 +8,8 @@ import akka.http.scaladsl.server._
 import akka.stream.scaladsl.Sink
 import akka.stream.{Materializer, SystemMaterializer}
 import akka.util.ByteString
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
+import stasis.core.api.directives.LoggingDirectives
 import stasis.core.security.tls.EndpointContext
 import stasis.server.api.routes._
 import stasis.server.security.ResourceProvider
@@ -20,11 +21,12 @@ import scala.util.{Failure, Success}
 class ApiEndpoint(
   resourceProvider: ResourceProvider,
   authenticator: UserAuthenticator
-)(implicit val system: ActorSystem[SpawnProtocol.Command]) {
+)(implicit val system: ActorSystem[SpawnProtocol.Command])
+    extends LoggingDirectives {
   private implicit val ec: ExecutionContextExecutor = system.executionContext
   private implicit val mat: Materializer = SystemMaterializer(system).materializer
 
-  private val log = LoggerFactory.getLogger(this.getClass.getName)
+  override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private implicit val context: RoutesContext = RoutesContext(resourceProvider, ec, mat, log)
 
@@ -98,8 +100,10 @@ class ApiEndpoint(
       .newServerAt(interface = interface, port = port)
       .withContext(context = context)
       .bindFlow(
-        handlerFlow = (handleExceptions(sanitizingExceptionHandler) & handleRejections(rejectionHandler)) {
-          endpointRoutes
+        handlerFlow = withLoggedRequestAndResponse {
+          (handleExceptions(sanitizingExceptionHandler) & handleRejections(rejectionHandler)) {
+            endpointRoutes
+          }
         }
       )
   }

@@ -8,7 +8,8 @@ import akka.http.scaladsl.server.{ExceptionHandler, RejectionHandler, Route}
 import akka.stream.scaladsl.Sink
 import akka.stream.{Materializer, SystemMaterializer}
 import akka.util.ByteString
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
+import stasis.core.api.directives.LoggingDirectives
 import stasis.core.security.tls.EndpointContext
 import stasis.server.api.routes.{DeviceBootstrap, RoutesContext}
 import stasis.server.security.ResourceProvider
@@ -22,11 +23,12 @@ class BootstrapEndpoint(
   userAuthenticator: UserAuthenticator,
   bootstrapCodeAuthenticator: BootstrapCodeAuthenticator,
   deviceBootstrapContext: DeviceBootstrap.BootstrapContext
-)(implicit val system: ActorSystem[SpawnProtocol.Command]) {
+)(implicit val system: ActorSystem[SpawnProtocol.Command])
+    extends LoggingDirectives {
   private implicit val ec: ExecutionContextExecutor = system.executionContext
   private implicit val mat: Materializer = SystemMaterializer(system).materializer
 
-  private val log = LoggerFactory.getLogger(this.getClass.getName)
+  override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private implicit val context: RoutesContext = RoutesContext(resourceProvider, ec, mat, log)
 
@@ -75,8 +77,10 @@ class BootstrapEndpoint(
       .newServerAt(interface = interface, port = port)
       .withContext(context = context)
       .bindFlow(
-        handlerFlow = (handleExceptions(sanitizingExceptionHandler) & handleRejections(rejectionHandler)) {
-          endpointRoutes
+        handlerFlow = withLoggedRequestAndResponse {
+          (handleExceptions(sanitizingExceptionHandler) & handleRejections(rejectionHandler)) {
+            endpointRoutes
+          }
         }
       )
   }
@@ -91,10 +95,12 @@ class BootstrapEndpoint(
           val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
           log.warn(
-            "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{}]",
+            "Rejecting [{}] request for [{}] with invalid credentials from [{} - {}]: [{}]",
             method.value,
             uri,
             remoteAddress,
+            e.getClass.getSimpleName,
+            e.getMessage,
             e
           )
 
