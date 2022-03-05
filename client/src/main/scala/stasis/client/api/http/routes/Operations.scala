@@ -31,7 +31,7 @@ class Operations()(implicit override val mat: Materializer, context: Context) ex
       pathEndOrSingleSlash {
         get {
           val operationsState = for {
-            operations <- context.executor.operations
+            operations <- context.executor.active
             progress <- context.tracker.state.map(_.operations)
           } yield {
             operations.map { case (operation, operationType) =>

@@ -11,12 +11,14 @@ import stasis.client.ops.scheduling.OperationExecutor
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.client.mocks.MockOperationExecutor.Statistic
-
 import scala.concurrent.Future
+
+import stasis.shared.ops.Operation.Id
 
 class MockOperationExecutor extends OperationExecutor {
   private val stats: Map[Statistic, AtomicInteger] = Map(
-    Statistic.GetOperations -> new AtomicInteger(0),
+    Statistic.GetActiveOperations -> new AtomicInteger(0),
+    Statistic.GetCompletedOperations -> new AtomicInteger(0),
     Statistic.GetRules -> new AtomicInteger(0),
     Statistic.StartBackupWithRules -> new AtomicInteger(0),
     Statistic.StartBackupWithFiles -> new AtomicInteger(0),
@@ -28,12 +30,22 @@ class MockOperationExecutor extends OperationExecutor {
     Statistic.Stop -> new AtomicInteger(0)
   )
 
-  override def operations: Future[Map[Operation.Id, Operation.Type]] = {
-    stats(Statistic.GetOperations).incrementAndGet()
+  override def active: Future[Map[Operation.Id, Operation.Type]] = {
+    stats(Statistic.GetActiveOperations).incrementAndGet()
     Future.successful(
       Map(
         Operation.generateId() -> Operation.Type.Backup,
         Operation.generateId() -> Operation.Type.Recovery,
+        Operation.generateId() -> Operation.Type.GarbageCollection
+      )
+    )
+  }
+
+  override def completed: Future[Map[Id, Operation.Type]] = {
+    stats(Statistic.GetCompletedOperations).incrementAndGet()
+    Future.successful(
+      Map(
+        Operation.generateId() -> Operation.Type.Backup,
         Operation.generateId() -> Operation.Type.GarbageCollection
       )
     )
@@ -132,7 +144,8 @@ object MockOperationExecutor {
 
   sealed trait Statistic
   object Statistic {
-    case object GetOperations extends Statistic
+    case object GetActiveOperations extends Statistic
+    case object GetCompletedOperations extends Statistic
     case object GetRules extends Statistic
     case object StartBackupWithRules extends Statistic
     case object StartBackupWithFiles extends Statistic

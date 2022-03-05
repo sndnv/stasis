@@ -164,7 +164,8 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
       eventually[Assertion] {
         scheduler.schedules.await should not be empty
 
-        mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+        mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+        mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be >= 1
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
@@ -193,7 +194,8 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
 
         await(delay = defaultMinDelay * 2, withSystem = typedSystem)
 
-        mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+        mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+        mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
@@ -224,7 +226,8 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
 
       await(delay = defaultMinDelay / 2, withSystem = typedSystem)
 
-      mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
@@ -236,7 +239,8 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
 
       await(delay = defaultMinDelay, withSystem = typedSystem)
 
-      mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(1)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
@@ -273,7 +277,8 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
 
       await(delay = maxDelay * 2 + maxDelay / 2, withSystem = typedSystem)
 
-      mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be >= 2
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
@@ -312,7 +317,8 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
       eventually[Assertion] {
         scheduler.schedules.await should not be empty
 
-        mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+        mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+        mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(1)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
@@ -329,7 +335,8 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
       eventually[Assertion] {
         scheduler.schedules.await should not be empty
 
-        mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+        mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+        mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(1)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
@@ -374,7 +381,8 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
       eventually[Assertion] {
         scheduler.schedules.await should not be empty
 
-        mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+        mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+        mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
@@ -406,7 +414,8 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
       eventually[Assertion] {
         scheduler.schedules.await should not be empty
 
-        mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+        mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+        mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be >= 1
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
@@ -436,7 +445,8 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
       eventually[Assertion] {
         scheduler.schedules.await should not be empty
 
-        mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+        mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+        mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be >= 1
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
@@ -466,7 +476,8 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
       eventually[Assertion] {
         scheduler.schedules.await should not be empty
 
-        mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+        mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+        mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
@@ -496,7 +507,8 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
       eventually[Assertion] {
         scheduler.schedules.await should not be empty
 
-        mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+        mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+        mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
@@ -526,7 +538,8 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
       eventually[Assertion] {
         scheduler.schedules.await should not be empty
 
-        mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+        mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+        mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)

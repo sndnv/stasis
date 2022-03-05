@@ -35,10 +35,16 @@ class DefaultOperationExecutor(
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private val activeOperations: MemoryBackend[Operation.Id, Operation] =
-    MemoryBackend(name = "executor-operations-store")
+    MemoryBackend(name = "executor-active-operations-store")
 
-  override def operations: Future[Map[Operation.Id, Operation.Type]] =
+  private val completedOperations: MemoryBackend[Operation.Id, Operation.Type] =
+    MemoryBackend(name = "executor-completed-operations-store")
+
+  override def active: Future[Map[Operation.Id, Operation.Type]] =
     activeOperations.entries.map(_.map { case (id, operation) => (id, operation.`type`) })
+
+  override def completed: Future[Map[Operation.Id, Operation.Type]] =
+    completedOperations.entries
 
   override def rules: Future[Specification] =
     SchedulingConfig.rules(file = config.backup.rulesFile).map(Specification.apply)
@@ -144,7 +150,7 @@ class DefaultOperationExecutor(
     }
 
   private def requireUniqueOperation(ofType: Operation.Type): Future[Done] =
-    operations.flatMap { active =>
+    active.flatMap { active =>
       active.find(_._2 == ofType) match {
         case Some((operation, _)) =>
           val opType = ofType.toString
@@ -177,7 +183,12 @@ class DefaultOperationExecutor(
           Done
         }
         .flatMap { _ =>
-          activeOperations.delete(operation.id).map(_ => Done)
+          for {
+            _ <- activeOperations.delete(operation.id)
+            _ <- completedOperations.put(operation.id, operation.`type`)
+          } yield {
+            Done
+          }
         }
     }
   }

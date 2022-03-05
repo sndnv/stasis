@@ -43,7 +43,8 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockTracker.statistics(MockTrackerView.Statistic.GetStateUpdates) should be(0)
       mockTracker.statistics(MockTrackerView.Statistic.GetOperationUpdates) should be(0)
 
-      mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(1)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(1)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
@@ -71,7 +72,8 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       spec.excluded shouldBe empty
       spec.explanation should not be empty
 
-      mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(1)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
@@ -93,7 +95,8 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Put(s"/backup/$definition") ~> routes ~> check {
       status should be(StatusCodes.Accepted)
 
-      mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(1)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
@@ -115,7 +118,8 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Put(s"/recover/$definition/latest") ~> routes ~> check {
       status should be(StatusCodes.Accepted)
 
-      mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
@@ -137,7 +141,8 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Put(s"/recover/$definition/until/${Instant.now()}") ~> routes ~> check {
       status should be(StatusCodes.Accepted)
 
-      mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
@@ -160,7 +165,8 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Put(s"/recover/$definition/from/$entry") ~> routes ~> check {
       status should be(StatusCodes.Accepted)
 
-      mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
@@ -265,7 +271,8 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Put(s"/$operation/stop") ~> routes ~> check {
       status should be(StatusCodes.OK)
 
-      mockExecutor.statistics(MockOperationExecutor.Statistic.GetOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
