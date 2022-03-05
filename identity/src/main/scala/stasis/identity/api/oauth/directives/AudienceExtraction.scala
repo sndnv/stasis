@@ -1,24 +1,25 @@
 package stasis.identity.api.oauth.directives
 
-import akka.event.LoggingAdapter
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.matching.Regex
+import scala.util.{Failure, Success, Try}
+
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Directive, Directive1}
+import org.slf4j.Logger
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.api.Formats._
 import stasis.identity.model.apis.{Api, ApiStoreView}
 import stasis.identity.model.clients.{Client, ClientStoreView}
 import stasis.identity.model.errors.TokenError
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.matching.Regex
-import scala.util.{Failure, Success, Try}
-
 trait AudienceExtraction extends EntityDiscardingDirectives {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
   protected implicit def ec: ExecutionContext
-  protected def log: LoggingAdapter
+  protected def log: Logger
 
   protected def clientStore: ClientStoreView
   protected def apiStore: ApiStoreView
@@ -37,7 +38,7 @@ trait AudienceExtraction extends EntityDiscardingDirectives {
             )(result => inner(Tuple1(result)))
 
           case Failure(_) =>
-            log.warning(
+            log.warnN(
               "One or more invalid client identifiers found in provided audience: [{}]",
               audience
             )
@@ -86,7 +87,7 @@ trait AudienceExtraction extends EntityDiscardingDirectives {
               inner(Tuple1(audience))
 
             case Nil =>
-              log.warning(
+              log.warnN(
                 "No matching audience found in scope [{}]",
                 scope
               )
@@ -124,7 +125,7 @@ trait AudienceExtraction extends EntityDiscardingDirectives {
           inner(Tuple1(result))
 
         case Success(_) =>
-          log.warning(
+          log.warnN(
             "No {} audience found with provided identifiers [{}]",
             audienceType,
             audience
@@ -138,12 +139,12 @@ trait AudienceExtraction extends EntityDiscardingDirectives {
           }
 
         case Failure(e) =>
-          log.error(
-            e,
+          log.errorN(
             "Failed to retrieve {} audience with provided identifiers [{}]: [{}]",
             audienceType,
             audience,
-            e.getMessage
+            e.getMessage,
+            e
           )
 
           discardEntity {

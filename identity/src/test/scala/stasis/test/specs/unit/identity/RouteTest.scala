@@ -1,13 +1,16 @@
 package stasis.test.specs.unit.identity
 
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
 import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.marshalling.{Marshal, Marshaller}
 import akka.http.scaladsl.model.RequestEntity
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.util.Timeout
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.identity.model.apis.{Api, ApiStore}
@@ -17,9 +20,6 @@ import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore}
 import stasis.identity.model.tokens.{RefreshToken, RefreshTokenStore, StoredRefreshToken}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.identity.RouteTest.FailingMemoryBackend
-
-import scala.concurrent.Future
-import scala.concurrent.duration._
 
 trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
   import scala.language.implicitConversions
@@ -32,7 +32,7 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
   implicit def requestToEntity[T](request: T)(implicit m: Marshaller[T, RequestEntity]): RequestEntity =
     Marshal(request).to[RequestEntity].await
 
-  def createLogger(): LoggingAdapter = Logging(system, this.getClass.getName)
+  def createLogger(): Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   def createApiStore(): ApiStore =
     ApiStore(

@@ -2,7 +2,7 @@ package stasis.test.specs.unit.identity.api.oauth
 
 import akka.http.scaladsl.model
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, CacheDirectives}
-import akka.http.scaladsl.model.{StatusCodes, Uri}
+import akka.http.scaladsl.model.{FormData, StatusCodes}
 import stasis.identity.api.oauth.ResourceOwnerPasswordCredentialsGrant
 import stasis.identity.api.oauth.ResourceOwnerPasswordCredentialsGrant.{AccessTokenRequest, AccessTokenResponse}
 import stasis.identity.model.GrantType
@@ -28,7 +28,7 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
     an[IllegalArgumentException] should be thrownBy request.copy(scope = Some(""))
   }
 
-  they should "generate access and refresh tokens for valid requests" in {
+  they should "generate access and refresh tokens for valid requests (with URL parameters)" in {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val grant = new ResourceOwnerPasswordCredentialsGrant(config, providers)
 
@@ -59,7 +59,69 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
     stores.apis.put(api).await
     stores.clients.put(client).await
     stores.owners.put(owner).await
-    Post(request).addCredentials(credentials) ~> grant.token() ~> check {
+    Post(
+      s"/" +
+        s"?grant_type=password" +
+        s"&username=${request.username}" +
+        s"&password=${request.password}" +
+        s"&scope=${request.scope.getOrElse("")}"
+    ).addCredentials(credentials) ~> grant.token() ~> check {
+      status should be(StatusCodes.OK)
+
+      headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
+
+      val actualResponse = responseAs[AccessTokenResponse]
+      actualResponse.access_token.value.nonEmpty should be(true)
+      actualResponse.token_type should be(TokenType.Bearer)
+      actualResponse.expires_in.value should be > 0L
+      actualResponse.refresh_token.exists(_.value.nonEmpty) should be(true)
+      actualResponse.scope should be(request.scope)
+
+      val refreshTokenGenerated = stores.tokens.tokens.await.headOption.nonEmpty
+      refreshTokenGenerated should be(true)
+    }
+  }
+
+  they should "generate access and refresh tokens for valid requests (with form fields)" in {
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val grant = new ResourceOwnerPasswordCredentialsGrant(config, providers)
+
+    val api = Generators.generateApi
+
+    val clientRawPassword = "some-password"
+    val clientSalt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
+    val client = Generators.generateClient.copy(
+      secret = Secret.derive(clientRawPassword, clientSalt)(secrets.client),
+      salt = clientSalt
+    )
+    val credentials = BasicHttpCredentials(client.id.toString, clientRawPassword)
+
+    val ownerRawPassword = "some-password"
+    val ownerSalt = stasis.test.Generators.generateString(withSize = secrets.owner.saltSize)
+    val owner = Generators.generateResourceOwner.copy(
+      password = Secret.derive(ownerRawPassword, ownerSalt)(secrets.owner),
+      salt = ownerSalt
+    )
+
+    val request = AccessTokenRequest(
+      grant_type = GrantType.Password,
+      username = owner.username,
+      password = ownerRawPassword,
+      scope = grant.apiAudienceToScope(Seq(api))
+    )
+
+    stores.apis.put(api).await
+    stores.clients.put(client).await
+    stores.owners.put(owner).await
+    Post(
+      "/",
+      FormData(
+        "grant_type" -> "password",
+        "username" -> request.username,
+        "password" -> request.password,
+        "scope" -> request.scope.getOrElse("")
+      )
+    ).addCredentials(credentials) ~> grant.token() ~> check {
       status should be(StatusCodes.OK)
 
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
@@ -107,7 +169,13 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
     stores.apis.put(api).await
     stores.clients.put(client).await
     stores.owners.put(owner).await
-    Post(request).addCredentials(credentials) ~> grant.token() ~> check {
+    Post(
+      s"/" +
+        s"?grant_type=password" +
+        s"&username=${request.username}" +
+        s"&password=${request.password}" +
+        s"&scope=${request.scope.getOrElse("")}"
+    ).addCredentials(credentials) ~> grant.token() ~> check {
       status should be(StatusCodes.OK)
 
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
@@ -122,15 +190,4 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
       stores.tokens.tokens.await should be(Map.empty)
     }
   }
-
-  import scala.language.implicitConversions
-
-  implicit def accessTokenRequestToLocalUri(request: AccessTokenRequest): Uri =
-    Uri(
-      s"/" +
-        s"?grant_type=password" +
-        s"&username=${request.username}" +
-        s"&password=${request.password}" +
-        s"&scope=${request.scope.getOrElse("")}"
-    )
 }

@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.identity.api.oauth.directives
 
-import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives
 import akka.stream.{Materializer, SystemMaterializer}
+import org.slf4j.Logger
 import stasis.identity.api.oauth.directives.ClientRetrieval
 import stasis.identity.model.clients.{ClientStore, ClientStoreView}
 import stasis.test.specs.unit.identity.RouteTest
@@ -83,7 +83,7 @@ class ClientRetrievalSpec extends RouteTest {
   ) =
     new ClientRetrieval {
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
-      override protected def log: LoggingAdapter = createLogger()
+      override protected def log: Logger = createLogger()
       override protected def clientStore: ClientStoreView = clients.view
     }
 }

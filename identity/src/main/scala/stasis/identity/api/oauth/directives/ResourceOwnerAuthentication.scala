@@ -1,6 +1,5 @@
 package stasis.identity.api.oauth.directives
 
-import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.model.{StatusCodes, Uri}
 import akka.http.scaladsl.server.Directives._
@@ -10,13 +9,15 @@ import stasis.identity.api.Formats._
 import stasis.identity.authentication.oauth.ResourceOwnerAuthenticator
 import stasis.identity.model.errors.AuthorizationError
 import stasis.identity.model.owners.ResourceOwner
-
 import scala.util.{Failure, Success}
+
+import akka.actor.typed.scaladsl.LoggerOps
+import org.slf4j.Logger
 
 trait ResourceOwnerAuthentication extends EntityDiscardingDirectives {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  protected def log: LoggingAdapter
+  protected def log: Logger
 
   protected def resourceOwnerAuthenticator: ResourceOwnerAuthenticator
 
@@ -27,7 +28,7 @@ trait ResourceOwnerAuthentication extends EntityDiscardingDirectives {
           inner(Tuple1(owner))
 
         case Failure(e) =>
-          log.warning(
+          log.warnN(
             "Authentication failed for resource owner [{}]: [{}]",
             username,
             e.getMessage
@@ -62,7 +63,7 @@ trait ResourceOwnerAuthentication extends EntityDiscardingDirectives {
                 inner(Tuple1(owner))
 
               case Failure(e) =>
-                log.warning(
+                log.warnN(
                   "Authentication failed for resource owner [{}]: [{}]",
                   resourceOwnerCredentials.username,
                   e.getMessage
@@ -72,7 +73,7 @@ trait ResourceOwnerAuthentication extends EntityDiscardingDirectives {
             }
 
           case Some(unsupportedCredentials) =>
-            log.warning(
+            log.warnN(
               "Resource owner with address [{}] provided unsupported credentials: [{}]",
               remoteAddress,
               unsupportedCredentials.scheme()
@@ -80,7 +81,7 @@ trait ResourceOwnerAuthentication extends EntityDiscardingDirectives {
             discardEntity & unauthorizedResponse
 
           case None =>
-            log.warning(
+            log.warnN(
               "Resource owner with address [{}] provided no credentials",
               remoteAddress
             )

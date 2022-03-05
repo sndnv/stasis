@@ -1,11 +1,14 @@
 package stasis.identity.api.oauth
 
+import scala.concurrent.ExecutionContext
+
 import akka.actor.ActorSystem
-import akka.event.{Logging, LoggingAdapter}
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
+import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.{Format, Json}
 import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.AuthDirectives
@@ -16,8 +19,6 @@ import stasis.identity.model.errors.{AuthorizationError, TokenError}
 import stasis.identity.model.tokens._
 import stasis.identity.model.{GrantType, ResponseType, Seconds}
 
-import scala.concurrent.ExecutionContext
-
 class AuthorizationCodeGrant(
   override val config: Config,
   override val providers: Providers
@@ -27,83 +28,96 @@ class AuthorizationCodeGrant(
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
   override implicit protected def ec: ExecutionContext = system.dispatcher
-  override protected def log: LoggingAdapter = Logging(system, this.getClass.getName)
+  override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
+
+  private val authorizationParams = parameters(
+    "response_type".as[ResponseType],
+    "client_id".as[Client.Id],
+    "redirect_uri".as[String].?,
+    "scope".as[String].?,
+    "state".as[String]
+  )
+
+  private val tokenParams =
+    parameters(
+      "grant_type".as[GrantType],
+      "code".as[AuthorizationCode],
+      "redirect_uri".as[String].?,
+      "client_id".as[Client.Id]
+    ).or(
+      formFields(
+        "grant_type".as[GrantType],
+        "code".as[AuthorizationCode],
+        "redirect_uri".as[String].?,
+        "client_id".as[Client.Id]
+      )
+    )
 
   def authorization(): Route =
     get {
-      (parameters(
-        "response_type".as[ResponseType],
-        "client_id".as[Client.Id],
-        "redirect_uri".as[String].?,
-        "scope".as[String].?,
-        "state".as[String]
-      ).as(AuthorizationRequest) & parameter("no_redirect".as[Boolean] ? false)) { case (request, noRedirect) =>
-        retrieveClient(request.client_id) {
-          case client if request.redirect_uri.forall(_ == client.redirectUri) =>
-            val redirectUri = Uri(request.redirect_uri.getOrElse(client.redirectUri))
+      (authorizationParams.as(AuthorizationRequest) & parameter("no_redirect".as[Boolean] ? false)) {
+        case (request, noRedirect) =>
+          retrieveClient(request.client_id) {
+            case client if request.redirect_uri.forall(_ == client.redirectUri) =>
+              val redirectUri = Uri(request.redirect_uri.getOrElse(client.redirectUri))
 
-            (authenticateResourceOwner(redirectUri, request.state, noRedirect) & extractApiAudience(request.scope)) {
-              (owner, audience) =>
-                val scope = apiAudienceToScope(audience)
+              (authenticateResourceOwner(redirectUri, request.state, noRedirect) & extractApiAudience(request.scope)) {
+                (owner, audience) =>
+                  val scope = apiAudienceToScope(audience)
 
-                generateAuthorizationCode(
-                  client = client.id,
-                  redirectUri = redirectUri,
-                  state = request.state,
-                  owner = owner,
-                  scope = scope
-                ) { code =>
-                  log.debug(
-                    "Successfully generated authorization code for client [{}] and owner [{}]",
-                    client.id,
-                    owner.username
-                  )
+                  generateAuthorizationCode(
+                    client = client.id,
+                    redirectUri = redirectUri,
+                    state = request.state,
+                    owner = owner,
+                    scope = scope
+                  ) { code =>
+                    log.debugN(
+                      "Successfully generated authorization code for client [{}] and owner [{}]",
+                      client.id,
+                      owner.username
+                    )
 
-                  val response = AuthorizationResponse(code, request.state, scope)
+                    val response = AuthorizationResponse(code, request.state, scope)
 
-                  if (noRedirect) {
-                    discardEntity & complete(
-                      StatusCodes.OK,
-                      AuthorizationResponseWithRedirectUri(
-                        response = response,
-                        responseRedirectUri = redirectUri.withQuery(response.asQuery)
+                    if (noRedirect) {
+                      discardEntity & complete(
+                        StatusCodes.OK,
+                        AuthorizationResponseWithRedirectUri(
+                          response = response,
+                          responseRedirectUri = redirectUri.withQuery(response.asQuery)
+                        )
                       )
-                    )
-                  } else {
-                    discardEntity & redirect(
-                      redirectUri.withQuery(response.asQuery),
-                      StatusCodes.Found
-                    )
+                    } else {
+                      discardEntity & redirect(
+                        redirectUri.withQuery(response.asQuery),
+                        StatusCodes.Found
+                      )
+                    }
                   }
-                }
-            }
+              }
 
-          case client =>
-            log.warning(
-              "Redirect URI [{}] for client [{}] did not match URI provided in request: [{}]",
-              client.redirectUri,
-              client.id,
-              request.redirect_uri
-            )
-
-            discardEntity {
-              complete(
-                StatusCodes.BadRequest,
-                AuthorizationError.InvalidRequest(withState = request.state): AuthorizationError
+            case client =>
+              log.warnN(
+                "Redirect URI [{}] for client [{}] did not match URI provided in request: [{}]",
+                client.redirectUri,
+                client.id,
+                request.redirect_uri
               )
-            }
-        }
+
+              discardEntity {
+                complete(
+                  StatusCodes.BadRequest,
+                  AuthorizationError.InvalidRequest(withState = request.state): AuthorizationError
+                )
+              }
+          }
       }
     }
 
   def token(): Route =
     post {
-      parameters(
-        "grant_type".as[GrantType],
-        "code".as[AuthorizationCode],
-        "redirect_uri".as[String].?,
-        "client_id".as[Client.Id]
-      ).as(AccessTokenRequest) { request =>
+      tokenParams.as(AccessTokenRequest) { request =>
         authenticateClient() {
           case client if client.id == request.client_id && request.redirect_uri.forall(_ == client.redirectUri) =>
             consumeAuthorizationCode(client.id, request.code) { (owner, scope) =>
@@ -141,7 +155,7 @@ class AuthorizationCodeGrant(
             }
 
           case client =>
-            log.warning(
+            log.warnN(
               "Encountered mismatched client identifiers (expected [{}], found [{}]) " +
                 "and/or redirect URIs (expected [{}], found [{}])",
               client.id,

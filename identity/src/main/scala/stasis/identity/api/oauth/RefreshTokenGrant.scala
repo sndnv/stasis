@@ -1,19 +1,20 @@
 package stasis.identity.api.oauth
 
+import scala.concurrent.ExecutionContext
+
 import akka.actor.ActorSystem
-import akka.event.{Logging, LoggingAdapter}
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
+import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.{Format, Json}
 import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.AuthDirectives
 import stasis.identity.api.oauth.setup.{Config, Providers}
 import stasis.identity.model.tokens._
 import stasis.identity.model.{GrantType, Seconds}
-
-import scala.concurrent.ExecutionContext
 
 class RefreshTokenGrant(
   override val config: Config,
@@ -24,15 +25,23 @@ class RefreshTokenGrant(
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
   override implicit protected def ec: ExecutionContext = system.dispatcher
-  override protected def log: LoggingAdapter = Logging(system, this.getClass.getName)
+  override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
+
+  private val tokenParams = parameters(
+    "grant_type".as[GrantType],
+    "refresh_token".as[RefreshToken],
+    "scope".as[String].?
+  ).or(
+    formFields(
+      "grant_type".as[GrantType],
+      "refresh_token".as[RefreshToken],
+      "scope".as[String].?
+    )
+  )
 
   def token(): Route =
     post {
-      parameters(
-        "grant_type".as[GrantType],
-        "refresh_token".as[RefreshToken],
-        "scope".as[String].?
-      ).as(AccessTokenRequest) { request =>
+      tokenParams.as(AccessTokenRequest) { request =>
         authenticateClient() { client =>
           consumeRefreshToken(client.id, request.scope, request.refresh_token) { owner =>
             extractApiAudience(request.scope) { audience =>
@@ -40,7 +49,7 @@ class RefreshTokenGrant(
 
               (generateAccessToken(owner, audience) & generateRefreshToken(client.id, owner, scope)) {
                 (accessToken, refreshToken) =>
-                  log.debug(
+                  log.debugN(
                     "Successfully generated {} for client [{}]",
                     refreshToken match {
                       case Some(_) => "access and refresh tokens"

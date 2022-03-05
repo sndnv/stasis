@@ -2,7 +2,7 @@ package stasis.test.specs.unit.identity.api.oauth
 
 import akka.http.scaladsl.model
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, CacheDirectives}
-import akka.http.scaladsl.model.{StatusCodes, Uri}
+import akka.http.scaladsl.model.{FormData, StatusCodes}
 import stasis.identity.api.oauth.ClientCredentialsGrant
 import stasis.identity.api.oauth.ClientCredentialsGrant.{AccessTokenRequest, AccessTokenResponse}
 import stasis.identity.model.GrantType
@@ -24,7 +24,7 @@ class ClientCredentialsGrantSpec extends RouteTest with OAuthFixtures {
     an[IllegalArgumentException] should be thrownBy request.copy(scope = Some(""))
   }
 
-  they should "generate access tokens for valid requests" in {
+  they should "generate access tokens for valid requests (with URL parameters)" in {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val grant = new ClientCredentialsGrant(config, providers)
 
@@ -42,7 +42,10 @@ class ClientCredentialsGrantSpec extends RouteTest with OAuthFixtures {
     )
 
     stores.clients.put(client).await
-    Post(request).addCredentials(credentials) ~> grant.token() ~> check {
+
+    Post(
+      s"/?grant_type=client_credentials&scope=${request.scope.getOrElse("")}"
+    ).addCredentials(credentials) ~> grant.token() ~> check {
       status should be(StatusCodes.OK)
 
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
@@ -55,12 +58,38 @@ class ClientCredentialsGrantSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  import scala.language.implicitConversions
+  they should "generate access tokens for valid requests (with form fields)" in {
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val grant = new ClientCredentialsGrant(config, providers)
 
-  implicit def accessTokenRequestToLocalUri(request: AccessTokenRequest): Uri =
-    Uri(
-      s"/" +
-        s"?grant_type=client_credentials" +
-        s"&scope=${request.scope.getOrElse("")}"
+    val rawPassword = "some-password"
+    val salt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
+    val client = Generators.generateClient.copy(
+      secret = Secret.derive(rawPassword, salt)(secrets.client),
+      salt = salt
     )
+    val credentials = BasicHttpCredentials(client.id.toString, rawPassword)
+
+    val request = AccessTokenRequest(
+      grant_type = GrantType.ClientCredentials,
+      scope = grant.clientAudienceToScope(Seq(client))
+    )
+
+    stores.clients.put(client).await
+
+    Post(
+      "/",
+      FormData("grant_type" -> "client_credentials", "scope" -> request.scope.getOrElse(""))
+    ).addCredentials(credentials) ~> grant.token() ~> check {
+      status should be(StatusCodes.OK)
+
+      headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
+
+      val actualResponse = responseAs[AccessTokenResponse]
+      actualResponse.access_token.value.nonEmpty should be(true)
+      actualResponse.token_type should be(TokenType.Bearer)
+      actualResponse.expires_in.value should be > 0L
+      actualResponse.scope should be(request.scope)
+    }
+  }
 }

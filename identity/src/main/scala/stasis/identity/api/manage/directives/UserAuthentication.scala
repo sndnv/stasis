@@ -1,19 +1,20 @@
 package stasis.identity.api.manage.directives
 
-import akka.event.LoggingAdapter
+import scala.util.{Failure, Success}
+
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.headers.{HttpChallenges, OAuth2BearerToken}
 import akka.http.scaladsl.model.{headers, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Directive, Directive1}
+import org.slf4j.Logger
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.authentication.manage.ResourceOwnerAuthenticator
 import stasis.identity.model.owners.ResourceOwner
 
-import scala.util.{Failure, Success}
-
 trait UserAuthentication extends EntityDiscardingDirectives {
 
-  protected def log: LoggingAdapter
+  protected def log: Logger
 
   protected def authenticator: ResourceOwnerAuthenticator
 
@@ -29,34 +30,30 @@ trait UserAuthentication extends EntityDiscardingDirectives {
                 inner(Tuple1(user))
 
               case Failure(e) =>
-                log.warning(
+                log.warnN(
                   "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{}]",
-                  Array(
-                    method.value,
-                    uri,
-                    remoteAddress,
-                    e
-                  )
+                  method.value,
+                  uri,
+                  remoteAddress,
+                  e
                 )
 
                 discardEntity & complete(StatusCodes.Unauthorized)
             }
 
           case Some(unsupportedCredentials) =>
-            log.warning(
+            log.warnN(
               "Rejecting [{}] request for [{}] with unsupported credentials [{}] from [{}]",
-              Array(
-                method.value,
-                uri,
-                unsupportedCredentials.scheme(),
-                remoteAddress
-              )
+              method.value,
+              uri,
+              unsupportedCredentials.scheme(),
+              remoteAddress
             )
 
             discardEntity & complete(StatusCodes.Unauthorized)
 
           case None =>
-            log.warning(
+            log.warnN(
               "Rejecting [{}] request for [{}] with no credentials from [{}]",
               method.value,
               uri,

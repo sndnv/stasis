@@ -1,10 +1,9 @@
 package stasis.identity.api
 
-import akka.actor.ActorSystem
-import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.identity.api.manage._
 import stasis.identity.api.manage.directives.{UserAuthentication, UserAuthorization}
 import stasis.identity.api.manage.setup.{Config, Providers}
@@ -13,14 +12,14 @@ import stasis.identity.authentication.manage.ResourceOwnerAuthenticator
 class Manage(
   providers: Providers,
   config: Config
-)(implicit system: ActorSystem, override val mat: Materializer)
+)(implicit override val mat: Materializer)
     extends UserAuthentication
     with UserAuthorization {
   import Manage._
 
   override protected val realm: String = config.realm
 
-  override protected def log: LoggingAdapter = Logging(system, this.getClass.getName)
+  override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
   override protected def authenticator: ResourceOwnerAuthenticator = providers.ownerAuthenticator
 
   private val apis = Apis(providers.apiStore)
@@ -73,7 +72,7 @@ object Manage {
   def apply(
     providers: Providers,
     config: Config
-  )(implicit system: ActorSystem, mat: Materializer): Manage =
+  )(implicit mat: Materializer): Manage =
     new Manage(
       providers = providers,
       config = config

@@ -1,21 +1,20 @@
 package stasis.identity.api.manage
 
-import akka.actor.ActorSystem
-import akka.event.{Logging, LoggingAdapter}
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore}
 import stasis.identity.model.owners.ResourceOwner
 
-class Codes(store: AuthorizationCodeStore)(implicit system: ActorSystem, override val mat: Materializer)
-    extends EntityDiscardingDirectives {
+class Codes(store: AuthorizationCodeStore)(implicit override val mat: Materializer) extends EntityDiscardingDirectives {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.identity.api.Formats._
 
-  private val log: LoggingAdapter = Logging(system, this.getClass.getName)
+  private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   def routes(user: ResourceOwner.Id): Route =
     concat(
@@ -32,7 +31,7 @@ class Codes(store: AuthorizationCodeStore)(implicit system: ActorSystem, overrid
           get {
             onSuccess(store.get(AuthorizationCode(code))) {
               case Some(storedCode) =>
-                log.debug(
+                log.debugN(
                   "User [{}] successfully retrieved authorization code for client [{}] and owner [{}]",
                   user,
                   storedCode.client,
@@ -41,7 +40,7 @@ class Codes(store: AuthorizationCodeStore)(implicit system: ActorSystem, overrid
                 discardEntity & complete(storedCode)
 
               case None =>
-                log.warning(
+                log.warnN(
                   "User [{}] requested authorization code [{}] but it was not found",
                   user,
                   code
@@ -52,10 +51,10 @@ class Codes(store: AuthorizationCodeStore)(implicit system: ActorSystem, overrid
           delete {
             onSuccess(store.delete(AuthorizationCode(code))) { deleted =>
               if (deleted) {
-                log.debug("User [{}] successfully deleted authorization code [{}]", user, code)
+                log.debugN("User [{}] successfully deleted authorization code [{}]", user, code)
                 discardEntity & complete(StatusCodes.OK)
               } else {
-                log.warning("User [{}] failed to delete authorization code [{}]", user, code)
+                log.warnN("User [{}] failed to delete authorization code [{}]", user, code)
                 discardEntity & complete(StatusCodes.NotFound)
               }
             }
@@ -66,7 +65,7 @@ class Codes(store: AuthorizationCodeStore)(implicit system: ActorSystem, overrid
 }
 
 object Codes {
-  def apply(store: AuthorizationCodeStore)(implicit system: ActorSystem, mat: Materializer): Codes =
+  def apply(store: AuthorizationCodeStore)(implicit mat: Materializer): Codes =
     new Codes(
       store = store
     )
