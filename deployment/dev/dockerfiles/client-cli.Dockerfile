@@ -8,7 +8,7 @@ ARG CLIENT_CERTS_PATH=/home/${CLIENT_USER}/.config/stasis-client/certs
 ENV PATH=${PATH}:/home/${CLIENT_USER}/.local/bin/:${CLIENT_PATH}
 
 USER root
-RUN apt-get update && apt-get install python3 python3-pip -y
+RUN apt-get update && apt-get install libffi-dev python3 python3-pip -y
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 

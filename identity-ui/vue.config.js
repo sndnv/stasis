@@ -5,16 +5,16 @@ module.exports = {
     https: true,
     proxy: {
       '^/api': {
-        target: 'https://identity:9090',
+        target: 'https://identity:10000',
         pathRewrite: {
           '^/api': '/'
         }
       },
       '^/oauth': {
-        target: 'https://identity:9090'
+        target: 'https://identity:10000'
       },
       '^/jwks': {
-        target: 'https://identity:9090'
+        target: 'https://identity:10000'
       }
     }
   },
