@@ -4,13 +4,13 @@ services:
   identity:
     image: stasis-identity:dev-latest
     ports:
-      - '9090:9090'
+      - '10000:10000'
     environment:
       - STASIS_IDENTITY_BOOTSTRAP_ENABLED=true
       - STASIS_IDENTITY_BOOTSTRAP_CONFIG=/opt/docker/config/bootstrap.conf
       - STASIS_IDENTITY_LOGLEVEL=DEBUG
       - STASIS_IDENTITY_SERVICE_INTERFACE=0.0.0.0
-      - STASIS_IDENTITY_SERVICE_PORT=9090
+      - STASIS_IDENTITY_SERVICE_PORT=10000
       - STASIS_IDENTITY_SERVICE_CONTEXT_KEYSTORE_PATH=/opt/docker/certs/localhost.p12
       - STASIS_IDENTITY_TOKENS_REFRESH_ALLOWED=true
       - STASIS_IDENTITY_UI_DEV_CLIENT_ID=a928359a-e2ee-4db7-9307-8071b2a1c756

@@ -9,7 +9,7 @@
     "test": "vue-cli-service test:unit"
   },
   "dependencies": {
-    "axios": "0.21.1",
+    "axios": "0.26.0",
     "axios-token-interceptor": "0.2.0",
     "base64url": "3.0.1",
     "core-js": "2.6.12",
