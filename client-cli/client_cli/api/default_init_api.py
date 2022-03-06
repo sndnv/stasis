@@ -42,7 +42,7 @@ class DefaultInitApi(InitApi):
                         response.content
                     )
                 )
-                raise click.Abort()
+                raise click.Abort() from None
         else:
             logging.error('Request failed: [{} - {}]'.format(response.status_code, response.reason))
             if response.text:

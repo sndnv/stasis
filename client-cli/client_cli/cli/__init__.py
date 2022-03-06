@@ -93,7 +93,7 @@ def validate_duration(_, __, value):
         match = next(m for m in matches if m)
         return int(match.total_seconds())
     except StopIteration:
-        raise click.BadParameter('expected valid duration format (ex: 10s, 1 minute, 420 days)')
+        raise click.BadParameter('expected valid duration format (ex: 10s, 1 minute, 420 days)') from None
 
 
 def capture_failures(f):

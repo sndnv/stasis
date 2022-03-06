@@ -11,6 +11,7 @@ USER root
 RUN apt-get update && apt-get install libffi-dev python3 python3-pip -y
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
+RUN pip install --upgrade pip
 
 COPY ./ ${CLIENT_PATH}/
 RUN mkdir ${CLIENT_PATH}/logs
