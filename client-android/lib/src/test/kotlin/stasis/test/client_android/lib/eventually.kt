@@ -9,7 +9,7 @@ import kotlin.time.toKotlinDuration
 
 @OptIn(ExperimentalTime::class)
 suspend inline fun <reified T> eventually(
-    duration: Duration = Duration.ofSeconds(3),
+    duration: Duration = Duration.ofSeconds(5),
     interval: Duration = Duration.ofMillis(50),
     f: () -> T
 ): T {

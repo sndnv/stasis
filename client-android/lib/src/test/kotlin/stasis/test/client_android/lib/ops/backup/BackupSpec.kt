@@ -384,29 +384,27 @@ class BackupSpec : WordSpec({
 
             val mockTracker = MockBackupTracker()
 
-            val backup = createBackup(
-                collector = Backup.Descriptor.Collector.WithEntities(
-                    entities = listOf(sourceFile1Metadata.path)
-                ),
-                latestMetadata = DatasetMetadata.empty(),
-                clients = Clients(
-                    api = MockServerApiEndpointClient(),
-                    core = MockServerCoreEndpointClient()
-                ),
-                tracker = mockTracker
-            )
-
-            backup.start(withScope = operationScope) {
-                operationCompleted.set(it != null)
-            }
-
-            backup.stop()
-
             eventually {
+                val backup = createBackup(
+                    collector = Backup.Descriptor.Collector.WithEntities(
+                        entities = listOf(sourceFile1Metadata.path)
+                    ),
+                    latestMetadata = DatasetMetadata.empty(),
+                    clients = Clients(
+                        api = MockServerApiEndpointClient(),
+                        core = MockServerCoreEndpointClient()
+                    ),
+                    tracker = mockTracker
+                )
+
+                backup.start(withScope = operationScope) {
+                    operationCompleted.set(it != null)
+                }
+
+                backup.stop()
+
                 operationCompleted.get() shouldBe (true)
             }
-
-            mockTracker.statistics[MockBackupTracker.Statistic.Completed] shouldBe (0)
         }
     }
 
