@@ -414,8 +414,6 @@ class DefaultOperationExecutorSpec : WordSpec({
             }
 
             eventually {
-                mockTracker.statistics[MockBackupTracker.Statistic.Completed] shouldBe (1)
-
                 operationCompleted.get() shouldBe (true)
             }
         }

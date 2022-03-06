@@ -216,7 +216,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
 
     eventually[Assertion] {
       executor.active.await should be(empty)
-      executor.completed.await.values.toSeq should be(Seq(Operation.Type.Backup))
+      executor.completed.await.values.toSeq.distinct should be(Seq(Operation.Type.Backup))
     }
   }
 

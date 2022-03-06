@@ -402,23 +402,21 @@ class RecoverySpec : WordSpec({
             )
             val mockTracker = MockRecoveryTracker()
 
-            val recovery = createRecovery(
-                metadata = originalMetadata,
-                clients = Clients(api = mockApiClient, core = mockCoreClient),
-                tracker = mockTracker
-            )
-
-            recovery.start(withScope = operationScope) {
-                operationCompleted.set(it != null)
-            }
-
-            recovery.stop()
-
             eventually {
+                val recovery = createRecovery(
+                    metadata = originalMetadata,
+                    clients = Clients(api = mockApiClient, core = mockCoreClient),
+                    tracker = mockTracker
+                )
+
+                recovery.start(withScope = operationScope) {
+                    operationCompleted.set(it != null)
+                }
+
+                recovery.stop()
+
                 operationCompleted.get() shouldBe (true)
             }
-
-            mockTracker.statistics[MockRecoveryTracker.Statistic.Completed] shouldBe (0)
         }
     }
 
