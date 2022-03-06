@@ -41,6 +41,7 @@ def start(ctx, username, password):
                     bar_format='{desc}: |{bar}| {n_fmt}/{total_fmt}',
                     disable=isinstance(ctx.obj.rendering, JsonWriter)
             ) as progress:
+                # pylint: disable=consider-using-with
                 Popen([service], stdout=DEVNULL, stdin=DEVNULL, stderr=DEVNULL, start_new_session=True)
                 progress.update()
 
