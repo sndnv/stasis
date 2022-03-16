@@ -8,6 +8,7 @@ import akka.http.scaladsl.server._
 import akka.stream.scaladsl.Sink
 import akka.stream.{Materializer, SystemMaterializer}
 import akka.util.ByteString
+import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.api.directives.LoggingDirectives
 import stasis.core.security.tls.EndpointContext
@@ -101,8 +102,12 @@ class ApiEndpoint(
       .withContext(context = context)
       .bindFlow(
         handlerFlow = withLoggedRequestAndResponse {
-          (handleExceptions(sanitizingExceptionHandler) & handleRejections(rejectionHandler)) {
-            endpointRoutes
+          handleRejections(corsRejectionHandler) {
+            cors() {
+              (handleExceptions(sanitizingExceptionHandler) & handleRejections(rejectionHandler)) {
+                endpointRoutes
+              }
+            }
           }
         }
       )

@@ -8,15 +8,16 @@ homepage := Some(url("https://github.com/sndnv/stasis"))
 
 ThisBuild / scalaVersion := "2.13.8"
 
-lazy val akkaVersion     = "2.6.18"
-lazy val akkaHttpVersion = "10.2.9"
-lazy val geodeVersion    = "1.14.3"
-lazy val slickVersion    = "3.3.3"
-lazy val h2Version       = "2.1.210"
-lazy val postgresVersion = "42.3.3"
-lazy val mariadbVersion  = "3.0.3"
-lazy val sqliteVersion   = "3.36.0.3"
-lazy val logbackVersion  = "1.2.11"
+lazy val akkaVersion         = "2.6.18"
+lazy val akkaHttpVersion     = "10.2.9"
+lazy val akkaHttpCorsVersion = "1.1.3"
+lazy val geodeVersion        = "1.14.3"
+lazy val slickVersion        = "3.3.3"
+lazy val h2Version           = "2.1.210"
+lazy val postgresVersion     = "42.3.3"
+lazy val mariadbVersion      = "3.0.3"
+lazy val sqliteVersion       = "3.36.0.3"
+lazy val logbackVersion      = "1.2.11"
 
 lazy val jdkDockerImage = "openjdk:11"
 
@@ -31,7 +32,8 @@ lazy val server = (project in file("./server"))
       "com.h2database"      % "h2"                  % h2Version,
       "org.postgresql"      % "postgresql"          % postgresVersion,
       "org.mariadb.jdbc"    % "mariadb-java-client" % mariadbVersion,
-      "org.xerial"          % "sqlite-jdbc"         % sqliteVersion
+      "org.xerial"          % "sqlite-jdbc"         % sqliteVersion,
+      "ch.megard"          %% "akka-http-cors"      % akkaHttpCorsVersion
     ),
     dockerBaseImage := jdkDockerImage
   )
