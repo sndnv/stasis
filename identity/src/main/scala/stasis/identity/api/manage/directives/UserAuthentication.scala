@@ -31,11 +31,12 @@ trait UserAuthentication extends EntityDiscardingDirectives {
 
               case Failure(e) =>
                 log.warnN(
-                  "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{}]",
+                  "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{} - {}]",
                   method.value,
                   uri,
                   remoteAddress,
-                  e
+                  e.getClass.getSimpleName,
+                  e.getMessage
                 )
 
                 discardEntity & complete(StatusCodes.Unauthorized)
