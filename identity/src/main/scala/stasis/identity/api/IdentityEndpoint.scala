@@ -8,6 +8,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
+import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import org.jose4j.jwk.JsonWebKey
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.api.directives.LoggingDirectives
@@ -103,8 +104,12 @@ class IdentityEndpoint(
       .withContext(context = context)
       .bindFlow(
         handlerFlow = withLoggedRequestAndResponse {
-          (handleExceptions(sanitizingExceptionHandler) & handleRejections(rejectionHandler)) {
-            routes
+          handleRejections(corsRejectionHandler) {
+            cors() {
+              (handleExceptions(sanitizingExceptionHandler) & handleRejections(rejectionHandler)) {
+                routes
+              }
+            }
           }
         }
       )

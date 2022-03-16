@@ -73,7 +73,8 @@ lazy val identity = (project in file("./identity"))
       "com.h2database"      % "h2"                  % h2Version,
       "org.postgresql"      % "postgresql"          % postgresVersion,
       "org.mariadb.jdbc"    % "mariadb-java-client" % mariadbVersion,
-      "org.xerial"          % "sqlite-jdbc"         % sqliteVersion
+      "org.xerial"          % "sqlite-jdbc"         % sqliteVersion,
+      "ch.megard"          %% "akka-http-cors"      % akkaHttpCorsVersion
     ),
     dockerBaseImage := jdkDockerImage
   )
