@@ -110,7 +110,7 @@ lazy val core = (project in file("./core"))
       "com.github.tomakehurst" % "wiremock-jre8"           % "2.32.0"        % Test,
       "org.mockito"           %% "mockito-scala"           % "1.17.5"        % Test,
       "org.mockito"           %% "mockito-scala-scalatest" % "1.17.5"        % Test,
-      "org.mockito"            % "mockito-inline"          % "4.3.1"         % Test
+      "org.mockito"            % "mockito-inline"          % "4.4.0"         % Test
     )
   )
   .dependsOn(proto)

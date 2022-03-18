@@ -1,11 +1,16 @@
 package stasis.test.specs.unit.core.persistence.crates
 
-import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.scaladsl.{Behaviors, LoggerOps}
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import com.typesafe.config.ConfigFactory
+import org.mockito.captor.ArgCaptor
+import org.mockito.scalatest.AsyncMockitoSugar
+import org.scalatest.Assertion
+import org.scalatest.concurrent.Eventually
+import org.slf4j.Logger
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.backends.StreamingBackend
 import stasis.core.persistence.backends.file.{ContainerBackend, FileBackend}
@@ -16,9 +21,12 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.Generators
 import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
 
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
-class CrateStoreSpec extends AsyncUnitSpec {
+class CrateStoreSpec extends AsyncUnitSpec with AsyncMockitoSugar with Eventually {
   "A CrateStore" should "create descriptors from config" in {
     val config = ConfigFactory.load().getConfig("stasis.test.core.persistence")
 
@@ -99,6 +107,89 @@ class CrateStoreSpec extends AsyncUnitSpec {
     CrateStore.Descriptor
       .ForFileBackend(parentDirectory = fileBackendParentDirectory)
       .toString should be(s"FileBackend(parentDirectory=$fileBackendParentDirectory)")
+  }
+
+  it should "support logged initialization of a backend (successful)" in {
+    import CrateStore.ExtendedStreamingBackend
+
+    val logger = mock[Logger]
+    val captor = ArgCaptor[String]
+
+    val initializedSuccessfulBackend = new AtomicBoolean(false)
+    val successfulBackend = new LifecycleTestStreamingBackend(
+      initResult = () => Future.successful(Done),
+      initialized = initializedSuccessfulBackend
+    )
+
+    successfulBackend.loggedInit()(logger, system.executionContext)
+
+    eventually[Assertion] {
+      verify(logger).debugN(eqTo("Initializing backend [{}]"), captor.capture)
+      verify(logger).debugN(eqTo("Backend [{}] successfully initialized"), captor.capture)
+
+      captor.values.distinct should be(List("LifecycleTestStreamingBackend"))
+    }
+  }
+
+  it should "support logged initialization of a backend (skipped)" in {
+    import CrateStore.ExtendedStreamingBackend
+
+    val logger = mock[Logger]
+    val captor = ArgCaptor[String]
+
+    val initializedSuccessfulBackend = new AtomicBoolean(true)
+    val successfulBackend = new LifecycleTestStreamingBackend(
+      initResult = () => Future.successful(Done),
+      initialized = initializedSuccessfulBackend
+    )
+
+    successfulBackend.loggedInit()(logger, system.executionContext)
+
+    eventually[Assertion] {
+      verify(logger).debugN(eqTo("Skipping initialization of backend [{}]; it already exists"), captor.capture)
+      verify(logger).debugN(eqTo("Backend [{}] successfully initialized"), captor.capture)
+
+      captor.values.distinct should be(List("LifecycleTestStreamingBackend"))
+    }
+  }
+
+  it should "support logged initialization of a backend (failed)" in {
+    import CrateStore.ExtendedStreamingBackend
+
+    val logger = mock[Logger]
+    val captor = ArgCaptor[String]
+
+    val initializedFailingBackend = new AtomicBoolean(false)
+    val failingBackend = new LifecycleTestStreamingBackend(
+      initResult = () => Future.failed(new RuntimeException("Test failure")),
+      initialized = initializedFailingBackend
+    )
+
+    failingBackend.loggedInit()(logger, system.executionContext)
+
+    eventually[Assertion] {
+      verify(logger).debugN(
+        eqTo("Initializing backend [{}]"),
+        captor.capture
+      )
+
+      verify(logger).errorN(
+        eqTo("Failed to initialize backend [{}]: [{} - {}]"),
+        captor.capture,
+        captor.capture,
+        captor.capture
+      )
+
+      captor.values.distinct should be(List("LifecycleTestStreamingBackend", "RuntimeException", "Test failure"))
+    }
+  }
+
+  it should "support initializing the underlying backend" in {
+    val store = new LifecycleTestCrateStore()
+
+    eventually[Assertion] {
+      store.initialized.get() should be(true)
+    }
   }
 
   it should "successfully persist crates" in {
@@ -215,9 +306,13 @@ class CrateStoreSpec extends AsyncUnitSpec {
     val backingCrateStore: MockCrateStore = new MockCrateStore()
   ) extends CrateStore(
         backend = new StreamingBackend {
+          override val info: String = "TestCrateStore"
+
           override def init(): Future[Done] = Future.successful(Done)
 
           override def drop(): Future[Done] = Future.successful(Done)
+
+          override def available(): Future[Boolean] = Future.successful(true)
 
           override def sink(key: Crate.Id): Future[Sink[ByteString, Future[Done]]] =
             backingCrateStore.sink(key)
@@ -236,6 +331,48 @@ class CrateStoreSpec extends AsyncUnitSpec {
         }
       )
 
+  private class LifecycleTestCrateStore(
+    val initialized: AtomicBoolean = new AtomicBoolean(false)
+  ) extends CrateStore(
+        backend = new LifecycleTestStreamingBackend(
+          initResult = () => Future.successful(Done),
+          initialized = initialized
+        )
+      )
+
+  private class LifecycleTestStreamingBackend(
+    initResult: () => Future[Done],
+    initialized: AtomicBoolean
+  ) extends StreamingBackend {
+    override val info: String = "LifecycleTestStreamingBackend"
+
+    override def init(): Future[Done] = {
+      initialized.set(true)
+      initResult()
+    }
+
+    override def available(): Future[Boolean] =
+      Future.successful(initialized.get)
+
+    override def drop(): Future[Done] =
+      Future.successful(Done)
+
+    override def sink(key: UUID): Future[Sink[ByteString, Future[Done]]] =
+      Future.failed(new UnsupportedOperationException())
+
+    override def source(key: UUID): Future[Option[Source[ByteString, NotUsed]]] =
+      Future.failed(new UnsupportedOperationException())
+
+    override def delete(key: UUID): Future[Boolean] =
+      Future.failed(new UnsupportedOperationException())
+
+    override def contains(key: UUID): Future[Boolean] =
+      Future.failed(new UnsupportedOperationException())
+
+    override def canStore(bytes: Long): Future[Boolean] =
+      Future.failed(new UnsupportedOperationException())
+  }
+
   private val testContent = ByteString("some value")
 
   private val testManifest = Manifest(
@@ -245,4 +382,6 @@ class CrateStoreSpec extends AsyncUnitSpec {
     source = Node.generateId(),
     origin = Node.generateId()
   )
+
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 }

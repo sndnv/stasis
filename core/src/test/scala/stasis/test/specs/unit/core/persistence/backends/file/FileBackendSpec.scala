@@ -11,4 +11,11 @@ class FileBackendSpec extends AsyncUnitSpec with StreamingBackendBehaviour {
         parentDirectory = s"${System.getProperty("user.dir")}/target/file_backend_test"
       )
   )
+
+  it should "provide its info" in {
+    val parentDirectory = s"${System.getProperty("user.dir")}/target/file_backend_test"
+    val store = new FileBackend(parentDirectory = parentDirectory)
+
+    store.info should be(s"FileBackend(parentDirectory=$parentDirectory)")
+  }
 }

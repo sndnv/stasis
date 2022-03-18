@@ -9,8 +9,10 @@ import akka.{Done, NotUsed}
 import scala.concurrent.Future
 
 trait StreamingBackend {
+  def info: String
   def init(): Future[Done]
   def drop(): Future[Done]
+  def available(): Future[Boolean]
   def sink(key: UUID): Future[Sink[ByteString, Future[Done]]]
   def source(key: UUID): Future[Option[Source[ByteString, NotUsed]]]
   def delete(key: UUID): Future[Boolean]

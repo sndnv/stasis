@@ -1,7 +1,5 @@
 package stasis.test.specs.unit.core.persistence.mocks
 
-import java.util.concurrent.atomic.AtomicInteger
-
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.util.{ByteString, Timeout}
@@ -13,6 +11,7 @@ import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.exceptions.PersistenceFailure
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -46,6 +45,8 @@ class MockCrateStore(
     Statistic.DiscardFailed -> new AtomicInteger(0)
   )
 
+  override protected def init(): Future[Done] = Future.successful(Done)
+
   override def persist(
     manifest: Manifest,
     content: Source[ByteString, NotUsed]
@@ -74,9 +75,13 @@ class MockCrateStore(
   def statistics: Map[Statistic, Int] = stats.view.mapValues(_.get()).toMap
 
   override val backend: StreamingBackend = new StreamingBackend {
+    override val info: String = "MockCrateStore"
+
     override def init(): Future[Done] = Future.successful(Done)
 
     override def drop(): Future[Done] = Future.successful(Done)
+
+    override def available(): Future[Boolean] = Future.successful(true)
 
     override def sink(key: StoreKey): Future[Sink[StoreValue, Future[Done]]] =
       Future.successful(

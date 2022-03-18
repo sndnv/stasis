@@ -6,7 +6,7 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.util.{ByteString, Timeout}
 import akka.{Done, NotUsed}
 import com.typesafe.config.Config
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.backends.StreamingBackend
@@ -14,13 +14,18 @@ import stasis.core.persistence.backends.file.{ContainerBackend, FileBackend}
 import stasis.core.persistence.backends.memory.StreamingMemoryBackend
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 class CrateStore(
   val backend: StreamingBackend
 )(implicit system: ActorSystem[SpawnProtocol.Command]) { store =>
+  import CrateStore._
+
   private implicit val ec: ExecutionContext = system.executionContext
 
-  private val log = LoggerFactory.getLogger(this.getClass.getName)
+  private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
+
+  locally { val _ = init() }
 
   def persist(manifest: Manifest, content: Source[ByteString, NotUsed]): Future[Done] = {
     log.debugN("Persisting content for crate [{}] with manifest [{}]", manifest.crate, manifest)
@@ -73,6 +78,8 @@ class CrateStore(
       override def retrieve(crate: Crate.Id): Future[Option[Source[ByteString, NotUsed]]] =
         store.retrieve(crate)
     }
+
+  protected def init(): Future[Done] = backend.loggedInit()
 }
 
 object CrateStore {
@@ -147,5 +154,37 @@ object CrateStore {
     }
 
     new CrateStore(backend = backend)
+  }
+
+  implicit class ExtendedStreamingBackend(backend: StreamingBackend) {
+    def loggedInit()(implicit log: Logger, ec: ExecutionContext): Future[Done] = {
+      val result = backend.available().flatMap {
+        case true =>
+          log.debugN("Skipping initialization of backend [{}]; it already exists", backend.info)
+          Future.successful(Done)
+
+        case false =>
+          log.debugN("Initializing backend [{}]", backend.info)
+          backend.init()
+      }
+
+      result.onComplete {
+        case Success(_) =>
+          log.debugN(
+            "Backend [{}] successfully initialized",
+            backend.info
+          )
+
+        case Failure(e) =>
+          log.errorN(
+            "Failed to initialize backend [{}]: [{} - {}]",
+            backend.info,
+            e.getClass.getSimpleName,
+            e.getMessage
+          )
+      }
+
+      result
+    }
   }
 }

@@ -15,6 +15,8 @@ class FileBackend(val parentDirectory: String)(implicit ec: ExecutionContext) ex
 
   private val parent: Path = Paths.get(parentDirectory)
 
+  override val info: String = s"FileBackend(parentDirectory=$parentDirectory)"
+
   override def init(): Future[Done] =
     Future {
       val _ = Files.createDirectories(parent)
@@ -30,6 +32,11 @@ class FileBackend(val parentDirectory: String)(implicit ec: ExecutionContext) ex
       }
     } else {
       Future.successful(Done)
+    }
+
+  override def available(): Future[Boolean] =
+    Future {
+      Files.exists(parent)
     }
 
   override def sink(key: UUID): Future[Sink[ByteString, Future[Done]]] =
