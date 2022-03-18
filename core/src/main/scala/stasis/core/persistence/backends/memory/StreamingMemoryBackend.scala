@@ -1,13 +1,12 @@
 package stasis.core.persistence.backends.memory
 
-import java.util.UUID
-
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.util.{ByteString, Timeout}
 import akka.{Done, NotUsed}
 import stasis.core.persistence.backends.StreamingBackend
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class StreamingMemoryBackend private (
@@ -16,9 +15,15 @@ class StreamingMemoryBackend private (
   maxChunkSize: Int
 )(implicit ec: ExecutionContext)
     extends StreamingBackend {
+
+  override val info: String =
+    s"StreamingMemoryBackend(maxSize=${maxSize.toString}, maxChunkSize=${maxChunkSize.toString})"
+
   override def init(): Future[Done] = backend.init()
 
   override def drop(): Future[Done] = backend.drop()
+
+  override def available(): Future[Boolean] = Future.successful(true)
 
   override def sink(key: UUID): Future[Sink[ByteString, Future[Done]]] =
     Future.successful(

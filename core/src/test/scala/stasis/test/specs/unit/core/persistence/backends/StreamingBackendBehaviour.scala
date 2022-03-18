@@ -19,7 +19,8 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
   def streamingBackend[B <: StreamingBackend](
     createBackend: () => B,
     before: B => Future[Done] = (backend: B) => backend.init(),
-    after: B => Future[Done] = (backend: B) => backend.drop()
+    after: B => Future[Done] = (backend: B) => backend.drop(),
+    alwaysAvailable: Boolean = false
   ): Unit = {
     val testKey = java.util.UUID.randomUUID()
     val testContent = ByteString("test-value")
@@ -114,15 +115,19 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
 
       for {
         _ <- before(store)
+        availableAfterInit <- store.available()
         sink <- store.sink(key = testKey)
         _ <- Source.single(testContent).runWith(sink)
         existsBeforeReset <- store.contains(key = testKey)
         _ <- store.drop()
+        availableAfterDrop <- store.available()
         existsAfterReset <- store.contains(key = testKey)
         _ <- after(store)
       } yield {
+        availableAfterInit should be(true)
         existsBeforeReset should be(true)
         existsAfterReset should be(false)
+        availableAfterDrop should be(alwaysAvailable) // either the backend is always available or should have been dropped
       }
     }
   }

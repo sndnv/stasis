@@ -1,8 +1,5 @@
 package stasis.core.persistence.backends.file
 
-import java.nio.ByteOrder
-import java.util.UUID
-
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
@@ -11,6 +8,8 @@ import stasis.core.persistence.backends.StreamingBackend
 import stasis.core.persistence.backends.file.container.Container
 import stasis.core.persistence.backends.file.container.ops.ConversionOps
 
+import java.nio.ByteOrder
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class ContainerBackend(
@@ -25,11 +24,17 @@ class ContainerBackend(
 
   private val container: Container = new Container(path, maxChunkSize, maxChunks)
 
+  override val info: String =
+    s"ContainerBackend(path=$path, maxChunkSize=${maxChunkSize.toString}, maxChunks=${maxChunks.toString})"
+
   override def init(): Future[Done] =
     container.create()
 
   override def drop(): Future[Done] =
     container.destroy()
+
+  override def available(): Future[Boolean] =
+    container.exists
 
   override def sink(key: UUID): Future[Sink[ByteString, Future[Done]]] =
     container.sink(key)

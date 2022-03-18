@@ -13,4 +13,16 @@ class ContainerBackendSpec extends AsyncUnitSpec with StreamingBackendBehaviour 
         maxChunks = 100
       )
   )
+
+  it should "provide its info" in {
+    val path = s"${System.getProperty("user.dir")}/target/container_backend_test"
+
+    val store = new ContainerBackend(
+      path = path,
+      maxChunkSize = 100,
+      maxChunks = 100
+    )
+
+    store.info should be(s"ContainerBackend(path=$path, maxChunkSize=100, maxChunks=100)")
+  }
 }

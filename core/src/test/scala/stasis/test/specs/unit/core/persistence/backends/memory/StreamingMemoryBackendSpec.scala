@@ -13,12 +13,22 @@ class StreamingMemoryBackendSpec extends AsyncUnitSpec with StreamingBackendBeha
         maxSize = 1000,
         maxChunkSize = 8192,
         name = "map-store"
-      )(
-        s = ActorSystem(
-          Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
-          "StreamingMemoryBackendSpec-Typed"
-        ),
-        t = timeout
-      )
+      ),
+    alwaysAvailable = true
+  )
+
+  it should "provide its info" in {
+    val store = StreamingMemoryBackend[java.util.UUID](
+      maxSize = 1000,
+      maxChunkSize = 8192,
+      name = "map-store"
+    )
+
+    store.info should be("StreamingMemoryBackend(maxSize=1000, maxChunkSize=8192)")
+  }
+
+  private implicit val actorSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+    "StreamingMemoryBackendSpec-Typed"
   )
 }
