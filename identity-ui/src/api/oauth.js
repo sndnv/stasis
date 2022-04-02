@@ -74,9 +74,9 @@ function make_authorization_request(username, password) {
     return derive_password(password, derive_salt(username))
         .then(
             derived_password => {
-                const state = base64url(crypto.randomBytes(config.authentication.state_size));
+                const state = base64url(crypto.randomBytes(parseInt(config.authentication.state_size)));
 
-                const code_verifier = base64url(crypto.randomBytes(config.authentication.code_verifier_size));
+                const code_verifier = base64url(crypto.randomBytes(parseInt(config.authentication.code_verifier_size)));
                 const code_challenge = base64url(crypto.createHash('sha256').update(code_verifier).digest());
                 const code_challenge_method = 's256';
 
@@ -229,13 +229,13 @@ function process_token_response(response) {
 }
 
 function derive_password(raw_password, salt) {
-    if (config.authentication.secret_derivation.enabled) {
+    if (config.authentication.secret_derivation.enabled == 'yes') {
         return new Promise(function (success, failure) {
             crypto.pbkdf2(
             /* password */ raw_password,
             /* salt */ `${config.authentication.secret_derivation.salt_prefix}-authentication-${salt}`,
-            /* iterations */ config.authentication.secret_derivation.iterations,
-            /* keylen */ config.authentication.secret_derivation.key_size,
+            /* iterations */ parseInt(config.authentication.secret_derivation.iterations),
+            /* keylen */ parseInt(config.authentication.secret_derivation.key_size),
             /* digest */ 'sha512',
                 function (error, password) {
                     if (error) {
