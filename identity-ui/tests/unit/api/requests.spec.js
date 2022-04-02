@@ -9,7 +9,7 @@ describe('requests', () => {
     let service_mock = null;
 
     const service_url = function (entries_type) {
-        return new RegExp(`${config.identity_api_url}/api/manage/${entries_type}.*`);
+        return new RegExp(`${config.identity_api_url}/manage/${entries_type}.*`);
     }
 
     beforeAll(() => {

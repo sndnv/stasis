@@ -258,7 +258,7 @@ describe('oauth', () => {
         const derived_password = 'VcARAa1_33RzxIZzH6mCXFU4u0mjNALC_PAo9olARCWMw_fYcwHwMwLsJZ89izXBS5xGGV_J0NNv9sXxj01VCA'
 
         const derivation_enabled = config.authentication.secret_derivation.enabled;
-        config.authentication.secret_derivation.enabled = true;
+        config.authentication.secret_derivation.enabled = "yes";
 
         return oauth.derive_password(raw_password, 'some-salt').then(function (derived) {
             expect(derived).toBe(derived_password);
@@ -268,7 +268,7 @@ describe('oauth', () => {
 
     test('should skip password derivation', () => {
         const derivation_enabled = config.authentication.secret_derivation.enabled;
-        config.authentication.secret_derivation.enabled = false;
+        config.authentication.secret_derivation.enabled = "no";
 
         const password = 'some-password'
 
@@ -284,7 +284,7 @@ describe('oauth', () => {
         );
 
         const derivation_enabled = config.authentication.secret_derivation.enabled;
-        config.authentication.secret_derivation.enabled = true;
+        config.authentication.secret_derivation.enabled = "yes";
 
         return oauth.derive_password('some-password', 'some-salt').then(
             response => {

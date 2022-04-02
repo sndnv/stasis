@@ -29,7 +29,7 @@ export default {
 
 function get_entries(entries_type) {
     return service
-        .get(`/api/manage/${entries_type}`)
+        .get(`/manage/${entries_type}`)
         .then(
             response => {
                 return { entries: response.data };
@@ -40,7 +40,7 @@ function get_entries(entries_type) {
 
 function post_entry(entries_type, new_entry_request) {
     return service
-        .post(`/api/manage/${entries_type}`, new_entry_request)
+        .post(`/manage/${entries_type}`, new_entry_request)
         .then(
             response => {
                 return { success: true, data: response.data };
@@ -51,7 +51,7 @@ function post_entry(entries_type, new_entry_request) {
 
 function put_entry(entries_type, entry_id, entry_update_request) {
     return service
-        .put(`/api/manage/${entries_type}/${entry_id}`, entry_update_request)
+        .put(`/manage/${entries_type}/${entry_id}`, entry_update_request)
         .then(
             response => { return { success: true, data: response.data }; },
             process_request_failure
@@ -60,7 +60,7 @@ function put_entry(entries_type, entry_id, entry_update_request) {
 
 function put_entry_credentials(entries_type, entry_id, entry_credentials_request) {
     return service
-        .put(`/api/manage/${entries_type}/${entry_id}/credentials`, entry_credentials_request)
+        .put(`/manage/${entries_type}/${entry_id}/credentials`, entry_credentials_request)
         .then(
             response => {
                 return { success: true, data: response.data };
@@ -71,7 +71,7 @@ function put_entry_credentials(entries_type, entry_id, entry_credentials_request
 
 function delete_entry(entries_type, entry_id) {
     return service
-        .delete(`/api/manage/${entries_type}/${entry_id}`)
+        .delete(`/manage/${entries_type}/${entry_id}`)
         .then(
             () => {
                 return { success: true };

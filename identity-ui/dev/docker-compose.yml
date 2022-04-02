@@ -27,8 +27,8 @@ services:
     ports:
       - '8080:8080'
     environment:
-      - STASIS_IDENTITY_UI_API_URL=https://localhost:8080
-      - STASIS_IDENTITY_UI_AUTH_CLIENT_ID=a928359a-e2ee-4db7-9307-8071b2a1c756
-      - STASIS_IDENTITY_UI_AUTH_REDIRECT_URI=https://localhost:8080/manage/login/callback
+      - VUE_APP_STASIS_IDENTITY_UI_API_URL=https://localhost:8080/api
+      - VUE_APP_STASIS_IDENTITY_UI_AUTH_CLIENT_ID=a928359a-e2ee-4db7-9307-8071b2a1c756
+      - VUE_APP_STASIS_IDENTITY_UI_AUTH_REDIRECT_URI=https://localhost:8080/manage/login/callback
     volumes:
       - '../:/opt/stasis-identity-ui'
