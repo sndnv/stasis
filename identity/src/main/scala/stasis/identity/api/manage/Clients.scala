@@ -4,7 +4,6 @@ import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import akka.stream.Materializer
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.api.Formats._
@@ -17,8 +16,7 @@ import stasis.identity.model.secrets.Secret
 class Clients(
   store: ClientStore,
   clientSecretConfig: Secret.ClientConfig
-)(implicit override val mat: Materializer)
-    extends EntityDiscardingDirectives {
+) extends EntityDiscardingDirectives {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
@@ -54,7 +52,7 @@ class Clients(
                 client.subject.contains(subject) || client.id.toString == subject
               }
 
-              log.debugN("User [{}] found [{}] clients for subject [{}]", user, clients.size, subject)
+              log.debugN("User [{}] found [{}] clients for subject [{}]", user, matchingClients.size, subject)
               discardEntity & complete(matchingClients)
             }
           }
@@ -119,7 +117,7 @@ object Clients {
   def apply(
     store: ClientStore,
     clientSecretConfig: Secret.ClientConfig
-  )(implicit mat: Materializer): Clients =
+  ): Clients =
     new Clients(
       store = store,
       clientSecretConfig = clientSecretConfig

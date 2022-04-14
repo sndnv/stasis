@@ -7,7 +7,6 @@ import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.stream.Materializer
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.{Format, Json}
 import stasis.identity.api.Formats._
@@ -19,7 +18,7 @@ import stasis.identity.model.{GrantType, Seconds}
 class ResourceOwnerPasswordCredentialsGrant(
   override val config: Config,
   override val providers: Providers
-)(implicit system: ActorSystem, override val mat: Materializer)
+)(implicit system: ActorSystem)
     extends AuthDirectives {
   import ResourceOwnerPasswordCredentialsGrant._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
@@ -87,7 +86,7 @@ object ResourceOwnerPasswordCredentialsGrant {
   def apply(
     config: Config,
     providers: Providers
-  )(implicit system: ActorSystem, mat: Materializer): ResourceOwnerPasswordCredentialsGrant =
+  )(implicit system: ActorSystem): ResourceOwnerPasswordCredentialsGrant =
     new ResourceOwnerPasswordCredentialsGrant(
       config = config,
       providers = providers

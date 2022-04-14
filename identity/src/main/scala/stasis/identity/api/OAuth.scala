@@ -5,7 +5,6 @@ import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import akka.stream.Materializer
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.api.oauth._
@@ -14,7 +13,7 @@ import stasis.identity.api.oauth.setup.{Config, Providers}
 class OAuth(
   config: Config,
   providers: Providers
-)(implicit system: ActorSystem, override val mat: Materializer)
+)(implicit system: ActorSystem)
     extends EntityDiscardingDirectives {
 
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
@@ -75,7 +74,7 @@ object OAuth {
   def apply(
     config: Config,
     providers: Providers
-  )(implicit system: ActorSystem, mat: Materializer): OAuth =
+  )(implicit system: ActorSystem): OAuth =
     new OAuth(
       config = config,
       providers = providers

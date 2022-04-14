@@ -73,11 +73,11 @@ class IdentityEndpoint(
           )
         }
       }
-      .handle { case ValidationRejection(_, _) =>
+      .handle { case ValidationRejection(rejectionMessage, _) =>
         extractRequestEntity { entity =>
           val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
-          val message = "Provided data is invalid or malformed"
+          val message = s"Provided data is invalid or malformed: [$rejectionMessage]"
           log.warnN(message)
 
           complete(
