@@ -2,7 +2,6 @@ package stasis.shared.api
 
 import java.nio.charset.StandardCharsets
 import java.time.temporal.ChronoUnit
-
 import akka.util.ByteString
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
@@ -137,6 +136,9 @@ object Formats {
   implicit val updateUserStateRequestFormat: Format[UpdateUserState] =
     Json.format[UpdateUserState]
 
+  implicit val updateUserPasswordRequestFormat: Format[UpdateUserPassword] =
+    Json.format[UpdateUserPassword]
+
   implicit val createDeviceRequestPrivilegedFormat: Format[CreateDevicePrivileged] =
     Json.format[CreateDevicePrivileged]
 
@@ -181,6 +183,9 @@ object Formats {
 
   implicit val createdUserFormat: Format[CreatedUser] =
     Json.format[CreatedUser]
+
+  implicit val updatedUserSaltFormat: Format[UpdatedUserSalt] =
+    Json.format[UpdatedUserSalt]
 
   implicit val deletedDatasetDefinitionFormat: Format[DeletedDatasetDefinition] =
     Json.format[DeletedDatasetDefinition]

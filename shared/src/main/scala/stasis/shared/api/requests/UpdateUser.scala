@@ -11,6 +11,7 @@ object UpdateUser {
         case UpdateUserState(active)            => user.copy(active = active)
         case UpdateUserLimits(limits)           => user.copy(limits = limits)
         case UpdateUserPermissions(permissions) => user.copy(permissions = permissions)
+        case UpdateUserSalt(salt)               => user.copy(salt = salt)
       }
   }
 }
