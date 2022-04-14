@@ -23,11 +23,12 @@ class LoggingDirectivesSpec extends AsyncUnitSpec with ScalatestRouteTest with A
       Directives.complete(StatusCodes.OK)
     }
 
-    Get().withHeaders(RawHeader("test-header", "test-value")) ~> route ~> check {
+    Get("/?a=1&b=2&c=3").withHeaders(RawHeader("test-header", "test-value")) ~> route ~> check {
       status should be(StatusCodes.OK)
 
       verify(logger).debug(
-        eqTo("Received [{}] request for [{}] with ID [{}] and headers [{}]"),
+        eqTo("Received [{}] request for [{}] with ID [{}], query parameters [{}] and headers [{}]"),
+        captor.capture,
         captor.capture,
         captor.capture,
         captor.capture,
@@ -35,7 +36,8 @@ class LoggingDirectivesSpec extends AsyncUnitSpec with ScalatestRouteTest with A
       )
 
       verify(logger).debug(
-        eqTo("Responding to [{}] request for [{}] with ID [{}]: [{}] with headers [{}]"),
+        eqTo("Responding to [{}] request for [{}] with ID [{}] and query parameters [{}]: [{}] with headers [{}]"),
+        captor.capture,
         captor.capture,
         captor.capture,
         captor.capture,
@@ -43,20 +45,22 @@ class LoggingDirectivesSpec extends AsyncUnitSpec with ScalatestRouteTest with A
         captor.capture
       )
 
-      captor.values.take(4) match {
-        case method :: uri :: _ :: headers :: Nil =>
+      captor.values.take(5) match {
+        case method :: uri :: _ :: params :: headers :: Nil =>
           method should be("GET")
           uri should be("http://example.com/")
+          params should be("a, b, c")
           headers.replaceAll("\\s", "") should be("test-header:test-value")
 
         case other =>
           fail(s"Unexpected result received: [$other]")
       }
 
-      captor.values.takeRight(5) match {
-        case method :: uri :: _ :: status :: headers :: Nil =>
+      captor.values.takeRight(6) match {
+        case method :: uri :: _ :: params :: status :: headers :: Nil =>
           method should be("GET")
           uri should be("http://example.com/")
+          params should be("a, b, c")
           status should be("200 OK")
           headers should be("none")
 
