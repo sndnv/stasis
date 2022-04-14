@@ -88,11 +88,11 @@ class HttpEndpoint(
           )
         }
       }
-      .handle { case ValidationRejection(_, _) =>
+      .handle { case ValidationRejection(rejectionMessage, _) =>
         extractRequestEntity { entity =>
           val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
-          val message = "Provided data is invalid or malformed"
+          val message = s"Provided data is invalid or malformed: [$rejectionMessage]"
           log.warn(message)
 
           complete(
@@ -194,11 +194,12 @@ class HttpEndpoint(
               val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
               log.warn(
-                "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{}]",
+                "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{} - {}]",
                 method.value,
                 uri,
                 remoteAddress,
-                e
+                e.getClass.getSimpleName,
+                e.getMessage
               )
 
               complete(StatusCodes.Unauthorized)

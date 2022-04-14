@@ -1,10 +1,7 @@
 package stasis.test.specs.unit.core.persistence.backends.file.container.ops
 
-import java.nio.ByteOrder
-import java.nio.file.Paths
-import java.util.UUID
-
-import akka.actor.ActorSystem
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.util.ByteString
 import org.scalatest.BeforeAndAfter
 import stasis.core.persistence.backends.file.container._
@@ -13,12 +10,19 @@ import stasis.core.persistence.backends.file.container.ops.{AutoCloseSupport, Co
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.backends.file.container.TestOps
 
+import java.nio.ByteOrder
+import java.nio.file.Paths
+import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
 
 class ContainerOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoCloseSupport {
-  private implicit val system: ActorSystem = ActorSystem(name = "ContainerOpsSpec")
-  private implicit val ec: ExecutionContext = system.dispatcher
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+    "ContainerOpsSpec"
+  )
+
+  private implicit val ec: ExecutionContext = system.executionContext
   private implicit val byteOrder: ByteOrder = ConversionOps.DEFAULT_BYTE_ORDER
 
   private val containersDir = s"${System.getProperty("user.dir")}/target/containers_test"

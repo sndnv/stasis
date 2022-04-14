@@ -1,12 +1,7 @@
 package stasis.core.persistence.backends.file.container.ops
 
-import java.io.RandomAccessFile
-import java.nio.file.{Files, Path, StandardOpenOption}
-import java.nio.{ByteBuffer, ByteOrder}
-import java.util.UUID
-
 import akka.Done
-import akka.stream.Materializer
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.util.ByteString
 import stasis.core.persistence.backends.file.container.Container.Index.{ChunkEntryNumber, IndexingFailure}
 import stasis.core.persistence.backends.file.container.exceptions.ContainerFailure
@@ -14,6 +9,10 @@ import stasis.core.persistence.backends.file.container.headers.{ChunkHeader, Con
 import stasis.core.persistence.backends.file.container.stream.{CrateChunkSink, CrateChunkSource}
 import stasis.core.persistence.backends.file.container.{Container, CrateChunkDescriptor}
 
+import java.io.RandomAccessFile
+import java.nio.file.{Files, Path, StandardOpenOption}
+import java.nio.{ByteBuffer, ByteOrder}
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -163,7 +162,9 @@ object ContainerOps extends AutoCloseSupport {
     source: Path,
     target: Path,
     p: ChunkHeader => Boolean
-  )(implicit ec: ExecutionContext, mat: Materializer, byteOrder: ByteOrder): Future[Done] =
+  )(implicit system: ActorSystem[SpawnProtocol.Command], byteOrder: ByteOrder): Future[Done] = {
+    implicit val ec: ExecutionContext = system.executionContext
+
     index(source)
       .flatMap { sourceIndex =>
         Future
@@ -176,6 +177,7 @@ object ContainerOps extends AutoCloseSupport {
           )
       }
       .map(_ => Done)
+  }
 
   def occupiedChunks(path: Path, maxChunkSize: Int)(implicit ec: ExecutionContext): Future[Int] =
     Future {
