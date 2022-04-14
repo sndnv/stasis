@@ -10,7 +10,6 @@ final case class CreateOwner(
   subject: Option[String]
 ) {
   require(username.nonEmpty, "username must not be empty")
-  require(allowedScopes.nonEmpty, "allowed scopes must not be empty")
   require(rawPassword.nonEmpty, "password must not be empty")
   require(subject.forall(_.nonEmpty), "subject must not be empty")
 

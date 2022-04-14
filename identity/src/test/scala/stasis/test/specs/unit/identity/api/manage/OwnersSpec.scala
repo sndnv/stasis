@@ -81,6 +81,124 @@ class OwnersSpec extends RouteTest {
     }
   }
 
+  they should "respond with resource owner when queried by subject" in {
+    val store = createOwnerStore()
+    val owners = new Owners(store, secretConfig)
+
+    val secret = Secret(ByteString("some-secret"))
+    val salt = "some-salt"
+
+    val expectedOwners = stasis.test.Generators
+      .generateSeq(min = 3, g = Generators.generateResourceOwner)
+      .map(_.copy(password = secret, salt = salt))
+      .zipWithIndex
+      .map { case (owner, i) =>
+        owner.copy(subject = Some(s"test-subject-$i"))
+      }
+
+    Future.sequence(expectedOwners.map(store.put)).await
+
+    Get("/by-subject/test-subject-1") ~> owners.routes(user) ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[PartialResourceOwner].subject should be(Some("test-subject-1"))
+    }
+  }
+
+  they should "update existing resource owner credentials when queried by subject" in {
+    val store = createOwnerStore()
+    val owners = new Owners(store, secretConfig)
+
+    val ownerSubject = "test-subject"
+    val owner = Generators.generateResourceOwner.copy(subject = Some(ownerSubject))
+    val request = UpdateOwnerCredentials(rawPassword = "some-password")
+
+    store.put(owner).await
+
+    Put(s"/by-subject/$ownerSubject/credentials").withEntity(request) ~> owners.routes(user) ~> check {
+      status should be(StatusCodes.OK)
+      store.get(owner.username).await match {
+        case Some(updatedOwner) =>
+          updatedOwner.password.isSameAs(request.rawPassword, updatedOwner.salt)(secretConfig) should be(true)
+
+        case None =>
+          fail("Unexpected response received; no resource owner found")
+      }
+    }
+  }
+
+  they should "activate existing resource owner when queried by subject" in {
+    val store = createOwnerStore()
+    val owners = new Owners(store, secretConfig)
+
+    val ownerSubject = "test-subject"
+    val owner = Generators.generateResourceOwner.copy(subject = Some(ownerSubject), active = false)
+
+    store.put(owner).await
+
+    Put(s"/by-subject/$ownerSubject/activate") ~> owners.routes(user) ~> check {
+      status should be(StatusCodes.OK)
+
+      store.get(owner.username).await match {
+        case Some(updatedOwner) =>
+          updatedOwner.active should be(true)
+
+        case None =>
+          fail("Unexpected response received; no resource owner found")
+      }
+    }
+  }
+
+  they should "deactivate existing resource owner when queried by subject" in {
+    val store = createOwnerStore()
+    val owners = new Owners(store, secretConfig)
+
+    val ownerSubject = "test-subject"
+    val owner = Generators.generateResourceOwner.copy(subject = Some(ownerSubject), active = true)
+
+    store.put(owner).await
+
+    Put(s"/by-subject/$ownerSubject/deactivate") ~> owners.routes(user) ~> check {
+      status should be(StatusCodes.OK)
+
+      store.get(owner.username).await match {
+        case Some(updatedOwner) =>
+          updatedOwner.active should be(false)
+
+        case None =>
+          fail("Unexpected response received; no resource owner found")
+      }
+    }
+  }
+
+  they should "reject resource owner requests by subject when no owner is found" in {
+    val store = createOwnerStore()
+    val owners = new Owners(store, secretConfig)
+
+    Get("/by-subject/test-subject") ~> owners.routes(user) ~> check {
+      status should be(StatusCodes.NotFound)
+    }
+  }
+
+  they should "reject resource owner requests by subject when more than one owner is found" in {
+    val store = createOwnerStore()
+    val owners = new Owners(store, secretConfig)
+
+    val secret = Secret(ByteString("some-secret"))
+    val salt = "some-salt"
+
+    val ownersSubject = "test-subject"
+
+    val expectedOwners = stasis.test.Generators
+      .generateSeq(min = 3, g = Generators.generateResourceOwner)
+      .map(_.copy(password = secret, salt = salt, subject = Some(ownersSubject)))
+
+    Future.sequence(expectedOwners.map(store.put)).await
+
+    Get(s"/by-subject/$ownersSubject") ~> owners.routes(user) ~> check {
+      status should be(StatusCodes.Conflict)
+    }
+  }
+
   they should "update existing resource owner credentials" in {
     val store = createOwnerStore()
     val owners = new Owners(store, secretConfig)

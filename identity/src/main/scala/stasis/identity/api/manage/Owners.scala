@@ -4,7 +4,6 @@ import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import akka.stream.Materializer
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.api.manage.requests.{CreateOwner, UpdateOwner, UpdateOwnerCredentials}
@@ -14,8 +13,7 @@ import stasis.identity.model.secrets.Secret
 class Owners(
   store: ResourceOwnerStore,
   ownerSecretConfig: Secret.ResourceOwnerConfig
-)(implicit override val mat: Materializer)
-    extends EntityDiscardingDirectives {
+) extends EntityDiscardingDirectives {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.identity.api.Formats._
 
@@ -54,6 +52,90 @@ class Owners(
             }
           }
         )
+      },
+      pathPrefix("by-subject") {
+        pathPrefix(Segment) { ownerSubject =>
+          onSuccess(store.owners) { owners =>
+            owners.values.filter(_.subject.contains(ownerSubject)).toList match {
+              case owner :: Nil =>
+                concat(
+                  pathEndOrSingleSlash {
+                    get {
+                      log.debugN(
+                        "User [{}] successfully retrieved resource owner [{}] with subject [{}]",
+                        user,
+                        owner.username,
+                        ownerSubject
+                      )
+                      discardEntity & complete(owner)
+                    }
+                  },
+                  path("activate") {
+                    put {
+                      onSuccess(store.put(owner.copy(active = true))) { _ =>
+                        log.debugN(
+                          "User [{}] successfully activated resource owner [{}] with subject [{}]",
+                          user,
+                          owner.username,
+                          ownerSubject
+                        )
+                        discardEntity & complete(StatusCodes.OK)
+                      }
+                    }
+                  },
+                  path("deactivate") {
+                    put {
+                      onSuccess(store.put(owner.copy(active = false))) { _ =>
+                        log.debugN(
+                          "User [{}] successfully deactivated resource owner [{}] with subject [{}]",
+                          user,
+                          owner.username,
+                          ownerSubject
+                        )
+                        discardEntity & complete(StatusCodes.OK)
+                      }
+                    }
+                  },
+                  path("credentials") {
+                    put {
+                      entity(as[UpdateOwnerCredentials]) { request =>
+                        val (secret, salt) = request.toSecret()
+
+                        onSuccess(store.put(owner.copy(password = secret, salt = salt))) { _ =>
+                          log.debugN(
+                            "User [{}] successfully updated credentials for resource owner [{}] with subject [{}]",
+                            user,
+                            owner.username,
+                            ownerSubject
+                          )
+                          complete(StatusCodes.OK)
+                        }
+                      }
+                    }
+                  }
+                )
+
+              case Nil =>
+                log.debugN(
+                  "User [{}] tried to access resource owner by subject [{}] but no results were found",
+                  user,
+                  ownerSubject
+                )
+
+                discardEntity & complete(StatusCodes.NotFound)
+
+              case other =>
+                log.debugN(
+                  "User [{}] tried to access resource owner by subject [{}] but too many results were found: [{}]",
+                  user,
+                  ownerSubject,
+                  other.length
+                )
+
+                discardEntity & complete(StatusCodes.Conflict)
+            }
+          }
+        }
       },
       pathPrefix(Segment) { ownerUsername =>
         onSuccess(store.get(ownerUsername)) {
@@ -97,7 +179,6 @@ class Owners(
                       ) { _ =>
                         log.debugN("User [{}] successfully updated resource owner [{}]", user, ownerUsername)
                         complete(StatusCodes.OK)
-
                       }
                     }
                   },
@@ -123,7 +204,7 @@ object Owners {
   def apply(
     store: ResourceOwnerStore,
     ownerSecretConfig: Secret.ResourceOwnerConfig
-  )(implicit mat: Materializer): Owners =
+  ): Owners =
     new Owners(
       store = store,
       ownerSecretConfig = ownerSecretConfig
