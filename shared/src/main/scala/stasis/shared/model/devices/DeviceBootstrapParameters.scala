@@ -3,11 +3,11 @@ package stasis.shared.model.devices
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.security.KeyStore
 import java.util.concurrent.ThreadLocalRandom
-
 import akka.util.ByteString
 import com.typesafe.{config => typesafe}
 import play.api.libs.json.JsObject
 import stasis.core.security.tls.EndpointContext
+import stasis.shared.secrets.SecretsConfig
 
 import scala.jdk.CollectionConverters._
 import scala.util.Random
@@ -16,10 +16,12 @@ final case class DeviceBootstrapParameters(
   authentication: DeviceBootstrapParameters.Authentication,
   serverApi: DeviceBootstrapParameters.ServerApi,
   serverCore: DeviceBootstrapParameters.ServerCore,
+  secrets: SecretsConfig,
   additionalConfig: JsObject
 ) {
   def withDeviceInfo(
     device: String,
+    nodeId: String,
     clientId: String,
     clientSecret: String
   ): DeviceBootstrapParameters =
@@ -30,6 +32,9 @@ final case class DeviceBootstrapParameters(
       ),
       serverApi = serverApi.copy(
         device = device
+      ),
+      serverCore = serverCore.copy(
+        nodeId = nodeId
       )
     )
 
@@ -65,6 +70,7 @@ object DeviceBootstrapParameters {
 
   final case class ServerCore(
     address: String,
+    nodeId: String,
     context: Context
   )
 

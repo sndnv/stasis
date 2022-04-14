@@ -1,32 +1,36 @@
 package stasis.test.specs.unit.shared.model.devices
 
-import java.io.ByteArrayOutputStream
-
 import akka.util.ByteString
 import com.typesafe.{config => typesafe}
 import play.api.libs.json.Json
 import stasis.core.routing.Node
 import stasis.core.security.tls.EndpointContext
 import stasis.shared.model.devices.DeviceBootstrapParameters
+import stasis.shared.secrets.SecretsConfig
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.shared.model.Generators
 
+import java.io.ByteArrayOutputStream
+import java.util.UUID
 import scala.jdk.CollectionConverters._
 
 class DeviceBootstrapParametersSpec extends UnitSpec {
   "DeviceBootstrapParameters" should "support updating device info" in {
     val device = Generators.generateDevice
+    val clientId = UUID.randomUUID().toString
     val clientSecret = "test-secret"
 
     val deviceParams = baseParams.withDeviceInfo(
       device = device.id.toString,
-      clientId = device.node.toString,
+      nodeId = device.node.toString,
+      clientId = clientId,
       clientSecret = clientSecret
     )
 
-    deviceParams.authentication.clientId should be(device.node.toString)
+    deviceParams.authentication.clientId should be(clientId)
     deviceParams.authentication.clientSecret should be(clientSecret)
     deviceParams.serverApi.device should be(device.id.toString)
+    deviceParams.serverCore.nodeId should be(device.node.toString)
   }
 
   it should "support updating user info" in {
@@ -158,7 +162,19 @@ class DeviceBootstrapParametersSpec extends UnitSpec {
     ),
     serverCore = DeviceBootstrapParameters.ServerCore(
       address = "http://localhost:5679",
+      nodeId = "",
       context = DeviceBootstrapParameters.Context.disabled()
+    ),
+    secrets = SecretsConfig(
+      derivation = SecretsConfig.Derivation(
+        encryption = SecretsConfig.Derivation.Encryption(secretSize = 32, iterations = 100000, saltPrefix = "test"),
+        authentication = SecretsConfig.Derivation.Authentication(secretSize = 64, iterations = 150000, saltPrefix = "test")
+      ),
+      encryption = SecretsConfig.Encryption(
+        file = SecretsConfig.Encryption.File(keySize = 16, ivSize = 12),
+        metadata = SecretsConfig.Encryption.Metadata(keySize = 24, ivSize = 12),
+        deviceSecret = SecretsConfig.Encryption.DeviceSecret(keySize = 32, ivSize = 12)
+      )
     ),
     additionalConfig = Json.obj(
       "a" -> "b",
