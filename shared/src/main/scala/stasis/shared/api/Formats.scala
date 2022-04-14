@@ -16,6 +16,7 @@ import stasis.shared.model.devices.{Device, DeviceBootstrapCode, DeviceBootstrap
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 import stasis.shared.ops.Operation
+import stasis.shared.secrets.SecretsConfig
 import stasis.shared.security.Permission
 
 import scala.concurrent.duration._
@@ -98,6 +99,30 @@ object Formats {
 
   implicit val deviceBootstrapConfigServerCoreFormat: Format[DeviceBootstrapParameters.ServerCore] =
     Json.format[DeviceBootstrapParameters.ServerCore]
+
+  implicit val secretsConfigDerivationEncryptionFormat: Format[SecretsConfig.Derivation.Encryption] =
+    Json.format[SecretsConfig.Derivation.Encryption]
+
+  implicit val secretsConfigDerivationAuthenticationFormat: Format[SecretsConfig.Derivation.Authentication] =
+    Json.format[SecretsConfig.Derivation.Authentication]
+
+  implicit val secretsConfigDerivationFormat: Format[SecretsConfig.Derivation] =
+    Json.format[SecretsConfig.Derivation]
+
+  implicit val secretsConfigEncryptionFileFormat: Format[SecretsConfig.Encryption.File] =
+    Json.format[SecretsConfig.Encryption.File]
+
+  implicit val secretsConfigEncryptionMetadataFormat: Format[SecretsConfig.Encryption.Metadata] =
+    Json.format[SecretsConfig.Encryption.Metadata]
+
+  implicit val secretsConfigEncryptionDeviceSecretFormat: Format[SecretsConfig.Encryption.DeviceSecret] =
+    Json.format[SecretsConfig.Encryption.DeviceSecret]
+
+  implicit val secretsConfigEncryptionFormat: Format[SecretsConfig.Encryption] =
+    Json.format[SecretsConfig.Encryption]
+
+  implicit val secretsConfigFormat: Format[SecretsConfig] =
+    Json.format[SecretsConfig]
 
   implicit val deviceBootstrapParametersFormat: Format[DeviceBootstrapParameters] =
     Json.format[DeviceBootstrapParameters]
