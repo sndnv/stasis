@@ -1,21 +1,18 @@
 package stasis.test.specs.unit.core.api.directives
 
-import java.util.concurrent.atomic.AtomicInteger
-
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.stream.scaladsl.Source
-import akka.stream.{Materializer, SystemMaterializer}
 import akka.util.ByteString
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.test.specs.unit.AsyncUnitSpec
 
+import java.util.concurrent.atomic.AtomicInteger
+
 class EntityDiscardingDirectivesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   "EntityDiscardingDirectives" should "discard entities" in {
-    val directive = new EntityDiscardingDirectives {
-      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
-    }
+    val directive = new EntityDiscardingDirectives {}
 
     val route = directive.discardEntity {
       Directives.complete(StatusCodes.OK)
@@ -39,9 +36,7 @@ class EntityDiscardingDirectivesSpec extends AsyncUnitSpec with ScalatestRouteTe
   }
 
   it should "consume entities" in {
-    val directive = new EntityDiscardingDirectives {
-      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
-    }
+    val directive = new EntityDiscardingDirectives {}
 
     val route = directive.consumeEntity {
       Directives.complete(StatusCodes.OK)

@@ -268,7 +268,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       )
       .map { response =>
         response.status should be(StatusCodes.BadRequest)
-        Unmarshal(response.entity).to[String].await should be(
+        Unmarshal(response.entity).to[String].await should startWith(
           "Provided data is invalid or malformed"
         )
       }
