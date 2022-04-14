@@ -17,7 +17,6 @@ class CreateOwnerSpec extends UnitSpec {
 
   "A CreateOwner request" should "validate its content" in {
     an[IllegalArgumentException] should be thrownBy request.copy(username = "")
-    an[IllegalArgumentException] should be thrownBy request.copy(allowedScopes = Seq.empty)
     an[IllegalArgumentException] should be thrownBy request.copy(rawPassword = "")
     an[IllegalArgumentException] should be thrownBy request.copy(subject = Some(""))
   }
