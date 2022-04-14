@@ -4,6 +4,8 @@ import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 
 final case class CreateUser(
+  username: String,
+  rawPassword: String,
   limits: Option[User.Limits],
   permissions: Set[Permission]
 )

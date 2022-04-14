@@ -17,6 +17,8 @@ class CreateUserSpec extends UnitSpec {
     )
 
     val request = CreateUser(
+      username = "test-user",
+      rawPassword = "test-password",
       limits = expectedUser.limits,
       permissions = expectedUser.permissions
     )

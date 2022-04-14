@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.shared.api.requests
 
-import stasis.shared.api.requests.{UpdateUserLimits, UpdateUserPermissions, UpdateUserState}
+import stasis.shared.api.requests.{UpdateUserLimits, UpdateUserPermissions, UpdateUserSalt, UpdateUserState}
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.UnitSpec
@@ -32,6 +32,8 @@ class UpdateUserSpec extends UnitSpec {
       )
     )
 
+    val expectedUserWithUpdatedSalt = initialUser.copy(salt = "other-salt")
+
     val expectedUserWithUpdatedPermissions = initialUser.copy(permissions = Set(Permission.Manage.Self))
 
     val updateStateRequest = UpdateUserState(active = expectedUserWithUpdatedState.active)
@@ -40,8 +42,11 @@ class UpdateUserSpec extends UnitSpec {
 
     val updatePermissionsRequest = UpdateUserPermissions(permissions = expectedUserWithUpdatedPermissions.permissions)
 
+    val updateSaltRequest = UpdateUserSalt(salt = "other-salt")
+
     updateStateRequest.toUpdatedUser(initialUser) should be(expectedUserWithUpdatedState)
     updateLimitsRequest.toUpdatedUser(initialUser) should be(expectedUserWithUpdatedLimits)
     updatePermissionsRequest.toUpdatedUser(initialUser) should be(expectedUserWithUpdatedPermissions)
+    updateSaltRequest.toUpdatedUser(initialUser) should be(expectedUserWithUpdatedSalt)
   }
 }

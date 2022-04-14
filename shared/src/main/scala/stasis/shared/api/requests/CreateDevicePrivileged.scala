@@ -5,7 +5,7 @@ import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
 
 final case class CreateDevicePrivileged(
-  node: Node.Id,
+  node: Option[Node.Id],
   owner: User.Id,
   limits: Option[Device.Limits]
 )
@@ -15,7 +15,7 @@ object CreateDevicePrivileged {
     def toDevice(owner: User): Device =
       Device(
         id = Device.generateId(),
-        node = request.node,
+        node = request.node.getOrElse(Node.generateId()),
         owner = owner.id,
         active = true,
         limits = Device.resolveLimits(owner.limits, request.limits)
