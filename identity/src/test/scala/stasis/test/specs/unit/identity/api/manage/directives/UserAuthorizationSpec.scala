@@ -2,7 +2,6 @@ package stasis.test.specs.unit.identity.api.manage.directives
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives
-import akka.stream.{Materializer, SystemMaterializer}
 import org.slf4j.Logger
 import stasis.identity.api.manage.directives.UserAuthorization
 import stasis.test.specs.unit.identity.RouteTest
@@ -43,7 +42,6 @@ class UserAuthorizationSpec extends RouteTest {
 
   private def createDirective() =
     new UserAuthorization {
-      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
       override protected def log: Logger = createLogger()
     }
 }

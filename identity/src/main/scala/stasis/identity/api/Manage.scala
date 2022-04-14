@@ -2,7 +2,6 @@ package stasis.identity.api
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import akka.stream.Materializer
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.identity.api.manage._
 import stasis.identity.api.manage.directives.{UserAuthentication, UserAuthorization}
@@ -12,8 +11,7 @@ import stasis.identity.authentication.manage.ResourceOwnerAuthenticator
 class Manage(
   providers: Providers,
   config: Config
-)(implicit override val mat: Materializer)
-    extends UserAuthentication
+) extends UserAuthentication
     with UserAuthorization {
   import Manage._
 
@@ -69,12 +67,6 @@ object Manage {
     final val ManageOwners: String = "manage:owners"
   }
 
-  def apply(
-    providers: Providers,
-    config: Config
-  )(implicit mat: Materializer): Manage =
-    new Manage(
-      providers = providers,
-      config = config
-    )
+  def apply(providers: Providers, config: Config): Manage =
+    new Manage(providers = providers, config = config)
 }

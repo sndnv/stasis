@@ -1,13 +1,10 @@
 package stasis.identity.api.oauth
 
-import scala.concurrent.ExecutionContext
-
 import akka.actor.ActorSystem
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.stream.Materializer
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.{Format, Json}
 import stasis.identity.api.Formats._
@@ -16,10 +13,12 @@ import stasis.identity.api.oauth.setup.{Config, Providers}
 import stasis.identity.model.tokens._
 import stasis.identity.model.{GrantType, Seconds}
 
+import scala.concurrent.ExecutionContext
+
 class RefreshTokenGrant(
   override val config: Config,
   override val providers: Providers
-)(implicit system: ActorSystem, override val mat: Materializer)
+)(implicit system: ActorSystem)
     extends AuthDirectives {
   import RefreshTokenGrant._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
@@ -85,7 +84,7 @@ object RefreshTokenGrant {
   def apply(
     config: Config,
     providers: Providers
-  )(implicit system: ActorSystem, mat: Materializer): RefreshTokenGrant =
+  )(implicit system: ActorSystem): RefreshTokenGrant =
     new RefreshTokenGrant(
       config = config,
       providers = providers

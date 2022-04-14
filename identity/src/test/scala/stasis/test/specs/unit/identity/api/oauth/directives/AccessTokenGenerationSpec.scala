@@ -2,7 +2,6 @@ package stasis.test.specs.unit.identity.api.oauth.directives
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives
-import akka.stream.{Materializer, SystemMaterializer}
 import stasis.identity.api.oauth.directives.AccessTokenGeneration
 import stasis.identity.model.Seconds
 import stasis.identity.model.apis.Api
@@ -18,7 +17,6 @@ class AccessTokenGenerationSpec extends RouteTest {
     val expectedToken = "some-token"
 
     val directive = new AccessTokenGeneration {
-      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
       override protected def accessTokenGenerator: AccessTokenGenerator = createGenerator(expectedToken)
     }
 
@@ -36,7 +34,6 @@ class AccessTokenGenerationSpec extends RouteTest {
     val expectedToken = "some-token"
 
     val directive = new AccessTokenGeneration {
-      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
       override protected def accessTokenGenerator: AccessTokenGenerator = createGenerator(expectedToken)
     }
 

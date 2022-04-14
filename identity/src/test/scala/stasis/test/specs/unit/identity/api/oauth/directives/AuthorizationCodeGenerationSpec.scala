@@ -3,7 +3,6 @@ package stasis.test.specs.unit.identity.api.oauth.directives
 import akka.http.scaladsl.model
 import akka.http.scaladsl.model.{StatusCodes, Uri}
 import akka.http.scaladsl.server.Directives
-import akka.stream.{Materializer, SystemMaterializer}
 import org.slf4j.Logger
 import stasis.identity.api.oauth.directives.AuthorizationCodeGeneration
 import stasis.identity.model.ChallengeMethod
@@ -115,8 +114,6 @@ class AuthorizationCodeGenerationSpec extends RouteTest {
     codes: AuthorizationCodeStore
   ) =
     new AuthorizationCodeGeneration {
-      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
-
       override protected def log: Logger = createLogger()
 
       override protected def authorizationCodeGenerator: AuthorizationCodeGenerator =

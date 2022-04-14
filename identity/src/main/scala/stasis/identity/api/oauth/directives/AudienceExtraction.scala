@@ -128,7 +128,7 @@ trait AudienceExtraction extends EntityDiscardingDirectives {
           log.warnN(
             "No {} audience found with provided identifiers [{}]",
             audienceType,
-            audience
+            audience.mkString(", ")
           )
 
           discardEntity {
@@ -142,7 +142,7 @@ trait AudienceExtraction extends EntityDiscardingDirectives {
           log.errorN(
             "Failed to retrieve {} audience with provided identifiers [{}]: [{}]",
             audienceType,
-            audience,
+            audience.mkString(", "),
             e.getMessage,
             e
           )

@@ -8,7 +8,6 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.CacheDirectives
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.stream.Materializer
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.{Format, Json}
 import stasis.identity.api.Formats._
@@ -20,7 +19,7 @@ import stasis.identity.model.{GrantType, Seconds}
 class ClientCredentialsGrant(
   override val config: Config,
   override val providers: Providers
-)(implicit system: ActorSystem, override val mat: Materializer)
+)(implicit system: ActorSystem)
     extends AuthDirectives {
   import ClientCredentialsGrant._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
@@ -73,7 +72,7 @@ object ClientCredentialsGrant {
   def apply(
     config: Config,
     providers: Providers
-  )(implicit system: ActorSystem, mat: Materializer): ClientCredentialsGrant =
+  )(implicit system: ActorSystem): ClientCredentialsGrant =
     new ClientCredentialsGrant(
       config = config,
       providers = providers

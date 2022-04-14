@@ -4,13 +4,12 @@ import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import akka.stream.Materializer
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.tokens.{RefreshToken, RefreshTokenStore}
 
-class Tokens(store: RefreshTokenStore)(implicit override val mat: Materializer) extends EntityDiscardingDirectives {
+class Tokens(store: RefreshTokenStore) extends EntityDiscardingDirectives {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.identity.api.Formats._
 
@@ -65,8 +64,5 @@ class Tokens(store: RefreshTokenStore)(implicit override val mat: Materializer) 
 }
 
 object Tokens {
-  def apply(store: RefreshTokenStore)(implicit mat: Materializer): Tokens =
-    new Tokens(
-      store = store
-    )
+  def apply(store: RefreshTokenStore): Tokens = new Tokens(store = store)
 }
