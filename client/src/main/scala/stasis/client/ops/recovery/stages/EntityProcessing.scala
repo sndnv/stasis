@@ -2,7 +2,6 @@ package stasis.client.ops.recovery.stages
 
 import java.nio.file.attribute.PosixFilePermissions
 import java.nio.file.{Files, Path}
-
 import akka.NotUsed
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Source}

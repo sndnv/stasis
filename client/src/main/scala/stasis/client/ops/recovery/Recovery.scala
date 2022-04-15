@@ -2,7 +2,6 @@ package stasis.client.ops.recovery
 
 import java.nio.file.{FileSystem, FileSystems, Path}
 import java.time.Instant
-
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.stream._
 import akka.stream.scaladsl.{Keep, Sink, Source}

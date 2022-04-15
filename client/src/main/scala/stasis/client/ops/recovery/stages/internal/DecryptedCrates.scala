@@ -1,7 +1,6 @@
 package stasis.client.ops.recovery.stages.internal
 
 import java.nio.file.Path
-
 import akka.NotUsed
 import akka.stream.scaladsl.Source
 import akka.util.ByteString

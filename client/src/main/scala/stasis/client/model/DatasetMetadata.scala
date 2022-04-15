@@ -1,7 +1,6 @@
 package stasis.client.model
 
 import java.nio.file.{Path, Paths}
-
 import akka.NotUsed
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source

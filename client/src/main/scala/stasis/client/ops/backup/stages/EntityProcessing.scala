@@ -1,7 +1,6 @@
 package stasis.client.ops.backup.stages
 
 import java.nio.file.{Files, Path, Paths}
-
 import akka.stream.scaladsl.{FileIO, Flow, Source, SubFlow}
 import akka.stream.{IOResult, Materializer}
 import akka.util.ByteString

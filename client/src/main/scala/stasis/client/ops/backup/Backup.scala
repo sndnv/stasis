@@ -1,7 +1,6 @@
 package stasis.client.ops.backup
 
 import java.nio.file.Path
-
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.stream._
 import akka.stream.scaladsl.{Keep, Sink, Source}
