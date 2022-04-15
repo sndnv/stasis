@@ -2,11 +2,11 @@ package stasis.server.model.devices
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-
 import akka.Done
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.server.security.Resource
+import stasis.server.security.exceptions.AuthorizationFailure
 import stasis.shared.model.devices.{Device, DeviceBootstrapCode}
 import stasis.shared.security.Permission
 
@@ -72,7 +72,7 @@ trait DeviceBootstrapCodeStore { store =>
           store.put(code)
         } else {
           Future.failed(
-            new IllegalArgumentException(
+            AuthorizationFailure(
               s"Expected to put own device bootstrap code but code for device [${code.device.toString}] provided"
             )
           )
@@ -86,7 +86,7 @@ trait DeviceBootstrapCodeStore { store =>
           }
         } else {
           Future.failed(
-            new IllegalArgumentException(
+            AuthorizationFailure(
               s"Expected to delete own device bootstrap code but code for device [${forDevice.toString}] provided"
             )
           )
