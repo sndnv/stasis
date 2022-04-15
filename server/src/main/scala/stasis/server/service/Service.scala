@@ -2,7 +2,6 @@ package stasis.server.service
 
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.model.headers.HttpCredentials
@@ -23,8 +22,10 @@ import stasis.server.api.{ApiEndpoint, BootstrapEndpoint}
 import stasis.server.security._
 import stasis.server.security.authenticators._
 import stasis.server.security.devices._
+import stasis.server.security.users.{IdentityUserCredentialsManager, UserCredentialsManager}
 import stasis.server.service.Service.Config.BootstrapApiConfig
 import stasis.shared.model.devices.DeviceBootstrapParameters
+import stasis.shared.secrets.SecretsConfig
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -73,6 +74,19 @@ trait Service {
       expirationTolerance = instanceAuthenticatorConfig.expirationTolerance
     )
 
+    val identityCredentialsManagerConfig = Config.IdentityCredentialsManager(
+      config = rawConfig.getConfig("credentials-managers.identity")
+    )
+
+    val identityCredentialsManagerJwtProvider: JwtProvider = DefaultJwtProvider(
+      client = oauthClient,
+      clientParameters = OAuthClient.GrantParameters.ResourceOwnerPasswordCredentials(
+        username = identityCredentialsManagerConfig.managementUser,
+        password = identityCredentialsManagerConfig.managementUserPassword
+      ),
+      expirationTolerance = instanceAuthenticatorConfig.expirationTolerance
+    )
+
     val persistenceConfig = rawConfig.getConfig("persistence")
 
     val serverPersistence: ServerPersistence = ServerPersistence(persistenceConfig)
@@ -100,6 +114,16 @@ trait Service {
       )
     )
 
+    val userCredentialsManager: UserCredentialsManager = IdentityUserCredentialsManager(
+      identityUrl = identityCredentialsManagerConfig.url,
+      identityCredentials = CredentialsProvider.Default(
+        scope = identityCredentialsManagerConfig.managementUserScope,
+        underlying = identityCredentialsManagerJwtProvider
+      ),
+      context = EndpointContext(identityCredentialsManagerConfig.contextConfig),
+      requestBufferSize = identityCredentialsManagerConfig.requestBufferSize
+    )
+
     val deviceBootstrapConfig = Config.DeviceBootstrap.config(rawConfig.getConfig("bootstrap.devices"))
     val deviceBootstrapParams = Config.DeviceBootstrap.params(rawConfig.getConfig("bootstrap.devices.parameters"))
 
@@ -117,25 +141,16 @@ trait Service {
         secretSize = deviceBootstrapConfig.secretSize
       )
 
-      val deviceManagerJwtProvider: JwtProvider = DefaultJwtProvider(
-        client = oauthClient,
-        clientParameters = OAuthClient.GrantParameters.ResourceOwnerPasswordCredentials(
-          username = deviceBootstrapConfig.credentialsManager.managementUser,
-          password = deviceBootstrapConfig.credentialsManager.managementUserPassword
-        ),
-        expirationTolerance = instanceAuthenticatorConfig.expirationTolerance
-      )
-
       val deviceCredentialsManager: DeviceCredentialsManager = IdentityDeviceCredentialsManager(
-        identityUrl = deviceBootstrapConfig.credentialsManager.url,
-        identityCredentials = IdentityDeviceCredentialsManager.CredentialsProvider.Default(
-          scope = deviceBootstrapConfig.credentialsManager.managementUserScope,
-          underlying = deviceManagerJwtProvider
+        identityUrl = identityCredentialsManagerConfig.url,
+        identityCredentials = CredentialsProvider.Default(
+          scope = identityCredentialsManagerConfig.managementUserScope,
+          underlying = identityCredentialsManagerJwtProvider
         ),
         redirectUri = deviceBootstrapConfig.credentialsManager.clientRedirectUri,
         tokenExpiration = deviceBootstrapConfig.credentialsManager.clientTokenExpiration,
-        context = EndpointContext(deviceBootstrapConfig.credentialsManager.contextConfig),
-        requestBufferSize = deviceBootstrapConfig.credentialsManager.requestBufferSize
+        context = EndpointContext(identityCredentialsManagerConfig.contextConfig),
+        requestBufferSize = identityCredentialsManagerConfig.requestBufferSize
       )
 
       Some(
@@ -212,7 +227,9 @@ trait Service {
       persistence = serverPersistence,
       apiEndpoint = ApiEndpoint(
         resourceProvider = resourceProvider,
-        authenticator = userAuthenticator
+        authenticator = userAuthenticator,
+        userCredentialsManager = userCredentialsManager,
+        secretsConfig = deviceBootstrapParams.secrets
       ),
       bootstrapEndpoint = bootstrapEndpoint,
       context = EndpointContext(apiConfig.context)
@@ -277,6 +294,15 @@ trait Service {
          |      expiration-tolerance:   ${instanceAuthenticatorConfig.expirationTolerance.toMillis.toString} ms
          |      use-query-string:       ${instanceAuthenticatorConfig.useQueryString.toString}
          |
+         |  credentials-managers:
+         |    identity:
+         |      url:                  ${identityCredentialsManagerConfig.url}
+         |      request-buffer-size:  ${identityCredentialsManagerConfig.requestBufferSize.toString}
+         |      management:
+         |        user:               ${identityCredentialsManagerConfig.managementUser}
+         |        password-provided:  ${identityCredentialsManagerConfig.managementUserPassword.nonEmpty.toString}
+         |        scope:              ${identityCredentialsManagerConfig.managementUserScope}
+         |
          |  persistence:
          |    database:
          |      core:
@@ -318,12 +344,6 @@ trait Service {
          |      code-expiration:        ${deviceBootstrapConfig.codeExpiration.toMillis.toString} ms
          |      secret-size:            ${deviceBootstrapConfig.secretSize.toString}
          |      credentials-manager:
-         |        url:                  ${deviceBootstrapConfig.credentialsManager.url}
-         |        request-buffer-size:  ${deviceBootstrapConfig.credentialsManager.requestBufferSize.toString}
-         |        management:
-         |          user:               ${deviceBootstrapConfig.credentialsManager.managementUser}
-         |          password-provided:  ${deviceBootstrapConfig.credentialsManager.managementUserPassword.nonEmpty.toString}
-         |          scope:              ${deviceBootstrapConfig.credentialsManager.managementUserScope}
          |        client:
          |          redirect-uri:       ${deviceBootstrapConfig.credentialsManager.clientRedirectUri}
          |          token-expiration:   ${deviceBootstrapConfig.credentialsManager.clientTokenExpiration.toSeconds.toString} s
@@ -341,6 +361,26 @@ trait Service {
          |          address:            ${deviceBootstrapParams.serverCore.address}
          |          context-enabled:    ${deviceBootstrapParams.serverCore.context.enabled.toString}
          |          context-protocol:   ${deviceBootstrapParams.serverCore.context.protocol}
+         |        secrets:
+         |          derivation:
+         |            encryption:
+         |              secret-size:    ${deviceBootstrapParams.secrets.derivation.encryption.secretSize.toString}  bytes
+         |              iterations:     ${deviceBootstrapParams.secrets.derivation.encryption.iterations.toString}
+         |              salt-prefix:    ${deviceBootstrapParams.secrets.derivation.encryption.saltPrefix}
+         |            authentication:
+         |              secret-size:    ${deviceBootstrapParams.secrets.derivation.authentication.secretSize.toString}  bytes
+         |              iterations:     ${deviceBootstrapParams.secrets.derivation.authentication.iterations.toString}
+         |              salt-prefix:    ${deviceBootstrapParams.secrets.derivation.authentication.saltPrefix}
+         |          encryption:
+         |            file:
+         |              key-size:       ${deviceBootstrapParams.secrets.encryption.file.keySize.toString} bytes
+         |              iv-size:        ${deviceBootstrapParams.secrets.encryption.file.ivSize.toString} bytes
+         |            metadata:
+         |              key-size:       ${deviceBootstrapParams.secrets.encryption.metadata.keySize.toString} bytes
+         |              iv-size:        ${deviceBootstrapParams.secrets.encryption.metadata.ivSize.toString} bytes
+         |            device-secret:
+         |              key-size:       ${deviceBootstrapParams.secrets.encryption.deviceSecret.keySize.toString} bytes
+         |              iv-size:        ${deviceBootstrapParams.secrets.encryption.deviceSecret.ivSize.toString} bytes
          |        additional-config:    ${deviceBootstrapParams.additionalConfig.fields.nonEmpty.toString}
          |)
        """.stripMargin
@@ -470,6 +510,27 @@ object Service {
         )
     }
 
+    final case class IdentityCredentialsManager(
+      url: String,
+      managementUser: String,
+      managementUserPassword: String,
+      managementUserScope: String,
+      contextConfig: typesafe.Config,
+      requestBufferSize: Int
+    )
+
+    object IdentityCredentialsManager {
+      def apply(config: typesafe.Config): IdentityCredentialsManager =
+        IdentityCredentialsManager(
+          url = config.getString("url"),
+          managementUser = config.getString("management.user"),
+          managementUserPassword = config.getString("management.user-password"),
+          managementUserScope = config.getString("management.scope"),
+          contextConfig = config.getConfig("context"),
+          requestBufferSize = config.getInt("request-buffer-size")
+        )
+    }
+
     final case class NodeAuthenticator(
       issuer: String,
       audience: String,
@@ -537,35 +598,20 @@ object Service {
     )
 
     object DeviceBootstrap {
-      def config(config: typesafe.Config): DeviceBootstrap = {
-        val credentialsManagerConfig = config.getConfig("credentials-manager.identity")
-
+      def config(config: typesafe.Config): DeviceBootstrap =
         DeviceBootstrap(
           codeSize = config.getInt("code-size"),
           codeExpiration = config.getDuration("code-expiration").toMillis.millis,
           secretSize = config.getInt("secret-size"),
           credentialsManager = DeviceBootstrap.IdentityCredentialsManager(
-            url = credentialsManagerConfig.getString("url"),
-            managementUser = credentialsManagerConfig.getString("management.user"),
-            managementUserPassword = credentialsManagerConfig.getString("management.user-password"),
-            managementUserScope = credentialsManagerConfig.getString("management.scope"),
-            clientRedirectUri = credentialsManagerConfig.getString("client.redirect-uri"),
-            clientTokenExpiration = credentialsManagerConfig.getDuration("client.token-expiration").toMillis.millis,
-            contextConfig = credentialsManagerConfig.getConfig("context"),
-            requestBufferSize = credentialsManagerConfig.getInt("request-buffer-size")
+            clientRedirectUri = config.getString("credentials-manager.identity.client.redirect-uri"),
+            clientTokenExpiration = config.getDuration("credentials-manager.identity.client.token-expiration").toMillis.millis
           )
         )
-      }
 
       final case class IdentityCredentialsManager(
-        url: String,
-        managementUser: String,
-        managementUserPassword: String,
-        managementUserScope: String,
         clientRedirectUri: String,
-        clientTokenExpiration: FiniteDuration,
-        contextConfig: typesafe.Config,
-        requestBufferSize: Int
+        clientTokenExpiration: FiniteDuration
       )
 
       def params(config: typesafe.Config): DeviceBootstrapParameters = {
@@ -601,9 +647,14 @@ object Service {
           ),
           serverCore = DeviceBootstrapParameters.ServerCore(
             address = config.getString("server-core.address"),
+            nodeId = "", // provided during bootstrap execution
             context = DeviceBootstrapParameters.Context(
               config = config.getConfig("server-core.context")
             )
+          ),
+          secrets = SecretsConfig(
+            config = config.getConfig("secrets"),
+            ivSize = SecretsConfig.Encryption.MinIvSize // value always overridden by client
           ),
           additionalConfig = Json
             .parse(additionalConfig.root().render(typesafe.ConfigRenderOptions.concise()))

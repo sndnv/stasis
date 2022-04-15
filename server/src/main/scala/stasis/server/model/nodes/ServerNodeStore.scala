@@ -3,7 +3,9 @@ package stasis.server.model.nodes
 import akka.Done
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
-import stasis.server.security.Resource
+import stasis.server.model.nodes.ServerNodeStore.Manage
+import stasis.server.security.{CurrentUser, Resource}
+import stasis.shared.model.devices.Device
 import stasis.shared.security.Permission
 
 import scala.concurrent.Future
@@ -27,6 +29,28 @@ trait ServerNodeStore { store =>
       override def update(node: Node): Future[Done] = store.update(node)
       override def delete(node: Node.Id): Future[Boolean] = store.delete(node)
     }
+
+  final def manageSelf(): ServerNodeStore.Manage.Self =
+    new Manage.Self {
+      override def create(self: CurrentUser, device: Device, node: Node): Future[Done] =
+        if (device.owner == self.id) {
+          if (device.node == node.id) {
+            store.create(node)
+          } else {
+            Future.failed(
+              new IllegalArgumentException(
+                s"Provided device [${device.id.toString}] has a mismatched node [${device.node.toString}]; expected [${node.id.toString}]"
+              )
+            )
+          }
+        } else {
+          Future.failed(
+            new IllegalArgumentException(
+              s"Expected to create node for own [${self.id.toString}] device but device for user [${device.owner.toString}] provided"
+            )
+          )
+        }
+    }
 }
 
 object ServerNodeStore {
@@ -44,6 +68,11 @@ object ServerNodeStore {
       def update(node: Node): Future[Done]
       def delete(node: Node.Id): Future[Boolean]
       override def requiredPermission: Permission = Permission.Manage.Service
+    }
+
+    sealed trait Self extends Resource {
+      def create(self: CurrentUser, device: Device, node: Node): Future[Done]
+      override def requiredPermission: Permission = Permission.Manage.Self
     }
   }
 

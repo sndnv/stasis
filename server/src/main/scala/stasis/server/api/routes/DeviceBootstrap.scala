@@ -4,7 +4,6 @@ import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.stream.Materializer
 import stasis.server.model.devices.{DeviceBootstrapCodeStore, DeviceStore}
 import stasis.server.model.users.UserStore
 import stasis.server.security.CurrentUser
@@ -20,8 +19,6 @@ class DeviceBootstrap(
     extends ApiRoutes {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
-
-  override implicit protected def mat: Materializer = ctx.mat
 
   def codes(implicit currentUser: CurrentUser): Route =
     concat(
@@ -128,12 +125,13 @@ class DeviceBootstrap(
               case None       => Future.failed(new IllegalStateException(s"Current user [${currentUser.toString}] not found"))
             }
             clientSecret <- context.clientSecretGenerator.generate()
-            _ <- context.credentialsManager.setClientSecret(device = device, clientSecret = clientSecret)
+            clientId <- context.credentialsManager.setClientSecret(device = device, clientSecret = clientSecret)
           } yield {
             context.deviceParams
               .withDeviceInfo(
                 device = code.device.toString,
-                clientId = device.node.toString,
+                nodeId = device.node.toString,
+                clientId = clientId,
                 clientSecret = clientSecret
               )
               .withUserInfo(

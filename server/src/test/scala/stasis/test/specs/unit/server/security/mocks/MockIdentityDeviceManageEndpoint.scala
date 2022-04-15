@@ -8,9 +8,9 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import stasis.core.security.tls.EndpointContext
 import stasis.shared.model.devices.Device
-import stasis.test.specs.unit.server.security.mocks.MockIdentityManageEndpoint._
+import stasis.test.specs.unit.server.security.mocks.MockIdentityDeviceManageEndpoint._
 
-class MockIdentityManageEndpoint(
+class MockIdentityDeviceManageEndpoint(
   port: Int,
   credentials: OAuth2BearerToken,
   existingDevice: Option[Device],
@@ -140,7 +140,7 @@ class MockIdentityManageEndpoint(
       .size
 }
 
-object MockIdentityManageEndpoint {
+object MockIdentityDeviceManageEndpoint {
   sealed trait SearchResult
   object SearchResult {
     case object SingleSubject extends SearchResult
@@ -169,8 +169,8 @@ object MockIdentityManageEndpoint {
     creationResult: CreationResult = CreationResult.Success,
     updateResult: UpdateResult = UpdateResult.Success,
     withKeystoreConfig: Option[EndpointContext.StoreConfig] = None
-  ): MockIdentityManageEndpoint =
-    new MockIdentityManageEndpoint(
+  ): MockIdentityDeviceManageEndpoint =
+    new MockIdentityDeviceManageEndpoint(
       port = port,
       credentials = credentials,
       existingDevice = existingDevice,

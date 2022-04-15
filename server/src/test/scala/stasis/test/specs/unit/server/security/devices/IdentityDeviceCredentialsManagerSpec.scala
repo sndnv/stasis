@@ -3,13 +3,12 @@ package stasis.test.specs.unit.server.security.devices
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
-import stasis.core.security.jwt.JwtProvider
 import stasis.core.security.tls.EndpointContext
 import stasis.server.security.devices.IdentityDeviceCredentialsManager
 import stasis.shared.model.devices.Device
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.server.security.mocks.MockIdentityManageEndpoint
-import stasis.test.specs.unit.server.security.mocks.MockIdentityManageEndpoint.{CreationResult, SearchResult, UpdateResult}
+import stasis.test.specs.unit.server.security.mocks.MockIdentityDeviceManageEndpoint
+import stasis.test.specs.unit.server.security.mocks.MockIdentityDeviceManageEndpoint.{CreationResult, SearchResult, UpdateResult}
 import stasis.test.specs.unit.shared.model.Generators
 
 import scala.collection.mutable
@@ -19,7 +18,7 @@ import scala.util.control.NonFatal
 
 class IdentityDeviceCredentialsManagerSpec extends AsyncUnitSpec {
   "An IdentityDeviceCredentialsManager" should "set client secrets for new devices" in {
-    val endpoint = MockIdentityManageEndpoint(port = ports.dequeue(), credentials = credentials, existingDevice = None)
+    val endpoint = MockIdentityDeviceManageEndpoint(port = ports.dequeue(), credentials = credentials, existingDevice = None)
     endpoint.start()
 
     val manager = createManager(endpoint.url)
@@ -36,7 +35,8 @@ class IdentityDeviceCredentialsManagerSpec extends AsyncUnitSpec {
   }
 
   it should "reset secrets for existing devices" in {
-    val endpoint = MockIdentityManageEndpoint(port = ports.dequeue(), credentials = credentials, existingDevice = Some(device))
+    val endpoint =
+      MockIdentityDeviceManageEndpoint(port = ports.dequeue(), credentials = credentials, existingDevice = Some(device))
     endpoint.start()
 
     val manager = createManager(endpoint.url)
@@ -53,7 +53,7 @@ class IdentityDeviceCredentialsManagerSpec extends AsyncUnitSpec {
   }
 
   it should "fail to set client credentials if more than one client matches an existing device" in {
-    val endpoint = MockIdentityManageEndpoint(
+    val endpoint = MockIdentityDeviceManageEndpoint(
       port = ports.dequeue(),
       credentials = credentials,
       existingDevice = Some(device),
@@ -83,7 +83,7 @@ class IdentityDeviceCredentialsManagerSpec extends AsyncUnitSpec {
   }
 
   it should "handle invalid responses" in {
-    val endpoint = MockIdentityManageEndpoint(
+    val endpoint = MockIdentityDeviceManageEndpoint(
       port = ports.dequeue(),
       credentials = credentials,
       existingDevice = Some(device),
@@ -111,7 +111,7 @@ class IdentityDeviceCredentialsManagerSpec extends AsyncUnitSpec {
   }
 
   it should "handle existing client/device query failures" in {
-    val endpoint = MockIdentityManageEndpoint(
+    val endpoint = MockIdentityDeviceManageEndpoint(
       port = ports.dequeue(),
       credentials = credentials,
       existingDevice = Some(device),
@@ -139,7 +139,7 @@ class IdentityDeviceCredentialsManagerSpec extends AsyncUnitSpec {
   }
 
   it should "handle new client/device creation failures" in {
-    val endpoint = MockIdentityManageEndpoint(
+    val endpoint = MockIdentityDeviceManageEndpoint(
       port = ports.dequeue(),
       credentials = credentials,
       existingDevice = None,
@@ -167,7 +167,7 @@ class IdentityDeviceCredentialsManagerSpec extends AsyncUnitSpec {
   }
 
   it should "handle existing client/device update failures" in {
-    val endpoint = MockIdentityManageEndpoint(
+    val endpoint = MockIdentityDeviceManageEndpoint(
       port = ports.dequeue(),
       credentials = credentials,
       existingDevice = Some(device),
@@ -192,26 +192,6 @@ class IdentityDeviceCredentialsManagerSpec extends AsyncUnitSpec {
         endpoint.updated should be(1)
         endpoint.searched should be(1)
       }
-  }
-
-  "An IdentityDeviceCredentialsManager Default CredentialsProvider" should "provide credentials" in {
-    val expectedToken = "test-token"
-    val expectedScope = "test-scope"
-
-    val underlying = new JwtProvider {
-      override def provide(scope: String): Future[String] = Future.successful(s"$expectedToken;$scope")
-    }
-
-    val provider = IdentityDeviceCredentialsManager.CredentialsProvider.Default(
-      scope = expectedScope,
-      underlying = underlying
-    )
-
-    provider.provide().map { credentials =>
-      credentials.token() should be(
-        s"$expectedToken;$expectedScope"
-      )
-    }
   }
 
   private def createManager(

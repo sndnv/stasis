@@ -1,7 +1,5 @@
 package stasis.test.specs.unit.server.api
 
-import java.time.Instant
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.Http
@@ -20,12 +18,14 @@ import stasis.server.security.authenticators.{BootstrapCodeAuthenticator, UserAu
 import stasis.shared.model.devices.{Device, DeviceBootstrapCode, DeviceBootstrapParameters}
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.server.Secrets
 import stasis.test.specs.unit.server.model.mocks._
 import stasis.test.specs.unit.server.security.mocks._
 
+import java.time.Instant
 import scala.collection.mutable
 
-class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
+class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
   "A BootstrapEndpoint" should "successfully authenticate requests with user credentials" in {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import stasis.shared.api.Formats._
@@ -215,8 +215,10 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     ),
     serverCore = DeviceBootstrapParameters.ServerCore(
       address = "http://localhost:5679",
+      nodeId = "",
       context = DeviceBootstrapParameters.Context.disabled()
     ),
+    secrets = testSecretsConfig,
     additionalConfig = Json.obj()
   )
 

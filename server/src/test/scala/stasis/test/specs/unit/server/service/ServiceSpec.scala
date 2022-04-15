@@ -1,7 +1,5 @@
 package stasis.test.specs.unit.server.service
 
-import java.util.UUID
-
 import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
@@ -12,7 +10,6 @@ import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import com.typesafe.config.{Config, ConfigFactory}
-import javax.net.ssl.TrustManagerFactory
 import org.jose4j.jwk.JsonWebKey
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
@@ -26,10 +23,16 @@ import stasis.shared.model.devices.{Device, DeviceBootstrapCode, DeviceBootstrap
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.security.mocks.{MockJwksEndpoint, MockJwtGenerators}
-import stasis.test.specs.unit.server.security.mocks.{MockIdentityManageEndpoint, MockSimpleJwtEndpoint}
+import stasis.test.specs.unit.core.security.mocks.MockJwtGenerators
+import stasis.test.specs.unit.server.security.mocks.{
+  MockIdentityDeviceManageEndpoint,
+  MockIdentityUserManageEndpoint,
+  MockSimpleJwtEndpoint
+}
 import stasis.test.specs.unit.shared.model.Generators
 
+import java.util.UUID
+import javax.net.ssl.TrustManagerFactory
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
@@ -43,13 +46,26 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
   "Service" should "handle API requests" in {
     implicit val trustedContext: EndpointContext = createTrustedContext()
 
-    val jwksPort = 29998
-    val jwksEndpoint = new MockJwksEndpoint(port = jwksPort)
-    val defaultJwk = jwksEndpoint.jwks.getJsonWebKeys.asScala.find(_.getKeyType != "oct") match {
+    val token = "test-token"
+
+    val identityPort = 29997
+    val identityEndpoint =
+      MockIdentityUserManageEndpoint(
+        port = identityPort,
+        credentials = OAuth2BearerToken(token)
+      )
+
+    identityEndpoint.start()
+
+    val jwtPort = 29998
+    val jwtEndpoint = new MockSimpleJwtEndpoint(jwtPort, token)
+
+    val defaultJwk = jwtEndpoint.jwks.getJsonWebKeys.asScala.find(_.getKeyType != "oct") match {
       case Some(jwk) => jwk
       case None      => fail("Expected at least one mock JWK but none were found")
     }
-    jwksEndpoint.start()
+
+    jwtEndpoint.start()
 
     val service = new Service {}
     val interface = "localhost"
@@ -70,6 +86,8 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     val existingUser = UUID.fromString("749d8c0e-6105-4022-ae0e-39bd77752c5d")
 
     val createUserRequest = CreateUser(
+      username = "test-user",
+      rawPassword = "test-password",
       limits = None,
       permissions = Set(
         Permission.View.Service
@@ -99,7 +117,8 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
       _ <- serverPersistence.drop()
       _ <- corePersistence.drop()
       _ = service.stop()
-      _ = jwksEndpoint.stop()
+      _ = jwtEndpoint.stop()
+      _ = identityEndpoint.stop()
     } yield {
       usersBefore should be(apiUsersBefore)
       apiUsersBefore.map(_.id) should be(Seq(existingUser))
@@ -137,7 +156,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
 
     val identityPort = 28997
     val identityEndpoint =
-      MockIdentityManageEndpoint(
+      MockIdentityDeviceManageEndpoint(
         port = identityPort,
         credentials = OAuth2BearerToken(token),
         existingDevice = None
@@ -187,7 +206,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
 
       bootstrapCodeExistsAfterExec should be(false)
       params.authentication.tokenEndpoint should be("http://localhost:28998/oauth/token")
-      params.authentication.clientId should be(existingDevice.node.toString)
+      params.authentication.clientId should not be empty
       params.authentication.clientSecret should not be empty
       params.authentication.useQueryString should be(false)
       params.authentication.scopes.api should be("urn:stasis:identity:audience:stasis-server-test")
@@ -201,6 +220,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
       params.serverApi.context.enabled should be(false)
       params.serverApi.context.protocol should be("TLS")
       params.serverCore.address should be("https://localhost:38999")
+      params.serverCore.nodeId should be(existingDevice.node.toString)
       params.serverCore.context.enabled should be(false)
       params.serverCore.context.protocol should be("TLS")
       params.additionalConfig should be(Json.parse("""{"a":{"b":{"c":"d","e":1,"f":["g","h"]}}}"""))

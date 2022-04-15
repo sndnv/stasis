@@ -6,7 +6,6 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.scaladsl.Sink
-import akka.stream.{Materializer, SystemMaterializer}
 import akka.util.ByteString
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import org.slf4j.{Logger, LoggerFactory}
@@ -15,25 +14,28 @@ import stasis.core.security.tls.EndpointContext
 import stasis.server.api.routes._
 import stasis.server.security.ResourceProvider
 import stasis.server.security.authenticators.UserAuthenticator
+import stasis.server.security.users.UserCredentialsManager
+import stasis.shared.secrets.SecretsConfig
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
 
 class ApiEndpoint(
   resourceProvider: ResourceProvider,
-  authenticator: UserAuthenticator
+  authenticator: UserAuthenticator,
+  userCredentialsManager: UserCredentialsManager,
+  secretsConfig: SecretsConfig
 )(implicit val system: ActorSystem[SpawnProtocol.Command])
     extends LoggingDirectives {
   private implicit val ec: ExecutionContextExecutor = system.executionContext
-  private implicit val mat: Materializer = SystemMaterializer(system).materializer
 
   override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
-  private implicit val context: RoutesContext = RoutesContext(resourceProvider, ec, mat, log)
+  private implicit val context: RoutesContext = RoutesContext(resourceProvider, ec, log)
 
   private val definitions = DatasetDefinitions()
   private val entries = DatasetEntries()
-  private val users = Users()
+  private val users = Users(userCredentialsManager, secretsConfig)
   private val devices = Devices()
   private val schedules = Schedules()
   private val nodes = Nodes()
@@ -70,11 +72,12 @@ class ApiEndpoint(
               val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
               log.warn(
-                "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{}]",
+                "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{} - {}]",
                 method.value,
                 uri,
                 remoteAddress,
-                e
+                e.getClass.getSimpleName,
+                e.getMessage
               )
 
               complete(StatusCodes.Unauthorized)
@@ -117,10 +120,14 @@ class ApiEndpoint(
 object ApiEndpoint {
   def apply(
     resourceProvider: ResourceProvider,
-    authenticator: UserAuthenticator
+    authenticator: UserAuthenticator,
+    userCredentialsManager: UserCredentialsManager,
+    secretsConfig: SecretsConfig
   )(implicit system: ActorSystem[SpawnProtocol.Command]): ApiEndpoint =
     new ApiEndpoint(
       resourceProvider = resourceProvider,
-      authenticator = authenticator
+      authenticator = authenticator,
+      userCredentialsManager = userCredentialsManager,
+      secretsConfig = secretsConfig
     )
 }

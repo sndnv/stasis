@@ -134,12 +134,79 @@ class UserStoreSpec extends AsyncUnitSpec {
     }
   }
 
+  it should "fail to deactivate an inactive user via management resource (self)" in {
+    val store = MockUserStore()
+
+    val ownUser = mockUser.copy(id = self.id, active = false)
+
+    for {
+      createResult <- store.manage().create(ownUser)
+      getResult <- store.viewSelf().get(self)
+      updateResult <- store.manageSelf().deactivate(self).failed
+    } yield {
+      createResult should be(Done)
+      getResult should be(Some(ownUser))
+      updateResult.getMessage should be(s"User [${self.id}] is not active")
+    }
+  }
+
   it should "fail to deactivate a missing user via management resource (self)" in {
     val store = MockUserStore()
 
     store
       .manageSelf()
       .deactivate(self)
+      .map { response =>
+        fail(s"Received unexpected response from store: [$response]")
+      }
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Expected user [${self.id}] not found"
+        )
+      }
+  }
+
+  it should "allow resetting own user password salt via management resource (self)" in {
+    val store = MockUserStore()
+
+    val ownUser = mockUser.copy(id = self.id)
+
+    for {
+      createResult <- store.manage().create(ownUser)
+      getResult <- store.viewSelf().get(self)
+      updatedSalt <- store.manageSelf().resetSalt(self)
+      updatedGetResult <- store.viewSelf().get(self)
+    } yield {
+      createResult should be(Done)
+      getResult should be(Some(ownUser))
+      updatedSalt should not be (ownUser.salt)
+      updatedSalt should be(updatedGetResult.map(_.salt).getOrElse("invalid"))
+      updatedGetResult should be(Some(ownUser.copy(salt = updatedSalt)))
+    }
+  }
+
+  it should "fail to reset password salt for an inactive user via management resource (self)" in {
+    val store = MockUserStore()
+
+    val ownUser = mockUser.copy(id = self.id, active = false)
+
+    for {
+      createResult <- store.manage().create(ownUser)
+      getResult <- store.viewSelf().get(self)
+      updateResult <- store.manageSelf().resetSalt(self).failed
+    } yield {
+      createResult should be(Done)
+      getResult should be(Some(ownUser))
+      updateResult.getMessage should be(s"User [${self.id}] is not active")
+    }
+  }
+
+  it should "fail to reset password salt for a missing user via management resource (self)" in {
+    val store = MockUserStore()
+
+    store
+      .manageSelf()
+      .resetSalt(self)
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
       }

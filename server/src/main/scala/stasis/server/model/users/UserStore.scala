@@ -53,10 +53,24 @@ trait UserStore { store =>
 
   final def manageSelf(): UserStore.Manage.Self =
     new UserStore.Manage.Self {
+      override def resetSalt(self: CurrentUser): Future[String] =
+        store.get(self.id).flatMap {
+          case Some(user) if user.active =>
+            val updated = generateSalt()
+            store.update(user.copy(salt = updated)).map { _ => updated }
+
+          case Some(_) =>
+            Future.failed(new IllegalArgumentException(s"User [${self.id.toString}] is not active"))
+
+          case None =>
+            Future.failed(new IllegalArgumentException(s"Expected user [${self.id.toString}] not found"))
+        }
+
       override def deactivate(self: CurrentUser): Future[Done] =
         store.get(self.id).flatMap {
-          case Some(user) => store.update(user.copy(active = false))
-          case None       => Future.failed(new IllegalArgumentException(s"Expected user [${self.id.toString}] not found"))
+          case Some(user) if user.active => store.update(user.copy(active = false))
+          case Some(_) => Future.failed(new IllegalArgumentException(s"User [${self.id.toString}] is not active"))
+          case None    => Future.failed(new IllegalArgumentException(s"Expected user [${self.id.toString}] not found"))
         }
     }
 }
@@ -85,6 +99,7 @@ object UserStore {
     }
 
     sealed trait Self extends Resource {
+      def resetSalt(self: CurrentUser): Future[String]
       def deactivate(self: CurrentUser): Future[Done]
       override def requiredPermission: Permission = Permission.Manage.Self
     }

@@ -4,8 +4,8 @@ import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.stream.Materializer
 import stasis.server.model.devices.DeviceStore
+import stasis.server.model.nodes.ServerNodeStore
 import stasis.server.model.users.UserStore
 import stasis.server.security.CurrentUser
 import stasis.shared.api.requests._
@@ -17,8 +17,6 @@ import scala.concurrent.Future
 class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
-
-  override implicit protected def mat: Materializer = ctx.mat
 
   def routes(implicit currentUser: CurrentUser): Route =
     concat(
@@ -39,8 +37,13 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                   case Some(owner) =>
                     val device = createRequest.toDevice(owner)
                     deviceManage.create(device).map { _ =>
-                      log.debugN("User [{}] successfully created device [{}]", currentUser, device.id)
-                      complete(CreatedDevice(device.id))
+                      log.debugN(
+                        "User [{}] successfully created device [{}] with node [{}]",
+                        currentUser,
+                        device.id,
+                        device.node
+                      )
+                      complete(CreatedDevice(device.id, device.node))
                     }
 
                   case None =>
@@ -119,19 +122,29 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
               },
               post {
                 entity(as[CreateDeviceOwn]) { createRequest =>
-                  resources[UserStore.View.Self, DeviceStore.Manage.Self] { (userView, deviceManage) =>
-                    userView.get(currentUser).flatMap {
-                      case Some(owner) =>
-                        val device = createRequest.toDevice(owner)
-                        deviceManage.create(currentUser, device).map { _ =>
-                          log.debugN("User [{}] successfully created device [{}]", currentUser, device.id)
-                          complete(CreatedDevice(device.id))
-                        }
+                  resources[UserStore.View.Self, DeviceStore.Manage.Self, ServerNodeStore.Manage.Self] {
+                    (userView, deviceManage, nodeManage) =>
+                      userView.get(currentUser).flatMap {
+                        case Some(owner) =>
+                          val (device, node) = createRequest.toDeviceAndNode(owner)
 
-                      case None =>
-                        log.warnN("User [{}] failed to retrieve own data", currentUser)
-                        Future.successful(complete(StatusCodes.BadRequest))
-                    }
+                          for {
+                            _ <- deviceManage.create(currentUser, device)
+                            _ <- nodeManage.create(currentUser, device, node)
+                          } yield {
+                            log.debugN(
+                              "User [{}] successfully created device [{}] with node [{}]",
+                              currentUser,
+                              device.id,
+                              device.node
+                            )
+                            complete(CreatedDevice(device.id, device.node))
+                          }
+
+                        case None =>
+                          log.warnN("User [{}] failed to retrieve own data", currentUser)
+                          Future.successful(complete(StatusCodes.BadRequest))
+                      }
                   }
                 }
               }
