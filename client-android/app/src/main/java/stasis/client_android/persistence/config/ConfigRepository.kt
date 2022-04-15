@@ -32,41 +32,42 @@ class ConfigRepository(
             .putString(Keys.ServerApi.UserSalt, params.serverApi.userSalt)
             .putString(Keys.ServerApi.Device, params.serverApi.device)
             .putString(Keys.ServerCore.Address, params.serverCore.address)
+            .putString(Keys.ServerCore.NodeId, params.serverCore.nodeId)
             .putInt(
                 Keys.Secrets.DerivationEncryptionSecretSize,
-                Defaults.Secrets.Derivation.Encryption.SecretSize
+                params.secrets.derivation.encryption.secretSize
             )
             .putInt(
                 Keys.Secrets.DerivationEncryptionIterations,
-                Defaults.Secrets.Derivation.Encryption.Iterations
+                params.secrets.derivation.encryption.iterations
             )
             .putString(
                 Keys.Secrets.DerivationEncryptionSaltPrefix,
-                Defaults.Secrets.Derivation.Encryption.SaltPrefix
+                params.secrets.derivation.encryption.saltPrefix
             )
             .putInt(
                 Keys.Secrets.DerivationAuthenticationSecretSize,
-                Defaults.Secrets.Derivation.Authentication.SecretSize
+                params.secrets.derivation.authentication.secretSize
             )
             .putInt(
                 Keys.Secrets.DerivationAuthenticationIterations,
-                Defaults.Secrets.Derivation.Authentication.Iterations
+                params.secrets.derivation.authentication.iterations
             )
             .putString(
                 Keys.Secrets.DerivationAuthenticationSaltPrefix,
-                Defaults.Secrets.Derivation.Authentication.SaltPrefix
+                params.secrets.derivation.authentication.saltPrefix
             )
             .putInt(
                 Keys.Secrets.EncryptionFileKeySize,
-                Defaults.Secrets.Encryption.File.KeySize
+                params.secrets.encryption.file.keySize
             )
             .putInt(
                 Keys.Secrets.EncryptionMetadataKeySize,
-                Defaults.Secrets.Encryption.Metadata.KeySize
+                params.secrets.encryption.metadata.keySize
             )
             .putInt(
                 Keys.Secrets.EncryptionDeviceSecretKeySize,
-                Defaults.Secrets.Encryption.DeviceSecret.KeySize
+                params.secrets.encryption.deviceSecret.keySize
             )
             .commit()
     }
@@ -84,6 +85,7 @@ class ConfigRepository(
             .remove(Keys.ServerApi.UserSalt)
             .remove(Keys.ServerApi.Device)
             .remove(Keys.ServerCore.Address)
+            .remove(Keys.ServerCore.NodeId)
             .remove(Keys.Secrets.DerivationEncryptionSecretSize)
             .remove(Keys.Secrets.DerivationEncryptionIterations)
             .remove(Keys.Secrets.DerivationEncryptionSaltPrefix)
@@ -133,9 +135,11 @@ class ConfigRepository(
 
             object ServerCore {
                 const val Address: String = "server_core_address"
+                const val NodeId: String = "server_core_node_id"
 
                 val All: List<String> = listOf(
-                    Address
+                    Address,
+                    NodeId
                 )
             }
 
@@ -269,7 +273,8 @@ class ConfigRepository(
             return when (params.size) {
                 0 -> null
                 expectedParams -> Config.ServerCore(
-                    address = params[0]
+                    address = params[0],
+                    nodeId = params[1]
                 )
                 else -> throw IllegalStateException(
                     "Expected [$expectedParams] server core parameters but [${params.size}] found"

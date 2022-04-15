@@ -146,7 +146,7 @@ object StasisClientDependencies {
                             val coreClient = DefaultServerCoreEndpointClient(
                                 serverCoreUrl = coreConfig.address,
                                 credentials = { HttpCredentials.OAuth2BearerToken(token = credentials.core.get().access_token) },
-                                self = UUID.fromString(authenticationConfig.clientId)
+                                self = UUID.fromString(coreConfig.nodeId)
                             )
 
                             val apiClient = DefaultServerApiEndpointClient(

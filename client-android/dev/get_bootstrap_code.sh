@@ -10,7 +10,7 @@ then
   exit
 fi
 
-CLIENT_ID="ecdd5f59-acaa-4d15-b74b-9fdb57583917"
+CLIENT_ID="22682c16-0184-40a5-9611-ecb304122a02"
 CLIENT_PASSWORD="mobile-secret"
 
 USER_ID="mobile-user"

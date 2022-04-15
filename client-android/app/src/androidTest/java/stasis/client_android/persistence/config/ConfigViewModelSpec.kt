@@ -61,7 +61,8 @@ class ConfigViewModelSpec {
                         preferences.getServerCoreConfig(),
                         equalTo(
                             Config.ServerCore(
-                                address = params.serverCore.address
+                                address = params.serverCore.address,
+                                nodeId = params.serverCore.nodeId
                             )
                         )
                     )
@@ -97,7 +98,36 @@ class ConfigViewModelSpec {
             device = "test-device"
         ),
         serverCore = DeviceBootstrapParameters.ServerCore(
-            address = "test-address"
+            address = "test-address",
+            nodeId = "test-node",
+        ),
+        secrets = DeviceBootstrapParameters.SecretsConfig(
+            derivation = DeviceBootstrapParameters.SecretsConfig.Derivation(
+                encryption = DeviceBootstrapParameters.SecretsConfig.Derivation.Encryption(
+                    secretSize = 16,
+                    iterations = 100000,
+                    saltPrefix = "test-prefix"
+                ),
+                authentication = DeviceBootstrapParameters.SecretsConfig.Derivation.Authentication(
+                    secretSize = 16,
+                    iterations = 100000,
+                    saltPrefix = "test-prefix"
+                )
+            ),
+            encryption = DeviceBootstrapParameters.SecretsConfig.Encryption(
+                file = DeviceBootstrapParameters.SecretsConfig.Encryption.File(
+                    keySize = 16,
+                    ivSize = 12
+                ),
+                metadata = DeviceBootstrapParameters.SecretsConfig.Encryption.Metadata(
+                    keySize = 16,
+                    ivSize = 12
+                ),
+                deviceSecret = DeviceBootstrapParameters.SecretsConfig.Encryption.DeviceSecret(
+                    keySize = 16,
+                    ivSize = 12
+                )
+            )
         )
     )
 

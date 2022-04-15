@@ -171,6 +171,7 @@ class ConfigRepositorySpec {
     fun notRetrieveMissingServerCoreConfig() {
         val preferences = mockk<SharedPreferences>()
         every { preferences.getString(Keys.ServerCore.Address, null) } returns null
+        every { preferences.getString(Keys.ServerCore.NodeId, null) } returns null
 
         assertThat(preferences.getServerCoreConfig(), equalTo(null))
     }
@@ -178,13 +179,15 @@ class ConfigRepositorySpec {
     @Test
     fun retrieveServerCoreConfig() {
         val expectedAddress = "test-address"
+        val expectedNode = "test-node"
 
         val preferences = mockk<SharedPreferences>()
         every { preferences.getString(Keys.ServerCore.Address, null) } returns expectedAddress
+        every { preferences.getString(Keys.ServerCore.NodeId, null) } returns expectedNode
 
         assertThat(
             preferences.getServerCoreConfig(),
-            equalTo(Config.ServerCore(address = expectedAddress))
+            equalTo(Config.ServerCore(address = expectedAddress, nodeId = expectedNode))
         )
     }
 
@@ -267,6 +270,7 @@ class ConfigRepositorySpec {
         every { emptyPreferences.getString(Keys.ServerApi.UserSalt, null) } returns null
         every { emptyPreferences.getString(Keys.ServerApi.Device, null) } returns null
         every { emptyPreferences.getString(Keys.ServerCore.Address, null) } returns null
+        every { emptyPreferences.getString(Keys.ServerCore.NodeId, null) } returns null
 
         val emptyRepository = ConfigRepository(preferences = emptyPreferences)
         assertThat(emptyRepository.available, equalTo(false))
@@ -292,6 +296,7 @@ class ConfigRepositorySpec {
         every { availablePreferences.getString(Keys.ServerApi.UserSalt, null) } returns "test"
         every { availablePreferences.getString(Keys.ServerApi.Device, null) } returns "test"
         every { availablePreferences.getString(Keys.ServerCore.Address, null) } returns "test"
+        every { availablePreferences.getString(Keys.ServerCore.NodeId, null) } returns "test"
 
         val availableRepository = ConfigRepository(preferences = availablePreferences)
         assertThat(availableRepository.available, equalTo(true))
@@ -314,6 +319,7 @@ class ConfigRepositorySpec {
         every { editor.putString(Keys.ServerApi.UserSalt, any()) } returns editor
         every { editor.putString(Keys.ServerApi.Device, any()) } returns editor
         every { editor.putString(Keys.ServerCore.Address, any()) } returns editor
+        every { editor.putString(Keys.ServerCore.NodeId, any()) } returns editor
 
         every {
             editor.putInt(Keys.Secrets.DerivationEncryptionSecretSize, any())
@@ -365,7 +371,36 @@ class ConfigRepositorySpec {
                     device = "test-device"
                 ),
                 serverCore = DeviceBootstrapParameters.ServerCore(
-                    address = "test-address"
+                    address = "test-address",
+                    nodeId = "test-node"
+                ),
+                secrets = DeviceBootstrapParameters.SecretsConfig(
+                    derivation = DeviceBootstrapParameters.SecretsConfig.Derivation(
+                        encryption = DeviceBootstrapParameters.SecretsConfig.Derivation.Encryption(
+                            secretSize = 16,
+                            iterations = 100000,
+                            saltPrefix = "test-prefix"
+                        ),
+                        authentication = DeviceBootstrapParameters.SecretsConfig.Derivation.Authentication(
+                            secretSize = 16,
+                            iterations = 100000,
+                            saltPrefix = "test-prefix"
+                        )
+                    ),
+                    encryption = DeviceBootstrapParameters.SecretsConfig.Encryption(
+                        file = DeviceBootstrapParameters.SecretsConfig.Encryption.File(
+                            keySize = 16,
+                            ivSize = 12
+                        ),
+                        metadata = DeviceBootstrapParameters.SecretsConfig.Encryption.Metadata(
+                            keySize = 16,
+                            ivSize = 12
+                        ),
+                        deviceSecret = DeviceBootstrapParameters.SecretsConfig.Encryption.DeviceSecret(
+                            keySize = 16,
+                            ivSize = 12
+                        )
+                    )
                 )
             )
         )
@@ -390,6 +425,7 @@ class ConfigRepositorySpec {
         every { editor.remove(Keys.ServerApi.UserSalt) } returns editor
         every { editor.remove(Keys.ServerApi.Device) } returns editor
         every { editor.remove(Keys.ServerCore.Address) } returns editor
+        every { editor.remove(Keys.ServerCore.NodeId) } returns editor
         every { editor.remove(Keys.Secrets.DerivationEncryptionSecretSize) } returns editor
         every { editor.remove(Keys.Secrets.DerivationEncryptionIterations) } returns editor
         every { editor.remove(Keys.Secrets.DerivationEncryptionSaltPrefix) } returns editor

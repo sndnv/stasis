@@ -21,6 +21,7 @@ data class Config(
     )
 
     data class ServerCore(
-        val address: String
+        val address: String,
+        val nodeId: String
     )
 }
