@@ -41,7 +41,36 @@ class DefaultServerBootstrapEndpointClientSpec : WordSpec({
                     device = UUID.randomUUID().toString()
                 ),
                 serverCore = DeviceBootstrapParameters.ServerCore(
-                    address = "http://localhost:5679"
+                    address = "http://localhost:5679",
+                    nodeId = "test-node"
+                ),
+                secrets = DeviceBootstrapParameters.SecretsConfig(
+                    derivation = DeviceBootstrapParameters.SecretsConfig.Derivation(
+                        encryption = DeviceBootstrapParameters.SecretsConfig.Derivation.Encryption(
+                            secretSize = 16,
+                            iterations = 100000,
+                            saltPrefix = "test-prefix"
+                        ),
+                        authentication = DeviceBootstrapParameters.SecretsConfig.Derivation.Authentication(
+                            secretSize = 16,
+                            iterations = 100000,
+                            saltPrefix = "test-prefix"
+                        )
+                    ),
+                    encryption = DeviceBootstrapParameters.SecretsConfig.Encryption(
+                        file = DeviceBootstrapParameters.SecretsConfig.Encryption.File(
+                            keySize = 16,
+                            ivSize = 12
+                        ),
+                        metadata = DeviceBootstrapParameters.SecretsConfig.Encryption.Metadata(
+                            keySize = 16,
+                            ivSize = 12
+                        ),
+                        deviceSecret = DeviceBootstrapParameters.SecretsConfig.Encryption.DeviceSecret(
+                            keySize = 16,
+                            ivSize = 12
+                        )
+                    )
                 )
             )
 
