@@ -25,7 +25,7 @@ class RejectionSpec extends UnitSpec with ScalatestRouteTest {
 
     Get().withEntity(HttpEntity(ContentTypes.`application/json`, "{}")) ~> route ~> check {
       status should be(StatusCodes.BadRequest)
-      entityAs[String] should be("Provided data is invalid or malformed")
+      entityAs[String] should startWith("Provided data is invalid or malformed")
     }
   }
 

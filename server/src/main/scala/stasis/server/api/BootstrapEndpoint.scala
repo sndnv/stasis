@@ -6,7 +6,6 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{ExceptionHandler, RejectionHandler, Route}
 import akka.stream.scaladsl.Sink
-import akka.stream.{Materializer, SystemMaterializer}
 import akka.util.ByteString
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import org.slf4j.{Logger, LoggerFactory}
@@ -27,11 +26,10 @@ class BootstrapEndpoint(
 )(implicit val system: ActorSystem[SpawnProtocol.Command])
     extends LoggingDirectives {
   private implicit val ec: ExecutionContextExecutor = system.executionContext
-  private implicit val mat: Materializer = SystemMaterializer(system).materializer
 
   override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
-  private implicit val context: RoutesContext = RoutesContext(resourceProvider, ec, mat, log)
+  private implicit val context: RoutesContext = RoutesContext(resourceProvider, ec, log)
 
   private val deviceBootstrap = DeviceBootstrap(deviceBootstrapContext)
 
@@ -100,13 +98,12 @@ class BootstrapEndpoint(
           val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
           log.warn(
-            "Rejecting [{}] request for [{}] with invalid credentials from [{} - {}]: [{}]",
+            "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{} - {}]",
             method.value,
             uri,
             remoteAddress,
             e.getClass.getSimpleName,
-            e.getMessage,
-            e
+            e.getMessage
           )
 
           complete(StatusCodes.Unauthorized)
