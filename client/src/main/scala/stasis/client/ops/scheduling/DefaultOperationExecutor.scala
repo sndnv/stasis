@@ -2,7 +2,6 @@ package stasis.client.ops.scheduling
 
 import java.nio.file.Path
 import java.time.Instant
-
 import akka.Done
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}

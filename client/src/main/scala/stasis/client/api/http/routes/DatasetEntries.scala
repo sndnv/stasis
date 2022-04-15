@@ -6,12 +6,11 @@ import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.stream.Materializer
 import stasis.client.api.http.Context
 
 import scala.concurrent.Future
 
-class DatasetEntries()(implicit override val mat: Materializer, context: Context) extends ApiRoutes {
+class DatasetEntries()(implicit context: Context) extends ApiRoutes {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.core.api.Matchers._
   import stasis.shared.api.Formats._
@@ -20,18 +19,18 @@ class DatasetEntries()(implicit override val mat: Materializer, context: Context
     concat(
       pathEndOrSingleSlash {
         get {
-          import mat.executionContext
+          extractExecutionContext { implicit ec =>
+            val result = for {
+              definitions <- context.api.datasetDefinitions()
+              entries <- Future.sequence(definitions.map(definition => context.api.datasetEntries(definition.id)))
+            } yield {
+              entries.flatten
+            }
 
-          val result = for {
-            definitions <- context.api.datasetDefinitions()
-            entries <- Future.sequence(definitions.map(definition => context.api.datasetEntries(definition.id)))
-          } yield {
-            entries.flatten
-          }
-
-          onSuccess(result) { entries =>
-            log.debugN("API successfully retrieved [{}] entries for all definitions", entries.size)
-            discardEntity & complete(entries)
+            onSuccess(result) { entries =>
+              log.debugN("API successfully retrieved [{}] entries for all definitions", entries.size)
+              discardEntity & complete(entries)
+            }
           }
         }
       },
@@ -73,6 +72,6 @@ class DatasetEntries()(implicit override val mat: Materializer, context: Context
 }
 
 object DatasetEntries {
-  def apply()(implicit mat: Materializer, context: Context): DatasetEntries =
+  def apply()(implicit context: Context): DatasetEntries =
     new DatasetEntries()
 }

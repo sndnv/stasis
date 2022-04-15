@@ -6,7 +6,6 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.scaladsl.Sink
-import akka.stream.{Materializer, SystemMaterializer}
 import akka.util.ByteString
 import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.api.http.routes._
@@ -20,8 +19,6 @@ import scala.util.{Failure, Success}
 class HttpApiEndpoint(
   authenticator: FrontendAuthenticator
 )(implicit system: ActorSystem[SpawnProtocol.Command], context: Context) {
-
-  private implicit val mat: Materializer = SystemMaterializer(system).materializer
 
   private val definitions = DatasetDefinitions()
   private val entries = DatasetEntries()
@@ -85,11 +82,12 @@ class HttpApiEndpoint(
               val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
               context.log.warn(
-                "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{}]",
+                "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{} - {}]",
                 method.value,
                 uri,
                 remoteAddress,
-                e
+                e.getClass.getSimpleName,
+                e.getMessage
               )
 
               complete(StatusCodes.Unauthorized)

@@ -2,10 +2,9 @@ package stasis.client.api.http.routes
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.stream.Materializer
 import stasis.client.api.http.Context
 
-class User()(implicit override val mat: Materializer, context: Context) extends ApiRoutes {
+class User()(implicit context: Context) extends ApiRoutes {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
@@ -21,6 +20,6 @@ class User()(implicit override val mat: Materializer, context: Context) extends 
 }
 
 object User {
-  def apply()(implicit mat: Materializer, context: Context): User =
+  def apply()(implicit context: Context): User =
     new User()
 }

@@ -3,11 +3,10 @@ package stasis.client.api.http.routes
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.stream.Materializer
 import stasis.client.api.http.Context
 import stasis.shared.api.responses.Ping
 
-class Service()(implicit override val mat: Materializer, context: Context) extends ApiRoutes {
+class Service()(implicit context: Context) extends ApiRoutes {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
@@ -31,6 +30,6 @@ class Service()(implicit override val mat: Materializer, context: Context) exten
 }
 
 object Service {
-  def apply()(implicit mat: Materializer, context: Context): Service =
+  def apply()(implicit context: Context): Service =
     new Service()
 }

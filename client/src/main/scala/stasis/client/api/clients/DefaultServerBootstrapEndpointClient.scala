@@ -1,21 +1,19 @@
 package stasis.client.api.clients
 
-import java.security.SecureRandom
-
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.http.scaladsl.{ConnectionContext, Http}
-import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
-import javax.net.ssl.SSLContext
 import play.api.libs.json.Format
 import stasis.client.api.clients.exceptions.ServerBootstrapFailure
 import stasis.client.api.clients.internal.InsecureX509TrustManager
 import stasis.shared.model.devices.DeviceBootstrapParameters
 
+import java.security.SecureRandom
+import javax.net.ssl.SSLContext
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -26,8 +24,6 @@ class DefaultServerBootstrapEndpointClient(
     extends ServerBootstrapEndpointClient {
   import DefaultServerBootstrapEndpointClient._
   import stasis.shared.api.Formats._
-
-  private implicit val ec: ExecutionContext = system.executionContext
 
   override val server: String = serverBootstrapUrl
 
@@ -47,7 +43,9 @@ class DefaultServerBootstrapEndpointClient(
     http.defaultClientHttpsContext
   }
 
-  override def execute(bootstrapCode: String): Future[DeviceBootstrapParameters] =
+  override def execute(bootstrapCode: String): Future[DeviceBootstrapParameters] = {
+    implicit val ec: ExecutionContext = system.executionContext
+
     for {
       response <- http.singleRequest(
         request = HttpRequest(
@@ -60,6 +58,7 @@ class DefaultServerBootstrapEndpointClient(
     } yield {
       params
     }
+  }
 }
 
 object DefaultServerBootstrapEndpointClient {
@@ -75,7 +74,9 @@ object DefaultServerBootstrapEndpointClient {
     )
 
   implicit class ResponseEntityToModel(response: HttpResponse) {
-    def to[M](implicit format: Format[M], ec: ExecutionContext, mat: Materializer): Future[M] =
+    def to[M](implicit format: Format[M], system: ActorSystem[SpawnProtocol.Command]): Future[M] = {
+      implicit val ec: ExecutionContext = system.executionContext
+
       if (response.status.isSuccess()) {
         import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
@@ -100,5 +101,6 @@ object DefaultServerBootstrapEndpointClient {
             )
           }
       }
+    }
   }
 }

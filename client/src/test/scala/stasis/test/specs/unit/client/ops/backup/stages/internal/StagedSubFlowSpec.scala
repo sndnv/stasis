@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.client.ops.backup.stages.internal
 
 import java.nio.file.{Path, Paths}
-
 import akka.Done
 import akka.actor.ActorSystem
 import akka.stream.IOResult

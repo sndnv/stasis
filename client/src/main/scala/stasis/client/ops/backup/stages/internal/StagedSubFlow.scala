@@ -3,7 +3,6 @@ package stasis.client.ops.backup.stages.internal
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
-
 import akka.stream.scaladsl.{FileIO, Flow, Keep, Source, SubFlow}
 import akka.stream.{IOResult, Materializer}
 import akka.util.ByteString

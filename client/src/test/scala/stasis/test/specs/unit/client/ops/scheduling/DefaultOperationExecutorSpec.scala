@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.client.ops.scheduling
 
 import java.util.concurrent.atomic.AtomicBoolean
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.scaladsl.Flow

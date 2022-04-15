@@ -3,10 +3,9 @@ package stasis.client.api.http.routes
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.stream.Materializer
 import stasis.client.api.http.Context
 
-class Schedules()(implicit override val mat: Materializer, context: Context) extends ApiRoutes {
+class Schedules()(implicit context: Context) extends ApiRoutes {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.client.api.http.Formats._
   import stasis.shared.api.Formats._
@@ -55,6 +54,6 @@ class Schedules()(implicit override val mat: Materializer, context: Context) ext
 }
 
 object Schedules {
-  def apply()(implicit mat: Materializer, context: Context): Schedules =
+  def apply()(implicit context: Context): Schedules =
     new Schedules()
 }

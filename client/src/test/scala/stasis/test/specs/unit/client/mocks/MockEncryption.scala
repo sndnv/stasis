@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.client.mocks
 
 import java.util.concurrent.atomic.AtomicInteger
-
 import akka.NotUsed
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString

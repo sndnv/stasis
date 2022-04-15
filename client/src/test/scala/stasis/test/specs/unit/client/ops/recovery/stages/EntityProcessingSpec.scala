@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.client.ops.recovery.stages
 
 import java.nio.file.Paths
-
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
 import akka.stream.{Materializer, SystemMaterializer}

@@ -2,11 +2,10 @@ package stasis.client.api.http.routes
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.stream.Materializer
 import stasis.client.api.http.Context
 import stasis.shared.api.requests.CreateDatasetDefinition
 
-class DatasetDefinitions()(implicit override val mat: Materializer, context: Context) extends ApiRoutes {
+class DatasetDefinitions()(implicit context: Context) extends ApiRoutes {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
@@ -32,6 +31,6 @@ class DatasetDefinitions()(implicit override val mat: Materializer, context: Con
 }
 
 object DatasetDefinitions {
-  def apply()(implicit mat: Materializer, context: Context): DatasetDefinitions =
+  def apply()(implicit context: Context): DatasetDefinitions =
     new DatasetDefinitions()
 }

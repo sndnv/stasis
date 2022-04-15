@@ -1,9 +1,6 @@
 package stasis.client.service.components
 
-import java.nio.file.Paths
-
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.stream.{Materializer, SystemMaterializer}
 import akka.util.Timeout
 import com.typesafe.{config => typesafe}
 import org.slf4j.Logger
@@ -17,6 +14,7 @@ import stasis.client.tracking.TrackerView
 import stasis.client.tracking.trackers.DefaultTracker
 import stasis.core.persistence.backends.memory.EventLogMemoryBackend
 
+import java.nio.file.Paths
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
@@ -25,7 +23,6 @@ import scala.util.Try
 trait Base extends FutureOps {
   implicit def system: ActorSystem[SpawnProtocol.Command]
   implicit def ec: ExecutionContext
-  implicit def mat: Materializer
   implicit def log: Logger
 
   def directory: ApplicationDirectory
@@ -58,7 +55,6 @@ object Base {
         new Base {
           override implicit val system: ActorSystem[SpawnProtocol.Command] = typedSystem
           override implicit val ec: ExecutionContext = typedSystem.executionContext
-          override implicit val mat: Materializer = SystemMaterializer(system).materializer
           override implicit val log: Logger = logger
 
           override val directory: ApplicationDirectory =

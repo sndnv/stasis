@@ -1,13 +1,10 @@
 package stasis.client.api.clients
 
-import java.time.Instant
-
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import stasis.client.api.clients.exceptions.ServerApiFailure
@@ -24,6 +21,7 @@ import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -298,7 +296,7 @@ object DefaultServerApiEndpointClient {
   }
 
   implicit class ResponseEntityToModel(response: HttpResponse) {
-    def to[M](implicit format: Format[M], ec: ExecutionContext, mat: Materializer): Future[M] =
+    def to[M](implicit format: Format[M], ec: ExecutionContext, system: ActorSystem[SpawnProtocol.Command]): Future[M] =
       if (response.status.isSuccess()) {
         import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 

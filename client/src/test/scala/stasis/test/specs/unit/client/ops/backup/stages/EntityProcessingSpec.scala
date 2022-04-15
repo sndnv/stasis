@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.client.ops.backup.stages
 
 import java.util.concurrent.atomic.AtomicInteger
-
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Flow, Source}

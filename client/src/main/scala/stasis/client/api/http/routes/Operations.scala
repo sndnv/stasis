@@ -8,7 +8,6 @@ import akka.http.scaladsl.model.sse.ServerSentEvent
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.unmarshalling.Unmarshaller
-import akka.stream.Materializer
 import play.api.libs.json.{Format, Json}
 import stasis.client.api.http.Context
 import stasis.client.api.http.Formats._
@@ -19,38 +18,39 @@ import stasis.shared.ops.Operation
 
 import scala.concurrent.duration._
 
-class Operations()(implicit override val mat: Materializer, context: Context) extends ApiRoutes {
+class Operations()(implicit context: Context) extends ApiRoutes {
   import Operations._
   import akka.http.scaladsl.marshalling.sse.EventStreamMarshalling._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
-  import mat.executionContext
   import stasis.core.api.Matchers._
 
   def routes(): Route =
     concat(
       pathEndOrSingleSlash {
         get {
-          val operationsState = for {
-            operations <- context.executor.active
-            progress <- context.tracker.state.map(_.operations)
-          } yield {
-            operations.map { case (operation, operationType) =>
-              val operationProgress = progress.getOrElse(
-                operation,
-                Operation.Progress.empty
-              )
+          extractExecutionContext { implicit ec =>
+            val operationsState = for {
+              operations <- context.executor.active
+              progress <- context.tracker.state.map(_.operations)
+            } yield {
+              operations.map { case (operation, operationType) =>
+                val operationProgress = progress.getOrElse(
+                  operation,
+                  Operation.Progress.empty
+                )
 
-              OperationState(
-                operation = operation,
-                `type` = operationType,
-                progress = operationProgress
-              )
+                OperationState(
+                  operation = operation,
+                  `type` = operationType,
+                  progress = operationProgress
+                )
+              }
             }
-          }
 
-          onSuccess(operationsState) { operations =>
-            log.debugN("API successfully retrieved state of [{}] operations", operations.size)
-            discardEntity & complete(operations)
+            onSuccess(operationsState) { operations =>
+              log.debugN("API successfully retrieved state of [{}] operations", operations.size)
+              discardEntity & complete(operations)
+            }
           }
         }
       },
@@ -142,17 +142,19 @@ class Operations()(implicit override val mat: Materializer, context: Context) ex
         concat(
           path("progress") {
             get {
-              onSuccess(context.tracker.state.map(_.operations.get(operation))) {
-                case Some(operation) =>
-                  log.debugN("API successfully retrieved progress of operation [{}]", operation)
-                  discardEntity & complete(operation)
+              extractExecutionContext { implicit ec =>
+                onSuccess(context.tracker.state.map(_.operations.get(operation))) {
+                  case Some(operation) =>
+                    log.debugN("API successfully retrieved progress of operation [{}]", operation)
+                    discardEntity & complete(operation)
 
-                case None =>
-                  log.debugN(
-                    "API could not retrieve progress of operation [{}]; operation not found",
-                    operation
-                  )
-                  discardEntity & complete(StatusCodes.NotFound)
+                  case None =>
+                    log.debugN(
+                      "API could not retrieve progress of operation [{}]; operation not found",
+                      operation
+                    )
+                    discardEntity & complete(StatusCodes.NotFound)
+                }
               }
             }
           },
@@ -186,7 +188,7 @@ class Operations()(implicit override val mat: Materializer, context: Context) ex
 object Operations {
   import akka.http.scaladsl.server.{Directive, Directive1}
 
-  def apply()(implicit mat: Materializer, context: Context): Operations =
+  def apply()(implicit context: Context): Operations =
     new Operations()
 
   final val DefaultSseHeartbeatInterval: FiniteDuration = 3.seconds

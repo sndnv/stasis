@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.client.ops.recovery.stages.internal
 
 import java.nio.file.Paths
-
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString

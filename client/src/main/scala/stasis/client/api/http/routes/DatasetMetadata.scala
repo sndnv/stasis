@@ -5,10 +5,9 @@ import java.time.Instant
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.stream.Materializer
 import stasis.client.api.http.Context
 
-class DatasetMetadata()(implicit override val mat: Materializer, context: Context) extends ApiRoutes {
+class DatasetMetadata()(implicit context: Context) extends ApiRoutes {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.client.api.http.Formats._
   import stasis.core.api.Matchers._
@@ -46,6 +45,6 @@ class DatasetMetadata()(implicit override val mat: Materializer, context: Contex
 }
 
 object DatasetMetadata {
-  def apply()(implicit mat: Materializer, context: Context): DatasetMetadata =
+  def apply()(implicit context: Context): DatasetMetadata =
     new DatasetMetadata()
 }

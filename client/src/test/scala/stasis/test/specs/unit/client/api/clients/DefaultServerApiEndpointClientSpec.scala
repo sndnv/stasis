@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.client.api.clients
 
 import java.time.Instant
-
 import akka.NotUsed
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
