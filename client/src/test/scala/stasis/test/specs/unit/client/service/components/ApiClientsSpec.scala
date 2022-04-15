@@ -1,7 +1,5 @@
 package stasis.test.specs.unit.client.service.components
 
-import java.util.UUID
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
@@ -9,14 +7,16 @@ import akka.stream.StreamTcpException
 import akka.util.ByteString
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.encryption.Aes
-import stasis.client.encryption.secrets.{DeviceSecret, Secret}
+import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.security.CredentialsProvider
 import stasis.client.service.components.{ApiClients, Base, Secrets}
 import stasis.core.packaging.Crate
 import stasis.shared.model.users.User
+import stasis.shared.secrets.SecretsConfig
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 
+import java.util.UUID
 import scala.concurrent.Future
 
 class ApiClientsSpec extends AsyncUnitSpec with ResourceHelpers {
@@ -27,8 +27,8 @@ class ApiClientsSpec extends AsyncUnitSpec with ResourceHelpers {
     val coreNodeId = UUID.fromString("31f7c5b1-3d47-4731-8c2b-19f6416eb2e3")
     val coreAddress = "http://localhost:19091"
 
-    implicit val secretsConfig: Secret.Config = Secret.Config(
-      rawConfig = typedSystem.settings.config.getConfig("stasis.client.secrets"),
+    implicit val secretsConfig: SecretsConfig = SecretsConfig(
+      config = typedSystem.settings.config.getConfig("stasis.client.secrets"),
       ivSize = Aes.IvSize
     )
 

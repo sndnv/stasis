@@ -1,16 +1,16 @@
 package stasis.client.service.components.bootstrap
 
-import java.util.UUID
-import java.util.concurrent.ThreadLocalRandom
-
 import akka.Done
 import akka.util.ByteString
 import stasis.client.encryption.Aes
-import stasis.client.encryption.secrets.{DeviceSecret, Secret, UserPassword}
+import stasis.client.encryption.secrets.{DeviceSecret, UserPassword}
 import stasis.client.service.components.Files
 import stasis.client.service.components.exceptions.ServiceStartupFailure
 import stasis.client.service.components.internal.ConfigOverride
+import stasis.shared.secrets.SecretsConfig
 
+import java.util.UUID
+import java.util.concurrent.ThreadLocalRandom
 import scala.concurrent.Future
 import scala.util.{Random, Try}
 
@@ -42,7 +42,7 @@ object Secrets {
                   .require(directory)
                   .transformFailureTo(ServiceStartupFailure.config)
               rawConfig <- configOverride.withFallback(system.settings.config).getConfig("stasis.client").resolve().future
-              secretsConfig <- Secret.Config(rawConfig = rawConfig.getConfig("secrets"), ivSize = Aes.IvSize).future
+              secretsConfig <- SecretsConfig(config = rawConfig.getConfig("secrets"), ivSize = Aes.IvSize).future
               user <- UUID.fromString(rawConfig.getString("server.api.user")).future
               userSalt <- rawConfig.getString("server.api.user-salt").future
               device <- UUID.fromString(rawConfig.getString("server.api.device")).future

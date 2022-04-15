@@ -1,19 +1,16 @@
 package stasis.test.specs.unit.client.ops.recovery
 
-import java.nio.file.Paths
-import java.time.Instant
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import akka.{Done, NotUsed}
-import org.scalatest.{Assertion, BeforeAndAfterAll}
 import org.scalatest.concurrent.Eventually
+import org.scalatest.{Assertion, BeforeAndAfterAll}
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.collection.RecoveryCollector
-import stasis.client.encryption.secrets.{DeviceMetadataSecret, DeviceSecret, Secret}
+import stasis.client.encryption.secrets.{DeviceMetadataSecret, DeviceSecret}
 import stasis.client.model.{DatasetMetadata, FilesystemMetadata}
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.recovery.Recovery.PathQuery
@@ -24,10 +21,13 @@ import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
 import stasis.shared.ops.Operation
+import stasis.shared.secrets.SecretsConfig
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks._
 import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 
+import java.nio.file.Paths
+import java.time.Instant
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
@@ -529,15 +529,15 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
 
   private implicit val parallelismConfig: ParallelismConfig = ParallelismConfig(value = 1)
 
-  private implicit val secretsConfig: Secret.Config = Secret.Config(
-    derivation = Secret.DerivationConfig(
-      encryption = Secret.KeyDerivationConfig(secretSize = 64, iterations = 100000, saltPrefix = "unit-test"),
-      authentication = Secret.KeyDerivationConfig(secretSize = 64, iterations = 100000, saltPrefix = "unit-test")
+  private implicit val secretsConfig: SecretsConfig = SecretsConfig(
+    derivation = SecretsConfig.Derivation(
+      encryption = SecretsConfig.Derivation.Encryption(secretSize = 64, iterations = 100000, saltPrefix = "unit-test"),
+      authentication = SecretsConfig.Derivation.Authentication(secretSize = 64, iterations = 100000, saltPrefix = "unit-test")
     ),
-    encryption = Secret.EncryptionConfig(
-      file = Secret.EncryptionSecretConfig(keySize = 16, ivSize = 16),
-      metadata = Secret.EncryptionSecretConfig(keySize = 24, ivSize = 32),
-      deviceSecret = Secret.EncryptionSecretConfig(keySize = 32, ivSize = 64)
+    encryption = SecretsConfig.Encryption(
+      file = SecretsConfig.Encryption.File(keySize = 16, ivSize = 16),
+      metadata = SecretsConfig.Encryption.Metadata(keySize = 24, ivSize = 32),
+      deviceSecret = SecretsConfig.Encryption.DeviceSecret(keySize = 32, ivSize = 64)
     )
   )
 

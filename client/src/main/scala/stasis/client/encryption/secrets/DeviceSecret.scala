@@ -2,7 +2,6 @@ package stasis.client.encryption.secrets
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
-
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -11,6 +10,7 @@ import stasis.client.encryption.stream.CipherStage
 import stasis.core.packaging.Crate
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
+import stasis.shared.secrets.SecretsConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -18,7 +18,7 @@ final case class DeviceSecret(
   user: User.Id,
   device: Device.Id,
   private val secret: ByteString
-)(implicit target: Secret.Config)
+)(implicit target: SecretsConfig)
     extends Secret {
   def encrypted(encryptionStage: CipherStage)(implicit mat: Materializer): Future[ByteString] =
     Source
@@ -73,7 +73,7 @@ object DeviceSecret {
     user: User.Id,
     device: Device.Id,
     secret: ByteString
-  )(implicit target: Secret.Config): DeviceSecret =
+  )(implicit target: SecretsConfig): DeviceSecret =
     new DeviceSecret(user, device, secret)
 
   def decrypted(
@@ -81,7 +81,7 @@ object DeviceSecret {
     device: Device.Id,
     encryptedSecret: ByteString,
     decryptionStage: CipherStage
-  )(implicit mat: Materializer, target: Secret.Config): Future[DeviceSecret] = {
+  )(implicit mat: Materializer, target: SecretsConfig): Future[DeviceSecret] = {
     implicit val ec: ExecutionContext = mat.executionContext
 
     Source

@@ -12,9 +12,10 @@ import stasis.core.security.tls.EndpointContext
 import stasis.shared.model.devices.{Device, DeviceBootstrapParameters}
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.ResourceHelpers
+import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 import stasis.test.specs.unit.client.mocks.MockServerBootstrapEndpoint
 
+import java.util.UUID
 import scala.collection.mutable
 
 class BootstrapSpec extends AsyncUnitSpec with ResourceHelpers {
@@ -52,7 +53,7 @@ class BootstrapSpec extends AsyncUnitSpec with ResourceHelpers {
   private val testParams = DeviceBootstrapParameters(
     authentication = DeviceBootstrapParameters.Authentication(
       tokenEndpoint = "http://localhost:1234",
-      clientId = Node.generateId().toString,
+      clientId = UUID.randomUUID().toString,
       clientSecret = "test-secret",
       useQueryString = true,
       scopes = DeviceBootstrapParameters.Scopes(
@@ -70,8 +71,10 @@ class BootstrapSpec extends AsyncUnitSpec with ResourceHelpers {
     ),
     serverCore = DeviceBootstrapParameters.ServerCore(
       address = "http://localhost:5679",
+      nodeId = Node.generateId().toString,
       context = DeviceBootstrapParameters.Context.disabled()
     ),
+    secrets = Fixtures.Secrets.DefaultConfig,
     additionalConfig = Json.obj()
   )
 

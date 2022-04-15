@@ -2,7 +2,6 @@ package stasis.test.specs.unit.client.service
 
 import java.io.Console
 import java.util.concurrent.ThreadLocalRandom
-
 import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
@@ -24,8 +23,9 @@ import stasis.shared.model.devices.{Device, DeviceBootstrapParameters}
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks.{MockServerBootstrapEndpoint, MockTokenEndpoint}
-import stasis.test.specs.unit.client.{EncodingHelpers, ResourceHelpers}
+import stasis.test.specs.unit.client.{EncodingHelpers, Fixtures, ResourceHelpers}
 
+import java.util.UUID
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -380,7 +380,7 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
   private val testParams = DeviceBootstrapParameters(
     authentication = DeviceBootstrapParameters.Authentication(
       tokenEndpoint = "http://localhost:1234",
-      clientId = Node.generateId().toString,
+      clientId = UUID.randomUUID().toString,
       clientSecret = "test-secret",
       useQueryString = true,
       scopes = DeviceBootstrapParameters.Scopes(
@@ -398,8 +398,10 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     ),
     serverCore = DeviceBootstrapParameters.ServerCore(
       address = "http://localhost:5679",
+      nodeId = Node.generateId().toString,
       context = DeviceBootstrapParameters.Context.disabled()
     ),
+    secrets = Fixtures.Secrets.DefaultConfig,
     additionalConfig = Json.obj()
   )
 

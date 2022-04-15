@@ -2,7 +2,6 @@ package stasis.test.specs.unit.client.service.components.bootstrap
 
 import java.nio.file.attribute.PosixFilePermissions
 import java.nio.file.{Files, Path}
-
 import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
@@ -16,9 +15,10 @@ import stasis.core.security.tls.EndpointContext
 import stasis.shared.model.devices.{Device, DeviceBootstrapParameters}
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.ResourceHelpers
+import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 import stasis.test.specs.unit.client.ResourceHelpers.FileSystemSetup
 
+import java.util.UUID
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
@@ -279,7 +279,7 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
   private val testParams = DeviceBootstrapParameters(
     authentication = DeviceBootstrapParameters.Authentication(
       tokenEndpoint = "http://localhost:1234",
-      clientId = Node.generateId().toString,
+      clientId = UUID.randomUUID().toString,
       clientSecret = "test-secret",
       useQueryString = true,
       scopes = DeviceBootstrapParameters.Scopes(
@@ -297,8 +297,10 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
     ),
     serverCore = DeviceBootstrapParameters.ServerCore(
       address = "http://localhost:5679",
+      nodeId = Node.generateId().toString,
       context = DeviceBootstrapParameters.Context.disabled()
     ),
+    secrets = Fixtures.Secrets.DefaultConfig,
     additionalConfig = Json.obj()
   )
 

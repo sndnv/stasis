@@ -5,6 +5,7 @@ import akka.util.ByteString
 import stasis.client.encryption.Aes
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
+import stasis.shared.secrets.SecretsConfig
 
 import scala.concurrent.Future
 
@@ -12,7 +13,7 @@ final case class UserEncryptionSecret(
   user: User.Id,
   iv: ByteString,
   private val key: ByteString
-)(implicit target: Secret.Config)
+)(implicit target: SecretsConfig)
     extends Secret {
 
   def encryptDeviceSecret(
@@ -37,6 +38,6 @@ object UserEncryptionSecret {
     user: User.Id,
     iv: ByteString,
     key: ByteString
-  )(implicit target: Secret.Config): UserEncryptionSecret =
+  )(implicit target: SecretsConfig): UserEncryptionSecret =
     new UserEncryptionSecret(user, iv, key)
 }

@@ -42,6 +42,36 @@ stasis {
       }
     }
 
+    secrets {
+      derivation {
+        encryption {
+          secret-size = $${SECRETS_DERIVATION_ENCRYPTION_SECRET_SIZE}
+          iterations = $${SECRETS_DERIVATION_ENCRYPTION_ITERATIONS}
+          salt-prefix = "$${SECRETS_DERIVATION_ENCRYPTION_SALT_PREFIX}"
+        }
+
+        authentication {
+          secret-size = $${SECRETS_DERIVATION_AUTHENTICATION_SECRET_SIZE}
+          iterations = $${SECRETS_DERIVATION_AUTHENTICATION_ITERATIONS}
+          salt-prefix = "$${SECRETS_DERIVATION_AUTHENTICATION_SALT_PREFIX}"
+        }
+      }
+
+      encryption {
+        file {
+          key-size = $${SECRETS_ENCRYPTION_FILE_KEY_SIZE}
+        }
+
+        metadata {
+          key-size = $${SECRETS_ENCRYPTION_METADATA_KEY_SIZE}
+        }
+
+        device-secret {
+          key-size = $${SECRETS_ENCRYPTION_DEVICE_SECRET_KEY_SIZE}
+        }
+      }
+    }
+
     server {
       authentication {
         token-endpoint = "$${AUTHENTICATION_TOKEN_ENDPOINT}"
@@ -98,6 +128,7 @@ stasis {
 
       core {
         address = "$${SERVER_CORE_ADDRESS}"
+        node-id = "$${SERVER_CORE_NODE_ID}"
 
         request-buffer-size = 1000
 

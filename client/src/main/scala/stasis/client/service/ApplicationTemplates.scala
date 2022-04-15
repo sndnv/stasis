@@ -1,11 +1,10 @@
 package stasis.client.service
 
-import java.io.FileNotFoundException
-
 import com.typesafe.{config => typesafe}
 import play.api.libs.json.JsObject
 import stasis.shared.model.devices.DeviceBootstrapParameters
 
+import java.io.FileNotFoundException
 import scala.util.{Failure, Success, Try}
 
 final case class ApplicationTemplates(
@@ -174,11 +173,21 @@ object ApplicationTemplates {
       "SERVER_API_CONTEXT_TRUSTSTORE_TYPE" -> bootstrapParams.serverApi.context.storeType,
       "SERVER_API_CONTEXT_TRUSTSTORE_PASSWORD" -> trustStoreParams.serverApiPassword,
       "SERVER_CORE_ADDRESS" -> bootstrapParams.serverCore.address,
+      "SERVER_CORE_NODE_ID" -> bootstrapParams.serverCore.nodeId,
       "SERVER_CORE_CONTEXT_ENABLED" -> bootstrapParams.serverCore.context.enabled.toString,
       "SERVER_CORE_CONTEXT_PROTOCOL" -> bootstrapParams.serverCore.context.protocol,
       "SERVER_CORE_CONTEXT_TRUSTSTORE_PATH" -> trustStoreParams.serverCoreFile,
       "SERVER_CORE_CONTEXT_TRUSTSTORE_TYPE" -> bootstrapParams.serverCore.context.storeType,
-      "SERVER_CORE_CONTEXT_TRUSTSTORE_PASSWORD" -> trustStoreParams.serverCorePassword
+      "SERVER_CORE_CONTEXT_TRUSTSTORE_PASSWORD" -> trustStoreParams.serverCorePassword,
+      "SECRETS_DERIVATION_ENCRYPTION_SECRET_SIZE" -> bootstrapParams.secrets.derivation.encryption.secretSize.toString,
+      "SECRETS_DERIVATION_ENCRYPTION_ITERATIONS" -> bootstrapParams.secrets.derivation.encryption.iterations.toString,
+      "SECRETS_DERIVATION_ENCRYPTION_SALT_PREFIX" -> bootstrapParams.secrets.derivation.encryption.saltPrefix,
+      "SECRETS_DERIVATION_AUTHENTICATION_SECRET_SIZE" -> bootstrapParams.secrets.derivation.authentication.secretSize.toString,
+      "SECRETS_DERIVATION_AUTHENTICATION_ITERATIONS" -> bootstrapParams.secrets.derivation.authentication.iterations.toString,
+      "SECRETS_DERIVATION_AUTHENTICATION_SALT_PREFIX" -> bootstrapParams.secrets.derivation.authentication.saltPrefix,
+      "SECRETS_ENCRYPTION_FILE_KEY_SIZE" -> bootstrapParams.secrets.encryption.file.keySize.toString,
+      "SECRETS_ENCRYPTION_METADATA_KEY_SIZE" -> bootstrapParams.secrets.encryption.metadata.keySize.toString,
+      "SECRETS_ENCRYPTION_DEVICE_SECRET_KEY_SIZE" -> bootstrapParams.secrets.encryption.deviceSecret.keySize.toString
     )
 
   private def flatten(user: String): Map[String, String] =

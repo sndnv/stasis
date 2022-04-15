@@ -1,20 +1,20 @@
 package stasis.test.specs.unit.client.model
 
-import java.util.UUID
-
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.google.protobuf.InvalidProtocolBufferException
 import stasis.client.encryption.Aes
-import stasis.client.encryption.secrets.{DeviceSecret, Secret}
+import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.{DatasetMetadata, FilesystemMetadata}
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
+import stasis.shared.secrets.SecretsConfig
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks.MockServerApiEndpointClient
 import stasis.test.specs.unit.client.{EncodingHelpers, Fixtures}
 
+import java.util.UUID
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
@@ -308,15 +308,15 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
 
   private implicit val system: ActorSystem = ActorSystem(name = "MetadataPushSpec")
 
-  private implicit val secretsConfig: Secret.Config = Secret.Config(
-    derivation = Secret.DerivationConfig(
-      encryption = Secret.KeyDerivationConfig(secretSize = 64, iterations = 100000, saltPrefix = "unit-test"),
-      authentication = Secret.KeyDerivationConfig(secretSize = 64, iterations = 100000, saltPrefix = "unit-test")
+  private implicit val secretsConfig: SecretsConfig = SecretsConfig(
+    derivation = SecretsConfig.Derivation(
+      encryption = SecretsConfig.Derivation.Encryption(secretSize = 64, iterations = 100000, saltPrefix = "unit-test"),
+      authentication = SecretsConfig.Derivation.Authentication(secretSize = 64, iterations = 100000, saltPrefix = "unit-test")
     ),
-    encryption = Secret.EncryptionConfig(
-      file = Secret.EncryptionSecretConfig(keySize = 16, ivSize = 16),
-      metadata = Secret.EncryptionSecretConfig(keySize = 24, ivSize = 32),
-      deviceSecret = Secret.EncryptionSecretConfig(keySize = 32, ivSize = 64)
+    encryption = SecretsConfig.Encryption(
+      file = SecretsConfig.Encryption.File(keySize = 16, ivSize = 16),
+      metadata = SecretsConfig.Encryption.Metadata(keySize = 24, ivSize = 32),
+      deviceSecret = SecretsConfig.Encryption.DeviceSecret(keySize = 32, ivSize = 64)
     )
   )
 

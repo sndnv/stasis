@@ -1,15 +1,15 @@
 package stasis.client.service.components
 
-import java.util.UUID
-
 import akka.util.ByteString
 import stasis.client.encryption.Aes
-import stasis.client.encryption.secrets.{DeviceSecret, Secret, UserPassword}
+import stasis.client.encryption.secrets.{DeviceSecret, UserPassword}
 import stasis.client.security.{CredentialsProvider, DefaultCredentialsProvider}
 import stasis.client.service.components.exceptions.ServiceStartupFailure
 import stasis.core.security.oauth.{DefaultOAuthClient, OAuthClient}
 import stasis.core.security.tls.EndpointContext
+import stasis.shared.secrets.SecretsConfig
 
+import java.util.UUID
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Try
@@ -34,7 +34,7 @@ object Secrets {
     }
 
     for {
-      secretsConfig <- Secret.Config(rawConfig = rawConfig.getConfig("secrets"), ivSize = Aes.IvSize).future
+      secretsConfig <- SecretsConfig(config = rawConfig.getConfig("secrets"), ivSize = Aes.IvSize).future
       user <- UUID.fromString(rawConfig.getString("server.api.user")).future
       userSalt <- rawConfig.getString("server.api.user-salt").future
       device <- UUID.fromString(rawConfig.getString("server.api.device")).future
