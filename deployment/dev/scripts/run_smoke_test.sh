@@ -10,7 +10,7 @@ then
   exit
 fi
 
-SMOKE_TEST_CLIENT_ID="ef1e47e0-3a55-492e-bf5d-3c09c10c394d"
+SMOKE_TEST_CLIENT_ID="1068208a-3cd7-4121-bad7-050dee3b4494"
 CLIENT_PASSWORD="test-secret"
 
 USER_ID="test-user"

@@ -8,14 +8,14 @@ homepage := Some(url("https://github.com/sndnv/stasis"))
 
 ThisBuild / scalaVersion := "2.13.8"
 
-lazy val akkaVersion         = "2.6.18"
+lazy val akkaVersion         = "2.6.19"
 lazy val akkaHttpVersion     = "10.2.9"
 lazy val akkaHttpCorsVersion = "1.1.3"
-lazy val geodeVersion        = "1.14.3"
+lazy val geodeVersion        = "1.14.4"
 lazy val slickVersion        = "3.3.3"
-lazy val h2Version           = "2.1.210"
+lazy val h2Version           = "2.1.212"
 lazy val postgresVersion     = "42.3.3"
-lazy val mariadbVersion      = "3.0.3"
+lazy val mariadbVersion      = "3.0.4"
 lazy val sqliteVersion       = "3.36.0.3"
 lazy val logbackVersion      = "1.2.11"
 
@@ -98,16 +98,16 @@ lazy val core = (project in file("./core"))
       "com.typesafe.akka"     %% "akka-http2-support"      % akkaHttpVersion,
       "com.typesafe.play"     %% "play-json"               % "2.9.2",
       "de.heikoseeberger"     %% "akka-http-play-json"     % "1.39.2",
-      "org.bitbucket.b_c"      % "jose4j"                  % "0.7.10",
+      "org.bitbucket.b_c"      % "jose4j"                  % "0.7.11",
       "org.apache.geode"       % "geode-core"              % geodeVersion    % Provided,
       "com.typesafe.slick"    %% "slick"                   % slickVersion    % Provided,
       "com.h2database"         % "h2"                      % h2Version       % Test,
-      "org.scalacheck"        %% "scalacheck"              % "1.15.4"        % Test,
+      "org.scalacheck"        %% "scalacheck"              % "1.16.0"        % Test,
       "org.scalatest"         %% "scalatest"               % "3.2.11"        % Test,
       "com.typesafe.akka"     %% "akka-testkit"            % akkaVersion     % Test,
       "com.typesafe.akka"     %% "akka-stream-testkit"     % akkaVersion     % Test,
       "com.typesafe.akka"     %% "akka-http-testkit"       % akkaHttpVersion % Test,
-      "com.github.tomakehurst" % "wiremock-jre8"           % "2.32.0"        % Test,
+      "com.github.tomakehurst" % "wiremock-jre8"           % "2.33.1"        % Test,
       "org.mockito"           %% "mockito-scala"           % "1.17.5"        % Test,
       "org.mockito"           %% "mockito-scala-scalatest" % "1.17.5"        % Test,
       "org.mockito"            % "mockito-inline"          % "4.4.0"         % Test
