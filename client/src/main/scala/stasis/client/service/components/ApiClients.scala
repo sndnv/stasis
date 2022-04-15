@@ -24,7 +24,7 @@ object ApiClients {
         val coreClient: ServerCoreEndpointClient = DefaultServerCoreEndpointClient(
           address = HttpEndpointAddress(rawConfig.getString("server.core.address")),
           credentials = credentialsProvider.core,
-          self = UUID.fromString(rawConfig.getString("server.authentication.client-id")),
+          self = UUID.fromString(rawConfig.getString("server.core.node-id")),
           context = EndpointContext(rawConfig.getConfig("server.core.context")),
           requestBufferSize = rawConfig.getInt("server.core.request-buffer-size")
         )

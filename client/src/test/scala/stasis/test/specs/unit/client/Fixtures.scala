@@ -1,17 +1,17 @@
 package stasis.test.specs.unit.client
 
-import java.nio.file.Paths
-import java.time.Instant
-import java.time.temporal.ChronoUnit
-
 import akka.util.ByteString
-import stasis.client.encryption.secrets.{DeviceSecret, Secret}
+import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.EntityMetadata
 import stasis.core.packaging.Crate
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
+import stasis.shared.secrets.SecretsConfig
 
+import java.nio.file.Paths
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import scala.concurrent.duration._
 
 object Fixtures {
@@ -131,15 +131,15 @@ object Fixtures {
   }
 
   object Secrets {
-    final lazy val DefaultConfig = Secret.Config(
-      derivation = Secret.DerivationConfig(
-        encryption = Secret.KeyDerivationConfig(secretSize = 16, iterations = 100000, saltPrefix = ""),
-        authentication = Secret.KeyDerivationConfig(secretSize = 16, iterations = 100000, saltPrefix = "")
+    final lazy val DefaultConfig = SecretsConfig(
+      derivation = SecretsConfig.Derivation(
+        encryption = SecretsConfig.Derivation.Encryption(secretSize = 16, iterations = 100000, saltPrefix = ""),
+        authentication = SecretsConfig.Derivation.Authentication(secretSize = 16, iterations = 100000, saltPrefix = "")
       ),
-      encryption = Secret.EncryptionConfig(
-        file = Secret.EncryptionSecretConfig(keySize = 16, ivSize = 12),
-        metadata = Secret.EncryptionSecretConfig(keySize = 16, ivSize = 12),
-        deviceSecret = Secret.EncryptionSecretConfig(keySize = 16, ivSize = 12)
+      encryption = SecretsConfig.Encryption(
+        file = SecretsConfig.Encryption.File(keySize = 16, ivSize = 12),
+        metadata = SecretsConfig.Encryption.Metadata(keySize = 16, ivSize = 12),
+        deviceSecret = SecretsConfig.Encryption.DeviceSecret(keySize = 16, ivSize = 12)
       )
     )
 

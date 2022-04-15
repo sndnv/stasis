@@ -7,7 +7,9 @@ import stasis.shared.model.devices.{Device, DeviceBootstrapParameters}
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.UnitSpec
 import com.typesafe.{config => typesafe}
+import stasis.test.specs.unit.client.Fixtures
 
+import java.util.UUID
 import scala.util.{Failure, Success, Try}
 
 class ApplicationTemplatesSpec extends UnitSpec {
@@ -175,7 +177,7 @@ class ApplicationTemplatesSpec extends UnitSpec {
   private val bootstrapParams = DeviceBootstrapParameters(
     authentication = DeviceBootstrapParameters.Authentication(
       tokenEndpoint = "http://localhost:1234",
-      clientId = Node.generateId().toString,
+      clientId = UUID.randomUUID().toString,
       clientSecret = "test-secret",
       useQueryString = true,
       scopes = DeviceBootstrapParameters.Scopes(
@@ -193,8 +195,10 @@ class ApplicationTemplatesSpec extends UnitSpec {
     ),
     serverCore = DeviceBootstrapParameters.ServerCore(
       address = "http://localhost:5679",
+      nodeId = Node.generateId().toString,
       context = DeviceBootstrapParameters.Context.disabled()
     ),
+    secrets = Fixtures.Secrets.DefaultConfig,
     additionalConfig = Json.obj(
       "a" -> Json.obj(
         "b" -> Json.obj(

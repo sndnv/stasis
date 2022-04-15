@@ -3,11 +3,12 @@ package stasis.client.encryption.secrets
 import akka.util.ByteString
 import at.favre.lib.crypto.HKDF
 import stasis.shared.model.users.User
+import stasis.shared.secrets.SecretsConfig
 
 final case class UserHashedEncryptionPassword(
   user: User.Id,
   private val hashedPassword: ByteString
-)(implicit target: Secret.Config)
+)(implicit target: SecretsConfig)
     extends Secret {
   def toEncryptionSecret: UserEncryptionSecret = {
     val salt = user.toBytes
@@ -29,6 +30,6 @@ object UserHashedEncryptionPassword {
   def apply(
     user: User.Id,
     hashedPassword: ByteString
-  )(implicit target: Secret.Config): UserHashedEncryptionPassword =
+  )(implicit target: SecretsConfig): UserHashedEncryptionPassword =
     new UserHashedEncryptionPassword(user, hashedPassword)
 }

@@ -1,10 +1,10 @@
 package stasis.client.encryption.secrets
 
-import java.util.Base64
-import java.util.concurrent.atomic.AtomicBoolean
-
 import akka.util.ByteString
 import stasis.shared.model.users.User
+import stasis.shared.secrets.DerivedPasswords
+
+import java.util.concurrent.atomic.AtomicBoolean
 
 // doc - sent to auth provider
 final case class UserHashedAuthenticationPassword(
@@ -20,7 +20,7 @@ final case class UserHashedAuthenticationPassword(
     if (alreadyExtracted) {
       throw new IllegalStateException("Password already extracted")
     } else {
-      Base64.getUrlEncoder.withoutPadding.encodeToString(hashedPassword.toArray)
+      DerivedPasswords.encode(hashedPassword)
     }
   }
 }
