@@ -1,7 +1,5 @@
 package stasis.test.specs.unit.server.api.routes
 
-import java.time.Instant
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.model.StatusCodes
@@ -18,13 +16,15 @@ import stasis.server.security.{CurrentUser, ResourceProvider}
 import stasis.shared.model.devices.{Device, DeviceBootstrapCode, DeviceBootstrapParameters}
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.server.Secrets
 import stasis.test.specs.unit.server.model.mocks._
 import stasis.test.specs.unit.server.security.mocks._
 import stasis.test.specs.unit.shared.model.Generators
 
+import java.time.Instant
 import scala.concurrent.Future
 
-class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest {
+class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
   "DeviceBootstrap routes (full permissions)" should "respond with all device bootstrap codes" in {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import stasis.shared.api.Formats._
@@ -154,7 +154,8 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest {
         baseParams
           .withDeviceInfo(
             device = devices.head.id.toString,
-            clientId = devices.head.node.toString,
+            nodeId = devices.head.node.toString,
+            clientId = "test-client-id",
             clientSecret = "test-secret"
           )
           .withUserInfo(
@@ -301,8 +302,10 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest {
     ),
     serverCore = DeviceBootstrapParameters.ServerCore(
       address = "http://localhost:5679",
+      nodeId = "",
       context = DeviceBootstrapParameters.Context.disabled()
     ),
+    secrets = testSecretsConfig,
     additionalConfig = Json.obj()
   )
 }

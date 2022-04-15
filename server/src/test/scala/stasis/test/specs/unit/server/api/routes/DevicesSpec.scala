@@ -7,9 +7,11 @@ import akka.http.scaladsl.model.{RequestEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.{Logger, LoggerFactory}
+import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
 import stasis.server.api.routes.{Devices, RoutesContext}
 import stasis.server.model.devices.DeviceStore
+import stasis.server.model.nodes.ServerNodeStore
 import stasis.server.model.users.UserStore
 import stasis.server.security.{CurrentUser, ResourceProvider}
 import stasis.shared.api.requests._
@@ -17,6 +19,7 @@ import stasis.shared.api.responses.{CreatedDevice, DeletedDevice}
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.persistence.mocks.MockNodeStore
 import stasis.test.specs.unit.server.model.mocks.{MockDeviceStore, MockUserStore}
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
 
@@ -319,6 +322,9 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     lazy val deviceStore: DeviceStore = MockDeviceStore()
 
+    lazy val nodeStore: NodeStore = new MockNodeStore()
+    lazy val serverNodeStore: ServerNodeStore = ServerNodeStore(nodeStore)
+
     implicit lazy val provider: ResourceProvider = new MockResourceProvider(
       resources = Set(
         userStore.view(),
@@ -326,7 +332,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
         deviceStore.view(),
         deviceStore.viewSelf(),
         deviceStore.manage(),
-        deviceStore.manageSelf()
+        deviceStore.manageSelf(),
+        serverNodeStore.manageSelf()
       )
     )
 
@@ -363,13 +370,12 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   )
 
   private val createRequestPrivileged = CreateDevicePrivileged(
-    node = Node.generateId(),
+    node = Some(Node.generateId()),
     owner = user.id,
     limits = None
   )
 
   private val createRequestOwn = CreateDeviceOwn(
-    node = Node.generateId(),
     limits = None
   )
 

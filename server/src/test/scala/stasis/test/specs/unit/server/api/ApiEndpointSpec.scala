@@ -1,8 +1,5 @@
 package stasis.test.specs.unit.server.api
 
-import java.time.{Instant, LocalDateTime}
-import java.util.UUID
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{Behavior, SpawnProtocol}
 import akka.http.scaladsl.Http
@@ -40,14 +37,17 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.{MockGrpcEndpointClient, MockHttpEndpointClient}
 import stasis.test.specs.unit.core.persistence.Generators
 import stasis.test.specs.unit.core.persistence.mocks.{MockCrateStore, MockNodeStore, MockReservationStore}
+import stasis.test.specs.unit.server.Secrets
 import stasis.test.specs.unit.server.model.mocks._
-import stasis.test.specs.unit.server.security.mocks.{MockResourceProvider, MockUserAuthenticator}
+import stasis.test.specs.unit.server.security.mocks.{MockResourceProvider, MockUserAuthenticator, MockUserCredentialsManager}
 
+import java.time.{Instant, LocalDateTime}
+import java.util.UUID
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
+class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
   import stasis.core.api.Formats._
   import stasis.shared.api.Formats._
 
@@ -300,7 +300,9 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   it should "handle authorization failures reported by routes" in {
     val endpoint = new ApiEndpoint(
       resourceProvider = new MockResourceProvider(Set.empty),
-      authenticator = new MockUserAuthenticator(testUser.toString, testPassword)
+      authenticator = new MockUserAuthenticator(testUser.toString, testPassword),
+      userCredentialsManager = MockUserCredentialsManager(),
+      secretsConfig = testSecretsConfig
     )
 
     val endpointPort = ports.dequeue()
@@ -327,7 +329,9 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     val endpoint = new ApiEndpoint(
       resourceProvider = new MockResourceProvider(Set(userStore.manageSelf())),
-      authenticator = new MockUserAuthenticator(testUser.toString, testPassword)
+      authenticator = new MockUserAuthenticator(testUser.toString, testPassword),
+      userCredentialsManager = MockUserCredentialsManager(),
+      secretsConfig = testSecretsConfig
     )
 
     val endpointPort = ports.dequeue()
@@ -357,7 +361,9 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     val endpoint = new ApiEndpoint(
       resourceProvider = new MockResourceProvider(Set(userStore.manageSelf())),
-      authenticator = new MockUserAuthenticator(testUser.toString, testPassword)
+      authenticator = new MockUserAuthenticator(testUser.toString, testPassword),
+      userCredentialsManager = MockUserCredentialsManager(),
+      secretsConfig = testSecretsConfig
     )
 
     val endpointPort = ports.dequeue()
@@ -377,7 +383,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       )
       .map { response =>
         response.status should be(StatusCodes.BadRequest)
-        Unmarshal(response.entity).to[String].await should be(
+        Unmarshal(response.entity).to[String].await should startWith(
           "Provided data is invalid or malformed"
         )
       }
@@ -435,7 +441,12 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     lazy val authenticator: UserAuthenticator = new MockUserAuthenticator(testUser.toString, testPassword)
 
-    lazy val endpoint: ApiEndpoint = new ApiEndpoint(provider, authenticator)
+    lazy val endpoint: ApiEndpoint = new ApiEndpoint(
+      resourceProvider = provider,
+      authenticator = authenticator,
+      userCredentialsManager = MockUserCredentialsManager(),
+      secretsConfig = testSecretsConfig
+    )
   }
 
   private val testUser = User.generateId()

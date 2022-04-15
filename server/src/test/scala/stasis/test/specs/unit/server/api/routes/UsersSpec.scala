@@ -9,19 +9,22 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.server.api.routes.{RoutesContext, Users}
 import stasis.server.model.users.UserStore
+import stasis.server.security.users.UserCredentialsManager
 import stasis.server.security.{CurrentUser, ResourceProvider}
-import stasis.shared.api.requests.{CreateUser, UpdateUserLimits, UpdateUserPermissions, UpdateUserState}
-import stasis.shared.api.responses.{CreatedUser, DeletedUser}
+import stasis.shared.api.requests._
+import stasis.shared.api.responses.{CreatedUser, DeletedUser, UpdatedUserSalt}
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.server.Secrets
 import stasis.test.specs.unit.server.model.mocks.MockUserStore
-import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
+import stasis.test.specs.unit.server.security.mocks.{MockResourceProvider, MockUserCredentialsManager}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.Success
 
-class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest {
+class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
@@ -43,7 +46,74 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.userStore
         .view()
         .get(entityAs[CreatedUser].user)
-        .map(_.isDefined should be(true))
+        .map { user =>
+          user.isDefined should be(true)
+
+          fixtures.credentialsManager.resourceOwnersCreated should be(1)
+          fixtures.credentialsManager.resourceOwnersActivated should be(0)
+          fixtures.credentialsManager.resourceOwnersDeactivated should be(0)
+          fixtures.credentialsManager.resourceOwnerPasswordsSet should be(0)
+          fixtures.credentialsManager.notFound should be(0)
+          fixtures.credentialsManager.conflicts should be(0)
+          fixtures.credentialsManager.failures should be(0)
+
+          fixtures.credentialsManager.latestPassword should not be empty
+          fixtures.credentialsManager.latestPassword should not be createRequest.rawPassword
+        }
+    }
+  }
+
+  they should "handle resource owner creation failures (not found)" in {
+    val fixtures = new TestFixtures {
+      override lazy val credentialsManager: MockUserCredentialsManager =
+        MockUserCredentialsManager(
+          withResult = Success(UserCredentialsManager.Result.NotFound("test-message"))
+        )
+    }
+    Post("/").withEntity(createRequest) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.NotFound)
+
+      fixtures.userStore
+        .view()
+        .list()
+        .map { users =>
+          users shouldBe empty
+
+          fixtures.credentialsManager.resourceOwnersCreated should be(1)
+          fixtures.credentialsManager.resourceOwnersActivated should be(0)
+          fixtures.credentialsManager.resourceOwnersDeactivated should be(0)
+          fixtures.credentialsManager.resourceOwnerPasswordsSet should be(0)
+          fixtures.credentialsManager.notFound should be(1)
+          fixtures.credentialsManager.conflicts should be(0)
+          fixtures.credentialsManager.failures should be(0)
+        }
+    }
+  }
+
+  they should "handle resource owner creation failures (conflict)" in {
+    val fixtures = new TestFixtures {
+      override lazy val credentialsManager: MockUserCredentialsManager =
+        MockUserCredentialsManager(
+          withResult = Success(UserCredentialsManager.Result.Conflict("test-message"))
+        )
+    }
+    Post("/").withEntity(createRequest) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.Conflict)
+
+      fixtures.userStore
+        .view()
+        .list()
+        .map { users =>
+          users shouldBe empty
+
+          fixtures.credentialsManager.resourceOwnersCreated should be(1)
+          fixtures.credentialsManager.resourceOwnersActivated should be(0)
+          fixtures.credentialsManager.resourceOwnersDeactivated should be(0)
+          fixtures.credentialsManager.resourceOwnerPasswordsSet should be(0)
+          fixtures.credentialsManager.notFound should be(0)
+          fixtures.credentialsManager.conflicts should be(1)
+          fixtures.credentialsManager.failures should be(0)
+        }
     }
   }
 
@@ -71,6 +141,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     Put(s"/${users.head.id}/limits")
       .withEntity(updateLimitsRequest) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+
       fixtures.userStore
         .view()
         .get(users.head.id)
@@ -84,6 +156,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     Put(s"/${users.head.id}/permissions")
       .withEntity(updatePermissionsRequest) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+
       fixtures.userStore
         .view()
         .get(users.head.id)
@@ -91,16 +165,131 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "update existing users' state" in {
+  they should "update existing users' state (to active)" in {
     val fixtures = new TestFixtures {}
     fixtures.userStore.manage().create(users.head).await
 
+    val updateStateRequest = UpdateUserState(
+      active = true
+    )
+
     Put(s"/${users.head.id}/state")
-      .withEntity(updateStateRequest) ~> fixtures.routes ~> check {
+      .withEntity(updateStateRequest.copy()) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+
       fixtures.userStore
         .view()
         .get(users.head.id)
-        .map(_.map(_.active) should be(Some(updateStateRequest.active)))
+        .map { user =>
+          user.map(_.active) should be(Some(updateStateRequest.active))
+
+          fixtures.credentialsManager.resourceOwnersCreated should be(0)
+          fixtures.credentialsManager.resourceOwnersActivated should be(1)
+          fixtures.credentialsManager.resourceOwnersDeactivated should be(0)
+          fixtures.credentialsManager.resourceOwnerPasswordsSet should be(0)
+          fixtures.credentialsManager.notFound should be(0)
+          fixtures.credentialsManager.conflicts should be(0)
+          fixtures.credentialsManager.failures should be(0)
+        }
+    }
+  }
+
+  they should "update existing users' state (to inactive)" in {
+    val fixtures = new TestFixtures {}
+    fixtures.userStore.manage().create(users.head).await
+
+    val updateStateRequest = UpdateUserState(
+      active = false
+    )
+
+    Put(s"/${users.head.id}/state")
+      .withEntity(updateStateRequest) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+
+      fixtures.userStore
+        .view()
+        .get(users.head.id)
+        .map { user =>
+          user.map(_.active) should be(Some(updateStateRequest.active))
+
+          fixtures.credentialsManager.resourceOwnersCreated should be(0)
+          fixtures.credentialsManager.resourceOwnersActivated should be(0)
+          fixtures.credentialsManager.resourceOwnersDeactivated should be(1)
+          fixtures.credentialsManager.resourceOwnerPasswordsSet should be(0)
+          fixtures.credentialsManager.notFound should be(0)
+          fixtures.credentialsManager.conflicts should be(0)
+          fixtures.credentialsManager.failures should be(0)
+        }
+    }
+  }
+
+  they should "handle resource owner activation/deactivation failures when updating user state (not found)" in {
+    val fixtures = new TestFixtures {
+      override lazy val credentialsManager: MockUserCredentialsManager =
+        MockUserCredentialsManager(
+          withResult = Success(UserCredentialsManager.Result.NotFound("test-message"))
+        )
+    }
+
+    fixtures.userStore.manage().create(users.head).await
+
+    val updateStateRequest = UpdateUserState(
+      active = false
+    )
+
+    Put(s"/${users.head.id}/state")
+      .withEntity(updateStateRequest) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.NotFound)
+
+      fixtures.userStore
+        .view()
+        .get(users.head.id)
+        .map { user =>
+          user should be(users.headOption)
+
+          fixtures.credentialsManager.resourceOwnersCreated should be(0)
+          fixtures.credentialsManager.resourceOwnersActivated should be(0)
+          fixtures.credentialsManager.resourceOwnersDeactivated should be(1)
+          fixtures.credentialsManager.resourceOwnerPasswordsSet should be(0)
+          fixtures.credentialsManager.notFound should be(1)
+          fixtures.credentialsManager.conflicts should be(0)
+          fixtures.credentialsManager.failures should be(0)
+        }
+    }
+  }
+
+  they should "handle resource owner activation/deactivation failures when updating user state (conflict)" in {
+    val fixtures = new TestFixtures {
+      override lazy val credentialsManager: MockUserCredentialsManager =
+        MockUserCredentialsManager(
+          withResult = Success(UserCredentialsManager.Result.Conflict("test-message"))
+        )
+    }
+
+    fixtures.userStore.manage().create(users.head).await
+
+    val updateStateRequest = UpdateUserState(
+      active = false
+    )
+
+    Put(s"/${users.head.id}/state")
+      .withEntity(updateStateRequest) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.Conflict)
+
+      fixtures.userStore
+        .view()
+        .get(users.head.id)
+        .map { user =>
+          user should be(users.headOption)
+
+          fixtures.credentialsManager.resourceOwnersCreated should be(0)
+          fixtures.credentialsManager.resourceOwnersActivated should be(0)
+          fixtures.credentialsManager.resourceOwnersDeactivated should be(1)
+          fixtures.credentialsManager.resourceOwnerPasswordsSet should be(0)
+          fixtures.credentialsManager.notFound should be(0)
+          fixtures.credentialsManager.conflicts should be(1)
+          fixtures.credentialsManager.failures should be(0)
+        }
     }
   }
 
@@ -122,6 +311,11 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
   they should "fail to update state if a user is missing" in {
     val fixtures = new TestFixtures {}
+
+    val updateStateRequest = UpdateUserState(
+      active = false
+    )
+
     Put(s"/${User.generateId()}/state")
       .withEntity(updateStateRequest) ~> fixtures.routes ~> check {
       status should be(StatusCodes.BadRequest)
@@ -139,7 +333,17 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.userStore
         .view()
         .get(users.head.id)
-        .map(_ should be(None))
+        .map { user =>
+          user should be(None)
+
+          fixtures.credentialsManager.resourceOwnersCreated should be(0)
+          fixtures.credentialsManager.resourceOwnersActivated should be(0)
+          fixtures.credentialsManager.resourceOwnersDeactivated should be(1)
+          fixtures.credentialsManager.resourceOwnerPasswordsSet should be(0)
+          fixtures.credentialsManager.notFound should be(0)
+          fixtures.credentialsManager.conflicts should be(0)
+          fixtures.credentialsManager.failures should be(0)
+        }
     }
   }
 
@@ -149,6 +353,133 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Delete(s"/${users.head.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DeletedUser] should be(DeletedUser(existing = false))
+    }
+  }
+
+  they should "handle resource owner deactivation failures when deleting users (not found)" in {
+    val fixtures = new TestFixtures {
+      override lazy val credentialsManager: MockUserCredentialsManager =
+        MockUserCredentialsManager(
+          withResult = Success(UserCredentialsManager.Result.NotFound("test-message"))
+        )
+    }
+    fixtures.userStore.manage().create(users.head).await
+
+    Delete(s"/${users.head.id}") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.NotFound)
+
+      fixtures.userStore
+        .view()
+        .get(users.head.id)
+        .map { user =>
+          user should be(users.headOption)
+
+          fixtures.credentialsManager.resourceOwnersCreated should be(0)
+          fixtures.credentialsManager.resourceOwnersActivated should be(0)
+          fixtures.credentialsManager.resourceOwnersDeactivated should be(1)
+          fixtures.credentialsManager.resourceOwnerPasswordsSet should be(0)
+          fixtures.credentialsManager.notFound should be(1)
+          fixtures.credentialsManager.conflicts should be(0)
+          fixtures.credentialsManager.failures should be(0)
+        }
+    }
+  }
+
+  they should "handle resource owner deactivation failures when deleting users (conflict)" in {
+    val fixtures = new TestFixtures {
+      override lazy val credentialsManager: MockUserCredentialsManager =
+        MockUserCredentialsManager(
+          withResult = Success(UserCredentialsManager.Result.Conflict("test-message"))
+        )
+    }
+    fixtures.userStore.manage().create(users.head).await
+
+    Delete(s"/${users.head.id}") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.Conflict)
+
+      fixtures.userStore
+        .view()
+        .get(users.head.id)
+        .map { user =>
+          user should be(users.headOption)
+
+          fixtures.credentialsManager.resourceOwnersCreated should be(0)
+          fixtures.credentialsManager.resourceOwnersActivated should be(0)
+          fixtures.credentialsManager.resourceOwnersDeactivated should be(1)
+          fixtures.credentialsManager.resourceOwnerPasswordsSet should be(0)
+          fixtures.credentialsManager.notFound should be(0)
+          fixtures.credentialsManager.conflicts should be(1)
+          fixtures.credentialsManager.failures should be(0)
+        }
+    }
+  }
+
+  they should "update existing users' passwords" in {
+    val fixtures = new TestFixtures {}
+    fixtures.userStore.manage().create(users.head).await
+
+    Put(s"/${users.head.id}/password")
+      .withEntity(updateUserPasswordRequest) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+
+      fixtures.credentialsManager.resourceOwnersCreated should be(0)
+      fixtures.credentialsManager.resourceOwnersActivated should be(0)
+      fixtures.credentialsManager.resourceOwnersDeactivated should be(0)
+      fixtures.credentialsManager.resourceOwnerPasswordsSet should be(1)
+      fixtures.credentialsManager.notFound should be(0)
+      fixtures.credentialsManager.conflicts should be(0)
+      fixtures.credentialsManager.failures should be(0)
+
+      fixtures.credentialsManager.latestPassword should not be empty
+      fixtures.credentialsManager.latestPassword should not be updateUserPasswordRequest.rawPassword
+    }
+  }
+
+  they should "handle user password update failures (not found)" in {
+    val fixtures = new TestFixtures {
+      override lazy val credentialsManager: MockUserCredentialsManager =
+        MockUserCredentialsManager(
+          withResult = Success(UserCredentialsManager.Result.NotFound("test-message"))
+        )
+    }
+
+    fixtures.userStore.manage().create(users.head).await
+
+    Put(s"/${users.head.id}/password")
+      .withEntity(updateUserPasswordRequest) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.NotFound)
+
+      fixtures.credentialsManager.resourceOwnersCreated should be(0)
+      fixtures.credentialsManager.resourceOwnersActivated should be(0)
+      fixtures.credentialsManager.resourceOwnersDeactivated should be(0)
+      fixtures.credentialsManager.resourceOwnerPasswordsSet should be(1)
+      fixtures.credentialsManager.notFound should be(1)
+      fixtures.credentialsManager.conflicts should be(0)
+      fixtures.credentialsManager.failures should be(0)
+    }
+  }
+
+  they should "handle user password update failures (conflict)" in {
+    val fixtures = new TestFixtures {
+      override lazy val credentialsManager: MockUserCredentialsManager =
+        MockUserCredentialsManager(
+          withResult = Success(UserCredentialsManager.Result.Conflict("test-message"))
+        )
+    }
+
+    fixtures.userStore.manage().create(users.head).await
+
+    Put(s"/${users.head.id}/password")
+      .withEntity(updateUserPasswordRequest) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.Conflict)
+
+      fixtures.credentialsManager.resourceOwnersCreated should be(0)
+      fixtures.credentialsManager.resourceOwnersActivated should be(0)
+      fixtures.credentialsManager.resourceOwnersDeactivated should be(0)
+      fixtures.credentialsManager.resourceOwnerPasswordsSet should be(1)
+      fixtures.credentialsManager.notFound should be(0)
+      fixtures.credentialsManager.conflicts should be(1)
+      fixtures.credentialsManager.failures should be(0)
     }
   }
 
@@ -179,7 +510,194 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.userStore
         .view()
         .get(users.head.id)
-        .map(_.map(_.active) should be(Some(false)))
+        .map { user =>
+          user.map(_.active) should be(Some(false))
+
+          fixtures.credentialsManager.resourceOwnersCreated should be(0)
+          fixtures.credentialsManager.resourceOwnersActivated should be(0)
+          fixtures.credentialsManager.resourceOwnersDeactivated should be(1)
+          fixtures.credentialsManager.resourceOwnerPasswordsSet should be(0)
+          fixtures.credentialsManager.notFound should be(0)
+          fixtures.credentialsManager.conflicts should be(0)
+          fixtures.credentialsManager.failures should be(0)
+        }
+    }
+  }
+
+  they should "handle resource owner deactivation failures (not found)" in {
+    val fixtures = new TestFixtures {
+      override lazy val credentialsManager: MockUserCredentialsManager =
+        MockUserCredentialsManager(
+          withResult = Success(UserCredentialsManager.Result.NotFound("test-message"))
+        )
+    }
+    fixtures.userStore.manage().create(users.head).await
+
+    Put("/self/deactivate") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.NotFound)
+
+      fixtures.userStore
+        .view()
+        .get(users.head.id)
+        .map { user =>
+          user should be(users.headOption)
+
+          fixtures.credentialsManager.resourceOwnersCreated should be(0)
+          fixtures.credentialsManager.resourceOwnersActivated should be(0)
+          fixtures.credentialsManager.resourceOwnersDeactivated should be(1)
+          fixtures.credentialsManager.resourceOwnerPasswordsSet should be(0)
+          fixtures.credentialsManager.notFound should be(1)
+          fixtures.credentialsManager.conflicts should be(0)
+          fixtures.credentialsManager.failures should be(0)
+        }
+    }
+  }
+
+  they should "handle resource owner deactivation failures (conflict)" in {
+    val fixtures = new TestFixtures {
+      override lazy val credentialsManager: MockUserCredentialsManager =
+        MockUserCredentialsManager(
+          withResult = Success(UserCredentialsManager.Result.Conflict("test-message"))
+        )
+    }
+    fixtures.userStore.manage().create(users.head).await
+
+    Put("/self/deactivate") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.Conflict)
+
+      fixtures.userStore
+        .view()
+        .get(users.head.id)
+        .map { user =>
+          user should be(users.headOption)
+
+          fixtures.credentialsManager.resourceOwnersCreated should be(0)
+          fixtures.credentialsManager.resourceOwnersActivated should be(0)
+          fixtures.credentialsManager.resourceOwnersDeactivated should be(1)
+          fixtures.credentialsManager.resourceOwnerPasswordsSet should be(0)
+          fixtures.credentialsManager.notFound should be(0)
+          fixtures.credentialsManager.conflicts should be(1)
+          fixtures.credentialsManager.failures should be(0)
+        }
+    }
+  }
+
+  they should "reset the current user's password salt" in {
+    val fixtures = new TestFixtures {}
+    fixtures.userStore.manage().create(users.head).await
+
+    Put("/self/salt") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+
+      val updatedSalt = entityAs[UpdatedUserSalt]
+
+      fixtures.userStore
+        .view()
+        .get(users.head.id)
+        .map { user =>
+          updatedSalt.salt should be(user.map(_.salt).getOrElse("invalid"))
+          updatedSalt.salt should not be users.headOption.map(_.salt).getOrElse("invalid")
+          user should be(users.headOption.map(_.copy(salt = updatedSalt.salt)))
+
+          fixtures.credentialsManager.resourceOwnersCreated should be(0)
+          fixtures.credentialsManager.resourceOwnersActivated should be(0)
+          fixtures.credentialsManager.resourceOwnersDeactivated should be(0)
+          fixtures.credentialsManager.resourceOwnerPasswordsSet should be(0)
+          fixtures.credentialsManager.notFound should be(0)
+          fixtures.credentialsManager.conflicts should be(0)
+          fixtures.credentialsManager.failures should be(0)
+        }
+    }
+  }
+
+  they should "fail to reset the current user's password salt if the current user is missing" in {
+    val fixtures = new TestFixtures {}
+    Put("/self/salt") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.NotFound)
+    }
+  }
+
+  they should "update the current user's password" in {
+    val fixtures = new TestFixtures {}
+    fixtures.userStore.manage().create(users.head).await
+
+    Put("/self/password").withEntity(updateUserPasswordRequest) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+
+      fixtures.credentialsManager.resourceOwnersCreated should be(0)
+      fixtures.credentialsManager.resourceOwnersActivated should be(0)
+      fixtures.credentialsManager.resourceOwnersDeactivated should be(0)
+      fixtures.credentialsManager.resourceOwnerPasswordsSet should be(1)
+      fixtures.credentialsManager.notFound should be(0)
+      fixtures.credentialsManager.conflicts should be(0)
+      fixtures.credentialsManager.failures should be(0)
+
+      fixtures.credentialsManager.latestPassword should not be empty
+
+      // when users reset their own password, hashing happens on the client side
+      fixtures.credentialsManager.latestPassword should be(updateUserPasswordRequest.rawPassword)
+    }
+  }
+
+  they should "handle current user password update failures (not found)" in {
+    val fixtures = new TestFixtures {
+      override lazy val credentialsManager: MockUserCredentialsManager =
+        MockUserCredentialsManager(
+          withResult = Success(UserCredentialsManager.Result.NotFound("test-message"))
+        )
+    }
+
+    fixtures.userStore.manage().create(users.head).await
+
+    Put("/self/password").withEntity(updateUserPasswordRequest) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.NotFound)
+
+      fixtures.credentialsManager.resourceOwnersCreated should be(0)
+      fixtures.credentialsManager.resourceOwnersActivated should be(0)
+      fixtures.credentialsManager.resourceOwnersDeactivated should be(0)
+      fixtures.credentialsManager.resourceOwnerPasswordsSet should be(1)
+      fixtures.credentialsManager.notFound should be(1)
+      fixtures.credentialsManager.conflicts should be(0)
+      fixtures.credentialsManager.failures should be(0)
+    }
+  }
+
+  they should "handle current user password update failures (conflict)" in {
+    val fixtures = new TestFixtures {
+      override lazy val credentialsManager: MockUserCredentialsManager =
+        MockUserCredentialsManager(
+          withResult = Success(UserCredentialsManager.Result.Conflict("test-message"))
+        )
+    }
+
+    fixtures.userStore.manage().create(users.head).await
+
+    Put("/self/password").withEntity(updateUserPasswordRequest) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.Conflict)
+
+      fixtures.credentialsManager.resourceOwnersCreated should be(0)
+      fixtures.credentialsManager.resourceOwnersActivated should be(0)
+      fixtures.credentialsManager.resourceOwnersDeactivated should be(0)
+      fixtures.credentialsManager.resourceOwnerPasswordsSet should be(1)
+      fixtures.credentialsManager.notFound should be(0)
+      fixtures.credentialsManager.conflicts should be(1)
+      fixtures.credentialsManager.failures should be(0)
+    }
+  }
+
+  they should "fail to update the current user's password if the user is missing" in {
+    val fixtures = new TestFixtures {}
+
+    Put("/self/password").withEntity(updateUserPasswordRequest) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.NotFound)
+
+      fixtures.credentialsManager.resourceOwnersCreated should be(0)
+      fixtures.credentialsManager.resourceOwnersActivated should be(0)
+      fixtures.credentialsManager.resourceOwnersDeactivated should be(0)
+      fixtures.credentialsManager.resourceOwnerPasswordsSet should be(0)
+      fixtures.credentialsManager.notFound should be(0)
+      fixtures.credentialsManager.conflicts should be(0)
+      fixtures.credentialsManager.failures should be(0)
     }
   }
 
@@ -194,6 +712,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
   private trait TestFixtures {
     lazy val userStore: UserStore = MockUserStore()
+    lazy val credentialsManager: MockUserCredentialsManager = MockUserCredentialsManager()
 
     implicit lazy val provider: ResourceProvider = new MockResourceProvider(
       resources = Set(
@@ -206,7 +725,10 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     lazy implicit val context: RoutesContext = RoutesContext.collect()
 
-    lazy val routes: Route = new Users().routes
+    lazy val routes: Route = new Users(
+      credentialsManager = credentialsManager,
+      secretsConfig = testSecretsConfig
+    ).routes
   }
 
   private implicit val user: CurrentUser = CurrentUser(User.generateId())
@@ -229,6 +751,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest {
   )
 
   private val createRequest = CreateUser(
+    username = "test-user",
+    rawPassword = "test-password",
     limits = None,
     permissions = Set.empty
   )
@@ -250,8 +774,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest {
     permissions = Set(Permission.View.Service)
   )
 
-  private val updateStateRequest = UpdateUserState(
-    active = false
+  private val updateUserPasswordRequest = UpdateUserPassword(
+    rawPassword = "test-password"
   )
 
   import scala.language.implicitConversions
@@ -266,5 +790,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Marshal(request).to[RequestEntity].await
 
   private implicit def updateRequestToEntity(request: UpdateUserState): RequestEntity =
+    Marshal(request).to[RequestEntity].await
+
+  private implicit def updateUserPasswordRequestToEntity(request: UpdateUserPassword): RequestEntity =
     Marshal(request).to[RequestEntity].await
 }

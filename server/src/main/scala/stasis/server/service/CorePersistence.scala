@@ -110,6 +110,7 @@ class CorePersistence(
   def resources: Set[Resource] =
     Set(
       serverNodes.manage(),
+      serverNodes.manageSelf(),
       serverNodes.view(),
       serverReservations.view()
     ) ++ Set(

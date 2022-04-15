@@ -5,15 +5,14 @@ import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import org.slf4j.LoggerFactory
-import play.api.libs.json.Format
+import play.api.libs.json.{Format, Json}
 import stasis.core.api.PoolClient
-import stasis.core.security.jwt.JwtProvider
 import stasis.core.security.tls.EndpointContext
+import stasis.server.security.CredentialsProvider
 import stasis.server.security.exceptions.CredentialsManagementFailure
 import stasis.shared.model.devices.Device
 
@@ -23,7 +22,7 @@ import scala.util.control.NonFatal
 
 class IdentityDeviceCredentialsManager(
   identityUrl: String,
-  identityCredentials: IdentityDeviceCredentialsManager.CredentialsProvider,
+  identityCredentials: CredentialsProvider,
   redirectUri: String,
   tokenExpiration: FiniteDuration,
   override protected val context: Option[EndpointContext],
@@ -37,7 +36,7 @@ class IdentityDeviceCredentialsManager(
 
   private val log = LoggerFactory.getLogger(this.getClass.getName)
 
-  override def setClientSecret(device: Device, clientSecret: String): Future[Done] =
+  override def setClientSecret(device: Device, clientSecret: String): Future[String] =
     findClient(device).flatMap {
       case Some(client) => updateClientCredentials(device, client, clientSecret)
       case None         => createClient(device, clientSecret)
@@ -77,7 +76,7 @@ class IdentityDeviceCredentialsManager(
       result
     }
 
-  private def createClient(device: Device, clientSecret: String): Future[Done] = {
+  private def createClient(device: Device, clientSecret: String): Future[String] = {
     val request = CreateClient(
       redirectUri = redirectUri,
       tokenExpiration = tokenExpiration.toSeconds,
@@ -101,11 +100,11 @@ class IdentityDeviceCredentialsManager(
       }
     } yield {
       log.debugN("Created client [{}] for device [{}] with node [{}]", result.client, device.id, device.node)
-      Done
+      result.client
     }
   }
 
-  private def updateClientCredentials(device: Device, client: String, clientSecret: String): Future[Done] = {
+  private def updateClientCredentials(device: Device, client: String, clientSecret: String): Future[String] = {
     val request = UpdateClientCredentials(rawSecret = clientSecret)
 
     for {
@@ -118,7 +117,7 @@ class IdentityDeviceCredentialsManager(
           entity = entity
         ).addCredentials(credentials)
       )
-      result <- response match {
+      _ <- response match {
         case response if response.status.isSuccess() =>
           val _ = response.entity.dataBytes.runWith(Sink.cancelled[ByteString])
           Future.successful(Done)
@@ -128,7 +127,7 @@ class IdentityDeviceCredentialsManager(
       }
     } yield {
       log.debugN("Updated client [{}] for device [{}] with node [{}]", client, device.id, device.node)
-      result
+      client
     }
   }
 
@@ -162,11 +161,9 @@ class IdentityDeviceCredentialsManager(
           )
         )
       }
-
 }
 
 object IdentityDeviceCredentialsManager {
-  import play.api.libs.json.{Format, Json}
   import stasis.core.api.Formats.jsonConfig
 
   private implicit val clientFormat: Format[Client] =
@@ -216,24 +213,4 @@ object IdentityDeviceCredentialsManager {
       context = context,
       requestBufferSize = requestBufferSize
     )
-
-  trait CredentialsProvider {
-    def provide(): Future[HttpCredentials]
-  }
-
-  object CredentialsProvider {
-    class Default(
-      scope: String,
-      underlying: JwtProvider
-    )(implicit ec: ExecutionContext)
-        extends CredentialsProvider {
-      override def provide(): Future[HttpCredentials] =
-        underlying.provide(scope = scope).map(OAuth2BearerToken)
-    }
-
-    object Default {
-      def apply(scope: String, underlying: JwtProvider)(implicit ec: ExecutionContext): Default =
-        new Default(scope, underlying)
-    }
-  }
 }

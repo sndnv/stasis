@@ -60,7 +60,7 @@ class CorePersistenceSpec extends AsyncUnitSpec {
       persistenceConfig = config.getConfig("persistence")
     )
 
-    val nodes = 2 // manage + view
+    val nodes = 3 // manage + manageSelf + view
     val reservations = 1 // view
     val staging = 2 // manage + view
 
