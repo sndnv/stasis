@@ -137,6 +137,22 @@ class DeviceBootstrapCodeStoreSpec extends AsyncUnitSpec {
     }
   }
 
+  it should "allow consuming device bootstrap codes via management resource (privileged)" in {
+    val store = MockDeviceBootstrapCodeStore()
+
+    for {
+      putResult <- store.manage().put(mockBootstrapCode)
+      getResult <- store.view().get(mockBootstrapCode.value)
+      consumeResult <- store.manage().consume(mockBootstrapCode.value)
+      consumedGetResult <- store.view().get(mockBootstrapCode.value)
+    } yield {
+      putResult should be(Done)
+      getResult should be(Some(mockBootstrapCode))
+      consumeResult should be(Some(mockBootstrapCode))
+      consumedGetResult should be(None)
+    }
+  }
+
   it should "provide management resource (self)" in {
     val store = MockDeviceBootstrapCodeStore()
     store.manageSelf().requiredPermission should be(Permission.Manage.Self)

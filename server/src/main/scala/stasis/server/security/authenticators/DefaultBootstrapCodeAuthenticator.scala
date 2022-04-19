@@ -9,13 +9,13 @@ import stasis.shared.model.devices.DeviceBootstrapCode
 import scala.concurrent.{ExecutionContext, Future}
 
 class DefaultBootstrapCodeAuthenticator(
-  store: DeviceBootstrapCodeStore.View.Privileged
+  store: DeviceBootstrapCodeStore.Manage.Privileged
 )(implicit ec: ExecutionContext)
     extends BootstrapCodeAuthenticator {
   override def authenticate(credentials: HttpCredentials): Future[(DeviceBootstrapCode, CurrentUser)] =
     credentials match {
       case OAuth2BearerToken(token) =>
-        store.get(code = token).flatMap {
+        store.consume(code = token).flatMap {
           case Some(code) =>
             Future.successful((code, CurrentUser(code.owner)))
 
@@ -30,7 +30,7 @@ class DefaultBootstrapCodeAuthenticator(
 
 object DefaultBootstrapCodeAuthenticator {
   def apply(
-    store: DeviceBootstrapCodeStore.View.Privileged
+    store: DeviceBootstrapCodeStore.Manage.Privileged
   )(implicit ec: ExecutionContext): DefaultBootstrapCodeAuthenticator =
     new DefaultBootstrapCodeAuthenticator(store)
 }

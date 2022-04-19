@@ -110,16 +110,14 @@ class DeviceBootstrap(
       put {
         resources[
           DeviceStore.View.Self,
-          UserStore.View.Self,
-          DeviceBootstrapCodeStore.Manage.Self
-        ] { (deviceView, userView, bootstrapCodeManage) =>
+          UserStore.View.Self
+        ] { (deviceView, userView) =>
           val result = for {
             devices <- deviceView.list(currentUser)
             device <- devices.get(code.device) match {
               case Some(device) => Future.successful(device)
               case None         => Future.failed(new IllegalStateException(s"Device [${code.device.toString}] not found"))
             }
-            _ <- bootstrapCodeManage.delete(devices.keys.toSeq, code.device)
             user <- userView.get(currentUser).flatMap {
               case Some(user) => Future.successful(user)
               case None       => Future.failed(new IllegalStateException(s"Current user [${currentUser.toString}] not found"))
