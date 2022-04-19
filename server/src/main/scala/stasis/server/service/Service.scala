@@ -129,7 +129,7 @@ trait Service {
 
     val bootstrapEndpoint = if (bootstrapApiConfig.enabled) {
       val bootstrapCodeAuthenticator: BootstrapCodeAuthenticator = DefaultBootstrapCodeAuthenticator(
-        store = serverPersistence.deviceBootstrapCodes.view()
+        store = serverPersistence.deviceBootstrapCodes.manage()
       )
 
       val deviceBootstrapCodeGenerator: DeviceBootstrapCodeGenerator = DeviceBootstrapCodeGenerator(

@@ -143,12 +143,8 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     fixtures.userStore.manage().create(user).await
     Future.sequence(devices.map(fixtures.deviceStore.manage().create)).await
 
-    fixtures.bootstrapCodeStore.manage().put(bootstrapCode).await
-    fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(Some(bootstrapCode))
-
     Put("/devices/execute") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
-      fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(None)
 
       responseAs[DeviceBootstrapParameters] should be(
         baseParams
@@ -185,13 +181,8 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
 
     Future.sequence(devices.map(fixtures.deviceStore.manage().create)).await
 
-    fixtures.bootstrapCodeStore.manage().put(bootstrapCode).await
-    fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(Some(bootstrapCode))
-
     Put("/devices/execute") ~> fixtures.routes ~> check {
       status should be(StatusCodes.Conflict)
-
-      fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(None)
     }
   }
 

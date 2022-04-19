@@ -18,6 +18,7 @@ trait DeviceBootstrapCodeStore { store =>
 
   protected def put(code: DeviceBootstrapCode): Future[Done]
   protected def delete(code: String): Future[Boolean]
+  protected def consume(code: String): Future[Option[DeviceBootstrapCode]]
   protected def get(code: String): Future[Option[DeviceBootstrapCode]]
   protected def list(): Future[Seq[DeviceBootstrapCode]]
   protected def find(forDevice: Device.Id): Future[Option[DeviceBootstrapCode]]
@@ -63,6 +64,9 @@ trait DeviceBootstrapCodeStore { store =>
           case Some(code) => store.delete(code.value)
           case None       => Future.successful(false)
         }
+
+      override def consume(code: String): Future[Option[DeviceBootstrapCode]] =
+        store.consume(code)
     }
 
   final def manageSelf(): DeviceBootstrapCodeStore.Manage.Self =
@@ -114,6 +118,7 @@ object DeviceBootstrapCodeStore {
     sealed trait Privileged extends Resource {
       def put(code: DeviceBootstrapCode): Future[Done]
       def delete(forDevice: Device.Id): Future[Boolean]
+      def consume(code: String): Future[Option[DeviceBootstrapCode]]
       override def requiredPermission: Permission = Permission.Manage.Privileged
     }
 
@@ -137,12 +142,20 @@ object DeviceBootstrapCodeStore {
           .put(code.value, code)
           .map { result =>
             val expiresIn = Instant.now().until(code.expiresAt, ChronoUnit.MILLIS).millis
-            val _ = akka.pattern.after(expiresIn, untypedSystem.scheduler)(backend.delete(code.value))
+            val _ = akka.pattern.after(expiresIn, untypedSystem.scheduler)(delete(code.value))
             result
           }
 
       override protected def delete(code: String): Future[Boolean] =
         backend.delete(code)
+
+      override protected def consume(code: String): Future[Option[DeviceBootstrapCode]] =
+        for {
+          result <- backend.get(code)
+          _ <- backend.delete(code)
+        } yield {
+          result
+        }
 
       override protected def get(code: String): Future[Option[DeviceBootstrapCode]] =
         backend.get(code)

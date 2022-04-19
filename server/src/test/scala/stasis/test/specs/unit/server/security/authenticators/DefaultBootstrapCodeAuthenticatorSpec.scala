@@ -15,7 +15,7 @@ class DefaultBootstrapCodeAuthenticatorSpec extends AsyncUnitSpec {
   "A DefaultBootstrapCodeAuthenticator" should "authenticate requests with valid bootstrap codes" in {
     val store = MockDeviceBootstrapCodeStore()
 
-    val authenticator = new DefaultBootstrapCodeAuthenticator(store.view())
+    val authenticator = new DefaultBootstrapCodeAuthenticator(store.manage())
 
     val expectedCode = Generators.generateDeviceBootstrapCode
 
@@ -34,7 +34,7 @@ class DefaultBootstrapCodeAuthenticatorSpec extends AsyncUnitSpec {
   it should "fail to authenticate requests with unexpected credentials" in {
     val store = MockDeviceBootstrapCodeStore()
 
-    val authenticator = new DefaultBootstrapCodeAuthenticator(store.view())
+    val authenticator = new DefaultBootstrapCodeAuthenticator(store.manage())
 
     authenticator
       .authenticate(
@@ -52,7 +52,7 @@ class DefaultBootstrapCodeAuthenticatorSpec extends AsyncUnitSpec {
   it should "fail to authenticate requests with invalid bootstrap codes" in {
     val store = MockDeviceBootstrapCodeStore()
 
-    val authenticator = new DefaultBootstrapCodeAuthenticator(store.view())
+    val authenticator = new DefaultBootstrapCodeAuthenticator(store.manage())
 
     authenticator
       .authenticate(

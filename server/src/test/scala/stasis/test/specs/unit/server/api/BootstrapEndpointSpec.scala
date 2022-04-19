@@ -45,12 +45,9 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
 
     fixtures.deviceStore.manage().create(device).await
     fixtures.userStore.manage().create(user).await
-    fixtures.bootstrapCodeStore.manage().put(bootstrapCode).await
-    fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(Some(bootstrapCode))
 
     Put("/devices/execute").addCredentials(testCodeCredentials) ~> fixtures.endpoint.endpointRoutes ~> check {
       status should be(StatusCodes.OK)
-      fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(None)
     }
   }
 
@@ -89,12 +86,9 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
 
     fixtures.deviceStore.manage().create(device).await
     fixtures.userStore.manage().create(user).await
-    fixtures.bootstrapCodeStore.manage().put(bootstrapCode).await
-    fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(Some(bootstrapCode))
 
     Put("/devices/execute").addCredentials(testCodeCredentials) ~> fixtures.endpoint.endpointRoutes ~> check {
       status should be(StatusCodes.OK)
-      fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(None)
     }
   }
 
