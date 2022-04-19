@@ -38,6 +38,7 @@ object Generators {
     fun generateDevice(): Device =
         Device(
             id = UUID.randomUUID(),
+            name = generateString(withSize = 12),
             node = UUID.randomUUID(),
             owner = UUID.randomUUID(),
             active = true,

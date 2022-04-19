@@ -179,6 +179,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
 
     val device = Device(
       id = Device.generateId(),
+      name = "test-device",
       node = Node.generateId(),
       owner = User.generateId(),
       active = true,

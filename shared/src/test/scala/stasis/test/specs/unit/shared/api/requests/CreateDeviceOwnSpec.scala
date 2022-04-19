@@ -7,11 +7,13 @@ import stasis.test.specs.unit.UnitSpec
 class CreateDeviceOwnSpec extends UnitSpec {
   it should "convert requests to devices and nodes" in {
     val ownRequest = CreateDeviceOwn(
+      name = "test-device",
       limits = None
     )
 
     val (actualDevice, actualNode) = ownRequest.toDeviceAndNode(owner)
 
+    actualDevice.name should be(ownRequest.name)
     actualDevice.owner should be(owner.id)
     actualDevice.active should be(true)
     actualDevice.limits should be(ownRequest.limits)

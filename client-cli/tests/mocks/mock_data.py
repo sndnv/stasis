@@ -130,6 +130,7 @@ USER_WITHOUT_LIMITS = {
 
 DEVICE = {
     'id': str(uuid4()),
+    'name': str('test-device-01'),
     'node': str(uuid4()),
     'owner': USER['id'],
     'active': True,
@@ -144,6 +145,7 @@ DEVICE = {
 
 DEVICE_WITHOUT_LIMITS = {
     'id': str(uuid4()),
+    'name': str('test-device-02'),
     'node': str(uuid4()),
     'owner': USER['id'],
     'active': True,

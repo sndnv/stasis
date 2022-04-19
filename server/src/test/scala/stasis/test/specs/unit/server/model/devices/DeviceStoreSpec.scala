@@ -281,6 +281,7 @@ class DeviceStoreSpec extends AsyncUnitSpec {
 
   private val mockDevice = Device(
     id = Device.generateId(),
+    name = "test-device",
     node = Node.generateId(),
     owner = User.generateId(),
     active = true,

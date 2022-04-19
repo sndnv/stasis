@@ -38,6 +38,8 @@ class DeviceDetailsFragment : Fragment() {
                 device.id.toMinimizedString()
             )
 
+            binding.deviceName.text = device.name
+
             when (val limits = device.limits) {
                 null -> {
                     binding.deviceLimits.isVisible = false

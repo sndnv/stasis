@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">stasis-client-android</string>
+    <string name="app_name">stasis</string>
     <string name="empty_value">-</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
@@ -358,8 +358,9 @@
 
     <!-- Status -->
     <string name="device_header_title">Device</string>
-    <string name="device_field_title_node">Node</string>
+    <string name="device_field_title_name">Name</string>
     <string name="device_field_title_limits">Limits</string>
+    <string name="device_field_title_node">Node</string>
     <string name="device_field_content_node">%1$s</string>
     <string name="device_field_content_info_active">%1$s (active)</string>
     <string name="device_field_content_info_inactive">%1$s (inactive)</string>

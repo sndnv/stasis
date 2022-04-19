@@ -238,6 +238,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   private val userDevice =
     Device(
       id = Device.generateId(),
+      name = "test-device",
       node = Node.generateId(),
       owner = user.id,
       active = true,

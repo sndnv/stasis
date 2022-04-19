@@ -20,6 +20,7 @@ class UpdateDeviceSpec extends UnitSpec {
 
     val initialDevice = Device(
       id = Device.generateId(),
+      name = "test-device",
       node = Node.generateId(),
       owner = owner.id,
       active = true,

@@ -9,6 +9,7 @@ class DeviceSpec(unittest.TestCase):
     def test_should_render_devices_with_limits(self):
         result = render(device=mock_data.DEVICE)
         self.assertIn('id:', result)
+        self.assertIn('name:', result)
         self.assertIn('node:', result)
         self.assertIn('owner:', result)
         self.assertIn('active:', result)
@@ -22,6 +23,7 @@ class DeviceSpec(unittest.TestCase):
     def test_should_render_devices_without_limits(self):
         result = render(device=mock_data.DEVICE_WITHOUT_LIMITS)
         self.assertIn('id:', result)
+        self.assertIn('name:', result)
         self.assertIn('node:', result)
         self.assertIn('owner:', result)
         self.assertIn('active:', result)

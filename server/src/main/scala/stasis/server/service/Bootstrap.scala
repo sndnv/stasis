@@ -113,6 +113,7 @@ object Bootstrap {
   private def deviceFromConfig(config: typesafe.Config): Device =
     Device(
       id = UUID.fromString(config.getString("id")),
+      name = config.getString("name"),
       node = UUID.fromString(config.getString("node")),
       owner = UUID.fromString(config.getString("owner")),
       active = config.getBoolean("active"),

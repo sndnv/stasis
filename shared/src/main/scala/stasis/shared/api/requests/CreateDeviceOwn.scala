@@ -7,6 +7,7 @@ import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
 
 final case class CreateDeviceOwn(
+  name: String,
   limits: Option[Device.Limits]
 )
 
@@ -15,6 +16,7 @@ object CreateDeviceOwn {
     def toDeviceAndNode(owner: User): (Device, Node) = {
       val device = Device(
         id = Device.generateId(),
+        name = request.name,
         node = Node.generateId(),
         owner = owner.id,
         active = true,
