@@ -226,6 +226,7 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
 
   private val device = Device(
     id = Device.generateId(),
+    name = "test-device",
     node = Node.generateId(),
     owner = user.id,
     active = true,

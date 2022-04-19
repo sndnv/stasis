@@ -41,6 +41,7 @@ object Generators {
   def generateDevice: Device =
     Device(
       id = Device.generateId(),
+      name = generateString(withSize = 12),
       node = Node.generateId(),
       owner = User.generateId(),
       active = true,

@@ -17,6 +17,7 @@ def render(device):
         [
             'Device:',
             '   id:     {}'.format(device['id']),
+            '   name:   {}'.format(device['name']),
             '   node:   {}'.format(device['node']),
             '   owner:  {}'.format(device['owner']),
             '   active: {}'.format('yes' if device['active'] else 'no'),

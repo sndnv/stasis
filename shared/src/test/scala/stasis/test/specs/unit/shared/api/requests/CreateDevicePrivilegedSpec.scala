@@ -10,6 +10,7 @@ class CreateDevicePrivilegedSpec extends UnitSpec {
   it should "convert requests to devices" in {
     val expectedDevice = Device(
       id = Device.generateId(),
+      name = "test-device",
       node = Node.generateId(),
       owner = owner.id,
       active = true,
@@ -17,6 +18,7 @@ class CreateDevicePrivilegedSpec extends UnitSpec {
     )
 
     val privilegedRequest = CreateDevicePrivileged(
+      name = "test-device",
       node = Some(expectedDevice.node),
       owner = owner.id,
       limits = expectedDevice.limits
@@ -28,6 +30,7 @@ class CreateDevicePrivilegedSpec extends UnitSpec {
   it should "generate random node IDs if none are provided when converting requests to devices" in {
     val expectedDevice = Device(
       id = Device.generateId(),
+      name = "test-device",
       node = Node.generateId(),
       owner = owner.id,
       active = true,
@@ -35,6 +38,7 @@ class CreateDevicePrivilegedSpec extends UnitSpec {
     )
 
     val privilegedRequest = CreateDevicePrivileged(
+      name = "test-device",
       node = None,
       owner = owner.id,
       limits = expectedDevice.limits

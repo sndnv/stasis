@@ -251,6 +251,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
   private val devices = Seq(
     Device(
       id = Device.generateId(),
+      name = "test-device-0",
       node = Node.generateId(),
       owner = user.id,
       active = true,
@@ -258,6 +259,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     ),
     Device(
       id = Device.generateId(),
+      name = "test-device-1",
       node = Node.generateId(),
       owner = User.generateId(),
       active = true,

@@ -96,6 +96,7 @@ class UserDetailsFragment : Fragment() {
                 }
             }
 
+            binding.userPermissions.removeAllViews()
             user.permissions.sorted().map { permission ->
                 val chip = inflater.inflate(
                     R.layout.list_item_permission_chip,

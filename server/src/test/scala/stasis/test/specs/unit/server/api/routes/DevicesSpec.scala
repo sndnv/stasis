@@ -355,6 +355,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   private val devices = Seq(
     Device(
       id = Device.generateId(),
+      name = "test-device-0",
       node = Node.generateId(),
       owner = user.id,
       active = true,
@@ -362,6 +363,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     ),
     Device(
       id = Device.generateId(),
+      name = "test-device-1",
       node = Node.generateId(),
       owner = User.generateId(),
       active = true,
@@ -370,12 +372,14 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   )
 
   private val createRequestPrivileged = CreateDevicePrivileged(
+    name = "test-device",
     node = Some(Node.generateId()),
     owner = user.id,
     limits = None
   )
 
   private val createRequestOwn = CreateDeviceOwn(
+    name = "test-device",
     limits = None
   )
 

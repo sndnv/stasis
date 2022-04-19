@@ -118,6 +118,7 @@ class ServerNodeStoreSpec extends AsyncUnitSpec {
 
     val ownDevice = Device(
       id = Device.generateId(),
+      name = "test-device",
       node = deviceNode.id,
       owner = self.id,
       active = true,
@@ -142,6 +143,7 @@ class ServerNodeStoreSpec extends AsyncUnitSpec {
 
     val device = Device(
       id = Device.generateId(),
+      name = "test-device",
       node = deviceNode.id,
       owner = User.generateId(),
       active = true,
@@ -169,6 +171,7 @@ class ServerNodeStoreSpec extends AsyncUnitSpec {
 
     val device = Device(
       id = Device.generateId(),
+      name = "test-device",
       node = Node.generateId(),
       owner = self.id,
       active = true,

@@ -7,6 +7,7 @@ import scala.concurrent.duration.FiniteDuration
 
 final case class Device(
   id: Device.Id,
+  name: String,
   node: Node.Id,
   owner: User.Id,
   active: Boolean,

@@ -9,6 +9,7 @@ import java.util.UUID
 
 data class Device(
     val id: DeviceId,
+    val name: String,
     val node: NodeId,
     val owner: UserId,
     val active: Boolean,
