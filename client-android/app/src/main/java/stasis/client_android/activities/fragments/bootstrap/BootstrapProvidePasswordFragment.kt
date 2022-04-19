@@ -12,6 +12,7 @@ import androidx.navigation.fragment.navArgs
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.TextInputExtensions.validate
+import stasis.client_android.activities.helpers.TextInputExtensions.validateMatches
 import stasis.client_android.databinding.FragmentBootstrapProvidePasswordBinding
 
 class BootstrapProvidePasswordFragment : Fragment() {
@@ -29,15 +30,20 @@ class BootstrapProvidePasswordFragment : Fragment() {
 
         binding.bootstrapProvidePasswordNextButton.setOnClickListener {
             binding.bootstrapProvidePassword.validate(withError = R.string.bootstrap_password_error) { userPassword ->
-                val args: BootstrapProvidePasswordFragmentArgs by navArgs()
+                binding.bootstrapProvidePasswordVerify.validateMatches(
+                    that = binding.bootstrapProvidePassword,
+                    withError = R.string.bootstrap_password_verify_error
+                ) {
+                    val args: BootstrapProvidePasswordFragmentArgs by navArgs()
 
-                findNavController().navigate(
-                    BootstrapProvidePasswordFragmentDirections
-                        .actionBootstrapProvidePasswordFragmentToBootstrapProvideCodeFragment(
-                            bootstrapServerUrl = args.bootstrapServerUrl,
-                            userPassword = userPassword
-                        )
-                )
+                    findNavController().navigate(
+                        BootstrapProvidePasswordFragmentDirections
+                            .actionBootstrapProvidePasswordFragmentToBootstrapProvideCodeFragment(
+                                bootstrapServerUrl = args.bootstrapServerUrl,
+                                userPassword = userPassword
+                            )
+                    )
+                }
             }
         }
 
@@ -45,10 +51,24 @@ class BootstrapProvidePasswordFragment : Fragment() {
             binding.bootstrapProvidePassword.validate(withError = R.string.bootstrap_password_error)
         }
 
+        binding.bootstrapProvidePasswordVerify.editText?.doOnTextChanged { _, _, _, _ ->
+            binding.bootstrapProvidePasswordVerify.validateMatches(
+                that = binding.bootstrapProvidePassword,
+                withError = R.string.bootstrap_password_verify_error
+            )
+        }
+
         binding.bootstrapProvidePassword.setStartIconOnClickListener {
             MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.bootstrap_password_hint)
                 .setMessage(getString(R.string.bootstrap_password_hint_extra))
+                .show()
+        }
+
+        binding.bootstrapProvidePasswordVerify.setStartIconOnClickListener {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.bootstrap_password_verify_hint)
+                .setMessage(getString(R.string.bootstrap_password_verify_hint_extra))
                 .show()
         }
 

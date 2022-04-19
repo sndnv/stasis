@@ -134,6 +134,9 @@
     <string name="bootstrap_password_hint">User Password</string>
     <string name="bootstrap_password_hint_extra">This password is required for encrypting the secrets used by this device. Your password is never stored, sent to the server or shared with other services.</string>
     <string name="bootstrap_password_error">Password cannot be empty</string>
+    <string name="bootstrap_password_verify_hint">Verify Password</string>
+    <string name="bootstrap_password_verify_hint_extra">Your password is never stored, sent to the server or shared with other services.</string>
+    <string name="bootstrap_password_verify_error">Passwords do not match</string>
     <string name="bootstrap_password_previous_button">Back</string>
     <string name="bootstrap_password_next_button">Next</string>
     <string name="bootstrap_code_hint">Bootstrap Code</string>
