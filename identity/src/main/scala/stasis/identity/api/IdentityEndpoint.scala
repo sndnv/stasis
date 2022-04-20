@@ -36,12 +36,14 @@ class IdentityEndpoint(
 
   private val sanitizingExceptionHandler: ExceptionHandler =
     ExceptionHandler { case NonFatal(e) =>
-      extractRequestEntity { entity =>
-        val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
+      extractRequest { request =>
+        val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
         val failureReference = java.util.UUID.randomUUID()
 
         log.errorN(
-          "Unhandled exception encountered: [{}]; failure reference is [{}]",
+          "Unhandled exception encountered during [{}] request for [{}]: [{}]; failure reference is [{}]",
+          request.method.value,
+          request.uri.path.toString,
           e.getMessage,
           failureReference,
           e
@@ -61,11 +63,17 @@ class IdentityEndpoint(
     RejectionHandler
       .newBuilder()
       .handle { case MissingQueryParamRejection(parameterName) =>
-        extractRequestEntity { entity =>
-          val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
+        extractRequest { request =>
+          val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
           val message = s"Parameter [$parameterName] is missing, invalid or malformed"
-          log.warnN(message)
+
+          log.warnN(
+            "[{}] request for [{}] rejected: [{}]",
+            request.method.value,
+            request.uri.path.toString,
+            message
+          )
 
           complete(
             StatusCodes.BadRequest,
@@ -74,11 +82,17 @@ class IdentityEndpoint(
         }
       }
       .handle { case ValidationRejection(rejectionMessage, _) =>
-        extractRequestEntity { entity =>
-          val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
+        extractRequest { request =>
+          val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
           val message = s"Provided data is invalid or malformed: [$rejectionMessage]"
-          log.warnN(message)
+
+          log.warnN(
+            "[{}] request for [{}] rejected: [{}]",
+            request.method.value,
+            request.uri.path.toString,
+            message
+          )
 
           complete(
             StatusCodes.BadRequest,

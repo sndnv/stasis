@@ -1,5 +1,6 @@
 package stasis.server.api.handlers
 
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{RejectionHandler, ValidationRejection}
@@ -12,12 +13,18 @@ object Rejection {
     RejectionHandler
       .newBuilder()
       .handle { case ValidationRejection(rejectionMessage, _) =>
-        extractRequestEntity { entity =>
+        extractRequest { request =>
           extractActorSystem { implicit system =>
-            val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
+            val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
 
             val message = s"Provided data is invalid or malformed: [$rejectionMessage]"
-            log.warn(message)
+
+            log.warnN(
+              "[{}] request for [{}] rejected: [{}]",
+              request.method.value,
+              request.uri.path.toString,
+              message
+            )
 
             complete(
               StatusCodes.BadRequest,
