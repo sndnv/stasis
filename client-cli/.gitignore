@@ -13,3 +13,5 @@ htmlcov
 *.iml
 *.db
 *.egg-info
+build
+dist
