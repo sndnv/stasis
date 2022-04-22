@@ -14,7 +14,7 @@ lazy val akkaHttpCorsVersion = "1.1.3"
 lazy val geodeVersion        = "1.14.4"
 lazy val slickVersion        = "3.3.3"
 lazy val h2Version           = "2.1.212"
-lazy val postgresVersion     = "42.3.3"
+lazy val postgresVersion     = "42.3.4"
 lazy val mariadbVersion      = "3.0.4"
 lazy val sqliteVersion       = "3.36.0.3"
 lazy val logbackVersion      = "1.2.11"
@@ -110,7 +110,7 @@ lazy val core = (project in file("./core"))
       "com.github.tomakehurst" % "wiremock-jre8"           % "2.33.1"        % Test,
       "org.mockito"           %% "mockito-scala"           % "1.17.5"        % Test,
       "org.mockito"           %% "mockito-scala-scalatest" % "1.17.5"        % Test,
-      "org.mockito"            % "mockito-inline"          % "4.4.0"         % Test
+      "org.mockito"            % "mockito-inline"          % "4.5.0"         % Test
     )
   )
   .dependsOn(proto)
