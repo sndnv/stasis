@@ -1,7 +1,9 @@
 package stasis.client_android.lib.model.server.devices
 
 import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
 
+@JsonClass(generateAdapter = true)
 data class DeviceBootstrapParameters(
     val authentication: Authentication,
     @Json(name = "server_api")
@@ -10,6 +12,7 @@ data class DeviceBootstrapParameters(
     val serverCore: ServerCore,
     val secrets: SecretsConfig
 ) {
+    @JsonClass(generateAdapter = true)
     data class Authentication(
         @Json(name = "token_endpoint")
         val tokenEndpoint: String,
@@ -20,6 +23,7 @@ data class DeviceBootstrapParameters(
         val scopes: Scopes
     )
 
+    @JsonClass(generateAdapter = true)
     data class ServerApi(
         val url: String,
         val user: String,
@@ -28,25 +32,30 @@ data class DeviceBootstrapParameters(
         val device: String
     )
 
+    @JsonClass(generateAdapter = true)
     data class ServerCore(
         val address: String,
         @Json(name = "node_id")
         val nodeId: String
     )
 
+    @JsonClass(generateAdapter = true)
     data class Scopes(
         val api: String,
         val core: String
     )
 
+    @JsonClass(generateAdapter = true)
     data class SecretsConfig(
         val derivation: Derivation,
         val encryption: Encryption
     ) {
+        @JsonClass(generateAdapter = true)
         data class Derivation(
             val encryption: Derivation.Encryption,
             val authentication: Derivation.Authentication
         ) {
+            @JsonClass(generateAdapter = true)
             data class Encryption(
                 @Json(name = "secret_size")
                 val secretSize: Int,
@@ -55,6 +64,7 @@ data class DeviceBootstrapParameters(
                 val saltPrefix: String
             )
 
+            @JsonClass(generateAdapter = true)
             data class Authentication(
                 @Json(name = "secret_size")
                 val secretSize: Int,
@@ -64,12 +74,14 @@ data class DeviceBootstrapParameters(
             )
         }
 
+        @JsonClass(generateAdapter = true)
         data class Encryption(
             val file: Encryption.File,
             val metadata: Encryption.Metadata,
             @Json(name = "device_secret")
             val deviceSecret: Encryption.DeviceSecret
         ) {
+            @JsonClass(generateAdapter = true)
             data class File(
                 @Json(name = "key_size")
                 val keySize: Int,
@@ -77,6 +89,7 @@ data class DeviceBootstrapParameters(
                 val ivSize: Int
             )
 
+            @JsonClass(generateAdapter = true)
             data class Metadata(
                 @Json(name = "key_size")
                 val keySize: Int,
@@ -84,6 +97,7 @@ data class DeviceBootstrapParameters(
                 val ivSize: Int
             )
 
+            @JsonClass(generateAdapter = true)
             data class DeviceSecret(
                 @Json(name = "key_size")
                 val keySize: Int,

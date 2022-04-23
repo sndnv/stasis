@@ -1,9 +1,11 @@
 package stasis.client_android.lib.model.server.users
 
+import com.squareup.moshi.JsonClass
 import java.math.BigInteger
 import java.time.Duration
 import java.util.UUID
 
+@JsonClass(generateAdapter = true)
 data class User(
     val id: UserId,
     val salt: String,
@@ -11,6 +13,7 @@ data class User(
     val limits: Limits?,
     val permissions: Set<String>
 ) {
+    @JsonClass(generateAdapter = true)
     data class Limits(
         val maxDevices: Long,
         val maxCrates: Long,

@@ -1,5 +1,6 @@
 package stasis.client_android.lib.security
 
+import com.squareup.moshi.JsonClass
 import org.jose4j.jwt.NumericDate
 
 import org.jose4j.jwt.consumer.JwtConsumer
@@ -8,6 +9,7 @@ import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Companion.map
 
 @Suppress("ConstructorParameterNaming")
+@JsonClass(generateAdapter = true)
 data class AccessTokenResponse(
     val access_token: String,
     val refresh_token: String?,

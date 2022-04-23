@@ -25,6 +25,7 @@ import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.persistence.config.ConfigViewModel
 import stasis.client_android.persistence.rules.RuleViewModel
 import stasis.client_android.security.Secrets
+import java.lang.RuntimeException
 import java.util.UUID
 import javax.inject.Inject
 
@@ -91,6 +92,9 @@ class BootstrapProvideCodeFragment : Fragment() {
 
                     when (val params = bootstrapClient.execute(bootstrapCode = bootstrapCode)) {
                         is Success -> {
+                            config.bootstrap(params.value)
+                            rules.bootstrap()
+
                             val result = Secrets.createDeviceSecret(
                                 user = UUID.fromString(params.value.serverApi.user),
                                 userSalt = params.value.serverApi.userSalt,
@@ -100,15 +104,10 @@ class BootstrapProvideCodeFragment : Fragment() {
                             )
 
                             when (result) {
-                                is Success -> {
-                                    config.bootstrap(params.value)
-                                    rules.bootstrap()
-
-                                    controller.navigate(
-                                        BootstrapProvideCodeFragmentDirections
-                                            .actionBootstrapProvideCodeFragmentToWelcomeFragment()
-                                    )
-                                }
+                                is Success -> controller.navigate(
+                                    BootstrapProvideCodeFragmentDirections
+                                        .actionBootstrapProvideCodeFragmentToWelcomeFragment()
+                                )
 
                                 is Failure -> showBootstrapFailed(result.exception)
                             }

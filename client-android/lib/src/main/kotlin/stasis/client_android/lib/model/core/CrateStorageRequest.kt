@@ -1,7 +1,9 @@
 package stasis.client_android.lib.model.core
 
+import com.squareup.moshi.JsonClass
 import java.util.UUID
 
+@JsonClass(generateAdapter = true)
 data class CrateStorageRequest(
     val id: CrateStorageRequestId,
     val crate: CrateId,

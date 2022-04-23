@@ -1,5 +1,8 @@
 package stasis.client_android.lib.model.core
 
+import com.squareup.moshi.JsonClass
+
+@JsonClass(generateAdapter = true)
 data class Manifest(
     val crate: CrateId,
     val size: Long,

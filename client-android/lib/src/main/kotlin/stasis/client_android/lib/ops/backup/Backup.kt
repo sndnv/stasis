@@ -44,7 +44,6 @@ class Backup(
 
         val job = (withScope + supervisor).async {
             try {
-
                 when (val collector = descriptor.collector) {
                     is Descriptor.Collector.WithRules -> providers.track.specificationProcessed(
                         operation = id,
@@ -52,7 +51,6 @@ class Backup(
                     )
                     else -> Unit // do nothing
                 }
-
 
                 stages.entityCollection(id)
                     .let { flow -> stages.entityProcessing(id, flow) }

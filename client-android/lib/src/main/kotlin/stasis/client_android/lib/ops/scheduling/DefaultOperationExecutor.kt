@@ -6,6 +6,7 @@ import stasis.client_android.lib.ops.recovery.Providers as RecoveryProviders
 import stasis.client_android.lib.ops.recovery.Recovery as RecoveryOp
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.withContext
 import stasis.client_android.lib.collection.rules.Rule
 import stasis.client_android.lib.collection.rules.Specification
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
@@ -216,16 +217,18 @@ class DefaultOperationExecutor(
         ofType: Operation.Type,
         callback: (Throwable?) -> Unit,
         f: suspend () -> OperationId
-    ): OperationId = when (val operation = active().filterValues { it == ofType }.toList().firstOrNull()?.first) {
-        null -> f() // operation doesn't exist; can proceed
-        else -> {
-            callback(
-                IllegalArgumentException(
-                    "Cannot start [$ofType] operation; [$ofType] with ID [$operation] is already active"
+    ): OperationId = withContext(operationScope.coroutineContext) {
+        when (val operation = active().filterValues { it == ofType }.toList().firstOrNull()?.first) {
+            null -> f() // operation doesn't exist; can proceed
+            else -> {
+                callback(
+                    IllegalArgumentException(
+                        "Cannot start [$ofType] operation; [$ofType] with ID [$operation] is already active"
+                    )
                 )
-            )
 
-            operation
+                operation
+            }
         }
     }
 

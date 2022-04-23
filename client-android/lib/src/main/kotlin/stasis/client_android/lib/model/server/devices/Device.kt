@@ -1,12 +1,14 @@
 package stasis.client_android.lib.model.server.devices
 
 import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
 import stasis.client_android.lib.model.core.NodeId
 import stasis.client_android.lib.model.server.users.UserId
 import java.math.BigInteger
 import java.time.Duration
 import java.util.UUID
 
+@JsonClass(generateAdapter = true)
 data class Device(
     val id: DeviceId,
     val name: String,
@@ -15,6 +17,7 @@ data class Device(
     val active: Boolean,
     val limits: Limits?
 ) {
+    @JsonClass(generateAdapter = true)
     data class Limits(
         @Json(name = "max_crates")
         val maxCrates: Long,
