@@ -31,8 +31,8 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.6.10")
     implementation("com.getkeepsafe.taptargetview:taptargetview:1.13.3")
 
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1")
 
     implementation("com.google.dagger:hilt-android:2.40.5")
     kapt("com.google.dagger:hilt-compiler:2.40.5")

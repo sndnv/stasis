@@ -18,6 +18,7 @@ data class DatasetDefinition(
     @Json(name = "removed_versions")
     val removedVersions: Retention
 ) {
+    @JsonClass(generateAdapter = true)
     data class Retention(
         val policy: Policy,
         val duration: Duration

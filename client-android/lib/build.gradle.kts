@@ -13,7 +13,7 @@ dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation("com.squareup.okio:okio:3.0.0")
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1")
     implementation("com.squareup.moshi:moshi-kotlin:1.13.0")
     implementation("com.squareup.moshi:moshi-adapters:1.13.0")
     implementation("at.favre.lib:hkdf:1.1.0")
@@ -24,7 +24,7 @@ dependencies {
     testImplementation("io.kotest:kotest-runner-junit5-jvm:5.1.0")
     testImplementation("io.kotest:kotest-assertions-core-jvm:5.1.0")
     testImplementation("io.kotest:kotest-property-jvm:5.1.0")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.1")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.9.3")
     testImplementation("com.google.jimfs:jimfs:1.2")
 }

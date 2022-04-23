@@ -1,12 +1,14 @@
 package stasis.client_android.lib.model.server.schedules
 
 import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 import kotlin.math.max
 
+@JsonClass(generateAdapter = true)
 data class Schedule(
     val id: ScheduleId,
     val info: String,
