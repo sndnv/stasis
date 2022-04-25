@@ -73,14 +73,14 @@ class TrackerViewSpec {
 
         val actualState = state.withFailure(
             operationId = operation,
-            failure = RuntimeException("test failure")
+            failure = RuntimeException("Test failure")
         )
 
         val expectedState = TrackerView.State(
             operations = mapOf(
                 operation to Operation.Progress(
                     stages = emptyMap(),
-                    failures = listOf("RuntimeException: test failure"),
+                    failures = listOf("Test failure"),
                     completed = null
                 )
             ),

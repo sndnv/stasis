@@ -104,9 +104,9 @@ class DefaultTrackerSpec {
                     completedState.failures.sorted(),
                     equalTo(
                         listOf(
-                            "RuleMatchingFailure: Rule [+ /tmp/1 *] failed with [RuntimeException - Test failure]",
-                            "RuleMatchingFailure: Rule [+ /tmp/2 *] failed with [RuntimeException - Test failure]",
-                            "RuleMatchingFailure: Rule [+ /tmp/3 *] failed with [RuntimeException - Test failure]",
+                            "RuleMatchingFailure: Rule [+ /tmp/1 *] failed with [Test failure]",
+                            "RuleMatchingFailure: Rule [+ /tmp/2 *] failed with [Test failure]",
+                            "RuleMatchingFailure: Rule [+ /tmp/3 *] failed with [Test failure]",
                         )
                     )
                 )

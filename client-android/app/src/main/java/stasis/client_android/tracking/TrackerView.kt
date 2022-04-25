@@ -31,7 +31,7 @@ interface TrackerView {
         fun withFailure(operationId: OperationId, failure: Throwable): State {
             val existingProgress = operations.getOrElse(operationId) { Operation.Progress.empty() }
             val updatedProgress = existingProgress.copy(
-                failures = existingProgress.failures + "${failure.javaClass.simpleName}: ${failure.message}"
+                failures = existingProgress.failures + (failure.message ?: "Failure message not provided")
             )
 
             return copy(operations = operations + (operationId to updatedProgress))
