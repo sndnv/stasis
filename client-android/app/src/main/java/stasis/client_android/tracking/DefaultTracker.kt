@@ -61,7 +61,7 @@ class DefaultTracker : TrackerView {
                         event = TrackingEvent.OperationStepFailed(
                             operationId = operation,
                             failure = RuleMatchingFailure(
-                                message = "Rule [${rule.asString()}] failed with [${e.javaClass.simpleName} - ${e.message}]"
+                                message = "Rule [${rule.asString()}] failed with [${e.message}]"
                             )
                         )
                     )
