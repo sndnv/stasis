@@ -186,7 +186,8 @@ object Bootstrap {
       case "remote-http" =>
         Node.Remote.Http(
           id = UUID.fromString(config.getString("id")),
-          address = HttpEndpointAddress(config.getString("address"))
+          address = HttpEndpointAddress(config.getString("address")),
+          storageAllowed = config.getBoolean("storage-allowed")
         )
 
       case "remote-grpc" =>
@@ -196,7 +197,8 @@ object Bootstrap {
             host = config.getString("address.host"),
             port = config.getInt("address.port"),
             tlsEnabled = config.getBoolean("address.tls-enabled")
-          )
+          ),
+          storageAllowed = config.getBoolean("storage-allowed")
         )
 
     }

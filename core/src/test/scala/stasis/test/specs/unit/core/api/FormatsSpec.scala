@@ -100,16 +100,17 @@ class FormatsSpec extends UnitSpec {
         s"""{"node_type":"local","id":"$nodeId","store_descriptor":${Json.toJson(storeDescriptor).toString}}"""
       ),
       "remote-http" -> (
-        Node.Remote.Http(id = nodeId, address = httpAddress),
-        s"""{"node_type":"remote-http","id":"$nodeId","address":{"uri":"${httpAddress.uri}"}}"""
+        Node.Remote.Http(id = nodeId, address = httpAddress, storageAllowed = true),
+        s"""{"node_type":"remote-http","id":"$nodeId","address":{"uri":"${httpAddress.uri}"},"storage_allowed":true}"""
       ),
       "remote-grpc" -> (
-        Node.Remote.Grpc(id = nodeId, address = grpcAddress),
+        Node.Remote.Grpc(id = nodeId, address = grpcAddress, storageAllowed = false),
         s"""
            |{
            |"node_type":"remote-grpc",
            |"id":"$nodeId",
-           |"address":{"host":"${grpcAddress.host}","port":${grpcAddress.port},"tls_enabled":${grpcAddress.tlsEnabled}}
+           |"address":{"host":"${grpcAddress.host}","port":${grpcAddress.port},"tls_enabled":${grpcAddress.tlsEnabled}},
+           |"storage_allowed":false
            |}""".stripMargin.replaceAll("\n", "").trim
       )
     )

@@ -261,7 +261,11 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     )
 
     val destinations: Map[Node, Int] = Map(
-      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:8000")) -> 1
+      Node.Remote.Http(
+        id = Node.generateId(),
+        address = HttpEndpointAddress("localhost:8000"),
+        storageAllowed = true
+      ) -> 1
     )
 
     val proxy: NodeProxy = new NodeProxy(

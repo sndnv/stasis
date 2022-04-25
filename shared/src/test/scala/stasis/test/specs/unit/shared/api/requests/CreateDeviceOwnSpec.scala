@@ -18,6 +18,7 @@ class CreateDeviceOwnSpec extends UnitSpec {
     actualDevice.active should be(true)
     actualDevice.limits should be(ownRequest.limits)
     actualNode.id should be(actualDevice.node)
+    actualNode.storageAllowed should be(false)
   }
 
   private val owner = User(

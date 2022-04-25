@@ -25,11 +25,13 @@ class CreateNodeSpec extends UnitSpec {
   it should "convert requests to remote HTTP nodes" in {
     val expectedNode = Node.Remote.Http(
       id = Node.generateId(),
-      address = HttpEndpointAddress(uri = "http://example.com")
+      address = HttpEndpointAddress(uri = "http://example.com"),
+      storageAllowed = true
     )
 
     val request = CreateRemoteHttpNode(
-      address = expectedNode.address
+      address = expectedNode.address,
+      storageAllowed = true
     )
 
     val actualNode = request.toNode
@@ -40,11 +42,13 @@ class CreateNodeSpec extends UnitSpec {
   it should "convert requests to remote gRPC nodes" in {
     val expectedNode = Node.Remote.Grpc(
       id = Node.generateId(),
-      address = GrpcEndpointAddress(host = "example.com", port = 443, tlsEnabled = true)
+      address = GrpcEndpointAddress(host = "example.com", port = 443, tlsEnabled = true),
+      storageAllowed = false
     )
 
     val request = CreateRemoteGrpcNode(
-      address = expectedNode.address
+      address = expectedNode.address,
+      storageAllowed = false
     )
 
     val actualNode = request.toNode

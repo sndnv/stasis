@@ -7,6 +7,7 @@ import stasis.core.persistence.crates.CrateStore
 
 sealed trait Node {
   def id: Node.Id
+  def storageAllowed: Boolean
 }
 
 object Node {
@@ -14,14 +15,28 @@ object Node {
 
   def generateId(): Id = java.util.UUID.randomUUID()
 
-  final case class Local(override val id: Node.Id, storeDescriptor: CrateStore.Descriptor) extends Node
+  final case class Local(
+    override val id: Node.Id,
+    storeDescriptor: CrateStore.Descriptor
+  ) extends Node {
+    override val storageAllowed: Boolean = true
+  }
 
   sealed trait Remote[A <: EndpointAddress] extends Node {
     def address: A
   }
 
   object Remote {
-    final case class Http(override val id: Node.Id, override val address: HttpEndpointAddress) extends Remote[HttpEndpointAddress]
-    final case class Grpc(override val id: Node.Id, override val address: GrpcEndpointAddress) extends Remote[GrpcEndpointAddress]
+    final case class Http(
+      override val id: Node.Id,
+      override val address: HttpEndpointAddress,
+      override val storageAllowed: Boolean
+    ) extends Remote[HttpEndpointAddress]
+
+    final case class Grpc(
+      override val id: Node.Id,
+      override val address: GrpcEndpointAddress,
+      override val storageAllowed: Boolean
+    ) extends Remote[GrpcEndpointAddress]
   }
 }

@@ -89,16 +89,29 @@ class FormatsSpec extends UnitSpec {
   they should "convert node creation requests to/from JSON" in {
     val requests = Map(
       "local" -> (
-        CreateLocalNode(storeDescriptor = CrateStore.Descriptor.ForFileBackend(parentDirectory = "/tmp")),
+        CreateLocalNode(
+          storeDescriptor = CrateStore.Descriptor.ForFileBackend(parentDirectory = "/tmp")
+        ),
         "{\"node_type\":\"local\",\"store_descriptor\":{\"backend_type\":\"file\",\"parent_directory\":\"/tmp\"}}"
       ),
       "remote-http" -> (
-        CreateRemoteHttpNode(address = HttpEndpointAddress(uri = "http://example.com")),
-        "{\"node_type\":\"remote-http\",\"address\":{\"uri\":\"http://example.com\"}}"
+        CreateRemoteHttpNode(
+          address = HttpEndpointAddress(uri = "http://example.com"),
+          storageAllowed = true
+        ),
+        "{\"node_type\":\"remote-http\",\"address\":{\"uri\":\"http://example.com\"},\"storage_allowed\":true}"
       ),
       "remote-grpc" -> (
-        CreateRemoteGrpcNode(address = GrpcEndpointAddress(host = "example.com", port = 443, tlsEnabled = true)),
-        "{\"node_type\":\"remote-grpc\",\"address\":{\"host\":\"example.com\",\"port\":443,\"tls_enabled\":true}}"
+        CreateRemoteGrpcNode(
+          address = GrpcEndpointAddress(host = "example.com", port = 443, tlsEnabled = true),
+          storageAllowed = false
+        ),
+        s"""
+         |{
+         |"node_type":"remote-grpc",
+         |"address":{"host":"example.com","port":443,"tls_enabled":true},
+         |"storage_allowed":false
+         |}""".stripMargin.replaceAll("\n", "").trim
       )
     )
 
@@ -111,16 +124,29 @@ class FormatsSpec extends UnitSpec {
   they should "convert node update requests to/from JSON" in {
     val requests = Map(
       "local" -> (
-        UpdateLocalNode(storeDescriptor = CrateStore.Descriptor.ForFileBackend(parentDirectory = "/tmp")),
+        UpdateLocalNode(
+          storeDescriptor = CrateStore.Descriptor.ForFileBackend(parentDirectory = "/tmp")
+        ),
         "{\"node_type\":\"local\",\"store_descriptor\":{\"backend_type\":\"file\",\"parent_directory\":\"/tmp\"}}"
       ),
       "remote-http" -> (
-        UpdateRemoteHttpNode(address = HttpEndpointAddress(uri = "http://example.com")),
-        "{\"node_type\":\"remote-http\",\"address\":{\"uri\":\"http://example.com\"}}"
+        UpdateRemoteHttpNode(
+          address = HttpEndpointAddress(uri = "http://example.com"),
+          storageAllowed = true
+        ),
+        "{\"node_type\":\"remote-http\",\"address\":{\"uri\":\"http://example.com\"},\"storage_allowed\":true}"
       ),
       "remote-grpc" -> (
-        UpdateRemoteGrpcNode(address = GrpcEndpointAddress(host = "example.com", port = 443, tlsEnabled = true)),
-        "{\"node_type\":\"remote-grpc\",\"address\":{\"host\":\"example.com\",\"port\":443,\"tls_enabled\":true}}"
+        UpdateRemoteGrpcNode(
+          address = GrpcEndpointAddress(host = "example.com", port = 443, tlsEnabled = true),
+          storageAllowed = false
+        ),
+        s"""
+           |{
+           |"node_type":"remote-grpc",
+           |"address":{"host":"example.com","port":443,"tls_enabled":true},
+           |"storage_allowed":false
+           |}""".stripMargin.replaceAll("\n", "").trim
       )
     )
 

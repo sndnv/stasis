@@ -55,7 +55,8 @@ object Generators {
   def generateRemoteHttpNode(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Node.Remote.Http =
     Node.Remote.Http(
       id = Node.generateId(),
-      address = HttpEndpointAddress(generateUri)
+      address = HttpEndpointAddress(generateUri),
+      storageAllowed = true
     )
 
   def generateRemoteGrpcNode(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Node.Remote.Grpc =
@@ -65,6 +66,7 @@ object Generators {
         host = generateString(withSize = 10),
         port = rnd.nextInt(50000, 60000),
         tlsEnabled = rnd.nextBoolean()
-      )
+      ),
+      storageAllowed = true
     )
 }

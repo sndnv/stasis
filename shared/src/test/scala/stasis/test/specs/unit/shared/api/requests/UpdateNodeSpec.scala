@@ -26,11 +26,13 @@ class UpdateNodeSpec extends UnitSpec {
   it should "convert requests to updated remote HTTP nodes" in {
     val initialNode = Node.Remote.Http(
       id = Node.generateId(),
-      address = HttpEndpointAddress(uri = "http://example.com")
+      address = HttpEndpointAddress(uri = "http://example.com"),
+      storageAllowed = true
     )
 
     val request = UpdateRemoteHttpNode(
-      address = HttpEndpointAddress(uri = "http://test.example.com")
+      address = HttpEndpointAddress(uri = "http://test.example.com"),
+      storageAllowed = true
     )
 
     val updatedNode = request.toUpdatedNode(initialNode)
@@ -41,11 +43,13 @@ class UpdateNodeSpec extends UnitSpec {
   it should "convert requests to updated remote gRPC nodes" in {
     val initialNode = Node.Remote.Grpc(
       id = Node.generateId(),
-      address = GrpcEndpointAddress(host = "example.com", port = 443, tlsEnabled = true)
+      address = GrpcEndpointAddress(host = "example.com", port = 443, tlsEnabled = true),
+      storageAllowed = false
     )
 
     val request = UpdateRemoteGrpcNode(
-      address = GrpcEndpointAddress(host = "test.example.com", port = 9999, tlsEnabled = false)
+      address = GrpcEndpointAddress(host = "test.example.com", port = 9999, tlsEnabled = false),
+      storageAllowed = false
     )
 
     val updatedNode = request.toUpdatedNode(initialNode)
@@ -56,7 +60,8 @@ class UpdateNodeSpec extends UnitSpec {
   it should "fail to convert requests when node types do not match" in {
     val initialNode = Node.Remote.Http(
       id = Node.generateId(),
-      address = HttpEndpointAddress(uri = "http://example.com")
+      address = HttpEndpointAddress(uri = "http://example.com"),
+      storageAllowed = true
     )
 
     val request = UpdateLocalNode(

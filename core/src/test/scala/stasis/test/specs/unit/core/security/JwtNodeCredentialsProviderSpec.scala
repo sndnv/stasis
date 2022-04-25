@@ -19,7 +19,11 @@ class JwtNodeCredentialsProviderSpec extends AsyncUnitSpec {
     val expectedToken = "some-token"
     val (provider, store) = createProvider(token = expectedToken)
 
-    val node = Node.Remote.Http(id = Node.generateId(), address = HttpEndpointAddress("http://some-address:9000"))
+    val node = Node.Remote.Http(
+      id = Node.generateId(),
+      address = HttpEndpointAddress("http://some-address:9000"),
+      storageAllowed = true
+    )
 
     store.put(node).await
     provider
@@ -32,7 +36,12 @@ class JwtNodeCredentialsProviderSpec extends AsyncUnitSpec {
   it should "fail to provide credentials for missing nodes" in {
     val (provider, store) = createProvider(token = "some-token")
 
-    val node = Node.Remote.Http(id = Node.generateId(), address = HttpEndpointAddress("http://some-address:9000"))
+    val node = Node.Remote.Http(
+      id = Node.generateId(),
+      address = HttpEndpointAddress("http://some-address:9000"),
+      storageAllowed = true
+    )
+
     val otherAddress = HttpEndpointAddress("http://some-address:9001")
 
     store.put(node).await
