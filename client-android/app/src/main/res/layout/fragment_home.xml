@@ -25,6 +25,15 @@
             android:layout_marginEnd="8dp"
             android:layout_marginBottom="8dp">
 
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/last_backup_in_progress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_margin="16dp"
+                android:indeterminate="true"
+                android:visibility="gone" />
+
             <TextView
                 android:id="@+id/last_backup_no_data"
                 android:layout_width="match_parent"
@@ -79,6 +88,15 @@
             android:layout_marginTop="1dp"
             android:layout_marginEnd="8dp"
             android:layout_marginBottom="8dp">
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/last_operation_in_progress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_margin="16dp"
+                android:indeterminate="true"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/last_operation_no_data"

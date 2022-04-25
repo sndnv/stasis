@@ -13,6 +13,7 @@ import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.Transitions.configureSourceTransition
+import stasis.client_android.activities.helpers.Transitions.operationComplete
 import stasis.client_android.api.DatasetsViewModel
 import stasis.client_android.databinding.FragmentDatasetDefinitionListBinding
 import javax.inject.Inject
@@ -70,6 +71,7 @@ class DatasetDefinitionListFragment : Fragment() {
             }
 
             (view.parent as? ViewGroup)?.doOnPreDraw {
+                activity?.operationComplete()
                 startPostponedEnterTransition()
             }
         }

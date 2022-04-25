@@ -13,6 +13,8 @@ import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.asSizeString
 import stasis.client_android.activities.helpers.Common.asString
 import stasis.client_android.activities.helpers.Common.toMinimizedString
+import stasis.client_android.activities.helpers.Transitions.operationComplete
+import stasis.client_android.activities.helpers.Transitions.operationInProgress
 import stasis.client_android.api.UserStatusViewModel
 import stasis.client_android.databinding.FragmentUserDetailsBinding
 import javax.inject.Inject
@@ -30,9 +32,11 @@ class UserDetailsFragment : Fragment() {
             false
         )
 
-        val context = requireContext()
+        activity.operationInProgress()
 
         status.user.observe(viewLifecycleOwner) { user ->
+            val context = requireContext()
+
             binding.userInfo.text = context.getString(
                 if (user.active) R.string.user_field_content_info_active
                 else R.string.user_field_content_info_inactive,
@@ -80,7 +84,8 @@ class UserDetailsFragment : Fragment() {
                         limits.maxStoragePerCrate.asSizeString(context)
                     )
 
-                    binding.userLimitsMaxRetention.rowLabel.text = context.getString(R.string.user_limits_label_max_retention)
+                    binding.userLimitsMaxRetention.rowLabel.text =
+                        context.getString(R.string.user_limits_label_max_retention)
                     binding.userLimitsMaxRetention.rowContent.text = context.getString(
                         R.string.user_limits_content_max_retention,
                         limits.maxRetention.asString(context)
@@ -106,6 +111,8 @@ class UserDetailsFragment : Fragment() {
                 chip.text = context.getString(R.string.user_field_content_permission, permission)
                 binding.userPermissions.addView(chip)
             }
+
+            activity.operationComplete()
         }
 
         return binding.root

@@ -20,6 +20,7 @@ import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.Common.toMinimizedString
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsDateTime
 import stasis.client_android.activities.helpers.Transitions.configureTargetTransition
+import stasis.client_android.activities.helpers.Transitions.operationComplete
 import stasis.client_android.activities.helpers.Transitions.setTargetTransitionName
 import stasis.client_android.api.DatasetsViewModel
 import stasis.client_android.databinding.FragmentDatasetEntryDetailsBinding
@@ -139,6 +140,7 @@ class DatasetEntryDetailsFragment : Fragment() {
                 toggleEmptyView()
             }
 
+            activity?.operationComplete()
             startPostponedEnterTransition()
         }
 

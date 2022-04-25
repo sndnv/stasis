@@ -12,6 +12,8 @@ import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.asSizeString
 import stasis.client_android.activities.helpers.Common.asString
 import stasis.client_android.activities.helpers.Common.toMinimizedString
+import stasis.client_android.activities.helpers.Transitions.operationComplete
+import stasis.client_android.activities.helpers.Transitions.operationInProgress
 import stasis.client_android.api.DeviceStatusViewModel
 import stasis.client_android.databinding.FragmentDeviceDetailsBinding
 import javax.inject.Inject
@@ -28,6 +30,8 @@ class DeviceDetailsFragment : Fragment() {
             container,
             false
         )
+
+        activity.operationInProgress()
 
         status.device.observe(viewLifecycleOwner) { device ->
             val context = requireContext()
@@ -95,6 +99,8 @@ class DeviceDetailsFragment : Fragment() {
                 R.string.device_field_content_node,
                 device.node.toString()
             )
+
+            activity.operationComplete()
         }
 
         return binding.root

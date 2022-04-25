@@ -127,10 +127,15 @@ class SearchFragment : Fragment() {
                 val until = (queryUntilDateButton.text to queryUntilTimeButton.text)
                     .parseAsDateTime(context)
 
+                binding.searchResultInProgress.isVisible = true
+                binding.searchResultEmpty.isVisible = false
+                binding.searchResult.isVisible = false
+
                 datasets.search(regex, until).observe(viewLifecycleOwner) { result ->
                     searchResultAdapter.setResult(result)
 
                     if (result.definitions.none { it.value != null }) {
+                        binding.searchResultInProgress.isVisible = false
                         binding.searchResultEmpty.isVisible = true
                         binding.searchResult.isVisible = false
 
@@ -143,6 +148,7 @@ class SearchFragment : Fragment() {
                                 )
                             )
                     } else {
+                        binding.searchResultInProgress.isVisible = false
                         binding.searchResultEmpty.isVisible = false
                         binding.searchResult.isVisible = true
 
