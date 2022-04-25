@@ -13,7 +13,12 @@ import scala.util.control.NonFatal
 
 class PreSharedKeyNodeAuthenticatorSpec extends AsyncUnitSpec {
   "A PreSharedKeyNodeAuthenticator" should "authenticate nodes with valid secrets" in {
-    val node = Node.Remote.Http(id = Node.generateId(), address = HttpEndpointAddress("http://some-address:9000"))
+    val node = Node.Remote.Http(
+      id = Node.generateId(),
+      address = HttpEndpointAddress("http://some-address:9000"),
+      storageAllowed = true
+    )
+
     val nodeSecret: String = "some-secret"
 
     val (authenticator, store) = createAuthenticator(node.id, nodeSecret)
@@ -27,7 +32,12 @@ class PreSharedKeyNodeAuthenticatorSpec extends AsyncUnitSpec {
   }
 
   it should "fail to authenticate missing nodes" in {
-    val node = Node.Remote.Http(id = Node.generateId(), address = HttpEndpointAddress("http://some-address:9000"))
+    val node = Node.Remote.Http(
+      id = Node.generateId(),
+      address = HttpEndpointAddress("http://some-address:9000"),
+      storageAllowed = true
+    )
+
     val nodeSecret: String = "some-secret"
 
     val (authenticator, _) = createAuthenticator(node.id, nodeSecret)
@@ -43,7 +53,12 @@ class PreSharedKeyNodeAuthenticatorSpec extends AsyncUnitSpec {
   }
 
   it should "refuse authentication attempts with invalid secrets" in {
-    val node = Node.Remote.Http(id = Node.generateId(), address = HttpEndpointAddress("http://some-address:9000"))
+    val node = Node.Remote.Http(
+      id = Node.generateId(),
+      address = HttpEndpointAddress("http://some-address:9000"),
+      storageAllowed = true
+    )
+
     val nodeSecret: String = "some-secret"
 
     val (authenticator, store) = createAuthenticator(node.id, nodeSecret)
@@ -60,7 +75,12 @@ class PreSharedKeyNodeAuthenticatorSpec extends AsyncUnitSpec {
   }
 
   it should "refuse authentication attempts with invalid node IDs" in {
-    val node = Node.Remote.Http(id = Node.generateId(), address = HttpEndpointAddress("http://some-address:9000"))
+    val node = Node.Remote.Http(
+      id = Node.generateId(),
+      address = HttpEndpointAddress("http://some-address:9000"),
+      storageAllowed = true
+    )
+
     val nodeSecret: String = "some-secret"
 
     val (authenticator, store) = createAuthenticator(node.id, nodeSecret)
@@ -80,7 +100,13 @@ class PreSharedKeyNodeAuthenticatorSpec extends AsyncUnitSpec {
 
   it should "refuse authentication attempts for nodes with missing credentials" in {
     val otherNode: Node.Id = Node.generateId()
-    val node = Node.Remote.Http(id = Node.generateId(), address = HttpEndpointAddress("http://some-address:9000"))
+
+    val node = Node.Remote.Http(
+      id = Node.generateId(),
+      address = HttpEndpointAddress("http://some-address:9000"),
+      storageAllowed = true
+    )
+
     val nodeSecret: String = "some-secret"
 
     val (authenticator, store) = createAuthenticator(otherNode, nodeSecret)

@@ -23,7 +23,11 @@ object CreateDeviceOwn {
         limits = Device.resolveLimits(owner.limits, request.limits)
       )
 
-      val node = Node.Remote.Http(id = device.node, address = HttpEndpointAddress(Uri.Empty))
+      val node = Node.Remote.Http(
+        id = device.node,
+        address = HttpEndpointAddress(Uri.Empty),
+        storageAllowed = false
+      )
 
       (device, node)
     }

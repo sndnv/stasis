@@ -21,7 +21,11 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
   "A JwtNodeAuthenticator" should "successfully authenticate nodes with valid tokens" in {
     val (authenticator, store) = createAuthenticator()
 
-    val node = Node.Remote.Http(id = Node.generateId(), address = HttpEndpointAddress("http://some-address:9000"))
+    val node = Node.Remote.Http(
+      id = Node.generateId(),
+      address = HttpEndpointAddress("http://some-address:9000"),
+      storageAllowed = true
+    )
 
     val nodeToken: String = MockJwtGenerators.generateJwt(
       issuer = "self",
@@ -42,7 +46,11 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
   it should "fail to authenticate missing nodes" in {
     val (authenticator, _) = createAuthenticator()
 
-    val node = Node.Remote.Http(id = Node.generateId(), address = HttpEndpointAddress("http://some-address:9000"))
+    val node = Node.Remote.Http(
+      id = Node.generateId(),
+      address = HttpEndpointAddress("http://some-address:9000"),
+      storageAllowed = true
+    )
 
     val nodeToken: String = MockJwtGenerators.generateJwt(
       issuer = "self",
@@ -64,7 +72,11 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
   it should "refuse authentication attempts with invalid node IDs" in {
     val (authenticator, store) = createAuthenticator()
 
-    val node = Node.Remote.Http(id = Node.generateId(), address = HttpEndpointAddress("http://some-address:9000"))
+    val node = Node.Remote.Http(
+      id = Node.generateId(),
+      address = HttpEndpointAddress("http://some-address:9000"),
+      storageAllowed = true
+    )
 
     val otherNode = "some-node"
     val nodeToken: String = MockJwtGenerators.generateJwt(
@@ -89,7 +101,11 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
   it should "fail authenticating nodes with unexpected credentials" in {
     val (authenticator, store) = createAuthenticator()
 
-    val node = Node.Remote.Http(id = Node.generateId(), address = HttpEndpointAddress("http://some-address:9000"))
+    val node = Node.Remote.Http(
+      id = Node.generateId(),
+      address = HttpEndpointAddress("http://some-address:9000"),
+      storageAllowed = true
+    )
 
     store.put(node).await
 

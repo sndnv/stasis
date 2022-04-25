@@ -25,7 +25,8 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
   "A DefaultRouter" should "calculate crate copies distribution" in {
     val node1 = Node.Remote.Http(
       id = Node.generateId(),
-      address = HttpEndpointAddress("localhost:8000")
+      address = HttpEndpointAddress("localhost:8000"),
+      storageAllowed = true
     )
 
     val node2 = Node.Local(
@@ -35,7 +36,14 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     val node3 = Node.Remote.Http(
       id = Node.generateId(),
-      address = HttpEndpointAddress("localhost:9000")
+      address = HttpEndpointAddress("localhost:9000"),
+      storageAllowed = true
+    )
+
+    val node4 = Node.Remote.Http(
+      id = Node.generateId(),
+      address = HttpEndpointAddress("localhost:10000"),
+      storageAllowed = false
     )
 
     DefaultRouter.distributeCopies(
@@ -59,7 +67,21 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     DefaultRouter
       .distributeCopies(
+        availableNodes = Seq(node1, node2, node3, node4),
+        sourceNodes = Seq.empty,
+        copies = 1
+      ) should be(Success(Map(node1 -> 1, node2 -> 1, node3 -> 1)))
+
+    DefaultRouter
+      .distributeCopies(
         availableNodes = Seq(node1, node2, node3),
+        sourceNodes = Seq.empty,
+        copies = 5
+      ) should be(Success(Map(node1 -> 1, node2 -> 5, node3 -> 1)))
+
+    DefaultRouter
+      .distributeCopies(
+        availableNodes = Seq(node1, node2, node3, node4),
         sourceNodes = Seq.empty,
         copies = 5
       ) should be(Success(Map(node1 -> 1, node2 -> 5, node3 -> 1)))
@@ -100,6 +122,13 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     DefaultRouter
       .distributeCopies(
         availableNodes = Seq(node1, node2, node3),
+        sourceNodes = Seq(node1.id, node2.id, node3.id),
+        copies = 1
+      ) should be(Failure(DistributionFailure("No nodes provided")))
+
+    DefaultRouter
+      .distributeCopies(
+        availableNodes = Seq(node1, node2, node3, node4),
         sourceNodes = Seq(node1.id, node2.id, node3.id),
         copies = 1
       ) should be(Failure(DistributionFailure("No nodes provided")))
@@ -886,8 +915,8 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     )
     lazy val stagingStore: Option[StagingStore] = None
     lazy val remoteNodes: Seq[Node.Remote.Http] = Seq(
-      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:8000")),
-      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:9000"))
+      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:8000"), storageAllowed = true),
+      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:9000"), storageAllowed = true)
     )
 
     def testNodes: Seq[Node] =

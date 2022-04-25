@@ -234,10 +234,16 @@ object Formats {
           CreateLocalNode(storeDescriptor = (node \ "store_descriptor").as[CrateStore.Descriptor])
 
         case "remote-http" =>
-          CreateRemoteHttpNode(address = (node \ "address").as[HttpEndpointAddress])
+          CreateRemoteHttpNode(
+            address = (node \ "address").as[HttpEndpointAddress],
+            storageAllowed = (node \ "storage_allowed").as[Boolean]
+          )
 
         case "remote-grpc" =>
-          CreateRemoteGrpcNode(address = (node \ "address").as[GrpcEndpointAddress])
+          CreateRemoteGrpcNode(
+            address = (node \ "address").as[GrpcEndpointAddress],
+            storageAllowed = (node \ "storage_allowed").as[Boolean]
+          )
       }
     },
     tjs = {
@@ -247,16 +253,18 @@ object Formats {
           "store_descriptor" -> Json.toJson(storeDescriptor)
         )
 
-      case CreateRemoteHttpNode(address) =>
+      case CreateRemoteHttpNode(address, storageAllowed) =>
         Json.obj(
           "node_type" -> Json.toJson("remote-http"),
-          "address" -> Json.toJson(address)
+          "address" -> Json.toJson(address),
+          "storage_allowed" -> Json.toJson(storageAllowed)
         )
 
-      case CreateRemoteGrpcNode(address) =>
+      case CreateRemoteGrpcNode(address, storageAllowed) =>
         Json.obj(
           "node_type" -> Json.toJson("remote-grpc"),
-          "address" -> Json.toJson(address)
+          "address" -> Json.toJson(address),
+          "storage_allowed" -> Json.toJson(storageAllowed)
         )
     }
   )
@@ -265,24 +273,43 @@ object Formats {
     fjs = _.validate[JsObject].flatMap { node =>
       (node \ "node_type").validate[String].map {
         case "local" =>
-          UpdateLocalNode(storeDescriptor = (node \ "store_descriptor").as[CrateStore.Descriptor])
+          UpdateLocalNode(
+            storeDescriptor = (node \ "store_descriptor").as[CrateStore.Descriptor]
+          )
 
         case "remote-http" =>
-          UpdateRemoteHttpNode(address = (node \ "address").as[HttpEndpointAddress])
+          UpdateRemoteHttpNode(
+            address = (node \ "address").as[HttpEndpointAddress],
+            storageAllowed = (node \ "storage_allowed").as[Boolean]
+          )
 
         case "remote-grpc" =>
-          UpdateRemoteGrpcNode(address = (node \ "address").as[GrpcEndpointAddress])
+          UpdateRemoteGrpcNode(
+            address = (node \ "address").as[GrpcEndpointAddress],
+            storageAllowed = (node \ "storage_allowed").as[Boolean]
+          )
       }
     },
     tjs = {
       case UpdateLocalNode(storeDescriptor) =>
-        Json.obj("node_type" -> Json.toJson("local"), "store_descriptor" -> Json.toJson(storeDescriptor))
+        Json.obj(
+          "node_type" -> Json.toJson("local"),
+          "store_descriptor" -> Json.toJson(storeDescriptor)
+        )
 
-      case UpdateRemoteHttpNode(address) =>
-        Json.obj("node_type" -> Json.toJson("remote-http"), "address" -> Json.toJson(address))
+      case UpdateRemoteHttpNode(address, storageAllowed) =>
+        Json.obj(
+          "node_type" -> Json.toJson("remote-http"),
+          "address" -> Json.toJson(address),
+          "storage_allowed" -> Json.toJson(storageAllowed)
+        )
 
-      case UpdateRemoteGrpcNode(address) =>
-        Json.obj("node_type" -> Json.toJson("remote-grpc"), "address" -> Json.toJson(address))
+      case UpdateRemoteGrpcNode(address, storageAllowed) =>
+        Json.obj(
+          "node_type" -> Json.toJson("remote-grpc"),
+          "address" -> Json.toJson(address),
+          "storage_allowed" -> Json.toJson(storageAllowed)
+        )
     }
   )
 

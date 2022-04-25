@@ -21,7 +21,8 @@ class NodeStoreSpec extends AsyncUnitSpec {
 
       val expectedNode = Node.Remote.Http(
         id = Node.generateId(),
-        address = HttpEndpointAddress("localhost")
+        address = HttpEndpointAddress("localhost"),
+        storageAllowed = true
       )
 
       for {
@@ -49,7 +50,8 @@ class NodeStoreSpec extends AsyncUnitSpec {
 
       val expectedNode = Node.Remote.Http(
         id = Node.generateId(),
-        address = HttpEndpointAddress("localhost")
+        address = HttpEndpointAddress("localhost"),
+        storageAllowed = true
       )
 
       for {

@@ -107,13 +107,15 @@ object Formats {
         case "remote-http" =>
           Node.Remote.Http(
             id = (node \ "id").as[Node.Id],
-            address = (node \ "address").as[HttpEndpointAddress]
+            address = (node \ "address").as[HttpEndpointAddress],
+            storageAllowed = (node \ "storage_allowed").as[Boolean]
           )
 
         case "remote-grpc" =>
           Node.Remote.Grpc(
             id = (node \ "id").as[Node.Id],
-            address = (node \ "address").as[GrpcEndpointAddress]
+            address = (node \ "address").as[GrpcEndpointAddress],
+            storageAllowed = (node \ "storage_allowed").as[Boolean]
           )
       }
     }
@@ -131,14 +133,16 @@ object Formats {
       Json.obj(
         "node_type" -> Json.toJson("remote-http"),
         "id" -> Json.toJson(node.id),
-        "address" -> Json.toJson(node.address)
+        "address" -> Json.toJson(node.address),
+        "storage_allowed" -> Json.toJson(node.storageAllowed)
       )
 
     case node: Node.Remote.Grpc =>
       Json.obj(
         "node_type" -> Json.toJson("remote-grpc"),
         "id" -> Json.toJson(node.id),
-        "address" -> Json.toJson(node.address)
+        "address" -> Json.toJson(node.address),
+        "storage_allowed" -> Json.toJson(node.storageAllowed)
       )
   }
 

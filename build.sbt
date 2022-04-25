@@ -103,14 +103,14 @@ lazy val core = (project in file("./core"))
       "com.typesafe.slick"    %% "slick"                   % slickVersion    % Provided,
       "com.h2database"         % "h2"                      % h2Version       % Test,
       "org.scalacheck"        %% "scalacheck"              % "1.16.0"        % Test,
-      "org.scalatest"         %% "scalatest"               % "3.2.11"        % Test,
+      "org.scalatest"         %% "scalatest"               % "3.2.12"        % Test,
       "com.typesafe.akka"     %% "akka-testkit"            % akkaVersion     % Test,
       "com.typesafe.akka"     %% "akka-stream-testkit"     % akkaVersion     % Test,
       "com.typesafe.akka"     %% "akka-http-testkit"       % akkaHttpVersion % Test,
       "com.github.tomakehurst" % "wiremock-jre8"           % "2.33.1"        % Test,
       "org.mockito"           %% "mockito-scala"           % "1.17.5"        % Test,
       "org.mockito"           %% "mockito-scala-scalatest" % "1.17.5"        % Test,
-      "org.mockito"            % "mockito-inline"          % "4.5.0"         % Test
+      "org.mockito"            % "mockito-inline"          % "4.5.1"         % Test
     )
   )
   .dependsOn(proto)

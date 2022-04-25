@@ -242,8 +242,8 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
       ) -> 1
     )
     lazy val remoteNodes: Map[Node.Remote.Http, Int] = Map(
-      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:8000")) -> 1,
-      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:9000")) -> 1
+      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:8000"), storageAllowed = true) -> 1,
+      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:9000"), storageAllowed = true) -> 1
     )
     lazy val proxy: NodeProxy = new NodeProxy(
       httpClient = testClient,

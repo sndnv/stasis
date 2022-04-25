@@ -457,7 +457,7 @@ object DefaultRouter {
   ): Try[Map[Node, Int]] =
     if (copies > 0) {
       val (localNodes, remoteNodes) = availableNodes
-        .filter(node => !sourceNodes.contains(node.id))
+        .filter(node => node.storageAllowed && !sourceNodes.contains(node.id))
         .partition {
           case _: Node.Local => true
           case _             => false

@@ -1,7 +1,5 @@
 package stasis.test.specs.unit.server.api.routes
 
-import java.util.UUID
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.model.StatusCodes
@@ -26,6 +24,7 @@ import stasis.test.specs.unit.core.networking.mocks.{MockGrpcEndpointClient, Moc
 import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
 
+import java.util.UUID
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -119,8 +118,8 @@ class StagingSpec extends AsyncUnitSpec with ScalatestRouteTest {
   )
 
   private val destinations: Map[Node, Int] = Map(
-    Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:8000")) -> 1,
-    Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:9000")) -> 1
+    Node.Remote.Http(id = Node.generateId(), address = HttpEndpointAddress("localhost:8000"), storageAllowed = true) -> 1,
+    Node.Remote.Http(id = Node.generateId(), address = HttpEndpointAddress("localhost:9000"), storageAllowed = true) -> 1
   )
 
   private val proxy: NodeProxy = new NodeProxy(

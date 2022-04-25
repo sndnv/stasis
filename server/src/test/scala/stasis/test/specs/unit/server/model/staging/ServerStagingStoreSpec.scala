@@ -97,8 +97,8 @@ class ServerStagingStoreSpec extends AsyncUnitSpec {
   )
 
   private val destinations: Map[Node, Int] = Map(
-    Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:8000")) -> 1,
-    Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:9000")) -> 1
+    Node.Remote.Http(id = Node.generateId(), address = HttpEndpointAddress("localhost:8000"), storageAllowed = true) -> 1,
+    Node.Remote.Http(id = Node.generateId(), address = HttpEndpointAddress("localhost:9000"), storageAllowed = true) -> 1
   )
 
   private val proxy: NodeProxy = new NodeProxy(

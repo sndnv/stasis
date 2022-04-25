@@ -32,10 +32,10 @@ class NodeProxy(
       case Node.Local(id, storeDescriptor) =>
         crateStore(id, storeDescriptor).flatMap(_.persist(manifest, content))
 
-      case Node.Remote.Http(_, address) =>
+      case Node.Remote.Http(_, address, _) =>
         httpClient.push(address, manifest, content)
 
-      case Node.Remote.Grpc(_, address) =>
+      case Node.Remote.Grpc(_, address, _) =>
         grpcClient.push(address, manifest, content)
     }
 
@@ -44,10 +44,10 @@ class NodeProxy(
       case Node.Local(id, storeDescriptor) =>
         crateStore(id, storeDescriptor).flatMap(_.sink(manifest.crate))
 
-      case Node.Remote.Http(_, address) =>
+      case Node.Remote.Http(_, address, _) =>
         httpClient.sink(address, manifest)
 
-      case Node.Remote.Grpc(_, address) =>
+      case Node.Remote.Grpc(_, address, _) =>
         grpcClient.sink(address, manifest)
     }
 
@@ -56,10 +56,10 @@ class NodeProxy(
       case Node.Local(id, storeDescriptor) =>
         crateStore(id, storeDescriptor).flatMap(_.retrieve(crate))
 
-      case Node.Remote.Http(_, address) =>
+      case Node.Remote.Http(_, address, _) =>
         httpClient.pull(address, crate)
 
-      case Node.Remote.Grpc(_, address) =>
+      case Node.Remote.Grpc(_, address, _) =>
         grpcClient.pull(address, crate)
     }
 
@@ -78,10 +78,10 @@ class NodeProxy(
       case Node.Local(id, storeDescriptor) =>
         crateStore(id, storeDescriptor).flatMap(_.discard(crate))
 
-      case Node.Remote.Http(_, address) =>
+      case Node.Remote.Http(_, address, _) =>
         httpClient.discard(address, crate)
 
-      case Node.Remote.Grpc(_, address) =>
+      case Node.Remote.Grpc(_, address, _) =>
         grpcClient.discard(address, crate)
     }
 

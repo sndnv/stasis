@@ -9,8 +9,8 @@ sealed trait UpdateNode
 
 object UpdateNode {
   final case class UpdateLocalNode(storeDescriptor: CrateStore.Descriptor) extends UpdateNode
-  final case class UpdateRemoteHttpNode(address: HttpEndpointAddress) extends UpdateNode
-  final case class UpdateRemoteGrpcNode(address: GrpcEndpointAddress) extends UpdateNode
+  final case class UpdateRemoteHttpNode(address: HttpEndpointAddress, storageAllowed: Boolean) extends UpdateNode
+  final case class UpdateRemoteGrpcNode(address: GrpcEndpointAddress, storageAllowed: Boolean) extends UpdateNode
 
   implicit class RequestToUpdatedNode(request: UpdateNode) {
     @SuppressWarnings(Array("org.wartremover.warts.Throw"))
@@ -19,11 +19,11 @@ object UpdateNode {
         case (UpdateLocalNode(storeDescriptor), node: Node.Local) =>
           node.copy(storeDescriptor = storeDescriptor)
 
-        case (UpdateRemoteHttpNode(address), node: Node.Remote.Http) =>
-          node.copy(address = address)
+        case (UpdateRemoteHttpNode(address, storageAllowed), node: Node.Remote.Http) =>
+          node.copy(address = address, storageAllowed = storageAllowed)
 
-        case (UpdateRemoteGrpcNode(address), node: Node.Remote.Grpc) =>
-          node.copy(address = address)
+        case (UpdateRemoteGrpcNode(address, storageAllowed), node: Node.Remote.Grpc) =>
+          node.copy(address = address, storageAllowed = storageAllowed)
 
         case (_, _) =>
           val requestType = request.getClass.getSimpleName

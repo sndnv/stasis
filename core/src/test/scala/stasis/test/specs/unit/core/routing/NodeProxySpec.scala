@@ -41,14 +41,16 @@ class NodeProxySpec extends AsyncUnitSpec {
   it should behave like remoteNodeProxy(
     node = Node.Remote.Http(
       id = Node.generateId(),
-      address = HttpEndpointAddress("http://some-address:1234")
+      address = HttpEndpointAddress("http://some-address:1234"),
+      storageAllowed = true
     )
   )
 
   it should behave like remoteNodeProxy(
     node = Node.Remote.Grpc(
       id = Node.generateId(),
-      address = GrpcEndpointAddress(host = "some-address", port = 1234, tlsEnabled = false)
+      address = GrpcEndpointAddress(host = "some-address", port = 1234, tlsEnabled = false),
+      storageAllowed = true
     )
   )
 
