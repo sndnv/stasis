@@ -15,6 +15,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import stasis.client_android.MainNavGraphDirections
 import stasis.client_android.R
+import stasis.client_android.activities.helpers.Transitions.operationComplete
+import stasis.client_android.activities.helpers.Transitions.operationInProgress
 import stasis.client_android.activities.receivers.LogoutReceiver
 import stasis.client_android.databinding.ActivityMainBinding
 import stasis.client_android.lib.utils.Try.Companion.flatMap
@@ -240,6 +242,13 @@ class MainActivity : AppCompatActivity() {
                 if (homeHintShown.get() && helpHintShown.get()) {
                     preferences.firstRunComplete()
                 }
+            }
+
+            when (destination.id) {
+                R.id.backupFragment -> operationInProgress()
+                R.id.datasetDefinitionDetailsFragment -> operationInProgress()
+                R.id.datasetEntryDetailsFragment -> operationInProgress()
+                else -> operationComplete()
             }
         }
 

@@ -11,6 +11,8 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.map
 import dagger.hilt.android.AndroidEntryPoint
 import stasis.client_android.R
+import stasis.client_android.activities.helpers.Transitions.operationComplete
+import stasis.client_android.activities.helpers.Transitions.operationInProgress
 import stasis.client_android.databinding.FragmentConnectionsBinding
 import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.providers.ProviderContext
@@ -33,6 +35,8 @@ class ConnectionsFragment : Fragment() {
             false
         )
 
+        activity.operationInProgress()
+
         val preferences: SharedPreferences = ConfigRepository.getPreferences(requireContext())
         val providerContext = providerContextFactory.getOrCreate(preferences).required()
 
@@ -51,6 +55,8 @@ class ConnectionsFragment : Fragment() {
                     binding.serversListEmpty.isVisible = false
                     binding.serversList.isVisible = true
                 }
+
+                activity.operationComplete()
             }
 
         return binding.root

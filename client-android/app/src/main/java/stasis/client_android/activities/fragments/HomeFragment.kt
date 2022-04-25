@@ -55,6 +55,9 @@ class HomeFragment : Fragment() {
 
         val preferences: SharedPreferences = ConfigRepository.getPreferences(requireContext())
 
+        showLastBackupInProgress(binding)
+        showLastOperationInProgress(binding)
+
         providerContextFactory.getOrCreate(preferences).provided { providerContext ->
             datasets.latestEntry().observe(viewLifecycleOwner) { latestEntry ->
                 when (latestEntry) {
@@ -74,7 +77,6 @@ class HomeFragment : Fragment() {
                 state.operations
                     .filterValues { it.completed != null }
                     .maxByOrNull { it.component2().completed!! }
-
             }.observe(viewLifecycleOwner) { entry ->
                 when (entry) {
                     null -> showLastOperationNoData(binding)
@@ -96,7 +98,14 @@ class HomeFragment : Fragment() {
         return binding.root
     }
 
+    private fun showLastBackupInProgress(binding: FragmentHomeBinding) {
+        binding.lastBackupInProgress.isVisible = true
+        binding.lastBackupNoData.isVisible = false
+        binding.lastBackupContainer.isVisible = false
+    }
+
     private fun showLastBackupNoData(binding: FragmentHomeBinding) {
+        binding.lastBackupInProgress.isVisible = false
         binding.lastBackupNoData.isVisible = true
         binding.lastBackupContainer.isVisible = false
 
@@ -114,6 +123,7 @@ class HomeFragment : Fragment() {
     ) {
         val context = binding.root.context
 
+        binding.lastBackupInProgress.isVisible = false
         binding.lastBackupNoData.isVisible = false
         binding.lastBackupContainer.isVisible = true
 
@@ -168,7 +178,14 @@ class HomeFragment : Fragment() {
         }
     }
 
+    private fun showLastOperationInProgress(binding: FragmentHomeBinding) {
+        binding.lastOperationInProgress.isVisible = true
+        binding.lastOperationNoData.isVisible = false
+        binding.lastOperationContainer.isVisible = false
+    }
+
     private fun showLastOperationNoData(binding: FragmentHomeBinding) {
+        binding.lastOperationInProgress.isVisible = false
         binding.lastOperationNoData.isVisible = true
         binding.lastOperationContainer.isVisible = false
 
@@ -187,6 +204,7 @@ class HomeFragment : Fragment() {
     ) {
         val context = binding.root.context
 
+        binding.lastOperationInProgress.isVisible = false
         binding.lastOperationNoData.isVisible = false
         binding.lastOperationContainer.isVisible = true
 
@@ -215,7 +233,7 @@ class HomeFragment : Fragment() {
             ),
             StyledString(
                 placeholder = "%2\$s",
-                content = progress.stages.values.map { it.steps.size }.sum().toString(),
+                content = progress.stages.values.sumOf { it.steps.size }.toString(),
                 style = StyleSpan(Typeface.BOLD)
             ),
             StyledString(

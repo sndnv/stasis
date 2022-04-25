@@ -27,6 +27,7 @@ import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.Common.toMinimizedString
 import stasis.client_android.activities.helpers.Transitions.configureSourceTransition
 import stasis.client_android.activities.helpers.Transitions.configureTargetTransition
+import stasis.client_android.activities.helpers.Transitions.operationComplete
 import stasis.client_android.activities.helpers.Transitions.setTargetTransitionName
 import stasis.client_android.api.DatasetsViewModel
 import stasis.client_android.databinding.FragmentDatasetDefinitionDetailsBinding
@@ -200,6 +201,7 @@ class DatasetDefinitionDetailsFragment : Fragment() {
                     )
                     binding.entriesList.setHasFixedSize(true)
 
+                    activity?.operationComplete()
                     startPostponedEnterTransition()
                 }
         }

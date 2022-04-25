@@ -1,5 +1,6 @@
 package stasis.test.client_android.activities.helpers
 
+import android.app.Activity
 import android.content.Context
 import android.view.View
 import androidx.fragment.app.Fragment
@@ -14,6 +15,8 @@ import org.robolectric.annotation.Config
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.Transitions.configureSourceTransition
 import stasis.client_android.activities.helpers.Transitions.configureTargetTransition
+import stasis.client_android.activities.helpers.Transitions.operationComplete
+import stasis.client_android.activities.helpers.Transitions.operationInProgress
 import stasis.client_android.activities.helpers.Transitions.setSourceTransitionName
 import stasis.client_android.activities.helpers.Transitions.setTargetTransitionName
 
@@ -61,5 +64,29 @@ class TransitionsSpec {
         view.setTargetTransitionName(resId = R.string.app_name)
 
         verify { view.transitionName = any() }
+    }
+
+    @Test
+    fun showProgressBarForLongRunningOperations() {
+        val activity = mockk<Activity>()
+
+        val view = mockk<View>(relaxUnitFun = true)
+        every { activity.findViewById<View>(any()) } returns view
+
+        activity.operationInProgress()
+
+        verify { view.visibility = View.VISIBLE }
+    }
+
+    @Test
+    fun hideProgressBarForCompletedOperations() {
+        val activity = mockk<Activity>()
+
+        val view = mockk<View>(relaxUnitFun = true)
+        every { activity.findViewById<View>(any()) } returns view
+
+        activity.operationComplete()
+
+        verify { view.visibility = View.INVISIBLE }
     }
 }
