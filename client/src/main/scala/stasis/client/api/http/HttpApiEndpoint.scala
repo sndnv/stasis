@@ -5,11 +5,10 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import akka.stream.scaladsl.Sink
-import akka.util.ByteString
 import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.api.http.routes._
 import stasis.client.security.FrontendAuthenticator
+import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.core.security.tls.EndpointContext
 
 import scala.concurrent.Future
@@ -18,7 +17,8 @@ import scala.util.{Failure, Success}
 
 class HttpApiEndpoint(
   authenticator: FrontendAuthenticator
-)(implicit system: ActorSystem[SpawnProtocol.Command], context: Context) {
+)(implicit system: ActorSystem[SpawnProtocol.Command], context: Context)
+    extends EntityDiscardingDirectives {
 
   private val definitions = DatasetDefinitions()
   private val entries = DatasetEntries()
@@ -32,33 +32,26 @@ class HttpApiEndpoint(
   private val exceptionHandler: ExceptionHandler =
     ExceptionHandler {
       case e: ServerApiFailure =>
-        extractRequestEntity { entity =>
-          val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
+        context.log.error(e.message, e)
 
-          context.log.error(e.message, e)
-
-          complete(
-            e.status,
-            HttpEntity(ContentTypes.`text/plain(UTF-8)`, e.message)
-          )
-        }
+        discardEntity & complete(
+          e.status,
+          HttpEntity(ContentTypes.`text/plain(UTF-8)`, e.message)
+        )
 
       case NonFatal(e) =>
-        extractRequestEntity { entity =>
-          val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
-          val message = s"Unhandled exception encountered: [${e.getMessage}]"
+        val message = s"Unhandled exception encountered: [${e.getMessage}]"
 
-          context.log.error(message, e)
+        context.log.error(message, e)
 
-          complete(
-            StatusCodes.InternalServerError,
-            HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
-          )
-        }
+        discardEntity & complete(
+          StatusCodes.InternalServerError,
+          HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
+        )
     }
 
   val endpointRoutes: Route =
-    (extractMethod & extractUri & extractClientIP & extractRequest) { (method, uri, remoteAddress, request) =>
+    (extractMethod & extractUri & extractClientIP) { (method, uri, remoteAddress) =>
       extractCredentials {
         case Some(credentials) =>
           onComplete(authenticator.authenticate(credentials)) {
@@ -79,8 +72,6 @@ class HttpApiEndpoint(
               )
 
             case Failure(e) =>
-              val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
-
               context.log.warn(
                 "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{} - {}]",
                 method.value,
@@ -90,12 +81,10 @@ class HttpApiEndpoint(
                 e.getMessage
               )
 
-              complete(StatusCodes.Unauthorized)
+              discardEntity & complete(StatusCodes.Unauthorized)
           }
 
         case None =>
-          val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
-
           context.log.warn(
             "Rejecting [{}] request for [{}] with no credentials from [{}]",
             method.value,
@@ -103,7 +92,7 @@ class HttpApiEndpoint(
             remoteAddress
           )
 
-          complete(StatusCodes.Unauthorized)
+          discardEntity & complete(StatusCodes.Unauthorized)
       }
     }
 

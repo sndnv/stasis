@@ -17,7 +17,7 @@ trait PoolClient {
 
   private implicit val ec: ExecutionContext = system.executionContext
 
-  private val http = Http()(system.classicSystem)
+  private val http = Http()
 
   private val clientContext: HttpsConnectionContext = context match {
     case Some(context) => context.connection

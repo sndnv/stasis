@@ -5,11 +5,9 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import akka.stream.scaladsl.Sink
-import akka.util.ByteString
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import org.slf4j.{Logger, LoggerFactory}
-import stasis.core.api.directives.LoggingDirectives
+import stasis.core.api.directives.{EntityDiscardingDirectives, LoggingDirectives}
 import stasis.core.security.tls.EndpointContext
 import stasis.server.api.routes._
 import stasis.server.security.ResourceProvider
@@ -26,7 +24,8 @@ class ApiEndpoint(
   userCredentialsManager: UserCredentialsManager,
   secretsConfig: SecretsConfig
 )(implicit val system: ActorSystem[SpawnProtocol.Command])
-    extends LoggingDirectives {
+    extends LoggingDirectives
+    with EntityDiscardingDirectives {
   private implicit val ec: ExecutionContextExecutor = system.executionContext
 
   override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
@@ -47,7 +46,7 @@ class ApiEndpoint(
   private val rejectionHandler: RejectionHandler = handlers.Rejection.create(log)
 
   val endpointRoutes: Route =
-    (extractMethod & extractUri & extractClientIP & extractRequest) { (method, uri, remoteAddress, request) =>
+    (extractMethod & extractUri & extractClientIP) { (method, uri, remoteAddress) =>
       extractCredentials {
         case Some(credentials) =>
           onComplete(authenticator.authenticate(credentials)) {
@@ -69,8 +68,6 @@ class ApiEndpoint(
               )
 
             case Failure(e) =>
-              val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
-
               log.warn(
                 "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{} - {}]",
                 method.value,
@@ -80,12 +77,10 @@ class ApiEndpoint(
                 e.getMessage
               )
 
-              complete(StatusCodes.Unauthorized)
+              discardEntity & complete(StatusCodes.Unauthorized)
           }
 
         case None =>
-          val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
-
           log.warn(
             "Rejecting [{}] request for [{}] with no credentials from [{}]",
             method.value,
@@ -93,7 +88,7 @@ class ApiEndpoint(
             remoteAddress
           )
 
-          complete(StatusCodes.Unauthorized)
+          discardEntity & complete(StatusCodes.Unauthorized)
       }
     }
 

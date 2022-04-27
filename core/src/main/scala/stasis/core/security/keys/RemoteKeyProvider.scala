@@ -1,22 +1,21 @@
 package stasis.core.security.keys
 
-import java.security.Key
-
 import akka.Done
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, StatusCodes}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
-import akka.stream.scaladsl.Sink
-import akka.util.{ByteString, Timeout}
+import akka.util.Timeout
 import org.jose4j.jwk.JsonWebKeySet
 import org.jose4j.jws.AlgorithmIdentifiers
 import org.slf4j.LoggerFactory
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.security.exceptions.ProviderFailure
 import stasis.core.security.tls.EndpointContext
+import stasis.core.streaming.Operators.ExtendedSource
 
+import java.security.Key
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
@@ -152,7 +151,7 @@ object RemoteKeyProvider {
   )(implicit system: ActorSystem[SpawnProtocol.Command]): Future[String] = {
     import system.executionContext
 
-    val http = Http()(system.classicSystem)
+    val http = Http()
 
     val clientContext: HttpsConnectionContext = context match {
       case Some(context) => context.connection
@@ -173,8 +172,9 @@ object RemoteKeyProvider {
             Unmarshal(entity).to[String]
 
           case _ =>
-            val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
-            Future.failed(ProviderFailure(s"Endpoint responded with unexpected status: [${status.value}]"))
+            entity.dataBytes.cancelled().flatMap { _ =>
+              Future.failed(ProviderFailure(s"Endpoint responded with unexpected status: [${status.value}]"))
+            }
         }
       }
   }

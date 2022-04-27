@@ -2,16 +2,16 @@ package stasis.core.api.directives
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Directive, Directive0}
-import akka.stream.scaladsl.Sink
-import akka.util.ByteString
+import stasis.core.streaming.Operators.ExtendedSource
 
 trait EntityDiscardingDirectives {
   def discardEntity: Directive0 =
     Directive { inner =>
       extractRequestEntity { entity =>
         extractActorSystem { implicit system =>
-          val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
-          inner(())
+          onSuccess(entity.dataBytes.cancelled()) { _ =>
+            inner(())
+          }
         }
       }
     }
@@ -20,8 +20,7 @@ trait EntityDiscardingDirectives {
     Directive { inner =>
       extractRequestEntity { entity =>
         extractActorSystem { implicit system =>
-          val result = entity.dataBytes.runWith(Sink.ignore)
-          onSuccess(result) { _ =>
+          onSuccess(entity.dataBytes.ignored()) { _ =>
             inner(())
           }
         }

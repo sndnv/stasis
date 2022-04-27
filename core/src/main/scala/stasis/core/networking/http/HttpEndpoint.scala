@@ -8,9 +8,8 @@ import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import akka.stream.scaladsl.Sink
-import akka.util.ByteString
 import org.slf4j.LoggerFactory
+import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.core.networking.Endpoint
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.CrateStorageRequest
@@ -29,7 +28,8 @@ class HttpEndpoint(
   reservationStore: ReservationStoreView,
   override protected val authenticator: NodeAuthenticator[HttpCredentials]
 )(implicit system: ActorSystem[SpawnProtocol.Command])
-    extends Endpoint[HttpCredentials] {
+    extends Endpoint[HttpCredentials]
+    with EntityDiscardingDirectives {
 
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.core.api.Formats._
@@ -52,7 +52,6 @@ class HttpEndpoint(
   private val sanitizingExceptionHandler: ExceptionHandler =
     ExceptionHandler { case NonFatal(e) =>
       extractRequest { request =>
-        val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
         val failureReference = java.util.UUID.randomUUID()
 
         log.errorN(
@@ -64,7 +63,7 @@ class HttpEndpoint(
           e
         )
 
-        complete(
+        discardEntity & complete(
           StatusCodes.InternalServerError,
           HttpEntity(
             ContentTypes.`text/plain(UTF-8)`,
@@ -79,8 +78,6 @@ class HttpEndpoint(
       .newBuilder()
       .handle { case MissingQueryParamRejection(parameterName) =>
         extractRequest { request =>
-          val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
-
           val message = s"Parameter [$parameterName] is missing, invalid or malformed"
 
           log.warnN(
@@ -90,7 +87,7 @@ class HttpEndpoint(
             message
           )
 
-          complete(
+          discardEntity & complete(
             StatusCodes.BadRequest,
             HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
           )
@@ -98,8 +95,6 @@ class HttpEndpoint(
       }
       .handle { case ValidationRejection(rejectionMessage, _) =>
         extractRequest { request =>
-          val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
-
           val message = s"Provided data is invalid or malformed: [$rejectionMessage]"
 
           log.warnN(
@@ -109,7 +104,7 @@ class HttpEndpoint(
             message
           )
 
-          complete(
+          discardEntity & complete(
             StatusCodes.BadRequest,
             HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
           )
@@ -119,7 +114,7 @@ class HttpEndpoint(
       .seal
 
   val routes: Route =
-    (extractMethod & extractUri & extractClientIP & extractRequest) { (method, uri, remoteAddress, request) =>
+    (extractMethod & extractUri & extractClientIP) { (method, uri, remoteAddress) =>
       extractCredentials {
         case Some(credentials) =>
           onComplete(authenticator.authenticate(credentials)) {
@@ -157,8 +152,6 @@ class HttpEndpoint(
                             }
 
                           case Some(reservation) =>
-                            val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
-
                             log.error(
                               "Node [{}] failed to push crate with ID [{}]; reservation [{}] is for crate [{}]",
                               node,
@@ -167,11 +160,9 @@ class HttpEndpoint(
                               reservation.crate
                             )
 
-                            complete(StatusCodes.BadRequest)
+                            discardEntity & complete(StatusCodes.BadRequest)
 
                           case None =>
-                            val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
-
                             log.error(
                               "Node [{}] failed to push crate with ID [{}]; reservation [{}] not found",
                               node,
@@ -179,7 +170,7 @@ class HttpEndpoint(
                               reservationId
                             )
 
-                            complete(StatusCodes.FailedDependency)
+                            discardEntity & complete(StatusCodes.FailedDependency)
                         }
                       }
                     },
@@ -205,8 +196,6 @@ class HttpEndpoint(
               )
 
             case Failure(e) =>
-              val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
-
               log.warn(
                 "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{} - {}]",
                 method.value,
@@ -216,13 +205,10 @@ class HttpEndpoint(
                 e.getMessage
               )
 
-              complete(StatusCodes.Unauthorized)
-
+              discardEntity & complete(StatusCodes.Unauthorized)
           }
 
         case None =>
-          val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
-
           log.warn(
             "Rejecting [{}] request for [{}] with no credentials from [{}]",
             method.value,
@@ -230,7 +216,7 @@ class HttpEndpoint(
             remoteAddress
           )
 
-          complete(StatusCodes.Unauthorized)
+          discardEntity & complete(StatusCodes.Unauthorized)
       }
     }
 }

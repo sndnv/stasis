@@ -52,7 +52,7 @@ class InitSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockitoSugar
         startup = startup.future,
         console = None
       )
-      response <- Http()(typedSystem.classicSystem)
+      response <- Http()
         .singleRequest(
           HttpRequest(
             method = HttpMethods.POST,

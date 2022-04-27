@@ -2,7 +2,8 @@ package stasis.core.routing
 
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.stream.scaladsl.{Broadcast, Sink, Source}
+import akka.stream.ClosedShape
+import akka.stream.scaladsl.{Broadcast, GraphDSL, RunnableGraph, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import org.slf4j.LoggerFactory
@@ -30,6 +31,7 @@ class DefaultRouter(
 
   private val log = LoggerFactory.getLogger(this.getClass.getName)
 
+  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   override def push(
     manifest: Manifest,
     content: Source[ByteString, NotUsed]
@@ -96,24 +98,27 @@ class DefaultRouter(
                     )
                     .flatMap { results =>
                       val (sinks, destinations) = results.flatten.unzip
+                      if (sinks.nonEmpty) {
+                        RunnableGraph
+                          .fromGraph(GraphDSL.create(sinks.toSeq) { implicit builder => sinkList =>
+                            import GraphDSL.Implicits._
+                            val broadcast = builder.add(Broadcast[ByteString](sinkList.length))
 
-                      val result = sinks.toList match {
-                        case first :: second :: remaining =>
-                          val _ = content.runWith(Sink.combine(first, second, remaining: _*)(Broadcast[ByteString](_)))
-                          Future.successful(Done)
+                            content ~> broadcast
+                            sinkList.foreach(sink => broadcast ~> sink)
 
-                        case single :: Nil =>
-                          content.runWith(single)
-
-                        case Nil =>
-                          val message = s"Crate [${manifest.crate.toString}] was not pushed; no content sinks retrieved"
-                          log.error(message)
-                          Future.failed(PushFailure(message))
-                      }
-
-                      result.flatMap { _ =>
-                        log.debugN("Crate [{}] pushed to [{}] nodes: [{}]", manifest.crate, destinations.size, destinations)
-                        persistence.manifests.put(manifest.copy(destinations = destinations.map(_.id).toSeq))
+                            ClosedShape
+                          })
+                          .mapMaterializedValue(Future.sequence(_))
+                          .run()
+                          .flatMap { _ =>
+                            log.debugN("Crate [{}] pushed to [{}] nodes: [{}]", manifest.crate, destinations.size, destinations)
+                            persistence.manifests.put(manifest.copy(destinations = destinations.map(_.id).toSeq))
+                          }
+                      } else {
+                        val message = s"Crate [${manifest.crate.toString}] was not pushed; no content sinks retrieved"
+                        log.error(message)
+                        Future.failed(PushFailure(message))
                       }
                     }
               }

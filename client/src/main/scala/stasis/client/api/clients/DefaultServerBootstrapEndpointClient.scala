@@ -5,11 +5,10 @@ import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.http.scaladsl.{ConnectionContext, Http}
-import akka.stream.scaladsl.Sink
-import akka.util.ByteString
 import play.api.libs.json.Format
 import stasis.client.api.clients.exceptions.ServerBootstrapFailure
 import stasis.client.api.clients.internal.InsecureX509TrustManager
+import stasis.core.streaming.Operators.ExtendedSource
 import stasis.shared.model.devices.DeviceBootstrapParameters
 
 import java.security.SecureRandom
@@ -27,7 +26,7 @@ class DefaultServerBootstrapEndpointClient(
 
   override val server: String = serverBootstrapUrl
 
-  private val http = Http()(system.classicSystem)
+  private val http = Http()
 
   @SuppressWarnings(Array("org.wartremover.warts.Null"))
   private val clientContext = if (acceptSelfSignedCertificates) {
@@ -83,12 +82,13 @@ object DefaultServerBootstrapEndpointClient {
         Unmarshal(response)
           .to[M]
           .recoverWith { case NonFatal(e) =>
-            val _ = response.entity.dataBytes.runWith(Sink.cancelled[ByteString])
-            Future.failed(
-              new ServerBootstrapFailure(
-                message = s"Server bootstrap request unmarshalling failed with: [${e.getMessage}]"
+            response.entity.dataBytes.cancelled().flatMap { _ =>
+              Future.failed(
+                new ServerBootstrapFailure(
+                  message = s"Server bootstrap request unmarshalling failed with: [${e.getMessage}]"
+                )
               )
-            )
+            }
           }
       } else {
         Unmarshal(response)

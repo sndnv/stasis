@@ -102,7 +102,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
 
     val endpointToken = java.nio.file.Files.readString(directory.config.get.resolve(Files.ApiToken))
 
-    val response = Http()(typedSystem.classicSystem)
+    val response = Http()
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.PUT,

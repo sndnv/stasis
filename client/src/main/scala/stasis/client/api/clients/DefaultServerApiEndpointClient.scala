@@ -5,8 +5,6 @@ import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.scaladsl.Sink
-import akka.util.ByteString
 import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.encryption.Decoder
 import stasis.client.encryption.secrets.DeviceSecret
@@ -14,6 +12,7 @@ import stasis.client.model.DatasetMetadata
 import stasis.core.api.PoolClient
 import stasis.core.networking.exceptions.ClientFailure
 import stasis.core.security.tls.EndpointContext
+import stasis.core.streaming.Operators.ExtendedSource
 import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}
 import stasis.shared.api.responses.{CreatedDatasetDefinition, CreatedDatasetEntry, Ping}
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
@@ -303,13 +302,14 @@ object DefaultServerApiEndpointClient {
         Unmarshal(response)
           .to[M]
           .recoverWith { case NonFatal(e) =>
-            val _ = response.entity.dataBytes.runWith(Sink.cancelled[ByteString])
-            Future.failed(
-              new ServerApiFailure(
-                status = StatusCodes.InternalServerError,
-                message = s"Server API request unmarshalling failed with: [${e.getMessage}]"
+            response.entity.dataBytes.cancelled().flatMap { _ =>
+              Future.failed(
+                new ServerApiFailure(
+                  status = StatusCodes.InternalServerError,
+                  message = s"Server API request unmarshalling failed with: [${e.getMessage}]"
+                )
               )
-            )
+            }
           }
       } else {
         Unmarshal(response)

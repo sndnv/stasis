@@ -5,11 +5,10 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
-import akka.stream.scaladsl.Sink
-import akka.util.ByteString
 import stasis.core.security.exceptions.ProviderFailure
 import stasis.core.security.oauth.OAuthClient.{AccessTokenResponse, GrantType}
 import stasis.core.security.tls.EndpointContext
+import stasis.core.streaming.Operators.ExtendedSource
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -27,7 +26,7 @@ class DefaultOAuthClient(
 
   private val credentials: BasicHttpCredentials = BasicHttpCredentials(username = client, password = clientSecret)
 
-  private val http = Http()(system.classicSystem)
+  private val http = Http()
 
   private val clientContext: HttpsConnectionContext = context match {
     case Some(context) => context.connection
@@ -95,10 +94,11 @@ class DefaultOAuthClient(
           Unmarshal(entity)
             .to[AccessTokenResponse]
             .recoverWith { case NonFatal(e) =>
-              val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
               val message = s"Failed to unmarshal response [${code.value}] from [$tokenEndpoint]: " +
                 s"[${e.getClass.getSimpleName}: ${e.getMessage}]"
-              Future.failed(ProviderFailure(message))
+              entity.dataBytes.cancelled().flatMap { _ =>
+                Future.failed(ProviderFailure(message))
+              }
             }
 
         case HttpResponse(code, _, entity, _) =>

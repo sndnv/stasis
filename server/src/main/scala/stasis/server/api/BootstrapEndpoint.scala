@@ -5,11 +5,9 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{ExceptionHandler, RejectionHandler, Route}
-import akka.stream.scaladsl.Sink
-import akka.util.ByteString
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import org.slf4j.{Logger, LoggerFactory}
-import stasis.core.api.directives.LoggingDirectives
+import stasis.core.api.directives.{EntityDiscardingDirectives, LoggingDirectives}
 import stasis.core.security.tls.EndpointContext
 import stasis.server.api.routes.{DeviceBootstrap, RoutesContext}
 import stasis.server.security.ResourceProvider
@@ -24,7 +22,8 @@ class BootstrapEndpoint(
   bootstrapCodeAuthenticator: BootstrapCodeAuthenticator,
   deviceBootstrapContext: DeviceBootstrap.BootstrapContext
 )(implicit val system: ActorSystem[SpawnProtocol.Command])
-    extends LoggingDirectives {
+    extends LoggingDirectives
+    with EntityDiscardingDirectives {
   private implicit val ec: ExecutionContextExecutor = system.executionContext
 
   override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
@@ -37,7 +36,7 @@ class BootstrapEndpoint(
   private val rejectionHandler: RejectionHandler = handlers.Rejection.create(log)
 
   val endpointRoutes: Route =
-    (extractMethod & extractUri & extractClientIP & extractRequest) { (method, uri, remoteAddress, request) =>
+    (extractMethod & extractUri & extractClientIP) { (method, uri, remoteAddress) =>
       extractCredentials {
         case Some(credentials) =>
           pathPrefix("devices") {
@@ -56,8 +55,6 @@ class BootstrapEndpoint(
           }
 
         case None =>
-          val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
-
           log.warn(
             "Rejecting [{}] request for [{}] with no credentials from [{}]",
             method.value,
@@ -65,7 +62,7 @@ class BootstrapEndpoint(
             remoteAddress
           )
 
-          complete(StatusCodes.Unauthorized)
+          discardEntity & complete(StatusCodes.Unauthorized)
       }
     }
 
@@ -89,14 +86,12 @@ class BootstrapEndpoint(
   }
 
   private def authenticated[T](handler: => Future[T])(route: T => Route): Route =
-    (extractMethod & extractUri & extractClientIP & extractRequest) { (method, uri, remoteAddress, request) =>
+    (extractMethod & extractUri & extractClientIP) { (method, uri, remoteAddress) =>
       onComplete(handler) {
         case Success(credentials) =>
           route(credentials)
 
         case Failure(e) =>
-          val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
-
           log.warn(
             "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{} - {}]",
             method.value,
@@ -106,7 +101,7 @@ class BootstrapEndpoint(
             e.getMessage
           )
 
-          complete(StatusCodes.Unauthorized)
+          discardEntity & complete(StatusCodes.Unauthorized)
       }
     }
 }
