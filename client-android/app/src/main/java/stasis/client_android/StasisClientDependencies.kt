@@ -284,7 +284,7 @@ object StasisClientDependencies {
         )
 
     object Defaults {
-        const val MaxBackupPartSize: Long = 128L * 1024L * 1024L // 128MB
+        const val MaxBackupPartSize: Long = 32L * 1024L * 1024L // 128MB
 
         val DatasetDefinitionsExpiration: Duration = Duration.ofSeconds(90)
         val DatasetEntriesExpiration: Duration = Duration.ofSeconds(90)
