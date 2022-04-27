@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-HELP="Create new devices via the server API"
+HELP="Removes existing users via the server API"
 USAGE="Usage: $0 [password size] [password iterations] [password salt prefix] [identity url] [server API url]"
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]
@@ -57,22 +57,22 @@ CLIENT_SECRET=$(get_secret)
 render_secret "${CLIENT_SECRET}"
 require "${CLIENT_SECRET}" "<client secret> is required for authentication"
 
-prompt "User ID"
+prompt "Management User ID"
 USER_ID=$(get_param)
-require "${USER_ID}" "<user ID> is required for authentication"
+require "${USER_ID}" "<management user ID> is required for authentication"
 
-prompt "User Password"
+prompt "Management User Password"
 USER_PASSWORD=$(get_secret)
 render_secret "${USER_PASSWORD}"
-require "${USER_PASSWORD}" "<user password> is required for authentication"
+require "${USER_PASSWORD}" "<management user password> is required for authentication"
 
-prompt "User Salt"
+prompt "Management User Salt"
 USER_SALT=$(get_param)
-require "${USER_SALT}" "<user salt> is required for authentication"
+require "${USER_SALT}" "<management user salt> is required for authentication"
 
-prompt "Device Name"
-DEVICE_NAME=$(get_param)
-require "${DEVICE_NAME}" "<device name> is required"
+prompt "Target User ID"
+TARGET_USER_ID=$(get_param)
+require "${TARGET_USER_ID}" "<target user id> is required"
 
 PASSWORD_SIZE=${1:-"24"}
 PASSWORD_ITERATIONS=${2:-"150000"}
@@ -98,8 +98,6 @@ else
   exit 1
 fi
 
-CREATE_DEVICE_REQUEST="{\"name\":\"${DEVICE_NAME}\"}"
+DELETE_USER_RESULT=$(curl -sk -H "Content-Type: application/json" -H "Authorization: Bearer ${USER_TOKEN}" -X DELETE "${SERVER_API_URL}/users/${TARGET_USER_ID}")
 
-CREATE_DEVICE_RESULT=$(curl -sk -H "Content-Type: application/json" -H "Authorization: Bearer ${USER_TOKEN}" -X POST "${SERVER_API_URL}/devices/own" -d "${CREATE_DEVICE_REQUEST}")
-
-echo ${CREATE_DEVICE_RESULT}
+echo ${DELETE_USER_RESULT}
