@@ -4,9 +4,8 @@ import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.ExceptionHandler
-import akka.stream.scaladsl.Sink
-import akka.util.ByteString
 import org.slf4j.Logger
+import stasis.core.streaming.Operators.ExtendedSource
 import stasis.server.security.exceptions.AuthorizationFailure
 
 import scala.util.control.NonFatal
@@ -17,16 +16,16 @@ object Sanitizing {
       case e: AuthorizationFailure =>
         extractRequestEntity { entity =>
           extractActorSystem { implicit system =>
-            val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
             log.errorN("User authorization failed: [{} - {}]", e.getClass.getSimpleName, e.getMessage)
-            complete(StatusCodes.Forbidden)
+            onSuccess(entity.dataBytes.cancelled()) { _ =>
+              complete(StatusCodes.Forbidden)
+            }
           }
         }
 
       case NonFatal(e) =>
         extractRequestEntity { entity =>
           extractActorSystem { implicit system =>
-            val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
             val failureReference = java.util.UUID.randomUUID()
 
             log.error(
@@ -36,13 +35,15 @@ object Sanitizing {
               e
             )
 
-            complete(
-              StatusCodes.InternalServerError,
-              HttpEntity(
-                ContentTypes.`text/plain(UTF-8)`,
-                s"Failed to process request; failure reference is [${failureReference.toString}]"
+            onSuccess(entity.dataBytes.cancelled()) { _ =>
+              complete(
+                StatusCodes.InternalServerError,
+                HttpEntity(
+                  ContentTypes.`text/plain(UTF-8)`,
+                  s"Failed to process request; failure reference is [${failureReference.toString}]"
+                )
               )
-            )
+            }
           }
         }
     }

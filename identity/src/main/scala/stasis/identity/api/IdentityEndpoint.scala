@@ -6,12 +6,10 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import akka.stream.scaladsl.Sink
-import akka.util.ByteString
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import org.jose4j.jwk.JsonWebKey
 import org.slf4j.{Logger, LoggerFactory}
-import stasis.core.api.directives.LoggingDirectives
+import stasis.core.api.directives._
 import stasis.core.security.tls.EndpointContext
 import stasis.identity.api.manage.setup.{Config => ManageConfig, Providers => ManageProviders}
 import stasis.identity.api.oauth.setup.{Config => OAuthConfig, Providers => OAuthProviders}
@@ -26,7 +24,8 @@ class IdentityEndpoint(
   manageConfig: ManageConfig,
   manageProviders: ManageProviders
 )(implicit system: ActorSystem)
-    extends LoggingDirectives {
+    extends LoggingDirectives
+    with EntityDiscardingDirectives {
 
   override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
@@ -37,7 +36,6 @@ class IdentityEndpoint(
   private val sanitizingExceptionHandler: ExceptionHandler =
     ExceptionHandler { case NonFatal(e) =>
       extractRequest { request =>
-        val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
         val failureReference = java.util.UUID.randomUUID()
 
         log.errorN(
@@ -49,7 +47,7 @@ class IdentityEndpoint(
           e
         )
 
-        complete(
+        discardEntity & complete(
           StatusCodes.InternalServerError,
           HttpEntity(
             ContentTypes.`text/plain(UTF-8)`,
@@ -64,8 +62,6 @@ class IdentityEndpoint(
       .newBuilder()
       .handle { case MissingQueryParamRejection(parameterName) =>
         extractRequest { request =>
-          val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
-
           val message = s"Parameter [$parameterName] is missing, invalid or malformed"
 
           log.warnN(
@@ -75,7 +71,7 @@ class IdentityEndpoint(
             message
           )
 
-          complete(
+          discardEntity & complete(
             StatusCodes.BadRequest,
             HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
           )
@@ -83,8 +79,6 @@ class IdentityEndpoint(
       }
       .handle { case ValidationRejection(rejectionMessage, _) =>
         extractRequest { request =>
-          val _ = request.entity.dataBytes.runWith(Sink.cancelled[ByteString])
-
           val message = s"Provided data is invalid or malformed: [$rejectionMessage]"
 
           log.warnN(
@@ -94,7 +88,7 @@ class IdentityEndpoint(
             message
           )
 
-          complete(
+          discardEntity & complete(
             StatusCodes.BadRequest,
             HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
           )

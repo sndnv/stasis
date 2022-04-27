@@ -17,6 +17,7 @@ import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.core.security.NodeCredentialsProvider
 import stasis.core.security.tls.EndpointContext
+import stasis.core.streaming.Operators.ExtendedSource
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -219,17 +220,15 @@ class HttpEndpointClient(
           Future.successful(Some(entity.dataBytes.mapMaterializedValue(_ => NotUsed)))
 
         case StatusCodes.NotFound =>
-          val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
           log.warnN("Endpoint [{}] responded to pull with no content for crate [{}]", address.uri, crate)
-          Future.successful(None)
+          entity.dataBytes.cancelled().map(_ => None)
 
         case _ =>
-          val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
           val message =
             s"Endpoint [${address.uri.toString}] responded to pull for crate [${crate.toString}] " +
               s"with unexpected status: [${status.value}]"
           log.warn(message)
-          Future.failed(EndpointFailure(message))
+          entity.dataBytes.cancelled().flatMap(_ => Future.failed(EndpointFailure(message)))
       }
     }
 
@@ -238,14 +237,15 @@ class HttpEndpointClient(
     crate: Crate.Id,
     endpointCredentials: HttpCredentials
   ): Future[Boolean] =
-    offer(
-      request = HttpRequest(
-        method = HttpMethods.DELETE,
-        uri = address.uri.withPath(address.uri.path ?/ "crates" / crate.toString)
-      ).addCredentials(endpointCredentials)
-    ).flatMap { case HttpResponse(status, _, entity, _) =>
-      val _ = entity.dataBytes.runWith(Sink.cancelled[ByteString])
-      status match {
+    for {
+      HttpResponse(status, _, entity, _) <- offer(
+        request = HttpRequest(
+          method = HttpMethods.DELETE,
+          uri = address.uri.withPath(address.uri.path ?/ "crates" / crate.toString)
+        ).addCredentials(endpointCredentials)
+      )
+      _ <- entity.dataBytes.cancelled()
+      result <- status match {
         case StatusCodes.OK =>
           log.debugN("Endpoint [{}] responded to discard for crate [{}] with OK", address.uri, crate)
           Future.successful(true)
@@ -261,6 +261,8 @@ class HttpEndpointClient(
           log.warn(message)
           Future.failed(EndpointFailure(message))
       }
+    } yield {
+      result
     }
 }
 

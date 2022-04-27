@@ -1,17 +1,15 @@
 package stasis.server.security.devices
 
-import akka.Done
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.scaladsl.Sink
-import akka.util.ByteString
 import org.slf4j.LoggerFactory
 import play.api.libs.json.{Format, Json}
 import stasis.core.api.PoolClient
 import stasis.core.security.tls.EndpointContext
+import stasis.core.streaming.Operators.ExtendedSource
 import stasis.server.security.CredentialsProvider
 import stasis.server.security.exceptions.CredentialsManagementFailure
 import stasis.shared.model.devices.Device
@@ -119,8 +117,7 @@ class IdentityDeviceCredentialsManager(
       )
       _ <- response match {
         case response if response.status.isSuccess() =>
-          val _ = response.entity.dataBytes.runWith(Sink.cancelled[ByteString])
-          Future.successful(Done)
+          response.entity.dataBytes.cancelled()
 
         case response =>
           unmarshalResponseFailure(response)
@@ -142,12 +139,13 @@ class IdentityDeviceCredentialsManager(
     Unmarshal(response)
       .to[T]
       .recoverWith { case NonFatal(e) =>
-        val _ = response.entity.dataBytes.runWith(Sink.cancelled[ByteString])
-        Future.failed(
-          CredentialsManagementFailure(
-            message = s"Identity response unmarshalling failed with: [${e.getMessage}]"
+        response.entity.dataBytes.cancelled().flatMap { _ =>
+          Future.failed(
+            CredentialsManagementFailure(
+              message = s"Identity response unmarshalling failed with: [${e.getMessage}]"
+            )
           )
-        )
+        }
       }
   }
 
