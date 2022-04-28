@@ -24,6 +24,7 @@ import stasis.client_android.lib.model.server.schedules.Schedule
 import stasis.client_android.lib.ops.scheduling.ActiveSchedule
 import stasis.client_android.lib.ops.scheduling.OperationExecutor
 import stasis.client_android.lib.ops.scheduling.OperationScheduleAssignment
+import stasis.client_android.lib.utils.Cache
 import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.persistence.credentials.CredentialsRepository
 import stasis.client_android.persistence.rules.RuleRepository
@@ -51,6 +52,8 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
     private val binder: SchedulerBinder = SchedulerBinder()
     private var schedulingEnabled: Boolean = true
 
+    lateinit var publicSchedules: Cache.Refreshing<Int, List<Schedule>>
+
     lateinit var activeScheduleRepository: ActiveScheduleRepository
 
     lateinit var ruleRepository: RuleRepository
@@ -74,7 +77,6 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
         private val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        private var publicSchedules: List<Schedule> = emptyList()
         private var configuredSchedules: List<ActiveSchedule> = emptyList()
 
         override fun handleMessage(msg: Message) {
@@ -83,7 +85,7 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
                     Log.v(TAG, "Refreshing schedules with [schedulingEnabled=$schedulingEnabled]")
 
                     val schedulerMessage = runBlocking {
-                        val public = api.publicSchedules().getOrElse { emptyList() }
+                        val public = getSchedules()
                         val configured = activeScheduleRepository.schedulesAsync()
 
                         SchedulerMessage.UpdateSchedules(public, configured)
@@ -108,7 +110,7 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
                     Log.v(
                         TAG,
                         "Updating schedules with [schedulingEnabled=$schedulingEnabled]; " +
-                                "existing [public=${publicSchedules.size},configured=${configuredSchedules.size}]; " +
+                                "existing [configured=${configuredSchedules.size}]; " +
                                 "updated [public=${message.public.size},configured=${message.configured.size}]; "
                     )
 
@@ -116,12 +118,11 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
                         alarmManager.deleteScheduleAlarm(this@SchedulerService, activeSchedule)
                     }
 
-                    publicSchedules = message.public
                     configuredSchedules = message.configured
 
                     configuredSchedules.map { activeSchedule ->
                         when (val publicSchedule =
-                            publicSchedules.find { it.id == activeSchedule.assignment.schedule }) {
+                            message.public.find { it.id == activeSchedule.assignment.schedule }) {
                             null -> notificationManager.putPublicScheduleNotFoundNotification(
                                 context = this@SchedulerService,
                                 activeSchedule = activeSchedule
@@ -140,7 +141,7 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
 
                     providedPublicAndConfiguredSchedules.postValue(
                         Pair(
-                            publicSchedules,
+                            message.public,
                             configuredSchedules
                         )
                     )
@@ -154,13 +155,15 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
                     )
 
                     runBlocking {
+                        val public = getSchedules()
+
                         val activeScheduleId = activeScheduleRepository.put(message.schedule)
                         val activeSchedule = message.schedule.copy(id = activeScheduleId)
 
                         configuredSchedules = configuredSchedules + activeSchedule
 
                         when (val publicSchedule =
-                            publicSchedules.find { it.id == activeSchedule.assignment.schedule }) {
+                            public.find { it.id == activeSchedule.assignment.schedule }) {
                             null -> notificationManager.putPublicScheduleNotFoundNotification(
                                 context = this@SchedulerService,
                                 activeSchedule = activeSchedule
@@ -178,7 +181,7 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
 
                         providedPublicAndConfiguredSchedules.postValue(
                             Pair(
-                                publicSchedules,
+                                public,
                                 configuredSchedules
                             )
                         )
@@ -200,7 +203,7 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
 
                         providedPublicAndConfiguredSchedules.postValue(
                             Pair(
-                                publicSchedules,
+                                getSchedules(),
                                 configuredSchedules
                             )
                         )
@@ -264,7 +267,7 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
                                 }
 
                                 when (val publicSchedule =
-                                    publicSchedules.find { it.id == activeSchedule.assignment.schedule }) {
+                                    getSchedules().find { it.id == activeSchedule.assignment.schedule }) {
                                     null -> notificationManager.putPublicScheduleNotFoundNotification(
                                         context = this@SchedulerService,
                                         activeSchedule = activeSchedule
@@ -287,6 +290,12 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
                 else -> throw IllegalArgumentException("Unexpected message encountered: [$message]")
             }
         }
+
+        private suspend fun getSchedules(): List<Schedule> =
+            publicSchedules.getOrLoad(
+                key = 0,
+                load = { api.publicSchedules().getOrElse { emptyList() } }
+            ) ?: emptyList()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -328,6 +337,14 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
         val preferences: SharedPreferences = ConfigRepository.getPreferences(this@SchedulerService)
         val contextFactory = component.providerContextFactory()
         val providerContext = contextFactory.getOrCreate(preferences).required()
+
+        publicSchedules = component.schedulesCache()
+        publicSchedules.registerOnEntryRefreshedListener { _, _ ->
+            handler.obtainMessage().let { msg ->
+                msg.obj = SchedulerMessage.RefreshSchedules
+                handler.sendMessage(msg)
+            }
+        }
 
         activeScheduleRepository = ActiveScheduleRepository(application)
         ruleRepository = RuleRepository(application)
