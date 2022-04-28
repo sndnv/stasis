@@ -25,6 +25,8 @@ import stasis.client_android.lib.model.server.datasets.DatasetEntry
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.model.server.devices.Device
 import stasis.client_android.lib.model.server.devices.DeviceId
+import stasis.client_android.lib.model.server.schedules.Schedule
+import stasis.client_android.lib.model.server.schedules.ScheduleId
 import stasis.client_android.lib.model.server.users.User
 import stasis.client_android.lib.model.server.users.UserId
 import stasis.client_android.lib.ops.backup.Backup
@@ -263,6 +265,13 @@ object StasisClientDependencies {
     ): Cache.Refreshing<Int, Device> =
         refreshingCache(dispatcher, interval = Defaults.DeviceRefreshInterval)
 
+    @Singleton
+    @Provides
+    fun provideSchedulesRefreshingCache(
+        dispatcher: CoroutineDispatcher
+    ): Cache.Refreshing<Int, List<Schedule>> =
+        refreshingCache(dispatcher, interval = Defaults.SchedulesRefreshInterval)
+
     private fun <K : Any, V> expiringCache(
         dispatcher: CoroutineDispatcher,
         expiration: Duration
@@ -292,6 +301,7 @@ object StasisClientDependencies {
 
         val UserRefreshInterval: Duration = Duration.ofMinutes(5)
         val DeviceRefreshInterval: Duration = Duration.ofMinutes(5)
+        val SchedulesRefreshInterval: Duration = Duration.ofMinutes(5)
 
         val CredentialsExpirationTolerance: Duration = Duration.ofSeconds(15)
     }
