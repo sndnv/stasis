@@ -1,5 +1,6 @@
 package stasis.test.client_android.lib.utils
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.shouldBe
@@ -7,6 +8,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import stasis.client_android.lib.utils.Cache
+import stasis.test.client_android.lib.awaitAndThen
+import stasis.test.client_android.lib.collectPeriodically
 import stasis.test.client_android.lib.eventually
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
@@ -36,6 +39,14 @@ class CacheSpec : WordSpec({
             loadedValues.get() shouldBe (1)
         }
 
+        "support explicitly adding data" {
+            val cache = Cache.Map<String, String>()
+
+            cache.get(key) shouldBe (null)
+            cache.put(key, value)
+            cache.get(key) shouldBe (value)
+        }
+
         "support removing data" {
             val loadedValues = AtomicInteger(0)
 
@@ -58,6 +69,29 @@ class CacheSpec : WordSpec({
             cache.getOrLoad(key, load) shouldBe (value)
 
             loadedValues.get() shouldBe (2)
+        }
+
+        "not update the cache if the load operation fails" {
+            val loadedValues = AtomicInteger(0)
+
+            val load: suspend (String) -> String = {
+                loadedValues.incrementAndGet()
+                throw RuntimeException("Test failure")
+            }
+
+            val cache = Cache.Map<String, String>()
+
+            loadedValues.get() shouldBe (0)
+            cache.get(key) shouldBe (null)
+
+            val e = shouldThrow<RuntimeException> {
+                cache.getOrLoad(key, load)
+            }
+
+            e.message shouldBe ("Test failure")
+
+            loadedValues.get() shouldBe (1)
+            cache.get(key) shouldBe (null)
         }
     }
 
@@ -99,6 +133,30 @@ class CacheSpec : WordSpec({
             eventually {
                 cache.getOrLoad(key, load) shouldBe (value)
                 loadedValues.get() shouldBe (2)
+            }
+        }
+
+        "support explicitly adding data" {
+            val expiredValues = AtomicInteger(0)
+
+            val expiration = Duration.ofMillis(250)
+
+            val cache = Cache.Expiring<String, String>(
+                underlying = Cache.Map(),
+                expiration = expiration,
+                scope = CoroutineScope(Dispatchers.IO)
+            )
+
+            cache.registerOnEntryExpiredListener { expiredValues.incrementAndGet() }
+
+            expiredValues.get() shouldBe (0)
+            cache.get(key) shouldBe (null)
+
+            cache.put(key, value)
+
+            eventually {
+                cache.get(key) shouldBe (null)
+                expiredValues.get() shouldBe (1)
             }
         }
 
@@ -199,6 +257,90 @@ class CacheSpec : WordSpec({
                 refreshedValues.get() shouldBe (3)
                 loadedValues.get() shouldBe (4)
             }
+        }
+
+        "support explicitly adding data" {
+            val refreshedValues = AtomicInteger(0)
+
+            val interval = Duration.ofMillis(100)
+
+            val cache = Cache.Refreshing<String, String>(
+                underlying = Cache.Map(),
+                interval = interval,
+                scope = CoroutineScope(Dispatchers.IO)
+            )
+
+            cache.registerOnEntryRefreshedListener { _, _ -> refreshedValues.incrementAndGet() }
+
+            refreshedValues.get() shouldBe (0)
+            cache.get(key) shouldBe (null)
+
+            cache.put(key, value)
+
+            cache.get(key) shouldBe (value)
+
+            awaitAndThen {
+                refreshedValues.get() shouldBe (0)
+            }
+        }
+
+        "support keeping stale entries until a refresh is successful" {
+            val loadedValues = AtomicInteger(0)
+            val failedRefreshes = AtomicInteger(0)
+            val successfulRefreshes = AtomicInteger(0)
+
+            val interval = Duration.ofMillis(100)
+            val failAfterValues = 3
+
+            val load: suspend (String) -> String = {
+                val loaded = loadedValues.getAndIncrement()
+
+                if (loaded >= failAfterValues) {
+                    failedRefreshes.incrementAndGet()
+                    throw RuntimeException("Test failure")
+                } else {
+                    value
+                }
+            }
+
+            val cache = Cache.Refreshing<String, String>(
+                underlying = Cache.Map(),
+                interval = interval,
+                scope = CoroutineScope(Dispatchers.IO)
+            )
+
+            cache.registerOnEntryRefreshedListener { _, _ -> successfulRefreshes.incrementAndGet() }
+
+            loadedValues.get() shouldBe (0)
+            failedRefreshes.get() shouldBe (0)
+            successfulRefreshes.get() shouldBe (0)
+            cache.get(key) shouldBe (null)
+
+            cache.getOrLoad(key, load) shouldBe (value)
+            cache.getOrLoad(key, load) shouldBe (value)
+            cache.getOrLoad(key, load) shouldBe (value)
+
+            loadedValues.get() shouldBe (1)
+
+            val collectionDuration = Duration.ofSeconds(1)
+            val collectionInterval = Duration.ofMillis(100)
+            val expectedValues = collectionDuration.dividedBy(collectionInterval).toInt()
+
+            val collected = collectPeriodically {
+                cache.getOrLoad(key, load)
+            }
+
+            collected.size shouldBe (expectedValues)
+
+            collected.any { it.isFailure } shouldBe (false)
+
+            collected.map { it.getOrElse { "invalid" } }.forEach {
+                it shouldBe (value)
+            }
+
+            successfulRefreshes.get() shouldBe (failAfterValues - 1)
+            loadedValues.get() shouldBeGreaterThanOrEqual (expectedValues)
+            failedRefreshes.get() shouldBeGreaterThanOrEqual (expectedValues - failAfterValues)
         }
 
         "support removing data" {
