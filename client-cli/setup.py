@@ -6,7 +6,7 @@ install_requires = [
     'terminaltables==3.1.10',
     'hurry.filesize==0.9',
     'pyhocon==0.3.59',
-    'click==8.0.4',
+    'click==7.1.2',
     'pyparsing==2.4.7',
     'psutil==5.9.0',
     'cryptography==36.0.1',

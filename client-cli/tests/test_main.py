@@ -148,7 +148,7 @@ class MockConfig:
             'port': 9999,
             'context.enabled': context_enabled,
             'context.keystore.type': 'pkcs12',
-            'context.keystore.path': '/tmpsome/path',
+            'context.keystore.path': '/tmp/some/path',
             'context.keystore.password': 'test-password',
         }
 

@@ -82,6 +82,8 @@ class CliPackageSpec(unittest.TestCase):
             '1h': 60 * 60,
             '3 hours': 3 * 60 * 60,
             '1 day': 24 * 60 * 60,
+            '30 days': 30 * 24 * 60 * 60,
+            '365 days': 365 * 24 * 60 * 60,
         }
 
         for duration, expected_duration_seconds in durations.items():
