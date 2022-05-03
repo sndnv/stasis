@@ -26,7 +26,6 @@ import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.model.server.devices.Device
 import stasis.client_android.lib.model.server.devices.DeviceId
 import stasis.client_android.lib.model.server.schedules.Schedule
-import stasis.client_android.lib.model.server.schedules.ScheduleId
 import stasis.client_android.lib.model.server.users.User
 import stasis.client_android.lib.model.server.users.UserId
 import stasis.client_android.lib.ops.backup.Backup
@@ -46,6 +45,7 @@ import stasis.client_android.providers.ProviderContext
 import stasis.client_android.security.Secrets
 import stasis.client_android.settings.Settings.getPingInterval
 import stasis.client_android.tracking.DefaultTracker
+import stasis.client_android.tracking.TrackerView
 import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
@@ -73,8 +73,19 @@ object StasisClientDependencies {
 
     @Singleton
     @Provides
+    fun provideDefaultTracker(): DefaultTracker =
+        DefaultTracker()
+
+    @Singleton
+    @Provides
+    fun provideTrackerView(tracker: DefaultTracker): TrackerView =
+        tracker
+
+    @Singleton
+    @Provides
     fun provideProviderContextFactory(
-        dispatcher: CoroutineDispatcher
+        dispatcher: CoroutineDispatcher,
+        tracker: DefaultTracker
     ): ProviderContext.Factory =
         object : ProviderContext.Factory {
             override fun getOrCreate(preferences: SharedPreferences): Reference<ProviderContext> =
@@ -177,8 +188,6 @@ object StasisClientDependencies {
                             )
 
                             val clients = Clients(api = apiClient, core = coreClient)
-
-                            val tracker = DefaultTracker()
 
                             val executor = DefaultOperationExecutor(
                                 config = DefaultOperationExecutor.Config(
