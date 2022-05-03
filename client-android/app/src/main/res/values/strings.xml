@@ -58,6 +58,11 @@
     <string name="navigation_subtitle_settings">Settings</string>
     <string name="navigation_subtitle_about">About</string>
 
+    <!-- Unreachable Servers -->
+    <string name="unreachable_servers_button_hint">Unreachable Servers</string>
+    <string name="unreachable_servers_dialog_title">Unreachable Servers</string>
+    <string name="unreachable_servers_list_item">%1$s (last seen: %2$s)</string>
+
     <!-- Context Help -->
     <string name="context_help_first_time_hint_title">Help</string>
     <string name="context_help_first_time_hint_description">

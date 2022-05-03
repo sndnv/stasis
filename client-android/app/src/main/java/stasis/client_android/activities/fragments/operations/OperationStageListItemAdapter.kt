@@ -51,7 +51,7 @@ class OperationStageListItemAdapter(
                 MaterialAlertDialogBuilder(context)
                     .setTitle(context.getString(R.string.operation_stage_title, stageName))
                     .setItems(
-                        stage.steps.map { step ->
+                        stage.steps.reversed().map { step ->
                             context.getString(R.string.operation_stage_message)
                                 .renderAsSpannable(
                                     StyledString(

@@ -2,6 +2,13 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/unreachable_servers"
+        android:contentDescription="@string/unreachable_servers_button_hint"
+        android:icon="@drawable/ic_warning"
+        android:title="@string/unreachable_servers_button_hint"
+        android:visible="false"
+        app:showAsAction="always" />
+    <item
         android:id="@+id/context_help"
         android:contentDescription="@string/context_help_button_hint"
         android:icon="@drawable/ic_info"

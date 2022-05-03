@@ -3,7 +3,9 @@ package stasis.client_android.activities
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Typeface
 import android.os.Bundle
+import android.text.style.StyleSpan
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.map
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -15,6 +17,9 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import stasis.client_android.MainNavGraphDirections
 import stasis.client_android.R
+import stasis.client_android.activities.helpers.Common.StyledString
+import stasis.client_android.activities.helpers.Common.renderAsSpannable
+import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullDateTime
 import stasis.client_android.activities.helpers.Transitions.operationComplete
 import stasis.client_android.activities.helpers.Transitions.operationInProgress
 import stasis.client_android.activities.receivers.LogoutReceiver
@@ -28,6 +33,7 @@ import stasis.client_android.persistence.config.ConfigRepository.Companion.first
 import stasis.client_android.persistence.config.ConfigRepository.Companion.isFirstRun
 import stasis.client_android.persistence.credentials.CredentialsViewModel
 import stasis.client_android.scheduling.SchedulerService
+import stasis.client_android.tracking.TrackerView
 import stasis.client_android.utils.LiveDataExtensions.and
 import stasis.client_android.utils.NotificationManagerExtensions.createSchedulingNotificationChannels
 import stasis.client_android.utils.Permissions.requestMissingPermissions
@@ -39,6 +45,9 @@ import javax.inject.Inject
 class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var credentials: CredentialsViewModel
+
+    @Inject
+    lateinit var trackerView: TrackerView
 
     private lateinit var broadcastManager: LocalBroadcastManager
     private lateinit var logoutReceiver: LogoutReceiver
@@ -92,6 +101,7 @@ class MainActivity : AppCompatActivity() {
         controller: NavController
     ) {
         val contextHelpRef = AtomicReference<Int?>(null)
+        val unreachableServersRef = AtomicReference<Map<String, TrackerView.ServerState>?>()
 
         binding.topAppBar.setNavigationOnClickListener {
             binding.drawerLayout.open()
@@ -266,7 +276,48 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
+                R.id.unreachable_servers -> {
+                    when (val servers = unreachableServersRef.get()) {
+                        null -> false
+                        else -> {
+                            MaterialAlertDialogBuilder(binding.root.context)
+                                .setTitle(getString(R.string.unreachable_servers_dialog_title))
+                                .setItems(
+                                    servers.map { (server, state) ->
+                                        getString(R.string.unreachable_servers_list_item)
+                                            .renderAsSpannable(
+                                                StyledString(
+                                                    placeholder = "%1\$s",
+                                                    content = server,
+                                                    style = StyleSpan(Typeface.BOLD)
+                                                ),
+                                                StyledString(
+                                                    placeholder = "%2\$s",
+                                                    content = state.timestamp.formatAsFullDateTime(binding.root.context),
+                                                    style = StyleSpan(Typeface.BOLD)
+                                                )
+                                            )
+                                    }.toTypedArray(),
+                                    null
+                                )
+                                .show()
+                            true
+                        }
+                    }
+                }
                 else -> false
+            }
+        }
+
+        trackerView.state.map { it.servers }.observe(this) { servers ->
+            val unreachable = servers.filterValues { !it.reachable }
+
+            binding.topAppBar.menu.findItem(R.id.unreachable_servers).isVisible = unreachable.isNotEmpty()
+
+            if (unreachable.isNotEmpty()) {
+                unreachableServersRef.set(unreachable)
+            } else {
+                unreachableServersRef.set(null)
             }
         }
     }
