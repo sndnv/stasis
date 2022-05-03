@@ -9,6 +9,7 @@ import stasis.client_android.lib.utils.NonFatal.nonFatal
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.math.min
 
 interface Cache<K : Any, V> {
 
@@ -149,7 +150,7 @@ interface Cache<K : Any, V> {
         override suspend fun getOrLoad(key: K, load: suspend (K) -> V?): V? =
             underlying.getOrLoad(key, load)?.also {
                 if (!jobs.containsKey(key)) {
-                    refresh(key, load)
+                    refresh(key, load, interval)
                 }
             }
 
@@ -166,10 +167,10 @@ interface Cache<K : Any, V> {
             listeners.remove(listener)
         }
 
-        private fun refresh(key: K, load: suspend (K) -> V?) {
+        private fun refresh(key: K, load: suspend (K) -> V?, refreshInterval: Duration) {
             try {
                 val job = scope.launch {
-                    delay(timeMillis = interval.toMillis())
+                    delay(timeMillis = refreshInterval.toMillis())
 
                     try {
                         val refreshedValue = load(key)
@@ -180,19 +181,28 @@ interface Cache<K : Any, V> {
                         }
 
                         listeners.forEach { it(key, refreshedValue) }
-
+                        refresh(key, load, interval)
                     } catch (e: Throwable) {
                         e.nonFatal()
-                    } finally {
-                        refresh(key, load)
+                        val nextRefresh = Duration.ofMillis(
+                            min(
+                                interval.dividedBy(RefreshIntervalOnFailureReduction).toMillis(),
+                                MaxRefreshIntervalOnFailure.toMillis()
+                            )
+                        )
+                        refresh(key, load, nextRefresh)
                     }
-
                 }
 
                 jobs[key] = job
             } catch (_: CancellationException) {
                 // do nothing
             }
+        }
+
+        companion object {
+            const val RefreshIntervalOnFailureReduction: Long = 10L
+            val MaxRefreshIntervalOnFailure: Duration = Duration.ofSeconds(5)
         }
     }
 }
