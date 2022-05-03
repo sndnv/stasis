@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import stasis.client_android.lib.utils.NonFatal.nonFatal
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -19,6 +20,13 @@ interface Cache<K : Any, V> {
      */
     suspend fun get(key: K): V?
 
+    /**
+     * Puts a new [value] with the provided [key] in the cache.
+     *
+     * @param key the key associated with the value
+     * @param value the value to insert
+     */
+    suspend fun put(key: K, value: V)
 
     /**
      * Retrieves the cached value associated with [key] or attempts to load it.
@@ -43,6 +51,10 @@ interface Cache<K : Any, V> {
         private val map: ConcurrentHashMap<K, V> = ConcurrentHashMap()
 
         override suspend fun get(key: K): V? = map[key]
+
+        override suspend fun put(key: K, value: V) {
+            map[key] = value
+        }
 
         override suspend fun getOrLoad(key: K, load: suspend (K) -> V?): V? =
             get(key) ?: load(key)?.also { map[key] = it }
@@ -70,6 +82,11 @@ interface Cache<K : Any, V> {
 
         override suspend fun get(key: K): V? =
             underlying.get(key)
+
+        override suspend fun put(key: K, value: V) {
+            underlying.put(key, value)
+            expire(key)
+        }
 
         override suspend fun getOrLoad(key: K, load: suspend (K) -> V?): V? =
             underlying.getOrLoad(key, load = { k -> load(k)?.also { expire(k) } })
@@ -125,6 +142,10 @@ interface Cache<K : Any, V> {
         override suspend fun get(key: K): V? =
             underlying.get(key)
 
+        override suspend fun put(key: K, value: V) {
+            underlying.put(key, value)
+        }
+
         override suspend fun getOrLoad(key: K, load: suspend (K) -> V?): V? =
             underlying.getOrLoad(key, load)?.also {
                 if (!jobs.containsKey(key)) {
@@ -149,10 +170,23 @@ interface Cache<K : Any, V> {
             try {
                 val job = scope.launch {
                     delay(timeMillis = interval.toMillis())
-                    underlying.remove(key)
-                    val refreshedValue = underlying.getOrLoad(key, load)
-                    listeners.forEach { it(key, refreshedValue) }
-                    refresh(key, load)
+
+                    try {
+                        val refreshedValue = load(key)
+
+                        when (refreshedValue) {
+                            null -> underlying.remove(key)
+                            else -> underlying.put(key, refreshedValue)
+                        }
+
+                        listeners.forEach { it(key, refreshedValue) }
+
+                    } catch (e: Throwable) {
+                        e.nonFatal()
+                    } finally {
+                        refresh(key, load)
+                    }
+
                 }
 
                 jobs[key] = job
