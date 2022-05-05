@@ -101,9 +101,11 @@ class ViaStdInSpec extends AsyncUnitSpec with AsyncMockitoSugar {
 
   it should "support retrieving user password" in {
     val expectedUserPassword = "test-password".toCharArray
+    val expectedUserPasswordConfirmation = "test-password".toCharArray
 
     val console = mock[java.io.Console]
     when(console.readPassword("User Password: ")).thenReturn(expectedUserPassword)
+    when(console.readPassword("Confirm Password: ")).thenReturn(expectedUserPasswordConfirmation)
 
     ViaStdIn
       .retrieveCredentials(
@@ -135,6 +137,7 @@ class ViaStdInSpec extends AsyncUnitSpec with AsyncMockitoSugar {
 
     val console = mock[java.io.Console]
     when(console.readPassword("User Password: ")).thenReturn(expectedUserPassword)
+    when(console.readPassword("Confirm Password: ")).thenReturn(expectedUserPassword)
 
     ViaStdIn
       .retrieveCredentials(
@@ -144,6 +147,25 @@ class ViaStdInSpec extends AsyncUnitSpec with AsyncMockitoSugar {
       .failed
       .map { e =>
         e.getMessage should include("User password cannot be empty")
+      }
+  }
+
+  it should "fail if the provided passwords do not match" in {
+    val expectedUserPassword = "test-password".toCharArray
+    val expectedUserPasswordConfirmation = "other-test-password".toCharArray
+
+    val console = mock[java.io.Console]
+    when(console.readPassword("User Password: ")).thenReturn(expectedUserPassword)
+    when(console.readPassword("Confirm Password: ")).thenReturn(expectedUserPasswordConfirmation)
+
+    ViaStdIn
+      .retrieveCredentials(
+        console = console,
+        args = ApplicationArguments.Mode.Bootstrap.empty
+      )
+      .failed
+      .map { e =>
+        e.getMessage should include("Passwords do not match")
       }
   }
 }

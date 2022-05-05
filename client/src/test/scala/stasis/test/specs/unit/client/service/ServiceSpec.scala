@@ -258,7 +258,8 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       serverBootstrapUrl = s"https://localhost:$endpointPort",
       bootstrapCode = testCode,
       acceptSelfSignedCertificates = true,
-      userPassword = "test-password".toCharArray
+      userPassword = "test-password".toCharArray,
+      userPasswordConfirm = "test-password".toCharArray
     )
 
     val service = new Service with TestServiceArguments {
