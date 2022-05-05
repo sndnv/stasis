@@ -208,7 +208,9 @@ trait ResourceHelpers {
   }
 
   def createMockFileSystem(setup: FileSystemSetup): (FileSystem, FileSystemObjects) = {
-    val filesystem = Jimfs.newFileSystem(Configuration.unix())
+    val filesystem = Jimfs.newFileSystem(
+      Configuration.unix().toBuilder.setAttributeViews("basic", "posix").build()
+    )
 
     val chars: Set[Char] = setup.chars
       .map { char =>

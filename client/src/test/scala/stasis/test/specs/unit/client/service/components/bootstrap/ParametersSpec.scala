@@ -1,7 +1,5 @@
 package stasis.test.specs.unit.client.service.components.bootstrap
 
-import java.nio.file.attribute.PosixFilePermissions
-import java.nio.file.{Files, Path}
 import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
@@ -15,9 +13,11 @@ import stasis.core.security.tls.EndpointContext
 import stasis.shared.model.devices.{Device, DeviceBootstrapParameters}
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 import stasis.test.specs.unit.client.ResourceHelpers.FileSystemSetup
+import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 
+import java.nio.file.attribute.PosixFilePermissions
+import java.nio.file.{Files, Path}
 import java.util.UUID
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
@@ -88,6 +88,40 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
     result.failed
       .map { e =>
         e.getMessage should be("No configuration directory is available")
+      }
+  }
+
+  it should "create the configuration directory if it doesn't exist" in {
+    val modeArguments = ApplicationArguments.Mode.Bootstrap(
+      serverBootstrapUrl = "https://test-url",
+      bootstrapCode = "test-code",
+      acceptSelfSignedCertificates = false,
+      userPassword = Array.emptyCharArray,
+      userPasswordConfirm = Array.emptyCharArray
+    )
+
+    val directory = ApplicationDirectory.Default(
+      applicationName = "test-name",
+      filesystem = createMockFileSystem(FileSystemSetup.Unix)._1
+    )
+
+    exists(directory.configDirectory) should be(false)
+
+    val bootstrap = new Bootstrap {
+      override def execute(): Future[DeviceBootstrapParameters] = Future.successful(testParams)
+    }
+
+    val result = for {
+      base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
+      params <- Parameters(base, bootstrap)
+      _ <- params.apply()
+    } yield {
+      Done
+    }
+
+    result
+      .map { _ =>
+        exists(directory.configDirectory) should be(true)
       }
   }
 
@@ -310,6 +344,12 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "ParametersSpec"
   )
+
+  private def exists(path: Option[Path]): Boolean =
+    path match {
+      case Some(actual) => Files.exists(actual)
+      case None         => fail("Expected a path but none was found")
+    }
 
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 }

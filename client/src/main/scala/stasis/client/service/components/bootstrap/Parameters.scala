@@ -53,6 +53,7 @@ object Parameters {
         case Some(parent) => Success(parent)
         case None         => Failure(new RuntimeException("No configuration directory is available"))
       }
+      _ <- Try { Files.createDirectories(parent) }
       (authenticationFile, authenticationPassword) <- storeContext(
         context = bootstrapParams.authentication.context,
         passwordSize = TrustStore.PasswordSize,
