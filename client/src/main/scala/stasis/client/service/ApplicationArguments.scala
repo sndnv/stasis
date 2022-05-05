@@ -17,7 +17,8 @@ object ApplicationArguments {
       serverBootstrapUrl: String,
       bootstrapCode: String,
       acceptSelfSignedCertificates: Boolean,
-      userPassword: Array[Char]
+      userPassword: Array[Char],
+      userPasswordConfirm: Array[Char]
     ) extends Mode {
       def validate(): Unit = {
         require(
@@ -38,7 +39,8 @@ object ApplicationArguments {
           serverBootstrapUrl = "",
           bootstrapCode = "",
           acceptSelfSignedCertificates = false,
-          userPassword = Array.emptyCharArray
+          userPassword = Array.emptyCharArray,
+          userPasswordConfirm = Array.emptyCharArray
         )
     }
   }

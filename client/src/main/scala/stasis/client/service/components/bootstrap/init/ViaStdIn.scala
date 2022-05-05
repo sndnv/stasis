@@ -39,8 +39,13 @@ object ViaStdIn {
           case password if password.nonEmpty => Success(password)
           case _                             => Try(console.readPassword("User Password: "))
         }
+        passwordConfirm <- args.userPassword match {
+          case password if password.nonEmpty => Success(password)
+          case _                             => Try(console.readPassword("Confirm Password: "))
+        }
       } yield {
         require(password.nonEmpty, "User password cannot be empty")
+        require(java.util.Objects.deepEquals(password, passwordConfirm), "Passwords do not match")
         password
       }
     )

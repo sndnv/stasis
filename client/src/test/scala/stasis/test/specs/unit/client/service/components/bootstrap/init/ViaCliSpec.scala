@@ -10,7 +10,8 @@ class ViaCliSpec extends AsyncUnitSpec {
       serverBootstrapUrl = "https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = false,
-      userPassword = Array.emptyCharArray
+      userPassword = Array.emptyCharArray,
+      userPasswordConfirm = Array.emptyCharArray
     )
 
     ViaCli
@@ -25,7 +26,8 @@ class ViaCliSpec extends AsyncUnitSpec {
       serverBootstrapUrl = "http://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = false,
-      userPassword = Array.emptyCharArray
+      userPassword = Array.emptyCharArray,
+      userPasswordConfirm = Array.emptyCharArray
     )
 
     ViaCli
@@ -41,7 +43,8 @@ class ViaCliSpec extends AsyncUnitSpec {
       serverBootstrapUrl = "https://test-url",
       bootstrapCode = "",
       acceptSelfSignedCertificates = false,
-      userPassword = Array.emptyCharArray
+      userPassword = Array.emptyCharArray,
+      userPasswordConfirm = Array.emptyCharArray
     )
 
     ViaCli
@@ -57,7 +60,8 @@ class ViaCliSpec extends AsyncUnitSpec {
       serverBootstrapUrl = "https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = false,
-      userPassword = "test-password".toCharArray
+      userPassword = "test-password".toCharArray,
+      userPasswordConfirm = "test-password".toCharArray
     )
 
     ViaCli
@@ -72,7 +76,8 @@ class ViaCliSpec extends AsyncUnitSpec {
       serverBootstrapUrl = "https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = false,
-      userPassword = Array.emptyCharArray
+      userPassword = Array.emptyCharArray,
+      userPasswordConfirm = Array.emptyCharArray
     )
 
     ViaCli

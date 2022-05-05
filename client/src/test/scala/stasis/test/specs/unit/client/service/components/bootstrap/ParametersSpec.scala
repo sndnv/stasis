@@ -28,7 +28,8 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
       serverBootstrapUrl = "https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = true,
-      userPassword = Array.emptyCharArray
+      userPassword = Array.emptyCharArray,
+      userPasswordConfirm = Array.emptyCharArray
     )
 
     val directory = createApplicationDirectory(init = dir => Files.createDirectories(dir.config.get))
@@ -60,7 +61,8 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
       serverBootstrapUrl = "https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = true,
-      userPassword = Array.emptyCharArray
+      userPassword = Array.emptyCharArray,
+      userPasswordConfirm = Array.emptyCharArray
     )
 
     val directory =

@@ -27,7 +27,8 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
       serverBootstrapUrl = "https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = true,
-      userPassword = "test-password".toCharArray
+      userPassword = "test-password".toCharArray,
+      userPasswordConfirm = "test-password".toCharArray
     )
 
     ApplicationArguments(
@@ -70,7 +71,8 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
       serverBootstrapUrl = "https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = true,
-      userPassword = Array.emptyCharArray
+      userPassword = Array.emptyCharArray,
+      userPasswordConfirm = Array.emptyCharArray
     )
 
     noException should be thrownBy {
@@ -83,7 +85,8 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
       serverBootstrapUrl = "http://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = true,
-      userPassword = Array.emptyCharArray
+      userPassword = Array.emptyCharArray,
+      userPasswordConfirm = Array.emptyCharArray
     )
 
     an[IllegalArgumentException] should be thrownBy {
@@ -96,7 +99,8 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
       serverBootstrapUrl = "https://test-url",
       bootstrapCode = "",
       acceptSelfSignedCertificates = true,
-      userPassword = Array.emptyCharArray
+      userPassword = Array.emptyCharArray,
+      userPasswordConfirm = Array.emptyCharArray
     )
 
     an[IllegalArgumentException] should be thrownBy {

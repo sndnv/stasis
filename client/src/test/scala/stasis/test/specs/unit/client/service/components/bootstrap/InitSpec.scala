@@ -42,7 +42,8 @@ class InitSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockitoSugar
           serverBootstrapUrl = expectedServerBootstrapUrl,
           bootstrapCode = expectedBootstrapCode,
           acceptSelfSignedCertificates = true,
-          userPassword = Array.emptyCharArray
+          userPassword = Array.emptyCharArray,
+          userPasswordConfirm = Array.emptyCharArray
         ),
         applicationDirectory = createApplicationDirectory(init = _ => ())
       )
@@ -60,6 +61,7 @@ class InitSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockitoSugar
 
     val console = mock[java.io.Console]
     when(console.readPassword("User Password: ")).thenReturn(expectedUserPassword)
+    when(console.readPassword("Confirm Password: ")).thenReturn(expectedUserPassword)
 
     for {
       base <- Base(
@@ -82,7 +84,8 @@ class InitSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockitoSugar
           serverBootstrapUrl = "https://test-url",
           bootstrapCode = "test-code",
           acceptSelfSignedCertificates = true,
-          userPassword = expectedUserPassword
+          userPassword = expectedUserPassword,
+          userPasswordConfirm = expectedUserPassword
         ),
         applicationDirectory = createApplicationDirectory(init = _ => ())
       )

@@ -23,7 +23,8 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       serverBootstrapUrl = s"https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = true,
-      userPassword = userPassword
+      userPassword = userPassword,
+      userPasswordConfirm = userPassword
     )
 
     val directory = createCustomApplicationDirectory()
@@ -44,7 +45,8 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       serverBootstrapUrl = s"https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = true,
-      userPassword = userPassword
+      userPassword = userPassword,
+      userPasswordConfirm = userPassword
     )
 
     val directory = createCustomApplicationDirectory()
@@ -71,7 +73,8 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       serverBootstrapUrl = s"https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = true,
-      userPassword = userPassword
+      userPassword = userPassword,
+      userPasswordConfirm = userPassword
     )
 
     Secrets(
@@ -99,7 +102,8 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       serverBootstrapUrl = s"https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = true,
-      userPassword = userPassword
+      userPassword = userPassword,
+      userPasswordConfirm = userPassword
     )
 
     val filesystem = Jimfs.newFileSystem()
@@ -138,7 +142,8 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       serverBootstrapUrl = s"https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = true,
-      userPassword = userPassword
+      userPassword = userPassword,
+      userPasswordConfirm = userPassword
     )
 
     val directory = createCustomApplicationDirectory(deviceSecret = Some(encryptedDeviceSecret))

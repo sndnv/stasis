@@ -35,7 +35,8 @@ class BootstrapSpec extends AsyncUnitSpec with ResourceHelpers {
       serverBootstrapUrl = s"https://localhost:$endpointPort",
       bootstrapCode = testCode,
       acceptSelfSignedCertificates = true,
-      userPassword = Array.emptyCharArray
+      userPassword = Array.emptyCharArray,
+      userPasswordConfirm = Array.emptyCharArray
     )
 
     for {
