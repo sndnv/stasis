@@ -82,6 +82,7 @@ object Ops {
 
         override val monitor: ServerMonitor =
           DefaultServerMonitor(
+            initialDelay = rawConfig.getDuration("ops.monitoring.initial-delay").toMillis.millis,
             interval = rawConfig.getDuration("ops.monitoring.interval").toMillis.millis,
             api = clients.api,
             tracker = tracker.server
