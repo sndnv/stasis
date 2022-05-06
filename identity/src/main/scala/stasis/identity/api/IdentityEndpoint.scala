@@ -3,12 +3,13 @@ package stasis.identity.api
 import akka.actor.ActorSystem
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import org.jose4j.jwk.JsonWebKey
 import org.slf4j.{Logger, LoggerFactory}
+import stasis.core.api.MessageResponse
 import stasis.core.api.directives._
 import stasis.core.security.tls.EndpointContext
 import stasis.identity.api.manage.setup.{Config => ManageConfig, Providers => ManageProviders}
@@ -26,6 +27,8 @@ class IdentityEndpoint(
 )(implicit system: ActorSystem)
     extends LoggingDirectives
     with EntityDiscardingDirectives {
+  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import stasis.core.api.Formats.messageResponseFormat
 
   override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
@@ -50,10 +53,7 @@ class IdentityEndpoint(
 
         discardEntity & complete(
           StatusCodes.InternalServerError,
-          HttpEntity(
-            ContentTypes.`text/plain(UTF-8)`,
-            s"Failed to process request; failure reference is [${failureReference.toString}]"
-          )
+          MessageResponse(s"Failed to process request; failure reference is [${failureReference.toString}]")
         )
       }
     }
@@ -74,7 +74,7 @@ class IdentityEndpoint(
 
           discardEntity & complete(
             StatusCodes.BadRequest,
-            HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
+            MessageResponse(message)
           )
         }
       }
@@ -91,7 +91,7 @@ class IdentityEndpoint(
 
           discardEntity & complete(
             StatusCodes.BadRequest,
-            HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
+            MessageResponse(message)
           )
         }
       }

@@ -5,6 +5,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import play.api.libs.json._
+import stasis.core.api.MessageResponse
 import stasis.identity.api.manage.setup.Config
 import stasis.identity.api.{IdentityEndpoint, Manage}
 import stasis.identity.model.apis.Api
@@ -102,6 +103,9 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
   }
 
   it should "handle parameter rejections reported by routes" in {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import stasis.core.api.Formats.messageResponseFormat
+
     val endpointPort = ports.dequeue()
 
     val (_, _, oauthConfig, oauthProviders) = createOAuthFixtures()
@@ -134,13 +138,16 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
       )
       .map { response =>
         response.status should be(StatusCodes.BadRequest)
-        Unmarshal(response.entity).to[String].await should be(
+        Unmarshal(response).to[MessageResponse].await.message should be(
           "Parameter [client_id] is missing, invalid or malformed"
         )
       }
   }
 
   it should "handle generic failures reported by routes" in {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import stasis.core.api.Formats.messageResponseFormat
+
     val endpointPort = ports.dequeue()
 
     val (_, _, oauthConfig, oauthProviders) = createOAuthFixtures()
@@ -175,13 +182,16 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
       )
       .map { response =>
         response.status should be(StatusCodes.InternalServerError)
-        Unmarshal(response.entity).to[String].await should startWith(
+        Unmarshal(response).to[MessageResponse].await.message should startWith(
           "Failed to process request; failure reference is"
         )
       }
   }
 
   it should "reject requests with invalid entities" in {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import stasis.core.api.Formats.messageResponseFormat
+
     val endpointPort = ports.dequeue()
 
     val (_, _, oauthConfig, oauthProviders) = createOAuthFixtures()
@@ -217,7 +227,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
       )
       .map { response =>
         response.status should be(StatusCodes.BadRequest)
-        Unmarshal(response.entity).to[String].await should startWith(
+        Unmarshal(response).to[MessageResponse].await.message should startWith(
           "Provided data is invalid or malformed"
         )
       }

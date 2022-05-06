@@ -60,7 +60,7 @@ class Operations()(implicit context: Context) extends ApiRoutes {
             get {
               onSuccess(context.executor.rules) { rules =>
                 log.debugN("API successfully retrieved backup rules specification")
-                discardEntity & complete(StatusCodes.OK, SpecificationRules(rules))
+                discardEntity & complete(SpecificationRules(rules))
               }
             }
           },
@@ -176,7 +176,7 @@ class Operations()(implicit context: Context) extends ApiRoutes {
             put {
               onSuccess(context.executor.stop(operation)) { _ =>
                 log.debugN("API stopped backup operation [{}]", operation)
-                discardEntity & complete(StatusCodes.OK)
+                discardEntity & complete(StatusCodes.NoContent)
               }
             }
           }

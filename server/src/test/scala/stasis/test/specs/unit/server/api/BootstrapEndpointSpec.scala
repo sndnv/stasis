@@ -8,6 +8,7 @@ import akka.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import play.api.libs.json.Json
+import stasis.core.api.MessageResponse
 import stasis.core.routing.Node
 import stasis.server.api.BootstrapEndpoint
 import stasis.server.api.routes.DeviceBootstrap
@@ -117,6 +118,9 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
   }
 
   it should "handle generic failures reported by routes" in {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import stasis.core.api.Formats.messageResponseFormat
+
     val fixtures = new TestFixtures {
       override lazy val userAuthenticator: UserAuthenticator =
         (_: HttpCredentials) => throw new RuntimeException("test failure")
@@ -138,7 +142,7 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
       )
       .map { response =>
         response.status should be(StatusCodes.InternalServerError)
-        Unmarshal(response.entity).to[String].await should startWith(
+        Unmarshal(response).to[MessageResponse].await.message should startWith(
           "Failed to process request; failure reference is"
         )
       }

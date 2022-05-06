@@ -102,7 +102,7 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       )
       .await
 
-    stopResponse.status should be(StatusCodes.Accepted)
+    stopResponse.status should be(StatusCodes.NoContent)
     await(delay = apiTerminationDelay * 3, withSystem = typedSystem)
 
     Http()

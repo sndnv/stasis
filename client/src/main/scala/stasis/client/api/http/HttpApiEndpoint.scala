@@ -3,13 +3,14 @@ package stasis.client.api.http
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.api.http.routes._
 import stasis.client.security.FrontendAuthenticator
+import stasis.core.api.MessageResponse
 import stasis.core.api.directives.{EntityDiscardingDirectives, LoggingDirectives}
 import stasis.core.security.tls.EndpointContext
 
@@ -22,6 +23,8 @@ class HttpApiEndpoint(
 )(implicit system: ActorSystem[SpawnProtocol.Command], context: Context)
     extends EntityDiscardingDirectives
     with LoggingDirectives {
+  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import stasis.core.api.Formats.messageResponseFormat
 
   override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
@@ -41,7 +44,7 @@ class HttpApiEndpoint(
 
         discardEntity & complete(
           e.status,
-          HttpEntity(ContentTypes.`text/plain(UTF-8)`, e.message)
+          MessageResponse(e.message)
         )
 
       case NonFatal(e) =>
@@ -63,7 +66,7 @@ class HttpApiEndpoint(
 
           discardEntity & complete(
             StatusCodes.InternalServerError,
-            HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
+            MessageResponse(message)
           )
         }
     }

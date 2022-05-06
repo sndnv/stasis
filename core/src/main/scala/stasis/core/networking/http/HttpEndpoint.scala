@@ -9,6 +9,7 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import org.slf4j.LoggerFactory
+import stasis.core.api.MessageResponse
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.core.networking.Endpoint
 import stasis.core.packaging.{Crate, Manifest}
@@ -66,10 +67,7 @@ class HttpEndpoint(
 
         discardEntity & complete(
           StatusCodes.InternalServerError,
-          HttpEntity(
-            ContentTypes.`text/plain(UTF-8)`,
-            s"Failed to process request; failure reference is [${failureReference.toString}]"
-          )
+          MessageResponse(s"Failed to process request; failure reference is [${failureReference.toString}]")
         )
       }
     }
@@ -90,7 +88,7 @@ class HttpEndpoint(
 
           discardEntity & complete(
             StatusCodes.BadRequest,
-            HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
+            MessageResponse(message)
           )
         }
       }
@@ -107,7 +105,7 @@ class HttpEndpoint(
 
           discardEntity & complete(
             StatusCodes.BadRequest,
-            HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
+            MessageResponse(message)
           )
         }
       }

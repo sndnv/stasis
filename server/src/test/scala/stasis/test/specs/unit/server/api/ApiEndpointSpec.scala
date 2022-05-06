@@ -10,6 +10,7 @@ import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import play.api.libs.json.JsArray
+import stasis.core.api.MessageResponse
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.CrateStorageReservation
@@ -330,6 +331,9 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
   }
 
   it should "handle generic failures reported by routes" in {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import stasis.core.api.Formats.messageResponseFormat
+
     val userStore: UserStore = MockUserStore()
 
     val endpoint = new ApiEndpoint(
@@ -355,13 +359,16 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
       )
       .map { response =>
         response.status should be(StatusCodes.InternalServerError)
-        Unmarshal(response.entity).to[String].await should startWith(
+        Unmarshal(response).to[MessageResponse].await.message should startWith(
           "Failed to process request; failure reference is"
         )
       }
   }
 
   it should "reject requests with invalid entities" in {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import stasis.core.api.Formats.messageResponseFormat
+
     val userStore: UserStore = MockUserStore()
 
     val endpoint = new ApiEndpoint(
@@ -388,7 +395,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
       )
       .map { response =>
         response.status should be(StatusCodes.BadRequest)
-        Unmarshal(response.entity).to[String].await should startWith(
+        Unmarshal(response).to[MessageResponse].await.message should startWith(
           "Provided data is invalid or malformed"
         )
       }
