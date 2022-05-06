@@ -5,6 +5,7 @@ import stasis.core.security.oauth.OAuthClient.AccessTokenResponse
 import scala.concurrent.Future
 
 trait OAuthClient {
+  def tokenEndpoint: String
   def token(scope: Option[String], parameters: OAuthClient.GrantParameters): Future[AccessTokenResponse]
 }
 

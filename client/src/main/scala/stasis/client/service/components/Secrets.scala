@@ -23,14 +23,21 @@ object Secrets {
   def apply(base: Base, init: Init): Future[Secrets] = {
     import base._
 
-    val oauthClient = Try {
-      new DefaultOAuthClient(
-        tokenEndpoint = rawConfig.getString("server.authentication.token-endpoint"),
+    val coreScope = Try(rawConfig.getString("server.authentication.scopes.core")).toOption
+    val apiScope = Try(rawConfig.getString("server.authentication.scopes.api")).toOption
+
+    val tokenAndOauthClient = Try {
+      val tokenEndpoint = rawConfig.getString("server.authentication.token-endpoint")
+
+      val client = new DefaultOAuthClient(
+        tokenEndpoint = tokenEndpoint,
         client = rawConfig.getString("server.authentication.client-id"),
         clientSecret = rawConfig.getString("server.authentication.client-secret"),
         useQueryString = rawConfig.getBoolean("server.authentication.use-query-string"),
         context = EndpointContext(rawConfig.getConfig("server.authentication.context"))
       )
+
+      (tokenEndpoint, client)
     }
 
     for {
@@ -38,48 +45,43 @@ object Secrets {
       user <- UUID.fromString(rawConfig.getString("server.api.user")).future
       userSalt <- rawConfig.getString("server.api.user-salt").future
       device <- UUID.fromString(rawConfig.getString("server.api.device")).future
-      (username, password) <-
-        init
-          .credentials()
-          .transformFailureTo(ServiceStartupFailure.credentials)
+      (username, password) <- init
+        .credentials()
+        .transformFailureTo(ServiceStartupFailure.credentials)
       userPassword = UserPassword(
         user = user,
         salt = userSalt,
         password = password
       )(secretsConfig)
       _ = log.debug("Loading encrypted device secret from [{}]...", Files.DeviceSecret)
-      encryptedDeviceSecret <-
-        directory
-          .pullFile[ByteString](file = Files.DeviceSecret)
-          .transformFailureTo(ServiceStartupFailure.file)
+      encryptedDeviceSecret <- directory
+        .pullFile[ByteString](file = Files.DeviceSecret)
+        .transformFailureTo(ServiceStartupFailure.file)
       _ = log.debug("Decrypting device secret...")
-      decryptedDeviceSecret <-
-        userPassword.toHashedEncryptionPassword.toEncryptionSecret
-          .decryptDeviceSecret(
-            device = device,
-            encryptedSecret = encryptedDeviceSecret
+      decryptedDeviceSecret <- userPassword.toHashedEncryptionPassword.toEncryptionSecret
+        .decryptDeviceSecret(
+          device = device,
+          encryptedSecret = encryptedDeviceSecret
+        )
+        .transformFailureTo(ServiceStartupFailure.credentials)
+      (tokenEndpoint, oauthClient) <- tokenAndOauthClient.future
+      _ = log.debug("Retrieving core token from [{}] with scope [{}]...", tokenEndpoint, coreScope)
+      coreToken <- oauthClient
+        .token(
+          scope = coreScope,
+          parameters = OAuthClient.GrantParameters.ClientCredentials()
+        )
+        .transformFailureTo(ServiceStartupFailure.token)
+      _ = log.debug("Retrieving API token from [{}] with scope [{}]...", tokenEndpoint, apiScope)
+      apiToken <- oauthClient
+        .token(
+          scope = apiScope,
+          parameters = OAuthClient.GrantParameters.ResourceOwnerPasswordCredentials(
+            username = username,
+            password = userPassword.toHashedAuthenticationPassword.extract()
           )
-          .transformFailureTo(ServiceStartupFailure.credentials)
-      oauthClient <- oauthClient.future
-      _ = log.debug("Retrieving core token...")
-      coreToken <-
-        oauthClient
-          .token(
-            scope = Try(rawConfig.getString("server.authentication.scopes.core")).toOption,
-            parameters = OAuthClient.GrantParameters.ClientCredentials()
-          )
-          .transformFailureTo(ServiceStartupFailure.token)
-      _ = log.debug("Retrieving API token...")
-      apiToken <-
-        oauthClient
-          .token(
-            scope = Try(rawConfig.getString("server.authentication.scopes.api")).toOption,
-            parameters = OAuthClient.GrantParameters.ResourceOwnerPasswordCredentials(
-              username = username,
-              password = userPassword.toHashedAuthenticationPassword.extract()
-            )
-          )
-          .transformFailureTo(ServiceStartupFailure.token)
+        )
+        .transformFailureTo(ServiceStartupFailure.token)
     } yield {
       new Secrets {
         override val deviceSecret: DeviceSecret =

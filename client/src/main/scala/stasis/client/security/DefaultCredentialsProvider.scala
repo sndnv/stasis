@@ -94,13 +94,11 @@ object DefaultCredentialsProvider {
     tokens: Tokens
   )(implicit timers: TimerScheduler[Message], client: OAuthClient, ec: ExecutionContext): Behavior[Message] =
     Behaviors.receive {
-      case (ctx, GetCoreCredentials(replyTo)) =>
-        ctx.log.debugN("Responding with core token with scope [{}]", tokens.core.scope)
+      case (_, GetCoreCredentials(replyTo)) =>
         replyTo ! OAuth2BearerToken(token = tokens.core.access_token)
         Behaviors.same
 
-      case (ctx, GetApiCredentials(replyTo)) =>
-        ctx.log.debugN("Responding with API token with scope [{}]", tokens.api.scope)
+      case (_, GetApiCredentials(replyTo)) =>
         replyTo ! OAuth2BearerToken(token = tokens.api.access_token)
         Behaviors.same
 
@@ -144,27 +142,45 @@ object DefaultCredentialsProvider {
 
         tokens.core.refresh_token match {
           case Some(token) =>
-            log.debugN("Refreshing core token...")
+            log.debugN("Refreshing core token from [{}]...", client.tokenEndpoint)
+
             client
               .token(
                 scope = tokens.core.scope,
                 parameters = OAuthClient.GrantParameters.RefreshToken(token)
               )
               .onComplete {
-                case Success(token) => self ! UpdateCoreToken(token)
-                case Failure(e)     => log.errorN("Failed to refresh core token: [{}]", e.getMessage, e)
+                case Success(token) =>
+                  self ! UpdateCoreToken(token)
+
+                case Failure(e) =>
+                  log.errorN(
+                    "Failed to refresh core token from [{}]: [{} - {}]",
+                    client.tokenEndpoint,
+                    e.getClass.getSimpleName,
+                    e.getMessage
+                  )
               }
 
           case None =>
-            log.debugN("Retrieving new core token...")
+            log.debugN("Retrieving new core token from [{}]...", client.tokenEndpoint)
+
             client
               .token(
                 scope = tokens.core.scope,
                 parameters = OAuthClient.GrantParameters.ClientCredentials()
               )
               .onComplete {
-                case Success(token) => self ! UpdateCoreToken(token)
-                case Failure(e)     => log.errorN("Failed to retrieve new core token: [{}]", e.getMessage, e)
+                case Success(token) =>
+                  self ! UpdateCoreToken(token)
+
+                case Failure(e) =>
+                  log.errorN(
+                    "Failed to retrieve new core token from [{}]: [{} - {}]",
+                    client.tokenEndpoint,
+                    e.getClass.getSimpleName,
+                    e.getMessage
+                  )
               }
         }
 
@@ -176,19 +192,30 @@ object DefaultCredentialsProvider {
 
         tokens.api.refresh_token match {
           case Some(token) =>
-            log.debugN("Refreshing API token...")
+            log.debugN("Refreshing API token from [{}]...", client.tokenEndpoint)
             client
               .token(
                 scope = tokens.api.scope,
                 parameters = OAuthClient.GrantParameters.RefreshToken(token)
               )
               .onComplete {
-                case Success(token) => self ! UpdateApiToken(token)
-                case Failure(e)     => log.errorN("Failed to refresh API token: [{}]", e.getMessage, e)
+                case Success(token) =>
+                  self ! UpdateApiToken(token)
+
+                case Failure(e) =>
+                  log.errorN(
+                    "Failed to refresh API token from [{}]: [{} - {}]",
+                    client.tokenEndpoint,
+                    e.getClass.getSimpleName,
+                    e.getMessage
+                  )
               }
 
           case None =>
-            log.errorN("Cannot refresh API token; refresh token is not available")
+            log.errorN(
+              "Cannot refresh API token from [{}]; refresh token is not available",
+              client.tokenEndpoint
+            )
         }
 
         Behaviors.same

@@ -47,10 +47,10 @@ trait ClientRetrieval extends EntityDiscardingDirectives {
 
         case Failure(e) =>
           log.errorN(
-            "Failed to retrieve client [{}]: [{}]",
+            "Failed to retrieve client [{}]: [{} - {}]",
             clientId,
-            e.getMessage,
-            e
+            e.getClass.getSimpleName,
+            e.getMessage
           )
 
           discardEntity {

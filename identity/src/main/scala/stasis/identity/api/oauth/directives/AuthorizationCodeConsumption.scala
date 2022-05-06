@@ -171,10 +171,10 @@ trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
 
           case Failure(e) =>
             log.errorN(
-              "Failed to consume authorization code for client [{}]: [{}]",
+              "Failed to consume authorization code for client [{}]: [{} - {}]",
               client,
-              e.getMessage,
-              e
+              e.getClass.getSimpleName,
+              e.getMessage
             )
 
             discardEntity {

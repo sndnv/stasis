@@ -55,9 +55,10 @@ class HttpEndpoint(
         val failureReference = java.util.UUID.randomUUID()
 
         log.errorN(
-          "Unhandled exception encountered during [{}] request for [{}]: [{}]; failure reference is [{}]",
+          "Unhandled exception encountered during [{}] request for [{}]: [{} - {}]; failure reference is [{}]",
           request.method.value,
           request.uri.path.toString,
+          e.getClass.getSimpleName,
           e.getMessage,
           failureReference,
           e

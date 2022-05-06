@@ -72,10 +72,10 @@ trait RefreshTokenConsumption extends EntityDiscardingDirectives {
 
         case Failure(e) =>
           log.errorN(
-            "Failed to consume refresh token for client [{}]: [{}]",
+            "Failed to consume refresh token for client [{}]: [{} - {}]",
             client,
-            e.getMessage,
-            e
+            e.getClass.getSimpleName,
+            e.getMessage
           )
 
           discardEntity & complete(StatusCodes.InternalServerError)

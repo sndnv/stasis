@@ -29,7 +29,8 @@ object Sanitizing {
             val failureReference = java.util.UUID.randomUUID()
 
             log.error(
-              "Unhandled exception encountered: [{}]; failure reference is [{}]",
+              "Unhandled exception encountered: [{} - {}]; failure reference is [{}]",
+              e.getClass.getSimpleName,
               e.getMessage,
               failureReference,
               e

@@ -164,7 +164,7 @@ class DefaultTracker private (
 
     override def failureEncountered(failure: Throwable)(implicit operation: Operation.Id): Unit = {
       log.debugN(
-        "[{}] (backup) - Failure encountered: [{}: {}]",
+        "[{}] (backup) - Failure encountered: [{} - {}]",
         operation,
         failure.getClass.getSimpleName,
         failure.getMessage
@@ -248,7 +248,7 @@ class DefaultTracker private (
 
     override def failureEncountered(failure: Throwable)(implicit operation: Operation.Id): Unit = {
       log.debugN(
-        "[{}] (recovery) - Failure encountered: [{}: {}]",
+        "[{}] (recovery) - Failure encountered: [{} - {}]",
         operation,
         failure.getClass.getSimpleName,
         failure.getMessage

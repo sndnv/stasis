@@ -173,11 +173,10 @@ class DefaultOperationExecutor(
         .start()
         .recover { case NonFatal(e) =>
           log.errorN(
-            "Failure encountered when running operation [{}]: [{}: {}]",
+            "Failure encountered when running operation [{}]: [{} - {}]",
             operation.id,
             e.getClass.getSimpleName,
-            e.getMessage,
-            e
+            e.getMessage
           )
           Done
         }

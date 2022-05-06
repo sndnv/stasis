@@ -1,11 +1,10 @@
 package stasis.client.service.components
 
-import java.io.Console
-
 import akka.Done
 import akka.http.scaladsl.Http
 import stasis.core.security.tls.EndpointContext
 
+import java.io.Console
 import scala.concurrent.{Future, Promise}
 
 trait Init {
@@ -41,7 +40,7 @@ object Init {
     } yield {
       val credentialsPromise = Promise[(String, Array[Char])]()
 
-      log.info("Client init API starting on [{}:{}]...", interface, port)
+      log.debug("Client init API starting on [{}:{}]...", interface, port)
 
       import EndpointContext._
 
@@ -54,7 +53,7 @@ object Init {
 
       startup.onComplete { _ =>
         binding.flatMap {
-          log.info("Client init API stopping...")
+          log.debug("Client init API stopping...")
           _.terminate(terminationDelay).map { _ =>
             Done
           }

@@ -37,10 +37,10 @@ trait RefreshTokenGeneration extends EntityDiscardingDirectives {
 
           case Failure(e) =>
             log.errorN(
-              "Failed to store refresh token for client [{}]: [{}]",
+              "Failed to store refresh token for client [{}]: [{} - {}]",
               client,
-              e.getMessage,
-              e
+              e.getClass.getSimpleName,
+              e.getMessage
             )
 
             discardEntity {

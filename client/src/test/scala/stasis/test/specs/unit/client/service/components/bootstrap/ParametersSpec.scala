@@ -125,6 +125,14 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
       }
   }
 
+  it should "support creating key/trust store file extensions from store types" in {
+    Parameters.storeTypeAsExtension(storeType = "pkcs12") should be("p12")
+
+    Parameters.storeTypeAsExtension(storeType = "jks") should be("jks")
+
+    an[IllegalArgumentException] should be thrownBy Parameters.storeTypeAsExtension(storeType = "other")
+  }
+
   it should "support creating PKCS12 trust stores" in {
     val directory = createApplicationDirectory(init = dir => Files.createDirectories(dir.config.get))
 

@@ -2,7 +2,7 @@
 <configuration>
 
     <appender name="SYNC_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/stasis-client.log</file>
+        <file>${HOME}/stasis-client/logs/stasis-client.log</file>
         <immediateFlush>true</immediateFlush>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <fileNamePattern>stasis-client-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
@@ -33,8 +33,15 @@
         <appender-ref ref="SYNC_CONSOLE"/>
     </appender>
 
+    <variable name="AKKA_LOGLEVEL" value="${STASIS_CLIENT_AKKA_LOGLEVEL:-INFO}"/>
     <variable name="CLIENT_LOGLEVEL" value="${STASIS_CLIENT_LOGLEVEL:-INFO}"/>
     <variable name="CLIENT_LOG_TARGET" value="${STASIS_CLIENT_LOG_TARGET:-FILE}"/>
+
+    <logger name="akka" level="${AKKA_LOGLEVEL}"/>
+
+    <logger name="stasis.client.service.components.bootstrap" level="${CLIENT_LOGLEVEL}">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
 
     <root level="${CLIENT_LOGLEVEL}">
         <appender-ref ref="${CLIENT_LOG_TARGET}"/>

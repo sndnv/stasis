@@ -63,11 +63,10 @@ final class RemoteKeyProvider(
       }
       .recover { case NonFatal(e) =>
         log.error(
-          "Failed to load keys from JWKs endpoint [{}]: [{}: {}]",
+          "Failed to load keys from JWKs endpoint [{}]: [{} - {}]",
           jwksEndpoint,
           e.getClass.getSimpleName,
-          e.getMessage,
-          e
+          e.getMessage
         )
         scheduleKeysRefresh(delay = refreshRetryInterval)
         Done

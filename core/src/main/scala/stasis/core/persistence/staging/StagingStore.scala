@@ -56,7 +56,7 @@ class StagingStore(
             val cancellable = system.classicSystem.scheduler.scheduleOnce(destagingDelay) {
               val _ = destage(manifest, destinations, viaProxy)
                 .recover { case NonFatal(e) =>
-                  log.error(s"Scheduled action failed: [${e.getClass.getSimpleName}: ${e.getMessage}]")
+                  log.error(s"Scheduled action failed: [${e.getClass.getSimpleName} - ${e.getMessage}]")
                   Done
                 }
             }

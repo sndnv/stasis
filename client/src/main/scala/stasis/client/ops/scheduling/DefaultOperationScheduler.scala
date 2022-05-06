@@ -121,8 +121,9 @@ object DefaultOperationScheduler {
                   .recover { case NonFatal(e) =>
                     val operation = assignment.getClass.getSimpleName
                     val schedule = assignment.schedule.toString
-                    val message = s"Failed to load [$operation] schedule for [$schedule]: [${e.getMessage}]"
-                    log.errorN(message, e)
+                    val message =
+                      s"Failed to load [$operation] schedule for [$schedule]: [${e.getClass.getSimpleName} - ${e.getMessage}]"
+                    log.errorN(message)
                     ActiveSchedule(assignment = assignment, schedule = Left(ScheduleRetrievalFailure(message)))
                   }
               }
@@ -220,11 +221,11 @@ object DefaultOperationScheduler {
 
             case Failure(e) =>
               log.errorN(
-                "[{}] operation with schedule [{}] failed: [{}]",
+                "[{}] operation with schedule [{}] failed: [{} - {}]",
                 assignment.getClass.getSimpleName,
                 assignment.schedule,
-                e.getMessage,
-                e
+                e.getClass.getSimpleName,
+                e.getMessage
               )
               self ! ScheduleExecuted(assignment)
           }

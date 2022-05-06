@@ -14,6 +14,7 @@ object ViaStdIn {
   ): Future[ApplicationArguments.Mode.Bootstrap] =
     Future.fromTry(
       for {
+        _ <- Try(console.printf("Client Boostrap"))
         url <- args.serverBootstrapUrl match {
           case url if url.trim.nonEmpty => Success(url)
           case _                        => Try(console.readLine("Server bootstrap URL: ").trim)
