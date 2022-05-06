@@ -14,10 +14,10 @@
 
     <variable name="IDENTITY_LOGLEVEL" value="${STASIS_IDENTITY_LOGLEVEL:-INFO}"/>
     <variable name="SLICK_LOGLEVEL" value="${STASIS_IDENTITY_SLICK_LOGLEVEL:-INFO}"/>
+    <variable name="AKKA_LOGLEVEL" value="${STASIS_IDENTITY_AKKA_LOGLEVEL:-INFO}"/>
 
-    <logger name="slick" level="${SLICK_LOGLEVEL}" additivity="false">
-        <appender-ref ref="CONSOLE"/>
-    </logger>
+    <logger name="slick" level="${SLICK_LOGLEVEL}"/>
+    <logger name="akka" level="${AKKA_LOGLEVEL}"/>
 
     <root level="${IDENTITY_LOGLEVEL}">
         <appender-ref ref="CONSOLE"/>
