@@ -44,7 +44,7 @@ class Schedules()(implicit context: Context) extends ApiRoutes {
           path("refresh") {
             put {
               onSuccess(context.scheduler.refresh()) { _ =>
-                discardEntity & complete(StatusCodes.OK)
+                discardEntity & complete(StatusCodes.NoContent)
               }
             }
           }

@@ -269,7 +269,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val operation = Operation.generateId()
 
     Put(s"/$operation/stop") ~> routes ~> check {
-      status should be(StatusCodes.OK)
+      status should be(StatusCodes.NoContent)
 
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)

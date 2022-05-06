@@ -34,7 +34,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     val routes = createRoutes(terminate = () => { val _ = terminationCounter.incrementAndGet() })
 
     Put("/stop") ~> routes ~> check {
-      status should be(StatusCodes.Accepted)
+      status should be(StatusCodes.NoContent)
       eventually[Assertion] {
         terminationCounter.get should be(1)
       }

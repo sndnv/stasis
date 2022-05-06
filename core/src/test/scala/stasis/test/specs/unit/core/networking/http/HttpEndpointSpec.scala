@@ -11,6 +11,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.util.ByteString
 import stasis.core.api.Formats._
+import stasis.core.api.MessageResponse
 import stasis.core.networking.http.HttpEndpoint
 import stasis.core.packaging.Crate
 import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
@@ -209,6 +210,9 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "handle generic failures reported by routes" in {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import stasis.core.api.Formats.messageResponseFormat
+
     val endpoint = new TestHttpEndpoint(
       testCrateStore = Some(new MockCrateStore(persistDisabled = true))
     )
@@ -226,13 +230,16 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       )
       .map { response =>
         response.status should be(StatusCodes.InternalServerError)
-        Unmarshal(response.entity).to[String].await should startWith(
+        Unmarshal(response).to[MessageResponse].await.message should startWith(
           "Failed to process request; failure reference is"
         )
       }
   }
 
   it should "reject requests with invalid query parameters" in {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import stasis.core.api.Formats.messageResponseFormat
+
     val endpoint = new TestHttpEndpoint()
     val endpointPort = ports.dequeue()
     val _ = endpoint.start(interface = "localhost", port = endpointPort, context = None)
@@ -247,13 +254,16 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       )
       .map { response =>
         response.status should be(StatusCodes.BadRequest)
-        Unmarshal(response.entity).to[String].await should be(
+        Unmarshal(response).to[MessageResponse].await.message should be(
           "Parameter [reservation] is missing, invalid or malformed"
         )
       }
   }
 
   it should "reject requests with invalid entities" in {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import stasis.core.api.Formats.messageResponseFormat
+
     val endpoint = new TestHttpEndpoint()
     val endpointPort = ports.dequeue()
     val _ = endpoint.start(interface = "localhost", port = endpointPort, context = None)
@@ -268,7 +278,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       )
       .map { response =>
         response.status should be(StatusCodes.BadRequest)
-        Unmarshal(response.entity).to[String].await should startWith(
+        Unmarshal(response).to[MessageResponse].await.message should startWith(
           "Provided data is invalid or malformed"
         )
       }

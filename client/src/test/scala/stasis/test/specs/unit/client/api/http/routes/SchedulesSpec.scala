@@ -85,7 +85,7 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val routes = createRoutes(scheduler = mockScheduler)
 
     Put("/configured/refresh") ~> routes ~> check {
-      status should be(StatusCodes.OK)
+      status should be(StatusCodes.NoContent)
 
       mockScheduler.statistics(MockOperationScheduler.Statistic.GetSchedules) should be(0)
       mockScheduler.statistics(MockOperationScheduler.Statistic.RefreshSchedules) should be(1)

@@ -151,4 +151,6 @@ object Formats {
   implicit val crateStorageRequestFormat: Format[CrateStorageRequest] = Json.format[CrateStorageRequest]
 
   implicit val crateStorageReservationFormat: Format[CrateStorageReservation] = Json.format[CrateStorageReservation]
+
+  implicit val messageResponseFormat: Format[MessageResponse] = Json.format[MessageResponse]
 }

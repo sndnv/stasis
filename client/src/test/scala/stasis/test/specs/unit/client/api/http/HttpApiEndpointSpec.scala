@@ -7,10 +7,12 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.unmarshalling.Unmarshal
 import org.slf4j.LoggerFactory
 import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.api.http.{Context, HttpApiEndpoint}
 import stasis.client.model.DatasetMetadata
+import stasis.core.api.MessageResponse
 import stasis.shared.api.responses.Ping
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.model.devices.Device
@@ -130,11 +132,14 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     Put(s"/operations/${Operation.generateId()}/stop")
       .addCredentials(testCredentials) ~> endpoint.endpointRoutes ~> check {
-      status should be(StatusCodes.OK)
+      status should be(StatusCodes.NoContent)
     }
   }
 
   it should "handle server API failures reported by routes" in {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import stasis.core.api.Formats.messageResponseFormat
+
     val expectedStatus = StatusCodes.Forbidden
     val expectedMessage = "test failure"
 
@@ -163,11 +168,14 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       )
       .map { response =>
         response.status should be(expectedStatus)
-        response.entity.toStrict(timeout = timeout.duration).await.data.utf8String should be(expectedMessage)
+        Unmarshal(response).to[MessageResponse].await.message should be(expectedMessage)
       }
   }
 
   it should "handle generic failures reported by routes" in {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import stasis.core.api.Formats.messageResponseFormat
+
     val mockApiClient = new MockServerApiEndpointClient(self = Device.generateId()) {
       override def user(): Future[User] = Future.failed(new RuntimeException("test failure"))
     }
@@ -190,10 +198,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       )
       .map { response =>
         response.status should be(StatusCodes.InternalServerError)
-
-        response.entity.toStrict(timeout = timeout.duration).await.data.utf8String should startWith(
-          "Unhandled exception encountered"
-        )
+        Unmarshal(response).to[MessageResponse].await.message should startWith("Unhandled exception encountered")
       }
   }
 

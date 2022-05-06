@@ -5,6 +5,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{ExceptionHandler, Route}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.LoggerFactory
+import stasis.core.api.MessageResponse
 import stasis.server.api.handlers.Sanitizing
 import stasis.server.security.exceptions.AuthorizationFailure
 import stasis.test.specs.unit.UnitSpec
@@ -25,6 +26,9 @@ class SanitizingSpec extends UnitSpec with ScalatestRouteTest {
   }
 
   it should "handle generic failures reported by routes" in {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import stasis.core.api.Formats.messageResponseFormat
+
     implicit val handler: ExceptionHandler = Sanitizing.create(log)
 
     val route = Route.seal(
@@ -35,7 +39,7 @@ class SanitizingSpec extends UnitSpec with ScalatestRouteTest {
 
     Get() ~> route ~> check {
       status should be(StatusCodes.InternalServerError)
-      entityAs[String] should startWith("Failed to process request; failure reference is")
+      entityAs[MessageResponse].message should startWith("Failed to process request; failure reference is")
     }
   }
 
