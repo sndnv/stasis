@@ -14,7 +14,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 class DefaultOAuthClient(
-  tokenEndpoint: String,
+  override val tokenEndpoint: String,
   client: String,
   clientSecret: String,
   useQueryString: Boolean,

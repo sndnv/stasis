@@ -140,11 +140,11 @@ trait AudienceExtraction extends EntityDiscardingDirectives {
 
         case Failure(e) =>
           log.errorN(
-            "Failed to retrieve {} audience with provided identifiers [{}]: [{}]",
+            "Failed to retrieve {} audience with provided identifiers [{}]: [{} - {}]",
             audienceType,
             audience.mkString(", "),
-            e.getMessage,
-            e
+            e.getClass.getSimpleName,
+            e.getMessage
           )
 
           discardEntity {

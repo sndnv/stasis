@@ -202,13 +202,13 @@ trait Service {
             )
 
           case Failure(e) =>
-            log.error("Bootstrap failed: [{}: {}]", e.getClass.getSimpleName, e.getMessage, e)
+            log.error("Bootstrap failed: [{} - {}]", e.getClass.getSimpleName, e.getMessage)
             serviceState.set(State.BootstrapFailed(e))
             stop()
         }
 
     case Failure(e) =>
-      log.error("Service startup failed: [{}: {}]", e.getClass.getSimpleName, e.getMessage, e)
+      log.error("Service startup failed: [{} - {}]", e.getClass.getSimpleName, e.getMessage)
       serviceState.set(State.StartupFailed(e))
       stop()
   }

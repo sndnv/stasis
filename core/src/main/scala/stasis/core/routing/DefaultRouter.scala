@@ -87,8 +87,7 @@ class DefaultRouter(
                                 node,
                                 manifest.crate,
                                 e.getClass.getSimpleName,
-                                e.getMessage,
-                                e
+                                e.getMessage
                               )
 
                               None
@@ -130,7 +129,7 @@ class DefaultRouter(
           }
 
         case Failure(e) =>
-          val message = s"Push of crate [${manifest.crate.toString}] failed: [${e.getClass.getSimpleName}: ${e.getMessage}]"
+          val message = s"Push of crate [${manifest.crate.toString}] failed: [${e.getClass.getSimpleName} - ${e.getMessage}]"
           log.error(message)
           Future.failed(PushFailure(message))
       }
@@ -170,10 +169,11 @@ class DefaultRouter(
                 }
                 .recoverWith { case NonFatal(e) =>
                   log.error(
-                    "Pull of crate [{}] from node [{}] failed: [{}]",
+                    "Pull of crate [{}] from node [{}] failed: [{} - {}]",
                     crate,
                     node,
-                    e
+                    e.getClass.getSimpleName,
+                    e.getMessage
                   )
 
                   pullFromNodes(remainingNodes, crate)
@@ -343,7 +343,12 @@ class DefaultRouter(
         }
 
       distributionResult.recover { case NonFatal(e) =>
-        log.errorN("Storage reservation failed for request [{}]: [{}]", request.id, e)
+        log.errorN(
+          "Storage reservation failed for request [{}]: [{} - {}]",
+          request.id,
+          e.getClass.getSimpleName,
+          e.getMessage
+        )
         None
       }
     }

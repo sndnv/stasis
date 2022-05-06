@@ -11,6 +11,7 @@ class ViaStdInSpec extends AsyncUnitSpec with AsyncMockitoSugar {
     val expectedBootstrapCode = "test-code"
 
     val console = mock[java.io.Console]
+    when(console.printf("Client Boostrap")).thenReturn(console)
     when(console.readLine("Server bootstrap URL: ")).thenReturn(expectedServerBootstrapUrl)
     when(console.readLine("Bootstrap Code: ")).thenReturn(expectedBootstrapCode)
 
@@ -30,6 +31,7 @@ class ViaStdInSpec extends AsyncUnitSpec with AsyncMockitoSugar {
     val expectedBootstrapCode = "test-code"
 
     val console = mock[java.io.Console]
+    when(console.printf("Client Boostrap")).thenReturn(console)
     when(console.readLine("Bootstrap Code: ")).thenReturn(expectedBootstrapCode)
 
     ViaStdIn
@@ -48,6 +50,7 @@ class ViaStdInSpec extends AsyncUnitSpec with AsyncMockitoSugar {
     val expectedBootstrapCode = "test-code"
 
     val console = mock[java.io.Console]
+    when(console.printf("Client Boostrap")).thenReturn(console)
     when(console.readLine("Server bootstrap URL: ")).thenReturn(expectedServerBootstrapUrl)
 
     ViaStdIn
@@ -66,6 +69,7 @@ class ViaStdInSpec extends AsyncUnitSpec with AsyncMockitoSugar {
     val expectedBootstrapCode = "test-code"
 
     val console = mock[java.io.Console]
+    when(console.printf("Client Boostrap")).thenReturn(console)
     when(console.readLine("Server bootstrap URL: ")).thenReturn(expectedServerBootstrapUrl)
     when(console.readLine("Bootstrap Code: ")).thenReturn(expectedBootstrapCode)
 
@@ -85,6 +89,7 @@ class ViaStdInSpec extends AsyncUnitSpec with AsyncMockitoSugar {
     val expectedBootstrapCode = ""
 
     val console = mock[java.io.Console]
+    when(console.printf("Client Boostrap")).thenReturn(console)
     when(console.readLine("Server bootstrap URL: ")).thenReturn(expectedServerBootstrapUrl)
     when(console.readLine("Bootstrap Code: ")).thenReturn(expectedBootstrapCode)
 

@@ -1,14 +1,15 @@
 package stasis.client.service.components.bootstrap
 
-import java.nio.file.attribute.PosixFilePermissions
-import java.nio.file.{Files, Path}
-import java.util.concurrent.ThreadLocalRandom
-
 import akka.Done
+import akka.actor.typed.scaladsl.LoggerOps
+import org.slf4j.Logger
 import stasis.client.service.components.bootstrap.internal.SelfSignedCertificateGenerator
 import stasis.client.service.{components, ApplicationDirectory, ApplicationTemplates}
 import stasis.shared.model.devices.DeviceBootstrapParameters
 
+import java.nio.file.attribute.PosixFilePermissions
+import java.nio.file.{Files, Path}
+import java.util.concurrent.ThreadLocalRandom
 import scala.concurrent.Future
 import scala.util.{Failure, Random, Success, Try}
 
@@ -47,7 +48,7 @@ object Parameters {
     directory: ApplicationDirectory,
     templates: ApplicationTemplates,
     bootstrapParams: DeviceBootstrapParameters
-  ): Try[Done] =
+  )(implicit log: Logger): Try[Done] =
     for {
       parent <- directory.configDirectory match {
         case Some(parent) => Success(parent)
@@ -105,9 +106,14 @@ object Parameters {
       Done
     }
 
-  def storeExpandedTemplate(template: String, parent: Path, file: String): Try[Done] =
+  def storeExpandedTemplate(
+    template: String,
+    parent: Path,
+    file: String
+  )(implicit log: Logger): Try[Done] =
     Try {
       val path = parent.resolve(file)
+      log.info("Creating [{}] from template...", path)
       val _ = Files.writeString(path, template)
 
       Done
@@ -118,7 +124,7 @@ object Parameters {
     passwordSize: Int,
     parent: Path,
     file: String
-  ): Try[(String, String)] =
+  )(implicit log: Logger): Try[(String, String)] =
     if (context.enabled) {
       Try {
         val store = DeviceBootstrapParameters.Context.decodeKeyStore(
@@ -127,12 +133,11 @@ object Parameters {
           storeType = context.storeType
         )
 
-        val extension = context.storeType.toLowerCase match {
-          case "pkcs12" => "p12"
-          case "jks"    => "jks"
-        }
+        val extension = storeTypeAsExtension(context.storeType)
 
         val path = parent.resolve(s"$file.$extension")
+
+        log.infoN("Creating trust store [{}]...", path)
 
         val rnd: Random = ThreadLocalRandom.current()
         val password = rnd.alphanumeric.take(passwordSize).mkString
@@ -147,6 +152,7 @@ object Parameters {
         (path.toString, password)
       }
     } else {
+      log.debugN("Context not enabled for trust store [{}]; skipping...", file)
       Success(("", ""))
     }
 
@@ -157,16 +163,15 @@ object Parameters {
     passwordSize: Int,
     parent: Path,
     file: String
-  ): Try[(String, String)] =
+  )(implicit log: Logger): Try[(String, String)] =
     SelfSignedCertificateGenerator
       .generate(distinguishedName = s"CN=$commonName")
       .map { case (privateKey, certificate) =>
-        val extension = storeType.toLowerCase match {
-          case "pkcs12" => "p12"
-          case "jks"    => "jks"
-        }
+        val extension = storeTypeAsExtension(storeType)
 
         val path = parent.resolve(s"$file.$extension")
+
+        log.infoN("Creating key store [{}]...", path)
 
         val rnd: Random = ThreadLocalRandom.current()
         val password = rnd.alphanumeric.take(passwordSize).mkString
@@ -188,4 +193,12 @@ object Parameters {
 
         (path.toString, password)
       }
+
+  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
+  def storeTypeAsExtension(storeType: String): String =
+    storeType.trim.toLowerCase match {
+      case "pkcs12" => "p12"
+      case "jks"    => "jks"
+      case other    => throw new IllegalArgumentException(s"Unexpected store type provided: [$other]")
+    }
 }

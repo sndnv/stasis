@@ -83,11 +83,11 @@ trait AuthorizationCodeGeneration extends EntityDiscardingDirectives {
 
         case Failure(e) =>
           log.errorN(
-            "Failed to store authorization code for client [{}] and owner [{}]: [{}]",
+            "Failed to store authorization code for client [{}] and owner [{}]: [{} - {}]",
             client,
             owner.username,
-            e.getMessage,
-            e
+            e.getClass.getSimpleName,
+            e.getMessage
           )
 
           discardEntity {

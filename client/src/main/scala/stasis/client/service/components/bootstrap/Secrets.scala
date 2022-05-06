@@ -1,6 +1,7 @@
 package stasis.client.service.components.bootstrap
 
 import akka.Done
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.util.ByteString
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.{DeviceSecret, UserPassword}
@@ -55,7 +56,7 @@ object Secrets {
                 salt = userSalt,
                 password = password
               )(secretsConfig)
-              _ = log.debug("Generating new device secret...")
+              _ = log.infoN("Generating a new device secret...")
               rawDeviceSecret <- generateRawDeviceSecret(secretSize = DefaultDeviceSecretSize).future
               decryptedDeviceSecret <- DeviceSecret(
                 user = user,
@@ -65,7 +66,7 @@ object Secrets {
               encryptedDeviceSecret <-
                 userPassword.toHashedEncryptionPassword.toEncryptionSecret
                   .encryptDeviceSecret(secret = decryptedDeviceSecret)
-              _ = log.debug("Storing encrypted device secret to [{}]...", Files.DeviceSecret)
+              _ = log.infoN("Storing encrypted device secret to [{}]...", Files.DeviceSecret)
               _ <-
                 directory
                   .pushFile[ByteString](file = Files.DeviceSecret, content = encryptedDeviceSecret)

@@ -73,7 +73,7 @@ object DefaultServerMonitor {
                   self ! ScheduleNextPing(after = interval)
 
                 case Failure(e) =>
-                  log.errorN("Failed to reach server [{}]: [{}]", api.server, e.getMessage, e)
+                  log.errorN("Failed to reach server [{}]: [{} - {}]", api.server, e.getClass.getSimpleName, e.getMessage)
                   tracker.unreachable(api.server)
                   self ! ScheduleNextPing(after = interval / 2)
               }(ctx.executionContext)

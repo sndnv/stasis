@@ -1,14 +1,16 @@
 package stasis.client.api.http
 
+import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.api.http.routes._
 import stasis.client.security.FrontendAuthenticator
-import stasis.core.api.directives.EntityDiscardingDirectives
+import stasis.core.api.directives.{EntityDiscardingDirectives, LoggingDirectives}
 import stasis.core.security.tls.EndpointContext
 
 import scala.concurrent.Future
@@ -18,7 +20,10 @@ import scala.util.{Failure, Success}
 class HttpApiEndpoint(
   authenticator: FrontendAuthenticator
 )(implicit system: ActorSystem[SpawnProtocol.Command], context: Context)
-    extends EntityDiscardingDirectives {
+    extends EntityDiscardingDirectives
+    with LoggingDirectives {
+
+  override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private val definitions = DatasetDefinitions()
   private val entries = DatasetEntries()
@@ -32,7 +37,7 @@ class HttpApiEndpoint(
   private val exceptionHandler: ExceptionHandler =
     ExceptionHandler {
       case e: ServerApiFailure =>
-        context.log.error(e.message, e)
+        context.log.error(e.message)
 
         discardEntity & complete(
           e.status,
@@ -40,14 +45,27 @@ class HttpApiEndpoint(
         )
 
       case NonFatal(e) =>
-        val message = s"Unhandled exception encountered: [${e.getMessage}]"
+        extractRequest { request =>
+          val failureReference = java.util.UUID.randomUUID()
 
-        context.log.error(message, e)
+          log.errorN(
+            "Unhandled exception encountered during [{}] request for [{}]: [{} - {}]; failure reference is [{}]",
+            request.method.value,
+            request.uri.path.toString,
+            e.getClass.getSimpleName,
+            e.getMessage,
+            failureReference,
+            e
+          )
 
-        discardEntity & complete(
-          StatusCodes.InternalServerError,
-          HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
-        )
+          val message = s"Unhandled exception encountered: [${e.getClass.getSimpleName} - ${e.getMessage}]; " +
+            s"failure reference is [${failureReference.toString}]"
+
+          discardEntity & complete(
+            StatusCodes.InternalServerError,
+            HttpEntity(ContentTypes.`text/plain(UTF-8)`, message)
+          )
+        }
     }
 
   val endpointRoutes: Route =
@@ -103,8 +121,10 @@ class HttpApiEndpoint(
       .newServerAt(interface = interface, port = port)
       .withContext(context = context)
       .bindFlow(
-        handlerFlow = handleExceptions(exceptionHandler) {
-          endpointRoutes
+        handlerFlow = withLoggedRequestAndResponse {
+          handleExceptions(exceptionHandler) {
+            endpointRoutes
+          }
         }
       )
   }

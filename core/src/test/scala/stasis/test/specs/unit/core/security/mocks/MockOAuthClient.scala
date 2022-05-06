@@ -17,6 +17,8 @@ class MockOAuthClient(token: Option[OAuthClient.AccessTokenResponse]) extends OA
     case None           => Future.failed(new RuntimeException("No token response is available"))
   }
 
+  override val tokenEndpoint: String = "MockOAuthClient"
+
   override def token(
     scope: Option[String],
     parameters: OAuthClient.GrantParameters

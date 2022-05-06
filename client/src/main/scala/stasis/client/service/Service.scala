@@ -1,8 +1,5 @@
 package stasis.client.service
 
-import java.io.Console
-import java.util.concurrent.atomic.AtomicReference
-
 import akka.Done
 import akka.actor.Scheduler
 import akka.actor.typed.scaladsl.Behaviors
@@ -10,6 +7,8 @@ import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.service.components.exceptions.ServiceStartupFailure
 
+import java.io.Console
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}

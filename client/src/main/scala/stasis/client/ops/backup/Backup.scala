@@ -28,7 +28,7 @@ class Backup(
   private implicit val mat: Materializer = SystemMaterializer(system).materializer
 
   private val supervision: Supervision.Decider = { e =>
-    system.log.error("Backup stream encountered failure: [{}: {}]; resuming", e.getClass.getSimpleName, e.getMessage, e)
+    system.log.error("Backup stream encountered failure: [{} - {}]; resuming", e.getClass.getSimpleName, e.getMessage)
     providers.track.failureEncountered(failure = e)
     Supervision.Resume
   }

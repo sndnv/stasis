@@ -64,14 +64,14 @@ class GrpcEndpoint(
               proto.ReserveResponse().withFailure(ReservationFailure(message))
           }
           .recover { case NonFatal(e) =>
-            val message = s"Reservation failed for node [${node.toString}]: [${e.getClass.getSimpleName}: ${e.getMessage}]"
+            val message = s"Reservation failed for node [${node.toString}]: [${e.getClass.getSimpleName} - ${e.getMessage}]"
             log.error(message)
             proto.ReserveResponse().withFailure(ReservationFailure(message))
           }
 
       case Left(failure) =>
         val message =
-          s"Node [${node.toString}] made reservation request with missing data: [${failure.getClass.getSimpleName}: ${failure.getMessage}]"
+          s"Node [${node.toString}] made reservation request with missing data: [${failure.getClass.getSimpleName} - ${failure.getMessage}]"
         log.error(message)
         Future.successful(proto.ReserveResponse().withFailure(EndpointFailure(message)))
     }
@@ -103,7 +103,7 @@ class GrpcEndpoint(
                     proto.PushResponse().withComplete(proto.Complete())
                   }
                   .recover { case NonFatal(e) =>
-                    val message = s"Push failed for node [${node.toString}]: [${e.getClass.getSimpleName}: ${e.getMessage}]"
+                    val message = s"Push failed for node [${node.toString}]: [${e.getClass.getSimpleName} - ${e.getMessage}]"
                     log.error(message)
                     proto.PushResponse().withFailure(EndpointFailure(message))
                   }

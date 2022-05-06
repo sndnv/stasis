@@ -1,9 +1,11 @@
 package stasis.test.specs.unit.client.service.components.bootstrap
 
-import akka.actor.typed.scaladsl.Behaviors
+import akka.Done
+import akka.actor.typed.scaladsl.{Behaviors, LoggerOps}
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import com.typesafe.config.Config
-import org.slf4j.{Logger, LoggerFactory}
+import org.mockito.scalatest.AsyncMockitoSugar
+import org.slf4j.Logger
 import play.api.libs.json.Json
 import stasis.client.service.ApplicationArguments
 import stasis.client.service.components.bootstrap.{Base, Bootstrap, Init}
@@ -12,14 +14,16 @@ import stasis.core.security.tls.EndpointContext
 import stasis.shared.model.devices.{Device, DeviceBootstrapParameters}
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 import stasis.test.specs.unit.client.mocks.MockServerBootstrapEndpoint
+import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 
 import java.util.UUID
 import scala.collection.mutable
 
-class BootstrapSpec extends AsyncUnitSpec with ResourceHelpers {
+class BootstrapSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockitoSugar {
   "A Bootstrap component" should "support executing device bootstrap" in {
+    implicit val logger: Logger = mock[Logger]
+
     val config: Config = typedSystem.settings.config.getConfig("stasis.test.client.security.tls")
 
     val endpointContext = EndpointContext(
@@ -45,8 +49,64 @@ class BootstrapSpec extends AsyncUnitSpec with ResourceHelpers {
       bootstrap <- Bootstrap(base, init)
       actualParams <- bootstrap.execute()
     } yield {
+      verify(logger).debug(
+        "Console not available; using CLI-based bootstrap..."
+      )
+
+      verify(logger).infoN(
+        "Executing client bootstrap using server [{}]...",
+        modeArguments.serverBootstrapUrl
+      )
+
+      verify(logger).infoN(
+        "Server [{}] successfully processed bootstrap request",
+        modeArguments.serverBootstrapUrl
+      )
+
       actualParams should be(testParams)
     }
+  }
+
+  it should "log bootstrap execution failures" in {
+    implicit val logger: Logger = mock[Logger]
+
+    val modeArguments = ApplicationArguments.Mode.Bootstrap(
+      serverBootstrapUrl = "https://localhost:1234",
+      bootstrapCode = testCode,
+      acceptSelfSignedCertificates = true,
+      userPassword = Array.emptyCharArray,
+      userPasswordConfirm = Array.emptyCharArray
+    )
+
+    val result = for {
+      base <- Base(modeArguments = modeArguments, applicationDirectory = createApplicationDirectory(init = _ => ()))
+      init <- Init(base, console = None)
+      bootstrap <- Bootstrap(base, init)
+      _ <- bootstrap.execute()
+    } yield {
+      Done
+    }
+
+    result.failed
+      .map { e =>
+        verify(logger).debug(
+          "Console not available; using CLI-based bootstrap..."
+        )
+
+        verify(logger).infoN(
+          "Executing client bootstrap using server [{}]...",
+          modeArguments.serverBootstrapUrl
+        )
+
+        verify(logger).errorN(
+          "Client bootstrap using server [{}] failed: [{} - {}]",
+          modeArguments.serverBootstrapUrl,
+          "StreamTcpException",
+          e.getMessage
+        )
+
+        e.getMessage should include("Connection refused")
+      }
   }
 
   private val testCode = "test-code"
@@ -83,8 +143,6 @@ class BootstrapSpec extends AsyncUnitSpec with ResourceHelpers {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "BootstrapSpec"
   )
-
-  private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private val ports: mutable.Queue[Int] = (35000 to 35100).to(mutable.Queue)
 }

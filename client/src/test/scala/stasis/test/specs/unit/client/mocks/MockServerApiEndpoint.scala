@@ -74,7 +74,12 @@ class MockServerApiEndpoint(
                         complete(CreatedDatasetDefinition(definition.id))
 
                       case Failure(e) =>
-                        log.errorN("Failed to create definition [{}]: [{}]", definition.id, e.getMessage, e)
+                        log.errorN(
+                          "Failed to create definition [{}]: [{} - {}]",
+                          definition.id,
+                          e.getClass.getSimpleName,
+                          e.getMessage
+                        )
                         complete(StatusCodes.InternalServerError)
                     }
                   }
