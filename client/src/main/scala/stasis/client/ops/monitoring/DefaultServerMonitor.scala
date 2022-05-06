@@ -23,13 +23,19 @@ class DefaultServerMonitor private (
 
 object DefaultServerMonitor {
   def apply(
+    initialDelay: FiniteDuration,
     interval: FiniteDuration,
     api: ServerApiEndpointClient,
     tracker: ServerTracker
   )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): DefaultServerMonitor = {
     implicit val ec: ExecutionContext = system.executionContext
 
-    val behaviour = monitor(interval, api, tracker)
+    val behaviour = monitor(
+      initialDelay = initialDelay,
+      interval = interval,
+      api = api,
+      tracker = tracker
+    )
 
     new DefaultServerMonitor(
       monitorRef = system ? (SpawnProtocol.Spawn(behaviour, name = "server-monitor", props = Props.empty, _))
@@ -38,18 +44,19 @@ object DefaultServerMonitor {
 
   private sealed trait Message
   private case object PingServer extends Message
-  private case object ScheduleNextPing extends Message
+  private final case class ScheduleNextPing(after: FiniteDuration) extends Message
   private final case class Stop(replyTo: ActorRef[Done]) extends Message
 
   private case object PingTimerKey
 
   private def monitor(
+    initialDelay: FiniteDuration,
     interval: FiniteDuration,
     api: ServerApiEndpointClient,
     tracker: ServerTracker
   ): Behavior[Message] =
     Behaviors.withTimers[Message] { timers =>
-      timers.startSingleTimer(PingTimerKey, PingServer, interval)
+      timers.startSingleTimer(PingTimerKey, PingServer, initialDelay)
 
       Behaviors.receive { case (ctx, message) =>
         message match {
@@ -63,23 +70,23 @@ object DefaultServerMonitor {
                 case Success(Ping(id)) =>
                   log.debugN("Server [{}] responded to ping with [{}]", api.server, id)
                   tracker.reachable(api.server)
-                  self ! ScheduleNextPing
+                  self ! ScheduleNextPing(after = interval)
 
                 case Failure(e) =>
                   log.errorN("Failed to reach server [{}]: [{}]", api.server, e.getMessage, e)
                   tracker.unreachable(api.server)
-                  self ! ScheduleNextPing
+                  self ! ScheduleNextPing(after = interval / 2)
               }(ctx.executionContext)
 
             Behaviors.same
 
-          case ScheduleNextPing =>
+          case ScheduleNextPing(after) =>
             ctx.log.debugN(
               "Scheduling next ping for server [{}] in [{}] second(s)",
               api.server,
-              interval.toSeconds
+              after.toSeconds
             )
-            timers.startSingleTimer(PingTimerKey, PingServer, interval)
+            timers.startSingleTimer(PingTimerKey, PingServer, after)
             Behaviors.same
 
           case Stop(replyTo) =>
