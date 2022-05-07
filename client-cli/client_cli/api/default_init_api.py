@@ -35,7 +35,7 @@ class DefaultInitApi(InitApi):
         if response.ok:
             try:
                 return response.json()
-            except JSONDecodeError:
+            except (JSONDecodeError, requests.exceptions.JSONDecodeError):
                 logging.error(
                     'Response was [{}] but content is not JSON: [{}]'.format(
                         response.status_code,

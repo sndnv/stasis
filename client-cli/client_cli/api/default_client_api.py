@@ -179,7 +179,7 @@ class DefaultClientApi(ClientApi):
         if response.ok:
             try:
                 result = response.json()
-            except JSONDecodeError:
+            except (JSONDecodeError, requests.exceptions.JSONDecodeError):
                 logging.debug(
                     'Response was [{}] but content is not JSON: [{}]'.format(
                         response.status_code,
