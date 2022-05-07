@@ -16,7 +16,7 @@ class Device()(implicit context: Context) extends ApiRoutes {
         get {
           onSuccess(context.api.device()) { device =>
             log.debugN("API successfully retrieved device [{}] for user [{}]", device.id, device.owner)
-            discardEntity & complete(device)
+            consumeEntity & complete(device)
           }
         }
       },
@@ -24,7 +24,7 @@ class Device()(implicit context: Context) extends ApiRoutes {
         get {
           onSuccess(context.tracker.state) { state =>
             log.debugN("API successfully retrieved connection state for [{}] servers", state.servers.size)
-            discardEntity & complete(state.servers)
+            consumeEntity & complete(state.servers)
           }
         }
       }

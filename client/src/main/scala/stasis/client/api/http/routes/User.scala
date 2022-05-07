@@ -13,7 +13,7 @@ class User()(implicit context: Context) extends ApiRoutes {
       get {
         onSuccess(context.api.user()) { user =>
           log.debug("API successfully retrieved user [{}]", user.id)
-          discardEntity & complete(user)
+          consumeEntity & complete(user)
         }
       }
     }

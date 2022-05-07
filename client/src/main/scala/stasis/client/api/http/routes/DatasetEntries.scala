@@ -29,7 +29,7 @@ class DatasetEntries()(implicit context: Context) extends ApiRoutes {
 
             onSuccess(result) { entries =>
               log.debugN("API successfully retrieved [{}] entries for all definitions", entries.size)
-              discardEntity & complete(entries)
+              consumeEntity & complete(entries)
             }
           }
         }
@@ -40,7 +40,7 @@ class DatasetEntries()(implicit context: Context) extends ApiRoutes {
             get {
               onSuccess(context.api.datasetEntries(definition)) { entries =>
                 log.debugN("API successfully retrieved [{}] entries", entries.size)
-                discardEntity & complete(entries)
+                consumeEntity & complete(entries)
               }
             }
           },
@@ -54,14 +54,14 @@ class DatasetEntries()(implicit context: Context) extends ApiRoutes {
                       entry.id,
                       definition
                     )
-                    discardEntity & complete(entry)
+                    consumeEntity & complete(entry)
 
                   case None =>
                     log.debugN(
                       "API could not retrieve latest entry for definition [{}]; no entry found",
                       definition
                     )
-                    discardEntity & complete(StatusCodes.NotFound)
+                    consumeEntity & complete(StatusCodes.NotFound)
                 }
               }
             }

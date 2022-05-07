@@ -18,7 +18,7 @@ class Schedules()(implicit context: Context) extends ApiRoutes {
             get {
               onSuccess(context.api.publicSchedules()) { schedules =>
                 log.debug("API successfully retrieved [{}] schedules", schedules.size)
-                discardEntity & complete(schedules)
+                consumeEntity & complete(schedules)
               }
             }
           },
@@ -26,7 +26,7 @@ class Schedules()(implicit context: Context) extends ApiRoutes {
             get {
               onSuccess(context.api.publicSchedule(schedule = scheduleId)) { schedule =>
                 log.debug("API successfully retrieve schedule [{}]", scheduleId)
-                discardEntity & complete(schedule)
+                consumeEntity & complete(schedule)
               }
             }
           }
@@ -37,14 +37,14 @@ class Schedules()(implicit context: Context) extends ApiRoutes {
           pathEndOrSingleSlash {
             get {
               onSuccess(context.scheduler.schedules) { schedules =>
-                discardEntity & complete(schedules)
+                consumeEntity & complete(schedules)
               }
             }
           },
           path("refresh") {
             put {
               onSuccess(context.scheduler.refresh()) { _ =>
-                discardEntity & complete(StatusCodes.NoContent)
+                consumeEntity & complete(StatusCodes.NoContent)
               }
             }
           }
