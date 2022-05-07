@@ -49,7 +49,7 @@ class Operations()(implicit context: Context) extends ApiRoutes {
 
             onSuccess(operationsState) { operations =>
               log.debugN("API successfully retrieved state of [{}] operations", operations.size)
-              discardEntity & complete(operations)
+              consumeEntity & complete(operations)
             }
           }
         }
@@ -60,7 +60,7 @@ class Operations()(implicit context: Context) extends ApiRoutes {
             get {
               onSuccess(context.executor.rules) { rules =>
                 log.debugN("API successfully retrieved backup rules specification")
-                discardEntity & complete(SpecificationRules(rules))
+                consumeEntity & complete(SpecificationRules(rules))
               }
             }
           },
@@ -68,7 +68,7 @@ class Operations()(implicit context: Context) extends ApiRoutes {
             put {
               onSuccess(context.executor.startBackupWithRules(definition)) { operation =>
                 log.debugN("API started backup operation [{}]", operation)
-                discardEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
+                consumeEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
               }
             }
           }
@@ -93,7 +93,7 @@ class Operations()(implicit context: Context) extends ApiRoutes {
                       operation,
                       definition
                     )
-                    discardEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
+                    consumeEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
                   }
 
                 },
@@ -112,7 +112,7 @@ class Operations()(implicit context: Context) extends ApiRoutes {
                       definition,
                       until
                     )
-                    discardEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
+                    consumeEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
                   }
 
                 },
@@ -130,7 +130,7 @@ class Operations()(implicit context: Context) extends ApiRoutes {
                       definition,
                       entry
                     )
-                    discardEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
+                    consumeEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
                   }
                 }
               )
@@ -146,14 +146,14 @@ class Operations()(implicit context: Context) extends ApiRoutes {
                 onSuccess(context.tracker.state.map(_.operations.get(operation))) {
                   case Some(operation) =>
                     log.debugN("API successfully retrieved progress of operation [{}]", operation)
-                    discardEntity & complete(operation)
+                    consumeEntity & complete(operation)
 
                   case None =>
                     log.debugN(
                       "API could not retrieve progress of operation [{}]; operation not found",
                       operation
                     )
-                    discardEntity & complete(StatusCodes.NotFound)
+                    consumeEntity & complete(StatusCodes.NotFound)
                 }
               }
             }
@@ -168,7 +168,7 @@ class Operations()(implicit context: Context) extends ApiRoutes {
                   .keepAlive(maxIdle = heartbeatInterval, injectedElem = () => ServerSentEvent.heartbeat)
 
                 log.debugN("API successfully retrieved progress stream for operation [{}]", operation)
-                discardEntity & complete(sseSource)
+                consumeEntity & complete(sseSource)
               }
             }
           },
@@ -176,7 +176,7 @@ class Operations()(implicit context: Context) extends ApiRoutes {
             put {
               onSuccess(context.executor.stop(operation)) { _ =>
                 log.debugN("API stopped backup operation [{}]", operation)
-                discardEntity & complete(StatusCodes.NoContent)
+                consumeEntity & complete(StatusCodes.NoContent)
               }
             }
           }

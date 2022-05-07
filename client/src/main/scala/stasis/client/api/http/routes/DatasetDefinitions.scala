@@ -15,7 +15,7 @@ class DatasetDefinitions()(implicit context: Context) extends ApiRoutes {
         get {
           onSuccess(context.api.datasetDefinitions()) { definitions =>
             log.debug("API successfully retrieved [{}] definitions", definitions.size)
-            discardEntity & complete(definitions)
+            consumeEntity & complete(definitions)
           }
         },
         post {

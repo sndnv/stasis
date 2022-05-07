@@ -18,7 +18,7 @@ class DatasetMetadata()(implicit context: Context) extends ApiRoutes {
         get {
           onSuccess(context.api.datasetMetadata(entry = entryId)) { metadata =>
             log.debugN("API successfully retrieved metadata for entry [{}]", entryId)
-            discardEntity & complete(metadata)
+            consumeEntity & complete(metadata)
           }
         }
       },
@@ -36,7 +36,7 @@ class DatasetMetadata()(implicit context: Context) extends ApiRoutes {
                 query
               )
 
-              discardEntity & complete(result)
+              consumeEntity & complete(result)
             }
           }
         }

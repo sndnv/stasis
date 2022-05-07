@@ -16,14 +16,14 @@ class Service()(implicit context: Context) extends ApiRoutes {
         get {
           val response = Ping()
           log.debug("Received ping request; responding with [{}]", response.id)
-          discardEntity & complete(response)
+          consumeEntity & complete(response)
         }
       },
       path("stop") {
         put {
           log.info("Received client termination request; stopping...")
           context.terminateService()
-          discardEntity & complete(StatusCodes.NoContent)
+          consumeEntity & complete(StatusCodes.NoContent)
         }
       }
     )
