@@ -39,7 +39,8 @@
 
     <logger name="akka" level="${AKKA_LOGLEVEL}"/>
 
-    <logger name="stasis.client.service.components.bootstrap" level="${CLIENT_LOGLEVEL}">
+    <logger name="stasis.client.bootstrap" level="${CLIENT_LOGLEVEL}">
+        <appender-ref ref="FILE"/>
         <appender-ref ref="CONSOLE"/>
     </logger>
 
