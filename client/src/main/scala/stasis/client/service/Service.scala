@@ -24,7 +24,7 @@ trait Service { _: Service.Arguments =>
   )
 
   private implicit val ec: ExecutionContext = system.executionContext
-  private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
+  private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   protected def applicationName: String = Service.ApplicationName
 
@@ -40,6 +40,8 @@ trait Service { _: Service.Arguments =>
 
   private val startup: Future[ApplicationArguments.Mode] = applicationArguments.flatMap {
     case ApplicationArguments(mode: ApplicationArguments.Mode.Bootstrap) =>
+      implicit val log: Logger = LoggerFactory.getLogger("stasis.client.bootstrap")
+
       for {
         base <- components.bootstrap.Base(modeArguments = mode, applicationDirectory = applicationDirectory)
         init <- components.bootstrap.Init(base, console)
@@ -53,6 +55,8 @@ trait Service { _: Service.Arguments =>
       }
 
     case ApplicationArguments(ApplicationArguments.Mode.Service) =>
+      implicit val log: Logger = LoggerFactory.getLogger("stasis.client.service")
+
       for {
         base <- components.Base(applicationDirectory = applicationDirectory, terminate = stop)
         init <- components.Init(base, startup = startupPromise.future, console = console)
