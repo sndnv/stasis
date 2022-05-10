@@ -62,7 +62,7 @@ def render_operation_progress_summary(progress):
     return '\n'.join(
         [
             'state:    {}'.format(
-                'Done ({})'.format(progress['completed']) if progress['completed'] else 'Running'
+                'Done ({})'.format(progress['completed']) if 'completed' in progress else 'Running'
             ),
             'stages:   {}'.format(render_operation_progress_summary_stages(progress['stages'])),
             'failures: {}'.format(render_operation_failures(progress['failures']))
@@ -77,14 +77,14 @@ def render_operation_progress_summary_stages(stages):
     :param stages: progress stages to render
     :return: rendered string
     """
-    result = '\n|\t'.join(
+    result = '\n└─ '.join(
         map(
             lambda entry: '{}: [{}] step(s) done'.format(entry[0], len(entry[1]['steps'])),
             stages.items()
         )
     )
 
-    return '\n|\t{}'.format(result) if result else '-'
+    return '\n└─ {}'.format(result) if result else '-'
 
 
 def render_operation_failures(failures):
@@ -94,8 +94,8 @@ def render_operation_failures(failures):
     :param failures: failures to render
     :return: rendered string
     """
-    result = '\n|\t'.join(failures)
-    return '\n|\t{}'.format(result) if result else '-'
+    result = '\n└─ '.join(failures)
+    return '\n└─ {}'.format(result) if result else '-'
 
 
 def render_operation_response(response):
