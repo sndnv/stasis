@@ -106,6 +106,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(4)
 
+        mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(1)
         mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(7) // 2 directories + 5 files
         mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(5) // 2 unchanged + 5 changed entities
         mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(5) // 2 unchanged + 5 changed entities
@@ -178,6 +179,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(2)
 
+        mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(3)
         mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(2)
         mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(2)
@@ -247,6 +249,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(1)
 
+        mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(2)
         mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(1)
         mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(1)
@@ -272,6 +275,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         result should be(Done)
 
         eventually[Assertion] {
+          mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
@@ -300,6 +304,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         e shouldBe a[RuntimeException]
 
         eventually[Assertion] {
+          mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)

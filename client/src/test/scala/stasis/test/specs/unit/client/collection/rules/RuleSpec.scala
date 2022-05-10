@@ -6,7 +6,48 @@ import stasis.test.specs.unit.UnitSpec
 import scala.util.{Failure, Success}
 
 class RuleSpec extends UnitSpec {
-  "A Rule" should "support trimming quoted strings" in {
+  "A Rule" should "support rendering itself as a string" in {
+    val original = Rule.Original(line = "", lineNumber = 0)
+
+    val rule1 = Rule(
+      operation = Rule.Operation.Include,
+      directory = "/work",
+      pattern = "?",
+      comment = None,
+      original = original
+    )
+
+    val rule2 = Rule(
+      operation = Rule.Operation.Exclude,
+      directory = "/work",
+      pattern = "[a-z]",
+      comment = None,
+      original = original
+    )
+
+    val rule3 = Rule(
+      operation = Rule.Operation.Include,
+      directory = "/work",
+      pattern = "{0|1}",
+      comment = None,
+      original = original
+    )
+
+    val rule4 = Rule(
+      operation = Rule.Operation.Exclude,
+      directory = "/work/root",
+      pattern = "**/q",
+      comment = None,
+      original = original
+    )
+
+    rule1.asString should be("+ /work ?")
+    rule2.asString should be("- /work [a-z]")
+    rule3.asString should be("+ /work {0|1}")
+    rule4.asString should be("- /work/root **/q")
+  }
+
+  it should "support trimming quoted strings" in {
     val expectedString = "test 42"
 
     val strings = Seq(

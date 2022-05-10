@@ -36,6 +36,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       .await
 
     eventually[Assertion] {
+      mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(1)
       mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
@@ -58,6 +59,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       .await
 
     eventually[Assertion] {
+      mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)

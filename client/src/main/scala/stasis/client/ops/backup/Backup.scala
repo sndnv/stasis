@@ -11,6 +11,7 @@ import stasis.client.collection.{BackupCollector, BackupMetadataCollector}
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.DatasetMetadata
 import stasis.client.ops.ParallelismConfig
+import stasis.client.ops.backup.Backup.Descriptor.Collector
 import stasis.client.ops.backup.stages.{EntityCollection, EntityProcessing, MetadataCollection, MetadataPush}
 import stasis.client.tracking.BackupTracker
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
@@ -50,10 +51,16 @@ class Backup(
       .withAttributes(ActorAttributes.supervisionStrategy(supervision))
       .preMaterialize()
 
-  override def start(): Future[Done] =
+  override def start(): Future[Done] = {
+    descriptor.collector match {
+      case Collector.WithRules(spec) => providers.track.specificationProcessed(unmatched = spec.unmatched)
+      case _                         => () // do nothing
+    }
+
     stream
       .runWith(Sink.ignore)
       .trackWith(providers.track)
+  }
 
   override def stop(): Unit =
     killSwitch.shutdown()

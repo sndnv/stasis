@@ -130,6 +130,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
           mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(2)
 
+          mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(3)
@@ -218,6 +219,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
           mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(expectedParts)
 
+          mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(1)
@@ -302,6 +304,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
           mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
 
+          mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
@@ -416,6 +419,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
           mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
 
+          mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)

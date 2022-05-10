@@ -63,6 +63,7 @@ class EntityCollectionSpec extends AsyncUnitSpec {
       .map { collectedFiles =>
         collectedFiles should be(Seq(sourceFile1, sourceFile3))
 
+        mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(3)
         mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(2)
         mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)

@@ -1,12 +1,12 @@
 package stasis.test.specs.unit.client.tracking.trackers
 
 import java.nio.file.Paths
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.scaladsl.Sink
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{Assertion, BeforeAndAfterAll}
+import stasis.client.collection.rules.Rule
 import stasis.client.tracking.TrackerView
 import stasis.client.tracking.trackers.DefaultTracker
 import stasis.core.persistence.backends.memory.EventLogMemoryBackend
@@ -30,6 +30,16 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
       TrackerView.State.empty
     )
 
+    val rule = Rule(
+      operation = Rule.Operation.Include,
+      directory = "/work",
+      pattern = "?",
+      comment = None,
+      original = Rule.Original(line = "", lineNumber = 0)
+    )
+
+    tracker.backup.specificationProcessed(unmatched = Seq.empty)
+    tracker.backup.specificationProcessed(unmatched = Seq(rule -> new RuntimeException("Test failure")))
     tracker.backup.entityExamined(entity = file, metadataChanged = true, contentChanged = false)
     tracker.backup.entityExamined(entity = file, metadataChanged = true, contentChanged = true)
     tracker.backup.entityCollected(entity = file)
@@ -44,6 +54,9 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
 
       completedState.completed should not be empty
 
+      completedState.stages.contains("specification") should be(true)
+      completedState.stages("specification").steps.size should be(1)
+
       completedState.stages.contains("examination") should be(true)
       completedState.stages("examination").steps.size should be(2)
 
@@ -56,7 +69,12 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
       completedState.stages.contains("metadata") should be(true)
       completedState.stages("metadata").steps.size should be(2)
 
-      completedState.failures should be(Queue("RuntimeException: test failure"))
+      completedState.failures should be(
+        Queue(
+          "RuleMatchingFailure: Rule [+ /work ?] failed with [RuntimeException - Test failure]",
+          "RuntimeException: test failure"
+        )
+      )
     }
   }
 
