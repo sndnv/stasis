@@ -25,10 +25,10 @@ object Ops {
     for {
       rulesFile <- rawConfig.getString("ops.backup.rules-file").future
       schedulesFile <- rawConfig.getString("ops.scheduling.schedules-file").future
-      _ = log.debug("Loading rules file [{}]...", rulesFile)
       rulesFile <- directory.requireFile(rulesFile)
-      _ = log.debug("Loading schedules file [{}]...", schedulesFile)
+      _ = log.debug("Loading rules file [{}]...", rulesFile)
       schedulesFile <- directory.requireFile(schedulesFile)
+      _ = log.debug("Loading schedules file [{}]...", schedulesFile)
     } yield {
       implicit val parallelismConfig: ParallelismConfig =
         ParallelismConfig(value = rawConfig.getInt("service.parallelism"))
