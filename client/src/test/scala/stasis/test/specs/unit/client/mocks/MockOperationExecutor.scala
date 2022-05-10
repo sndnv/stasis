@@ -77,7 +77,13 @@ class MockOperationExecutor extends OperationExecutor {
           reason = Seq(explanation)
         )
       ),
-      unmatched = Seq((rule2, new RuntimeException("test failure")))
+      failures = Seq(
+        Specification.FailedMatch(
+          rule = rule2,
+          path = Paths.get("/tmp/other"),
+          failure = new RuntimeException("Test failure")
+        )
+      )
     )
     Future.successful(spec)
   }

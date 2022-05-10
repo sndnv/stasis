@@ -2,12 +2,16 @@
 - /home/$${USER}           .local/bin/**       # exclude local binaries
 - /home/$${USER}           .local/lib/**       # exclude local libraries
 - /home/$${USER}           .cache/**           # exclude user cache
-- /home/$${USER}/.m2       repository/**       # exclude maven artifacts
-- /home/$${USER}/.ivy2     {cache|local}/**    # exclude ivy artifacts
 
-# exclude logs, temporary and cache files
-- /home/$${USER}           **/*.{class|obj}
-- /home/$${USER}           **/lost+found/*
-- /home/$${USER}           **/*cache*/*
-- /home/$${USER}           **/*log*/*
-- /home/$${USER}           **/*.{tmp|temp|part|bak|~}
+# exclude git files, logs, temporary and cache files
+- /home/$${USER}           **/*.{class,obj}
+- /home/$${USER}           **/lost+found/**
+- /home/$${USER}           **/*cache*/**
+- /home/$${USER}           **/*log*/**
+- /home/$${USER}           **/*.{tmp,temp,part,bak,~}
+- /home/$${USER}           **/.git/**
+
+# generated stasis-client files
+- /home/$${USER}          .config/stasis-client/certs/**
+- /home/$${USER}          .config/stasis-client/*.{p12,pem}
+- /home/$${USER}          .config/stasis-client/{device-secret,api-token}

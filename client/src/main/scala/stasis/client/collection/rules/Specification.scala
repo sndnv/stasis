@@ -1,15 +1,14 @@
 package stasis.client.collection.rules
 
-import java.nio.file._
-
 import stasis.client.collection.rules.exceptions.RuleMatchingFailure
+import stasis.client.collection.rules.internal.FilesWalker
 
-import scala.jdk.CollectionConverters._
+import java.nio.file._
 import scala.util.control.NonFatal
 
 final case class Specification(
   entries: Map[Path, Specification.Entry],
-  unmatched: Seq[(Rule, Throwable)]
+  failures: Seq[Specification.FailedMatch]
 ) {
   lazy val explanation: Map[Path, Seq[Specification.Entry.Explanation]] =
     entries.map { case (path, entry) => (path, entry.reason) }
@@ -30,11 +29,13 @@ final case class Specification(
   lazy val included: Seq[Path] = (includedEntries ++ includedParents).distinct
 
   lazy val excluded: Seq[Path] = excludedEntries
+
+  lazy val unmatched: Seq[(Rule, Throwable)] = failures.map(m => m.rule -> m.failure)
 }
 
 object Specification {
 
-  def empty: Specification = Specification(entries = Map.empty, unmatched = Seq.empty)
+  def empty: Specification = Specification(entries = Map.empty, failures = Seq.empty)
 
   final case class Entry(
     file: Path,
@@ -50,11 +51,22 @@ object Specification {
     )
   }
 
+  final case class RuleMatcher(
+    rule: Rule,
+    matcher: PathMatcher
+  )
+
+  final case class FailedMatch(
+    rule: Rule,
+    path: Path,
+    failure: Throwable
+  )
+
   def apply(rules: Seq[Rule]): Specification =
     apply(rules, filesystem = FileSystems.getDefault)
 
-  def apply(rules: Seq[Rule], filesystem: FileSystem): Specification =
-    rules.foldLeft(Specification.empty) { case (spec, rule) =>
+  def apply(rules: Seq[Rule], filesystem: FileSystem): Specification = {
+    val (matchers, spec) = rules.foldLeft(Seq.empty[RuleMatcher] -> Specification.empty) { case ((matchers, spec), rule) =>
       val ruleDirectory = if (rule.directory.endsWith(filesystem.getSeparator)) {
         rule.directory
       } else {
@@ -66,48 +78,39 @@ object Specification {
       val matcher = filesystem.getPathMatcher(s"glob:$ruleDirectory${rule.pattern}")
 
       try {
-        val matchesStream = Files
-          .walk(directory, Seq.empty[FileVisitOption]: _*)
-          .filter(path => matcher.matches(path))
+        val result = FilesWalker.filter(start = directory, matcher = matcher)
 
-        val matches =
-          try {
-            matchesStream.iterator.asScala.toList
-          } finally {
-            matchesStream.close()
-          }
-
-        if (matches.isEmpty) {
-          spec.copy(unmatched = spec.unmatched :+ (rule, new RuleMatchingFailure("Rule matched no files")))
+        val updated = if (result.isEmpty) {
+          spec.copy(
+            failures = spec.failures :+ FailedMatch(
+              rule = rule,
+              path = directory,
+              failure = new RuleMatchingFailure("Rule matched no files")
+            )
+          )
         } else {
-          val updatedFiles = matches
-            .map { file =>
-              val entry = spec.entries.get(file) match {
-                case Some(existing) =>
-                  existing.copy(
-                    operation = rule.operation,
-                    reason = existing.reason :+ Entry.Explanation(rule.operation, rule.original)
-                  )
-
-                case None =>
-                  Entry(
-                    file = file,
-                    directory = directory,
-                    operation = rule.operation,
-                    reason = Seq(Entry.Explanation(rule.operation, rule.original))
-                  )
-              }
-
-              file -> entry
-            }
-
-          spec.copy(entries = spec.entries ++ updatedFiles)
+          spec
+            .withMatches(result.matches, rule, directory)
+            .withFailures(result.failures, rule)
         }
+
+        (matchers :+ RuleMatcher(rule, matcher)) -> updated
       } catch {
         case NonFatal(e) =>
-          spec.copy(unmatched = spec.unmatched :+ (rule, e))
+          val updated = spec.copy(
+            failures = spec.failures :+ FailedMatch(
+              rule = rule,
+              path = directory,
+              failure = e
+            )
+          )
+
+          (matchers :+ RuleMatcher(rule, matcher)) -> updated
       }
     }
+
+    spec.dropExcludedFailures(matchers)
+  }
 
   def collectRelativeParents(from: Path, to: Path): Seq[Path] = {
     @scala.annotation.tailrec
@@ -126,6 +129,54 @@ object Specification {
       collect(current = to, collected = Seq.empty)
     } else {
       Seq.empty
+    }
+  }
+
+  implicit class ExtendedSpecification(spec: Specification) {
+    def withMatches(matches: Seq[Path], rule: Rule, directory: Path): Specification = {
+      val updatedFiles = matches
+        .map { file =>
+          val entry = spec.entries.get(file) match {
+            case Some(existing) =>
+              existing.copy(
+                operation = rule.operation,
+                reason = existing.reason :+ Entry.Explanation(rule.operation, rule.original)
+              )
+
+            case None =>
+              Entry(
+                file = file,
+                directory = directory,
+                operation = rule.operation,
+                reason = Seq(Entry.Explanation(rule.operation, rule.original))
+              )
+          }
+
+          file -> entry
+        }
+
+      spec.copy(entries = spec.entries ++ updatedFiles)
+    }
+
+    def withFailures(failures: Map[Path, Throwable], rule: Rule): Specification =
+      failures.foldLeft(spec) { case (current, (path, failure)) =>
+        current.copy(
+          failures = current.failures :+ FailedMatch(
+            rule = rule,
+            path = path,
+            failure = failure
+          )
+        )
+      }
+
+    def dropExcludedFailures(matchers: Seq[RuleMatcher]): Specification = {
+      val exclusionMatchers = matchers.filter(_.rule.operation == Rule.Operation.Exclude)
+
+      spec.copy(
+        failures = spec.failures.filterNot { failure =>
+          exclusionMatchers.exists(_.matcher.matches(failure.path))
+        }
+      )
     }
   }
 }
