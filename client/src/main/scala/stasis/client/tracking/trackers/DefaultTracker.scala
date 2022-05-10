@@ -1,11 +1,12 @@
 package stasis.client.tracking.trackers
 
 import java.nio.file.Path
-
 import akka.NotUsed
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.stream.scaladsl.Source
 import org.slf4j.{Logger, LoggerFactory}
+import stasis.client.collection.rules.Rule
+import stasis.client.collection.rules.exceptions.RuleMatchingFailure
 import stasis.client.tracking.{BackupTracker, RecoveryTracker, ServerTracker, TrackerView}
 import stasis.core.persistence.backends.EventLogBackend
 import stasis.core.persistence.events.EventLog
@@ -92,6 +93,43 @@ class DefaultTracker private (
   }
 
   object backup extends BackupTracker {
+    override def specificationProcessed(
+      unmatched: Seq[(Rule, Throwable)]
+    )(implicit operation: Operation.Id): Unit =
+      if (unmatched.isEmpty) {
+        log.debugN("[{}] (backup) - Specification successfully processed", operation)
+
+        val _ = events.store(
+          event = Event.OperationStepCompleted(
+            operationId = operation,
+            stage = "specification",
+            step = "processing"
+          )
+        )
+      } else {
+        val failures = unmatched.map { case (rule, e) =>
+          s"Rule [${rule.asString}] failed with [${e.getClass.getSimpleName} - ${e.getMessage}]"
+        }
+
+        log.debugN(
+          "[{}] (backup) - Specification processed with [{}] unmatched rules: [{}]",
+          operation,
+          failures.length,
+          failures.mkString("\n\t", "\n\t", "\n")
+        )
+
+        failures.foreach { failure =>
+          val _ = events.store(
+            event = Event.OperationStepFailed(
+              operationId = operation,
+              failure = new RuleMatchingFailure(
+                message = failure
+              )
+            )
+          )
+        }
+      }
+
     override def entityExamined(
       entity: Path,
       metadataChanged: Boolean,

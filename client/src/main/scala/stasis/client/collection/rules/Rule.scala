@@ -11,7 +11,16 @@ final case class Rule(
   pattern: String,
   comment: Option[String],
   original: Rule.Original
-)
+) {
+  def asString: String = {
+    val operationAsString = operation match {
+      case Rule.Operation.Include => "+"
+      case Rule.Operation.Exclude => "-"
+    }
+
+    s"$operationAsString $directory $pattern"
+  }
+}
 
 object Rule {
   sealed trait Operation
