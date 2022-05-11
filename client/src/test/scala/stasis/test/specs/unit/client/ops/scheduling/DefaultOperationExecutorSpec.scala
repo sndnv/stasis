@@ -227,8 +227,8 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     executor.rules
       .map { spec =>
         // test rules are not expected to match anything on the default filesystem
-        spec.entries.size should be(0)
-        spec.unmatched.size should be(8)
+        spec.entries should be(empty)
+        spec.unmatched should not be empty
       }
   }
 

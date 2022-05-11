@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.client.collection.rules
 
 import java.nio.file.NoSuchFileException
-
 import stasis.client.collection.rules.exceptions.RuleMatchingFailure
+import stasis.client.collection.rules.internal.IndexedRule
 import stasis.client.collection.rules.{Rule, Specification}
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
@@ -11,6 +11,15 @@ trait SpecificationBehaviour { _: UnitSpec with ResourceHelpers =>
   import ResourceHelpers._
 
   def specification(setup: FileSystemSetup): Unit = {
+    it should "require at least one rule to be present" in {
+      import Specification.ExtendedRules
+
+      val rules = Seq(IndexedRule(index = 0, underlying = Rule("+ /work ?", 0).get))
+
+      noException should be thrownBy rules.first
+      an[IllegalStateException] should be thrownBy Seq.empty[IndexedRule].first
+    }
+
     it should "support creation based on rules" in {
       val (filesystem, objects) = createMockFileSystem(setup)
 
@@ -30,7 +39,6 @@ trait SpecificationBehaviour { _: UnitSpec with ResourceHelpers =>
       val zeroOneListSize = Seq('0', '1').size
       val rootDirsFiles = objects.rootDirs * objects.filesPerDir
       val acChildFiles = objects.nestedParentDirs * ('a' to 'c').size * Seq('a').size
-      val parent0Files = objects.nestedChildDirsPerParent * objects.filesPerDir
       val qFiles = objects.nestedDirs * Seq('q').size
 
       val work = 1
@@ -45,7 +53,7 @@ trait SpecificationBehaviour { _: UnitSpec with ResourceHelpers =>
         rule3 -> RuleExpectation(excluded = zeroOneListSize, included = 0),
         rule4 -> RuleExpectation(excluded = 0, included = rootDirsFiles + rootDirs + workRoot),
         rule5 -> RuleExpectation(excluded = 0, included = acChildFiles + acChildDirs + workRoot),
-        rule6 -> RuleExpectation(excluded = parent0Files + parent0Dirs, included = 0),
+        rule6 -> RuleExpectation(excluded = parent0Dirs, included = 0),
         rule7 -> RuleExpectation(excluded = qFiles, included = 0)
       ).zipWithIndex.map { case ((rule, expectations), lineNumber) =>
         (Rule(line = rule, lineNumber = lineNumber).get, expectations)
@@ -69,7 +77,7 @@ trait SpecificationBehaviour { _: UnitSpec with ResourceHelpers =>
 
       val includedUnderRootDirs = rootDirsFiles + rootDirs // rule 4
       val includedUnderChildDirs = acChildFiles + acChildDirs // rule 5
-      val excludedUnderParent0 = parent0Files + parent0Dirs // rule 6
+      val excludedUnderParent0 = parent0Dirs // rule 6
       val excludedQFiles = qFiles // rule 7
 
       val overlappingQFilesInParent0 = objects.nestedChildDirsPerParent

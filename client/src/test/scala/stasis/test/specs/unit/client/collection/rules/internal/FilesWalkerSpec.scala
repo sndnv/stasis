@@ -7,7 +7,7 @@ import stasis.test.specs.unit.client.ResourceHelpers.FileSystemSetup
 
 class FilesWalkerSpec extends UnitSpec with ResourceHelpers with FilesWalkerBehaviour {
   "A FilesWalker FilterResult" should "support checking if a result is empty" in {
-    val empty = FilesWalker.FilterResult(matches = Seq.empty, failures = Map.empty)
+    val empty = FilesWalker.FilterResult(matches = Map.empty, failures = Map.empty)
 
     empty.isEmpty should be(true)
   }
