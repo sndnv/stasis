@@ -3,16 +3,16 @@ package stasis.test.specs.unit.client.mocks
 import java.nio.file.{Path, Paths}
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
-
 import akka.Done
+import stasis.client.collection.rules.internal.IndexedRule
 import stasis.client.collection.rules.{Rule, Specification}
 import stasis.client.ops.recovery.Recovery
 import stasis.client.ops.scheduling.OperationExecutor
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.client.mocks.MockOperationExecutor.Statistic
-import scala.concurrent.Future
 
+import scala.concurrent.Future
 import stasis.shared.ops.Operation.Id
 
 class MockOperationExecutor extends OperationExecutor {
@@ -79,7 +79,7 @@ class MockOperationExecutor extends OperationExecutor {
       ),
       failures = Seq(
         Specification.FailedMatch(
-          rule = rule2,
+          rule = IndexedRule(index = 0, underlying = rule2),
           path = Paths.get("/tmp/other"),
           failure = new RuntimeException("Test failure")
         )

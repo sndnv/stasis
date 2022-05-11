@@ -1,7 +1,7 @@
 package stasis.client.collection.rules
 
 import stasis.client.collection.rules.exceptions.RuleMatchingFailure
-import stasis.client.collection.rules.internal.FilesWalker
+import stasis.client.collection.rules.internal.{FilesWalker, IndexedRule}
 
 import java.nio.file._
 import scala.util.control.NonFatal
@@ -30,7 +30,7 @@ final case class Specification(
 
   lazy val excluded: Seq[Path] = excludedEntries
 
-  lazy val unmatched: Seq[(Rule, Throwable)] = failures.map(m => m.rule -> m.failure)
+  lazy val unmatched: Seq[(Rule, Throwable)] = failures.sortBy(_.rule.index).map(m => m.rule.underlying -> m.failure)
 }
 
 object Specification {
@@ -52,12 +52,12 @@ object Specification {
   }
 
   final case class RuleMatcher(
-    rule: Rule,
+    rule: IndexedRule,
     matcher: PathMatcher
   )
 
   final case class FailedMatch(
-    rule: Rule,
+    rule: IndexedRule,
     path: Path,
     failure: Throwable
   )
@@ -66,48 +66,45 @@ object Specification {
     apply(rules, filesystem = FileSystems.getDefault)
 
   def apply(rules: Seq[Rule], filesystem: FileSystem): Specification = {
-    val (matchers, spec) = rules.foldLeft(Seq.empty[RuleMatcher] -> Specification.empty) { case ((matchers, spec), rule) =>
-      val ruleDirectory = if (rule.directory.endsWith(filesystem.getSeparator)) {
-        rule.directory
-      } else {
-        s"${rule.directory}${filesystem.getSeparator}"
-      }
+    val (matchers, spec) = rules.zipWithIndex
+      .map(e => IndexedRule(index = e._2, underlying = e._1))
+      .groupBy(_.underlying.directory)
+      .foldLeft(Seq.empty[RuleMatcher] -> Specification.empty) { case ((collected, spec), (groupedDirectory, rules)) =>
+        val (directory, matchers) = rules.asMatchers(groupedDirectory, filesystem)
 
-      val directory = filesystem.getPath(ruleDirectory)
+        try {
+          val result = FilesWalker.filter(start = directory, matchers = matchers)
 
-      val matcher = filesystem.getPathMatcher(s"glob:$ruleDirectory${rule.pattern}")
-
-      try {
-        val result = FilesWalker.filter(start = directory, matcher = matcher)
-
-        val updated = if (result.isEmpty) {
-          spec.copy(
-            failures = spec.failures :+ FailedMatch(
-              rule = rule,
-              path = directory,
-              failure = new RuleMatchingFailure("Rule matched no files")
+          val updated = if (result.isEmpty) {
+            spec.copy(
+              failures = spec.failures :++ rules.map { rule =>
+                FailedMatch(
+                  rule = rule,
+                  path = directory,
+                  failure = new RuleMatchingFailure("Rule matched no files")
+                )
+              }
             )
-          )
-        } else {
-          spec
-            .withMatches(result.matches, rule, directory)
-            .withFailures(result.failures, rule)
+          } else {
+            spec
+              .withMatches(result.matches, directory)
+              .withFailures(rules.first, result.failures)
+          }
+
+          (collected :++ matchers.map(m => RuleMatcher(m._1, m._2))) -> updated
+        } catch {
+          case NonFatal(e) =>
+            val updated = spec.copy(
+              failures = spec.failures :+ FailedMatch(
+                rule = rules.first,
+                path = directory,
+                failure = e
+              )
+            )
+
+            (collected :++ matchers.map(m => RuleMatcher(m._1, m._2))) -> updated
         }
-
-        (matchers :+ RuleMatcher(rule, matcher)) -> updated
-      } catch {
-        case NonFatal(e) =>
-          val updated = spec.copy(
-            failures = spec.failures :+ FailedMatch(
-              rule = rule,
-              path = directory,
-              failure = e
-            )
-          )
-
-          (matchers :+ RuleMatcher(rule, matcher)) -> updated
       }
-    }
 
     spec.dropExcludedFailures(matchers)
   }
@@ -132,33 +129,62 @@ object Specification {
     }
   }
 
+  implicit class ExtendedRules(rules: Seq[IndexedRule]) {
+    def asMatchers(groupedDirectory: String, filesystem: FileSystem): (Path, Seq[(IndexedRule, PathMatcher)]) = {
+      val ruleDirectory = if (groupedDirectory.endsWith(filesystem.getSeparator)) {
+        groupedDirectory
+      } else {
+        s"$groupedDirectory${filesystem.getSeparator}"
+      }
+
+      val directory = filesystem.getPath(ruleDirectory)
+
+      val matchers = rules.map { rule =>
+        rule -> filesystem.getPathMatcher(s"glob:$ruleDirectory${rule.underlying.pattern}")
+      }
+
+      directory -> matchers
+    }
+
+    @SuppressWarnings(Array("org.wartremover.warts.Throw"))
+    def first: IndexedRule =
+      rules.headOption match {
+        case Some(rule) => rule
+        case None       => throw new IllegalStateException("At least one rule must be provided")
+      }
+  }
+
   implicit class ExtendedSpecification(spec: Specification) {
-    def withMatches(matches: Seq[Path], rule: Rule, directory: Path): Specification = {
-      val updatedFiles = matches
-        .map { file =>
-          val entry = spec.entries.get(file) match {
+    def withMatches(matches: Map[IndexedRule, Seq[Path]], directory: Path): Specification = {
+      val updatedFiles = matches.toSeq
+        .sortBy(_._1.index)
+        .foldLeft(Seq.empty[(IndexedRule, Path)]) { case (collected, (rule, files)) =>
+          collected :++ files.map(file => rule -> file)
+        }
+        .foldLeft(spec.entries) { case (collected, (rule, file)) =>
+          val entry = collected.get(file) match {
             case Some(existing) =>
               existing.copy(
-                operation = rule.operation,
-                reason = existing.reason :+ Entry.Explanation(rule.operation, rule.original)
+                operation = rule.underlying.operation,
+                reason = existing.reason :+ Entry.Explanation(rule.underlying.operation, rule.underlying.original)
               )
 
             case None =>
               Entry(
                 file = file,
                 directory = directory,
-                operation = rule.operation,
-                reason = Seq(Entry.Explanation(rule.operation, rule.original))
+                operation = rule.underlying.operation,
+                reason = Seq(Entry.Explanation(rule.underlying.operation, rule.underlying.original))
               )
           }
 
-          file -> entry
+          collected + (file -> entry)
         }
 
       spec.copy(entries = spec.entries ++ updatedFiles)
     }
 
-    def withFailures(failures: Map[Path, Throwable], rule: Rule): Specification =
+    def withFailures(rule: IndexedRule, failures: Map[Path, Throwable]): Specification =
       failures.foldLeft(spec) { case (current, (path, failure)) =>
         current.copy(
           failures = current.failures :+ FailedMatch(
@@ -170,7 +196,7 @@ object Specification {
       }
 
     def dropExcludedFailures(matchers: Seq[RuleMatcher]): Specification = {
-      val exclusionMatchers = matchers.filter(_.rule.operation == Rule.Operation.Exclude)
+      val exclusionMatchers = matchers.filter(_.rule.underlying.operation == Rule.Operation.Exclude)
 
       spec.copy(
         failures = spec.failures.filterNot { failure =>
