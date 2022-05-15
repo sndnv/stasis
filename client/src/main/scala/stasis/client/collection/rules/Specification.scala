@@ -2,8 +2,11 @@ package stasis.client.collection.rules
 
 import stasis.client.collection.rules.exceptions.RuleMatchingFailure
 import stasis.client.collection.rules.internal.{FilesWalker, IndexedRule}
+import stasis.client.tracking.BackupTracker
+import stasis.shared.ops.Operation
 
 import java.nio.file._
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 final case class Specification(
@@ -62,10 +65,28 @@ object Specification {
     failure: Throwable
   )
 
-  def apply(rules: Seq[Rule]): Specification =
-    apply(rules, filesystem = FileSystems.getDefault)
+  def untracked(
+    rules: Seq[Rule]
+  )(implicit ec: ExecutionContext): Future[Specification] =
+    apply(rules, onMatchIncluded = { _ => () }, filesystem = FileSystems.getDefault)
 
-  def apply(rules: Seq[Rule], filesystem: FileSystem): Specification = {
+  def tracked(
+    rules: Seq[Rule],
+    tracker: BackupTracker
+  )(implicit ec: ExecutionContext, operation: Operation.Id): Future[Specification] =
+    apply(rules, onMatchIncluded = { path => tracker.entityDiscovered(path) }, filesystem = FileSystems.getDefault)
+
+  def apply(
+    rules: Seq[Rule],
+    onMatchIncluded: Path => Unit
+  )(implicit ec: ExecutionContext): Future[Specification] =
+    apply(rules, onMatchIncluded = onMatchIncluded, filesystem = FileSystems.getDefault)
+
+  def apply(
+    rules: Seq[Rule],
+    onMatchIncluded: Path => Unit,
+    filesystem: FileSystem
+  )(implicit ec: ExecutionContext): Future[Specification] = Future {
     val (matchers, spec) = rules.zipWithIndex
       .map(e => IndexedRule(index = e._2, underlying = e._1))
       .groupBy(_.underlying.directory)
@@ -73,7 +94,7 @@ object Specification {
         val (directory, matchers) = rules.asMatchers(groupedDirectory, filesystem)
 
         try {
-          val result = FilesWalker.filter(start = directory, matchers = matchers)
+          val result = FilesWalker.filter(start = directory, matchers = matchers, onMatchIncluded = onMatchIncluded)
 
           val updated = if (result.isEmpty) {
             spec.copy(

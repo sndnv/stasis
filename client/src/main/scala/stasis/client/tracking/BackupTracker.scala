@@ -7,6 +7,7 @@ import stasis.shared.ops.Operation
 import java.nio.file.Path
 
 trait BackupTracker {
+  def entityDiscovered(entity: Path)(implicit operation: Operation.Id): Unit
   def specificationProcessed(unmatched: Seq[(Rule, Throwable)])(implicit operation: Operation.Id): Unit
   def entityExamined(entity: Path, metadataChanged: Boolean, contentChanged: Boolean)(implicit operation: Operation.Id): Unit
   def entityCollected(entity: Path)(implicit operation: Operation.Id): Unit

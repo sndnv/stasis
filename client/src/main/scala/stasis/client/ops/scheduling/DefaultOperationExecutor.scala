@@ -46,7 +46,7 @@ class DefaultOperationExecutor(
     completedOperations.entries
 
   override def rules: Future[Specification] =
-    SchedulingConfig.rules(file = config.backup.rulesFile).map(Specification.apply)
+    SchedulingConfig.rules(file = config.backup.rulesFile).flatMap(Specification.untracked)
 
   override def startBackupWithRules(
     definition: DatasetDefinition.Id
@@ -56,7 +56,7 @@ class DefaultOperationExecutor(
       rules <- SchedulingConfig.rules(file = config.backup.rulesFile)
       descriptor <- backup.Backup.Descriptor(
         definition = definition,
-        collector = backup.Backup.Descriptor.Collector.WithRules(spec = Specification(rules = rules)),
+        collector = backup.Backup.Descriptor.Collector.WithRules(rules),
         deviceSecret = secret,
         limits = config.backup.limits
       )

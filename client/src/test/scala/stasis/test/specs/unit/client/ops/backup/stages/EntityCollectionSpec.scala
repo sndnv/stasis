@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.client.ops.backup.stages
 
 import akka.actor.ActorSystem
+import akka.stream.scaladsl.Source
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
-import stasis.client.collection.BackupCollector
 import stasis.client.model.SourceEntity
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.backup.stages.EntityCollection
@@ -50,19 +50,19 @@ class EntityCollectionSpec extends AsyncUnitSpec {
           track = mockTracker
         )
 
-      override protected def collector: BackupCollector =
-        new MockBackupCollector(List(sourceFile1, sourceFile2, sourceFile3))
-
       override protected def targetDataset: DatasetDefinition = Fixtures.Datasets.Default
     }
 
     implicit val operationId: Operation.Id = Operation.generateId()
 
-    stage.entityCollection
+    Source
+      .single(new MockBackupCollector(List(sourceFile1, sourceFile2, sourceFile3)))
+      .via(stage.entityCollection)
       .runFold(Seq.empty[SourceEntity])(_ :+ _)
       .map { collectedFiles =>
         collectedFiles should be(Seq(sourceFile1, sourceFile3))
 
+        mockTracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(3)
         mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(2)

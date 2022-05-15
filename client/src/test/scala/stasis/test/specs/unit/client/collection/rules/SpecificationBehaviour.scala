@@ -1,14 +1,19 @@
 package stasis.test.specs.unit.client.collection.rules
 
-import java.nio.file.NoSuchFileException
 import stasis.client.collection.rules.exceptions.RuleMatchingFailure
 import stasis.client.collection.rules.internal.IndexedRule
 import stasis.client.collection.rules.{Rule, Specification}
-import stasis.test.specs.unit.UnitSpec
+import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 
-trait SpecificationBehaviour { _: UnitSpec with ResourceHelpers =>
+import java.nio.file.NoSuchFileException
+import java.util.concurrent.atomic.AtomicInteger
+import scala.concurrent.ExecutionContext
+
+trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
   import ResourceHelpers._
+
+  private val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
 
   def specification(setup: FileSystemSetup): Unit = {
     it should "require at least one rule to be present" in {
@@ -48,26 +53,37 @@ trait SpecificationBehaviour { _: UnitSpec with ResourceHelpers =>
       val parent0Dirs = objects.nestedChildDirsPerParent
 
       val rules = Seq(
-        rule1 -> RuleExpectation(excluded = 0, included = objects.filesPerDir + work),
-        rule2 -> RuleExpectation(excluded = azRangeSize, included = 0),
-        rule3 -> RuleExpectation(excluded = zeroOneListSize, included = 0),
-        rule4 -> RuleExpectation(excluded = 0, included = rootDirsFiles + rootDirs + workRoot),
-        rule5 -> RuleExpectation(excluded = 0, included = acChildFiles + acChildDirs + workRoot),
-        rule6 -> RuleExpectation(excluded = parent0Dirs, included = 0),
-        rule7 -> RuleExpectation(excluded = qFiles, included = 0)
+        rule1 -> RuleExpectation(excluded = 0, included = objects.filesPerDir + work, root = work),
+        rule2 -> RuleExpectation(excluded = azRangeSize, included = 0, root = 0),
+        rule3 -> RuleExpectation(excluded = zeroOneListSize, included = 0, root = 0),
+        rule4 -> RuleExpectation(excluded = 0, included = rootDirsFiles + rootDirs + workRoot, root = workRoot + rootDirs),
+        rule5 -> RuleExpectation(excluded = 0, included = acChildFiles + acChildDirs + workRoot, root = workRoot + acChildDirs),
+        rule6 -> RuleExpectation(excluded = parent0Dirs, included = 0, root = 0),
+        rule7 -> RuleExpectation(excluded = qFiles, included = 0, root = 0)
       ).zipWithIndex.map { case ((rule, expectations), lineNumber) =>
         (Rule(line = rule, lineNumber = lineNumber).get, expectations)
       }
 
       rules.foreach { case (rule, expectation) =>
-        val spec = Specification(Seq(rule), filesystem)
+        val matchesIncluded = new AtomicInteger(0)
+
+        val spec = Specification(
+          rules = Seq(rule),
+          onMatchIncluded = _ => matchesIncluded.incrementAndGet(),
+          filesystem = filesystem
+        )(ec).await
+
         withClue(s"Specification for rule [${rule.original.line}] on line [${rule.original.lineNumber}]") {
           spec.excluded.size should be(expectation.excluded)
           spec.included.size should be(expectation.included)
+
+          matchesIncluded.get should be(
+            expectation.included - expectation.root
+          ) // root directories are not included in the matches
         }
       }
 
-      val spec = Specification(rules = rules.map(_._1), filesystem = filesystem)
+      val spec = Specification(rules = rules.map(_._1), onMatchIncluded = _ => (), filesystem = filesystem)(ec).await
 
       spec.unmatched should be(Seq.empty)
       spec.entries.size should be < objects.total
@@ -103,7 +119,7 @@ trait SpecificationBehaviour { _: UnitSpec with ResourceHelpers =>
       val rule1 = Rule(line = "+ /test/ **                # include all files in directory", lineNumber = 0).get
       val rule2 = Rule(line = "+ /work  missing-test-file # include specific file", lineNumber = 0).get
 
-      val spec = Specification(Seq(rule1, rule2), filesystem)
+      val spec = Specification(rules = Seq(rule1, rule2), onMatchIncluded = _ => (), filesystem = filesystem)(ec).await
 
       spec.unmatched.toList match {
         case (`rule1`, e1) :: (`rule2`, e2) :: Nil =>
@@ -130,7 +146,7 @@ trait SpecificationBehaviour { _: UnitSpec with ResourceHelpers =>
 
       val rules = Seq(rule1, rule2, rule3, rule4, rule5)
 
-      val spec = Specification(rules = rules, filesystem = filesystem)
+      val spec = Specification(rules = rules, onMatchIncluded = _ => (), filesystem = filesystem)(ec).await
 
       spec.unmatched should be(Seq.empty)
       spec.entries.size should be(objects.filesPerDir)
@@ -200,7 +216,7 @@ trait SpecificationBehaviour { _: UnitSpec with ResourceHelpers =>
     }
 
     it should "create an empty spec if no rules are provided" in {
-      Specification(rules = Seq.empty) should be(Specification.empty)
+      Specification(rules = Seq.empty, onMatchIncluded = _ => ())(ec).await should be(Specification.empty)
     }
 
     it should "handle matching failures" in {
@@ -208,7 +224,7 @@ trait SpecificationBehaviour { _: UnitSpec with ResourceHelpers =>
 
       val rule1 = Rule("+ /work/missing-dir *", 0).get
 
-      val spec = Specification(rules = Seq(rule1), filesystem = filesystem)
+      val spec = Specification(rules = Seq(rule1), onMatchIncluded = _ => (), filesystem = filesystem)(ec).await
 
       spec.unmatched.toList match {
         case (`rule1`, e) :: Nil => e shouldBe a[NoSuchFileException]

@@ -5,6 +5,9 @@ import stasis.client.collection.rules.internal.{FilesWalker, IndexedRule}
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 
+import java.nio.file.Path
+import scala.collection.mutable
+
 trait FilesWalkerBehaviour { _: UnitSpec with ResourceHelpers =>
   import ResourceHelpers._
 
@@ -25,9 +28,20 @@ trait FilesWalkerBehaviour { _: UnitSpec with ResourceHelpers =>
         IndexedRule(index = 1, underlying = rule2) -> matcher2
       )
 
-      val successfulResult = FilesWalker.filter(start = filesystem.getPath("/work/root/parent-1"), matchers = matchers)
+      val matchedSuccessful = mutable.ListBuffer[Path]()
+      val successfulResult = FilesWalker.filter(
+        start = filesystem.getPath("/work/root/parent-1"),
+        onMatchIncluded = matchedSuccessful.addOne,
+        matchers = matchers
+      )
 
-      val failedResult = FilesWalker.filter(start = filesystem.getPath("/work/root/other"), matchers = matchers)
+      matchedSuccessful.map(_.toString).toList should be(
+        List(
+          "/work/root/parent-1/child-dir-a",
+          "/work/root/parent-1/child-dir-b",
+          "/work/root/parent-1/child-dir-c"
+        )
+      )
 
       successfulResult.isEmpty should be(false)
 
@@ -49,6 +63,14 @@ trait FilesWalkerBehaviour { _: UnitSpec with ResourceHelpers =>
 
       successfulResult.failures should be(empty)
 
+      val matchedFailed = mutable.ListBuffer[Path]()
+      val failedResult = FilesWalker.filter(
+        start = filesystem.getPath("/work/root/other"),
+        onMatchIncluded = matchedFailed.addOne,
+        matchers = matchers
+      )
+
+      matchedFailed.map(_.toString).toList should be(List.empty)
       failedResult.isEmpty should be(false)
       failedResult.matches should be(empty)
 
@@ -73,7 +95,7 @@ trait FilesWalkerBehaviour { _: UnitSpec with ResourceHelpers =>
         IndexedRule(index = 1, underlying = rule2) -> matcher2
       )
 
-      val result = FilesWalker.filter(start = filesystem.getPath("/work/root"), matchers = matchers)
+      val result = FilesWalker.filter(start = filesystem.getPath("/work/root"), onMatchIncluded = _ => (), matchers = matchers)
 
       result.isEmpty should be(false)
 

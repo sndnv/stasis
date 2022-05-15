@@ -16,7 +16,7 @@ object FilesWalker {
     def isEmpty: Boolean = matches.isEmpty && failures.isEmpty
   }
 
-  def filter(start: Path, matchers: Seq[(IndexedRule, PathMatcher)]): FilterResult = {
+  def filter(start: Path, matchers: Seq[(IndexedRule, PathMatcher)], onMatchIncluded: Path => Unit): FilterResult = {
     val collected = mutable.HashMap.empty[IndexedRule, ListBuffer[Path]]
     val failures = mutable.HashMap.empty[Path, Throwable]
 
@@ -39,18 +39,34 @@ object FilesWalker {
           }
 
           lastMatchedRule.map(_.underlying.operation) match {
-            case Some(Rule.Operation.Exclude) => FileVisitResult.SKIP_SUBTREE
-            case _                            => FileVisitResult.CONTINUE
+            case Some(Rule.Operation.Exclude) =>
+              FileVisitResult.SKIP_SUBTREE
+
+            case Some(Rule.Operation.Include) =>
+              onMatchIncluded(dir)
+              FileVisitResult.CONTINUE
+
+            case _ =>
+              FileVisitResult.CONTINUE
           }
         }
 
+        @SuppressWarnings(Array("org.wartremover.warts.Var"))
         override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
+          var lastMatchedRule: Option[IndexedRule] = None
+
           Option(file).foreach { current =>
             sortedMatchers.foreach { case (rule, matcher) =>
               if (matcher.matches(current)) {
+                lastMatchedRule = Some(rule)
                 collected.getOrElseUpdate(rule, defaultValue = ListBuffer.empty[Path]).append(current)
               }
             }
+          }
+
+          lastMatchedRule.map(_.underlying.operation) match {
+            case Some(Rule.Operation.Include) => onMatchIncluded(file)
+            case _                            => () // do nothing
           }
 
           FileVisitResult.CONTINUE

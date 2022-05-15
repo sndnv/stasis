@@ -352,6 +352,7 @@ object ResourceHelpers {
 
   final case class RuleExpectation(
     excluded: Int,
-    included: Int
+    included: Int,
+    root: Int
   )
 }

@@ -93,6 +93,18 @@ class DefaultTracker private (
   }
 
   object backup extends BackupTracker {
+    override def entityDiscovered(entity: Path)(implicit operation: Operation.Id): Unit = {
+      log.debugN("[{}] (backup) - Entity [{}] discovered", operation, entity)
+
+      val _ = events.store(
+        event = Event.OperationStepCompleted(
+          operationId = operation,
+          stage = "discovery",
+          step = entity.toAbsolutePath.toString
+        )
+      )
+    }
+
     override def specificationProcessed(
       unmatched: Seq[(Rule, Throwable)]
     )(implicit operation: Operation.Id): Unit =

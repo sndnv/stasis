@@ -1,22 +1,19 @@
 package stasis.client.ops.backup
 
-import java.nio.file.Path
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.stream._
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.{Done, NotUsed}
-import stasis.client.analysis.Checksum
-import stasis.client.collection.rules.Specification
-import stasis.client.collection.{BackupCollector, BackupMetadataCollector}
+import stasis.client.collection.rules.Rule
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.DatasetMetadata
 import stasis.client.ops.ParallelismConfig
-import stasis.client.ops.backup.Backup.Descriptor.Collector
-import stasis.client.ops.backup.stages.{EntityCollection, EntityProcessing, MetadataCollection, MetadataPush}
+import stasis.client.ops.backup.stages._
 import stasis.client.tracking.BackupTracker
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.ops.Operation
 
+import java.nio.file.Path
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -40,10 +37,9 @@ class Backup(
 
   override val `type`: Operation.Type = Operation.Type.Backup
 
-  private val collector: BackupCollector = parent.descriptor.toBackupCollector(parent.providers.checksum)
-
   private val (killSwitch: UniqueKillSwitch, stream: Source[Done, NotUsed]) =
-    stages.entityCollection
+    stages.entityDiscovery
+      .via(stages.entityCollection)
       .via(stages.entityProcessing)
       .via(stages.metadataCollection)
       .via(stages.metadataPush)
@@ -51,27 +47,26 @@ class Backup(
       .withAttributes(ActorAttributes.supervisionStrategy(supervision))
       .preMaterialize()
 
-  override def start(): Future[Done] = {
-    descriptor.collector match {
-      case Collector.WithRules(spec) => providers.track.specificationProcessed(unmatched = spec.unmatched)
-      case _                         => () // do nothing
-    }
-
+  override def start(): Future[Done] =
     stream
       .runWith(Sink.ignore)
       .trackWith(providers.track)
-  }
 
   override def stop(): Unit =
     killSwitch.shutdown()
 
-  private object stages extends EntityCollection with EntityProcessing with MetadataCollection with MetadataPush {
+  private object stages
+      extends EntityDiscovery
+      with EntityCollection
+      with EntityProcessing
+      with MetadataCollection
+      with MetadataPush {
+    override protected lazy val collector: EntityDiscovery.Collector = parent.descriptor.collector.asDiscoveryCollector
     override protected lazy val targetDataset: DatasetDefinition = parent.descriptor.targetDataset
     override protected lazy val latestEntry: Option[DatasetEntry] = parent.descriptor.latestEntry
     override protected lazy val latestMetadata: Option[DatasetMetadata] = parent.descriptor.latestMetadata
     override protected lazy val deviceSecret: DeviceSecret = parent.descriptor.deviceSecret
     override protected lazy val providers: Providers = parent.providers
-    override protected lazy val collector: BackupCollector = parent.collector
     override protected lazy val parallelism: ParallelismConfig = parent.parallelism
     override protected lazy val maxChunkSize: Int = parent.descriptor.limits.maxChunkSize
     override protected lazy val maxPartSize: Long = parent.descriptor.limits.maxPartSize
@@ -93,39 +88,22 @@ object Backup {
     deviceSecret: DeviceSecret,
     collector: Descriptor.Collector,
     limits: Limits
-  ) {
-    def toBackupCollector(
-      checksum: Checksum
-    )(implicit
-      mat: Materializer,
-      ec: ExecutionContext,
-      parallelism: ParallelismConfig,
-      providers: Providers
-    ): BackupCollector =
-      collector match {
-        case Descriptor.Collector.WithRules(spec) =>
-          new BackupCollector.Default(
-            entities = spec.included.toList,
-            latestMetadata = latestMetadata,
-            metadataCollector = BackupMetadataCollector.Default(checksum = checksum),
-            api = providers.clients.api
-          )
-
-        case Descriptor.Collector.WithEntities(entities) =>
-          new BackupCollector.Default(
-            entities = entities.toList,
-            latestMetadata = latestMetadata,
-            metadataCollector = BackupMetadataCollector.Default(checksum = checksum),
-            api = providers.clients.api
-          )
-      }
-  }
+  )
 
   object Descriptor {
-    sealed trait Collector
+    sealed trait Collector {
+      def asDiscoveryCollector: EntityDiscovery.Collector
+    }
     object Collector {
-      final case class WithRules(spec: Specification) extends Collector
-      final case class WithEntities(entities: Seq[Path]) extends Collector
+      final case class WithRules(rules: Seq[Rule]) extends Collector {
+        override def asDiscoveryCollector: EntityDiscovery.Collector =
+          EntityDiscovery.Collector.WithRules(rules)
+      }
+
+      final case class WithEntities(entities: Seq[Path]) extends Collector {
+        override def asDiscoveryCollector: EntityDiscovery.Collector =
+          EntityDiscovery.Collector.WithEntities(entities)
+      }
     }
 
     def apply(
