@@ -305,6 +305,18 @@ ACTIVE_OPERATIONS = [
         'type': 'backup',
         'progress': {
             'stages': {
+                'discovery': {
+                    'steps': [
+                        {'name': 'test-file-01', 'completed': int(round(time.time() * 1000))},
+                        {'name': 'test-file-02', 'completed': int(round(time.time() * 1000))},
+                        {'name': 'test-file-03', 'completed': int(round(time.time() * 1000))},
+                    ]
+                },
+                'specification': {
+                    'steps': [
+                        {'name': 'processed', 'completed': int(round(time.time() * 1000))}
+                    ]
+                },
                 'collection': {
                     'steps': [
                         {'name': 'test-file-01', 'completed': int(round(time.time() * 1000))},
@@ -350,6 +362,14 @@ EMPTY_OPERATION_PROGRESS = {
 OPERATION_PROGRESS = [
     {
         'stages': {
+            'discovery': {
+                'steps': [
+                    {
+                        'name': '/some/path/01',
+                        'completed': '2020-12-21T01:02:05',
+                    },
+                ]
+            },
             'examination': {
                 'steps': [
                     {
@@ -363,6 +383,22 @@ OPERATION_PROGRESS = [
     },
     {
         'stages': {
+            'discovery': {
+                'steps': [
+                    {
+                        'name': '/some/path/01',
+                        'completed': '2020-12-21T01:02:05',
+                    },
+                    {
+                        'name': '/some/path/02',
+                        'completed': '2020-12-21T01:02:06',
+                    },
+                    {
+                        'name': '/some/path/03',
+                        'completed': '2020-12-21T01:02:07',
+                    },
+                ]
+            },
             'examination': {
                 'steps': [
                     {
