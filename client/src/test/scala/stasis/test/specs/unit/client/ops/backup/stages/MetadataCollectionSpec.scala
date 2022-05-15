@@ -69,6 +69,7 @@ class MetadataCollectionSpec extends AsyncUnitSpec {
             )
           )
 
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)

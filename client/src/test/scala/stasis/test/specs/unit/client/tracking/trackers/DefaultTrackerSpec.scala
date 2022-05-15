@@ -38,6 +38,10 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
       original = Rule.Original(line = "", lineNumber = 0)
     )
 
+    tracker.backup.entityDiscovered(entity = file)
+    tracker.backup.entityDiscovered(entity = file)
+    tracker.backup.entityDiscovered(entity = file)
+    tracker.backup.entityDiscovered(entity = file)
     tracker.backup.specificationProcessed(unmatched = Seq.empty)
     tracker.backup.specificationProcessed(unmatched = Seq(rule -> new RuntimeException("Test failure")))
     tracker.backup.entityExamined(entity = file, metadataChanged = true, contentChanged = false)
@@ -53,6 +57,9 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
       val completedState = tracker.state.await.operations(operation)
 
       completedState.completed should not be empty
+
+      completedState.stages.contains("discovery") should be(true)
+      completedState.stages("discovery").steps.size should be(4)
 
       completedState.stages.contains("specification") should be(true)
       completedState.stages("specification").steps.size should be(1)
