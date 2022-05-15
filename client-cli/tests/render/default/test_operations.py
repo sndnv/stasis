@@ -22,6 +22,7 @@ class OperationsSpec(unittest.TestCase):
             result = render_operation_progress(progress=progress)
             self.assertIn('Files:', result)
             self.assertIn('Stats:', result)
+            self.assertIn('Completed:', result)
 
             if 'metadata' in progress['stages']:
                 self.assertIn('Metadata:', result)
@@ -29,9 +30,9 @@ class OperationsSpec(unittest.TestCase):
                 self.assertNotIn('Metadata:', result)
 
             if 'completed' in progress:
-                self.assertIn('Completed:', result)
+                self.assertNotIn('%', result)
             else:
-                self.assertNotIn('Completed:', result)
+                self.assertIn('%', result)
 
     def test_should_render_a_message_when_no_progress_data_is_available(self):
         result = render_operation_progress(progress=mock_data.EMPTY_OPERATION_PROGRESS)

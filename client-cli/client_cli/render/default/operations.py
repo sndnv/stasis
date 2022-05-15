@@ -62,7 +62,9 @@ def render_operation_progress_summary(progress):
     return '\n'.join(
         [
             'state:    {}'.format(
-                'Done ({})'.format(progress['completed']) if 'completed' in progress else 'Running'
+                'Done ({})'.format(progress['completed']) if 'completed' in progress else 'Running ({})'.format(
+                    _calculate_progress_pct(progress)
+                )
             ),
             'stages:   {}'.format(render_operation_progress_summary_stages(progress['stages'])),
             'failures: {}'.format(render_operation_failures(progress['failures']))
@@ -245,12 +247,24 @@ def _render_progress_completed(progress):
             'Completed:',
             '{}{}'.format(RENDERING_ELEMENTS['child_last'], style(progress['completed'], fg='green'))
         ]
+    elif progress and (progress['stages'] or progress['failures']):
+        return [
+            'Completed:',
+            '{}{}'.format(RENDERING_ELEMENTS['child_last'], style(_calculate_progress_pct(progress), fg='green')),
+        ]
     else:
         return []
 
 
 def _with_prefix(item):
     return '{}_{}'.format(INTERNAL_DATA_PREFIX, item)
+
+
+def _calculate_progress_pct(progress):
+    expected_steps = len(progress['stages']['discovery']['steps']) if 'discovery' in progress['stages'] else 0
+    actual_steps = len(progress['stages']['processing']['steps']) if 'processing' in progress['stages'] else 0
+
+    return '{}%'.format(round(actual_steps / expected_steps * 100, 2)) if expected_steps > 0 else '-'
 
 
 INTERNAL_DATA_PREFIX = '__stasis_cli_internal'
@@ -263,8 +277,9 @@ RENDERING_ELEMENTS = {
 }
 
 OPERATION_STAGE_DESCRIPTIONS = {
-    'examination': {'fg': 'yellow', 'title': 'examined', 'priority': 0},
-    'collection': {'fg': 'cyan', 'title': 'collected', 'priority': 1},
-    'processing': {'fg': 'green', 'title': 'processed', 'priority': 2},
-    'metadata-applied': {'fg': 'bright_blue', 'title': 'metadata applied', 'priority': 3},
+    'discovery': {'fg': 'white', 'title': 'found', 'priority': 0},
+    'examination': {'fg': 'yellow', 'title': 'examined', 'priority': 1},
+    'collection': {'fg': 'cyan', 'title': 'collected', 'priority': 2},
+    'processing': {'fg': 'green', 'title': 'processed', 'priority': 3},
+    'metadata-applied': {'fg': 'bright_blue', 'title': 'metadata applied', 'priority': 4},
 }
