@@ -6,6 +6,7 @@ import stasis.client_android.lib.ops.OperationId
 import java.nio.file.Path
 
 interface BackupTracker {
+    fun entityDiscovered(operation: OperationId, entity: Path)
     fun specificationProcessed(operation: OperationId, unmatched: List<Pair<Rule, Throwable>>)
     fun entityExamined(operation: OperationId, entity: Path, metadataChanged: Boolean, contentChanged: Boolean)
     fun entityCollected(operation: OperationId, entity: Path)

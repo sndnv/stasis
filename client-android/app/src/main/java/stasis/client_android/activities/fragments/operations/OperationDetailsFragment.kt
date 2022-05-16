@@ -84,7 +84,7 @@ class OperationDetailsFragment : Fragment() {
                         ),
                         StyledString(
                             placeholder = "%2\$s",
-                            content = progress.stages.values.map { it.steps.size }.sum().toString(),
+                            content = progress.stages.values.sumOf { it.steps.size }.toString(),
                             style = StyleSpan(Typeface.BOLD)
                         ),
                         StyledString(
@@ -96,11 +96,21 @@ class OperationDetailsFragment : Fragment() {
 
                 when (val completed = progress.completed) {
                     null -> {
-                        binding.operationCompleted.isVisible = false
+                        val expectedSteps = progress.stages["discovery"]?.steps?.size ?: 0
+                        val actualSteps = progress.stages["processing"]?.steps?.size ?: 0
+                        val progressPct = actualSteps / expectedSteps.toDouble() * 100
+
+                        binding.operationCompleted.text =
+                            context.getString(R.string.operation_field_content_completed_progress)
+                                .renderAsSpannable(
+                                    StyledString(
+                                        placeholder = "%1\$s",
+                                        content = String.format("%.2f", progressPct),
+                                        style = StyleSpan(Typeface.BOLD)
+                                    )
+                                )
                     }
                     else -> {
-                        binding.operationCompleted.isVisible = true
-
                         binding.operationCompleted.text =
                             context.getString(R.string.operation_field_content_completed)
                                 .renderAsSpannable(

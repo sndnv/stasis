@@ -335,6 +335,7 @@
     <string name="operation_field_content_details">Stages: %1$s, Steps: %2$s</string>
     <string name="operation_field_content_details_with_failures">Stages: %1$s, Steps: %2$s, Errors: %3$s</string>
     <string name="operation_field_content_completed">Completed: %1$s</string>
+    <string name="operation_field_content_completed_progress">Completed: %1$s%</string>
     <string name="operation_field_content_stage_info">%1$s (steps: %2$s)</string>
     <string name="operation_field_content_failure_info">%1$s</string>
     <string name="operation_stop_confirm_title">Stop operation [%1$s]?</string>
@@ -349,6 +350,7 @@
     <string name="operation_failure_message">%1$s</string>
 
     <!-- Operation Stages/Steps -->
+    <string name="operation_stage_discovery">Discovery</string>
     <string name="operation_stage_specification">Specification</string>
     <string name="operation_stage_examination">Examination</string>
     <string name="operation_stage_collection">Collection</string>

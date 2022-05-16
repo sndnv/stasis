@@ -2,6 +2,8 @@ package stasis.client_android.lib.collection.rules
 
 import stasis.client_android.lib.collection.rules.exceptions.RuleMatchingFailure
 import stasis.client_android.lib.collection.rules.internal.FilesWalker
+import stasis.client_android.lib.ops.OperationId
+import stasis.client_android.lib.tracking.BackupTracker
 import stasis.client_android.lib.utils.NonFatal.nonFatal
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
@@ -36,9 +38,9 @@ data class Specification(
         included.map { it.file } to includedParents to excluded.map { it.file }
     }
 
-    private val includedEntries: List<Path> by lazy { splitEntries.first.first }
-    private val includedParents: List<Path> by lazy { splitEntries.first.second }
-    private val excludedEntries: List<Path> by lazy { splitEntries.second }
+    val includedEntries: List<Path> by lazy { splitEntries.first.first }
+    val includedParents: List<Path> by lazy { splitEntries.first.second }
+    val excludedEntries: List<Path> by lazy { splitEntries.second }
 
     data class Entry(
         val file: Path,
@@ -65,64 +67,103 @@ data class Specification(
     companion object {
         fun empty(): Specification = Specification(entries = emptyMap(), failures = emptyList())
 
-        operator fun invoke(rules: List<Rule>): Specification = invoke(rules, filesystem = FileSystems.getDefault())
+        fun tracked(
+            operation: OperationId,
+            rules: List<Rule>,
+            tracker: BackupTracker
+        ): Specification =
+            invoke(
+                rules = rules,
+                onMatchIncluded = { path -> tracker.entityDiscovered(operation, path) },
+                filesystem = FileSystems.getDefault()
+            )
 
-        operator fun invoke(rules: List<Rule>, filesystem: FileSystem): Specification {
-            val (matchers, spec) = rules.fold(emptyList<RuleMatcher>() to empty()) { (matchers, spec), rule ->
-                val (directory, matcher) = rule.asMatcher(withFilesystem = filesystem)
+        operator fun invoke(
+            rules: List<Rule>,
+            onMatchIncluded: (Path) -> Unit
+        ): Specification =
+            invoke(rules = rules, onMatchIncluded = onMatchIncluded, filesystem = FileSystems.getDefault())
 
-                try {
-                    val result = FilesWalker.filter(start = directory, matcher = matcher)
+        operator fun invoke(
+            rules: List<Rule>,
+            onMatchIncluded: (Path) -> Unit,
+            filesystem: FileSystem
+        ): Specification {
+            val (matchers, spec) = rules
+                .groupBy { it.directory }
+                .toList()
+                .fold(emptyList<RuleMatcher>() to empty()) { (collected, spec), (groupedDirectory, rules) ->
+                    val (directory, matchers) = rules.asMatchers(groupedDirectory, filesystem)
 
-                    val updated = if (result.isEmpty()) {
-                        spec.copy(
+                    try {
+                        val result = FilesWalker.filter(
+                            start = directory,
+                            matchers = matchers,
+                            onMatchIncluded = onMatchIncluded
+                        )
+
+                        val updated = if (result.isEmpty()) {
+                            spec.copy(
+                                failures = spec.failures + rules.map { rule ->
+                                    FailedMatch(
+                                        rule = rule,
+                                        path = directory,
+                                        failure = RuleMatchingFailure("Rule matched no files")
+                                    )
+                                }
+                            )
+                        } else {
+                            spec
+                                .withMatches(result.matches, directory)
+                                .withFailures(rules.first(), result.failures)
+                        }
+
+                        (collected + matchers.map { RuleMatcher(it.first, it.second) }) to updated
+                    } catch (e: Throwable) {
+                        val updated = spec.copy(
                             failures = spec.failures + FailedMatch(
-                                rule = rule,
+                                rule = rules.first(),
                                 path = directory,
-                                failure = RuleMatchingFailure("Rule matched no files")
+                                failure = e.nonFatal()
                             )
                         )
-                    } else {
-                        spec
-                            .withMatches(result.matches, rule, directory)
-                            .withFailures(result.failures, rule)
+
+                        (collected + matchers.map { RuleMatcher(it.first, it.second) }) to updated
                     }
-
-                    (matchers + RuleMatcher(rule, matcher)) to updated
-                } catch (e: Throwable) {
-                    val updated = spec.copy(
-                        failures = spec.failures + FailedMatch(
-                            rule = rule,
-                            path = directory,
-                            failure = e.nonFatal()
-                        )
-                    )
-
-                    (matchers + RuleMatcher(rule, matcher)) to updated
                 }
-            }
 
             return spec.dropExcludedFailures(matchers)
         }
 
-        private fun Rule.asMatcher(withFilesystem: FileSystem): Pair<Path, PathMatcher> {
-            val ruleDirectory = if (this.directory.endsWith(withFilesystem.separator)) {
-                this.directory
+        private fun List<Rule>.asMatchers(
+            groupedDirectory: String,
+            withFilesystem: FileSystem
+        ): Pair<Path, List<Pair<Rule, PathMatcher>>> {
+            val ruleDirectory = if (groupedDirectory.endsWith(withFilesystem.separator)) {
+                groupedDirectory
             } else {
-                "${this.directory}${withFilesystem.separator}"
+                "$groupedDirectory${withFilesystem.separator}"
             }
 
             val directory = withFilesystem.getPath(ruleDirectory)
 
-            val matcher = withFilesystem.getPathMatcher("glob:$ruleDirectory${this.pattern}")
+            val matchers = this.map { rule ->
+                rule to withFilesystem.getPathMatcher("glob:$ruleDirectory${rule.pattern}")
+            }
 
-            return directory to matcher
+            return directory to matchers
         }
 
-        private fun Specification.withMatches(matches: List<Path>, rule: Rule, directory: Path): Specification {
-            val updatedFiles = matches
-                .map { file ->
-                    val entry = when (val existing = this.entries[file]) {
+        private fun Specification.withMatches(matches: Map<Rule, List<Path>>, directory: Path): Specification {
+            val collected = this.entries.toMutableMap()
+
+            matches.toList()
+                .sortedBy { it.first.id }
+                .fold(emptyList<Pair<Rule, Path>>()) { coll, (rule, files) ->
+                    coll + files.map { file -> rule to file }
+                }
+                .forEach { (rule, file) ->
+                    val entry = when (val existing = collected[file]) {
                         null -> Entry(
                             file = file,
                             directory = directory,
@@ -135,13 +176,13 @@ data class Specification(
                         )
                     }
 
-                    file to entry
+                    collected[file] = entry
                 }
 
-            return this.copy(entries = this.entries + updatedFiles)
+            return this.copy(entries = collected.toMap())
         }
 
-        private fun Specification.withFailures(failures: Map<Path, Throwable>, rule: Rule): Specification =
+        private fun Specification.withFailures(rule: Rule, failures: Map<Path, Throwable>): Specification =
             failures.toList().fold(this) { current, (path, failure) ->
                 current.copy(
                     failures = current.failures + FailedMatch(

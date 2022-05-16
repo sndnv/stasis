@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class MockBackupTracker : BackupTracker {
     private val stats: Map<Statistic, AtomicInteger> = mapOf(
+        Statistic.EntityDiscovered to AtomicInteger(0),
         Statistic.SpecificationProcessed to AtomicInteger(0),
         Statistic.EntityExamined to AtomicInteger(0),
         Statistic.EntityCollected to AtomicInteger(0),
@@ -19,6 +20,10 @@ class MockBackupTracker : BackupTracker {
         Statistic.FailureEncountered to AtomicInteger(0),
         Statistic.Completed to AtomicInteger(0)
     )
+
+    override fun entityDiscovered(operation: OperationId, entity: Path) {
+        stats[Statistic.EntityDiscovered]?.getAndIncrement()
+    }
 
     override fun specificationProcessed(
         operation: OperationId,
@@ -64,6 +69,7 @@ class MockBackupTracker : BackupTracker {
         get() = stats.mapValues { it.value.get() }
 
     sealed class Statistic {
+        object EntityDiscovered : Statistic()
         object SpecificationProcessed : Statistic()
         object EntityExamined : Statistic()
         object EntityCollected : Statistic()

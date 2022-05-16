@@ -146,6 +146,7 @@ object Common {
     }.toAssignmentTypeString(context)
 
     fun String.toOperationStageString(context: Context): String = when (this) {
+        "discovery" -> context.getString(R.string.operation_stage_discovery)
         "specification" -> context.getString(R.string.operation_stage_specification)
         "examination" -> context.getString(R.string.operation_stage_examination)
         "collection" -> context.getString(R.string.operation_stage_collection)

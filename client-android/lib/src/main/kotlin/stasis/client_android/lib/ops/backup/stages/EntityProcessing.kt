@@ -57,7 +57,6 @@ interface EntityProcessing {
                 )
             }
 
-
     suspend fun processContentChanged(entity: SourceEntity): EntityMetadata {
         val file = expectFileMetadata(entity)
         val staged = stage(entity.path)

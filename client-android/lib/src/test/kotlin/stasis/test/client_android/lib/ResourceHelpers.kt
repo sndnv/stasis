@@ -257,6 +257,7 @@ object ResourceHelpers {
 
     data class RuleExpectation(
         val excluded: Int,
-        val included: Int
+        val included: Int,
+        val root: Int
     )
 }

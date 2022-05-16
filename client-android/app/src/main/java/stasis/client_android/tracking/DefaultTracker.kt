@@ -43,6 +43,16 @@ class DefaultTracker : TrackerView {
         }
 
     val backup: BackupTracker = object : BackupTracker {
+        override fun entityDiscovered(operation: OperationId, entity: Path) {
+            send(
+                event = TrackingEvent.OperationStepCompleted(
+                    operationId = operation,
+                    stage = "discovery",
+                    step = entity.toAbsolutePath().toString()
+                )
+            )
+        }
+
         override fun specificationProcessed(
             operation: OperationId,
             unmatched: List<Pair<Rule, Throwable>>

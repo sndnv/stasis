@@ -36,8 +36,7 @@
             android:maxLines="1"
             android:paddingStart="4dp"
             android:paddingEnd="4dp"
-            android:textAppearance="?attr/textAppearanceBody2"
-            android:visibility="gone" />
+            android:textAppearance="?attr/textAppearanceBody2" />
 
         <LinearLayout
             android:layout_width="match_parent"

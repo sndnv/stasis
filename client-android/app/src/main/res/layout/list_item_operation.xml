@@ -60,7 +60,6 @@
             android:id="@+id/operation_progress"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:indeterminate="true"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             app:layout_anchor="@id/operation_container"
