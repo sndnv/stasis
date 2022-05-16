@@ -202,7 +202,7 @@ object Specification {
           collected + (file -> entry)
         }
 
-      spec.copy(entries = spec.entries ++ updatedFiles)
+      spec.copy(entries = updatedFiles)
     }
 
     def withFailures(rule: IndexedRule, failures: Map[Path, Throwable]): Specification =
