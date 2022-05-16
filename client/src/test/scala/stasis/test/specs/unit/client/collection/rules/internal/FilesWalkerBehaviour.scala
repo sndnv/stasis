@@ -79,7 +79,7 @@ trait FilesWalkerBehaviour { _: UnitSpec with ResourceHelpers =>
       )
     }
 
-    it should "skipping excluded subtrees" in {
+    it should "support skipping excluded subtrees" in {
       val (filesystem, _) = createMockFileSystem(setup)
 
       val original = Rule.Original(line = "", lineNumber = 0)

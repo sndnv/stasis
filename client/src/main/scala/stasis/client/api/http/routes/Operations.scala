@@ -1,13 +1,12 @@
 package stasis.client.api.http.routes
 
-import java.nio.file.Path
-
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.sse.ServerSentEvent
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.unmarshalling.Unmarshaller
+import akka.stream.OverflowStrategy
 import play.api.libs.json.{Format, Json}
 import stasis.client.api.http.Context
 import stasis.client.api.http.Formats._
@@ -16,6 +15,7 @@ import stasis.client.ops.recovery.Recovery
 import stasis.shared.api.Formats._
 import stasis.shared.ops.Operation
 
+import java.nio.file.Path
 import scala.concurrent.duration._
 
 class Operations()(implicit context: Context) extends ApiRoutes {
@@ -159,10 +159,16 @@ class Operations()(implicit context: Context) extends ApiRoutes {
             }
           },
           path("follow") {
-            parameter("heartbeat".as[FiniteDuration].?(default = DefaultSseHeartbeatInterval)) { heartbeatInterval =>
+            parameters(
+              "heartbeat".as[FiniteDuration].?(default = DefaultSseHeartbeatInterval),
+              "throttle_events_per_interval".as[Int].?(default = DefaultSseThrottleEventsPerInterval),
+              "throttle_interval".as[FiniteDuration].?(default = DefaultSseThrottleInterval)
+            ) { case (heartbeatInterval, eventsPerInterval, eventsInterval) =>
               get {
                 val sseSource = context.tracker
                   .operationUpdates(operation)
+                  .buffer(size = 1, overflowStrategy = OverflowStrategy.dropHead)
+                  .throttle(elements = math.max(eventsPerInterval, DefaultSseThrottleEventsPerInterval), per = eventsInterval)
                   .map(update => Json.toJson(update).toString)
                   .map(update => ServerSentEvent.apply(update))
                   .keepAlive(maxIdle = heartbeatInterval, injectedElem = () => ServerSentEvent.heartbeat)
@@ -192,6 +198,8 @@ object Operations {
     new Operations()
 
   final val DefaultSseHeartbeatInterval: FiniteDuration = 3.seconds
+  final val DefaultSseThrottleEventsPerInterval: Int = 1
+  final val DefaultSseThrottleInterval: FiniteDuration = 2.seconds
 
   final case class OperationStarted(operation: Operation.Id)
 

@@ -1,8 +1,5 @@
 package stasis.test.specs.unit.client.api.http.routes
 
-import java.time.Instant
-import java.time.temporal.ChronoUnit
-
 import akka.NotUsed
 import akka.http.scaladsl.model.sse.ServerSentEvent
 import akka.http.scaladsl.model.{MediaTypes, StatusCodes, Uri}
@@ -22,6 +19,8 @@ import stasis.shared.ops.Operation.Id
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks._
 
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import scala.collection.immutable.Queue
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -221,7 +220,6 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
   they should "support retrieve progress stream for specific operations" in {
     import akka.http.scaladsl.unmarshalling.sse.EventStreamUnmarshalling._
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import play.api.libs.json.Json
     import stasis.shared.api.Formats.operationProgressFormat
 

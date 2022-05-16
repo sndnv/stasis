@@ -101,17 +101,16 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
   }
 
   it should "discover files (based on entities)" in {
-
-    val sourceFile1Metadata = "/ops/source-file-1".asTestResource
-    val sourceFile2Metadata = "/ops/source-file-2".asTestResource
+    val sourceFile1 = "/ops/source-file-1".asTestResource
+    val sourceFile2 = "/ops/source-file-2".asTestResource
 
     val mockTracker = new MockBackupTracker
 
     val stage = new EntityDiscovery {
       override protected def collector: EntityDiscovery.Collector = EntityDiscovery.Collector.WithEntities(
         entities = Seq(
-          sourceFile1Metadata,
-          sourceFile2Metadata,
+          sourceFile1,
+          sourceFile2,
           Paths.get("/ops/invalid-file")
         )
       )
