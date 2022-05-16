@@ -266,6 +266,7 @@ class CommonSpec {
     fun convertOperationStageStrings() {
         val context = ApplicationProvider.getApplicationContext<Context>()
 
+        assertThat("discovery".toOperationStageString(context), equalTo("Discovery"))
         assertThat("specification".toOperationStageString(context), equalTo("Specification"))
         assertThat("examination".toOperationStageString(context), equalTo("Examination"))
         assertThat("collection".toOperationStageString(context), equalTo("Collection"))

@@ -11,6 +11,7 @@ import stasis.client_android.lib.collection.rules.exceptions.RuleMatchingFailure
 import stasis.test.client_android.lib.ResourceHelpers.FileSystemSetup
 import stasis.test.client_android.lib.ResourceHelpers.RuleExpectation
 import stasis.test.client_android.lib.ResourceHelpers.createMockFileSystem
+import java.util.concurrent.atomic.AtomicInteger
 
 class SpecificationSpec : WordSpec({
     "A Specification" should {
@@ -27,15 +28,20 @@ class SpecificationSpec : WordSpec({
             val rule2 = Rule(id = 2, operation = Rule.Operation.Exclude, directory = "/work", pattern = "[a-z]")
             val rule3 = Rule(id = 3, operation = Rule.Operation.Exclude, directory = "/work", pattern = "{0|1}")
             val rule4 = Rule(id = 4, operation = Rule.Operation.Include, directory = "/work", pattern = "root-dir-?/*")
-            val rule5 = Rule(id = 5, operation = Rule.Operation.Include, directory = "/work/root", pattern = "**/child-*[a-c]/a")
-            val rule6 = Rule(id = 6, operation = Rule.Operation.Exclude, directory = "/work/root", pattern = "parent-0/**")
+            val rule5 = Rule(
+                id = 5,
+                operation = Rule.Operation.Include,
+                directory = "/work/root",
+                pattern = "**/child-*[a-c]/a"
+            )
+            val rule6 =
+                Rule(id = 6, operation = Rule.Operation.Exclude, directory = "/work/root", pattern = "parent-0/**")
             val rule7 = Rule(id = 7, operation = Rule.Operation.Exclude, directory = "/work/root", pattern = "**/q")
 
             val azRangeSize = ('a'..'z').toList().size
             val zeroOneListSize = listOf('0', '1').size
             val rootDirsFiles = objects.rootDirs * objects.filesPerDir
             val acChildFiles = objects.nestedParentDirs * ('a'..'c').toList().size * listOf('a').size
-            val parent0Files = objects.nestedChildDirsPerParent * objects.filesPerDir
             val qFiles = objects.nestedDirs * listOf('q').size
 
             val work = 1
@@ -45,26 +51,38 @@ class SpecificationSpec : WordSpec({
             val parent0Dirs = objects.nestedChildDirsPerParent
 
             val rules = listOf(
-                rule1 to RuleExpectation(excluded = 0, included = objects.filesPerDir + work),
-                rule2 to RuleExpectation(excluded = azRangeSize, included = 0),
-                rule3 to RuleExpectation(excluded = zeroOneListSize, included = 0),
-                rule4 to RuleExpectation(excluded = 0, included = rootDirsFiles + rootDirs + workRoot),
-                rule5 to RuleExpectation(excluded = 0, included = acChildFiles + acChildDirs + workRoot),
-                rule6 to RuleExpectation(excluded = parent0Files + parent0Dirs, included = 0),
-                rule7 to RuleExpectation(excluded = qFiles, included = 0)
+                rule1 to RuleExpectation(excluded = 0, included = objects.filesPerDir + work, root = work),
+                rule2 to RuleExpectation(excluded = azRangeSize, included = 0, root = 0),
+                rule3 to RuleExpectation(excluded = zeroOneListSize, included = 0, root = 0),
+                rule4 to RuleExpectation(
+                    excluded = 0,
+                    included = rootDirsFiles + rootDirs + workRoot,
+                    root = workRoot + rootDirs
+                ),
+                rule5 to RuleExpectation(
+                    excluded = 0,
+                    included = acChildFiles + acChildDirs + workRoot,
+                    root = workRoot + acChildDirs
+                ),
+                rule6 to RuleExpectation(excluded = parent0Dirs, included = 0, root = 0),
+                rule7 to RuleExpectation(excluded = qFiles, included = 0, root = 0)
             )
 
             rules.forEach {
                 val (rule, expectation) = it
+                val matchesIncluded = AtomicInteger(0)
 
                 withClue("Specification for rule [${rule.id}]: [${rule.operation} ${rule.directory} ${rule.pattern}]") {
-                    val spec = Specification(listOf(rule), filesystem)
+                    val spec = Specification(listOf(rule), { matchesIncluded.incrementAndGet() }, filesystem)
                     spec.excluded.size shouldBe (expectation.excluded)
                     spec.included.size shouldBe (expectation.included)
+
+                    // root directories are not included in the matches
+                    matchesIncluded.get() shouldBe (expectation.included - expectation.root)
                 }
             }
 
-            val spec = Specification(rules = rules.map { it.first }, filesystem = filesystem)
+            val spec = Specification(rules = rules.map { it.first }, onMatchIncluded = {}, filesystem = filesystem)
 
             spec.unmatched shouldBe (emptyList())
             spec.entries.size shouldBeLessThan (objects.total)
@@ -74,7 +92,7 @@ class SpecificationSpec : WordSpec({
 
             val includedUnderRootDirs = rootDirsFiles + rootDirs // rule 4
             val includedUnderChildDirs = acChildFiles + acChildDirs // rule 5
-            val excludedUnderParent0 = parent0Files + parent0Dirs // rule 6
+            val excludedUnderParent0 = parent0Dirs // rule 6
             val excludedQFiles = qFiles // rule 7
 
             val overlappingQFilesInParent0 = objects.nestedChildDirsPerParent
@@ -99,9 +117,10 @@ class SpecificationSpec : WordSpec({
             val (filesystem, _) = createMockFileSystem(setup = FileSystemSetup.empty())
 
             val rule1 = Rule(id = 1, operation = Rule.Operation.Include, directory = "/test/", pattern = "**")
-            val rule2 = Rule(id = 2, operation = Rule.Operation.Include, directory = "/work", pattern = "missing-test-file")
+            val rule2 =
+                Rule(id = 2, operation = Rule.Operation.Include, directory = "/work", pattern = "missing-test-file")
 
-            val spec = Specification(listOf(rule1, rule2), filesystem)
+            val spec = Specification(listOf(rule1, rule2), {}, filesystem)
 
             spec.unmatched.size shouldBe (2)
             val (actualRule1, e1) = spec.unmatched[0]
@@ -129,7 +148,7 @@ class SpecificationSpec : WordSpec({
 
             val rules = listOf(rule1, rule2, rule3, rule4, rule5)
 
-            val spec = Specification(rules = rules, filesystem = filesystem)
+            val spec = Specification(rules = rules, onMatchIncluded = {}, filesystem = filesystem)
 
             spec.unmatched shouldBe (emptyList())
             spec.entries.size shouldBe (objects.filesPerDir)
@@ -203,7 +222,7 @@ class SpecificationSpec : WordSpec({
         }
 
         "create an empty spec if no rules are provided" {
-            Specification(rules = emptyList()) shouldBe (Specification.empty())
+            Specification(rules = emptyList(), onMatchIncluded = {}) shouldBe (Specification.empty())
         }
 
         "handle matching failures" {
@@ -211,7 +230,7 @@ class SpecificationSpec : WordSpec({
 
             val rule1 = Rule(id = 1, operation = Rule.Operation.Include, directory = "/work/missing-dir", pattern = "*")
 
-            val spec = Specification(rules = listOf(rule1), filesystem = filesystem)
+            val spec = Specification(rules = listOf(rule1), onMatchIncluded = {}, filesystem = filesystem)
 
             spec.unmatched.size shouldBe (1)
 

@@ -7,10 +7,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.plus
-import stasis.client_android.lib.collection.BackupCollector
-import stasis.client_android.lib.collection.BackupMetadataCollector
-import stasis.client_android.lib.collection.DefaultBackupCollector
-import stasis.client_android.lib.collection.rules.Specification
+import stasis.client_android.lib.collection.rules.Rule
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
@@ -19,6 +16,7 @@ import stasis.client_android.lib.model.server.datasets.DatasetEntry
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.ops.backup.stages.EntityCollection
+import stasis.client_android.lib.ops.backup.stages.EntityDiscovery
 import stasis.client_android.lib.ops.backup.stages.EntityProcessing
 import stasis.client_android.lib.ops.backup.stages.MetadataCollection
 import stasis.client_android.lib.ops.backup.stages.MetadataPush
@@ -44,15 +42,8 @@ class Backup(
 
         val job = (withScope + supervisor).async {
             try {
-                when (val collector = descriptor.collector) {
-                    is Descriptor.Collector.WithRules -> providers.track.specificationProcessed(
-                        operation = id,
-                        unmatched = collector.spec.unmatched
-                    )
-                    else -> Unit // do nothing
-                }
-
-                stages.entityCollection(id)
+                stages.entityDiscovery(id)
+                    .let { flow -> stages.entityCollection(id, flow) }
                     .let { flow -> stages.entityProcessing(id, flow) }
                     .let { flow -> stages.metadataCollection(id, flow) }
                     .let { flow -> stages.metadataPush(id, flow) }
@@ -83,13 +74,13 @@ class Backup(
     private val jobRef: AtomicReference<Job> = AtomicReference()
 
     private val stages =
-        object : EntityCollection, EntityProcessing, MetadataCollection, MetadataPush {
+        object : EntityDiscovery, EntityCollection, EntityProcessing, MetadataCollection, MetadataPush {
+            override val collector: EntityDiscovery.Collector = descriptor.collector.asDiscoveryCollector()
             override val targetDataset: DatasetDefinition = descriptor.targetDataset
             override val latestEntry: DatasetEntry? = descriptor.latestEntry
             override val latestMetadata: DatasetMetadata? = descriptor.latestMetadata
             override val deviceSecret: DeviceSecret = descriptor.deviceSecret
             override val providers: Providers = this@Backup.providers
-            override val collector: BackupCollector = descriptor.toBackupCollector(providers = this@Backup.providers)
             override val maxPartSize: Long = descriptor.limits.maxPartSize
         }
 
@@ -101,23 +92,6 @@ class Backup(
         val collector: Collector,
         val limits: Limits
     ) {
-        fun toBackupCollector(providers: Providers): BackupCollector =
-            when (collector) {
-                is Collector.WithRules -> DefaultBackupCollector(
-                    entities = collector.spec.included,
-                    latestMetadata = latestMetadata,
-                    metadataCollector = BackupMetadataCollector.Default(checksum = providers.checksum),
-                    api = providers.clients.api
-                )
-
-                is Collector.WithEntities -> DefaultBackupCollector(
-                    entities = collector.entities,
-                    latestMetadata = latestMetadata,
-                    metadataCollector = BackupMetadataCollector.Default(checksum = providers.checksum),
-                    api = providers.clients.api
-                )
-            }
-
         companion object {
             suspend operator fun invoke(
                 definition: DatasetDefinitionId,
@@ -149,8 +123,17 @@ class Backup(
         }
 
         sealed class Collector {
-            data class WithRules(val spec: Specification) : Collector()
-            data class WithEntities(val entities: List<Path>) : Collector()
+            abstract fun asDiscoveryCollector(): EntityDiscovery.Collector
+
+            data class WithRules(val rules: List<Rule>) : Collector() {
+                override fun asDiscoveryCollector(): EntityDiscovery.Collector =
+                    EntityDiscovery.Collector.WithRules(rules)
+            }
+
+            data class WithEntities(val entities: List<Path>) : Collector() {
+                override fun asDiscoveryCollector(): EntityDiscovery.Collector =
+                    EntityDiscovery.Collector.WithEntities(entities)
+            }
         }
 
         data class Limits(

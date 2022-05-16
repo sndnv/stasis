@@ -73,7 +73,7 @@ class OperationListItemAdapter(
                 ),
                 StyledString(
                     placeholder = "%2\$s",
-                    content = progress.stages.values.map { it.steps.size }.sum().toString(),
+                    content = progress.stages.values.sumOf { it.steps.size }.toString(),
                     style = StyleSpan(Typeface.BOLD)
                 ),
                 StyledString(
@@ -85,8 +85,14 @@ class OperationListItemAdapter(
 
             when (val completed = progress.completed) {
                 null -> {
+                    val expectedSteps = progress.stages["discovery"]?.steps?.size ?: 0
+                    val actualSteps = progress.stages["processing"]?.steps?.size ?: 0
+
                     binding.operationCompleted.isVisible = false
                     binding.operationProgress.isVisible = true
+
+                    binding.operationProgress.max = expectedSteps
+                    binding.operationProgress.progress = actualSteps
                 }
                 else -> {
                     binding.operationCompleted.isVisible = true

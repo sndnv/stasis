@@ -1,5 +1,6 @@
 package stasis.client_android.lib.collection.rules.internal
 
+import stasis.client_android.lib.collection.rules.Rule
 import java.io.IOException
 import java.nio.file.FileVisitResult
 import java.nio.file.FileVisitor
@@ -10,34 +11,62 @@ import java.nio.file.attribute.BasicFileAttributes
 
 object FilesWalker {
     data class FilterResult(
-        val matches: List<Path>,
+        val matches: Map<Rule, List<Path>>,
         val failures: Map<Path, Throwable>
     ) {
         fun isEmpty(): Boolean = matches.isEmpty() && failures.isEmpty()
     }
 
-    fun filter(start: Path, matcher: PathMatcher): FilterResult {
-        val collected = mutableListOf<Path>()
+    fun filter(
+        start: Path,
+        matchers: List<Pair<Rule, PathMatcher>>,
+        onMatchIncluded: (Path) -> Unit
+    ): FilterResult {
+        val collected = mutableMapOf<Rule, MutableList<Path>>()
         val failures = mutableMapOf<Path, Throwable>()
+
+        val sortedMatchers = matchers.sortedBy { it.first.id }
 
         Files.walkFileTree(
             start,
             object : FileVisitor<Path> {
                 override fun preVisitDirectory(dir: Path?, attrs: BasicFileAttributes?): FileVisitResult {
+                    var lastMatchedRule: Rule? = null
+
                     dir?.let {
-                        if (matcher.matches(it)) {
-                            collected.add(it)
+                        sortedMatchers.forEach { (rule, matcher) ->
+                            if (matcher.matches(it)) {
+                                lastMatchedRule = rule
+                                collected.getOrPut(rule) { mutableListOf() }.add(it)
+                            }
                         }
                     }
 
-                    return FileVisitResult.CONTINUE
+                    return when (lastMatchedRule?.operation) {
+                        is Rule.Operation.Exclude -> FileVisitResult.SKIP_SUBTREE
+                        is Rule.Operation.Include -> {
+                            dir?.let { onMatchIncluded(it) }
+                            FileVisitResult.CONTINUE
+                        }
+                        else -> FileVisitResult.CONTINUE
+                    }
                 }
 
                 override fun visitFile(file: Path?, attrs: BasicFileAttributes?): FileVisitResult {
+                    var lastMatchedRule: Rule? = null
+
                     file?.let {
-                        if (matcher.matches(it)) {
-                            collected.add(it)
+                        sortedMatchers.forEach { (rule, matcher) ->
+                            if (matcher.matches(it)) {
+                                lastMatchedRule = rule
+                                collected.getOrPut(rule) { mutableListOf() }.add(it)
+                            }
                         }
+                    }
+
+                    when (lastMatchedRule?.operation) {
+                        is Rule.Operation.Include -> file?.let { onMatchIncluded(it) }
+                        else -> Unit // do nothing
                     }
 
                     return FileVisitResult.CONTINUE

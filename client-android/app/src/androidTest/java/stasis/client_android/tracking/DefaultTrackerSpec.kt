@@ -30,6 +30,10 @@ class DefaultTrackerSpec {
 
         assertThat(initialState, equalTo(TrackerView.State.empty()))
 
+        tracker.backup.entityDiscovered(operation, entity = file)
+        tracker.backup.entityDiscovered(operation, entity = file)
+        tracker.backup.entityDiscovered(operation, entity = file)
+        tracker.backup.entityDiscovered(operation, entity = file)
         tracker.backup.specificationProcessed(operation, unmatched = emptyList())
         tracker.backup.entityExamined(operation, entity = file, metadataChanged = true, contentChanged = false)
         tracker.backup.entityExamined(operation, entity = file, metadataChanged = true, contentChanged = true)
@@ -46,6 +50,9 @@ class DefaultTrackerSpec {
 
                 assertThat(completedState.completed != null, equalTo(true))
 
+                assertThat(completedState.stages.contains("discovery"), equalTo(true))
+                assertThat(completedState.stages["discovery"]!!.steps.size, equalTo(4))
+
                 assertThat(completedState.stages.contains("specification"), equalTo(true))
                 assertThat(completedState.stages["specification"]!!.steps.size, equalTo(1))
 
@@ -61,7 +68,7 @@ class DefaultTrackerSpec {
                 assertThat(completedState.stages.contains("metadata"), equalTo(true))
                 assertThat(completedState.stages["metadata"]!!.steps.size, equalTo(2))
 
-                assertThat(completedState.failures, equalTo(listOf("RuntimeException: test failure")))
+                assertThat(completedState.failures, equalTo(listOf("test failure")))
             }
         }
     }
@@ -104,9 +111,9 @@ class DefaultTrackerSpec {
                     completedState.failures.sorted(),
                     equalTo(
                         listOf(
-                            "RuleMatchingFailure: Rule [+ /tmp/1 *] failed with [Test failure]",
-                            "RuleMatchingFailure: Rule [+ /tmp/2 *] failed with [Test failure]",
-                            "RuleMatchingFailure: Rule [+ /tmp/3 *] failed with [Test failure]",
+                            "Rule [+ /tmp/1 *] failed with [Test failure]",
+                            "Rule [+ /tmp/2 *] failed with [Test failure]",
+                            "Rule [+ /tmp/3 *] failed with [Test failure]",
                         )
                     )
                 )
@@ -151,7 +158,7 @@ class DefaultTrackerSpec {
                 assertThat(completedState.stages.contains("metadata-applied"), equalTo(true))
                 assertThat(completedState.stages["metadata-applied"]!!.steps.size, equalTo(1))
 
-                assertThat(completedState.failures, equalTo(listOf("RuntimeException: test failure")))
+                assertThat(completedState.failures, equalTo(listOf("test failure")))
             }
         }
     }

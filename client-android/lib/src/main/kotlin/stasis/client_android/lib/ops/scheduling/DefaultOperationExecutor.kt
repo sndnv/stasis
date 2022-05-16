@@ -8,7 +8,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.withContext
 import stasis.client_android.lib.collection.rules.Rule
-import stasis.client_android.lib.collection.rules.Specification
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
@@ -46,11 +45,9 @@ class DefaultOperationExecutor(
         rules: List<Rule>,
         f: (Throwable?) -> Unit
     ): OperationId = asUniqueOperation(ofType = Operation.Type.Backup, callback = f) {
-        val collector = BackupOp.Descriptor.Collector.WithRules(spec = Specification(rules))
-
         val descriptor = BackupOp.Descriptor(
             definition = definition,
-            collector = collector,
+            collector = BackupOp.Descriptor.Collector.WithRules(rules),
             deviceSecret = deviceSecret(),
             limits = config.backup.limits,
             providers = backupProviders
