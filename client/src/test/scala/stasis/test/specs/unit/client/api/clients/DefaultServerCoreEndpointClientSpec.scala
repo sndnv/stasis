@@ -30,7 +30,8 @@ class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec {
       credentials = Future.successful(coreCredentials),
       self = Node.generateId(),
       context = None,
-      requestBufferSize = 100
+      requestBufferSize = 100,
+      maxChunkSize = 100
     )
 
     val crateId = Crate.generateId()
@@ -64,7 +65,8 @@ class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec {
       credentials = Future.successful(coreCredentials),
       self = Node.generateId(),
       context = None,
-      requestBufferSize = 100
+      requestBufferSize = 100,
+      maxChunkSize = 100
     )
 
     val crateId = Crate.generateId()
@@ -112,7 +114,8 @@ class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec {
       credentials = Future.successful(coreCredentials),
       self = Node.generateId(),
       context = Some(clientContext),
-      requestBufferSize = 100
+      requestBufferSize = 100,
+      maxChunkSize = 100
     )
 
     core.start(port = corePort, context = Some(endpointContext))

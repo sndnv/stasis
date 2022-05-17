@@ -4,6 +4,7 @@ import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import stasis.test.specs.unit.AsyncUnitSpec
 
 import java.util.concurrent.atomic.AtomicInteger
@@ -15,7 +16,7 @@ class OperatorsSpec extends AsyncUnitSpec {
     val counter = new AtomicInteger(0)
 
     val successfulSource = Source("part-0" :: "part-1" :: "part-2" :: Nil).map { bytes =>
-      counter.incrementAndGet()
+      val _ = counter.incrementAndGet()
       bytes
     }
 
@@ -47,13 +48,32 @@ class OperatorsSpec extends AsyncUnitSpec {
     val counter = new AtomicInteger(0)
 
     val source = Source("part-0" :: "part-1" :: "part-2" :: Nil).map { bytes =>
-      counter.incrementAndGet()
+      val _ = counter.incrementAndGet()
       bytes
     }
 
     source.ignored().map { _ =>
       counter.get() should be(3)
     }
+  }
+
+  they should "support repartitioning individual stream elements" in {
+    import stasis.core.streaming.Operators.ExtendedByteStringSource
+
+    val originalElements = new AtomicInteger(0)
+
+    val source = Source("abcdef" :: "g1234" :: "5678" :: "9" :: Nil).map { bytes =>
+      val _ = originalElements.incrementAndGet()
+      ByteString.fromString(bytes)
+    }
+
+    source
+      .repartition(withMaximumElementSize = 4)
+      .runFold(Seq.empty[ByteString])(_ :+ _)
+      .map { partitionedElements =>
+        originalElements.get() should be(4)
+        partitionedElements.map(_.utf8String) should be(Seq("abcd", "ef", "g123", "4", "5678", "9"))
+      }
   }
 
   private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(

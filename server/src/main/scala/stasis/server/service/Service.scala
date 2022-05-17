@@ -196,7 +196,8 @@ trait Service {
         underlying = clientJwtProvider
       ),
       context = clientEndpointContext,
-      requestBufferSize = rawConfig.getInt("clients.core.request-buffer-size")
+      requestBufferSize = rawConfig.getInt("clients.core.request-buffer-size"),
+      maxChunkSize = rawConfig.getInt("clients.core.max-chunk-size")
     )
 
     val coreGrpcEndpointClient = GrpcEndpointClient(
@@ -204,7 +205,8 @@ trait Service {
         nodeStore = corePersistence.nodes.view,
         underlying = clientJwtProvider
       ),
-      context = clientEndpointContext
+      context = clientEndpointContext,
+      maxChunkSize = rawConfig.getInt("clients.core.max-chunk-size")
     )
 
     val nodeProxy = NodeProxy(

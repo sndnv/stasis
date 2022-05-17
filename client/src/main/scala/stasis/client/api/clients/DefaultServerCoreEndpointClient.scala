@@ -17,14 +17,16 @@ class DefaultServerCoreEndpointClient(
   credentials: => Future[HttpCredentials],
   override val self: Node.Id,
   context: Option[EndpointContext],
-  requestBufferSize: Int
+  requestBufferSize: Int,
+  maxChunkSize: Int
 )(implicit system: ActorSystem[SpawnProtocol.Command])
     extends ServerCoreEndpointClient {
 
   private val client: HttpEndpointClient = HttpEndpointClient(
     credentials = (_: HttpEndpointAddress) => credentials,
     context = context,
-    requestBufferSize = requestBufferSize
+    requestBufferSize = requestBufferSize,
+    maxChunkSize = maxChunkSize
   )
 
   override val server: String = address.uri.toString
@@ -42,13 +44,15 @@ object DefaultServerCoreEndpointClient {
     credentials: => Future[HttpCredentials],
     self: Node.Id,
     context: Option[EndpointContext],
-    requestBufferSize: Int
+    requestBufferSize: Int,
+    maxChunkSize: Int
   )(implicit system: ActorSystem[SpawnProtocol.Command]): DefaultServerCoreEndpointClient =
     new DefaultServerCoreEndpointClient(
       address = address,
       credentials = credentials,
       self = self,
       context = context,
-      requestBufferSize = requestBufferSize
+      requestBufferSize = requestBufferSize,
+      maxChunkSize = maxChunkSize
     )
 }

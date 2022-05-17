@@ -26,7 +26,8 @@ object ApiClients {
           credentials = credentialsProvider.core,
           self = UUID.fromString(rawConfig.getString("server.core.node-id")),
           context = EndpointContext(rawConfig.getConfig("server.core.context")),
-          requestBufferSize = rawConfig.getInt("server.core.request-buffer-size")
+          requestBufferSize = rawConfig.getInt("server.core.request-buffer-size"),
+          maxChunkSize = rawConfig.getInt("server.core.max-chunk-size")
         )
 
         val apiClient: ServerApiEndpointClient = DefaultServerApiEndpointClient(
