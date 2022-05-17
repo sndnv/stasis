@@ -103,7 +103,8 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
         case address       => Future.failed(new IllegalArgumentException(s"Unexpected address provided: [$address]"))
       },
       context = trustedContext,
-      requestBufferSize = 100
+      requestBufferSize = 100,
+      maxChunkSize = 100
     )
 
     for {

@@ -17,7 +17,7 @@ import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.core.security.NodeCredentialsProvider
 import stasis.core.security.tls.EndpointContext
-import stasis.core.streaming.Operators.ExtendedSource
+import stasis.core.streaming.Operators.{ExtendedByteStringSource, ExtendedSource}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -26,7 +26,8 @@ import scala.util.control.NonFatal
 class HttpEndpointClient(
   override protected val credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
   override protected val context: Option[EndpointContext],
-  override protected val requestBufferSize: Int
+  override protected val requestBufferSize: Int,
+  private val maxChunkSize: Int
 )(implicit override protected val system: ActorSystem[SpawnProtocol.Command])
     extends EndpointClient[HttpEndpointAddress, HttpCredentials]
     with PoolClient {
@@ -57,7 +58,14 @@ class HttpEndpointClient(
       .flatMap { endpointCredentials =>
         for {
           reservation <- reserveStorage(address, manifest, endpointCredentials)
-          result <- pushCrate(address, manifest, content, reservation, endpointCredentials)
+          result <- pushCrate(
+            address = address,
+            manifest = manifest,
+            content = content,
+            reservation = reservation,
+            endpointCredentials = endpointCredentials,
+            maxChunkSize = maxChunkSize
+          )
         } yield {
           result
         }
@@ -86,7 +94,15 @@ class HttpEndpointClient(
       }
       .flatMap { endpointCredentials =>
         reserveStorage(address, manifest, endpointCredentials).map { reservation =>
-          val _ = pushCrate(address, manifest, content, reservation, endpointCredentials)
+          val _ = pushCrate(
+            address = address,
+            manifest = manifest,
+            content = content,
+            reservation = reservation,
+            endpointCredentials = endpointCredentials,
+            maxChunkSize = maxChunkSize
+          )
+
           sink.mapMaterializedValue(_ => Future.successful(Done))
         }
       }
@@ -178,7 +194,8 @@ class HttpEndpointClient(
     manifest: Manifest,
     content: Source[ByteString, NotUsed],
     reservation: CrateStorageReservation,
-    endpointCredentials: HttpCredentials
+    endpointCredentials: HttpCredentials,
+    maxChunkSize: Int
   ): Future[Done] =
     offer(
       request = HttpRequest(
@@ -186,7 +203,10 @@ class HttpEndpointClient(
         uri = address.uri
           .withPath(address.uri.path ?/ "crates" / manifest.crate.toString)
           .withQuery(Uri.Query("reservation" -> reservation.id.toString)),
-        entity = HttpEntity(ContentTypes.`application/octet-stream`, content)
+        entity = HttpEntity(
+          ContentTypes.`application/octet-stream`,
+          content.repartition(withMaximumElementSize = maxChunkSize)
+        )
       ).addCredentials(endpointCredentials)
     ).flatMap { response =>
       response.status match {
@@ -270,32 +290,38 @@ object HttpEndpointClient {
   def apply(
     credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
     context: Option[EndpointContext],
-    requestBufferSize: Int
+    requestBufferSize: Int,
+    maxChunkSize: Int
   )(implicit system: ActorSystem[SpawnProtocol.Command]): HttpEndpointClient =
     new HttpEndpointClient(
       credentials = credentials,
       context = context,
-      requestBufferSize = requestBufferSize
+      requestBufferSize = requestBufferSize,
+      maxChunkSize = maxChunkSize
     )
 
   def apply(
     credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
-    requestBufferSize: Int
+    requestBufferSize: Int,
+    maxChunkSize: Int
   )(implicit system: ActorSystem[SpawnProtocol.Command]): HttpEndpointClient =
     HttpEndpointClient(
       credentials = credentials,
       context = None,
-      requestBufferSize = requestBufferSize
+      requestBufferSize = requestBufferSize,
+      maxChunkSize = maxChunkSize
     )
 
   def apply(
     credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
     context: EndpointContext,
-    requestBufferSize: Int
+    requestBufferSize: Int,
+    maxChunkSize: Int
   )(implicit system: ActorSystem[SpawnProtocol.Command]): HttpEndpointClient =
     HttpEndpointClient(
       credentials = credentials,
       context = Some(context),
-      requestBufferSize = requestBufferSize
+      requestBufferSize = requestBufferSize,
+      maxChunkSize = maxChunkSize
     )
 }

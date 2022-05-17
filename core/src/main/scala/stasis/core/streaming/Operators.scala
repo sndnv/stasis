@@ -3,6 +3,7 @@ package stasis.core.streaming
 import akka.Done
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
+import akka.util.ByteString
 
 import scala.concurrent.{Future, Promise}
 
@@ -32,5 +33,17 @@ object Operators {
 
     def ignored()(implicit mat: Materializer): Future[Done] =
       source.runWith(Sink.ignore)
+  }
+
+  implicit class ExtendedByteStringSource[+Mat](source: Source[ByteString, Mat]) {
+    def repartition(withMaximumElementSize: Int): Source[ByteString, Mat] =
+      source
+        .mapConcat { current =>
+          if (current.size > withMaximumElementSize) {
+            current.grouped(size = withMaximumElementSize).toList
+          } else {
+            List(current)
+          }
+        }
   }
 }

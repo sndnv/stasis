@@ -1,7 +1,6 @@
 package stasis.core.networking.grpc
 
 import java.util.UUID
-
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.scaladsl.model.headers.HttpCredentials
@@ -16,13 +15,15 @@ import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.core.security.NodeCredentialsProvider
 import stasis.core.security.tls.EndpointContext
+import stasis.core.streaming.Operators.ExtendedByteStringSource
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 class GrpcEndpointClient(
   override protected val credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials],
-  context: Option[EndpointContext]
+  context: Option[EndpointContext],
+  maxChunkSize: Int
 )(implicit system: ActorSystem[SpawnProtocol.Command])
     extends EndpointClient[GrpcEndpointAddress, HttpCredentials] {
 
@@ -53,7 +54,15 @@ class GrpcEndpointClient(
 
         for {
           reservation <- reserveStorage(client, address, manifest, endpointCredentials)
-          result <- pushCrate(client, address, manifest, endpointCredentials, reservation, content)
+          result <- pushCrate(
+            client = client,
+            address = address,
+            manifest = manifest,
+            endpointCredentials = endpointCredentials,
+            reservation = reservation,
+            content = content,
+            maxChunkSize = maxChunkSize
+          )
         } yield {
           result
         }
@@ -87,7 +96,16 @@ class GrpcEndpointClient(
           .run()
 
         reserveStorage(client, address, manifest, endpointCredentials).map { reservation =>
-          val _ = pushCrate(client, address, manifest, endpointCredentials, reservation, content)
+          val _ = pushCrate(
+            client = client,
+            address = address,
+            manifest = manifest,
+            endpointCredentials = endpointCredentials,
+            reservation = reservation,
+            content = content,
+            maxChunkSize = maxChunkSize
+          )
+
           sink.mapMaterializedValue(_ => Future.successful(Done))
         }
       }
@@ -217,11 +235,16 @@ class GrpcEndpointClient(
     manifest: Manifest,
     endpointCredentials: HttpCredentials,
     reservation: CrateStorageReservation.Id,
-    content: Source[ByteString, NotUsed]
+    content: Source[ByteString, NotUsed],
+    maxChunkSize: Int
   ): Future[Done] =
     client
       .requestWithCredentials(_.push(), endpointCredentials)
-      .invoke(content.map(chunk => proto.PushChunk(Some(reservation), chunk)))
+      .invoke(
+        content
+          .repartition(withMaximumElementSize = maxChunkSize)
+          .map(chunk => proto.PushChunk(Some(reservation), chunk))
+      )
       .flatMap { response =>
         response.result.complete match {
           case Some(_) =>
@@ -243,27 +266,33 @@ class GrpcEndpointClient(
 object GrpcEndpointClient {
   def apply(
     credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials],
-    context: Option[EndpointContext]
+    context: Option[EndpointContext],
+    maxChunkSize: Int
   )(implicit system: ActorSystem[SpawnProtocol.Command]): GrpcEndpointClient =
     new GrpcEndpointClient(
       credentials = credentials,
-      context = context
-    )
-
-  def apply(
-    credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials]
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): GrpcEndpointClient =
-    GrpcEndpointClient(
-      credentials = credentials,
-      context = None
+      context = context,
+      maxChunkSize = maxChunkSize
     )
 
   def apply(
     credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials],
-    context: EndpointContext
+    maxChunkSize: Int
   )(implicit system: ActorSystem[SpawnProtocol.Command]): GrpcEndpointClient =
     GrpcEndpointClient(
       credentials = credentials,
-      context = Some(context)
+      context = None,
+      maxChunkSize = maxChunkSize
+    )
+
+  def apply(
+    credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials],
+    context: EndpointContext,
+    maxChunkSize: Int
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): GrpcEndpointClient =
+    GrpcEndpointClient(
+      credentials = credentials,
+      context = Some(context),
+      maxChunkSize = maxChunkSize
     )
 }

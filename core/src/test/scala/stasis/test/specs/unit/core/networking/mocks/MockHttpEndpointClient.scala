@@ -22,7 +22,8 @@ class MockHttpEndpointClient(
     extends HttpEndpointClient(
       (_: HttpEndpointAddress) => Future.failed(new RuntimeException("No credentials available")),
       context = None,
-      requestBufferSize = 100
+      requestBufferSize = 100,
+      maxChunkSize = 100
     ) {
 
   import MockHttpEndpointClient._

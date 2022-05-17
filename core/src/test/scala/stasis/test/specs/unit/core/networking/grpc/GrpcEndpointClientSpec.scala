@@ -29,7 +29,8 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpoint = new TestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
-      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
+      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret),
+      maxChunkSize = maxChunkSize
     )
 
     client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).map { _ =>
@@ -45,7 +46,8 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpoint = new TestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
-      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
+      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret),
+      maxChunkSize = maxChunkSize
     )
 
     client
@@ -75,7 +77,8 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     )
 
     val client = GrpcEndpointClient(
-      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
+      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret),
+      maxChunkSize = maxChunkSize
     )
 
     client
@@ -100,7 +103,8 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpoint = new TestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
-      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
+      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret),
+      maxChunkSize = maxChunkSize
     )
 
     client.sink(endpointAddress, testManifest).flatMap { sink =>
@@ -123,7 +127,8 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpoint = new TestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
-      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
+      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret),
+      maxChunkSize = maxChunkSize
     )
 
     client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).flatMap { _ =>
@@ -155,7 +160,8 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
-      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
+      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret),
+      maxChunkSize = maxChunkSize
     )
 
     client.pull(endpointAddress, Crate.generateId()).map { response =>
@@ -170,7 +176,8 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
-      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, "invalid-secret")
+      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, "invalid-secret"),
+      maxChunkSize = maxChunkSize
     )
 
     val crateId = Crate.generateId()
@@ -212,7 +219,8 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
           primaryEndpointAddress -> (primaryEndpointNode, primaryEndpointSecret),
           secondaryEndpointAddress -> (secondaryEndpointNode, secondaryEndpointSecret)
         )
-      )
+      ),
+      maxChunkSize = maxChunkSize
     )
 
     for {
@@ -230,7 +238,8 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
-      credentials = new MockGrpcNodeCredentialsProvider(Map.empty)
+      credentials = new MockGrpcNodeCredentialsProvider(Map.empty),
+      maxChunkSize = maxChunkSize
     )
 
     client
@@ -253,7 +262,8 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
-      credentials = new MockGrpcNodeCredentialsProvider(Map.empty)
+      credentials = new MockGrpcNodeCredentialsProvider(Map.empty),
+      maxChunkSize = maxChunkSize
     )
 
     client
@@ -276,7 +286,8 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
-      credentials = new MockGrpcNodeCredentialsProvider(Map.empty)
+      credentials = new MockGrpcNodeCredentialsProvider(Map.empty),
+      maxChunkSize = maxChunkSize
     )
 
     val crateId = Crate.generateId()
@@ -301,7 +312,8 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpoint = new TestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
-      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
+      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret),
+      maxChunkSize = maxChunkSize
     )
 
     client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).flatMap { _ =>
@@ -322,7 +334,8 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
-      credentials = new MockGrpcNodeCredentialsProvider(Map.empty)
+      credentials = new MockGrpcNodeCredentialsProvider(Map.empty),
+      maxChunkSize = maxChunkSize
     )
 
     val crateId = Crate.generateId()
@@ -347,7 +360,8 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
-      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret)
+      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret),
+      maxChunkSize = maxChunkSize
     )
 
     client.discard(endpointAddress, Crate.generateId()).map { result =>
@@ -362,7 +376,8 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val _ = new TestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
-      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, "invalid-secret")
+      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, "invalid-secret"),
+      maxChunkSize = maxChunkSize
     )
 
     client.discard(endpointAddress, Crate.generateId()).map { result =>
@@ -388,7 +403,8 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret),
-      context = clientContext
+      context = clientContext,
+      maxChunkSize = maxChunkSize
     )
 
     client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).map { _ =>
@@ -439,4 +455,6 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
   }
 
   private val ports: mutable.Queue[Int] = (20000 to 20100).to(mutable.Queue)
+
+  private val maxChunkSize = 100
 }
