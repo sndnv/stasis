@@ -6,8 +6,9 @@ import akka.util.Timeout
 import stasis.core.packaging.Crate
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.core.persistence.backends.memory.MemoryBackend
-import stasis.core.persistence.{CrateStorageReservation, StoreInitializationResult}
+import stasis.core.persistence.{CrateStorageReservation, Metrics, StoreInitializationResult}
 import stasis.core.routing.Node
+import stasis.core.telemetry.TelemetryContext
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -36,9 +37,15 @@ object ReservationStore {
   def apply(
     expiration: FiniteDuration,
     backend: KeyValueBackend[CrateStorageReservation.Id, CrateStorageReservation]
-  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): StoreInitializationResult[ReservationStore] = {
+  )(implicit
+    system: ActorSystem[SpawnProtocol.Command],
+    telemetry: TelemetryContext,
+    timeout: Timeout
+  ): StoreInitializationResult[ReservationStore] = {
     implicit val ec: ExecutionContext = system.executionContext
     val untypedSystem = system.classicSystem
+
+    val metrics = telemetry.metrics[Metrics.ReservationStore]
 
     val cache: KeyValueBackend[(Crate.Id, Node.Id), CrateStorageReservation.Id] =
       MemoryBackend[(Crate.Id, Node.Id), CrateStorageReservation.Id](
@@ -62,6 +69,7 @@ object ReservationStore {
           _ <- backend.put(reservation.id, reservation)
           _ <- cache.put((reservation.crate, reservation.target), reservation.id)
         } yield {
+          metrics.recordReservation(reservation)
           val _ = akka.pattern.after(expiration, untypedSystem.scheduler)(delete(reservation.crate, reservation.target))
           Done
         }

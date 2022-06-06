@@ -11,6 +11,7 @@ import akka.util.Timeout
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.security.tls.EndpointContext
+import stasis.core.telemetry.TelemetryContext
 import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}
 import stasis.shared.api.responses.{CreatedDatasetDefinition, CreatedDatasetEntry, Ping}
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
@@ -26,7 +27,7 @@ class MockServerApiEndpoint(
   expectedCredentials: BasicHttpCredentials,
   definitionsWithoutEntries: Seq[DatasetDefinition.Id] = Seq.empty,
   withDefinitions: Option[Seq[DatasetDefinition]] = None
-)(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout) {
+)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, timeout: Timeout) {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 

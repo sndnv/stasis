@@ -19,6 +19,7 @@ import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks._
 import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionException, Future}
@@ -338,6 +339,8 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DefaultOperationExecutorSpec"
   )
+
+  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   private implicit val parallelismConfig: ParallelismConfig = ParallelismConfig(value = 1)
 

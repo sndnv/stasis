@@ -12,6 +12,7 @@ import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.backends.StreamingBackend
 import stasis.core.persistence.backends.file.{ContainerBackend, FileBackend}
 import stasis.core.persistence.backends.memory.StreamingMemoryBackend
+import stasis.core.telemetry.TelemetryContext
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -129,9 +130,7 @@ object CrateStore {
 
   def fromDescriptor(
     descriptor: Descriptor
-  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): CrateStore = {
-    implicit val ec: ExecutionContext = system.executionContext
-
+  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, timeout: Timeout): CrateStore = {
     val backend = descriptor match {
       case Descriptor.ForStreamingMemoryBackend(maxSize, maxChunkSize, name) =>
         StreamingMemoryBackend(
@@ -148,9 +147,7 @@ object CrateStore {
         )
 
       case Descriptor.ForFileBackend(parentDirectory) =>
-        new FileBackend(
-          parentDirectory = parentDirectory
-        )
+        FileBackend(parentDirectory = parentDirectory)
     }
 
     new CrateStore(backend = backend)

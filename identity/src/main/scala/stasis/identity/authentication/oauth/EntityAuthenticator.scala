@@ -1,6 +1,6 @@
 package stasis.identity.authentication.oauth
 
-import akka.actor.ActorSystem
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import stasis.core.security.exceptions.AuthenticationFailure
 import stasis.identity.model.secrets.Secret
@@ -9,10 +9,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait EntityAuthenticator[T] {
 
-  protected implicit def system: ActorSystem
+  protected implicit def system: ActorSystem[SpawnProtocol.Command]
   protected implicit def config: Secret.Config
 
-  protected implicit val ec: ExecutionContext = system.dispatcher
+  protected implicit val ec: ExecutionContext = system.executionContext
 
   protected def getEntity(username: String): Future[T]
   protected def extractSecret: T => Secret
@@ -38,7 +38,7 @@ trait EntityAuthenticator[T] {
 
     akka.pattern.after(
       duration = config.authenticationDelay,
-      using = system.scheduler
+      using = system.classicSystem.scheduler
     )(result)
   }
 }

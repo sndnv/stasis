@@ -1,6 +1,7 @@
 package stasis.test.specs.unit.identity.authentication.oauth
 
-import akka.actor.ActorSystem
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import stasis.core.security.exceptions.AuthenticationFailure
 import stasis.identity.authentication.oauth.EntityAuthenticator
@@ -84,7 +85,10 @@ class EntityAuthenticatorSpec extends AsyncUnitSpec {
       }
   }
 
-  private implicit val system: ActorSystem = ActorSystem(name = "EntityAuthenticatorSpec")
+  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
+    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+    "EntityAuthenticatorSpec"
+  )
 
   private implicit val secretConfig: Secret.ClientConfig = Secret.ClientConfig(
     algorithm = "PBKDF2WithHmacSHA512",
@@ -95,7 +99,7 @@ class EntityAuthenticatorSpec extends AsyncUnitSpec {
   )
 
   private class MockEntityAuthenticator(secretConfig: Secret.Config, failingGet: Boolean = false)(implicit
-    protected val system: ActorSystem
+    protected val system: ActorSystem[SpawnProtocol.Command]
   ) extends EntityAuthenticator[String] {
 
     override implicit protected def config: Secret.Config = secretConfig

@@ -4,11 +4,13 @@ import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.routing.Node
+import stasis.core.telemetry.TelemetryContext
 import stasis.server.security.CurrentUser
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.model.mocks.MockDeviceStore
 
 import scala.util.control.NonFatal
@@ -278,6 +280,8 @@ class DeviceStoreSpec extends AsyncUnitSpec {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DeviceStoreSpec"
   )
+
+  private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 
   private val mockDevice = Device(
     id = Device.generateId(),

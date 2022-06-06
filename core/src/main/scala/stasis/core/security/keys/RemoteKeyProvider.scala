@@ -11,9 +11,11 @@ import org.jose4j.jwk.JsonWebKeySet
 import org.jose4j.jws.AlgorithmIdentifiers
 import org.slf4j.LoggerFactory
 import stasis.core.persistence.backends.memory.MemoryBackend
+import stasis.core.security.Metrics
 import stasis.core.security.exceptions.ProviderFailure
 import stasis.core.security.tls.EndpointContext
 import stasis.core.streaming.Operators.ExtendedSource
+import stasis.core.telemetry.TelemetryContext
 
 import java.security.Key
 import scala.concurrent.duration.FiniteDuration
@@ -29,12 +31,14 @@ final class RemoteKeyProvider(
   refreshRetryInterval: FiniteDuration,
   override val issuer: String,
   override val allowedAlgorithms: Seq[String]
-)(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout)
+)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, timeout: Timeout)
     extends KeyProvider {
 
   private implicit val ec: ExecutionContext = system.executionContext
 
   private val log = LoggerFactory.getLogger(this.getClass.getName)
+
+  private val metrics = telemetry.metrics[Metrics.KeyProvider]
 
   private val cache = MemoryBackend[String, Key](name = "jwk-provider-cache")
 
@@ -58,10 +62,14 @@ final class RemoteKeyProvider(
       .getRawJwks(jwksEndpoint, context)
       .flatMap(loadKeys)
       .map { _ =>
+        metrics.recordKeyRefresh(provider = jwksEndpoint, successful = true)
+
         scheduleKeysRefresh(delay = refreshInterval)
         Done
       }
       .recover { case NonFatal(e) =>
+        metrics.recordKeyRefresh(provider = jwksEndpoint, successful = false)
+
         log.error(
           "Failed to load keys from JWKs endpoint [{}]: [{} - {}]",
           jwksEndpoint,
@@ -114,7 +122,7 @@ object RemoteKeyProvider {
     refreshInterval: FiniteDuration,
     refreshRetryInterval: FiniteDuration,
     issuer: String
-  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): RemoteKeyProvider =
+  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, timeout: Timeout): RemoteKeyProvider =
     new RemoteKeyProvider(
       jwksEndpoint = jwksEndpoint,
       context = context,

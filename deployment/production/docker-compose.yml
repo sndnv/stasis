@@ -27,6 +27,30 @@ services:
     volumes:
       - ./local/postgres/server:/var/lib/postgresql/data
 
+  db-identity-exporter:
+    image: prometheuscommunity/postgres-exporter
+    depends_on:
+      - db-identity
+    restart: always
+    env_file:
+      - ./secrets/db-identity-exporter.env
+    environment:
+      DATA_SOURCE_URI: "db-identity:42000/stasis_identity?sslmode=disable"
+      PG_EXPORTER_WEB_LISTEN_ADDRESS: "0.0.0.0:42002"
+      PG_EXPORTER_AUTO_DISCOVER_DATABASES: "true"
+
+  db-server-exporter:
+    image: prometheuscommunity/postgres-exporter
+    depends_on:
+      - db-server
+    restart: always
+    env_file:
+      - ./secrets/db-server-exporter.env
+    environment:
+      DATA_SOURCE_URI: "db-server:42001/stasis_server?sslmode=disable"
+      PG_EXPORTER_WEB_LISTEN_ADDRESS: "0.0.0.0:42003"
+      PG_EXPORTER_AUTO_DISCOVER_DATABASES: "true"
+
   identity:
     image: stasis-identity:0.0.1-SNAPSHOT # replace with actual tag/version
     depends_on:
@@ -40,13 +64,15 @@ services:
     environment:
       STASIS_IDENTITY_LOGLEVEL: "INFO"
       STASIS_IDENTITY_REALM: "stasis.internal"
-      STASIS_IDENTITY_SERVICE_INTERFACE: "0.0.0.0"
-      STASIS_IDENTITY_SERVICE_PORT: "42100"
+      STASIS_IDENTITY_SERVICE_API_INTERFACE: "0.0.0.0"
+      STASIS_IDENTITY_SERVICE_API_PORT: "42100"
       STASIS_IDENTITY_SERVICE_INTERNAL_QUERY_TIMEOUT: "3 seconds"
-      STASIS_IDENTITY_SERVICE_CONTEXT_PROTOCOL: "TLS"
-      STASIS_IDENTITY_SERVICE_CONTEXT_KEYSTORE_PATH: "/opt/docker/secrets/identity.p12"
-      STASIS_IDENTITY_SERVICE_CONTEXT_KEYSTORE_TYPE: "PKCS12"
-      STASIS_IDENTITY_SERVICE_CONTEXT_KEYSTORE_PASSWORD: ""
+      STASIS_IDENTITY_SERVICE_API_CONTEXT_PROTOCOL: "TLS"
+      STASIS_IDENTITY_SERVICE_API_CONTEXT_KEYSTORE_PATH: "/opt/docker/secrets/identity.p12"
+      STASIS_IDENTITY_SERVICE_API_CONTEXT_KEYSTORE_TYPE: "PKCS12"
+      STASIS_IDENTITY_SERVICE_API_CONTEXT_KEYSTORE_PASSWORD: ""
+      STASIS_IDENTITY_SERVICE_TELEMETRY_METRICS_INTERFACE: "0.0.0.0"
+      STASIS_IDENTITY_SERVICE_TELEMETRY_METRICS_PORT: "42101"
       STASIS_IDENTITY_CODES_AUTHORIZATION_SIZE: "32"
       STASIS_IDENTITY_CODES_AUTHORIZATION_EXPIRATION: "1 minute"
       STASIS_IDENTITY_TOKENS_ACCESS_ISSUER: "identity.stasis.internal"
@@ -110,6 +136,8 @@ services:
       STASIS_SERVER_SERVICE_CORE_CONTEXT_KEYSTORE_PATH: "/opt/docker/secrets/server.p12"
       STASIS_SERVER_SERVICE_CORE_CONTEXT_KEYSTORE_TYPE: "PKCS12"
       STASIS_SERVER_SERVICE_CORE_CONTEXT_KEYSTORE_PASSWORD: ""
+      STASIS_SERVER_SERVICE_TELEMETRY_METRICS_INTERFACE: "0.0.0.0"
+      STASIS_SERVER_SERVICE_TELEMETRY_METRICS_PORT: "42303"
       STASIS_SERVER_CLIENTS_CORE_REQUEST_BUFFER_SIZE: "1000"
       STASIS_SERVER_CLIENTS_CORE_CONTEXT_ENABLED: "false"
       STASIS_SERVER_CLIENTS_CORE_CONTEXT_PROTOCOL: "TLS"
@@ -186,3 +214,25 @@ services:
       - ./local/server:/opt/server
       - ./secrets/server.p12:/opt/docker/secrets/server.p12
       - ./secrets/identity.p12:/opt/docker/secrets/identity.p12
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "42400:9090"
+    volumes:
+      - ./telemetry/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "42500:3000"
+    volumes:
+      - ./telemetry/grafana:/etc/grafana/provisioning
+      - ../grafana/dashboards/identity:/etc/grafana/provisioning/dashboards/identity
+      - ../grafana/dashboards/server:/etc/grafana/provisioning/dashboards/server
+      - ../grafana/dashboards/jvm:/etc/grafana/provisioning/dashboards/jvm
+      - ../grafana/dashboards/postgresql:/etc/grafana/provisioning/dashboards/postgresql
+
+volumes:
+  prometheus_data:

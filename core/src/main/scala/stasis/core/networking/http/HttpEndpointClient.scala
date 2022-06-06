@@ -39,49 +39,8 @@ class HttpEndpointClient(
 
   private val log = LoggerFactory.getLogger(this.getClass.getName)
 
-  override def push(
-    address: HttpEndpointAddress,
-    manifest: Manifest,
-    content: Source[ByteString, NotUsed]
-  ): Future[Done] = {
-    log.debugN("Pushing to endpoint [{}] content with manifest [{}]", address.uri, manifest)
-
-    credentials
-      .provide(address)
-      .recoverWith { case NonFatal(e) =>
-        val message =
-          s"Push to endpoint [${address.uri.toString()}] failed for crate [${manifest.crate.toString}];" +
-            s" unable to retrieve credentials: [${e.getMessage}]"
-        log.error(message)
-        Future.failed(CredentialsFailure(message))
-      }
-      .flatMap { endpointCredentials =>
-        for {
-          reservation <- reserveStorage(address, manifest, endpointCredentials)
-          result <- pushCrate(
-            address = address,
-            manifest = manifest,
-            content = content,
-            reservation = reservation,
-            endpointCredentials = endpointCredentials,
-            maxChunkSize = maxChunkSize
-          )
-        } yield {
-          result
-        }
-      }
-  }
-
-  override def sink(address: HttpEndpointAddress, manifest: Manifest): Future[Sink[ByteString, Future[Done]]] = {
+  override def push(address: HttpEndpointAddress, manifest: Manifest): Future[Sink[ByteString, Future[Done]]] = {
     log.debugN("Building content sink for endpoint [{}] with manifest [{}]", address.uri, manifest)
-
-    val (sink, content) = Source
-      .asSubscriber[ByteString]
-      .toMat(Sink.asPublisher[ByteString](fanout = false))(Keep.both)
-      .mapMaterializedValue { case (subscriber, publisher) =>
-        (Sink.fromSubscriber(subscriber), Source.fromPublisher(publisher))
-      }
-      .run()
 
     credentials
       .provide(address)
@@ -94,7 +53,15 @@ class HttpEndpointClient(
       }
       .flatMap { endpointCredentials =>
         reserveStorage(address, manifest, endpointCredentials).map { reservation =>
-          val _ = pushCrate(
+          val (sink, content) = Source
+            .asSubscriber[ByteString]
+            .toMat(Sink.asPublisher[ByteString](fanout = false))(Keep.both)
+            .mapMaterializedValue { case (subscriber, publisher) =>
+              (Sink.fromSubscriber(subscriber), Source.fromPublisher(publisher))
+            }
+            .run()
+
+          val result = pushCrate(
             address = address,
             manifest = manifest,
             content = content,
@@ -103,7 +70,7 @@ class HttpEndpointClient(
             maxChunkSize = maxChunkSize
           )
 
-          sink.mapMaterializedValue(_ => Future.successful(Done))
+          sink.mapMaterializedValue(_ => result)
         }
       }
   }

@@ -5,19 +5,23 @@ import akka.stream.scaladsl.Sink
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 import stasis.core.persistence.backends.EventLogBackend
+import stasis.core.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import scala.collection.immutable.Queue
 
 trait EventLogBackendBehaviour { _: AsyncUnitSpec with Eventually =>
   def eventLogBackend[B <: EventLogBackend[String, Queue[String]]](
-    createBackend: () => B
+    createBackend: TelemetryContext => B
   )(implicit system: ActorSystem[SpawnProtocol.Command]): Unit = {
 
     val testEvent = "test-event"
 
     it should "store events and update state" in {
-      val store = createBackend()
+      val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+      val store = createBackend(telemetry)
 
       for {
         eventsBefore <- store.getEvents
@@ -30,12 +34,16 @@ trait EventLogBackendBehaviour { _: AsyncUnitSpec with Eventually =>
         stateBefore should be(Queue.empty)
         eventsAfter should be(Queue(testEvent))
         stateAfter should be(Queue(testEvent))
+
+        telemetry.persistence.eventLog.event should be(1)
       }
     }
 
     it should "provide a state update stream" in {
+      val telemetry: MockTelemetryContext = MockTelemetryContext()
+
       eventually[Assertion] {
-        val store = createBackend()
+        val store = createBackend(telemetry)
 
         val updates = store.getStateStream.take(3).runWith(Sink.seq)
 
@@ -58,6 +66,8 @@ trait EventLogBackendBehaviour { _: AsyncUnitSpec with Eventually =>
             first should be(Queue(testEvent))
             second should be(Queue(testEvent, testEvent))
             third should be(Queue(testEvent, testEvent, testEvent))
+
+            telemetry.persistence.eventLog.event should be >= 3
 
           case other =>
             fail(s"Received unexpected result: [$other]")

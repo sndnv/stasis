@@ -10,6 +10,7 @@ import stasis.core.persistence.backends.StreamingBackend
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.exceptions.PersistenceFailure
+import stasis.core.telemetry.TelemetryContext
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration._
@@ -22,7 +23,7 @@ class MockCrateStore(
   retrieveDisabled: Boolean = false,
   retrieveEmpty: Boolean = false,
   discardDisabled: Boolean = false
-)(implicit system: ActorSystem[SpawnProtocol.Command])
+)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext)
     extends CrateStore(backend = null /* not needed here; backend is overridden in this class */ ) {
 
   import MockCrateStore._
@@ -86,10 +87,8 @@ class MockCrateStore(
     override def sink(key: StoreKey): Future[Sink[StoreValue, Future[Done]]] =
       Future.successful(
         Flow[ByteString]
-          .fold(ByteString.empty) { case (folded, chunk) =>
-            folded.concat(chunk)
-          }
-          .mapAsyncUnordered(parallelism = 1) { data =>
+          .fold(ByteString.empty)(_ concat _)
+          .mapAsync(parallelism = 1) { data =>
             stats(Statistic.PersistCompleted).incrementAndGet()
             store.put(key, data)
           }

@@ -5,10 +5,12 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
+import stasis.core.security.Metrics
 import stasis.core.security.exceptions.ProviderFailure
 import stasis.core.security.oauth.OAuthClient.{AccessTokenResponse, GrantType}
 import stasis.core.security.tls.EndpointContext
 import stasis.core.streaming.Operators.ExtendedSource
+import stasis.core.telemetry.TelemetryContext
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -19,10 +21,12 @@ class DefaultOAuthClient(
   clientSecret: String,
   useQueryString: Boolean,
   context: Option[EndpointContext]
-)(implicit system: ActorSystem[SpawnProtocol.Command])
+)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext)
     extends OAuthClient {
 
   private implicit val ec: ExecutionContext = system.executionContext
+
+  private val metrics = telemetry.metrics[Metrics.OAuthClient]
 
   private val credentials: BasicHttpCredentials = BasicHttpCredentials(username = client, password = clientSecret)
 
@@ -75,6 +79,10 @@ class DefaultOAuthClient(
       }
 
     processRequest(request)
+      .map { result =>
+        metrics.recordToken(endpoint = tokenEndpoint, grantType = grantParams("grant_type"))
+        result
+      }
   }
 
   private def processRequest(request: HttpRequest): Future[AccessTokenResponse] =
@@ -118,7 +126,7 @@ object DefaultOAuthClient {
     clientSecret: String,
     useQueryString: Boolean,
     context: Option[EndpointContext]
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): DefaultOAuthClient =
+  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext): DefaultOAuthClient =
     new DefaultOAuthClient(
       tokenEndpoint = tokenEndpoint,
       client = client,

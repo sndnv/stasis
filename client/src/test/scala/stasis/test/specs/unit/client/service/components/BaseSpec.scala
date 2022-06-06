@@ -9,6 +9,7 @@ import stasis.client.encryption.Aes
 import stasis.client.service.components.Base
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class BaseSpec extends AsyncUnitSpec with ResourceHelpers {
   "A Base component" should "create itself from config" in {
@@ -23,6 +24,8 @@ class BaseSpec extends AsyncUnitSpec with ResourceHelpers {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "BaseSpec"
   )
+
+  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 }

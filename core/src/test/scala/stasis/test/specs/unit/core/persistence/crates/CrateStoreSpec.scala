@@ -20,6 +20,7 @@ import stasis.core.routing.Node
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.Generators
 import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
@@ -63,6 +64,8 @@ class CrateStoreSpec extends AsyncUnitSpec with AsyncMockitoSugar with Eventuall
   }
 
   it should "create store from descriptors" in {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
     val memoryBackedStore = CrateStore.fromDescriptor(
       descriptor = CrateStore.Descriptor.ForStreamingMemoryBackend(
         maxSize = 1,
@@ -193,7 +196,7 @@ class CrateStoreSpec extends AsyncUnitSpec with AsyncMockitoSugar with Eventuall
   }
 
   it should "successfully persist crates" in {
-    val store = new TestCrateStore()
+    val store = createCrateStore()
 
     store.persist(testManifest, Source.single(testContent)).await
 
@@ -202,7 +205,7 @@ class CrateStoreSpec extends AsyncUnitSpec with AsyncMockitoSugar with Eventuall
   }
 
   it should "create stream sinks for persisting crates" in {
-    val store = new TestCrateStore()
+    val store = createCrateStore()
 
     val sink = store.sink(testManifest.crate).await
     Source.single(testContent).runWith(sink).await
@@ -212,7 +215,7 @@ class CrateStoreSpec extends AsyncUnitSpec with AsyncMockitoSugar with Eventuall
   }
 
   it should "successfully retrieve crates" in {
-    val store = new TestCrateStore()
+    val store = createCrateStore()
 
     store.backingCrateStore.persist(testManifest, Source.single(testContent)).await
 
@@ -235,7 +238,7 @@ class CrateStoreSpec extends AsyncUnitSpec with AsyncMockitoSugar with Eventuall
   }
 
   it should "successfully discard existing crates" in {
-    val store = new TestCrateStore()
+    val store = createCrateStore()
 
     store.backingCrateStore.persist(testManifest, Source.single(testContent)).await
 
@@ -248,7 +251,7 @@ class CrateStoreSpec extends AsyncUnitSpec with AsyncMockitoSugar with Eventuall
   }
 
   it should "fail to discard crates that do not exist" in {
-    val store = new TestCrateStore()
+    val store = createCrateStore()
 
     store.discard(testManifest.crate).await should be(false)
     store.backingCrateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(0)
@@ -256,8 +259,8 @@ class CrateStoreSpec extends AsyncUnitSpec with AsyncMockitoSugar with Eventuall
   }
 
   it should "report storage availability" in {
-    val availableStore = new TestCrateStore(isStorageAvailable = true)
-    val unavailableStore = new TestCrateStore(isStorageAvailable = false)
+    val availableStore = createCrateStore()
+    val unavailableStore = createCrateStore(isStorageAvailable = false)
 
     for {
       availableResult <- availableStore.canStore(Generators.generateRequest)
@@ -269,7 +272,8 @@ class CrateStoreSpec extends AsyncUnitSpec with AsyncMockitoSugar with Eventuall
   }
 
   it should "provide a read-only view" in {
-    val store = new TestCrateStore()
+
+    val store = createCrateStore()
     val storeView = store.view
 
     store.backingCrateStore.persist(testManifest, Source.single(testContent)).await
@@ -301,9 +305,21 @@ class CrateStoreSpec extends AsyncUnitSpec with AsyncMockitoSugar with Eventuall
     "CrateStoreSpec"
   )
 
+  private def createCrateStore(
+    isStorageAvailable: Boolean = true,
+    backingCrateStore: Option[MockCrateStore] = None
+  ): TestCrateStore = {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    new TestCrateStore(
+      isStorageAvailable = isStorageAvailable,
+      backingCrateStore = backingCrateStore.getOrElse(new MockCrateStore())
+    )
+  }
+
   private class TestCrateStore(
-    val isStorageAvailable: Boolean = true,
-    val backingCrateStore: MockCrateStore = new MockCrateStore()
+    val isStorageAvailable: Boolean,
+    val backingCrateStore: MockCrateStore
   ) extends CrateStore(
         backend = new StreamingBackend {
           override val info: String = "TestCrateStore"

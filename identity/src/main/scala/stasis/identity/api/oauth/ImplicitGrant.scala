@@ -1,8 +1,8 @@
 package stasis.identity.api.oauth
 
-import scala.concurrent.ExecutionContext
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 
-import akka.actor.ActorSystem
+import scala.concurrent.ExecutionContext
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.{StatusCodes, Uri}
 import akka.http.scaladsl.server.Directives._
@@ -19,12 +19,12 @@ import stasis.identity.model.{ResponseType, Seconds}
 class ImplicitGrant(
   override val config: Config,
   override val providers: Providers
-)(implicit system: ActorSystem)
+)(implicit system: ActorSystem[SpawnProtocol.Command])
     extends AuthDirectives {
   import ImplicitGrant._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  override implicit protected def ec: ExecutionContext = system.dispatcher
+  override implicit protected def ec: ExecutionContext = system.executionContext
   override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private val authorizationParams = parameters(
@@ -99,7 +99,7 @@ object ImplicitGrant {
   def apply(
     config: Config,
     providers: Providers
-  )(implicit system: ActorSystem): ImplicitGrant =
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): ImplicitGrant =
     new ImplicitGrant(
       config = config,
       providers = providers

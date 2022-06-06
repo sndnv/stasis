@@ -3,16 +3,18 @@ version: '3'
 services:
   identity:
     image: stasis-identity:dev-latest
-    user: root
     ports:
       - '10000:10000'
+      - '10001:10001'
     environment:
       - STASIS_IDENTITY_BOOTSTRAP_ENABLED=true
       - STASIS_IDENTITY_BOOTSTRAP_CONFIG=/opt/docker/config/identity-bootstrap.conf
       - STASIS_IDENTITY_LOGLEVEL=DEBUG
-      - STASIS_IDENTITY_SERVICE_INTERFACE=0.0.0.0
-      - STASIS_IDENTITY_SERVICE_PORT=10000
-      - STASIS_IDENTITY_SERVICE_CONTEXT_KEYSTORE_PATH=/opt/docker/certs/identity.p12
+      - STASIS_IDENTITY_SERVICE_API_INTERFACE=0.0.0.0
+      - STASIS_IDENTITY_SERVICE_API_PORT=10000
+      - STASIS_IDENTITY_SERVICE_API_CONTEXT_KEYSTORE_PATH=/opt/docker/certs/identity.p12
+      - STASIS_IDENTITY_SERVICE_TELEMETRY_METRICS_INTERFACE=0.0.0.0
+      - STASIS_IDENTITY_SERVICE_TELEMETRY_METRICS_PORT=10001
       - STASIS_IDENTITY_TOKENS_REFRESH_ALLOWED=true
       - STASIS_IDENTITY_TOKENS_ACCESS_EXPIRATION=90 minutes
       - STASIS_IDENTITY_UI_DEV_CLIENT_ID=a928359a-e2ee-4db7-9307-8071b2a1c756
@@ -57,11 +59,11 @@ services:
 
   server:
     image: stasis-server:dev-latest
-    user: root
     ports:
       - '20000:20000' # API
       - '20001:20001' # Core
       - '20002:20002' # Bootstrap
+      - '20003:20003' # Prometheus
     environment:
       - STASIS_SERVER_SERVICE_BOOTSTRAP_ENABLED=true
       - STASIS_SERVER_SERVICE_BOOTSTRAP_CONFIG=/opt/docker/config/server-bootstrap.conf
@@ -71,6 +73,8 @@ services:
       - STASIS_SERVER_SERVICE_API_CONTEXT_KEYSTORE_PATH=/opt/docker/certs/server.p12
       - STASIS_SERVER_SERVICE_CORE_INTERFACE=0.0.0.0
       - STASIS_SERVER_SERVICE_CORE_PORT=20001
+      - STASIS_SERVER_SERVICE_TELEMETRY_METRICS_INTERFACE=0.0.0.0
+      - STASIS_SERVER_SERVICE_TELEMETRY_METRICS_PORT=20003
       - STASIS_SERVER_CREDENTIALS_MANAGERS_IDENTITY_URL=https://identity:10000
       - STASIS_SERVER_CREDENTIALS_MANAGERS_IDENTITY_MANAGEMENT_USER=server-management-user
       - STASIS_SERVER_CREDENTIALS_MANAGERS_IDENTITY_MANAGEMENT_USER_PASSWORD=manage-passw0rd
@@ -167,3 +171,20 @@ services:
     image: stasis-client-cli:dev-latest
     command: tail -F /opt/docker/bin/logs/client.log
     tty: true
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "19090:9090"
+    volumes:
+      - ./config/prometheus:/etc/prometheus
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "13000:3000"
+    volumes:
+      - ./config/grafana:/etc/grafana/provisioning
+      - ../grafana/dashboards/identity:/etc/grafana/provisioning/dashboards/identity
+      - ../grafana/dashboards/server:/etc/grafana/provisioning/dashboards/server
+      - ../grafana/dashboards/jvm:/etc/grafana/provisioning/dashboards/jvm

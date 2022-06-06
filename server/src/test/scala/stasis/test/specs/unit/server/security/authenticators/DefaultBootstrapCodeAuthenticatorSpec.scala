@@ -4,8 +4,10 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
 import stasis.core.security.exceptions.AuthenticationFailure
+import stasis.core.telemetry.TelemetryContext
 import stasis.server.security.authenticators.DefaultBootstrapCodeAuthenticator
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.model.mocks.MockDeviceBootstrapCodeStore
 import stasis.test.specs.unit.shared.model.Generators
 
@@ -71,4 +73,6 @@ class DefaultBootstrapCodeAuthenticatorSpec extends AsyncUnitSpec {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DefaultBootstrapCodeAuthenticatorSpec"
   )
+
+  private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 }

@@ -1,7 +1,5 @@
 package stasis.test.specs.unit.core.networking.mocks
 
-import java.util.concurrent.atomic.AtomicInteger
-
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.util.{ByteString, Timeout}
@@ -9,7 +7,9 @@ import akka.{Done, NotUsed}
 import stasis.core.networking.http.{HttpEndpointAddress, HttpEndpointClient}
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.backends.memory.MemoryBackend
+import stasis.core.telemetry.TelemetryContext
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -18,7 +18,7 @@ class MockHttpEndpointClient(
   pullFailureAddresses: Map[HttpEndpointAddress, Exception] = Map.empty,
   discardFailureAddresses: Map[HttpEndpointAddress, Exception] = Map.empty,
   pullEmptyAddresses: Seq[HttpEndpointAddress] = Seq.empty
-)(implicit system: ActorSystem[SpawnProtocol.Command])
+)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext)
     extends HttpEndpointClient(
       (_: HttpEndpointAddress) => Future.failed(new RuntimeException("No credentials available")),
       context = None,
@@ -43,28 +43,7 @@ class MockHttpEndpointClient(
     Statistic.DiscardFailed -> new AtomicInteger(0)
   )
 
-  override def push(
-    address: HttpEndpointAddress,
-    manifest: Manifest,
-    content: Source[ByteString, NotUsed]
-  ): Future[Done] =
-    pushFailureAddresses.get(address) match {
-      case Some(pushFailure) =>
-        stats(Statistic.PushFailed).incrementAndGet()
-        Future.failed(pushFailure)
-
-      case None =>
-        stats(Statistic.PushCompleted).incrementAndGet()
-        content
-          .runFold(ByteString.empty) { case (folded, chunk) =>
-            folded.concat(chunk)
-          }
-          .flatMap { data =>
-            store.put((address, manifest.crate), (data, manifest.copies))
-          }
-    }
-
-  override def sink(address: HttpEndpointAddress, manifest: Manifest): Future[Sink[ByteString, Future[Done]]] =
+  override def push(address: HttpEndpointAddress, manifest: Manifest): Future[Sink[ByteString, Future[Done]]] =
     pushFailureAddresses.get(address) match {
       case Some(pushFailure) =>
         stats(Statistic.PushFailed).incrementAndGet()

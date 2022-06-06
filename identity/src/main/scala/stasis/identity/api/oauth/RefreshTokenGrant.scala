@@ -1,6 +1,6 @@
 package stasis.identity.api.oauth
 
-import akka.actor.ActorSystem
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
@@ -18,12 +18,12 @@ import scala.concurrent.ExecutionContext
 class RefreshTokenGrant(
   override val config: Config,
   override val providers: Providers
-)(implicit system: ActorSystem)
+)(implicit system: ActorSystem[SpawnProtocol.Command])
     extends AuthDirectives {
   import RefreshTokenGrant._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  override implicit protected def ec: ExecutionContext = system.dispatcher
+  override implicit protected def ec: ExecutionContext = system.executionContext
   override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private val tokenParams = parameters(
@@ -84,7 +84,7 @@ object RefreshTokenGrant {
   def apply(
     config: Config,
     providers: Providers
-  )(implicit system: ActorSystem): RefreshTokenGrant =
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): RefreshTokenGrant =
     new RefreshTokenGrant(
       config = config,
       providers = providers

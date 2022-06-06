@@ -10,6 +10,7 @@ import stasis.identity.model.secrets.Secret
 import stasis.identity.service.Bootstrap.Entities
 import stasis.identity.service.{Bootstrap, Persistence}
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.identity.model.Generators
 
 import scala.concurrent.duration._
@@ -146,6 +147,8 @@ class BootstrapSpec extends AsyncUnitSpec {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "BootstrapSpec"
   )
+
+  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 

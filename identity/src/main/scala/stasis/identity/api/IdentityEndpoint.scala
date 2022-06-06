@@ -1,6 +1,6 @@
 package stasis.identity.api
 
-import akka.actor.ActorSystem
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
@@ -12,6 +12,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.api.MessageResponse
 import stasis.core.api.directives._
 import stasis.core.security.tls.EndpointContext
+import stasis.core.telemetry.TelemetryContext
 import stasis.identity.api.manage.setup.{Config => ManageConfig, Providers => ManageProviders}
 import stasis.identity.api.oauth.setup.{Config => OAuthConfig, Providers => OAuthProviders}
 
@@ -24,7 +25,7 @@ class IdentityEndpoint(
   oauthProviders: OAuthProviders,
   manageConfig: ManageConfig,
   manageProviders: ManageProviders
-)(implicit system: ActorSystem)
+)(implicit system: ActorSystem[SpawnProtocol.Command], override val telemetry: TelemetryContext)
     extends LoggingDirectives
     with EntityDiscardingDirectives {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
@@ -132,7 +133,7 @@ object IdentityEndpoint {
     oauthProviders: OAuthProviders,
     manageConfig: ManageConfig,
     manageProviders: ManageProviders
-  )(implicit system: ActorSystem): IdentityEndpoint =
+  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext): IdentityEndpoint =
     new IdentityEndpoint(
       keys = keys,
       oauthConfig = oauthConfig,

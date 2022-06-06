@@ -5,6 +5,7 @@ import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.identity.model.apis.{Api, ApiStore}
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.identity.model.Generators
 
 class ApiStoreSpec extends AsyncUnitSpec {
@@ -62,6 +63,8 @@ class ApiStoreSpec extends AsyncUnitSpec {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "ApiStoreSpec"
   )
+
+  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   private def createStore() =
     ApiStore(

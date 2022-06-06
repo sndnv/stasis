@@ -7,6 +7,7 @@ import stasis.core.persistence.CrateStorageReservation
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.routing.Node
+import stasis.core.telemetry.TelemetryContext
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -14,7 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class MockReservationStore(
   missingReservations: Seq[CrateStorageReservation] = Seq.empty,
   ignoreMissingReservations: Boolean = true
-)(implicit system: ActorSystem[SpawnProtocol.Command])
+)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext)
     extends ReservationStore {
   private type StoreKey = CrateStorageReservation.Id
   private type StoreValue = CrateStorageReservation

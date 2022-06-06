@@ -8,13 +8,17 @@ import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.persistence.{CrateStorageReservation, StoreInitializationResult}
 import stasis.core.routing.Node
+import stasis.core.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class ReservationStoreSpec extends AsyncUnitSpec {
   "A ReservationStore" should "add, retrieve and delete reservations" in {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
     val store = createStore()
 
     val expectedReservation = CrateStorageReservation(
@@ -38,10 +42,14 @@ class ReservationStoreSpec extends AsyncUnitSpec {
       someReservations should be(Map(expectedReservation.id -> expectedReservation))
       missingReservation should be(None)
       noReservations should be(Map.empty)
+
+      telemetry.persistence.reservation.reservation should be(1)
     }
   }
 
   it should "check for existing reservations" in {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
     val store = createStore()
 
     val expectedReservation = CrateStorageReservation(
@@ -62,10 +70,14 @@ class ReservationStoreSpec extends AsyncUnitSpec {
       reservationExists should be(true)
       reservationMissingTarget should be(false)
       reservationMissingCrate should be(false)
+
+      telemetry.persistence.reservation.reservation should be(1)
     }
   }
 
   it should "expire old reservations" in {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
     val expiration = 100.millis
     val store = createStore(reservationExpiration = expiration)
 
@@ -86,10 +98,14 @@ class ReservationStoreSpec extends AsyncUnitSpec {
     } yield {
       actualReservation should be(Some(expectedReservation))
       missingReservation should be(None)
+
+      telemetry.persistence.reservation.reservation should be(1)
     }
   }
 
   it should "provide a read-only view" in {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
     val store = createStore()
     val storeView = store.view
 
@@ -118,6 +134,9 @@ class ReservationStoreSpec extends AsyncUnitSpec {
       noReservations should be(Map.empty)
       reservationExists should be(true)
       reservationMissing should be(false)
+
+      telemetry.persistence.reservation.reservation should be(1)
+
       a[ClassCastException] should be thrownBy { val _ = storeView.asInstanceOf[ReservationStore] }
     }
   }
@@ -127,7 +146,9 @@ class ReservationStoreSpec extends AsyncUnitSpec {
     "ReservationStoreSpec"
   )
 
-  private def createStore(reservationExpiration: FiniteDuration = 3.seconds): ReservationStore = {
+  private def createStore(
+    reservationExpiration: FiniteDuration = 3.seconds
+  )(implicit telemetry: TelemetryContext): ReservationStore = {
     val StoreInitializationResult(store, init) = ReservationStore(
       expiration = reservationExpiration,
       backend = MemoryBackend[CrateStorageReservation.Id, CrateStorageReservation](

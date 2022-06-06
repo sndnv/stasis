@@ -12,6 +12,7 @@ import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.ops.exceptions.OperationExecutionFailure
 import stasis.client.ops.{backup, recovery, ParallelismConfig}
 import stasis.core.persistence.backends.memory.MemoryBackend
+import stasis.core.telemetry.TelemetryContext
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.ops.Operation
 
@@ -23,6 +24,7 @@ class DefaultOperationExecutor(
   secret: DeviceSecret
 )(implicit
   system: ActorSystem[SpawnProtocol.Command],
+  telemetry: TelemetryContext,
   parallelismConfig: ParallelismConfig,
   timeout: Timeout,
   backupProviders: backup.Providers,

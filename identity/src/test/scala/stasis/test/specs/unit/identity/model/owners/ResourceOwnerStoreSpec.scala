@@ -5,6 +5,7 @@ import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore}
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.identity.model.Generators
 
 class ResourceOwnerStoreSpec extends AsyncUnitSpec {
@@ -62,6 +63,8 @@ class ResourceOwnerStoreSpec extends AsyncUnitSpec {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "ResourceOwnerStoreSpec"
   )
+
+  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   private def createStore() =
     ResourceOwnerStore(

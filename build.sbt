@@ -8,16 +8,42 @@ homepage := Some(url("https://github.com/sndnv/stasis"))
 
 ThisBuild / scalaVersion := "2.13.8"
 
-lazy val akkaVersion         = "2.6.19"
-lazy val akkaHttpVersion     = "10.2.9"
-lazy val akkaHttpCorsVersion = "1.1.3"
-lazy val geodeVersion        = "1.14.4"
-lazy val slickVersion        = "3.3.3"
-lazy val h2Version           = "2.1.212"
-lazy val postgresVersion     = "42.3.5"
-lazy val mariadbVersion      = "3.0.4"
-lazy val sqliteVersion       = "3.36.0.3"
-lazy val logbackVersion      = "1.2.11"
+lazy val versions = new {
+  // akka
+  val akka         = "2.6.19"
+  val akkaHttp     = "10.2.9"
+  val akkaHttpCors = "1.1.3"
+  val akkaJson     = "1.39.2"
+
+  // persistence
+  val geode    = "1.14.4"
+  val slick    = "3.3.3"
+  val postgres = "42.3.6"
+  val mariadb  = "3.0.5"
+  val sqlite   = "3.36.0.3"
+  val h2       = "2.1.212"
+
+  // telemetry
+  val openTelemetry           = "1.14.0"
+  val openTelemetryPrometheus = "1.14.0-alpha"
+  val prometheus              = "0.15.0"
+
+  // testing
+  val scalaCheck    = "1.16.0"
+  val scalaTest     = "3.2.12"
+  val wiremock      = "2.33.2"
+  val mockito       = "1.17.7"
+  val mockitoInline = "4.6.1"
+  val jimfs         = "1.2"
+
+  // misc
+  val playJson = "2.9.2"
+  val jose4j   = "0.7.12"
+  val hkdf     = "1.1.0"
+  val appdirs  = "1.2.1"
+  val scopt    = "4.0.1"
+  val logback  = "1.2.11"
+}
 
 lazy val jdkDockerImage = "openjdk:11"
 
@@ -26,14 +52,17 @@ lazy val server = (project in file("./server"))
   .settings(dockerSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.typesafe.akka"  %% "akka-slf4j"          % akkaVersion,
-      "ch.qos.logback"      % "logback-classic"     % logbackVersion,
-      "com.typesafe.slick" %% "slick"               % slickVersion,
-      "com.h2database"      % "h2"                  % h2Version,
-      "org.postgresql"      % "postgresql"          % postgresVersion,
-      "org.mariadb.jdbc"    % "mariadb-java-client" % mariadbVersion,
-      "org.xerial"          % "sqlite-jdbc"         % sqliteVersion,
-      "ch.megard"          %% "akka-http-cors"      % akkaHttpCorsVersion
+      "com.typesafe.akka"  %% "akka-slf4j"                        % versions.akka,
+      "ch.qos.logback"      % "logback-classic"                   % versions.logback,
+      "com.typesafe.slick" %% "slick"                             % versions.slick,
+      "com.h2database"      % "h2"                                % versions.h2,
+      "org.postgresql"      % "postgresql"                        % versions.postgres,
+      "org.mariadb.jdbc"    % "mariadb-java-client"               % versions.mariadb,
+      "org.xerial"          % "sqlite-jdbc"                       % versions.sqlite,
+      "ch.megard"          %% "akka-http-cors"                    % versions.akkaHttpCors,
+      "io.opentelemetry"    % "opentelemetry-sdk"                 % versions.openTelemetry,
+      "io.opentelemetry"    % "opentelemetry-exporter-prometheus" % versions.openTelemetryPrometheus,
+      "io.prometheus"       % "simpleclient_hotspot"              % versions.prometheus
     ),
     dockerBaseImage := jdkDockerImage
   )
@@ -45,13 +74,13 @@ lazy val client = (project in file("./client"))
   .settings(dockerSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "at.favre.lib"       % "hkdf"              % "1.1.0",
-      "net.harawata"       % "appdirs"           % "1.2.1",
-      "com.typesafe.akka" %% "akka-slf4j"        % akkaVersion,
-      "com.typesafe.akka" %% "akka-http-caching" % akkaHttpVersion,
-      "ch.qos.logback"     % "logback-classic"   % logbackVersion,
-      "com.github.scopt"  %% "scopt"             % "4.0.1",
-      "com.google.jimfs"   % "jimfs"             % "1.2" % Test
+      "at.favre.lib"       % "hkdf"              % versions.hkdf,
+      "net.harawata"       % "appdirs"           % versions.appdirs,
+      "com.typesafe.akka" %% "akka-slf4j"        % versions.akka,
+      "com.typesafe.akka" %% "akka-http-caching" % versions.akkaHttp,
+      "ch.qos.logback"     % "logback-classic"   % versions.logback,
+      "com.github.scopt"  %% "scopt"             % versions.scopt,
+      "com.google.jimfs"   % "jimfs"             % versions.jimfs % Test
     ),
     dockerBaseImage          := jdkDockerImage,
     Compile / PB.targets     := Seq(
@@ -67,14 +96,17 @@ lazy val identity = (project in file("./identity"))
   .settings(dockerSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.typesafe.akka"  %% "akka-slf4j"          % akkaVersion,
-      "ch.qos.logback"      % "logback-classic"     % logbackVersion,
-      "com.typesafe.slick" %% "slick"               % slickVersion,
-      "com.h2database"      % "h2"                  % h2Version,
-      "org.postgresql"      % "postgresql"          % postgresVersion,
-      "org.mariadb.jdbc"    % "mariadb-java-client" % mariadbVersion,
-      "org.xerial"          % "sqlite-jdbc"         % sqliteVersion,
-      "ch.megard"          %% "akka-http-cors"      % akkaHttpCorsVersion
+      "com.typesafe.akka"  %% "akka-slf4j"                        % versions.akka,
+      "ch.qos.logback"      % "logback-classic"                   % versions.logback,
+      "com.typesafe.slick" %% "slick"                             % versions.slick,
+      "com.h2database"      % "h2"                                % versions.h2,
+      "org.postgresql"      % "postgresql"                        % versions.postgres,
+      "org.mariadb.jdbc"    % "mariadb-java-client"               % versions.mariadb,
+      "org.xerial"          % "sqlite-jdbc"                       % versions.sqlite,
+      "ch.megard"          %% "akka-http-cors"                    % versions.akkaHttpCors,
+      "io.opentelemetry"    % "opentelemetry-sdk"                 % versions.openTelemetry,
+      "io.opentelemetry"    % "opentelemetry-exporter-prometheus" % versions.openTelemetryPrometheus,
+      "io.prometheus"       % "simpleclient_hotspot"              % versions.prometheus
     ),
     dockerBaseImage := jdkDockerImage
   )
@@ -89,28 +121,32 @@ lazy val core = (project in file("./core"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.typesafe.akka"     %% "akka-actor"              % akkaVersion,
-      "com.typesafe.akka"     %% "akka-actor-typed"        % akkaVersion,
-      "com.typesafe.akka"     %% "akka-stream"             % akkaVersion,
-      "com.typesafe.akka"     %% "akka-discovery"          % akkaVersion,
-      "com.typesafe.akka"     %% "akka-http"               % akkaHttpVersion,
-      "com.typesafe.akka"     %% "akka-http-core"          % akkaHttpVersion,
-      "com.typesafe.akka"     %% "akka-http2-support"      % akkaHttpVersion,
-      "com.typesafe.play"     %% "play-json"               % "2.9.2",
-      "de.heikoseeberger"     %% "akka-http-play-json"     % "1.39.2",
-      "org.bitbucket.b_c"      % "jose4j"                  % "0.7.12",
-      "org.apache.geode"       % "geode-core"              % geodeVersion    % Provided,
-      "com.typesafe.slick"    %% "slick"                   % slickVersion    % Provided,
-      "com.h2database"         % "h2"                      % h2Version       % Test,
-      "org.scalacheck"        %% "scalacheck"              % "1.16.0"        % Test,
-      "org.scalatest"         %% "scalatest"               % "3.2.12"        % Test,
-      "com.typesafe.akka"     %% "akka-testkit"            % akkaVersion     % Test,
-      "com.typesafe.akka"     %% "akka-stream-testkit"     % akkaVersion     % Test,
-      "com.typesafe.akka"     %% "akka-http-testkit"       % akkaHttpVersion % Test,
-      "com.github.tomakehurst" % "wiremock-jre8"           % "2.33.2"        % Test,
-      "org.mockito"           %% "mockito-scala"           % "1.17.5"        % Test,
-      "org.mockito"           %% "mockito-scala-scalatest" % "1.17.5"        % Test,
-      "org.mockito"            % "mockito-inline"          % "4.5.1"         % Test
+      "com.typesafe.akka"     %% "akka-actor"                        % versions.akka,
+      "com.typesafe.akka"     %% "akka-actor-typed"                  % versions.akka,
+      "com.typesafe.akka"     %% "akka-stream"                       % versions.akka,
+      "com.typesafe.akka"     %% "akka-discovery"                    % versions.akka,
+      "com.typesafe.akka"     %% "akka-http"                         % versions.akkaHttp,
+      "com.typesafe.akka"     %% "akka-http-core"                    % versions.akkaHttp,
+      "com.typesafe.akka"     %% "akka-http2-support"                % versions.akkaHttp,
+      "com.typesafe.play"     %% "play-json"                         % versions.playJson,
+      "de.heikoseeberger"     %% "akka-http-play-json"               % versions.akkaJson,
+      "org.bitbucket.b_c"      % "jose4j"                            % versions.jose4j,
+      "io.opentelemetry"       % "opentelemetry-api"                 % versions.openTelemetry,
+      "io.opentelemetry"       % "opentelemetry-sdk"                 % versions.openTelemetry           % Provided,
+      "io.opentelemetry"       % "opentelemetry-exporter-prometheus" % versions.openTelemetryPrometheus % Provided,
+      "io.prometheus"          % "simpleclient"                      % versions.prometheus              % Provided,
+      "org.apache.geode"       % "geode-core"                        % versions.geode                   % Provided,
+      "com.typesafe.slick"    %% "slick"                             % versions.slick                   % Provided,
+      "com.h2database"         % "h2"                                % versions.h2                      % Test,
+      "org.scalacheck"        %% "scalacheck"                        % versions.scalaCheck              % Test,
+      "org.scalatest"         %% "scalatest"                         % versions.scalaTest               % Test,
+      "com.typesafe.akka"     %% "akka-testkit"                      % versions.akka                    % Test,
+      "com.typesafe.akka"     %% "akka-stream-testkit"               % versions.akka                    % Test,
+      "com.typesafe.akka"     %% "akka-http-testkit"                 % versions.akkaHttp                % Test,
+      "com.github.tomakehurst" % "wiremock-jre8"                     % versions.wiremock                % Test,
+      "org.mockito"           %% "mockito-scala"                     % versions.mockito                 % Test,
+      "org.mockito"           %% "mockito-scala-scalatest"           % versions.mockito                 % Test,
+      "org.mockito"            % "mockito-inline"                    % versions.mockitoInline           % Test
     )
   )
   .dependsOn(proto)
@@ -118,10 +154,10 @@ lazy val core = (project in file("./core"))
 lazy val proto = (project in file("./proto"))
   .settings(
     libraryDependencies ++= Seq(
-      "com.typesafe.akka" %% "akka-stream"        % akkaVersion,
-      "com.typesafe.akka" %% "akka-http"          % akkaHttpVersion,
-      "com.typesafe.akka" %% "akka-http-core"     % akkaHttpVersion,
-      "com.typesafe.akka" %% "akka-http2-support" % akkaHttpVersion
+      "com.typesafe.akka" %% "akka-stream"        % versions.akka,
+      "com.typesafe.akka" %% "akka-http"          % versions.akkaHttp,
+      "com.typesafe.akka" %% "akka-http-core"     % versions.akkaHttp,
+      "com.typesafe.akka" %% "akka-http2-support" % versions.akkaHttp
     ),
     coverageEnabled := false,
     akkaGrpcCodeGeneratorSettings += "single_line_to_proto_string"

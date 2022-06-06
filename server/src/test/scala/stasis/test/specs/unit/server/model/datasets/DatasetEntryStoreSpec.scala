@@ -1,15 +1,16 @@
 package stasis.test.specs.unit.server.model.datasets
 
 import java.time.Instant
-
 import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.packaging.Crate
+import stasis.core.telemetry.TelemetryContext
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.model.devices.Device
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.model.mocks.MockDatasetEntryStore
 
 import scala.concurrent.duration._
@@ -331,6 +332,8 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DatasetEntryStoreSpec"
   )
+
+  private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 
   private val ownDevices = Seq(Device.generateId(), Device.generateId())
 

@@ -1,7 +1,5 @@
 package stasis.core.persistence.staging
 
-import java.time.Instant
-
 import akka.actor.Cancellable
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
@@ -16,7 +14,9 @@ import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.exceptions.StagingFailure
 import stasis.core.persistence.staging.StagingStore.PendingDestaging
 import stasis.core.routing.{Node, NodeProxy}
+import stasis.core.telemetry.TelemetryContext
 
+import java.time.Instant
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -24,8 +24,11 @@ import scala.util.control.NonFatal
 class StagingStore(
   crateStore: CrateStore,
   destagingDelay: FiniteDuration
-)(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout) {
-
+)(implicit
+  system: ActorSystem[SpawnProtocol.Command],
+  telemetry: TelemetryContext,
+  timeout: Timeout
+) {
   private implicit val ec: ExecutionContext = system.executionContext
 
   private val pendingDestagingStore: MemoryBackend[Crate.Id, PendingDestaging] =
@@ -40,7 +43,7 @@ class StagingStore(
     viaProxy: NodeProxy
   ): Future[Done] =
     if (destinations.nonEmpty) {
-      log.debug2("Staging crate [{}] with manifest [{}]", manifest.crate, manifest)
+      log.debugN("Staging crate [{}] with manifest [{}]", manifest.crate, manifest)
 
       crateStore.canStore(request = CrateStorageRequest(manifest)).flatMap {
         case true =>
@@ -128,7 +131,7 @@ class StagingStore(
             val destinationSinks =
               Future.sequence(
                 destinations.map { case (node, copies) =>
-                  viaProxy.sink(node, manifest.copy(copies = copies))
+                  viaProxy.push(node, manifest.copy(copies = copies))
                 }
               )
 
@@ -176,6 +179,10 @@ object StagingStore {
   def apply(
     crateStore: CrateStore,
     destagingDelay: FiniteDuration
-  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): StagingStore =
+  )(implicit
+    system: ActorSystem[SpawnProtocol.Command],
+    telemetry: TelemetryContext,
+    timeout: Timeout
+  ): StagingStore =
     new StagingStore(crateStore = crateStore, destagingDelay = destagingDelay)
 }

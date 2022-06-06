@@ -1,6 +1,6 @@
 package stasis.identity.authentication.oauth
 
-import akka.actor.ActorSystem
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import stasis.core.security.exceptions.AuthenticationFailure
 import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStoreView}
 import stasis.identity.model.secrets.Secret
@@ -10,7 +10,7 @@ import scala.concurrent.Future
 class DefaultResourceOwnerAuthenticator(
   store: ResourceOwnerStoreView,
   secretConfig: Secret.ResourceOwnerConfig
-)(implicit val system: ActorSystem)
+)(implicit val system: ActorSystem[SpawnProtocol.Command])
     extends ResourceOwnerAuthenticator {
 
   override implicit protected def config: Secret.Config = secretConfig
@@ -35,7 +35,7 @@ object DefaultResourceOwnerAuthenticator {
   def apply(
     store: ResourceOwnerStoreView,
     secretConfig: Secret.ResourceOwnerConfig
-  )(implicit system: ActorSystem): DefaultResourceOwnerAuthenticator =
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): DefaultResourceOwnerAuthenticator =
     new DefaultResourceOwnerAuthenticator(
       store = store,
       secretConfig = secretConfig

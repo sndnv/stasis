@@ -3,10 +3,12 @@ package stasis.test.specs.unit.core.persistence.backends
 import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import stasis.core.persistence.backends.StreamingBackend
+import stasis.core.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import scala.concurrent.Future
 
@@ -17,7 +19,7 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
   )
 
   def streamingBackend[B <: StreamingBackend](
-    createBackend: () => B,
+    createBackend: TelemetryContext => B,
     before: B => Future[Done] = (backend: B) => backend.init(),
     after: B => Future[Done] = (backend: B) => backend.drop(),
     alwaysAvailable: Boolean = false
@@ -26,7 +28,9 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
     val testContent = ByteString("test-value")
 
     it should "successfully stream data" in {
-      val store = createBackend()
+      val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+      val store = createBackend(telemetry)
 
       for {
         _ <- before(store)
@@ -42,41 +46,65 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
         _ <- after(store)
       } yield {
         result should be(testContent)
+
+        telemetry.persistence.streaming.init should be(1)
+        telemetry.persistence.streaming.drop should be(1)
+        telemetry.persistence.streaming.write should be(1)
+        telemetry.persistence.streaming.read should be(1)
+        telemetry.persistence.streaming.discard should be(0)
       }
     }
 
     it should "fail to create a stream source if data is missing" in {
-      val store = createBackend()
+      val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+      val store = createBackend(telemetry)
 
       for {
         _ <- before(store)
-        source <- store.source(key = testKey)
+        source <- store.source(key = testKey).consume()
         _ <- after(store)
       } yield {
         source should be(None)
+
+        telemetry.persistence.streaming.init should be(1)
+        telemetry.persistence.streaming.drop should be(1)
+        telemetry.persistence.streaming.write should be(0)
+        telemetry.persistence.streaming.read should be(0)
+        telemetry.persistence.streaming.discard should be(0)
       }
     }
 
     it should "delete data" in {
-      val store = createBackend()
+      val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+      val store = createBackend(telemetry)
 
       for {
         _ <- before(store)
         sink <- store.sink(key = testKey)
         _ <- Source.single(testContent).runWith(sink)
-        existingSource <- store.source(key = testKey)
+        existingSource <- store.source(key = testKey).consume()
         deleteResult <- store.delete(key = testKey)
-        missingSource <- store.source(key = testKey)
+        missingSource <- store.source(key = testKey).consume()
         _ <- after(store)
       } yield {
         existingSource.isDefined should be(true)
         deleteResult should be(true)
         missingSource.isDefined should be(false)
+
+        telemetry.persistence.streaming.init should be(1)
+        telemetry.persistence.streaming.drop should be(1)
+        telemetry.persistence.streaming.write should be(1)
+        telemetry.persistence.streaming.read should be(1)
+        telemetry.persistence.streaming.discard should be(1)
       }
     }
 
     it should "check if values exist" in {
-      val store = createBackend()
+      val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+      val store = createBackend(telemetry)
 
       for {
         _ <- before(store)
@@ -91,11 +119,19 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
         existsBeforePush should be(false)
         existsAfterPush should be(true)
         existsAfterDelete should be(false)
+
+        telemetry.persistence.streaming.init should be(1)
+        telemetry.persistence.streaming.drop should be(1)
+        telemetry.persistence.streaming.write should be(1)
+        telemetry.persistence.streaming.read should be(0)
+        telemetry.persistence.streaming.discard should be(1)
       }
     }
 
     it should "check if data can be stored" in {
-      val store = createBackend()
+      val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+      val store = createBackend(telemetry)
 
       for {
         _ <- before(store)
@@ -107,11 +143,19 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
       } yield {
         canStore should be(true)
         cantStore should be(false)
+
+        telemetry.persistence.streaming.init should be(1)
+        telemetry.persistence.streaming.drop should be(1)
+        telemetry.persistence.streaming.write should be(1)
+        telemetry.persistence.streaming.read should be(0)
+        telemetry.persistence.streaming.discard should be(0)
       }
     }
 
     it should "reset itself" in {
-      val store = createBackend()
+      val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+      val store = createBackend(telemetry)
 
       for {
         _ <- before(store)
@@ -128,7 +172,21 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
         existsBeforeReset should be(true)
         existsAfterReset should be(false)
         availableAfterDrop should be(alwaysAvailable) // either the backend is always available or should have been dropped
+
+        telemetry.persistence.streaming.init should be(1)
+        telemetry.persistence.streaming.drop should be(2)
+        telemetry.persistence.streaming.write should be(1)
+        telemetry.persistence.streaming.read should be(0)
+        telemetry.persistence.streaming.discard should be(0)
       }
     }
+  }
+
+  private implicit class ExtendedFutureSource(futureSource: Future[Option[Source[ByteString, _]]]) {
+    def consume(): Future[Option[Done]] =
+      futureSource.flatMap {
+        case Some(source) => source.runWith(Sink.ignore).map(Option.apply)
+        case None         => Future.successful(None)
+      }
   }
 }

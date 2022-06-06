@@ -14,6 +14,7 @@ import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.staging.StagingStore
 import stasis.core.routing.{Node, NodeProxy}
+import stasis.core.telemetry.TelemetryContext
 import stasis.server.api.routes.{RoutesContext, Staging}
 import stasis.server.model.staging.ServerStagingStore
 import stasis.server.security.{CurrentUser, ResourceProvider}
@@ -22,6 +23,7 @@ import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.{MockGrpcEndpointClient, MockHttpEndpointClient}
 import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
 
 import java.util.UUID
@@ -84,6 +86,8 @@ class StagingSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
   private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
+
+  private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 
   private trait TestFixtures {
     lazy val stagingStore: StagingStore = new StagingStore(

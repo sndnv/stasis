@@ -9,12 +9,13 @@ import stasis.test.specs.unit.core.persistence.backends.KeyValueBackendBehaviour
 class MemoryBackendSpec extends AsyncUnitSpec with KeyValueBackendBehaviour {
 
   "A MemoryBackend" should behave like keyValueBackend[MemoryBackend[String, Int]](
-    createBackend = () =>
+    createBackend = telemetry =>
       MemoryBackend(name = "map-store")(
         s = ActorSystem(
           Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
           "MemoryBackendSpec-Typed"
         ),
+        telemetry = telemetry,
         t = timeout
       )
   )

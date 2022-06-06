@@ -1,8 +1,7 @@
 package stasis.identity.api.oauth
 
 import scala.concurrent.ExecutionContext
-
-import akka.actor.ActorSystem
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
@@ -21,12 +20,12 @@ import stasis.identity.model.{ChallengeMethod, GrantType, ResponseType, Seconds}
 class PkceAuthorizationCodeGrant(
   override val config: Config,
   override val providers: Providers
-)(implicit system: ActorSystem)
+)(implicit system: ActorSystem[SpawnProtocol.Command])
     extends AuthDirectives {
   import PkceAuthorizationCodeGrant._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  override implicit protected def ec: ExecutionContext = system.dispatcher
+  override implicit protected def ec: ExecutionContext = system.executionContext
   override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private val authorizationParams = parameters(
@@ -183,7 +182,7 @@ object PkceAuthorizationCodeGrant {
   def apply(
     config: Config,
     providers: Providers
-  )(implicit system: ActorSystem): PkceAuthorizationCodeGrant =
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): PkceAuthorizationCodeGrant =
     new PkceAuthorizationCodeGrant(
       config = config,
       providers = providers

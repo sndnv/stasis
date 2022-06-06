@@ -12,13 +12,18 @@ import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.crates.CrateStore
+import stasis.core.telemetry.TelemetryContext
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class NodeProxy(
   val httpClient: EndpointClient[HttpEndpointAddress, _],
   val grpcClient: EndpointClient[GrpcEndpointAddress, _]
-)(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout) {
+)(implicit
+  system: ActorSystem[SpawnProtocol.Command],
+  telemetry: TelemetryContext,
+  timeout: Timeout
+) {
   private implicit val ec: ExecutionContext = system.executionContext
 
   private val log = LoggerFactory.getLogger(this.getClass.getName)
@@ -27,28 +32,16 @@ class NodeProxy(
     name = s"crate-store-cache-${java.util.UUID.randomUUID().toString}"
   )
 
-  def push(node: Node, manifest: Manifest, content: Source[ByteString, NotUsed]): Future[Done] =
-    node match {
-      case Node.Local(id, storeDescriptor) =>
-        crateStore(id, storeDescriptor).flatMap(_.persist(manifest, content))
-
-      case Node.Remote.Http(_, address, _) =>
-        httpClient.push(address, manifest, content)
-
-      case Node.Remote.Grpc(_, address, _) =>
-        grpcClient.push(address, manifest, content)
-    }
-
-  def sink(node: Node, manifest: Manifest): Future[Sink[ByteString, Future[Done]]] =
+  def push(node: Node, manifest: Manifest): Future[Sink[ByteString, Future[Done]]] =
     node match {
       case Node.Local(id, storeDescriptor) =>
         crateStore(id, storeDescriptor).flatMap(_.sink(manifest.crate))
 
       case Node.Remote.Http(_, address, _) =>
-        httpClient.sink(address, manifest)
+        httpClient.push(address, manifest)
 
       case Node.Remote.Grpc(_, address, _) =>
-        grpcClient.sink(address, manifest)
+        grpcClient.push(address, manifest)
     }
 
   def pull(node: Node, crate: Crate.Id): Future[Option[Source[ByteString, NotUsed]]] =
@@ -105,7 +98,7 @@ object NodeProxy {
   def apply(
     httpClient: EndpointClient[HttpEndpointAddress, _],
     grpcClient: EndpointClient[GrpcEndpointAddress, _]
-  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): NodeProxy =
+  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, timeout: Timeout): NodeProxy =
     new NodeProxy(
       httpClient = httpClient,
       grpcClient = grpcClient

@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.server.security.authenticators
 
 import java.security.Key
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
@@ -10,11 +9,13 @@ import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.security.exceptions.AuthenticationFailure
 import stasis.core.security.jwt.DefaultJwtAuthenticator
 import stasis.core.security.keys.KeyProvider
+import stasis.core.telemetry.TelemetryContext
 import stasis.server.model.users.UserStore
 import stasis.server.security.authenticators.DefaultUserAuthenticator
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.security.mocks.{MockJwksGenerators, MockJwtGenerators}
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.shared.model.Generators
 
 import scala.concurrent.Future
@@ -209,6 +210,8 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DefaultUserAuthenticatorSpec"
   )
+
+  private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 
   private val issuer = "some-issuer"
   private val audience = "some-audience"

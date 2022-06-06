@@ -2,7 +2,6 @@ package stasis.test.specs.unit.identity
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
-
 import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
@@ -19,6 +18,7 @@ import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, S
 import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore}
 import stasis.identity.model.tokens.{RefreshToken, RefreshTokenStore, StoredRefreshToken}
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.identity.RouteTest.FailingMemoryBackend
 
 trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
@@ -28,6 +28,8 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     name = this.getClass.getSimpleName + "_typed"
   )
+
+  implicit val telemetryContext: MockTelemetryContext = MockTelemetryContext()
 
   implicit def requestToEntity[T](request: T)(implicit m: Marshaller[T, RequestEntity]): RequestEntity =
     Marshal(request).to[RequestEntity].await
@@ -71,6 +73,7 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
   ): ApiStore =
     ApiStore(
       new FailingMemoryBackend[Api.Id, Api] {
+        override implicit def telemetry: MockTelemetryContext = telemetryContext
         override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
         override def storeName: String = s"api-store-${java.util.UUID.randomUUID()}"
         override def putFails: Boolean = failingPut
@@ -90,6 +93,7 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
   ): ClientStore =
     ClientStore(
       new FailingMemoryBackend[Client.Id, Client] {
+        override implicit def telemetry: MockTelemetryContext = telemetryContext
         override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
         override def storeName: String = s"client-store-${java.util.UUID.randomUUID()}"
         override def putFails: Boolean = failingPut
@@ -111,6 +115,7 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
     AuthorizationCodeStore(
       expiration = expiration,
       new FailingMemoryBackend[AuthorizationCode, StoredAuthorizationCode] {
+        override implicit def telemetry: MockTelemetryContext = telemetryContext
         override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
         override def storeName: String = s"code-store-${java.util.UUID.randomUUID()}"
         override def putFails: Boolean = failingPut
@@ -130,6 +135,7 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
   ): ResourceOwnerStore =
     ResourceOwnerStore(
       new FailingMemoryBackend[ResourceOwner.Id, ResourceOwner] {
+        override implicit def telemetry: MockTelemetryContext = telemetryContext
         override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
         override def storeName: String = s"owner-store-${java.util.UUID.randomUUID()}"
         override def putFails: Boolean = failingPut
@@ -151,6 +157,7 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
     RefreshTokenStore(
       expiration = expiration,
       new FailingMemoryBackend[RefreshToken, StoredRefreshToken] {
+        override implicit def telemetry: MockTelemetryContext = telemetryContext
         override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
         override def storeName: String = s"token-store-${java.util.UUID.randomUUID()}"
         override def putFails: Boolean = failingPut
@@ -167,6 +174,7 @@ object RouteTest {
   trait FailingMemoryBackend[K, V] extends KeyValueBackend[K, V] {
     private val underlying = MemoryBackend[K, V](storeName)
 
+    implicit def telemetry: MockTelemetryContext
     implicit def system: ActorSystem[SpawnProtocol.Command]
     implicit def timeout: Timeout = 3.seconds
 

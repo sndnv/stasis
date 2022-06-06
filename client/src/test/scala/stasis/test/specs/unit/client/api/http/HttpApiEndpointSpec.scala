@@ -21,6 +21,7 @@ import stasis.shared.model.users.User
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks._
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import scala.collection.mutable
 import scala.concurrent.Future
@@ -230,6 +231,8 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "HttpApiEndpointSpec"
   )
+
+  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   private val testUser = "test-user"
   private val testPassword = "test-password"

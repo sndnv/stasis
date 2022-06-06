@@ -13,9 +13,11 @@ import stasis.core.persistence.staging.StagingStore
 import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.core.routing.exceptions.{DiscardFailure, DistributionFailure, PullFailure, PushFailure}
 import stasis.core.routing.{DefaultRouter, Node, NodeProxy}
+import stasis.core.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.{MockGrpcEndpointClient, MockHttpEndpointClient}
 import stasis.test.specs.unit.core.persistence.mocks._
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -135,7 +137,9 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
   }
 
   it should "push crates to nodes" in {
-    val router = new TestRouter()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val router = createTestRouter()
 
     router.push(testManifest, Source.single(testContent)).await
 
@@ -146,10 +150,22 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       router.testClient.crateNodes(testManifest.crate).await should be(router.fixtures.remoteNodes.size)
       router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(router.fixtures.remoteNodes.size)
       router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
+
+      telemetry.routing.router.push should be(1)
+      telemetry.routing.router.pushFailures should be(0)
+      telemetry.routing.router.pull should be(0)
+      telemetry.routing.router.pullFailures should be(0)
+      telemetry.routing.router.discard should be(0)
+      telemetry.routing.router.discardFailures should be(0)
+      telemetry.routing.router.reserve should be(0)
+      telemetry.routing.router.reserveFailures should be(0)
+      telemetry.routing.router.stage should be(0)
     }
   }
 
   it should "push crates to nodes using staging" in {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
     val stagingCrateStore = new MockCrateStore()
     val testClient = new MockHttpEndpointClient()
 
@@ -172,17 +188,30 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       testClient.crateNodes(testManifest.crate).await should be(fixtures.remoteNodes.size)
       testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(fixtures.remoteNodes.size)
       testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
+
+      telemetry.routing.router.push should be(0)
+      telemetry.routing.router.pushFailures should be(0)
+      telemetry.routing.router.pull should be(0)
+      telemetry.routing.router.pullFailures should be(0)
+      telemetry.routing.router.discard should be(0)
+      telemetry.routing.router.discardFailures should be(0)
+      telemetry.routing.router.reserve should be(0)
+      telemetry.routing.router.reserveFailures should be(0)
+      telemetry.routing.router.stage should be(1)
     }
   }
 
   it should "expire reservations on successful push" in {
-    val testReservationStore = new MockReservationStore(ignoreMissingReservations = false)
-    val router = new TestRouter(
-      fixtures = new TestFixtures {
-        override lazy val reservationStore: MockReservationStore = testReservationStore
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
-        override def testNodes: Seq[Node] = Seq(localNode)
-      }
+    val testReservationStore = new MockReservationStore(ignoreMissingReservations = false)
+    val router = createTestRouter(
+      fixtures = Some(
+        new TestFixtures {
+          override lazy val reservationStore: MockReservationStore = testReservationStore
+          override def testNodes: Seq[Node] = Seq(localNode)
+        }
+      )
     )
 
     testReservationStore.reservations.await.size should be(0)
@@ -201,17 +230,31 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     eventually[Assertion] {
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+
+      telemetry.routing.router.push should be(1)
+      telemetry.routing.router.pushFailures should be(0)
+      telemetry.routing.router.pull should be(0)
+      telemetry.routing.router.pullFailures should be(0)
+      telemetry.routing.router.discard should be(0)
+      telemetry.routing.router.discardFailures should be(0)
+      telemetry.routing.router.reserve should be(2)
+      telemetry.routing.router.reserveFailures should be(0)
+      telemetry.routing.router.stage should be(0)
     }
   }
 
   it should "fail to push crates if no reservation is available" in {
-    val testReservationStore = new MockReservationStore(ignoreMissingReservations = false)
-    val router = new TestRouter(
-      fixtures = new TestFixtures {
-        override lazy val reservationStore: MockReservationStore = testReservationStore
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
-        override def testNodes: Seq[Node] = Seq(localNode)
-      }
+    val testReservationStore = new MockReservationStore(ignoreMissingReservations = false)
+    val router = createTestRouter(
+      fixtures = Some(
+        new TestFixtures {
+          override lazy val reservationStore: MockReservationStore = testReservationStore
+
+          override def testNodes: Seq[Node] = Seq(localNode)
+        }
+      )
     )
 
     testReservationStore.reservations.await.size should be(0)
@@ -225,14 +268,28 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         message should be(s"Push of crate [${testManifest.crate}] failed; unable to remove reservation for crate")
         router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
         router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+
+        telemetry.routing.router.push should be(0)
+        telemetry.routing.router.pushFailures should be(1)
+        telemetry.routing.router.pull should be(0)
+        telemetry.routing.router.pullFailures should be(0)
+        telemetry.routing.router.discard should be(0)
+        telemetry.routing.router.discardFailures should be(0)
+        telemetry.routing.router.reserve should be(0)
+        telemetry.routing.router.reserveFailures should be(0)
+        telemetry.routing.router.stage should be(0)
       }
   }
 
   it should "fail to push crates when no nodes are available" in {
-    val router = new TestRouter(
-      fixtures = new TestFixtures {
-        override def testNodes: Seq[Node] = Seq.empty
-      }
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val router = createTestRouter(
+      fixtures = Some(
+        new TestFixtures {
+          override def testNodes: Seq[Node] = Seq.empty
+        }
+      )
     )
 
     router
@@ -248,11 +305,23 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
+
+        telemetry.routing.router.push should be(0)
+        telemetry.routing.router.pushFailures should be(1)
+        telemetry.routing.router.pull should be(0)
+        telemetry.routing.router.pullFailures should be(0)
+        telemetry.routing.router.discard should be(0)
+        telemetry.routing.router.discardFailures should be(0)
+        telemetry.routing.router.reserve should be(0)
+        telemetry.routing.router.reserveFailures should be(0)
+        telemetry.routing.router.stage should be(0)
       }
   }
 
   it should "fail to push crates when no copies are requested" in {
-    val router = new TestRouter()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val router = createTestRouter()
 
     router
       .push(testManifest.copy(copies = 0), Source.single(testContent))
@@ -267,10 +336,22 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
+
+        telemetry.routing.router.push should be(0)
+        telemetry.routing.router.pushFailures should be(1)
+        telemetry.routing.router.pull should be(0)
+        telemetry.routing.router.pullFailures should be(0)
+        telemetry.routing.router.discard should be(0)
+        telemetry.routing.router.discardFailures should be(0)
+        telemetry.routing.router.reserve should be(0)
+        telemetry.routing.router.reserveFailures should be(0)
+        telemetry.routing.router.stage should be(0)
       }
   }
 
   it should "recover from node failure on push" in {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
     val fixtures = new TestFixtures {}
 
     val router = new TestRouter(
@@ -299,10 +380,22 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         router.fixtures.remoteNodes.size - failedNodesCount
       )
       router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(failedNodesCount)
+
+      telemetry.routing.router.push should be(1)
+      telemetry.routing.router.pushFailures should be(0)
+      telemetry.routing.router.pull should be(0)
+      telemetry.routing.router.pullFailures should be(0)
+      telemetry.routing.router.discard should be(0)
+      telemetry.routing.router.discardFailures should be(0)
+      telemetry.routing.router.reserve should be(0)
+      telemetry.routing.router.reserveFailures should be(0)
+      telemetry.routing.router.stage should be(0)
     }
   }
 
   it should "fail to push crates when all nodes fail" in {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
     val fixtures = new TestFixtures {
       override def testNodes: Seq[Node] = remoteNodes
     }
@@ -333,14 +426,28 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         router.testClient.crateNodes(testManifest.crate).await should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(fixtures.remoteNodes.size)
+
+        telemetry.routing.router.push should be(0)
+        telemetry.routing.router.pushFailures should be(1)
+        telemetry.routing.router.pull should be(0)
+        telemetry.routing.router.pullFailures should be(0)
+        telemetry.routing.router.discard should be(0)
+        telemetry.routing.router.discardFailures should be(0)
+        telemetry.routing.router.reserve should be(0)
+        telemetry.routing.router.reserveFailures should be(0)
+        telemetry.routing.router.stage should be(0)
       }
   }
 
   it should "pull crates from remote nodes" in {
-    val router = new TestRouter(
-      fixtures = new TestFixtures {
-        override def testNodes: Seq[Node] = remoteNodes
-      }
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val router = createTestRouter(
+      fixtures = Some(
+        new TestFixtures {
+          override def testNodes: Seq[Node] = remoteNodes
+        }
+      )
     )
 
     router.push(testManifest, Source.single(testContent)).await
@@ -366,13 +473,27 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedWithData) should be(1)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedEmpty) should be(0)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullFailed) should be(0)
+
+    telemetry.routing.router.push should be(1)
+    telemetry.routing.router.pushFailures should be(0)
+    telemetry.routing.router.pull should be(1)
+    telemetry.routing.router.pullFailures should be(0)
+    telemetry.routing.router.discard should be(0)
+    telemetry.routing.router.discardFailures should be(0)
+    telemetry.routing.router.reserve should be(0)
+    telemetry.routing.router.reserveFailures should be(0)
+    telemetry.routing.router.stage should be(0)
   }
 
   it should "pull crates from local nodes" in {
-    val router = new TestRouter(
-      fixtures = new TestFixtures {
-        override def testNodes: Seq[Node] = Seq(localNode)
-      }
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val router = createTestRouter(
+      fixtures = Some(
+        new TestFixtures {
+          override def testNodes: Seq[Node] = Seq(localNode)
+        }
+      )
     )
 
     router.push(testManifest, Source.single(testContent)).await
@@ -394,10 +515,22 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedWithData) should be(0)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedEmpty) should be(0)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullFailed) should be(0)
+
+    telemetry.routing.router.push should be(1)
+    telemetry.routing.router.pushFailures should be(0)
+    telemetry.routing.router.pull should be(1)
+    telemetry.routing.router.pullFailures should be(0)
+    telemetry.routing.router.discard should be(0)
+    telemetry.routing.router.discardFailures should be(0)
+    telemetry.routing.router.reserve should be(0)
+    telemetry.routing.router.reserveFailures should be(0)
+    telemetry.routing.router.stage should be(0)
   }
 
   it should "fail to pull crates when crate manifest is missing" in {
-    val router = new TestRouter()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val router = createTestRouter()
 
     val missingCrateId = Crate.generateId()
 
@@ -411,11 +544,23 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedWithData) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedEmpty) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PullFailed) should be(0)
+
+        telemetry.routing.router.push should be(0)
+        telemetry.routing.router.pushFailures should be(0)
+        telemetry.routing.router.pull should be(0)
+        telemetry.routing.router.pullFailures should be(1)
+        telemetry.routing.router.discard should be(0)
+        telemetry.routing.router.discardFailures should be(0)
+        telemetry.routing.router.reserve should be(0)
+        telemetry.routing.router.reserveFailures should be(0)
+        telemetry.routing.router.stage should be(0)
       }
   }
 
   it should "fail to pull crates if crate manifest has no destinations" in {
-    val router = new TestRouter()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val router = createTestRouter()
 
     router.fixtures.manifestStore.put(testManifest).await
 
@@ -432,11 +577,23 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedWithData) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedEmpty) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PullFailed) should be(0)
+
+        telemetry.routing.router.push should be(0)
+        telemetry.routing.router.pushFailures should be(0)
+        telemetry.routing.router.pull should be(0)
+        telemetry.routing.router.pullFailures should be(1)
+        telemetry.routing.router.discard should be(0)
+        telemetry.routing.router.discardFailures should be(0)
+        telemetry.routing.router.reserve should be(0)
+        telemetry.routing.router.reserveFailures should be(0)
+        telemetry.routing.router.stage should be(0)
       }
   }
 
   it should "recover from missing node on pull" in {
-    val router = new TestRouter()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val router = createTestRouter()
 
     router.push(testManifest, Source.single(testContent)).await
 
@@ -466,14 +623,28 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedWithData) should be(1)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedEmpty) should be(0)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullFailed) should be(0)
+
+    telemetry.routing.router.push should be(1)
+    telemetry.routing.router.pushFailures should be(0)
+    telemetry.routing.router.pull should be(1)
+    telemetry.routing.router.pullFailures should be(1)
+    telemetry.routing.router.discard should be(0)
+    telemetry.routing.router.discardFailures should be(0)
+    telemetry.routing.router.reserve should be(0)
+    telemetry.routing.router.reserveFailures should be(0)
+    telemetry.routing.router.stage should be(0)
   }
 
   it should "recover from content not returned by individual nodes" in {
-    val router = new TestRouter(
-      fixtures = new TestFixtures {
-        override lazy val crateStore: MockCrateStore =
-          new MockCrateStore(retrieveEmpty = true)
-      }
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val router = createTestRouter(
+      fixtures = Some(
+        new TestFixtures {
+          override lazy val crateStore: MockCrateStore =
+            new MockCrateStore(retrieveEmpty = true)
+        }
+      )
     )
 
     router.push(testManifest, Source.single(testContent)).await
@@ -499,14 +670,28 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedWithData) should be(1)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedEmpty) should be(0)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullFailed) should be(0)
+
+    telemetry.routing.router.push should be(1)
+    telemetry.routing.router.pushFailures should be(0)
+    telemetry.routing.router.pull should be(1)
+    telemetry.routing.router.pullFailures should be(1)
+    telemetry.routing.router.discard should be(0)
+    telemetry.routing.router.discardFailures should be(0)
+    telemetry.routing.router.reserve should be(0)
+    telemetry.routing.router.reserveFailures should be(0)
+    telemetry.routing.router.stage should be(0)
   }
 
   it should "recover from node failure on pull" in {
-    val router = new TestRouter(
-      fixtures = new TestFixtures {
-        override lazy val crateStore: MockCrateStore =
-          new MockCrateStore(retrieveDisabled = true)
-      }
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val router = createTestRouter(
+      fixtures = Some(
+        new TestFixtures {
+          override lazy val crateStore: MockCrateStore =
+            new MockCrateStore(retrieveDisabled = true)
+        }
+      )
     )
 
     router.push(testManifest, Source.single(testContent)).await
@@ -532,9 +717,21 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedWithData) should be(1)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedEmpty) should be(0)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullFailed) should be(0)
+
+    telemetry.routing.router.push should be(1)
+    telemetry.routing.router.pushFailures should be(0)
+    telemetry.routing.router.pull should be(1)
+    telemetry.routing.router.pullFailures should be(1)
+    telemetry.routing.router.discard should be(0)
+    telemetry.routing.router.discardFailures should be(0)
+    telemetry.routing.router.reserve should be(0)
+    telemetry.routing.router.reserveFailures should be(0)
+    telemetry.routing.router.stage should be(0)
   }
 
   it should "fail to pull missing crates" in {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
     val fixtures = new TestFixtures {
       override def testNodes: Seq[Node] = remoteNodes
     }
@@ -550,6 +747,8 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     router.pull(testManifest.crate).await should be(None)
 
+    val expectedFailures = fixtures.testNodes.size + 1 // 2 x no-content + no-nodes
+
     router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
     router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
     router.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(0)
@@ -558,10 +757,22 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedWithData) should be(0)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedEmpty) should be(fixtures.testNodes.size)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullFailed) should be(0)
+
+    telemetry.routing.router.push should be(1)
+    telemetry.routing.router.pushFailures should be(0)
+    telemetry.routing.router.pull should be(0)
+    telemetry.routing.router.pullFailures should be(expectedFailures)
+    telemetry.routing.router.discard should be(0)
+    telemetry.routing.router.discardFailures should be(0)
+    telemetry.routing.router.reserve should be(0)
+    telemetry.routing.router.reserveFailures should be(0)
+    telemetry.routing.router.stage should be(0)
   }
 
   it should "successfully discard existing crates" in {
-    val router = new TestRouter()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val router = createTestRouter()
 
     router.push(testManifest, Source.single(testContent)).await
 
@@ -578,9 +789,21 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(2)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
+
+    telemetry.routing.router.push should be(1)
+    telemetry.routing.router.pushFailures should be(0)
+    telemetry.routing.router.pull should be(0)
+    telemetry.routing.router.pullFailures should be(0)
+    telemetry.routing.router.discard should be(1)
+    telemetry.routing.router.discardFailures should be(0)
+    telemetry.routing.router.reserve should be(0)
+    telemetry.routing.router.reserveFailures should be(0)
+    telemetry.routing.router.stage should be(0)
   }
 
   it should "successfully discard staged crates" in {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
     val stagingCrateStore = new MockCrateStore()
     val testClient = new MockHttpEndpointClient()
 
@@ -608,10 +831,22 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(0)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
+
+    telemetry.routing.router.push should be(0)
+    telemetry.routing.router.pushFailures should be(0)
+    telemetry.routing.router.pull should be(0)
+    telemetry.routing.router.pullFailures should be(0)
+    telemetry.routing.router.discard should be(1)
+    telemetry.routing.router.discardFailures should be(0)
+    telemetry.routing.router.reserve should be(0)
+    telemetry.routing.router.reserveFailures should be(0)
+    telemetry.routing.router.stage should be(1)
   }
 
   it should "fail to discard crates with no manifest" in {
-    val router = new TestRouter()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val router = createTestRouter()
 
     router
       .discard(testManifest.crate)
@@ -629,11 +864,23 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
+
+        telemetry.routing.router.push should be(0)
+        telemetry.routing.router.pushFailures should be(0)
+        telemetry.routing.router.pull should be(0)
+        telemetry.routing.router.pullFailures should be(0)
+        telemetry.routing.router.discard should be(0)
+        telemetry.routing.router.discardFailures should be(1)
+        telemetry.routing.router.reserve should be(0)
+        telemetry.routing.router.reserveFailures should be(0)
+        telemetry.routing.router.stage should be(0)
       }
   }
 
   it should "fail to discard crates with no destinations" in {
-    val router = new TestRouter()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val router = createTestRouter()
 
     router.fixtures.manifestStore.put(testManifest).await
 
@@ -653,11 +900,23 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
+
+        telemetry.routing.router.push should be(0)
+        telemetry.routing.router.pushFailures should be(0)
+        telemetry.routing.router.pull should be(0)
+        telemetry.routing.router.pullFailures should be(0)
+        telemetry.routing.router.discard should be(0)
+        telemetry.routing.router.discardFailures should be(1)
+        telemetry.routing.router.reserve should be(0)
+        telemetry.routing.router.reserveFailures should be(0)
+        telemetry.routing.router.stage should be(0)
       }
   }
 
   it should "fail to discard crates with some missing nodes" in {
-    val router = new TestRouter()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val router = createTestRouter()
 
     router.push(testManifest, Source.single(testContent)).await
 
@@ -694,11 +953,23 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(2)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
+
+        telemetry.routing.router.push should be(1)
+        telemetry.routing.router.pushFailures should be(0)
+        telemetry.routing.router.pull should be(0)
+        telemetry.routing.router.pullFailures should be(0)
+        telemetry.routing.router.discard should be(0)
+        telemetry.routing.router.discardFailures should be(1)
+        telemetry.routing.router.reserve should be(0)
+        telemetry.routing.router.reserveFailures should be(0)
+        telemetry.routing.router.stage should be(0)
       }
   }
 
   it should "fail to discard crates with all nodes missing" in {
-    val router = new TestRouter()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val router = createTestRouter()
 
     router.push(testManifest, Source.single(testContent)).await
 
@@ -733,15 +1004,29 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
+
+        telemetry.routing.router.push should be(1)
+        telemetry.routing.router.pushFailures should be(0)
+        telemetry.routing.router.pull should be(0)
+        telemetry.routing.router.pullFailures should be(0)
+        telemetry.routing.router.discard should be(0)
+        telemetry.routing.router.discardFailures should be(1)
+        telemetry.routing.router.reserve should be(0)
+        telemetry.routing.router.reserveFailures should be(0)
+        telemetry.routing.router.stage should be(0)
       }
   }
 
   it should "handle partial discards" in {
-    val router = new TestRouter(
-      fixtures = new TestFixtures {
-        override lazy val crateStore: MockCrateStore =
-          new MockCrateStore(discardDisabled = true)
-      }
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val router = createTestRouter(
+      fixtures = Some(
+        new TestFixtures {
+          override lazy val crateStore: MockCrateStore =
+            new MockCrateStore(discardDisabled = true)
+        }
+      )
     )
 
     router.push(testManifest, Source.single(testContent)).await
@@ -775,14 +1060,28 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(2)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
+
+        telemetry.routing.router.push should be(1)
+        telemetry.routing.router.pushFailures should be(0)
+        telemetry.routing.router.pull should be(0)
+        telemetry.routing.router.pullFailures should be(0)
+        telemetry.routing.router.discard should be(0)
+        telemetry.routing.router.discardFailures should be(1)
+        telemetry.routing.router.reserve should be(0)
+        telemetry.routing.router.reserveFailures should be(0)
+        telemetry.routing.router.stage should be(0)
       }
   }
 
   it should "process reservation requests for local nodes" in {
-    val router = new TestRouter(
-      fixtures = new TestFixtures {
-        override def testNodes: Seq[Node] = Seq(localNode)
-      }
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val router = createTestRouter(
+      fixtures = Some(
+        new TestFixtures {
+          override def testNodes: Seq[Node] = Seq(localNode)
+        }
+      )
     )
 
     val request = CrateStorageRequest(
@@ -806,14 +1105,28 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       val actualReservation = response.get
       actualReservation.size should be(expectedReservation.size)
       actualReservation.copies should be(expectedReservation.copies)
+
+      telemetry.routing.router.push should be(0)
+      telemetry.routing.router.pushFailures should be(0)
+      telemetry.routing.router.pull should be(0)
+      telemetry.routing.router.pullFailures should be(0)
+      telemetry.routing.router.discard should be(0)
+      telemetry.routing.router.discardFailures should be(0)
+      telemetry.routing.router.reserve should be(2) // 1 for the node + 1 for the router
+      telemetry.routing.router.reserveFailures should be(0)
+      telemetry.routing.router.stage should be(0)
     }
   }
 
   it should "not process reservation requests for remote nodes" in {
-    val router = new TestRouter(
-      fixtures = new TestFixtures {
-        override def testNodes: Seq[Node] = remoteNodes
-      }
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val router = createTestRouter(
+      fixtures = Some(
+        new TestFixtures {
+          override def testNodes: Seq[Node] = remoteNodes
+        }
+      )
     )
 
     val request = CrateStorageRequest(
@@ -824,14 +1137,30 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       source = Node.generateId()
     )
 
-    router.reserve(request).map(_ should be(None))
+    router.reserve(request).map { result =>
+      result should be(None)
+
+      telemetry.routing.router.push should be(0)
+      telemetry.routing.router.pushFailures should be(0)
+      telemetry.routing.router.pull should be(0)
+      telemetry.routing.router.pullFailures should be(0)
+      telemetry.routing.router.discard should be(0)
+      telemetry.routing.router.discardFailures should be(0)
+      telemetry.routing.router.reserve should be(0)
+      telemetry.routing.router.reserveFailures should be(2) // 1 for storage rejection and 1 for reservation rejection
+      telemetry.routing.router.stage should be(0)
+    }
   }
 
   it should "fail to process reservation requests when no nodes are available" in {
-    val router = new TestRouter(
-      fixtures = new TestFixtures {
-        override def testNodes: Seq[Node] = Seq.empty
-      }
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val router = createTestRouter(
+      fixtures = Some(
+        new TestFixtures {
+          override def testNodes: Seq[Node] = Seq.empty
+        }
+      )
     )
 
     val request = CrateStorageRequest(
@@ -846,11 +1175,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
   }
 
   it should "recover from nodes failing to process reservation requests" in {
-    val router = new TestRouter(
-      fixtures = new TestFixtures {
-        override lazy val crateStore: MockCrateStore =
-          new MockCrateStore(maxStorageSize = Some(0))
-      }
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val router = createTestRouter(
+      fixtures = Some(
+        new TestFixtures {
+          override lazy val crateStore: MockCrateStore =
+            new MockCrateStore(maxStorageSize = Some(0))
+        }
+      )
     )
 
     val request = CrateStorageRequest(
@@ -861,14 +1194,30 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       source = Node.generateId()
     )
 
-    router.reserve(request).map(_ should be(None))
+    router.reserve(request).map { result =>
+      result should be(None)
+
+      telemetry.routing.router.push should be(0)
+      telemetry.routing.router.pushFailures should be(0)
+      telemetry.routing.router.pull should be(0)
+      telemetry.routing.router.pullFailures should be(0)
+      telemetry.routing.router.discard should be(0)
+      telemetry.routing.router.discardFailures should be(0)
+      telemetry.routing.router.reserve should be(0)
+      telemetry.routing.router.reserveFailures should be(4) // 4 for storage rejection + 1 for reservation rejection
+      telemetry.routing.router.stage should be(0)
+    }
   }
 
   it should "fail to process reservation requests if reservation already exists" in {
-    val router = new TestRouter(
-      fixtures = new TestFixtures {
-        override def testNodes: Seq[Node] = Seq(localNode)
-      }
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val router = createTestRouter(
+      fixtures = Some(
+        new TestFixtures {
+          override def testNodes: Seq[Node] = Seq(localNode)
+        }
+      )
     )
 
     val request = CrateStorageRequest(
@@ -892,7 +1241,19 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       case None => fail("Expected reservation response but none was received")
     }
 
-    router.reserve(request).map(_ should be(None))
+    router.reserve(request).map { result =>
+      result should be(None)
+
+      telemetry.routing.router.push should be(0)
+      telemetry.routing.router.pushFailures should be(0)
+      telemetry.routing.router.pull should be(0)
+      telemetry.routing.router.pullFailures should be(0)
+      telemetry.routing.router.discard should be(0)
+      telemetry.routing.router.discardFailures should be(0)
+      telemetry.routing.router.reserve should be(2) // 1 for the node + 1 for the router (first request)
+      telemetry.routing.router.reserveFailures should be(1)
+      telemetry.routing.router.stage should be(0)
+    }
   }
 
   private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
@@ -904,7 +1265,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
-  private trait TestFixtures {
+  private def createTestRouter(
+    fixtures: Option[TestFixtures] = None,
+    testClient: Option[MockHttpEndpointClient] = None
+  )(implicit telemetry: TelemetryContext): TestRouter = new TestRouter(
+    fixtures = fixtures.getOrElse(new TestFixtures()),
+    testClient = testClient.getOrElse(new MockHttpEndpointClient())
+  )
+
+  private class TestFixtures(implicit telemetry: TelemetryContext) {
     lazy val reservationStore: MockReservationStore = new MockReservationStore()
     lazy val crateStore: MockCrateStore = new MockCrateStore()
     lazy val manifestStore: MockManifestStore = new MockManifestStore
@@ -930,9 +1299,10 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
   }
 
   private class TestRouter(
-    val fixtures: TestFixtures = new TestFixtures {},
-    val testClient: MockHttpEndpointClient = new MockHttpEndpointClient()
-  ) extends DefaultRouter(
+    val fixtures: TestFixtures,
+    val testClient: MockHttpEndpointClient
+  )(implicit telemetry: TelemetryContext)
+      extends DefaultRouter(
         routerId = Node.generateId(),
         persistence = DefaultRouter.Persistence(
           manifests = fixtures.manifestStore,

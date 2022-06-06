@@ -11,9 +11,11 @@ import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.staging.StagingStore
 import stasis.core.routing.{Node, NodeProxy}
+import stasis.core.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.{MockGrpcEndpointClient, MockHttpEndpointClient}
 import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -21,79 +23,77 @@ import scala.util.control.NonFatal
 
 class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfterAll {
   "A StagingStore" should "stage crates to temporary storage" in {
-    val fixtures = new TestFixtures {}
-    val store = new TestStagingStore(fixtures)
-    val destinations: Map[Node, Int] = (fixtures.remoteNodes ++ fixtures.localNodes).toMap
+    val store = createTestStagingStore()
+    val destinations: Map[Node, Int] = (store.fixtures.remoteNodes ++ store.fixtures.localNodes).toMap
 
     store
       .stage(
         manifest = testManifest,
         destinations = destinations,
         content = Source.single(testContent),
-        viaProxy = fixtures.proxy
+        viaProxy = store.fixtures.proxy
       )
       .map { _ =>
-        fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-        fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+        store.fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+        store.fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
       }
   }
 
   it should "destage crates from temporary storage to multiple crate destinations" in {
-    val fixtures = new TestFixtures {}
-    val store = new TestStagingStore(fixtures)
-    val destinations: Map[Node, Int] = (fixtures.remoteNodes ++ fixtures.localNodes).toMap
+    val store = createTestStagingStore()
+    val destinations: Map[Node, Int] = (store.fixtures.remoteNodes ++ store.fixtures.localNodes).toMap
 
     store
       .stage(
         manifest = testManifest,
         destinations = destinations,
         content = Source.single(testContent),
-        viaProxy = fixtures.proxy
+        viaProxy = store.fixtures.proxy
       )
       .map { _ =>
         eventually[Assertion] {
-          fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(1)
-          fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(0)
-          fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
+          store.fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(1)
+          store.fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(0)
+          store.fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
 
-          fixtures.nodeCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-          fixtures.nodeCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+          store.fixtures.nodeCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+          store.fixtures.nodeCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
 
-          fixtures.testClient.crateCopies(testManifest.crate).await should be(fixtures.remoteNodes.size)
-          fixtures.testClient.crateNodes(testManifest.crate).await should be(fixtures.remoteNodes.size)
-          fixtures.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(fixtures.remoteNodes.size)
-          fixtures.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
+          store.fixtures.testClient.crateCopies(testManifest.crate).await should be(store.fixtures.remoteNodes.size)
+          store.fixtures.testClient.crateNodes(testManifest.crate).await should be(store.fixtures.remoteNodes.size)
+          store.fixtures.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(
+            store.fixtures.remoteNodes.size
+          )
+          store.fixtures.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
         }
       }
   }
 
   it should "destage crates from temporary storage to a single crate destination" in {
-    val fixtures = new TestFixtures {}
-    val store = new TestStagingStore(fixtures)
-    val destinations: Map[Node, Int] = fixtures.localNodes.map { case (k, v) => (k: Node, v) }
+    val store = createTestStagingStore()
+    val destinations: Map[Node, Int] = store.fixtures.localNodes.map { case (k, v) => (k: Node, v) }
 
     store
       .stage(
         manifest = testManifest,
         destinations = destinations,
         content = Source.single(testContent),
-        viaProxy = fixtures.proxy
+        viaProxy = store.fixtures.proxy
       )
       .map { _ =>
         eventually[Assertion] {
-          fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(1)
-          fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(0)
-          fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
+          store.fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(1)
+          store.fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(0)
+          store.fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
 
-          fixtures.nodeCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-          fixtures.nodeCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+          store.fixtures.nodeCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+          store.fixtures.nodeCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
         }
       }
   }
 
   it should "fail to stage crates if no destinations are set" in {
-    val fixtures = new TestFixtures {}
-    val store = new TestStagingStore(fixtures)
+    val store = createTestStagingStore()
     val destinations: Map[Node, Int] = Map.empty
 
     store
@@ -101,7 +101,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
         manifest = testManifest,
         destinations = destinations,
         content = Source.single(testContent),
-        viaProxy = fixtures.proxy
+        viaProxy = store.fixtures.proxy
       )
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
@@ -114,20 +114,26 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
   }
 
   it should "fail to stage crates if storage cannot be reserved staging crate store" in {
-    val fixtures = new TestFixtures {
-      override lazy val stagingCrateStore: MockCrateStore = new MockCrateStore(
-        maxStorageSize = Some(1)
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val store = createTestStagingStore(
+      Some(
+        new TestFixtures {
+          override lazy val stagingCrateStore: MockCrateStore = new MockCrateStore(
+            maxStorageSize = Some(1)
+          )
+        }
       )
-    }
-    val store = new TestStagingStore(fixtures)
-    val destinations: Map[Node, Int] = (fixtures.remoteNodes ++ fixtures.localNodes).toMap
+    )
+
+    val destinations: Map[Node, Int] = (store.fixtures.remoteNodes ++ store.fixtures.localNodes).toMap
 
     store
       .stage(
         manifest = testManifest,
         destinations = destinations,
         content = Source.single(testContent),
-        viaProxy = fixtures.proxy
+        viaProxy = store.fixtures.proxy
       )
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
@@ -140,83 +146,85 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
   }
 
   it should "fail to stage crates if crate content is missing" in {
-    val fixtures = new TestFixtures {
-      override lazy val stagingCrateStore: MockCrateStore =
-        new MockCrateStore(retrieveEmpty = true)
-    }
-    val store = new TestStagingStore(fixtures)
-    val destinations: Map[Node, Int] = (fixtures.remoteNodes ++ fixtures.localNodes).toMap
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val store = createTestStagingStore(
+      Some(
+        new TestFixtures {
+          override lazy val stagingCrateStore: MockCrateStore =
+            new MockCrateStore(retrieveEmpty = true)
+        }
+      )
+    )
+    val destinations: Map[Node, Int] = (store.fixtures.remoteNodes ++ store.fixtures.localNodes).toMap
 
     store
       .stage(
         manifest = testManifest,
         destinations = destinations,
         content = Source.single(testContent),
-        viaProxy = fixtures.proxy
+        viaProxy = store.fixtures.proxy
       )
       .map { _ =>
         eventually[Assertion] {
-          fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(0)
-          fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(1)
-          fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
+          store.fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(0)
+          store.fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(1)
+          store.fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
 
-          fixtures.nodeCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
-          fixtures.nodeCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+          store.fixtures.nodeCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
+          store.fixtures.nodeCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
         }
       }
   }
 
   it should "successfully drop scheduled crate destage operations" in {
-    val fixtures = new TestFixtures {}
-    val store = new TestStagingStore(fixtures)
-    val destinations: Map[Node, Int] = (fixtures.remoteNodes ++ fixtures.localNodes).toMap
+    val store = createTestStagingStore()
+    val destinations: Map[Node, Int] = (store.fixtures.remoteNodes ++ store.fixtures.localNodes).toMap
 
     for {
       _ <- store.stage(
         testManifest,
         destinations = destinations,
         content = Source.single(testContent),
-        viaProxy = fixtures.proxy
+        viaProxy = store.fixtures.proxy
       )
       result <- store.drop(testManifest.crate)
     } yield {
-      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+      store.fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+      store.fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
 
       result should be(true)
     }
   }
 
   it should "fail to drop missing crate destage operations" in {
-    val fixtures = new TestFixtures {}
-    val store = new TestStagingStore(fixtures)
+    val store = createTestStagingStore()
 
     for {
       result <- store.drop(testManifest.crate)
     } yield {
-      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
-      fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+      store.fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
+      store.fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
 
       result should be(false)
     }
   }
 
   it should "provide a list of currently pending destaging operations" in {
-    val fixtures = new TestFixtures {}
-    val store = new TestStagingStore(fixtures)
-    val destinations: Map[Node, Int] = (fixtures.remoteNodes ++ fixtures.localNodes).toMap
+    val store = createTestStagingStore()
+    val destinations: Map[Node, Int] = (store.fixtures.remoteNodes ++ store.fixtures.localNodes).toMap
 
     store
       .stage(
         manifest = testManifest,
         destinations = destinations,
         content = Source.single(testContent),
-        viaProxy = fixtures.proxy
+        viaProxy = store.fixtures.proxy
       )
       .await
 
-    fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-    fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+    store.fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+    store.fixtures.stagingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
 
     store.pending.map { result =>
       result.size should be(1)
@@ -231,7 +239,7 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
-  private trait TestFixtures {
+  private class TestFixtures()(implicit telemetry: TelemetryContext) {
     lazy val stagingCrateStore: MockCrateStore = new MockCrateStore()
     lazy val nodeCrateStore: MockCrateStore = new MockCrateStore()
     lazy val testClient: MockHttpEndpointClient = new MockHttpEndpointClient()
@@ -254,9 +262,17 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
     }
   }
 
+  private def createTestStagingStore(
+    fixtures: Option[TestFixtures] = None
+  ): TestStagingStore = {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+    new TestStagingStore(fixtures.getOrElse(new TestFixtures()))
+  }
+
   private class TestStagingStore(
-    val fixtures: TestFixtures = new TestFixtures {}
-  ) extends StagingStore(
+    val fixtures: TestFixtures
+  )(implicit telemetry: TelemetryContext)
+      extends StagingStore(
         crateStore = fixtures.stagingCrateStore,
         destagingDelay = 50.milliseconds
       )

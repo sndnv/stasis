@@ -4,7 +4,9 @@ import akka.Done
 import akka.actor.typed.{ActorSystem, DispatcherSelector, SpawnProtocol}
 import akka.util.ByteString
 import org.apache.geode.cache.Region
+import stasis.core.persistence.Metrics
 import stasis.core.persistence.backends.KeyValueBackend
+import stasis.core.telemetry.TelemetryContext
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
@@ -12,35 +14,48 @@ import scala.jdk.CollectionConverters._
 class GeodeBackend[K, V](
   protected val region: Region[String, Array[Byte]],
   protected val serdes: KeyValueBackend.Serdes[K, V]
-)(implicit system: ActorSystem[SpawnProtocol.Command])
+)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext)
     extends KeyValueBackend[K, V] {
   import serdes._
 
+  private val regionPath = region.getFullPath
+
+  private val metrics = telemetry.metrics[Metrics.KeyValueBackend]
+
   private implicit val ec: ExecutionContext = system.dispatchers.lookup(DispatcherSelector.blocking())
 
-  override def init(): Future[Done] = Future.successful(Done)
+  override def init(): Future[Done] = {
+    metrics.recordInit(backend = regionPath)
+    Future.successful(Done)
+  }
 
   override def drop(): Future[Done] =
     Future {
       region.clear()
+      metrics.recordDrop(backend = regionPath)
       Done
     }
 
   override def put(key: K, value: V): Future[Done] =
     Future {
       val _ = region.put(key.asGeodeKey, value.asGeodeValue)
+      metrics.recordPut(backend = regionPath)
       Done
     }
 
   override def delete(key: K): Future[Boolean] =
     Future {
-      Option(region.remove(key.asGeodeKey)).isDefined
+      val result = Option(region.remove(key.asGeodeKey)).isDefined
+      metrics.recordDelete(backend = regionPath)
+      result
     }
 
   override def get(key: K): Future[Option[V]] =
     Future {
       Option(region.get(key.asGeodeKey)).map { result =>
-        ByteString.fromArray(result): V
+        val value = ByteString.fromArray(result): V
+        metrics.recordGet(backend = regionPath)
+        value
       }
     }
 
@@ -54,6 +69,7 @@ class GeodeBackend[K, V](
         .asScala
         .toMap
         .map { case (k, v) =>
+          metrics.recordGet(backend = regionPath)
           (k: K) -> (ByteString.fromArray(v): V)
         }
     }

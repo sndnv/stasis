@@ -9,6 +9,7 @@ import stasis.identity.authentication.oauth.DefaultClientAuthenticator
 import stasis.identity.model.clients.{Client, ClientStore}
 import stasis.identity.model.secrets.Secret
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.identity.model.Generators
 
 import scala.concurrent.duration._
@@ -116,7 +117,7 @@ class DefaultClientAuthenticatorSpec extends AsyncUnitSpec {
     "DefaultClientAuthenticatorSpec"
   )
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = system.classicSystem
+  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   private implicit val secretConfig: Secret.ClientConfig = Secret.ClientConfig(
     algorithm = "PBKDF2WithHmacSHA512",

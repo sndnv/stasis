@@ -8,11 +8,13 @@ import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
 import stasis.core.security.PreSharedKeyNodeAuthenticator
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import scala.util.control.NonFatal
 
 class PreSharedKeyNodeAuthenticatorSpec extends AsyncUnitSpec {
   "A PreSharedKeyNodeAuthenticator" should "authenticate nodes with valid secrets" in {
+
     val node = Node.Remote.Http(
       id = Node.generateId(),
       address = HttpEndpointAddress("http://some-address:9000"),
@@ -123,6 +125,8 @@ class PreSharedKeyNodeAuthenticatorSpec extends AsyncUnitSpec {
   }
 
   private def createAuthenticator(node: Node.Id, nodeSecret: String): (PreSharedKeyNodeAuthenticator, NodeStore) = {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
     val storeInit = NodeStore(
       backend = MemoryBackend[Node.Id, Node](name = s"node-store-${java.util.UUID.randomUUID()}"),
       cachingEnabled = false

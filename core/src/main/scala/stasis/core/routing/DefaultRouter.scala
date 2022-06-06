@@ -15,6 +15,7 @@ import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.persistence.staging.StagingStore
 import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.core.routing.exceptions.{DiscardFailure, DistributionFailure, PullFailure, PushFailure}
+import stasis.core.telemetry.TelemetryContext
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -24,12 +25,15 @@ class DefaultRouter(
   routerId: Node.Id,
   persistence: DefaultRouter.Persistence,
   nodeProxy: NodeProxy
-)(implicit system: ActorSystem[SpawnProtocol.Command])
+)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext)
     extends Router {
 
   private implicit val ec: ExecutionContext = system.executionContext
 
   private val log = LoggerFactory.getLogger(this.getClass.getName)
+
+  private val router = routerId.toString
+  private val metrics = telemetry.metrics[Metrics.Router]
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   override def push(
@@ -55,6 +59,7 @@ class DefaultRouter(
                     _ <- persistence.manifests.put(manifest.copy(destinations = distribution.keys.map(_.id).toSeq))
                   } yield {
                     log.debug("Initiated staging for crate [{}]", manifest.crate)
+                    metrics.recordStage(router = router, bytes = manifest.size)
                     Done
                   }
 
@@ -71,7 +76,7 @@ class DefaultRouter(
 
                         persistence.reservations.delete(manifest.crate, node.id).flatMap { _ =>
                           nodeProxy
-                            .sink(node, manifest.copy(copies = copies))
+                            .push(node, manifest.copy(copies = copies))
                             .map { sink =>
                               log.debugN(
                                 "Content sink retrieved for node [{}] while pushing crate [{}]",
@@ -97,6 +102,7 @@ class DefaultRouter(
                     )
                     .flatMap { results =>
                       val (sinks, destinations) = results.flatten.unzip
+
                       if (sinks.nonEmpty) {
                         RunnableGraph
                           .fromGraph(GraphDSL.create(sinks.toSeq) { implicit builder => sinkList =>
@@ -111,10 +117,15 @@ class DefaultRouter(
                           .mapMaterializedValue(Future.sequence(_))
                           .run()
                           .flatMap { _ =>
+                            metrics.recordPush(router = router, bytes = destinations.size * manifest.size)
+
                             log.debugN("Crate [{}] pushed to [{}] nodes: [{}]", manifest.crate, destinations.size, destinations)
+
                             persistence.manifests.put(manifest.copy(destinations = destinations.map(_.id).toSeq))
                           }
                       } else {
+                        metrics.recordPushFailure(router = router, Metrics.Router.PushFailure.NoSinks)
+
                         val message = s"Crate [${manifest.crate.toString}] was not pushed; no content sinks retrieved"
                         log.error(message)
                         Future.failed(PushFailure(message))
@@ -122,6 +133,8 @@ class DefaultRouter(
                     }
               }
             } else {
+              metrics.recordPushFailure(router = router, Metrics.Router.PushFailure.ReservationNotRemoved)
+
               val message = s"Push of crate [${manifest.crate.toString}] failed; unable to remove reservation for crate"
               log.error(message)
               Future.failed(PushFailure(message))
@@ -129,6 +142,8 @@ class DefaultRouter(
           }
 
         case Failure(e) =>
+          metrics.recordPushFailure(router = router, Metrics.Router.PushFailure.DistributionFailed)
+
           val message = s"Push of crate [${manifest.crate.toString}] failed: [${e.getClass.getSimpleName} - ${e.getMessage}]"
           log.error(message)
           Future.failed(PushFailure(message))
@@ -140,61 +155,70 @@ class DefaultRouter(
   ): Future[Option[Source[ByteString, NotUsed]]] = {
     def pullFromNodes(
       nodes: List[(Node.Id, Option[Node])],
-      crate: Crate.Id
+      manifest: Manifest
     ): Future[Option[Source[ByteString, NotUsed]]] =
       nodes match {
         case (currentNodeId, currentNode) :: remainingNodes =>
           currentNode match {
             case Some(node) =>
               nodeProxy
-                .pull(node, crate)
+                .pull(node, manifest.crate)
                 .flatMap {
                   case Some(content) =>
                     log.debugN(
                       "Pull of crate [{}] from node [{}] completed",
-                      crate,
+                      manifest.crate,
                       node
                     )
+
+                    metrics.recordPull(router = router, bytes = manifest.size)
 
                     Future.successful(Some(content))
 
                   case None =>
                     log.warnN(
                       "Pull of crate [{}] from node [{}] completed with no content",
-                      crate,
+                      manifest.crate,
                       node
                     )
 
-                    pullFromNodes(remainingNodes, crate)
+                    metrics.recordPullFailure(router = router, reason = Metrics.Router.PullFailure.NoContent)
+
+                    pullFromNodes(remainingNodes, manifest)
                 }
                 .recoverWith { case NonFatal(e) =>
                   log.error(
                     "Pull of crate [{}] from node [{}] failed: [{} - {}]",
-                    crate,
+                    manifest.crate,
                     node,
                     e.getClass.getSimpleName,
                     e.getMessage
                   )
 
-                  pullFromNodes(remainingNodes, crate)
+                  metrics.recordPullFailure(router = router, reason = Metrics.Router.PullFailure.Exception)
+
+                  pullFromNodes(remainingNodes, manifest)
                 }
 
             case None =>
               log.errorN(
                 "Pull of crate [{}] from node [{}] failed; node not found",
-                crate,
+                manifest.crate,
                 currentNodeId
               )
 
-              pullFromNodes(remainingNodes, crate)
+              metrics.recordPullFailure(router = router, reason = Metrics.Router.PullFailure.MissingNode)
 
+              pullFromNodes(remainingNodes, manifest)
           }
 
         case Nil =>
           log.error(
             "Pull of crate [{}] failed; no nodes remaining",
-            crate
+            manifest.crate
           )
+
+          metrics.recordPullFailure(router = router, reason = Metrics.Router.PullFailure.NoNodes)
 
           Future.successful(None)
       }
@@ -221,15 +245,19 @@ class DefaultRouter(
                 }
               }
 
-            pullFromNodes((local ++ remote).toList, crate)
+            pullFromNodes((local ++ remote).toList, manifest)
           }
         } else {
+          metrics.recordPullFailure(router = router, reason = Metrics.Router.PullFailure.NoDestinations)
+
           val message = s"Crate [${crate.toString}] was not pulled; no destinations found"
           log.error(message)
           Future.failed(PullFailure(message))
         }
 
       case None =>
+        metrics.recordPullFailure(router = router, reason = Metrics.Router.PullFailure.NoManifest)
+
         log.warn("Crate [{}] was not pulled; failed to retrieve manifest", crate)
         Future.successful(None)
     }
@@ -249,6 +277,8 @@ class DefaultRouter(
                 manifest.destinations
               )
 
+              metrics.recordDiscard(router = router, bytes = manifest.size)
+
               Future.successful(Done)
             } else {
               if (manifest.destinations.nonEmpty) {
@@ -267,6 +297,8 @@ class DefaultRouter(
                   Done
                 }
               } else {
+                metrics.recordDiscardFailure(router = router, reason = Metrics.Router.DiscardFailure.NoDestinations)
+
                 val message = s"Crate [${crate.toString}] was not discarded; no destinations found"
                 log.error(message)
                 Future.failed(DiscardFailure(message))
@@ -275,6 +307,8 @@ class DefaultRouter(
           }
 
       case None =>
+        metrics.recordDiscardFailure(router = router, reason = Metrics.Router.DiscardFailure.NoManifest)
+
         val message = s"Crate [${crate.toString}] was not discarded; failed to retrieve manifest"
         log.error(message)
         Future.failed(DiscardFailure(message))
@@ -290,22 +324,30 @@ class DefaultRouter(
                 distribution.map { case (node, copies) =>
                   persistence.reservations.existsFor(request.crate, node.id).flatMap { exists =>
                     if (!exists) {
-                      nodeProxy.canStore(node, request.copy(copies = copies)).flatMap { storageAvailable =>
+                      val requestForNode = request.copy(copies = copies)
+
+                      nodeProxy.canStore(node, requestForNode).flatMap { storageAvailable =>
                         if (storageAvailable) {
-                          val reservation = CrateStorageReservation(request, target = node.id)
+                          val reservation = CrateStorageReservation(requestForNode, target = node.id)
                           persistence.reservations.put(reservation).map { _ =>
+                            metrics.recordReserve(router = router, bytes = reservation.copies * reservation.size)
+
                             Some(reservation)
                           }
                         } else {
+                          metrics.recordReserveFailure(router = router, reason = Metrics.Router.ReserveFailure.NoStorage)
+
                           log.warnN(
                             "Storage request [{}] for crate [{}] cannot be fulfilled; storage not available",
-                            request,
-                            request.crate
+                            requestForNode,
+                            requestForNode.crate
                           )
                           Future.successful(None)
                         }
                       }
                     } else {
+                      metrics.recordReserveFailure(router = router, reason = Metrics.Router.ReserveFailure.ReservationExists)
+
                       val message = s"Failed to process reservation request [${request.toString}]; " +
                         s"reservation already exists for crate [${request.crate.toString}]"
                       log.error(message)
@@ -330,15 +372,20 @@ class DefaultRouter(
                   )
 
                   persistence.reservations.put(reservation).map { _ =>
+                    metrics.recordReserve(router = router, bytes = 0) // no storage is actually used by the router
                     Some(reservation)
                   }
                 } else {
+                  metrics.recordReserveFailure(router = router, reason = Metrics.Router.ReserveFailure.ReservationRejected)
+
                   log.error("Storage reservation failed for request [{}]; request rejected by all nodes", request.id)
                   Future.successful(None)
                 }
               }
 
           case Failure(e) =>
+            metrics.recordReserveFailure(router = router, reason = Metrics.Router.ReserveFailure.DistributionFailed)
+
             Future.failed(e)
         }
 
@@ -385,6 +432,8 @@ class DefaultRouter(
 
     dropManifestNodes(manifest, successfulDiscards, destinationsCount).flatMap { _ =>
       if (successful.lengthCompare(destinationsCount) == 0) {
+        metrics.recordDiscard(router = router, bytes = destinationsCount * manifest.size)
+
         log.debugN(
           "Discarded crate [{}] from [{}] nodes: [{}]",
           manifest.crate,
@@ -394,6 +443,8 @@ class DefaultRouter(
 
         Future.successful(Done)
       } else {
+        metrics.recordDiscardFailure(router = router, reason = Metrics.Router.DiscardFailure.MissingNodeOrCrate)
+
         val message = s"Crate [${manifest.crate.toString}] was not discarded; crate or nodes missing"
         log.error(message)
         Future.failed(DiscardFailure(message))
@@ -433,7 +484,7 @@ object DefaultRouter {
     routerId: Node.Id,
     persistence: DefaultRouter.Persistence,
     nodeProxy: NodeProxy
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): DefaultRouter =
+  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext): DefaultRouter =
     new DefaultRouter(
       routerId = routerId,
       persistence = persistence,

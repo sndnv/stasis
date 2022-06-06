@@ -1,6 +1,6 @@
 package stasis.identity.authentication.oauth
 
-import akka.actor.ActorSystem
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import stasis.core.security.exceptions.AuthenticationFailure
 import stasis.identity.model.clients.{Client, ClientStoreView}
 import stasis.identity.model.secrets.Secret
@@ -11,7 +11,7 @@ import scala.util.{Failure, Success, Try}
 class DefaultClientAuthenticator(
   store: ClientStoreView,
   secretConfig: Secret.ClientConfig
-)(implicit val system: ActorSystem)
+)(implicit val system: ActorSystem[SpawnProtocol.Command])
     extends ClientAuthenticator {
 
   override implicit protected def config: Secret.Config = secretConfig
@@ -44,7 +44,7 @@ object DefaultClientAuthenticator {
   def apply(
     store: ClientStoreView,
     secretConfig: Secret.ClientConfig
-  )(implicit system: ActorSystem): DefaultClientAuthenticator =
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): DefaultClientAuthenticator =
     new DefaultClientAuthenticator(
       store = store,
       secretConfig = secretConfig

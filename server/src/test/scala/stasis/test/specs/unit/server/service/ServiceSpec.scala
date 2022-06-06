@@ -24,11 +24,7 @@ import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.security.mocks.MockJwtGenerators
-import stasis.test.specs.unit.server.security.mocks.{
-  MockIdentityDeviceManageEndpoint,
-  MockIdentityUserManageEndpoint,
-  MockSimpleJwtEndpoint
-}
+import stasis.test.specs.unit.server.security.mocks._
 import stasis.test.specs.unit.shared.model.Generators
 
 import java.util.UUID
@@ -38,12 +34,10 @@ import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 
 class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
-  import stasis.shared.api.Formats._
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
-  "Service" should "handle API requests" in {
+  "Service" should "handle API and metrics requests" in {
     implicit val trustedContext: EndpointContext = createTrustedContext()
 
     val token = "test-token"
@@ -75,6 +69,9 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
 
     val corePort = 39999
     val coreUrl = s"https://$interface:$corePort"
+
+    val metricsPort = 59999
+    val metricsUrl = s"http://$interface:$metricsPort"
 
     val (serverPersistence, corePersistence) = eventually[(ServerPersistence, CorePersistence)] {
       service.state match {
@@ -115,6 +112,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
       usersAfter <- serverPersistence.users.view().list().map(_.values.toSeq)
       apiUsersAfter <- getUsers(serviceUrl, jwt)
       crateDiscarded <- coreClient.discard(address = coreAddress, crate = Crate.generateId())
+      metrics <- getMetrics(metricsUrl)
       _ <- serverPersistence.drop()
       _ <- corePersistence.drop()
       _ = service.stop()
@@ -137,6 +135,10 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
       }
 
       crateDiscarded should be(false)
+
+      metrics.filter(_.startsWith(Service.Telemetry.Instrumentation)) should not be empty
+      metrics.filter(_.startsWith("jvm")) should not be empty
+      metrics.filter(_.startsWith("process")) should not be empty
     }
   }
 
@@ -321,7 +323,10 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     serviceUrl: String,
     request: CreateUser,
     jwt: String
-  )(implicit trustedContext: EndpointContext): Future[Done] =
+  )(implicit trustedContext: EndpointContext): Future[Done] = {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import stasis.shared.api.Formats._
+
     Http()
       .singleRequest(
         request = HttpRequest(
@@ -335,11 +340,15 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
         case HttpResponse(StatusCodes.OK, _, _, _) => Future.successful(Done)
         case response                              => fail(s"Unexpected response received: [$response]")
       }
+  }
 
   private def getUsers(
     serviceUrl: String,
     jwt: String
-  )(implicit trustedContext: EndpointContext): Future[Seq[User]] =
+  )(implicit trustedContext: EndpointContext): Future[Seq[User]] = {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import stasis.shared.api.Formats._
+
     Http()
       .singleRequest(
         request = HttpRequest(
@@ -352,12 +361,16 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
         case HttpResponse(StatusCodes.OK, _, entity, _) => Unmarshal(entity).to[Seq[User]]
         case response                                   => fail(s"Unexpected response received: [$response]")
       }
+  }
 
   private def getBootstrapCode(
     bootstrapUrl: String,
     device: Device.Id,
     jwt: String
-  )(implicit trustedContext: EndpointContext): Future[DeviceBootstrapCode] =
+  )(implicit trustedContext: EndpointContext): Future[DeviceBootstrapCode] = {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import stasis.shared.api.Formats._
+
     Http()
       .singleRequest(
         request = HttpRequest(
@@ -370,11 +383,15 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
         case HttpResponse(StatusCodes.OK, _, entity, _) => Unmarshal(entity).to[DeviceBootstrapCode]
         case response                                   => fail(s"Unexpected response received: [$response]")
       }
+  }
 
   private def getBootstrapParams(
     bootstrapUrl: String,
     code: String
-  )(implicit trustedContext: EndpointContext): Future[DeviceBootstrapParameters] =
+  )(implicit trustedContext: EndpointContext): Future[DeviceBootstrapParameters] = {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import stasis.shared.api.Formats._
+
     Http()
       .singleRequest(
         request = HttpRequest(
@@ -386,6 +403,25 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
       .flatMap {
         case HttpResponse(StatusCodes.OK, _, entity, _) => Unmarshal(entity).to[DeviceBootstrapParameters]
         case response                                   => fail(s"Unexpected response received: [$response]")
+      }
+  }
+
+  private def getMetrics(
+    metricsUrl: String
+  ): Future[Seq[String]] =
+    Http()
+      .singleRequest(
+        request = HttpRequest(
+          method = HttpMethods.GET,
+          uri = metricsUrl
+        )
+      )
+      .flatMap {
+        case HttpResponse(StatusCodes.OK, _, entity, _) => Unmarshal(entity).to[String]
+        case response                                   => fail(s"Unexpected response received: [$response]")
+      }
+      .map { result =>
+        result.split("\n").toSeq.filterNot(_.startsWith("#"))
       }
 
   private def createTrustedContext(): EndpointContext = {

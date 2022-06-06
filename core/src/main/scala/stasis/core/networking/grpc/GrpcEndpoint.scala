@@ -1,7 +1,7 @@
 package stasis.core.networking.grpc
 
 import akka.NotUsed
-import akka.actor.ActorSystem
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.grpc.scaladsl.{GrpcExceptionHandler, GrpcMarshalling}
 import akka.http.scaladsl.Http
@@ -12,6 +12,7 @@ import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
 import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{Materializer, SystemMaterializer}
 import org.slf4j.LoggerFactory
+import stasis.core.api.Metrics
 import stasis.core.networking.Endpoint
 import stasis.core.networking.exceptions.{CredentialsFailure, EndpointFailure, ReservationFailure}
 import stasis.core.packaging.Manifest
@@ -20,6 +21,7 @@ import stasis.core.routing.{Node, Router}
 import stasis.core.security.NodeAuthenticator
 import stasis.core.security.tls.EndpointContext
 import stasis.core.security.tls.EndpointContext.RichServerBuilder
+import stasis.core.telemetry.TelemetryContext
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
@@ -29,15 +31,16 @@ class GrpcEndpoint(
   router: Router,
   reservationStore: ReservationStoreView,
   override protected val authenticator: NodeAuthenticator[HttpCredentials]
-)(implicit system: ActorSystem)
+)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext)
     extends Endpoint[HttpCredentials] {
 
   import internal.Implicits._
 
   private implicit val mat: Materializer = SystemMaterializer(system).materializer
-  private implicit val ec: ExecutionContext = system.dispatcher
+  private implicit val ec: ExecutionContext = system.executionContext
 
   private val log = LoggerFactory.getLogger(this.getClass.getName)
+  private val metrics = telemetry.metrics[Metrics.Endpoint]
 
   def start(interface: String, port: Int, context: Option[EndpointContext]): Future[Http.ServerBinding] =
     Http()
@@ -167,7 +170,10 @@ class GrpcEndpoint(
   def grpcHandler(request: HttpRequest, node: Node.Id): Future[HttpResponse] = {
     import proto.StasisEndpoint.Serializers._
 
-    request.uri.path match {
+    val requestStart = System.currentTimeMillis()
+    metrics.recordRequest(request)
+
+    val response = request.uri.path match {
       case Path.Slash(Segment(proto.StasisEndpoint.name, Path.Slash(Segment(method, Path.Empty)))) =>
         GrpcMarshalling
           .negotiated(
@@ -210,6 +216,12 @@ class GrpcEndpoint(
       case _ =>
         Future.successful(HttpResponse(StatusCodes.NotFound))
     }
+
+    response
+      .map { actualResponse =>
+        metrics.recordResponse(requestStart, request, actualResponse)
+        actualResponse
+      }
   }
 
   def authenticated(

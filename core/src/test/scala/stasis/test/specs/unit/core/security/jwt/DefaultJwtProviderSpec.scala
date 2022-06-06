@@ -8,6 +8,7 @@ import stasis.core.security.jwt.DefaultJwtProvider
 import stasis.core.security.oauth.OAuthClient
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.security.mocks.MockOAuthClient
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -60,6 +61,8 @@ class DefaultJwtProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DefaultJwtProviderSpec"
   )
+
+  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   private val client = "some-client"
 

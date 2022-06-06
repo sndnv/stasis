@@ -15,6 +15,7 @@ import stasis.shared.model.users.User
 import stasis.shared.secrets.SecretsConfig
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import java.util.UUID
 import scala.concurrent.Future
@@ -71,6 +72,8 @@ class ApiClientsSpec extends AsyncUnitSpec with ResourceHelpers {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "ApiClientsSpec"
   )
+
+  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 }

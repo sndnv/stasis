@@ -26,6 +26,7 @@ import stasis.shared.model.schedules.Schedule
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
 import stasis.test.specs.unit.client.mocks.{MockEncryption, MockServerApiEndpoint, MockServerCoreEndpointClient}
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.shared.model.Generators
 
 import scala.collection.mutable
@@ -506,6 +507,8 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DefaultServerApiEndpointClientSpec"
   )
+
+  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   private val ports: mutable.Queue[Int] = (22000 to 22100).to(mutable.Queue)
 

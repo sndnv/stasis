@@ -7,23 +7,32 @@ import akka.stream.{CompletionStrategy, OverflowStrategy}
 import akka.stream.scaladsl.Source
 import akka.util.Timeout
 import akka.{Done, NotUsed}
+import stasis.core.persistence.Metrics
 import stasis.core.persistence.backends.EventLogBackend
+import stasis.core.telemetry.TelemetryContext
 
 import scala.collection.immutable.Queue
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 
 class EventLogMemoryBackend[E, S] private (
+  name: String,
   storeRef: Future[ActorRef[EventLogMemoryBackend.Message[E, S]]],
   stateStreamBufferSize: Int
-)(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout, tag: ClassTag[S])
-    extends EventLogBackend[E, S] {
+)(implicit
+  system: ActorSystem[SpawnProtocol.Command],
+  telemetry: TelemetryContext,
+  timeout: Timeout,
+  tag: ClassTag[S]
+) extends EventLogBackend[E, S] {
   import EventLogMemoryBackend._
 
   private implicit val ec: ExecutionContext = system.executionContext
 
+  private val metrics = telemetry.metrics[Metrics.EventLogBackend]
+
   override def getState: Future[S] =
-    storeRef.flatMap(_ ? (ref => GetState(ref)))
+    storeRef.flatMap(_ ? ((ref: ActorRef[S]) => GetState(ref)))
 
   override def getStateStream: Source[S, NotUsed] = {
     val (actor, source) = Source
@@ -41,10 +50,15 @@ class EventLogMemoryBackend[E, S] private (
   }
 
   override def getEvents: Future[Queue[E]] =
-    storeRef.flatMap(_ ? (ref => GetEvents(ref)))
+    storeRef.flatMap(_ ? ((ref: ActorRef[Queue[E]]) => GetEvents(ref)))
 
   override def storeEventAndUpdateState(event: E, update: (E, S) => S): Future[Done] =
-    storeRef.flatMap(_ ? (ref => StoreEventAndUpdateState(event, update, ref)))
+    storeRef
+      .flatMap(_ ? ((ref: ActorRef[Done]) => StoreEventAndUpdateState(event, update, ref)))
+      .map { result =>
+        metrics.recordEvent(backend = name)
+        result
+      }
 }
 
 object EventLogMemoryBackend {
@@ -53,17 +67,26 @@ object EventLogMemoryBackend {
   def apply[E, S: ClassTag](
     name: String,
     initialState: => S
-  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): EventLogMemoryBackend[E, S] =
+  )(implicit
+    system: ActorSystem[SpawnProtocol.Command],
+    telemetry: TelemetryContext,
+    timeout: Timeout
+  ): EventLogMemoryBackend[E, S] =
     apply(name = name, stateStreamBufferSize = DefaultStreamBufferSize, initialState = initialState)
 
   def apply[E, S: ClassTag](
     name: String,
     stateStreamBufferSize: Int,
     initialState: => S
-  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): EventLogMemoryBackend[E, S] = {
+  )(implicit
+    system: ActorSystem[SpawnProtocol.Command],
+    telemetry: TelemetryContext,
+    timeout: Timeout
+  ): EventLogMemoryBackend[E, S] = {
     val behaviour = store(state = initialState, events = Queue.empty[E])
 
     new EventLogMemoryBackend[E, S](
+      name = name,
       storeRef = system ? (SpawnProtocol.Spawn(behaviour, name, Props.empty, _)),
       stateStreamBufferSize = stateStreamBufferSize
     )

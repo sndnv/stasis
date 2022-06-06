@@ -9,6 +9,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
+import stasis.core.telemetry.TelemetryContext
 import stasis.server.api.routes.{Devices, RoutesContext}
 import stasis.server.model.devices.DeviceStore
 import stasis.server.model.nodes.ServerNodeStore
@@ -20,6 +21,7 @@ import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.mocks.MockNodeStore
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.model.mocks.{MockDeviceStore, MockUserStore}
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
 
@@ -316,6 +318,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
 
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
+
+  private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 
   private trait TestFixtures {
     lazy val userStore: UserStore = MockUserStore()

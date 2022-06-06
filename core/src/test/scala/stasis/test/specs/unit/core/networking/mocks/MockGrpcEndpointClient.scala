@@ -18,13 +18,6 @@ class MockGrpcEndpointClient()(implicit system: ActorSystem[SpawnProtocol.Comman
     ) {
   override def push(
     address: GrpcEndpointAddress,
-    manifest: packaging.Manifest,
-    content: Source[ByteString, NotUsed]
-  ): Future[Done] =
-    Future.failed(new IllegalStateException("Mock gRPC endpoint is not available"))
-
-  override def sink(
-    address: GrpcEndpointAddress,
     manifest: packaging.Manifest
   ): Future[Sink[ByteString, Future[Done]]] =
     Future.failed(new IllegalStateException("Mock gRPC endpoint is not available"))

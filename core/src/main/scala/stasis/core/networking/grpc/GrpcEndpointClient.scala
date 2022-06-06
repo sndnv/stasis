@@ -35,42 +35,6 @@ class GrpcEndpointClient(
 
   override def push(
     address: GrpcEndpointAddress,
-    manifest: Manifest,
-    content: Source[ByteString, NotUsed]
-  ): Future[Done] = {
-    log.debugN("Pushing to endpoint [{}] content with manifest [{}]", address.host, manifest)
-
-    credentials
-      .provide(address)
-      .recoverWith { case NonFatal(e) =>
-        val message =
-          s"Push to endpoint [${address.host}] failed for crate [${manifest.crate.toString}];" +
-            s" unable to retrieve credentials: [${e.getMessage}]"
-        log.error(message)
-        Future.failed(CredentialsFailure(message))
-      }
-      .flatMap { endpointCredentials =>
-        val client = internal.Client(address, context)
-
-        for {
-          reservation <- reserveStorage(client, address, manifest, endpointCredentials)
-          result <- pushCrate(
-            client = client,
-            address = address,
-            manifest = manifest,
-            endpointCredentials = endpointCredentials,
-            reservation = reservation,
-            content = content,
-            maxChunkSize = maxChunkSize
-          )
-        } yield {
-          result
-        }
-      }
-  }
-
-  override def sink(
-    address: GrpcEndpointAddress,
     manifest: Manifest
   ): Future[Sink[ByteString, Future[Done]]] = {
     log.debugN("Building content sink for endpoint [{}] with manifest [{}]", address.host, manifest)
@@ -87,16 +51,16 @@ class GrpcEndpointClient(
       .flatMap { endpointCredentials =>
         val client = internal.Client(address, context)
 
-        val (sink, content) = Source
-          .asSubscriber[ByteString]
-          .toMat(Sink.asPublisher[ByteString](fanout = false))(Keep.both)
-          .mapMaterializedValue { case (subscriber, publisher) =>
-            (Sink.fromSubscriber(subscriber), Source.fromPublisher(publisher))
-          }
-          .run()
-
         reserveStorage(client, address, manifest, endpointCredentials).map { reservation =>
-          val _ = pushCrate(
+          val (sink, content) = Source
+            .asSubscriber[ByteString]
+            .toMat(Sink.asPublisher[ByteString](fanout = false))(Keep.both)
+            .mapMaterializedValue { case (subscriber, publisher) =>
+              (Sink.fromSubscriber(subscriber), Source.fromPublisher(publisher))
+            }
+            .run()
+
+          val result = pushCrate(
             client = client,
             address = address,
             manifest = manifest,
@@ -106,7 +70,7 @@ class GrpcEndpointClient(
             maxChunkSize = maxChunkSize
           )
 
-          sink.mapMaterializedValue(_ => Future.successful(Done))
+          sink.mapMaterializedValue(_ => result)
         }
       }
   }

@@ -8,6 +8,7 @@ import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class NodeStoreSpec extends AsyncUnitSpec {
 
@@ -81,6 +82,8 @@ class NodeStoreSpec extends AsyncUnitSpec {
   )
 
   private def createStore(cachingEnabled: Boolean): NodeStore = {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
     val StoreInitializationResult(store, init) = NodeStore(
       MemoryBackend[Node.Id, Node](name = s"node-store-${java.util.UUID.randomUUID()}"),
       cachingEnabled = cachingEnabled

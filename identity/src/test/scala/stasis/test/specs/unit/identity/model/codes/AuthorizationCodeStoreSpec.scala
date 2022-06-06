@@ -7,6 +7,7 @@ import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.identity.model.clients.Client
 import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, StoredAuthorizationCode}
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.identity.model.Generators
 
 import scala.concurrent.Future
@@ -64,6 +65,8 @@ class AuthorizationCodeStoreSpec extends AsyncUnitSpec {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "AuthorizationCodeStoreSpec"
   )
+
+  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   private def createStore(expiration: FiniteDuration = 3.seconds): AuthorizationCodeStore =
     AuthorizationCodeStore(

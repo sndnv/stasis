@@ -8,9 +8,9 @@ import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.api.MessageResponse
-import stasis.core.api.directives.EntityDiscardingDirectives
+import stasis.core.api.directives.{EntityDiscardingDirectives, LoggingDirectives}
 import stasis.core.networking.Endpoint
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.CrateStorageRequest
@@ -18,6 +18,7 @@ import stasis.core.persistence.reservations.ReservationStoreView
 import stasis.core.routing.Router
 import stasis.core.security.NodeAuthenticator
 import stasis.core.security.tls.EndpointContext
+import stasis.core.telemetry.TelemetryContext
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -28,14 +29,15 @@ class HttpEndpoint(
   router: Router,
   reservationStore: ReservationStoreView,
   override protected val authenticator: NodeAuthenticator[HttpCredentials]
-)(implicit system: ActorSystem[SpawnProtocol.Command])
+)(implicit system: ActorSystem[SpawnProtocol.Command], override val telemetry: TelemetryContext)
     extends Endpoint[HttpCredentials]
-    with EntityDiscardingDirectives {
+    with EntityDiscardingDirectives
+    with LoggingDirectives {
 
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.core.api.Formats._
 
-  private val log = LoggerFactory.getLogger(this.getClass.getName)
+  override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   def start(interface: String, port: Int, context: Option[EndpointContext]): Future[Http.ServerBinding] = {
     import EndpointContext._
@@ -44,8 +46,10 @@ class HttpEndpoint(
       .newServerAt(interface = interface, port = port)
       .withContext(context = context)
       .bindFlow(
-        handlerFlow = (handleExceptions(sanitizingExceptionHandler) & handleRejections(rejectionHandler)) {
-          routes
+        handlerFlow = withLoggedRequestAndResponse {
+          (handleExceptions(sanitizingExceptionHandler) & handleRejections(rejectionHandler)) {
+            routes
+          }
         }
       )
   }
@@ -112,112 +116,111 @@ class HttpEndpoint(
       .result()
       .seal
 
-  val routes: Route =
-    (extractMethod & extractUri & extractClientIP) { (method, uri, remoteAddress) =>
-      extractCredentials {
-        case Some(credentials) =>
-          onComplete(authenticator.authenticate(credentials)) {
-            case Success(node) =>
-              concat(
-                path("reservations") {
-                  put {
-                    entity(as[CrateStorageRequest]) { storageRequest =>
-                      onSuccess(router.reserve(storageRequest)) {
-                        case Some(reservation) =>
-                          log.debugN("Reservation created for node [{}]: [{}]", node, reservation)
-                          complete(reservation)
+  val routes: Route = (extractMethod & extractUri & extractClientIP) { (method, uri, remoteAddress) =>
+    extractCredentials {
+      case Some(credentials) =>
+        onComplete(authenticator.authenticate(credentials)) {
+          case Success(node) =>
+            concat(
+              path("reservations") {
+                put {
+                  entity(as[CrateStorageRequest]) { storageRequest =>
+                    onSuccess(router.reserve(storageRequest)) {
+                      case Some(reservation) =>
+                        log.debugN("Reservation created for node [{}]: [{}]", node, reservation)
+                        complete(reservation)
 
-                        case None =>
-                          log.warn("Reservation rejected for node [{}]", node)
-                          complete(StatusCodes.InsufficientStorage)
-                      }
+                      case None =>
+                        log.warn("Reservation rejected for node [{}]", node)
+                        complete(StatusCodes.InsufficientStorage)
                     }
                   }
-                },
-                path("crates" / JavaUUID) { crateId: Crate.Id =>
-                  concat(
-                    put {
-                      parameters("reservation".as[java.util.UUID]) { reservationId =>
-                        onSuccess(reservationStore.get(reservationId)) {
-                          case Some(reservation) if reservation.crate == crateId =>
-                            extractDataBytes { stream =>
-                              val manifest = Manifest(source = node, reservation = reservation)
-                              onSuccess(
-                                router.push(manifest, stream.mapMaterializedValue(_ => NotUsed))
-                              ) { _ =>
-                                log.debug("Crate created with manifest: [{}]", manifest)
-                                complete(StatusCodes.OK)
-                              }
+                }
+              },
+              path("crates" / JavaUUID) { crateId: Crate.Id =>
+                concat(
+                  put {
+                    parameters("reservation".as[java.util.UUID]) { reservationId =>
+                      onSuccess(reservationStore.get(reservationId)) {
+                        case Some(reservation) if reservation.crate == crateId =>
+                          extractDataBytes { stream =>
+                            val manifest = Manifest(source = node, reservation = reservation)
+                            onSuccess(
+                              router.push(manifest, stream.mapMaterializedValue(_ => NotUsed))
+                            ) { _ =>
+                              log.debug("Crate created with manifest: [{}]", manifest)
+                              complete(StatusCodes.OK)
                             }
+                          }
 
-                          case Some(reservation) =>
-                            log.error(
-                              "Node [{}] failed to push crate with ID [{}]; reservation [{}] is for crate [{}]",
-                              node,
-                              crateId,
-                              reservationId,
-                              reservation.crate
-                            )
+                        case Some(reservation) =>
+                          log.error(
+                            "Node [{}] failed to push crate with ID [{}]; reservation [{}] is for crate [{}]",
+                            node,
+                            crateId,
+                            reservationId,
+                            reservation.crate
+                          )
 
-                            discardEntity & complete(StatusCodes.BadRequest)
-
-                          case None =>
-                            log.error(
-                              "Node [{}] failed to push crate with ID [{}]; reservation [{}] not found",
-                              node,
-                              crateId,
-                              reservationId
-                            )
-
-                            discardEntity & complete(StatusCodes.FailedDependency)
-                        }
-                      }
-                    },
-                    get {
-                      onSuccess(router.pull(crateId)) {
-                        case Some(stream) =>
-                          log.debugN("Node [{}] pulling crate [{}]", node, crateId)
-                          complete(HttpEntity(ContentTypes.`application/octet-stream`, stream))
+                          discardEntity & complete(StatusCodes.BadRequest)
 
                         case None =>
-                          log.warnN("Node [{}] failed to pull crate [{}]", node, crateId)
-                          complete(StatusCodes.NotFound)
-                      }
-                    },
-                    delete {
-                      onSuccess(router.discard(crateId)) { _ =>
-                        log.debugN("Node [{}] discarded crate [{}]", node, crateId)
-                        complete(StatusCodes.OK)
+                          log.error(
+                            "Node [{}] failed to push crate with ID [{}]; reservation [{}] not found",
+                            node,
+                            crateId,
+                            reservationId
+                          )
+
+                          discardEntity & complete(StatusCodes.FailedDependency)
                       }
                     }
-                  )
-                }
-              )
+                  },
+                  get {
+                    onSuccess(router.pull(crateId)) {
+                      case Some(stream) =>
+                        log.debugN("Node [{}] pulling crate [{}]", node, crateId)
+                        complete(HttpEntity(ContentTypes.`application/octet-stream`, stream))
 
-            case Failure(e) =>
-              log.warn(
-                "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{} - {}]",
-                method.value,
-                uri,
-                remoteAddress,
-                e.getClass.getSimpleName,
-                e.getMessage
-              )
+                      case None =>
+                        log.warnN("Node [{}] failed to pull crate [{}]", node, crateId)
+                        complete(StatusCodes.NotFound)
+                    }
+                  },
+                  delete {
+                    onSuccess(router.discard(crateId)) { _ =>
+                      log.debugN("Node [{}] discarded crate [{}]", node, crateId)
+                      complete(StatusCodes.OK)
+                    }
+                  }
+                )
+              }
+            )
 
-              discardEntity & complete(StatusCodes.Unauthorized)
-          }
+          case Failure(e) =>
+            log.warn(
+              "Rejecting [{}] request for [{}] with invalid credentials from [{}]: [{} - {}]",
+              method.value,
+              uri,
+              remoteAddress,
+              e.getClass.getSimpleName,
+              e.getMessage
+            )
 
-        case None =>
-          log.warn(
-            "Rejecting [{}] request for [{}] with no credentials from [{}]",
-            method.value,
-            uri,
-            remoteAddress
-          )
+            discardEntity & complete(StatusCodes.Unauthorized)
+        }
 
-          discardEntity & complete(StatusCodes.Unauthorized)
-      }
+      case None =>
+        log.warn(
+          "Rejecting [{}] request for [{}] with no credentials from [{}]",
+          method.value,
+          uri,
+          remoteAddress
+        )
+
+        discardEntity & complete(StatusCodes.Unauthorized)
     }
+  }
 }
 
 object HttpEndpoint {
@@ -225,7 +228,7 @@ object HttpEndpoint {
     router: Router,
     reservationStore: ReservationStoreView,
     authenticator: NodeAuthenticator[HttpCredentials]
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): HttpEndpoint =
+  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext): HttpEndpoint =
     new HttpEndpoint(
       router = router,
       reservationStore = reservationStore,

@@ -8,6 +8,7 @@ import stasis.core.security.keys.RemoteKeyProvider
 import stasis.core.security.tls.EndpointContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.security.mocks.MockJwksEndpoint
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import scala.collection.mutable
 import scala.concurrent.duration._
@@ -16,6 +17,8 @@ import scala.util.{Failure, Success}
 
 class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
   "An RemoteKeyProvider" should "provide keys from a JWKs endpoint" in {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
     val endpoint = new MockJwksEndpoint(port = ports.dequeue())
     endpoint.start()
 
@@ -39,10 +42,14 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
 
         endpoint.count(path = jwksPath) should be(1)
         actualKey should be(expectedKey)
+
+        telemetry.security.keyProvider.keyRefresh should be(1)
       }
   }
 
   it should "fail to provide missing keys" in {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
     val endpoint = new MockJwksEndpoint(port = ports.dequeue())
     endpoint.start()
 
@@ -68,10 +75,14 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
 
         endpoint.count(path = jwksPath) should be(1)
         e.getMessage should be(s"Key [$expectedKeyId] was not found")
+
+        telemetry.security.keyProvider.keyRefresh should be(1)
       }
   }
 
   it should "not provide keys with no IDs" in {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
     val provider = RemoteKeyProvider(
       jwksEndpoint = "localhost",
       context = None,
@@ -87,6 +98,8 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
       }
       .recover { case NonFatal(e) =>
         e.getMessage should be("Key expected but none was provided")
+
+        telemetry.security.keyProvider.keyRefresh should be(1)
       }
   }
 
@@ -220,6 +233,8 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
   }
 
   it should "support faster key refresh on failure" in {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
     val endpoint = new MockJwksEndpoint(port = ports.dequeue())
     endpoint.start()
 
@@ -248,10 +263,14 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
 
         endpoint.count(path = jwksPath) should be >= 2
         e.getMessage should be(s"Key [$expectedKeyId] was not found")
+
+        telemetry.security.keyProvider.keyRefresh should be >= 2
       }
   }
 
   it should "support custom connection contexts" in {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
     val config: Config = ConfigFactory.load().getConfig("stasis.test.core.security.tls")
 
     val serverContextConfig = EndpointContext.Config(config.getConfig("context-server-jks"))
@@ -283,6 +302,7 @@ class RemoteKeyProviderSpec extends AsyncUnitSpec with BeforeAndAfterAll {
       .map { actualKey =>
         endpoint.stop()
         actualKey should be(expectedKey)
+        telemetry.security.keyProvider.keyRefresh should be(1)
       }
   }
 
