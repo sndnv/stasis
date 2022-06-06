@@ -10,6 +10,7 @@ import akka.http.scaladsl.unmarshalling.Unmarshal
 import play.api.libs.json.Json
 import stasis.core.api.MessageResponse
 import stasis.core.routing.Node
+import stasis.core.telemetry.TelemetryContext
 import stasis.server.api.BootstrapEndpoint
 import stasis.server.api.routes.DeviceBootstrap
 import stasis.server.model.devices.{DeviceBootstrapCodeStore, DeviceStore}
@@ -19,6 +20,7 @@ import stasis.server.security.authenticators.{BootstrapCodeAuthenticator, UserAu
 import stasis.shared.model.devices.{Device, DeviceBootstrapCode, DeviceBootstrapParameters}
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.Secrets
 import stasis.test.specs.unit.server.model.mocks._
 import stasis.test.specs.unit.server.security.mocks._
@@ -152,6 +154,8 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "BootstrapEndpointSpec"
   )
+
+  private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 
   private trait TestFixtures {
     lazy val userStore: UserStore = MockUserStore()

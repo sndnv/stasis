@@ -9,6 +9,7 @@ import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.api.directives.{EntityDiscardingDirectives, LoggingDirectives}
 import stasis.core.security.tls.EndpointContext
+import stasis.core.telemetry.TelemetryContext
 import stasis.server.api.routes.{DeviceBootstrap, RoutesContext}
 import stasis.server.security.ResourceProvider
 import stasis.server.security.authenticators.{BootstrapCodeAuthenticator, UserAuthenticator}
@@ -21,7 +22,7 @@ class BootstrapEndpoint(
   userAuthenticator: UserAuthenticator,
   bootstrapCodeAuthenticator: BootstrapCodeAuthenticator,
   deviceBootstrapContext: DeviceBootstrap.BootstrapContext
-)(implicit val system: ActorSystem[SpawnProtocol.Command])
+)(implicit val system: ActorSystem[SpawnProtocol.Command], override val telemetry: TelemetryContext)
     extends LoggingDirectives
     with EntityDiscardingDirectives {
   private implicit val ec: ExecutionContextExecutor = system.executionContext
@@ -112,7 +113,7 @@ object BootstrapEndpoint {
     userAuthenticator: UserAuthenticator,
     bootstrapCodeAuthenticator: BootstrapCodeAuthenticator,
     deviceBootstrapContext: DeviceBootstrap.BootstrapContext
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): BootstrapEndpoint =
+  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext): BootstrapEndpoint =
     new BootstrapEndpoint(
       resourceProvider = resourceProvider,
       userAuthenticator = userAuthenticator,

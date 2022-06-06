@@ -13,6 +13,7 @@ import stasis.client.staging.{DefaultFileStaging, FileStaging}
 import stasis.client.tracking.TrackerView
 import stasis.client.tracking.trackers.DefaultTracker
 import stasis.core.persistence.backends.memory.EventLogMemoryBackend
+import stasis.core.telemetry.TelemetryContext
 
 import java.nio.file.Paths
 import scala.concurrent.duration._
@@ -24,6 +25,7 @@ trait Base extends FutureOps {
   implicit def system: ActorSystem[SpawnProtocol.Command]
   implicit def ec: ExecutionContext
   implicit def log: Logger
+  implicit def telemetry: TelemetryContext
 
   def directory: ApplicationDirectory
 
@@ -48,6 +50,7 @@ object Base {
     terminate: () => Unit
   )(implicit
     typedSystem: ActorSystem[SpawnProtocol.Command],
+    telemetryContext: TelemetryContext,
     logger: Logger
   ): Future[Base] =
     Future.fromTry(
@@ -56,6 +59,7 @@ object Base {
           override implicit val system: ActorSystem[SpawnProtocol.Command] = typedSystem
           override implicit val ec: ExecutionContext = typedSystem.executionContext
           override implicit val log: Logger = logger
+          override implicit val telemetry: TelemetryContext = telemetryContext
 
           override val directory: ApplicationDirectory =
             applicationDirectory
@@ -94,7 +98,7 @@ object Base {
                 EventLogMemoryBackend(
                   name = s"tracker-${java.util.UUID.randomUUID().toString}",
                   initialState = state
-                )(implicitly[ClassTag[TrackerView.State]], typedSystem, timeout)
+                )(implicitly[ClassTag[TrackerView.State]], typedSystem, telemetry, timeout)
             )
 
           override val terminateService: () => Unit = terminate

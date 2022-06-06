@@ -6,13 +6,14 @@ import akka.util.Timeout
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
+import stasis.core.telemetry.TelemetryContext
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class MockNodeStore(
   replacementNodes: Map[Node.Id, Option[Node]] = Map.empty
-)(implicit system: ActorSystem[SpawnProtocol.Command])
+)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext)
     extends NodeStore {
   private type StoreKey = Node.Id
   private type StoreValue = Node

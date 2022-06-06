@@ -1,14 +1,15 @@
 package stasis.test.specs.unit.server.model.devices
 
 import java.time.Instant
-
 import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import stasis.core.telemetry.TelemetryContext
 import stasis.shared.model.devices.{Device, DeviceBootstrapCode}
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.model.mocks.MockDeviceBootstrapCodeStore
 
 import scala.util.control.NonFatal
@@ -242,6 +243,8 @@ class DeviceBootstrapCodeStoreSpec extends AsyncUnitSpec {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DeviceBootstrapCodeStore"
   )
+
+  private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 
   private val ownDevices = Seq(Device.generateId(), Device.generateId())
 

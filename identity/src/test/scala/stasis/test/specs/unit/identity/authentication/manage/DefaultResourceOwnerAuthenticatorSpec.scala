@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.identity.authentication.manage
 
 import java.security.Key
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
@@ -15,6 +14,7 @@ import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore}
 import stasis.identity.model.tokens.generators.JwtBearerAccessTokenGenerator
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.security.mocks.MockJwksGenerators
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.identity.model.Generators
 
 import scala.concurrent.Future
@@ -162,6 +162,8 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
     jwk = jwk,
     jwtExpiration = 3.seconds
   )
+
+  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   private def createStore() =
     ResourceOwnerStore(

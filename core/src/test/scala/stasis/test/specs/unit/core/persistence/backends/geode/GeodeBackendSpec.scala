@@ -9,6 +9,7 @@ import org.apache.geode.cache.client.{ClientCache, ClientCacheFactory, ClientReg
 import org.apache.geode.distributed.{ConfigurationProperties, ServerLauncher}
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.core.persistence.backends.geode.GeodeBackend
+import stasis.core.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.backends.KeyValueBackendBehaviour
 
@@ -16,12 +17,12 @@ import scala.concurrent.Future
 
 class GeodeBackendSpec extends AsyncUnitSpec with KeyValueBackendBehaviour {
   "A GeodeBackend" should behave like keyValueBackend[TestGeodeBackend](
-    createBackend = () => new TestGeodeBackend,
+    createBackend = telemetry => new TestGeodeBackend()(telemetry),
     before = _.init(),
     after = _.close()
   )
 
-  private class TestGeodeBackend extends KeyValueBackend[String, Int] {
+  private class TestGeodeBackend(implicit telemetry: TelemetryContext) extends KeyValueBackend[String, Int] {
 
     private val serverLauncher: ServerLauncher =
       new ServerLauncher.Builder()
@@ -68,11 +69,12 @@ class GeodeBackendSpec extends AsyncUnitSpec with KeyValueBackendBehaviour {
 
     override def entries: Future[Map[String, Int]] = geodeBackend.entries
 
-    def close(): Future[Done] = {
-      cache.close()
-      serverLauncher.stop()
-      Future.successful(Done)
-    }
+    def close(): Future[Done] =
+      drop().map { _ =>
+        cache.close()
+        serverLauncher.stop()
+        Done
+      }
   }
 
   private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(

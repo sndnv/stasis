@@ -11,6 +11,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.service.components.{Base, Init}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import scala.concurrent.duration._
 import scala.concurrent.{Future, Promise}
@@ -73,6 +74,8 @@ class InitSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockitoSugar
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "InitSpec"
   )
+
+  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 

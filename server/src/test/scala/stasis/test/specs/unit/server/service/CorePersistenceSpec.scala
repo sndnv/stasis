@@ -3,9 +3,11 @@ package stasis.test.specs.unit.server.service
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import com.typesafe.config.Config
+import stasis.core.telemetry.TelemetryContext
 import stasis.server.service.CorePersistence
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.Generators
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class CorePersistenceSpec extends AsyncUnitSpec {
   "CorePersistence" should "setup staging store based on config" in {
@@ -77,6 +79,8 @@ class CorePersistenceSpec extends AsyncUnitSpec {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "CorePersistenceSpec"
   )
+
+  private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 
   private val config: Config = system.settings.config.getConfig("stasis.test.server")
 }

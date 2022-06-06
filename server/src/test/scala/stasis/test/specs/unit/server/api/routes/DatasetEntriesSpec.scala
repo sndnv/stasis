@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.server.api.routes
 
 import java.time.Instant
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.marshalling.Marshal
@@ -11,6 +10,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
+import stasis.core.telemetry.TelemetryContext
 import stasis.server.api.routes.{DatasetEntries, RoutesContext}
 import stasis.server.model.datasets.DatasetEntryStore
 import stasis.server.model.devices.DeviceStore
@@ -21,6 +21,7 @@ import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.model.mocks.{MockDatasetEntryStore, MockDeviceStore}
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
 
@@ -209,6 +210,8 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
 
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
+
+  private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 
   private trait TestFixtures {
     lazy val deviceStore: DeviceStore = MockDeviceStore()

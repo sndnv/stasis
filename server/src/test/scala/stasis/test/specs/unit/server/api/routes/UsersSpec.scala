@@ -7,6 +7,7 @@ import akka.http.scaladsl.model.{RequestEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.{Logger, LoggerFactory}
+import stasis.core.telemetry.TelemetryContext
 import stasis.server.api.routes.{RoutesContext, Users}
 import stasis.server.model.users.UserStore
 import stasis.server.security.users.UserCredentialsManager
@@ -16,6 +17,7 @@ import stasis.shared.api.responses.{CreatedUser, DeletedUser, UpdatedUserSalt}
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.Secrets
 import stasis.test.specs.unit.server.model.mocks.MockUserStore
 import stasis.test.specs.unit.server.security.mocks.{MockResourceProvider, MockUserCredentialsManager}
@@ -709,6 +711,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
   private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
 
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
+
+  private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 
   private trait TestFixtures {
     lazy val userStore: UserStore = MockUserStore()

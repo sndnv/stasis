@@ -1,13 +1,14 @@
 package stasis.test.specs.unit.server.model.schedules
 
 import java.time.LocalDateTime
-
 import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import stasis.core.telemetry.TelemetryContext
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.model.mocks.MockScheduleStore
 
 import scala.concurrent.duration._
@@ -149,6 +150,8 @@ class ScheduleStoreSpec extends AsyncUnitSpec {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "ScheduleStoreSpec"
   )
+
+  private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 
   private val mockSchedule = Schedule(
     id = Schedule.generateId(),

@@ -4,6 +4,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.routing.Node
+import stasis.core.telemetry.TelemetryContext
 import stasis.server.model.nodes.ServerNodeStore
 import stasis.server.security.CurrentUser
 import stasis.shared.model.devices.Device
@@ -12,6 +13,7 @@ import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.Generators
 import stasis.test.specs.unit.core.persistence.mocks.MockNodeStore
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import scala.util.control.NonFatal
 
@@ -195,6 +197,8 @@ class ServerNodeStoreSpec extends AsyncUnitSpec {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "ServerNodeStoreSpec"
   )
+
+  private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 
   private val self = CurrentUser(User.generateId())
 }

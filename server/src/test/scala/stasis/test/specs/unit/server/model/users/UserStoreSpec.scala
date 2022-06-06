@@ -3,10 +3,12 @@ package stasis.test.specs.unit.server.model.users
 import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import stasis.core.telemetry.TelemetryContext
 import stasis.server.security.CurrentUser
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.model.mocks.MockUserStore
 
 import scala.util.control.NonFatal
@@ -221,6 +223,8 @@ class UserStoreSpec extends AsyncUnitSpec {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "UserStoreSpec"
   )
+
+  private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 
   private val mockUser = User(
     id = User.generateId(),

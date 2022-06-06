@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.server.api.routes
 
 import java.time.LocalDateTime
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.marshalling.Marshal
@@ -9,6 +8,7 @@ import akka.http.scaladsl.model.{RequestEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.{Logger, LoggerFactory}
+import stasis.core.telemetry.TelemetryContext
 import stasis.server.api.routes.{RoutesContext, Schedules}
 import stasis.server.model.schedules.ScheduleStore
 import stasis.server.security.{CurrentUser, ResourceProvider}
@@ -17,6 +17,7 @@ import stasis.shared.api.responses.{CreatedSchedule, DeletedSchedule}
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.model.mocks.MockScheduleStore
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
 
@@ -153,6 +154,8 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
 
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
+
+  private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 
   private trait TestFixtures {
     lazy val scheduleStore: ScheduleStore = MockScheduleStore()

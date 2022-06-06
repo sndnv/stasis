@@ -3,11 +3,13 @@ package stasis.test.specs.unit.server.security
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.persistence.backends.memory.MemoryBackend
+import stasis.core.telemetry.TelemetryContext
 import stasis.server.model.users.UserStore
 import stasis.server.security.{CurrentUser, DefaultResourceProvider, Resource}
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
@@ -64,6 +66,8 @@ class DefaultResourceProviderSpec extends AsyncUnitSpec {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DefaultResourceProviderSpec"
   )
+
+  private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 
   private val userStore: UserStore = UserStore(
     userSaltSize = 8,

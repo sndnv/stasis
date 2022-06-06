@@ -8,6 +8,7 @@ import slick.jdbc.JdbcProfile
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.backends.slick.{SlickBackend, SlickProfile}
+import stasis.core.telemetry.TelemetryContext
 import stasis.identity.model.apis.{Api, ApiStore, ApiStoreSerdes}
 import stasis.identity.model.clients.{Client, ClientStore, ClientStoreSerdes}
 import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, StoredAuthorizationCode}
@@ -21,7 +22,7 @@ class Persistence(
   persistenceConfig: typesafe.Config,
   authorizationCodeExpiration: FiniteDuration,
   refreshTokenExpiration: FiniteDuration
-)(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout) {
+)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, timeout: Timeout) {
   private implicit val ec: ExecutionContext = system.executionContext
 
   val profile: JdbcProfile = SlickProfile(profile = persistenceConfig.getString("database.profile"))
@@ -128,7 +129,7 @@ object Persistence {
     persistenceConfig: typesafe.Config,
     authorizationCodeExpiration: FiniteDuration,
     refreshTokenExpiration: FiniteDuration
-  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): Persistence =
+  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, timeout: Timeout): Persistence =
     new Persistence(
       persistenceConfig = persistenceConfig,
       authorizationCodeExpiration = authorizationCodeExpiration,

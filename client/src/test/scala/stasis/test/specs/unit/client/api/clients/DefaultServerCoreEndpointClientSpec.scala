@@ -6,6 +6,8 @@ import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.typesafe.config.{Config, ConfigFactory}
+import org.scalatest.Assertion
+import org.scalatest.concurrent.Eventually
 import stasis.client.api.clients.DefaultServerCoreEndpointClient
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.packaging.{Crate, Manifest}
@@ -14,11 +16,13 @@ import stasis.core.routing.exceptions.PullFailure
 import stasis.core.security.tls.EndpointContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks.MockServerCoreEndpoint
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import scala.collection.mutable
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
-class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec {
+class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec with Eventually {
   "A DefaultServerCoreEndpointClient" should "push crates" in {
     val coreCredentials = BasicHttpCredentials(username = "some-user", password = "some-password")
     val corePort = ports.dequeue()
@@ -37,8 +41,8 @@ class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec {
     val crateId = Crate.generateId()
     val crateContent = ByteString("some-crate")
 
-    for {
-      _ <- coreClient.push(
+    val _ = coreClient
+      .push(
         manifest = Manifest(
           crate = crateId,
           origin = Node.generateId(),
@@ -48,9 +52,10 @@ class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec {
         ),
         content = Source.single(crateContent)
       )
-      crateExists <- core.crateExists(crateId)
-    } yield {
-      crateExists should be(true)
+      .await
+
+    eventually[Assertion] {
+      core.crateExists(crateId).await should be(true)
     }
   }
 
@@ -123,8 +128,8 @@ class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec {
     val crateId = Crate.generateId()
     val crateContent = ByteString("some-crate")
 
-    for {
-      _ <- coreClient.push(
+    val _ = coreClient
+      .push(
         manifest = Manifest(
           crate = crateId,
           origin = Node.generateId(),
@@ -134,9 +139,10 @@ class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec {
         ),
         content = Source.single(crateContent)
       )
-      crateExists <- core.crateExists(crateId)
-    } yield {
-      crateExists should be(true)
+      .await
+
+    eventually[Assertion] {
+      core.crateExists(crateId).await should be(true)
     }
   }
 
@@ -144,6 +150,10 @@ class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DefaultServerCoreEndpointClientSpec"
   )
+
+  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
   private val ports: mutable.Queue[Int] = (23000 to 23100).to(mutable.Queue)
 }

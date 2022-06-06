@@ -1,12 +1,11 @@
 package stasis.server.service
 
-import java.util.UUID
-import java.util.concurrent.atomic.AtomicReference
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.util.Timeout
 import com.typesafe.{config => typesafe}
+import io.prometheus.client.hotspot.DefaultExports
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.{JsObject, Json}
 import stasis.core.networking.grpc.{GrpcEndpointAddress, GrpcEndpointClient}
@@ -17,6 +16,9 @@ import stasis.core.security.keys.RemoteKeyProvider
 import stasis.core.security.oauth.{DefaultOAuthClient, OAuthClient}
 import stasis.core.security.tls.EndpointContext
 import stasis.core.security.{JwtNodeAuthenticator, JwtNodeCredentialsProvider, NodeAuthenticator}
+import stasis.core.telemetry.metrics.MetricsExporter
+import stasis.core.telemetry.{DefaultTelemetryContext, TelemetryContext}
+import stasis.core.{api, persistence, routing, security}
 import stasis.server.api.routes.DeviceBootstrap
 import stasis.server.api.{ApiEndpoint, BootstrapEndpoint}
 import stasis.server.security._
@@ -27,6 +29,8 @@ import stasis.server.service.Service.Config.BootstrapApiConfig
 import stasis.shared.model.devices.DeviceBootstrapParameters
 import stasis.shared.secrets.SecretsConfig
 
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
@@ -41,15 +45,17 @@ trait Service {
     name = "stasis-server-service"
   )
 
-  private implicit val ec: ExecutionContext = system.executionContext
-  private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
-
   protected def systemConfig: typesafe.Config = system.settings.config
 
   private val rawConfig: typesafe.Config = systemConfig.getConfig("stasis.server")
   private val apiConfig: Config = Config(rawConfig.getConfig("service.api"))
   private val coreConfig: Config = Config(rawConfig.getConfig("service.core"))
+  private val metricsConfig: Config = Config(rawConfig.getConfig("service.telemetry.metrics"))
   private val bootstrapApiConfig: BootstrapApiConfig = BootstrapApiConfig(rawConfig.getConfig("bootstrap.api"))
+
+  private implicit val ec: ExecutionContext = system.executionContext
+  private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
+  private val exporter: MetricsExporter = Telemetry.createMetricsExporter(config = metricsConfig)
 
   Try {
     implicit val timeout: Timeout = rawConfig.getDuration("service.internal-query-timeout").toMillis.millis
@@ -59,6 +65,15 @@ trait Service {
 
     val authenticationEndpointContext: Option[EndpointContext] =
       EndpointContext(rawConfig.getConfig("clients.authentication.context"))
+
+    implicit val telemetry: TelemetryContext = DefaultTelemetryContext(
+      metricsProviders = Set(
+        security.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation),
+        api.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation),
+        persistence.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation),
+        routing.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation)
+      ).flatten
+    )
 
     val oauthClient = DefaultOAuthClient(
       tokenEndpoint = instanceAuthenticatorConfig.tokenEndpoint,
@@ -271,6 +286,12 @@ trait Service {
          |      enabled: ${rawConfig.getBoolean("service.bootstrap.enabled").toString}
          |      config:  ${rawConfig.getString("service.bootstrap.config")}
          |
+         |    telemetry:
+         |      metrics:
+         |        namespace: ${Telemetry.Instrumentation}
+         |        interface: ${metricsConfig.interface}
+         |        port:      ${metricsConfig.port.toString}
+         |
          |  authenticators:
          |    users:
          |      issuer:                 ${userAuthenticatorConfig.issuer}
@@ -441,7 +462,8 @@ trait Service {
 
   def stop(): Unit = {
     log.info("Service stopping...")
-    val _ = system.terminate()
+    locally { val _ = exporter.shutdown() }
+    locally { val _ = system.terminate() }
   }
 
   def state: State = serviceState.get()
@@ -664,5 +686,16 @@ object Service {
         )
       }
     }
+  }
+
+  object Telemetry {
+    final val Instrumentation: String = "stasis_server"
+
+    def createMetricsExporter(config: Config): MetricsExporter =
+      MetricsExporter.Prometheus.asProxyRegistry(
+        instrumentation = Instrumentation,
+        interface = config.interface,
+        port = config.port
+      ) { registry => DefaultExports.register(registry) }
   }
 }

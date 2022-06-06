@@ -8,13 +8,17 @@ import org.scalatest.concurrent.Eventually
 import stasis.core.persistence.backends.EventLogBackend
 import stasis.core.persistence.backends.memory.EventLogMemoryBackend
 import stasis.core.persistence.events.EventLog
+import stasis.core.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import scala.collection.immutable.Queue
 import scala.concurrent.duration._
 
 class EventLogSpec extends AsyncUnitSpec with Eventually {
   "An EventLog" should "store events" in {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
     val backend = createBackend()
     val store = EventLog[String, Queue[String]](backend, updateState)
 
@@ -31,10 +35,14 @@ class EventLogSpec extends AsyncUnitSpec with Eventually {
       stateBefore should be(Queue.empty)
       eventsAfter should be(Queue(testEvent))
       stateAfter should be(Queue(testEvent))
+
+      telemetry.persistence.eventLog.event should be(1)
     }
   }
 
   it should "retrieve state" in {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
     val backend = createBackend()
     val store = EventLog[String, Queue[String]](backend, updateState)
 
@@ -47,11 +55,15 @@ class EventLogSpec extends AsyncUnitSpec with Eventually {
     } yield {
       stateBefore should be(Queue.empty)
       stateAfter should be(Queue(testEvent))
+
+      telemetry.persistence.eventLog.event should be(1)
     }
   }
 
   it should "provide a state update stream" in {
     eventually[Assertion] {
+      implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
       val backend = createBackend()
       val store = EventLog[String, Queue[String]](backend, updateState)
 
@@ -77,6 +89,8 @@ class EventLogSpec extends AsyncUnitSpec with Eventually {
           second should be(Queue(testEvent1, testEvent2))
           third should be(Queue(testEvent1, testEvent2, testEvent3))
 
+          telemetry.persistence.eventLog.event should be(3)
+
         case other =>
           fail(s"Received unexpected result: [$other]")
       }
@@ -84,6 +98,8 @@ class EventLogSpec extends AsyncUnitSpec with Eventually {
   }
 
   it should "provide a read-only view" in {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
     val backend = createBackend()
     val store = EventLog[String, Queue[String]](backend, updateState)
     val storeView = store.view
@@ -101,11 +117,14 @@ class EventLogSpec extends AsyncUnitSpec with Eventually {
       stateBefore should be(Queue.empty)
       updates should be(Seq(Queue(testEvent)))
       stateAfter should be(Queue(testEvent))
+
+      telemetry.persistence.eventLog.event should be(1)
+
       a[ClassCastException] should be thrownBy { val _ = storeView.asInstanceOf[EventLog[_, _]] }
     }
   }
 
-  private def createBackend(): EventLogBackend[String, Queue[String]] =
+  private def createBackend()(implicit telemetry: TelemetryContext): EventLogBackend[String, Queue[String]] =
     EventLogMemoryBackend(
       name = s"event-log-backend-${java.util.UUID.randomUUID()}",
       initialState = Queue.empty[String]

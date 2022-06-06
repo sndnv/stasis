@@ -16,16 +16,18 @@ import stasis.core.networking.http.HttpEndpoint
 import stasis.core.packaging.Crate
 import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.core.routing.Node
+import stasis.core.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.mocks.{MockCrateStore, MockReservationStore}
 import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockHttpAuthenticator
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import scala.collection.mutable
 
 class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   "An HTTP Endpoint" should "successfully authenticate a client" in {
-    val endpoint = new TestHttpEndpoint()
+    val endpoint = createTestHttpEndpoint()
     endpoint.testReservationStore.put(testReservation).await
 
     Put(s"/crates/${testReservation.crate}?reservation=${testReservation.id}")
@@ -36,7 +38,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "fail to authenticate if no reservation ID is provided" in {
-    val endpoint = new TestHttpEndpoint()
+    val endpoint = createTestHttpEndpoint()
 
     Put(s"/crates/${Crate.generateId()}")
       .addCredentials(testCredentials)
@@ -46,7 +48,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "fail to authenticate a client with no credentials" in {
-    val endpoint = new TestHttpEndpoint()
+    val endpoint = createTestHttpEndpoint()
 
     Put(s"/crates/some-crate-id?reservation=${testReservation.id}")
       .withEntity(crateContent) ~> endpoint.routes ~> check {
@@ -55,7 +57,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "fail to authenticate a client with invalid credentials" in {
-    val endpoint = new TestHttpEndpoint()
+    val endpoint = createTestHttpEndpoint()
 
     Put(s"/crates/some-crate-id?reservation=${testReservation.id}")
       .addCredentials(testCredentials.copy(password = "invalid-password"))
@@ -73,7 +75,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   it should "successfully process reservation requests" in {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-    val endpoint = new TestHttpEndpoint()
+    val endpoint = createTestHttpEndpoint()
 
     val storageRequest = CrateStorageRequest(
       crate = Crate.generateId(),
@@ -105,7 +107,9 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   it should "reject reservation requests that cannot be fulfilled" in {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-    val endpoint = new TestHttpEndpoint(
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestHttpEndpoint(
       testCrateStore = Some(new MockCrateStore(maxStorageSize = Some(99)))
     )
 
@@ -125,7 +129,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "successfully store crates" in {
-    val endpoint = new TestHttpEndpoint()
+    val endpoint = createTestHttpEndpoint()
     endpoint.testReservationStore.put(testReservation).await
 
     Put(s"/crates/${testReservation.crate}?reservation=${testReservation.id}")
@@ -136,7 +140,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "fail to store crates when reservation is missing" in {
-    val endpoint = new TestHttpEndpoint()
+    val endpoint = createTestHttpEndpoint()
 
     val crateId = Crate.generateId()
 
@@ -148,7 +152,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "fail to store crates when reservation is for a different crate" in {
-    val endpoint = new TestHttpEndpoint()
+    val endpoint = createTestHttpEndpoint()
     endpoint.testReservationStore.put(testReservation).await
 
     Put(s"/crates/${Crate.generateId()}?reservation=${testReservation.id}")
@@ -159,7 +163,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "successfully retrieve crates" in {
-    val endpoint = new TestHttpEndpoint()
+    val endpoint = createTestHttpEndpoint()
     endpoint.testReservationStore.put(testReservation).await
 
     Put(s"/crates/${testReservation.crate}?reservation=${testReservation.id}")
@@ -176,7 +180,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "fail to retrieve missing crates" in {
-    val endpoint = new TestHttpEndpoint()
+    val endpoint = createTestHttpEndpoint()
 
     Get(s"/crates/${Crate.generateId()}?reservation=${testReservation.id}")
       .addCredentials(testCredentials) ~> endpoint.routes ~> check {
@@ -185,7 +189,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "successfully delete existing crates" in {
-    val endpoint = new TestHttpEndpoint()
+    val endpoint = createTestHttpEndpoint()
     endpoint.testReservationStore.put(testReservation).await
 
     Put(s"/crates/${testReservation.crate}?reservation=${testReservation.id}")
@@ -201,7 +205,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "fail to delete missing crates" in {
-    val endpoint = new TestHttpEndpoint()
+    val endpoint = createTestHttpEndpoint()
 
     Delete(s"/crates/${Crate.generateId()}")
       .addCredentials(testCredentials) ~> endpoint.routes ~> check {
@@ -213,7 +217,9 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 
-    val endpoint = new TestHttpEndpoint(
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestHttpEndpoint(
       testCrateStore = Some(new MockCrateStore(persistDisabled = true))
     )
     val endpointPort = ports.dequeue()
@@ -240,7 +246,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 
-    val endpoint = new TestHttpEndpoint()
+    val endpoint = createTestHttpEndpoint()
     val endpointPort = ports.dequeue()
     val _ = endpoint.start(interface = "localhost", port = endpointPort, context = None)
 
@@ -264,7 +270,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 
-    val endpoint = new TestHttpEndpoint()
+    val endpoint = createTestHttpEndpoint()
     val endpointPort = ports.dequeue()
     val _ = endpoint.start(interface = "localhost", port = endpointPort, context = None)
 
@@ -289,11 +295,26 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     "HttpEndpointSpec_Untyped"
   )
 
+  private def createTestHttpEndpoint(
+    testCrateStore: Option[MockCrateStore] = None,
+    testReservationStore: Option[MockReservationStore] = None,
+    testAuthenticator: MockHttpAuthenticator = new MockHttpAuthenticator(testUser, testPassword)
+  ): TestHttpEndpoint = {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    new TestHttpEndpoint(
+      testCrateStore = testCrateStore,
+      testReservationStore = testReservationStore.getOrElse(new MockReservationStore()),
+      testAuthenticator = testAuthenticator
+    )
+  }
+
   private class TestHttpEndpoint(
-    val testCrateStore: Option[MockCrateStore] = None,
-    val testReservationStore: MockReservationStore = new MockReservationStore(),
-    val testAuthenticator: MockHttpAuthenticator = new MockHttpAuthenticator(testUser, testPassword)
-  ) extends HttpEndpoint(
+    val testCrateStore: Option[MockCrateStore],
+    val testReservationStore: MockReservationStore,
+    val testAuthenticator: MockHttpAuthenticator
+  )(implicit telemetry: TelemetryContext)
+      extends HttpEndpoint(
         new MockRouter(testCrateStore.getOrElse(new MockCrateStore()), Node.generateId(), testReservationStore),
         testReservationStore.view,
         testAuthenticator

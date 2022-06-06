@@ -10,6 +10,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
+import stasis.core.telemetry.TelemetryContext
 import stasis.server.api.routes.{Nodes, RoutesContext}
 import stasis.server.model.nodes.ServerNodeStore
 import stasis.server.security.{CurrentUser, ResourceProvider}
@@ -21,6 +22,7 @@ import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.Generators
 import stasis.test.specs.unit.core.persistence.mocks.MockNodeStore
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
 
 class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
@@ -127,6 +129,8 @@ class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
 
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
+
+  private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 
   private trait TestFixtures {
     lazy val nodeStore: NodeStore = new MockNodeStore()

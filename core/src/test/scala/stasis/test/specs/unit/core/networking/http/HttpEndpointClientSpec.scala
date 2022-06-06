@@ -13,22 +13,24 @@ import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.routing.Node
 import stasis.core.security.NodeAuthenticator
 import stasis.core.security.tls.EndpointContext
+import stasis.core.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.MockHttpNodeCredentialsProvider
 import stasis.test.specs.unit.core.persistence.mocks.{MockCrateStore, MockReservationStore}
 import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockHttpAuthenticator
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
 class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
-  "An HTTP Endpoint Client" should "successfully push crates" in {
+  "An HTTP Endpoint Client" should "successfully push crates via a stream sink" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
-    val endpoint = new TestHttpEndpoint(port = endpointPort)
+    val endpoint = createTestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
@@ -36,9 +38,16 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       maxChunkSize = maxChunkSize
     )
 
-    client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).map { _ =>
-      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+    client.push(endpointAddress, testManifest).flatMap { sink =>
+      Source
+        .single(ByteString(crateContent))
+        .runWith(sink)
+        .map { _ =>
+          eventually[Assertion] {
+            endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+            endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+          }
+        }
     }
   }
 
@@ -46,7 +55,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
-    val endpoint = new TestHttpEndpoint(port = endpointPort)
+    val endpoint = createTestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
@@ -55,7 +64,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     )
 
     client
-      .push(endpointAddress, testManifest.copy(size = 100), Source.single(ByteString(crateContent)))
+      .push(endpointAddress, testManifest.copy(size = 100))
+      .flatMap(sink => Source.single(ByteString(crateContent)).runWith(sink))
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
@@ -72,7 +82,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort/invalid")
 
-    val endpoint = new TestHttpEndpoint(port = endpointPort)
+    val endpoint = createTestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
@@ -81,7 +91,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     )
 
     client
-      .push(endpointAddress, testManifest, Source.single(ByteString(crateContent)))
+      .push(endpointAddress, testManifest)
+      .flatMap(sink => Source.single(ByteString(crateContent)).runWith(sink))
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
@@ -98,11 +109,15 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
-    val endpoint = new TestHttpEndpoint(
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestHttpEndpoint(
       port = endpointPort,
-      fixtures = new TestFixtures {
-        override lazy val crateStore: MockCrateStore = new MockCrateStore(persistDisabled = true)
-      }
+      fixtures = Some(
+        new TestFixtures {
+          override lazy val crateStore: MockCrateStore = new MockCrateStore(persistDisabled = true)
+        }
+      )
     )
 
     val client = HttpEndpointClient(
@@ -112,7 +127,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     )
 
     client
-      .push(endpointAddress, testManifest, Source.single(ByteString(crateContent)))
+      .push(endpointAddress, testManifest)
+      .flatMap(sink => Source.single(ByteString(crateContent)).runWith(sink))
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
@@ -126,36 +142,11 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
-  it should "successfully push crates via a stream sink" in {
-    val endpointPort = ports.dequeue()
-    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
-
-    val endpoint = new TestHttpEndpoint(port = endpointPort)
-
-    val client = HttpEndpointClient(
-      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
-    )
-
-    client.sink(endpointAddress, testManifest).flatMap { sink =>
-      Source
-        .single(ByteString(crateContent))
-        .runWith(sink)
-        .map { _ =>
-          eventually[Assertion] {
-            endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-            endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-          }
-        }
-    }
-  }
-
   it should "successfully pull crates" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
-    val endpoint = new TestHttpEndpoint(port = endpointPort)
+    val endpoint = createTestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
@@ -163,33 +154,36 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       maxChunkSize = maxChunkSize
     )
 
-    client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).flatMap { _ =>
-      client.pull(endpointAddress, testManifest.crate).flatMap {
-        case Some(source) =>
-          source
-            .runFold(ByteString.empty) { case (folded, chunk) =>
-              folded.concat(chunk)
-            }
-            .map { result =>
-              result.utf8String should be(crateContent)
-              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(1)
-              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(0)
-              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
-            }
+    client
+      .push(endpointAddress, testManifest)
+      .flatMap(sink => Source.single(ByteString(crateContent)).runWith(sink))
+      .flatMap { _ =>
+        client.pull(endpointAddress, testManifest.crate).flatMap {
+          case Some(source) =>
+            source
+              .runFold(ByteString.empty) { case (folded, chunk) =>
+                folded.concat(chunk)
+              }
+              .map { result =>
+                result.utf8String should be(crateContent)
+                endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+                endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+                endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(1)
+                endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(0)
+                endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
+              }
 
-        case None =>
-          fail("Received unexpected empty response")
+          case None =>
+            fail("Received unexpected empty response")
+        }
       }
-    }
   }
 
   it should "handle trying to pull missing crates" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
-    val _ = new TestHttpEndpoint(port = endpointPort)
+    val _ = createTestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
@@ -206,7 +200,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
-    val _ = new TestHttpEndpoint(port = endpointPort)
+    val _ = createTestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, "invalid-user", testPassword),
@@ -240,12 +234,12 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val secondaryEndpointUser = "secondary-endpoint-user"
     val secondaryEndpointPassword = "secondary-endpoint-password"
 
-    new TestHttpEndpoint(
+    createTestHttpEndpoint(
       testAuthenticator = new MockHttpAuthenticator(primaryEndpointUser, primaryEndpointPassword),
       port = primaryEndpointPort
     )
 
-    new TestHttpEndpoint(
+    createTestHttpEndpoint(
       testAuthenticator = new MockHttpAuthenticator(secondaryEndpointUser, secondaryEndpointPassword),
       port = secondaryEndpointPort
     )
@@ -262,8 +256,10 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     )
 
     for {
-      _ <- client.push(primaryEndpointAddress, testManifest, Source.single(ByteString(crateContent)))
-      _ <- client.push(secondaryEndpointAddress, testManifest, Source.single(ByteString(crateContent)))
+      primarySink <- client.push(primaryEndpointAddress, testManifest)
+      secondarySink <- client.push(secondaryEndpointAddress, testManifest)
+      _ <- Source.single(ByteString(crateContent)).runWith(primarySink)
+      _ <- Source.single(ByteString(crateContent)).runWith(secondarySink)
     } yield {
       succeed
     }
@@ -273,7 +269,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
-    val _ = new TestHttpEndpoint(port = endpointPort)
+    val _ = createTestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(Map.empty),
@@ -282,13 +278,14 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     )
 
     client
-      .push(endpointAddress, testManifest, Source.single(ByteString(crateContent)))
+      .push(endpointAddress, testManifest)
+      .flatMap(sink => Source.single(ByteString(crateContent)).runWith(sink))
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
       .recover { case NonFatal(e) =>
         e.getMessage should be(
-          s"Push to endpoint [${endpointAddress.uri}] failed for crate [${testManifest.crate}]; " +
+          s"Push to endpoint [${endpointAddress.uri}] via sink failed for crate [${testManifest.crate}]; " +
             s"unable to retrieve credentials: [No credentials found for [HttpEndpointAddress(http://localhost:$endpointPort)]]"
         )
       }
@@ -298,7 +295,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
-    val _ = new TestHttpEndpoint(port = endpointPort)
+    val _ = createTestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(Map.empty),
@@ -307,7 +304,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     )
 
     client
-      .sink(endpointAddress, testManifest)
+      .push(endpointAddress, testManifest)
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
@@ -323,7 +320,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
-    val _ = new TestHttpEndpoint(port = endpointPort)
+    val _ = createTestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(Map.empty),
@@ -350,7 +347,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
-    val endpoint = new TestHttpEndpoint(port = endpointPort)
+    val endpoint = createTestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
@@ -358,22 +355,25 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       maxChunkSize = maxChunkSize
     )
 
-    client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).flatMap { _ =>
-      client.discard(endpointAddress, testManifest.crate).flatMap { result =>
-        result should be(true)
-        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(1)
-        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(0)
+    client
+      .push(endpointAddress, testManifest)
+      .flatMap(sink => Source.single(ByteString(crateContent)).runWith(sink))
+      .flatMap { _ =>
+        client.discard(endpointAddress, testManifest.crate).flatMap { result =>
+          result should be(true)
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(1)
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(0)
+        }
       }
-    }
   }
 
   it should "fail to discard crates if no credentials are available" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
-    val _ = new TestHttpEndpoint(port = endpointPort)
+    val _ = createTestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(Map.empty),
@@ -400,7 +400,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
-    val _ = new TestHttpEndpoint(port = endpointPort)
+    val _ = createTestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
@@ -417,7 +417,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
-    val _ = new TestHttpEndpoint(port = endpointPort)
+    val _ = createTestHttpEndpoint(port = endpointPort)
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, "invalid-user", testPassword),
@@ -454,7 +454,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       config = EndpointContext.Config(config.getConfig("context-client"))
     )
 
-    val endpoint = new TestHttpEndpoint(port = endpointPort, context = Some(endpointContext))
+    val endpoint = createTestHttpEndpoint(port = endpointPort, context = Some(endpointContext))
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
@@ -463,10 +463,15 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       maxChunkSize = maxChunkSize
     )
 
-    client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).map { _ =>
-      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-    }
+    client
+      .push(endpointAddress, testManifest)
+      .flatMap(sink => Source.single(ByteString(crateContent)).runWith(sink))
+      .map { _ =>
+        eventually[Assertion] {
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+        }
+      }
   }
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
@@ -489,18 +494,35 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
   private val testUser = "test-user"
   private val testPassword = "test-password"
 
-  private trait TestFixtures {
+  private def createTestHttpEndpoint(
+    testAuthenticator: NodeAuthenticator[HttpCredentials] = new MockHttpAuthenticator(testUser, testPassword),
+    fixtures: Option[TestFixtures] = None,
+    context: Option[EndpointContext] = None,
+    port: Int
+  ): TestHttpEndpoint = {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    new TestHttpEndpoint(
+      testAuthenticator = testAuthenticator,
+      fixtures = fixtures.getOrElse(new TestFixtures),
+      context = context,
+      port = port
+    )
+  }
+
+  private class TestFixtures(implicit telemetry: TelemetryContext) {
     lazy val reservationStore: MockReservationStore = new MockReservationStore()
     lazy val crateStore: MockCrateStore = new MockCrateStore(maxStorageSize = Some(99))
     lazy val router: MockRouter = new MockRouter(crateStore, Node.generateId(), reservationStore)
   }
 
   private class TestHttpEndpoint(
-    val testAuthenticator: NodeAuthenticator[HttpCredentials] = new MockHttpAuthenticator(testUser, testPassword),
-    val fixtures: TestFixtures = new TestFixtures {},
-    context: Option[EndpointContext] = None,
+    val testAuthenticator: NodeAuthenticator[HttpCredentials],
+    val fixtures: TestFixtures,
+    context: Option[EndpointContext],
     port: Int
-  ) extends HttpEndpoint(
+  )(implicit telemetry: TelemetryContext)
+      extends HttpEndpoint(
         router = fixtures.router,
         authenticator = testAuthenticator,
         reservationStore = fixtures.reservationStore.view

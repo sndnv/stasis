@@ -5,15 +5,23 @@ import akka.http.scaladsl.model.{HttpHeader, Uri}
 import akka.http.scaladsl.server.Directives.{extractRequest, mapResponse}
 import akka.http.scaladsl.server.{Directive, Directive0}
 import org.slf4j.Logger
+import stasis.core.api.Metrics
+import stasis.core.telemetry.TelemetryContext
 
 import java.util.UUID
 
 trait LoggingDirectives {
   protected def log: Logger
+  protected def telemetry: TelemetryContext
+
+  private val metrics = telemetry.metrics[Metrics.Endpoint]
 
   def withLoggedRequestAndResponse: Directive0 = Directive { inner =>
     extractRequest { request =>
       val requestId = UUID.randomUUID().toString
+      val requestStart = System.currentTimeMillis()
+
+      metrics.recordRequest(request)
 
       log.debug(
         "Received [{}] request for [{}] with ID [{}], query parameters [{}] and headers [{}]",
@@ -25,6 +33,8 @@ trait LoggingDirectives {
       )
 
       mapResponse { response =>
+        metrics.recordResponse(requestStart, request, response)
+
         log.debugN(
           "Responding to [{}] request for [{}] with ID [{}] and query parameters [{}]: [{}] with headers [{}]",
           request.method.value,

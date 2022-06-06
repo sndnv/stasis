@@ -1,6 +1,6 @@
 package stasis.identity.api
 
-import akka.actor.ActorSystem
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
@@ -13,7 +13,7 @@ import stasis.identity.api.oauth.setup.{Config, Providers}
 class OAuth(
   config: Config,
   providers: Providers
-)(implicit system: ActorSystem)
+)(implicit system: ActorSystem[SpawnProtocol.Command])
     extends EntityDiscardingDirectives {
 
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
@@ -74,7 +74,7 @@ object OAuth {
   def apply(
     config: Config,
     providers: Providers
-  )(implicit system: ActorSystem): OAuth =
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): OAuth =
     new OAuth(
       config = config,
       providers = providers

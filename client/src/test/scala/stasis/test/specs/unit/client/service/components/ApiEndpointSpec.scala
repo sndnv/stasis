@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.client.service.components
 
 import java.util.concurrent.atomic.AtomicInteger
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.Http
@@ -17,6 +16,7 @@ import stasis.client.service.components.exceptions.ServiceStartupFailure
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.client.mocks._
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import scala.collection.mutable
 import scala.concurrent.duration._
@@ -192,6 +192,8 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "ApiEndpointSpec"
   )
+
+  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 

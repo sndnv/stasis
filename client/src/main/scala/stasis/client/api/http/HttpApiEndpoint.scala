@@ -13,6 +13,7 @@ import stasis.client.security.FrontendAuthenticator
 import stasis.core.api.MessageResponse
 import stasis.core.api.directives.{EntityDiscardingDirectives, LoggingDirectives}
 import stasis.core.security.tls.EndpointContext
+import stasis.core.telemetry.TelemetryContext
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -20,7 +21,7 @@ import scala.util.{Failure, Success}
 
 class HttpApiEndpoint(
   authenticator: FrontendAuthenticator
-)(implicit system: ActorSystem[SpawnProtocol.Command], context: Context)
+)(implicit system: ActorSystem[SpawnProtocol.Command], override val telemetry: TelemetryContext, context: Context)
     extends EntityDiscardingDirectives
     with LoggingDirectives {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
@@ -136,7 +137,7 @@ class HttpApiEndpoint(
 object HttpApiEndpoint {
   def apply(
     authenticator: FrontendAuthenticator
-  )(implicit system: ActorSystem[SpawnProtocol.Command], context: Context): HttpApiEndpoint =
+  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, context: Context): HttpApiEndpoint =
     new HttpApiEndpoint(
       authenticator = authenticator
     )

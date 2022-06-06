@@ -7,6 +7,7 @@ import com.typesafe.{config => typesafe}
 import slick.jdbc.JdbcProfile
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.backends.slick.{SlickBackend, SlickProfile}
+import stasis.core.telemetry.TelemetryContext
 import stasis.server.model.datasets._
 import stasis.server.model.devices.{DeviceBootstrapCodeStore, DeviceStore, DeviceStoreSerdes}
 import stasis.server.model.schedules.{ScheduleStore, ScheduleStoreSerdes}
@@ -21,7 +22,11 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ServerPersistence(
   persistenceConfig: typesafe.Config
-)(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout) {
+)(implicit
+  system: ActorSystem[SpawnProtocol.Command],
+  telemetry: TelemetryContext,
+  timeout: Timeout
+) {
   private implicit val ec: ExecutionContext = system.executionContext
 
   val profile: JdbcProfile = SlickProfile(profile = persistenceConfig.getString("database.profile"))
@@ -151,6 +156,6 @@ class ServerPersistence(
 object ServerPersistence {
   def apply(
     persistenceConfig: typesafe.Config
-  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): ServerPersistence =
+  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, timeout: Timeout): ServerPersistence =
     new ServerPersistence(persistenceConfig)
 }

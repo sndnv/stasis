@@ -1,12 +1,13 @@
 package stasis.test.specs.unit.server.service
 
 import java.util.concurrent.ThreadLocalRandom
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import com.typesafe.config.Config
+import stasis.core.telemetry.TelemetryContext
 import stasis.server.service.ServerPersistence
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.shared.model.Generators
 
 class ServerPersistenceSpec extends AsyncUnitSpec {
@@ -70,6 +71,8 @@ class ServerPersistenceSpec extends AsyncUnitSpec {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "ServerPersistenceSpec"
   )
+
+  private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 
   private val config: Config = system.settings.config.getConfig("stasis.test.server")
 }

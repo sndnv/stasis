@@ -11,31 +11,40 @@ import stasis.core.networking.grpc.{GrpcEndpoint, GrpcEndpointAddress, GrpcEndpo
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.routing.Node
 import stasis.core.security.tls.EndpointContext
+import stasis.core.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.MockGrpcNodeCredentialsProvider
 import stasis.test.specs.unit.core.persistence.mocks.{MockCrateStore, MockReservationStore}
 import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockGrpcAuthenticator
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
 class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
-  "An GRPC Endpoint Client" should "successfully push crates" in {
+  "An GRPC Endpoint Client" should "successfully push crates via a stream sink" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val endpoint = new TestGrpcEndpoint(port = endpointPort)
+    val endpoint = createTestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret),
       maxChunkSize = maxChunkSize
     )
 
-    client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).map { _ =>
-      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+    client.push(endpointAddress, testManifest).flatMap { sink =>
+      Source
+        .single(ByteString(crateContent))
+        .runWith(sink)
+        .map { _ =>
+          eventually[Assertion] {
+            endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+            endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+          }
+        }
     }
   }
 
@@ -43,7 +52,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val endpoint = new TestGrpcEndpoint(port = endpointPort)
+    val endpoint = createTestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret),
@@ -51,7 +60,8 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     )
 
     client
-      .push(endpointAddress, testManifest.copy(size = 100), Source.single(ByteString(crateContent)))
+      .push(endpointAddress, testManifest.copy(size = 100))
+      .flatMap(sink => Source.single(ByteString(crateContent)).runWith(sink))
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
@@ -69,11 +79,15 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val endpoint = new TestGrpcEndpoint(
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestGrpcEndpoint(
       port = endpointPort,
-      fixtures = new TestFixtures {
-        override lazy val crateStore: MockCrateStore = new MockCrateStore(persistDisabled = true)
-      }
+      fixtures = Some(
+        new TestFixtures {
+          override lazy val crateStore: MockCrateStore = new MockCrateStore(persistDisabled = true)
+        }
+      )
     )
 
     val client = GrpcEndpointClient(
@@ -82,7 +96,8 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     )
 
     client
-      .push(endpointAddress, testManifest, Source.single(ByteString(crateContent)))
+      .push(endpointAddress, testManifest)
+      .flatMap(sink => Source.single(ByteString(crateContent)).runWith(sink))
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
@@ -96,68 +111,47 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
-  it should "successfully push crates via a stream sink" in {
-    val endpointPort = ports.dequeue()
-    val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
-
-    val endpoint = new TestGrpcEndpoint(port = endpointPort)
-
-    val client = GrpcEndpointClient(
-      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret),
-      maxChunkSize = maxChunkSize
-    )
-
-    client.sink(endpointAddress, testManifest).flatMap { sink =>
-      Source
-        .single(ByteString(crateContent))
-        .runWith(sink)
-        .map { _ =>
-          eventually[Assertion] {
-            endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-            endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-          }
-        }
-    }
-  }
-
   it should "successfully pull crates" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val endpoint = new TestGrpcEndpoint(port = endpointPort)
+    val endpoint = createTestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret),
       maxChunkSize = maxChunkSize
     )
 
-    client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).flatMap { _ =>
-      client.pull(endpointAddress, testManifest.crate).flatMap {
-        case Some(source) =>
-          source
-            .runFold(ByteString.empty) { case (folded, chunk) =>
-              folded.concat(chunk)
-            }
-            .map { result =>
-              result.utf8String should be(crateContent)
-              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(1)
-              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(0)
-              endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
-            }
+    client
+      .push(endpointAddress, testManifest)
+      .flatMap(sink => Source.single(ByteString(crateContent)).runWith(sink))
+      .flatMap { _ =>
+        client.pull(endpointAddress, testManifest.crate).flatMap {
+          case Some(source) =>
+            source
+              .runFold(ByteString.empty) { case (folded, chunk) =>
+                folded.concat(chunk)
+              }
+              .map { result =>
+                result.utf8String should be(crateContent)
+                endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+                endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+                endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(1)
+                endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(0)
+                endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
+              }
 
-        case None =>
-          fail("Received unexpected empty response")
+          case None =>
+            fail("Received unexpected empty response")
+        }
       }
-    }
   }
 
   it should "handle trying to pull missing crates" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val _ = new TestGrpcEndpoint(port = endpointPort)
+    val _ = createTestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret),
@@ -173,7 +167,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val _ = new TestGrpcEndpoint(port = endpointPort)
+    val _ = createTestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, "invalid-secret"),
@@ -203,12 +197,12 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val secondaryEndpointNode = Node.generateId()
     val secondaryEndpointSecret = "secondary-endpoint-secret"
 
-    new TestGrpcEndpoint(
+    createTestGrpcEndpoint(
       testAuthenticator = new MockGrpcAuthenticator(primaryEndpointNode, primaryEndpointSecret),
       port = primaryEndpointPort
     )
 
-    new TestGrpcEndpoint(
+    createTestGrpcEndpoint(
       testAuthenticator = new MockGrpcAuthenticator(secondaryEndpointNode, secondaryEndpointSecret),
       port = secondaryEndpointPort
     )
@@ -224,8 +218,10 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     )
 
     for {
-      _ <- client.push(primaryEndpointAddress, testManifest, Source.single(ByteString(crateContent)))
-      _ <- client.push(secondaryEndpointAddress, testManifest, Source.single(ByteString(crateContent)))
+      primarySink <- client.push(primaryEndpointAddress, testManifest)
+      secondarySink <- client.push(secondaryEndpointAddress, testManifest)
+      _ <- Source.single(ByteString(crateContent)).runWith(primarySink)
+      _ <- Source.single(ByteString(crateContent)).runWith(secondarySink)
     } yield {
       succeed
     }
@@ -235,7 +231,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val _ = new TestGrpcEndpoint(port = endpointPort)
+    val _ = createTestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(Map.empty),
@@ -243,13 +239,14 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     )
 
     client
-      .push(endpointAddress, testManifest, Source.single(ByteString(crateContent)))
+      .push(endpointAddress, testManifest)
+      .flatMap { sink => Source.single(ByteString(crateContent)).runWith(sink) }
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
       .recover { case NonFatal(e) =>
         e.getMessage should be(
-          s"Push to endpoint [${endpointAddress.host}] failed for crate [${testManifest.crate}]; " +
+          s"Push to endpoint [${endpointAddress.host}] via sink failed for crate [${testManifest.crate}]; " +
             s"unable to retrieve credentials: [No credentials found for [GrpcEndpointAddress(localhost,$endpointPort,false)]]"
         )
       }
@@ -259,7 +256,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val _ = new TestGrpcEndpoint(port = endpointPort)
+    val _ = createTestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(Map.empty),
@@ -267,7 +264,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     )
 
     client
-      .sink(endpointAddress, testManifest)
+      .push(endpointAddress, testManifest)
       .map { response =>
         fail(s"Received unexpected response from endpoint: [$response]")
       }
@@ -283,7 +280,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val _ = new TestGrpcEndpoint(port = endpointPort)
+    val _ = createTestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(Map.empty),
@@ -309,29 +306,32 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val endpoint = new TestGrpcEndpoint(port = endpointPort)
+    val endpoint = createTestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret),
       maxChunkSize = maxChunkSize
     )
 
-    client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).flatMap { _ =>
-      client.discard(endpointAddress, testManifest.crate).flatMap { result =>
-        result should be(true)
-        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(1)
-        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(0)
+    client
+      .push(endpointAddress, testManifest)
+      .flatMap(sink => Source.single(ByteString(crateContent)).runWith(sink))
+      .flatMap { _ =>
+        client.discard(endpointAddress, testManifest.crate).flatMap { result =>
+          result should be(true)
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardCompleted) should be(1)
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.DiscardFailed) should be(0)
+        }
       }
-    }
   }
 
   it should "fail to discard crates if no credentials are available" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val _ = new TestGrpcEndpoint(port = endpointPort)
+    val _ = createTestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(Map.empty),
@@ -357,7 +357,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val _ = new TestGrpcEndpoint(port = endpointPort)
+    val _ = createTestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret),
@@ -373,7 +373,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
-    val _ = new TestGrpcEndpoint(port = endpointPort)
+    val _ = createTestGrpcEndpoint(port = endpointPort)
 
     val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, "invalid-secret"),
@@ -399,7 +399,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       config = EndpointContext.Config(config.getConfig("context-client"))
     )
 
-    val endpoint = new TestGrpcEndpoint(port = endpointPort, context = Some(endpointContext))
+    val endpoint = createTestGrpcEndpoint(port = endpointPort, context = Some(endpointContext))
 
     val client = GrpcEndpointClient(
       credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret),
@@ -407,10 +407,15 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       maxChunkSize = maxChunkSize
     )
 
-    client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).map { _ =>
-      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-      endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-    }
+    client
+      .push(endpointAddress, testManifest)
+      .flatMap(sink => Source.single(ByteString(crateContent)).runWith(sink))
+      .map { _ =>
+        eventually[Assertion] {
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+          endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+        }
+      }
   }
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
@@ -433,18 +438,35 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
   private val testNode = Node.generateId()
   private val testSecret = "test-secret"
 
-  private trait TestFixtures {
+  private def createTestGrpcEndpoint(
+    testAuthenticator: MockGrpcAuthenticator = new MockGrpcAuthenticator(testNode, testSecret),
+    fixtures: Option[TestFixtures] = None,
+    context: Option[EndpointContext] = None,
+    port: Int
+  ): TestGrpcEndpoint = {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    new TestGrpcEndpoint(
+      testAuthenticator = testAuthenticator,
+      fixtures = fixtures.getOrElse(new TestFixtures()),
+      context = context,
+      port = port
+    )
+  }
+
+  private class TestFixtures(implicit telemetry: TelemetryContext) {
     lazy val reservationStore: MockReservationStore = new MockReservationStore()
     lazy val crateStore: MockCrateStore = new MockCrateStore(maxStorageSize = Some(99))
     lazy val router: MockRouter = new MockRouter(crateStore, testNode, reservationStore)
   }
 
   private class TestGrpcEndpoint(
-    val testAuthenticator: MockGrpcAuthenticator = new MockGrpcAuthenticator(testNode, testSecret),
-    val fixtures: TestFixtures = new TestFixtures {},
+    val testAuthenticator: MockGrpcAuthenticator,
+    val fixtures: TestFixtures,
     context: Option[EndpointContext] = None,
     port: Int
-  ) extends GrpcEndpoint(fixtures.router, fixtures.reservationStore.view, testAuthenticator)(typedSystem.classicSystem) {
+  )(implicit telemetry: TelemetryContext)
+      extends GrpcEndpoint(fixtures.router, fixtures.reservationStore.view, testAuthenticator) {
     locally {
       val _ = start(
         interface = "localhost",

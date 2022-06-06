@@ -1,9 +1,7 @@
 package stasis.identity.api.oauth
 
-import scala.concurrent.ExecutionContext
-
-import akka.actor.ActorSystem
 import akka.actor.typed.scaladsl.LoggerOps
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
@@ -18,15 +16,17 @@ import stasis.identity.model.errors.{AuthorizationError, TokenError}
 import stasis.identity.model.tokens._
 import stasis.identity.model.{GrantType, ResponseType, Seconds}
 
+import scala.concurrent.ExecutionContext
+
 class AuthorizationCodeGrant(
   override val config: Config,
   override val providers: Providers
-)(implicit system: ActorSystem)
+)(implicit system: ActorSystem[SpawnProtocol.Command])
     extends AuthDirectives {
   import AuthorizationCodeGrant._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  override implicit protected def ec: ExecutionContext = system.dispatcher
+  override implicit protected def ec: ExecutionContext = system.executionContext
   override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private val authorizationParams = parameters(
@@ -178,7 +178,7 @@ object AuthorizationCodeGrant {
   def apply(
     config: Config,
     providers: Providers
-  )(implicit system: ActorSystem): AuthorizationCodeGrant =
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): AuthorizationCodeGrant =
     new AuthorizationCodeGrant(
       config = config,
       providers = providers

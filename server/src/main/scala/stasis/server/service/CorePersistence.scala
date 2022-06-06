@@ -14,6 +14,7 @@ import stasis.core.persistence.reservations.{ReservationStore, ReservationStoreS
 import stasis.core.persistence.staging.StagingStore
 import stasis.core.persistence.{CrateStorageReservation, StoreInitializationResult}
 import stasis.core.routing.Node
+import stasis.core.telemetry.TelemetryContext
 import stasis.server.model.nodes.ServerNodeStore
 import stasis.server.model.reservations.ServerReservationStore
 import stasis.server.model.staging.ServerStagingStore
@@ -24,7 +25,11 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class CorePersistence(
   persistenceConfig: typesafe.Config
-)(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout) { persistence =>
+)(implicit
+  system: ActorSystem[SpawnProtocol.Command],
+  telemetry: TelemetryContext,
+  timeout: Timeout
+) { persistence =>
   private implicit val ec: ExecutionContext = system.executionContext
 
   val profile: JdbcProfile = SlickProfile(profile = persistenceConfig.getString("database.profile"))
@@ -149,6 +154,6 @@ class CorePersistence(
 object CorePersistence {
   def apply(
     persistenceConfig: typesafe.Config
-  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): CorePersistence =
+  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, timeout: Timeout): CorePersistence =
     new CorePersistence(persistenceConfig)
 }

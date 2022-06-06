@@ -1,25 +1,34 @@
 package stasis.core.persistence.backends.file
 
+import akka.actor.typed.{ActorSystem, DispatcherSelector, SpawnProtocol}
+
 import java.nio.file.{Files, Path, Paths}
 import java.util.UUID
-
 import akka.stream.scaladsl.{FileIO, Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
+import stasis.core.persistence.Metrics
 import stasis.core.persistence.backends.StreamingBackend
+import stasis.core.telemetry.TelemetryContext
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 
-class FileBackend(val parentDirectory: String)(implicit ec: ExecutionContext) extends StreamingBackend {
+class FileBackend(
+  val parentDirectory: String
+)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext)
+    extends StreamingBackend {
+  private implicit val ec: ExecutionContext = system.dispatchers.lookup(DispatcherSelector.blocking())
 
   private val parent: Path = Paths.get(parentDirectory)
+  private val metrics = telemetry.metrics[Metrics.StreamingBackend]
 
   override val info: String = s"FileBackend(parentDirectory=$parentDirectory)"
 
   override def init(): Future[Done] =
     Future {
       val _ = Files.createDirectories(parent)
+      metrics.recordInit(backend = parentDirectory)
       Done
     }
 
@@ -28,9 +37,11 @@ class FileBackend(val parentDirectory: String)(implicit ec: ExecutionContext) ex
       Future {
         parent.toFile.listFiles().foreach(_.delete)
         Files.delete(parent)
+        metrics.recordDrop(backend = parentDirectory)
         Done
       }
     } else {
+      metrics.recordDrop(backend = parentDirectory)
       Future.successful(Done)
     }
 
@@ -43,6 +54,10 @@ class FileBackend(val parentDirectory: String)(implicit ec: ExecutionContext) ex
     Future.successful(
       FileIO
         .toPath(key.toPath)
+        .contramap { bytes: ByteString =>
+          metrics.recordWrite(backend = parentDirectory, bytes = bytes.length.toLong)
+          bytes
+        }
         .mapMaterializedValue(_.flatMap(_ => Future.successful(Done)))
     )
 
@@ -50,7 +65,12 @@ class FileBackend(val parentDirectory: String)(implicit ec: ExecutionContext) ex
     val path = key.toPath
     Future.successful(
       if (Files.exists(path)) {
-        Some(FileIO.fromPath(path).mapMaterializedValue(_ => NotUsed))
+        Some(
+          FileIO
+            .fromPath(path)
+            .wireTap(bytes => metrics.recordRead(backend = parentDirectory, bytes = bytes.length.toLong))
+            .mapMaterializedValue(_ => NotUsed)
+        )
       } else {
         None
       }
@@ -59,7 +79,9 @@ class FileBackend(val parentDirectory: String)(implicit ec: ExecutionContext) ex
 
   override def delete(key: UUID): Future[Boolean] =
     Future {
-      Files.deleteIfExists(key.toPath)
+      val result = Files.deleteIfExists(key.toPath)
+      metrics.recordDiscard(backend = parentDirectory)
+      result
     }
 
   override def contains(key: UUID): Future[Boolean] =
@@ -75,4 +97,11 @@ class FileBackend(val parentDirectory: String)(implicit ec: ExecutionContext) ex
   private implicit class FileKey(key: UUID) {
     def toPath: Path = parent.resolve(key.toString)
   }
+}
+
+object FileBackend {
+  def apply(parentDirectory: String)(implicit
+    system: ActorSystem[SpawnProtocol.Command],
+    telemetry: TelemetryContext
+  ): FileBackend = new FileBackend(parentDirectory = parentDirectory)
 }

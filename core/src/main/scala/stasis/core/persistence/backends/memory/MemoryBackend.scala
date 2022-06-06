@@ -5,39 +5,82 @@ import akka.actor.typed._
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.Behaviors
 import akka.util.Timeout
+import stasis.core.persistence.Metrics
 import stasis.core.persistence.backends.KeyValueBackend
+import stasis.core.telemetry.TelemetryContext
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class MemoryBackend[K, V] private (
+  val name: String,
   storeRef: Future[ActorRef[MemoryBackend.Message[K, V]]]
-)(implicit scheduler: Scheduler, ec: ExecutionContext, timeout: Timeout)
+)(implicit scheduler: Scheduler, ec: ExecutionContext, telemetry: TelemetryContext, timeout: Timeout)
     extends KeyValueBackend[K, V] {
   import MemoryBackend._
 
-  override def init(): Future[Done] = Future.successful(Done)
+  private val metrics = telemetry.metrics[Metrics.KeyValueBackend]
 
-  override def drop(): Future[Done] = storeRef.flatMap(_ ? (ref => Reset(ref)))
-
-  override def put(key: K, value: V): Future[Done] = storeRef.flatMap(_ ? (ref => Put(key, value, ref)))
-
-  override def delete(key: K): Future[Boolean] = storeRef.flatMap(_ ? (ref => Remove(key, ref)))
-
-  override def get(key: K): Future[Option[V]] = storeRef.flatMap(_ ? (ref => Get(key, ref)))
-
-  override def contains(key: K): Future[Boolean] = {
-    val result: Future[Option[V]] = storeRef.flatMap(_ ? (ref => Get(key, ref)))
-    result.map(_.isDefined)
+  override def init(): Future[Done] = {
+    metrics.recordInit(backend = name)
+    Future.successful(Done)
   }
 
-  override def entries: Future[Map[K, V]] = storeRef.flatMap(_ ? (ref => GetAll(ref)))
+  override def drop(): Future[Done] =
+    storeRef
+      .flatMap(_ ? ((ref: ActorRef[Done]) => Reset(ref)))
+      .map { result =>
+        metrics.recordDrop(backend = name)
+        result
+      }
+
+  override def put(key: K, value: V): Future[Done] =
+    storeRef
+      .flatMap(_ ? ((ref: ActorRef[Done]) => Put(key, value, ref)))
+      .map { result =>
+        metrics.recordPut(backend = name)
+        result
+      }
+
+  override def delete(key: K): Future[Boolean] =
+    storeRef
+      .flatMap(_ ? ((ref: ActorRef[Boolean]) => Remove(key, ref)))
+      .map { result =>
+        metrics.recordDelete(backend = name)
+        result
+      }
+
+  override def get(key: K): Future[Option[V]] =
+    storeRef
+      .flatMap(_ ? ((ref: ActorRef[Option[V]]) => Get(key, ref)))
+      .map { result =>
+        result.foreach(_ => metrics.recordGet(backend = name))
+        result
+      }
+
+  override def contains(key: K): Future[Boolean] =
+    storeRef.flatMap(_ ? ((ref: ActorRef[Option[V]]) => Get(key, ref))).map(_.isDefined)
+
+  override def entries: Future[Map[K, V]] =
+    storeRef
+      .flatMap(_ ? ((ref: ActorRef[Map[K, V]]) => GetAll(ref)))
+      .map { result =>
+        if (result.nonEmpty) {
+          metrics.recordGet(backend = name, entries = result.size)
+        }
+        result
+      }
 }
 
 object MemoryBackend {
-  def apply[K, V](name: String)(implicit s: ActorSystem[SpawnProtocol.Command], t: Timeout): MemoryBackend[K, V] = {
+  def apply[K, V](
+    name: String
+  )(implicit s: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, t: Timeout): MemoryBackend[K, V] = {
     implicit val ec: ExecutionContext = s.executionContext
 
-    new MemoryBackend[K, V](storeRef = s ? (SpawnProtocol.Spawn(store(Map.empty[K, V]), name, Props.empty, _)))
+    new MemoryBackend[K, V](
+      name = name,
+      storeRef = s ? (SpawnProtocol.Spawn(store(Map.empty[K, V]), name, Props.empty, _))
+    )
   }
 
   private sealed trait Message[K, V]

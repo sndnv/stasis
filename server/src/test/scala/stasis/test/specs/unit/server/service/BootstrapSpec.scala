@@ -3,7 +3,6 @@ package stasis.test.specs.unit.server.service
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit.MINUTES
 import java.util.UUID
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import com.typesafe.config.Config
@@ -12,6 +11,7 @@ import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.routing.Node
+import stasis.core.telemetry.TelemetryContext
 import stasis.server.service.Bootstrap.Entities
 import stasis.server.service.{Bootstrap, CorePersistence, ServerPersistence}
 import stasis.shared.model.datasets.DatasetDefinition
@@ -20,6 +20,7 @@ import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.{Generators => CoreGenerators}
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.shared.model.Generators
 
 import scala.concurrent.duration._
@@ -276,6 +277,8 @@ class BootstrapSpec extends AsyncUnitSpec {
   )
 
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
+
+  private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 
   private val config: Config = system.settings.config.getConfig("stasis.test.server")
 }

@@ -8,15 +8,20 @@ import org.mockito.captor.ArgCaptor
 import org.mockito.scalatest.AsyncMockitoSugar
 import org.slf4j.Logger
 import stasis.core.api.directives.LoggingDirectives
+import stasis.core.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class LoggingDirectivesSpec extends AsyncUnitSpec with ScalatestRouteTest with AsyncMockitoSugar {
   "LoggingDirectives" should "log requests and responses" in {
     val logger = mock[Logger]
     val captor = ArgCaptor[String]
 
+    val context = MockTelemetryContext()
+
     val directive = new LoggingDirectives {
       override protected def log: Logger = logger
+      override protected def telemetry: TelemetryContext = context
     }
 
     val route = directive.withLoggedRequestAndResponse {
@@ -67,6 +72,9 @@ class LoggingDirectivesSpec extends AsyncUnitSpec with ScalatestRouteTest with A
         case other =>
           fail(s"Unexpected result received: [$other]")
       }
+
+      context.api.endpoint.request should be(1)
+      context.api.endpoint.response should be(1)
     }
   }
 }

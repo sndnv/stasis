@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.identity.service
 
 import java.time.Instant
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import com.typesafe.config.Config
@@ -9,6 +8,7 @@ import stasis.identity.model.codes.StoredAuthorizationCode
 import stasis.identity.model.tokens.StoredRefreshToken
 import stasis.identity.service.Persistence
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.identity.model.Generators
 
 import scala.concurrent.duration._
@@ -66,6 +66,8 @@ class PersistenceSpec extends AsyncUnitSpec {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "PersistenceSpec"
   )
+
+  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   private val config: Config = system.settings.config.getConfig("stasis.test.identity")
 }

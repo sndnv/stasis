@@ -5,6 +5,7 @@ import akka.util.Timeout
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.security.oauth.OAuthClient
 import stasis.core.security.oauth.OAuthClient.AccessTokenResponse
+import stasis.core.telemetry.TelemetryContext
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -13,7 +14,7 @@ class DefaultJwtProvider(
   client: OAuthClient,
   clientParameters: OAuthClient.GrantParameters,
   expirationTolerance: FiniteDuration
-)(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout)
+)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, timeout: Timeout)
     extends JwtProvider {
   private val untypedSystem = system.classicSystem
   private implicit val ec: ExecutionContext = system.executionContext
@@ -47,7 +48,7 @@ object DefaultJwtProvider {
   def apply(
     client: OAuthClient,
     expirationTolerance: FiniteDuration
-  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): DefaultJwtProvider =
+  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, timeout: Timeout): DefaultJwtProvider =
     new DefaultJwtProvider(
       client = client,
       clientParameters = OAuthClient.GrantParameters.ClientCredentials(),
@@ -58,7 +59,7 @@ object DefaultJwtProvider {
     client: OAuthClient,
     clientParameters: OAuthClient.GrantParameters,
     expirationTolerance: FiniteDuration
-  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): DefaultJwtProvider =
+  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, timeout: Timeout): DefaultJwtProvider =
     new DefaultJwtProvider(
       client = client,
       clientParameters = clientParameters,

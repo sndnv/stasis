@@ -2,11 +2,13 @@ package stasis.test.specs.unit.server.model.reservations
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import stasis.core.telemetry.TelemetryContext
 import stasis.server.model.reservations.ServerReservationStore
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.Generators
 import stasis.test.specs.unit.core.persistence.mocks.MockReservationStore
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class ServerReservationStoreSpec extends AsyncUnitSpec {
   "A ServerReservationStore" should "provide a view resource (service)" in {
@@ -34,4 +36,6 @@ class ServerReservationStoreSpec extends AsyncUnitSpec {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "ServerReservationStoreSpec"
   )
+
+  private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 }

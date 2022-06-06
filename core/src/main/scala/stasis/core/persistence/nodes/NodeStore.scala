@@ -7,6 +7,7 @@ import stasis.core.persistence.StoreInitializationResult
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.routing.Node
+import stasis.core.telemetry.TelemetryContext
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -29,7 +30,11 @@ object NodeStore {
   def apply(
     backend: KeyValueBackend[Node.Id, Node],
     cachingEnabled: Boolean
-  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): StoreInitializationResult[NodeStore] = {
+  )(implicit
+    system: ActorSystem[SpawnProtocol.Command],
+    telemetry: TelemetryContext,
+    timeout: Timeout
+  ): StoreInitializationResult[NodeStore] = {
     implicit val ec: ExecutionContext = system.executionContext
 
     val cacheOpt: Option[KeyValueBackend[Node.Id, Node]] =

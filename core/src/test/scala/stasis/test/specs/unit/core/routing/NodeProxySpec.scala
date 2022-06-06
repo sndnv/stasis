@@ -1,7 +1,5 @@
 package stasis.test.specs.unit.core.routing
 
-import java.util.UUID
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.scaladsl.{Sink, Source}
@@ -21,7 +19,9 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.Generators
 import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
 import stasis.test.specs.unit.core.routing.NodeProxySpec.{ExpectedFailure, FailingEndpointClient}
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
+import java.util.UUID
 import scala.concurrent.Future
 
 class NodeProxySpec extends AsyncUnitSpec {
@@ -56,6 +56,8 @@ class NodeProxySpec extends AsyncUnitSpec {
 
   def localNodeProxy(node: Node.Local): Unit = {
     it should "cache created crate stores" in {
+      implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
       val proxy = new NodeProxy(
         httpClient = new FailingEndpointClient[HttpEndpointAddress](),
         grpcClient = new FailingEndpointClient[GrpcEndpointAddress]()
@@ -102,24 +104,11 @@ class NodeProxySpec extends AsyncUnitSpec {
         }
     }
 
-    it should s"proxy push requests for [${node.getClass.getSimpleName}]" in {
-      val proxy = createProxy()
-
-      proxy
-        .push(node, Generators.generateManifest, Source.empty[ByteString])
-        .map { response =>
-          fail(s"Unexpected response received: [$response]")
-        }
-        .recover { case e: PersistenceFailure =>
-          e.getMessage should be("[persistDisabled] is set to [true]")
-        }
-    }
-
     it should s"proxy sink requests for [${node.getClass.getSimpleName}]" in {
       val proxy = createProxy()
 
       proxy
-        .sink(node, Generators.generateManifest)
+        .push(node, Generators.generateManifest)
         .map { response =>
           fail(s"Unexpected response received: [$response]")
         }
@@ -163,24 +152,11 @@ class NodeProxySpec extends AsyncUnitSpec {
   }
 
   def remoteNodeProxy[A <: EndpointAddress](node: Node.Remote[A]): Unit = {
-    it should s"proxy push requests for [${node.address.getClass.getSimpleName}]" in {
-      val proxy = createProxy()
-
-      proxy
-        .push(node, Generators.generateManifest, Source.empty[ByteString])
-        .map { response =>
-          fail(s"Unexpected response received: [$response]")
-        }
-        .recover { case ExpectedFailure(actualAddress) =>
-          actualAddress should be(node.address)
-        }
-    }
-
     it should s"proxy sink requests for [${node.address.getClass.getSimpleName}]" in {
       val proxy = createProxy()
 
       proxy
-        .sink(node, Generators.generateManifest)
+        .push(node, Generators.generateManifest)
         .map { response =>
           fail(s"Unexpected response received: [$response]")
         }
@@ -226,7 +202,9 @@ class NodeProxySpec extends AsyncUnitSpec {
     }
   }
 
-  private def createProxy(): NodeProxy =
+  private def createProxy(): NodeProxy = {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
     new NodeProxy(
       httpClient = new FailingEndpointClient[HttpEndpointAddress](),
       grpcClient = new FailingEndpointClient[GrpcEndpointAddress]()
@@ -242,6 +220,7 @@ class NodeProxySpec extends AsyncUnitSpec {
           )
         )
     }
+  }
 }
 
 object NodeProxySpec {
@@ -252,12 +231,6 @@ object NodeProxySpec {
       (_: A) => Future.successful("test-credentials")
 
     override def push(
-      address: A,
-      manifest: packaging.Manifest,
-      content: Source[ByteString, NotUsed]
-    ): Future[Done] = Future.failed(ExpectedFailure(address))
-
-    override def sink(
       address: A,
       manifest: packaging.Manifest
     ): Future[Sink[ByteString, Future[Done]]] = Future.failed(ExpectedFailure(address))

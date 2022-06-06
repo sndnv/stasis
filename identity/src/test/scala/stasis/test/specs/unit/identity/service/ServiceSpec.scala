@@ -1,27 +1,25 @@
 package stasis.test.specs.unit.identity.service
 
-import java.security.SecureRandom
-
 import akka.Done
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
+import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
 import akka.util.ByteString
 import com.typesafe.config.{Config, ConfigFactory}
-import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
-import javax.net.ssl.{SSLContext, TrustManagerFactory}
 import org.jose4j.jwk.{JsonWebKey, JsonWebKeySet}
 import org.jose4j.jws.JsonWebSignature
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 import play.api.libs.json._
 import stasis.core.security.tls.EndpointContext
-import stasis.identity.api.Formats._
 import stasis.identity.api.manage.requests.{CreateApi, CreateOwner}
 import stasis.identity.model.apis.Api
 import stasis.identity.service.{Persistence, Service}
 import stasis.test.specs.unit.identity.RouteTest
 
+import java.security.SecureRandom
+import javax.net.ssl.{SSLContext, TrustManagerFactory}
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
@@ -31,13 +29,19 @@ class ServiceSpec extends RouteTest with Eventually {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
-  "Identity Service" should "authenticate and authorize actions" in {
+  "Identity Service" should "authenticate and authorize actions, and provide metrics" in {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import stasis.identity.api.Formats._
+
     implicit val clientContext: HttpsConnectionContext = createTrustedContext()
 
     val service = new Service {}
     val serviceInterface = "localhost"
     val servicePort = 19999
     val serviceUrl = s"https://$serviceInterface:$servicePort"
+
+    val metricsPort = 29999
+    val metricsUrl = s"http://$serviceInterface:$metricsPort"
 
     val persistence = eventually[Persistence] {
       service.state match {
@@ -94,6 +98,7 @@ class ServiceSpec extends RouteTest with Eventually {
       owners <- persistence.resourceOwners.owners
       clients <- persistence.clients.clients
       signatureKey <- getJwk(serviceUrl)
+      metrics <- getMetrics(metricsUrl)
       _ <- persistence.drop()
       _ = service.stop()
     } yield {
@@ -106,6 +111,10 @@ class ServiceSpec extends RouteTest with Eventually {
       jws.setKey(signatureKey.getKey)
 
       jws.verifySignature() should be(true)
+
+      metrics.filter(_.startsWith(Service.Telemetry.Instrumentation)) should not be empty
+      metrics.filter(_.startsWith("jvm")) should not be empty
+      metrics.filter(_.startsWith("process")) should not be empty
     }
   }
 
@@ -197,6 +206,24 @@ class ServiceSpec extends RouteTest with Eventually {
       case Some(entity) => entity
       case None         => fail("Existing entity expected but none was found")
     }
+
+  private def getMetrics(
+    metricsUrl: String
+  ): Future[Seq[String]] =
+    Http()
+      .singleRequest(
+        request = HttpRequest(
+          method = HttpMethods.GET,
+          uri = metricsUrl
+        )
+      )
+      .flatMap {
+        case HttpResponse(StatusCodes.OK, _, entity, _) => Unmarshal(entity).to[String]
+        case response                                   => fail(s"Unexpected response received: [$response]")
+      }
+      .map { result =>
+        result.split("\n").toSeq.filterNot(_.startsWith("#"))
+      }
 
   private def createTrustedContext(): HttpsConnectionContext = {
     val config = ConfigFactory.load().getConfig("stasis.test.identity.service.context")

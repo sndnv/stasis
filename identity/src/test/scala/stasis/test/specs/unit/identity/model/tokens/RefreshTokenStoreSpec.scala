@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.identity.model.tokens
 
 import java.time.Instant
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.scalatest.Assertion
@@ -11,6 +10,7 @@ import stasis.identity.model.clients.Client
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.tokens.{RefreshToken, RefreshTokenStore, StoredRefreshToken}
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.identity.model.Generators
 
 import scala.concurrent.duration._
@@ -136,6 +136,8 @@ class RefreshTokenStoreSpec extends AsyncUnitSpec with Eventually {
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "RefreshTokenStoreSpec"
   )
+
+  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   private def createStore(expiration: FiniteDuration = 3.seconds): RefreshTokenStore =
     RefreshTokenStore(

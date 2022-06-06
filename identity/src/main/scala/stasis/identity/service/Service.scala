@@ -1,15 +1,18 @@
 package stasis.identity.service
 
-import java.util.concurrent.atomic.AtomicReference
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import akka.util.Timeout
 import com.typesafe.{config => typesafe}
+import io.prometheus.client.hotspot.DefaultExports
 import org.jose4j.jwk.JsonWebKey
 import org.slf4j.{Logger, LoggerFactory}
+import stasis.core
 import stasis.core.security.jwt.DefaultJwtAuthenticator
 import stasis.core.security.keys.LocalKeyProvider
 import stasis.core.security.tls.EndpointContext
+import stasis.core.telemetry.metrics.MetricsExporter
+import stasis.core.telemetry.{DefaultTelemetryContext, TelemetryContext}
 import stasis.identity.api.{manage => manageApi, oauth => oauthApi, IdentityEndpoint}
 import stasis.identity.authentication.{manage, oauth}
 import stasis.identity.model.apis.Api
@@ -17,6 +20,7 @@ import stasis.identity.model.codes.generators.DefaultAuthorizationCodeGenerator
 import stasis.identity.model.secrets.Secret
 import stasis.identity.model.tokens.generators.{JwtBearerAccessTokenGenerator, RandomRefreshTokenGenerator}
 
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
@@ -31,14 +35,11 @@ trait Service {
     name = "stasis-identity-service"
   )
 
-  private implicit val untyped: akka.actor.ActorSystem = system.classicSystem
-  private implicit val ec: ExecutionContext = system.executionContext
-  private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
-
   protected def systemConfig: typesafe.Config = system.settings.config
 
   private val rawConfig: typesafe.Config = systemConfig.getConfig("stasis.identity")
-  private val config: Config = Config(rawConfig.getConfig("service"))
+  private val apiConfig: Config = Config(rawConfig.getConfig("service.api"))
+  private val metricsConfig: Config = Config(rawConfig.getConfig("service.telemetry.metrics"))
 
   private implicit val clientSecretsConfig: Secret.ClientConfig =
     Secret.ClientConfig(rawConfig.getConfig("secrets.client"))
@@ -46,17 +47,31 @@ trait Service {
   private implicit val ownerSecretsConfig: Secret.ResourceOwnerConfig =
     Secret.ResourceOwnerConfig(rawConfig.getConfig("secrets.resource-owner"))
 
+  private implicit val ec: ExecutionContext = system.executionContext
+  private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
+  private val exporter: MetricsExporter = Telemetry.createMetricsExporter(config = metricsConfig)
+
   Try {
+    implicit val timeout: Timeout = rawConfig.getDuration("service.internal-query-timeout").toMillis.millis
+
     val refreshTokensConfig = Config.RefreshTokens(rawConfig.getConfig("tokens.refresh"))
     val accessTokensConfig = Config.AccessTokens(rawConfig.getConfig("tokens.access"))
     val authorizationCodesConfig = Config.AuthorizationCodes(rawConfig.getConfig("codes.authorization"))
     val ownerAuthenticatorConfig = Config.ResourceOwnerAuthenticator(rawConfig.getConfig("authenticators.resource-owner"))
 
+    implicit val telemetry: TelemetryContext = DefaultTelemetryContext(
+      metricsProviders = Set(
+        core.security.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation),
+        core.api.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation),
+        core.persistence.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation)
+      ).flatten
+    )
+
     val persistence: Persistence = Persistence(
       persistenceConfig = rawConfig.getConfig("persistence"),
       authorizationCodeExpiration = authorizationCodesConfig.expiration,
       refreshTokenExpiration = refreshTokensConfig.expiration
-    )(system, config.internalQueryTimeout)
+    )
 
     val accessTokenSignatureKey: JsonWebKey =
       SignatureKey.fromConfig(rawConfig.getConfig("tokens.access.signature-key"))
@@ -126,7 +141,7 @@ trait Service {
       manageProviders = manageProviders
     )
 
-    val context = EndpointContext.apply(config.context)
+    val context = EndpointContext.apply(apiConfig.context)
 
     log.info(
       s"""
@@ -138,12 +153,19 @@ trait Service {
          |    config:  ${rawConfig.getString("bootstrap.config")}
          |
          |  service:
-         |    interface: ${config.interface}
-         |    port:      ${config.port.toString}
-         |    iqt:       ${config.internalQueryTimeout.toMillis.toString} ms
-         |    context:
-         |      protocol: ${config.context.protocol}
-         |      keystore: ${config.context.keyStoreConfig.map(_.storePath).getOrElse("none")}
+         |    internal-query-timeout: ${timeout.duration.toMillis.toString} ms
+         |    api:
+         |      interface: ${apiConfig.interface}
+         |      port:      ${apiConfig.port.toString}
+         |      context:
+         |        protocol: ${apiConfig.context.protocol}
+         |        keystore: ${apiConfig.context.keyStoreConfig.map(_.storePath).getOrElse("none")}
+         |
+         |    telemetry:
+         |      metrics:
+         |        namespace: ${Telemetry.Instrumentation}
+         |        interface: ${metricsConfig.interface}
+         |        port:      ${metricsConfig.port.toString}
          |
          |  authorization-codes:
          |    size:       ${authorizationCodesConfig.size.toString}
@@ -193,11 +215,11 @@ trait Service {
         .run(rawConfig.getConfig("bootstrap"), persistence)
         .onComplete {
           case Success(_) =>
-            log.info("Identity service starting on [{}:{}]...", config.interface, config.port)
+            log.info("Identity service starting on [{}:{}]...", apiConfig.interface, apiConfig.port)
             serviceState.set(State.Started(persistence, endpoint))
             val _ = endpoint.start(
-              interface = config.interface,
-              port = config.port,
+              interface = apiConfig.interface,
+              port = apiConfig.port,
               context = Some(context)
             )
 
@@ -219,7 +241,8 @@ trait Service {
 
   def stop(): Unit = {
     log.info("Identity service stopping...")
-    val _ = system.terminate()
+    locally { val _ = exporter.shutdown() }
+    locally { val _ = system.terminate() }
   }
 
   def state: State = serviceState.get()
@@ -237,7 +260,6 @@ object Service {
   final case class Config(
     interface: String,
     port: Int,
-    internalQueryTimeout: FiniteDuration,
     context: EndpointContext.Config
   )
 
@@ -246,7 +268,6 @@ object Service {
       Config(
         interface = config.getString("interface"),
         port = config.getInt("port"),
-        internalQueryTimeout = config.getDuration("internal-query-timeout").toMillis.millis,
         context = EndpointContext.Config(config.getConfig("context"))
       )
 
@@ -303,5 +324,16 @@ object Service {
           expirationTolerance = config.getDuration("expiration-tolerance").toMillis.millis
         )
     }
+  }
+
+  object Telemetry {
+    final val Instrumentation: String = "stasis_identity"
+
+    def createMetricsExporter(config: Config): MetricsExporter =
+      MetricsExporter.Prometheus.asProxyRegistry(
+        instrumentation = Instrumentation,
+        interface = config.interface,
+        port = config.port
+      ) { registry => DefaultExports.register(registry) }
   }
 }

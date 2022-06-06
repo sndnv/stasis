@@ -6,11 +6,12 @@ import akka.util.Timeout
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.manifests.ManifestStore
+import stasis.core.telemetry.TelemetryContext
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class MockManifestStore(implicit system: ActorSystem[SpawnProtocol.Command]) extends ManifestStore {
+class MockManifestStore(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext) extends ManifestStore {
   private type StoreKey = Crate.Id
   private type StoreValue = Manifest
 

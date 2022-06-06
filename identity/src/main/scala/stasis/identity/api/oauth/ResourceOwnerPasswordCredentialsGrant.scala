@@ -1,8 +1,8 @@
 package stasis.identity.api.oauth
 
-import scala.concurrent.ExecutionContext
+import akka.actor.typed.{ActorSystem, SpawnProtocol}
 
-import akka.actor.ActorSystem
+import scala.concurrent.ExecutionContext
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
@@ -18,12 +18,12 @@ import stasis.identity.model.{GrantType, Seconds}
 class ResourceOwnerPasswordCredentialsGrant(
   override val config: Config,
   override val providers: Providers
-)(implicit system: ActorSystem)
+)(implicit system: ActorSystem[SpawnProtocol.Command])
     extends AuthDirectives {
   import ResourceOwnerPasswordCredentialsGrant._
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  override implicit protected def ec: ExecutionContext = system.dispatcher
+  override implicit protected def ec: ExecutionContext = system.executionContext
   override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private val tokenParams = parameters(
@@ -86,7 +86,7 @@ object ResourceOwnerPasswordCredentialsGrant {
   def apply(
     config: Config,
     providers: Providers
-  )(implicit system: ActorSystem): ResourceOwnerPasswordCredentialsGrant =
+  )(implicit system: ActorSystem[SpawnProtocol.Command]): ResourceOwnerPasswordCredentialsGrant =
     new ResourceOwnerPasswordCredentialsGrant(
       config = config,
       providers = providers

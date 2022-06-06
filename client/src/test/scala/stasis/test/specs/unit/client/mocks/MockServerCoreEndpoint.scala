@@ -10,6 +10,7 @@ import stasis.core.networking.http.HttpEndpoint
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.routing.Node
 import stasis.core.security.tls.EndpointContext
+import stasis.core.telemetry.TelemetryContext
 import stasis.test.specs.unit.core.persistence.mocks.{MockCrateStore, MockReservationStore}
 import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockHttpAuthenticator
@@ -18,7 +19,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class MockServerCoreEndpoint(
   expectedCredentials: BasicHttpCredentials
-)(implicit typedSystem: ActorSystem[SpawnProtocol.Command]) {
+)(implicit typedSystem: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext) {
   private implicit val ec: ExecutionContext = typedSystem.executionContext
 
   private val reservationStore = new MockReservationStore()

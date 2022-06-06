@@ -19,6 +19,7 @@ import stasis.core.persistence.nodes.NodeStore
 import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.persistence.staging.StagingStore
 import stasis.core.routing.{Node, NodeProxy}
+import stasis.core.telemetry.TelemetryContext
 import stasis.server.api.ApiEndpoint
 import stasis.server.model.datasets.{DatasetDefinitionStore, DatasetEntryStore}
 import stasis.server.model.devices.DeviceStore
@@ -38,6 +39,7 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.{MockGrpcEndpointClient, MockHttpEndpointClient}
 import stasis.test.specs.unit.core.persistence.Generators
 import stasis.test.specs.unit.core.persistence.mocks.{MockCrateStore, MockNodeStore, MockReservationStore}
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.Secrets
 import stasis.test.specs.unit.server.model.mocks._
 import stasis.test.specs.unit.server.security.mocks.{MockResourceProvider, MockUserAuthenticator, MockUserCredentialsManager}
@@ -405,6 +407,8 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "ApiEndpointSpec_Typed"
   )
+
+  private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 
   private trait TestFixtures {
     lazy val definitionStore: DatasetDefinitionStore = MockDatasetDefinitionStore()

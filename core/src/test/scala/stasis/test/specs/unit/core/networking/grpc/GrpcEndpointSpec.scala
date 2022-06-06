@@ -12,10 +12,12 @@ import stasis.core.networking.grpc.{proto, GrpcEndpoint}
 import stasis.core.packaging.Crate
 import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.core.routing.Node
+import stasis.core.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.mocks.{MockCrateStore, MockReservationStore}
 import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockGrpcAuthenticator
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -24,7 +26,9 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import Implicits._
 
   "An GRPC Endpoint" should "successfully authenticate a client" in {
-    val endpoint = new TestGrpcEndpoint()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestGrpcEndpoint()
 
     endpoint
       .authenticated((_, _) => Future.successful(HttpResponse(StatusCodes.Accepted)))(
@@ -36,7 +40,9 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "fail to authenticate a client with no credentials" in {
-    val endpoint = new TestGrpcEndpoint()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestGrpcEndpoint()
 
     endpoint
       .authenticated((_, _) => Future.successful(HttpResponse(StatusCodes.Accepted)))(
@@ -48,7 +54,9 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "fail to authenticate a client with invalid credentials" in {
-    val endpoint = new TestGrpcEndpoint()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestGrpcEndpoint()
 
     endpoint
       .authenticated((_, _) => Future.successful(HttpResponse(StatusCodes.Accepted)))(
@@ -60,7 +68,9 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "successfully respond to valid URLs" in {
-    val endpoint = new TestGrpcEndpoint()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestGrpcEndpoint()
 
     val grpcEntity = HttpEntity(ContentTypes.`application/grpc+proto`, ByteString.empty)
 
@@ -71,11 +81,16 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       )
       .map { response =>
         response.status should be(StatusCodes.OK)
+
+        telemetry.api.endpoint.request should be(1)
+        telemetry.api.endpoint.response should be(1)
       }
   }
 
   it should "respond with failure to invalid methods" in {
-    val endpoint = new TestGrpcEndpoint()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestGrpcEndpoint()
 
     val grpcEntity = HttpEntity(ContentTypes.`application/grpc+proto`, ByteString.empty)
 
@@ -86,11 +101,16 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       )
       .map { response =>
         response.status should be(StatusCodes.MethodNotAllowed)
+
+        telemetry.api.endpoint.request should be(1)
+        telemetry.api.endpoint.response should be(1)
       }
   }
 
   it should "respond with failure to unsupported gRPC protocols" in {
-    val endpoint = new TestGrpcEndpoint()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestGrpcEndpoint()
 
     val octetEntity = HttpEntity(ContentTypes.`application/octet-stream`, ByteString.empty)
 
@@ -101,11 +121,16 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       )
       .map { response =>
         response.status should be(StatusCodes.UnsupportedMediaType)
+
+        telemetry.api.endpoint.request should be(1)
+        telemetry.api.endpoint.response should be(1)
       }
   }
 
   it should "respond with failure to invalid URIs" in {
-    val endpoint = new TestGrpcEndpoint()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestGrpcEndpoint()
 
     endpoint
       .grpcHandler(
@@ -114,11 +139,16 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       )
       .map { response =>
         response.status should be(StatusCodes.NotFound)
+
+        telemetry.api.endpoint.request should be(1)
+        telemetry.api.endpoint.response should be(1)
       }
   }
 
   it should "successfully process reservation requests" in {
-    val endpoint = new TestGrpcEndpoint()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestGrpcEndpoint()
 
     val storageRequest = CrateStorageRequest(
       crate = Crate.generateId(),
@@ -157,7 +187,9 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "reject reservation requests that cannot be fulfilled" in {
-    val endpoint = new TestGrpcEndpoint(
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestGrpcEndpoint(
       testCrateStore = Some(new MockCrateStore(maxStorageSize = Some(99)))
     )
 
@@ -181,7 +213,9 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "reject invalid reservation requests" in {
-    val endpoint = new TestGrpcEndpoint()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestGrpcEndpoint()
 
     endpoint
       .reserve(testNode, proto.ReserveRequest())
@@ -201,8 +235,10 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "handle reservation failures" in {
-    val endpoint = new TestGrpcEndpoint(
-      testReservationStore = new MockReservationStore(),
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestGrpcEndpoint(
+      testReservationStore = Some(new MockReservationStore()),
       testCrateStore = Some(new MockCrateStore(maxStorageSize = Some(0))),
       reservationDisabled = true
     )
@@ -232,7 +268,9 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "successfully store crates" in {
-    val endpoint = new TestGrpcEndpoint()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestGrpcEndpoint()
     endpoint.testReservationStore.put(testReservation).await
 
     endpoint
@@ -252,7 +290,9 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "fail to store crates when a reservation ID is not provided" in {
-    val endpoint = new TestGrpcEndpoint()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestGrpcEndpoint()
 
     endpoint
       .push(
@@ -272,7 +312,9 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "fail to store crates when no data is sent" in {
-    val endpoint = new TestGrpcEndpoint()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestGrpcEndpoint()
 
     endpoint
       .push(
@@ -288,9 +330,11 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "handle push failures" in {
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
     val reservationStore = new MockReservationStore()
-    val endpoint = new TestGrpcEndpoint(
-      testReservationStore = reservationStore,
+    val endpoint = createTestGrpcEndpoint(
+      testReservationStore = Some(reservationStore),
       testCrateStore = Some(new MockCrateStore(persistDisabled = true))
     )
 
@@ -313,7 +357,9 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "fail to store crates when reservation is missing" in {
-    val endpoint = new TestGrpcEndpoint()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestGrpcEndpoint()
 
     val reservationId = CrateStorageReservation.generateId()
 
@@ -336,7 +382,9 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "successfully retrieve crates" in {
-    val endpoint = new TestGrpcEndpoint()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestGrpcEndpoint()
     endpoint.testReservationStore.put(testReservation).await
 
     for {
@@ -365,7 +413,9 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "fail to retrieve missing crates" in {
-    val endpoint = new TestGrpcEndpoint()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestGrpcEndpoint()
 
     endpoint
       .pull(testNode, proto.PullRequest().withCrate(testReservation.crate))
@@ -375,7 +425,9 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "fail to retrieve crates when no crate ID is provided" in {
-    val endpoint = new TestGrpcEndpoint()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestGrpcEndpoint()
 
     endpoint
       .pull(testNode, proto.PullRequest())
@@ -390,7 +442,9 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "successfully delete existing crates" in {
-    val endpoint = new TestGrpcEndpoint()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestGrpcEndpoint()
     endpoint.testReservationStore.put(testReservation).await
 
     for {
@@ -415,7 +469,9 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "fail to delete missing crates" in {
-    val endpoint = new TestGrpcEndpoint()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestGrpcEndpoint()
 
     endpoint
       .discard(testNode, proto.DiscardRequest().withCrate(testReservation.crate))
@@ -430,7 +486,9 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "fail to delete crates when no crate ID is provided" in {
-    val endpoint = new TestGrpcEndpoint()
+    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+    val endpoint = createTestGrpcEndpoint()
 
     endpoint
       .discard(testNode, proto.DiscardRequest())
@@ -447,12 +505,26 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     "GrpcEndpointSpec"
   )
 
+  private def createTestGrpcEndpoint(
+    testCrateStore: Option[MockCrateStore] = None,
+    testReservationStore: Option[MockReservationStore] = None,
+    testAuthenticator: MockGrpcAuthenticator = new MockGrpcAuthenticator(testNode, testSecret),
+    reservationDisabled: Boolean = false
+  )(implicit telemetry: TelemetryContext): TestGrpcEndpoint =
+    new TestGrpcEndpoint(
+      testCrateStore = testCrateStore,
+      testReservationStore = testReservationStore.getOrElse(new MockReservationStore()),
+      testAuthenticator = testAuthenticator,
+      reservationDisabled = reservationDisabled
+    )
+
   private class TestGrpcEndpoint(
-    val testCrateStore: Option[MockCrateStore] = None,
-    val testReservationStore: MockReservationStore = new MockReservationStore(),
-    val testAuthenticator: MockGrpcAuthenticator = new MockGrpcAuthenticator(testNode, testSecret),
-    val reservationDisabled: Boolean = false
-  ) extends GrpcEndpoint(
+    val testCrateStore: Option[MockCrateStore],
+    val testReservationStore: MockReservationStore,
+    val testAuthenticator: MockGrpcAuthenticator,
+    val reservationDisabled: Boolean
+  )(implicit telemetry: TelemetryContext)
+      extends GrpcEndpoint(
         new MockRouter(
           store = testCrateStore.getOrElse(new MockCrateStore()),
           storeNode = testNode,
@@ -461,7 +533,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
         ),
         testReservationStore.view,
         testAuthenticator
-      )(typedSystem.classicSystem)
+      )
 
   private val crateContent = "some value"
 

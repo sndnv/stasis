@@ -1,6 +1,5 @@
 package stasis.test.specs.unit.client.tracking.trackers
 
-import java.nio.file.Paths
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.scaladsl.Sink
@@ -13,7 +12,9 @@ import stasis.core.persistence.backends.memory.EventLogMemoryBackend
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
+import java.nio.file.Paths
 import scala.collection.immutable.Queue
 import scala.concurrent.duration._
 
@@ -238,6 +239,8 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DefaultTrackerSpec"
   )
+
+  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   override protected def afterAll(): Unit =
     system.terminate()
