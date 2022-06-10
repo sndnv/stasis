@@ -360,7 +360,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
           crates = Map(entry.metadata -> ByteString.empty)
         )
       ),
-      track = new MockRecoveryTracker
+      track = new MockRecoveryTracker,
+      telemetry = MockClientTelemetryContext()
     )
 
     for {
@@ -412,7 +413,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
         },
         core = MockServerCoreEndpointClient()
       ),
-      track = new MockRecoveryTracker
+      track = new MockRecoveryTracker,
+      telemetry = MockClientTelemetryContext()
     )
 
     Recovery
@@ -447,7 +449,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
         api = MockServerApiEndpointClient(),
         core = MockServerCoreEndpointClient()
       ),
-      track = new MockRecoveryTracker
+      track = new MockRecoveryTracker,
+      telemetry = MockClientTelemetryContext()
     )
 
     val descriptor = Recovery.Descriptor(
@@ -584,7 +587,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
       decompressor = new MockCompression,
       decryptor = new MockEncryption,
       clients = clients,
-      track = tracker
+      track = tracker,
+      telemetry = MockClientTelemetryContext()
     )
 
     new Recovery(

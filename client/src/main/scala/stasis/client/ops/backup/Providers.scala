@@ -5,6 +5,7 @@ import stasis.client.api.clients.Clients
 import stasis.client.staging.FileStaging
 import stasis.client.tracking.BackupTracker
 import stasis.client.{compression, encryption}
+import stasis.core.telemetry.TelemetryContext
 
 final case class Providers(
   checksum: Checksum,
@@ -13,5 +14,6 @@ final case class Providers(
   encryptor: encryption.Encoder,
   decryptor: encryption.Decoder,
   clients: Clients,
-  track: BackupTracker
+  track: BackupTracker,
+  telemetry: TelemetryContext
 )

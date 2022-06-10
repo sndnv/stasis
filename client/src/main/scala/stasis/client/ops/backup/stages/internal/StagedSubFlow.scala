@@ -8,6 +8,7 @@ import akka.stream.{IOResult, Materializer}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import stasis.client.encryption.secrets.DeviceFileSecret
+import stasis.client.ops.Metrics
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.exceptions.EntityProcessingFailure
 
@@ -56,12 +57,15 @@ class StagedSubFlow(
 object StagedSubFlow {
   def createStagingFlow(
     partSecret: DeviceFileSecret
-  )(implicit providers: Providers, ec: ExecutionContext): Future[Flow[ByteString, (Path, Path), Future[IOResult]]] =
+  )(implicit providers: Providers, ec: ExecutionContext): Future[Flow[ByteString, (Path, Path), Future[IOResult]]] = {
+    val metrics = providers.telemetry.metrics[Metrics.BackupOperation]
+
     providers.staging
       .temporary()
       .map { staged =>
         Flow[ByteString]
           .via(providers.encryptor.encrypt(partSecret))
+          .wireTap(bytes => metrics.recordEntityChunkProcessed(step = "encrypted", bytes = bytes.length))
           .viaMat(
             Flow.fromSinkAndSourceMat(
               sink = FileIO.toPath(staged),
@@ -69,6 +73,7 @@ object StagedSubFlow {
             )(Keep.left[Future[IOResult], NotUsed])
           )(Keep.right[NotUsed, Future[IOResult]])
       }
+  }
 
   def handleStagingFailure[T](
     stagedParts: java.util.Queue[(Path, Path)]

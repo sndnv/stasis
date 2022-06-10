@@ -25,6 +25,7 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
   "A StagedSubFlow" should "support dynamic creation of staging flows" in {
     val mockStaging = new MockFileStaging()
     val mockEncryption = new MockEncryption()
+    val mockTelemetry = MockClientTelemetryContext()
 
     implicit val providers: Providers = Providers(
       checksum = Checksum.MD5,
@@ -36,7 +37,8 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
         api = MockServerApiEndpointClient(),
         core = MockServerCoreEndpointClient()
       ),
-      track = new MockBackupTracker
+      track = new MockBackupTracker,
+      telemetry = mockTelemetry
     )
 
     val expectedPartPath = Paths.get("/tmp/file/one_0")
@@ -63,12 +65,18 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
         mockEncryption.statistics(MockEncryption.Statistic.FileDecrypted) should be(0)
         mockEncryption.statistics(MockEncryption.Statistic.MetadataEncrypted) should be(0)
         mockEncryption.statistics(MockEncryption.Statistic.MetadataDecrypted) should be(0)
+
+        mockTelemetry.ops.backup.entityExamined should be(0)
+        mockTelemetry.ops.backup.entityCollected should be(0)
+        mockTelemetry.ops.backup.entityChunkProcessed should be(1)
+        mockTelemetry.ops.backup.entityProcessed should be(0)
       }
     }
   }
 
   it should "handle staging failures" in {
     val mockStaging = new MockFileStaging()
+    val mockTelemetry = MockClientTelemetryContext()
 
     implicit val providers: Providers = Providers(
       checksum = Checksum.MD5,
@@ -80,7 +88,8 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
         api = MockServerApiEndpointClient(),
         core = MockServerCoreEndpointClient()
       ),
-      track = new MockBackupTracker
+      track = new MockBackupTracker,
+      telemetry = mockTelemetry
     )
 
     val stagedParts = new java.util.LinkedList[(Path, Path)](
@@ -105,6 +114,11 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
         mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(0)
         mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(3)
         mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
+
+        mockTelemetry.ops.backup.entityExamined should be(0)
+        mockTelemetry.ops.backup.entityCollected should be(0)
+        mockTelemetry.ops.backup.entityChunkProcessed should be(0)
+        mockTelemetry.ops.backup.entityProcessed should be(0)
       }
   }
 
@@ -114,6 +128,7 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
     val mockStaging = new MockFileStaging() {
       override def discard(file: Path): Future[Done] = Future.failed(failure)
     }
+    val mockTelemetry = MockClientTelemetryContext()
 
     implicit val providers: Providers = Providers(
       checksum = Checksum.MD5,
@@ -125,7 +140,8 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
         api = MockServerApiEndpointClient(),
         core = MockServerCoreEndpointClient()
       ),
-      track = new MockBackupTracker
+      track = new MockBackupTracker,
+      telemetry = mockTelemetry
     )
 
     val stagedParts = new java.util.LinkedList[(Path, Path)](
@@ -146,12 +162,18 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
         mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(0)
         mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(0)
         mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
+
+        mockTelemetry.ops.backup.entityExamined should be(0)
+        mockTelemetry.ops.backup.entityCollected should be(0)
+        mockTelemetry.ops.backup.entityChunkProcessed should be(0)
+        mockTelemetry.ops.backup.entityProcessed should be(0)
       }
   }
 
   it should "support staging a partitioned data stream" in {
     val mockStaging = new MockFileStaging()
     val mockEncryption = new MockEncryption()
+    val mockTelemetry = MockClientTelemetryContext()
 
     val original = Source("part1" :: "part2" :: Nil)
       .map(ByteString.apply)
@@ -170,7 +192,8 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
         api = MockServerApiEndpointClient(),
         core = MockServerCoreEndpointClient()
       ),
-      track = new MockBackupTracker
+      track = new MockBackupTracker,
+      telemetry = mockTelemetry
     )
 
     extended
@@ -204,6 +227,11 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
           mockEncryption.statistics(MockEncryption.Statistic.FileDecrypted) should be(0)
           mockEncryption.statistics(MockEncryption.Statistic.MetadataEncrypted) should be(0)
           mockEncryption.statistics(MockEncryption.Statistic.MetadataDecrypted) should be(0)
+
+          mockTelemetry.ops.backup.entityExamined should be(0)
+          mockTelemetry.ops.backup.entityCollected should be(0)
+          mockTelemetry.ops.backup.entityChunkProcessed should be(2)
+          mockTelemetry.ops.backup.entityProcessed should be(0)
         }
       }
   }

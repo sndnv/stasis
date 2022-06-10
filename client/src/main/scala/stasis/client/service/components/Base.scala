@@ -1,5 +1,6 @@
 package stasis.client.service.components
 
+import akka.actor.CoordinatedShutdown
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.util.Timeout
 import com.typesafe.{config => typesafe}
@@ -7,13 +8,16 @@ import org.slf4j.Logger
 import stasis.client.analysis.Checksum
 import stasis.client.compression.{Compression, Decoder => CompressionDecoder, Encoder => CompressionEncoder}
 import stasis.client.encryption.{Aes, Decoder => EncryptionDecoder, Encoder => EncryptionEncoder}
+import stasis.client.ops
 import stasis.client.service.ApplicationDirectory
 import stasis.client.service.components.internal.{ConfigOverride, FutureOps}
 import stasis.client.staging.{DefaultFileStaging, FileStaging}
 import stasis.client.tracking.TrackerView
 import stasis.client.tracking.trackers.DefaultTracker
 import stasis.core.persistence.backends.memory.EventLogMemoryBackend
-import stasis.core.telemetry.TelemetryContext
+import stasis.core.telemetry.metrics.{MetricsExporter, MetricsProvider}
+import stasis.core.telemetry.{DefaultTelemetryContext, TelemetryContext}
+import stasis.core.{api, persistence, security}
 
 import java.nio.file.Paths
 import scala.concurrent.duration._
@@ -50,7 +54,6 @@ object Base {
     terminate: () => Unit
   )(implicit
     typedSystem: ActorSystem[SpawnProtocol.Command],
-    telemetryContext: TelemetryContext,
     logger: Logger
   ): Future[Base] =
     Future.fromTry(
@@ -59,7 +62,6 @@ object Base {
           override implicit val system: ActorSystem[SpawnProtocol.Command] = typedSystem
           override implicit val ec: ExecutionContext = typedSystem.executionContext
           override implicit val log: Logger = logger
-          override implicit val telemetry: TelemetryContext = telemetryContext
 
           override val directory: ApplicationDirectory =
             applicationDirectory
@@ -69,6 +71,12 @@ object Base {
 
           override val rawConfig: typesafe.Config =
             configOverride.withFallback(system.settings.config).getConfig("stasis.client").resolve()
+
+          override implicit val telemetry: TelemetryContext = DefaultTelemetryContext(
+            metricsProviders = Telemetry.loadMetricsProviders(
+              metricsConfig = rawConfig.getConfig("service.telemetry.metrics")
+            )(typedSystem)
+          )
 
           override implicit val timeout: Timeout =
             rawConfig.getDuration("service.internal-query-timeout").toMillis.millis
@@ -105,4 +113,49 @@ object Base {
         }
       }
     )
+
+  object Telemetry {
+    final val Instrumentation: String = "stasis_client"
+
+    def loadMetricsProviders(
+      metricsConfig: typesafe.Config
+    )(implicit system: ActorSystem[SpawnProtocol.Command]): Set[MetricsProvider] =
+      if (metricsConfig.getBoolean("enabled")) {
+        val exporter = createMetricsExporter(
+          interface = metricsConfig.getString("interface"),
+          port = metricsConfig.getInt("port")
+        )
+
+        Set(
+          security.Metrics.default(meter = exporter.meter, namespace = Instrumentation),
+          api.Metrics.default(meter = exporter.meter, namespace = Instrumentation),
+          persistence.Metrics.default(meter = exporter.meter, namespace = Instrumentation),
+          ops.Metrics.default(meter = exporter.meter, namespace = Instrumentation)
+        ).flatten
+      } else {
+        Set(
+          security.Metrics.noop(),
+          api.Metrics.noop(),
+          persistence.Metrics.noop(),
+          ops.Metrics.noop()
+        ).flatten
+      }
+
+    private def createMetricsExporter(interface: String, port: Int)(implicit
+      system: ActorSystem[SpawnProtocol.Command]
+    ): MetricsExporter = {
+      val exporter = MetricsExporter.Prometheus.apply(
+        instrumentation = Instrumentation,
+        interface = interface,
+        port = port
+      )
+
+      CoordinatedShutdown(system).addTask(
+        phase = CoordinatedShutdown.PhaseServiceStop,
+        taskName = "metricsExporterShutdown"
+      ) { () => exporter.shutdown() }
+
+      exporter
+    }
+  }
 }

@@ -25,7 +25,8 @@ class CompressedByteStringSourceSpec extends AsyncUnitSpec {
         api = MockServerApiEndpointClient(),
         core = MockServerCoreEndpointClient()
       ),
-      track = new MockBackupTracker
+      track = new MockBackupTracker,
+      telemetry = MockClientTelemetryContext()
     )
 
     val original = Source

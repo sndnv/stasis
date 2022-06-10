@@ -36,6 +36,7 @@ class EntityCollectionSpec extends AsyncUnitSpec {
     )
 
     val mockTracker = new MockRecoveryTracker
+    val mockTelemetry = MockClientTelemetryContext()
 
     val stage = new EntityCollection {
       override protected def collector: RecoveryCollector =
@@ -48,7 +49,8 @@ class EntityCollectionSpec extends AsyncUnitSpec {
           decompressor = new MockCompression(),
           decryptor = new MockEncryption(),
           clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
-          track = mockTracker
+          track = mockTracker,
+          telemetry = mockTelemetry
         )
     }
 
@@ -65,6 +67,12 @@ class EntityCollectionSpec extends AsyncUnitSpec {
         mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
         mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
         mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(0)
+
+        mockTelemetry.ops.recovery.entityExamined should be(3)
+        mockTelemetry.ops.recovery.entityCollected should be(2)
+        mockTelemetry.ops.recovery.entityChunkProcessed should be(0)
+        mockTelemetry.ops.recovery.entityProcessed should be(0)
+        mockTelemetry.ops.recovery.metadataApplied should be(0)
       }
   }
 

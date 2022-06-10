@@ -4,7 +4,7 @@ import akka.stream.scaladsl.Flow
 import akka.{Done, NotUsed}
 import stasis.client.analysis.Metadata
 import stasis.client.model.TargetEntity
-import stasis.client.ops.ParallelismConfig
+import stasis.client.ops.{Metrics, ParallelismConfig}
 import stasis.client.ops.recovery.Providers
 import stasis.shared.ops.Operation
 
@@ -16,6 +16,8 @@ trait MetadataApplication {
 
   protected implicit def ec: ExecutionContext
 
+  private val metrics = providers.telemetry.metrics[Metrics.RecoveryOperation]
+
   def metadataApplication(implicit operation: Operation.Id): Flow[TargetEntity, Done, NotUsed] =
     Flow[TargetEntity]
       .mapAsync(parallelism.value) { targetEntity =>
@@ -26,6 +28,9 @@ trait MetadataApplication {
           )
           .map(_ => targetEntity)
       }
-      .wireTap(targetEntity => providers.track.metadataApplied(entity = targetEntity.destinationPath))
+      .wireTap { targetEntity =>
+        metrics.recordMetadataApplied(entity = targetEntity)
+        providers.track.metadataApplied(entity = targetEntity.destinationPath)
+      }
       .map(_ => Done)
 }

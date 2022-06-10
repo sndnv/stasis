@@ -41,6 +41,7 @@ class MetadataApplicationSpec extends AsyncUnitSpec { spec =>
     )
 
     val mockTracker = new MockRecoveryTracker
+    val mockTelemetry = MockClientTelemetryContext()
 
     val stage = new MetadataApplication {
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
@@ -52,7 +53,8 @@ class MetadataApplicationSpec extends AsyncUnitSpec { spec =>
           decompressor = new MockCompression,
           decryptor = new MockEncryption,
           clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
-          track = mockTracker
+          track = mockTracker,
+          telemetry = mockTelemetry
         )
 
       override implicit protected def ec: ExecutionContext = spec.system.dispatcher
@@ -86,6 +88,12 @@ class MetadataApplicationSpec extends AsyncUnitSpec { spec =>
       mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(1)
       mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(0)
+
+      mockTelemetry.ops.recovery.entityExamined should be(0)
+      mockTelemetry.ops.recovery.entityCollected should be(0)
+      mockTelemetry.ops.recovery.entityChunkProcessed should be(0)
+      mockTelemetry.ops.recovery.entityProcessed should be(0)
+      mockTelemetry.ops.recovery.metadataApplied should be(1)
     }
   }
 

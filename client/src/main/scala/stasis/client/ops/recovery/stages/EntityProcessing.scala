@@ -9,7 +9,7 @@ import akka.util.ByteString
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.TargetEntity.Destination
 import stasis.client.model.{EntityMetadata, TargetEntity}
-import stasis.client.ops.ParallelismConfig
+import stasis.client.ops.{Metrics, ParallelismConfig}
 import stasis.client.ops.recovery.Providers
 import stasis.core.packaging.Crate
 import stasis.core.routing.exceptions.PullFailure
@@ -25,6 +25,8 @@ trait EntityProcessing {
   protected implicit def mat: Materializer
   protected implicit def ec: ExecutionContext
 
+  private val metrics = providers.telemetry.metrics[Metrics.RecoveryOperation]
+
   def entityProcessing(implicit operation: Operation.Id): Flow[TargetEntity, TargetEntity, NotUsed] =
     Flow[TargetEntity]
       .collect {
@@ -37,7 +39,10 @@ trait EntityProcessing {
         case entity if entity.hasContentChanged => processContentChanged(entity)
         case entity                             => processMetadataChanged(entity)
       }
-      .wireTap(targetEntity => providers.track.entityProcessed(entity = targetEntity.destinationPath))
+      .wireTap { targetEntity =>
+        metrics.recordEntityProcessed(entity = targetEntity)
+        providers.track.entityProcessed(entity = targetEntity.destinationPath)
+      }
 
   private def createEntityDirectory(entity: TargetEntity): TargetEntity = {
     val entityDirectory = entity.existingMetadata match {

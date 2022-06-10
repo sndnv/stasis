@@ -34,6 +34,7 @@ class EntityCollectionSpec extends AsyncUnitSpec {
     )
 
     val mockTracker = new MockBackupTracker
+    val mockTelemetry = MockClientTelemetryContext()
 
     val stage = new EntityCollection {
       override protected def providers: Providers =
@@ -47,7 +48,8 @@ class EntityCollectionSpec extends AsyncUnitSpec {
             api = MockServerApiEndpointClient(),
             core = MockServerCoreEndpointClient()
           ),
-          track = mockTracker
+          track = mockTracker,
+          telemetry = mockTelemetry
         )
 
       override protected def targetDataset: DatasetDefinition = Fixtures.Datasets.Default
@@ -71,6 +73,11 @@ class EntityCollectionSpec extends AsyncUnitSpec {
         mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
+
+        mockTelemetry.ops.backup.entityExamined should be(3)
+        mockTelemetry.ops.backup.entityCollected should be(2)
+        mockTelemetry.ops.backup.entityChunkProcessed should be(0)
+        mockTelemetry.ops.backup.entityProcessed should be(0)
       }
   }
 

@@ -4,7 +4,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import akka.util.{ByteString, Timeout}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
@@ -156,4 +156,6 @@ class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec with Eventually 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
   private val ports: mutable.Queue[Int] = (23000 to 23100).to(mutable.Queue)
+
+  override implicit val timeout: Timeout = 3.seconds
 }

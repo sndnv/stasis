@@ -70,7 +70,8 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
             api = MockServerApiEndpointClient(),
             core = MockServerCoreEndpointClient()
           ),
-          track = mockTracker
+          track = mockTracker,
+          telemetry = MockClientTelemetryContext()
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
       override protected implicit def mat: Materializer = SystemMaterializer(system).materializer
@@ -126,7 +127,8 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
             api = MockServerApiEndpointClient(),
             core = MockServerCoreEndpointClient()
           ),
-          track = mockTracker
+          track = mockTracker,
+          telemetry = MockClientTelemetryContext()
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
       override protected implicit def mat: Materializer = SystemMaterializer(system).materializer
