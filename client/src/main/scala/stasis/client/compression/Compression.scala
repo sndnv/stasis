@@ -5,5 +5,6 @@ object Compression {
     compression.toLowerCase match {
       case "deflate" => Deflate
       case "gzip"    => Gzip
+      case "none"    => Identity
     }
 }
