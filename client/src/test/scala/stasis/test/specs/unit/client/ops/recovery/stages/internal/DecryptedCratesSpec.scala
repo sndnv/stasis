@@ -16,6 +16,8 @@ import scala.concurrent.Future
 
 class DecryptedCratesSpec extends AsyncUnitSpec {
   "DecryptedCrates" should "support data stream decryption" in {
+    val mockTelemetry = MockClientTelemetryContext()
+
     implicit val providers: Providers = Providers(
       checksum = Checksum.MD5,
       staging = new MockFileStaging(),
@@ -25,7 +27,8 @@ class DecryptedCratesSpec extends AsyncUnitSpec {
         api = MockServerApiEndpointClient(),
         core = MockServerCoreEndpointClient()
       ),
-      track = new MockRecoveryTracker
+      track = new MockRecoveryTracker,
+      telemetry = mockTelemetry
     )
 
     val original = Seq(
@@ -54,6 +57,12 @@ class DecryptedCratesSpec extends AsyncUnitSpec {
         crates.length should be(3)
         crates.distinct.length should be(1)
         crates.headOption should be(Some(ByteString("file-decrypted")))
+
+        mockTelemetry.ops.recovery.entityExamined should be(0)
+        mockTelemetry.ops.recovery.entityCollected should be(0)
+        mockTelemetry.ops.recovery.entityChunkProcessed should be(crates.length * 2) // x2 == once for pull, once for decrypt
+        mockTelemetry.ops.recovery.entityProcessed should be(0)
+        mockTelemetry.ops.recovery.metadataApplied should be(0)
       }
   }
 

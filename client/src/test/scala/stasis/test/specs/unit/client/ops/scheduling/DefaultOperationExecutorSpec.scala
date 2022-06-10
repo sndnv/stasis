@@ -307,7 +307,8 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       encryptor = encryption,
       decryptor = encryption,
       clients = clients,
-      track = backupTracker
+      track = backupTracker,
+      telemetry = MockClientTelemetryContext()
     )
 
     implicit val recoveryProviders: recovery.Providers = recovery.Providers(
@@ -316,7 +317,8 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       decompressor = compression,
       decryptor = encryption,
       clients = clients,
-      track = recoveryTracker
+      track = recoveryTracker,
+      telemetry = MockClientTelemetryContext()
     )
 
     new DefaultOperationExecutor(

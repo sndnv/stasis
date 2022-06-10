@@ -10,7 +10,6 @@ import stasis.client.service.components.{Base, Files, Init, Secrets}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks.MockTokenEndpoint
 import stasis.test.specs.unit.client.{EncodingHelpers, ResourceHelpers}
-import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import java.util.UUID
 import scala.collection.mutable
@@ -175,8 +174,6 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "SecretsSpec"
   )
-
-  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 

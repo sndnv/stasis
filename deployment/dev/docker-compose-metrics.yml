@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "19090:9090"
+    volumes:
+      - ./config/prometheus-local:/etc/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "13000:3000"
+    volumes:
+      - ./config/grafana:/etc/grafana/provisioning
+      - ../grafana/dashboards/client:/etc/grafana/provisioning/dashboards/client

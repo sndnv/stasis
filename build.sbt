@@ -18,7 +18,7 @@ lazy val versions = new {
   // persistence
   val geode    = "1.14.4"
   val slick    = "3.3.3"
-  val postgres = "42.3.6"
+  val postgres = "42.4.0"
   val mariadb  = "3.0.5"
   val sqlite   = "3.36.0.3"
   val h2       = "2.1.212"
@@ -74,13 +74,16 @@ lazy val client = (project in file("./client"))
   .settings(dockerSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "at.favre.lib"       % "hkdf"              % versions.hkdf,
-      "net.harawata"       % "appdirs"           % versions.appdirs,
-      "com.typesafe.akka" %% "akka-slf4j"        % versions.akka,
-      "com.typesafe.akka" %% "akka-http-caching" % versions.akkaHttp,
-      "ch.qos.logback"     % "logback-classic"   % versions.logback,
-      "com.github.scopt"  %% "scopt"             % versions.scopt,
-      "com.google.jimfs"   % "jimfs"             % versions.jimfs % Test
+      "at.favre.lib"       % "hkdf"                              % versions.hkdf,
+      "net.harawata"       % "appdirs"                           % versions.appdirs,
+      "com.typesafe.akka" %% "akka-slf4j"                        % versions.akka,
+      "com.typesafe.akka" %% "akka-http-caching"                 % versions.akkaHttp,
+      "ch.qos.logback"     % "logback-classic"                   % versions.logback,
+      "com.github.scopt"  %% "scopt"                             % versions.scopt,
+      "io.opentelemetry"   % "opentelemetry-sdk"                 % versions.openTelemetry,
+      "io.opentelemetry"   % "opentelemetry-exporter-prometheus" % versions.openTelemetryPrometheus,
+      "io.prometheus"      % "simpleclient_hotspot"              % versions.prometheus,
+      "com.google.jimfs"   % "jimfs"                             % versions.jimfs % Test
     ),
     dockerBaseImage          := jdkDockerImage,
     Compile / PB.targets     := Seq(

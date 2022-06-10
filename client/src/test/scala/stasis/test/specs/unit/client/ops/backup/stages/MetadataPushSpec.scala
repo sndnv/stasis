@@ -37,7 +37,8 @@ class MetadataPushSpec extends AsyncUnitSpec { spec =>
             api = mockApiClient,
             core = mockCoreClient
           ),
-          track = mockTracker
+          track = mockTracker,
+          telemetry = MockClientTelemetryContext()
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer

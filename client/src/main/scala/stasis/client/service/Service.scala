@@ -6,8 +6,6 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.service.components.exceptions.ServiceStartupFailure
-import stasis.core.telemetry.{DefaultTelemetryContext, TelemetryContext}
-import stasis.core.{api, persistence, security}
 
 import java.io.Console
 import java.util.concurrent.atomic.AtomicReference
@@ -27,13 +25,6 @@ trait Service { _: Service.Arguments =>
 
   private implicit val ec: ExecutionContext = system.executionContext
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
-  private implicit val telemetry: TelemetryContext = DefaultTelemetryContext(
-    metricsProviders = Set(
-      security.Metrics.noop(),
-      api.Metrics.noop(),
-      persistence.Metrics.noop()
-    ).flatten
-  )
 
   protected def applicationName: String = Service.ApplicationName
 

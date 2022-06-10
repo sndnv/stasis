@@ -411,7 +411,8 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
           crates = Map(entry.metadata -> ByteString.empty)
         )
       ),
-      track = new MockBackupTracker()
+      track = new MockBackupTracker(),
+      telemetry = MockClientTelemetryContext()
     )
 
     val collectorDescriptor = Backup.Descriptor.Collector.WithEntities(entities = Seq.empty)
@@ -509,7 +510,8 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
       encryptor = encryption,
       decryptor = encryption,
       clients = clients,
-      track = tracker
+      track = tracker,
+      telemetry = MockClientTelemetryContext()
     )
 
     new Backup(

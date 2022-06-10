@@ -108,6 +108,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
       ).toMap
     )
     val mockTracker = new MockRecoveryTracker
+    val mockTelemetry = MockClientTelemetryContext()
 
     val stage = new EntityProcessing {
       override protected def deviceSecret: DeviceSecret = Fixtures.Secrets.Default
@@ -118,7 +119,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           decompressor = mockCompression,
           decryptor = mockEncryption,
           clients = Clients(api = mockApiClient, core = mockCoreClient),
-          track = mockTracker
+          track = mockTracker,
+          telemetry = mockTelemetry
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
@@ -168,6 +170,12 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(0)
+
+          mockTelemetry.ops.recovery.entityExamined should be(0)
+          mockTelemetry.ops.recovery.entityCollected should be(0)
+          mockTelemetry.ops.recovery.entityChunkProcessed should be(contentCrates * 4) // x4 == one for each step
+          mockTelemetry.ops.recovery.entityProcessed should be(totalChanged)
+          mockTelemetry.ops.recovery.metadataApplied should be(0)
         }
       }
   }
@@ -191,6 +199,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
     val mockApiClient = MockServerApiEndpointClient()
     val mockCoreClient = MockServerCoreEndpointClient()
     val mockTracker = new MockRecoveryTracker
+    val mockTelemetry = MockClientTelemetryContext()
 
     val stage = new EntityProcessing {
       override protected def deviceSecret: DeviceSecret = Fixtures.Secrets.Default
@@ -201,7 +210,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           decompressor = mockCompression,
           decryptor = mockEncryption,
           clients = Clients(api = mockApiClient, core = mockCoreClient),
-          track = mockTracker
+          track = mockTracker,
+          telemetry = mockTelemetry
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
@@ -242,6 +252,12 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(0)
+
+          mockTelemetry.ops.recovery.entityExamined should be(0)
+          mockTelemetry.ops.recovery.entityCollected should be(0)
+          mockTelemetry.ops.recovery.entityChunkProcessed should be(0)
+          mockTelemetry.ops.recovery.entityProcessed should be(0)
+          mockTelemetry.ops.recovery.metadataApplied should be(0)
         }
       }
   }

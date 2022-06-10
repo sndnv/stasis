@@ -153,6 +153,7 @@ class MetadataCollectionSpec extends AsyncUnitSpec {
         api = MockServerApiEndpointClient(),
         core = MockServerCoreEndpointClient()
       ),
-      track = tracker
+      track = tracker,
+      telemetry = MockClientTelemetryContext()
     )
 }

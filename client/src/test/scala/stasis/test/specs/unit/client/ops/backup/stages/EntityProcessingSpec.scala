@@ -67,6 +67,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
     val mockEncryption = new MockEncryption()
     val mockCoreClient = MockServerCoreEndpointClient()
     val mockTracker = new MockBackupTracker
+    val mockTelemetry = MockClientTelemetryContext()
 
     implicit val operationId: Operation.Id = Operation.generateId()
 
@@ -84,7 +85,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
             api = MockServerApiEndpointClient(),
             core = mockCoreClient
           ),
-          track = mockTracker
+          track = mockTracker,
+          telemetry = mockTelemetry
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
       override protected def maxChunkSize: Int = 8192
@@ -139,6 +141,11 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
+
+          mockTelemetry.ops.backup.entityExamined should be(0)
+          mockTelemetry.ops.backup.entityCollected should be(0)
+          mockTelemetry.ops.backup.entityChunkProcessed should be >= 6
+          mockTelemetry.ops.backup.entityProcessed should be(3)
         }
       }
   }
@@ -162,6 +169,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
     val mockEncryption = new MockEncryption()
     val mockCoreClient = MockServerCoreEndpointClient()
     val mockTracker = new MockBackupTracker
+    val mockTelemetry = MockClientTelemetryContext()
 
     implicit val operationId: Operation.Id = Operation.generateId()
 
@@ -179,7 +187,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
             api = MockServerApiEndpointClient(),
             core = mockCoreClient
           ),
-          track = mockTracker
+          track = mockTracker,
+          telemetry = mockTelemetry
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
       override protected def maxChunkSize: Int = 5
@@ -228,6 +237,13 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
+
+          mockTelemetry.ops.backup.entityExamined should be(0)
+          mockTelemetry.ops.backup.entityCollected should be(0)
+          // (expectedChunks * 3) == each chunk X each step
+          // + expectedParts == each part X push
+          mockTelemetry.ops.backup.entityChunkProcessed should be((expectedChunks * 3) + expectedParts)
+          mockTelemetry.ops.backup.entityProcessed should be(1)
         }
       }
   }
@@ -253,6 +269,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
       pushDisabled = true
     )
     val mockTracker = new MockBackupTracker
+    val mockTelemetry = MockClientTelemetryContext()
 
     implicit val operationId: Operation.Id = Operation.generateId()
 
@@ -270,7 +287,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
             api = MockServerApiEndpointClient(),
             core = mockCoreClient
           ),
-          track = mockTracker
+          track = mockTracker,
+          telemetry = mockTelemetry
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
       override protected def maxChunkSize: Int = 8192
@@ -313,6 +331,11 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
+
+          mockTelemetry.ops.backup.entityExamined should be(0)
+          mockTelemetry.ops.backup.entityCollected should be(0)
+          mockTelemetry.ops.backup.entityChunkProcessed should be(3) // x3 == one for each step before push
+          mockTelemetry.ops.backup.entityProcessed should be(0)
         }
       }
   }
@@ -369,6 +392,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
     val mockEncryption = new MockEncryption()
     val mockCoreClient = MockServerCoreEndpointClient()
     val mockTracker = new MockBackupTracker
+    val mockTelemetry = MockClientTelemetryContext()
 
     implicit val operationId: Operation.Id = Operation.generateId()
 
@@ -386,7 +410,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
             api = MockServerApiEndpointClient(),
             core = mockCoreClient
           ),
-          track = mockTracker
+          track = mockTracker,
+          telemetry = mockTelemetry
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
       override protected def maxChunkSize: Int = 5
@@ -428,6 +453,14 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
+
+          mockTelemetry.ops.backup.entityExamined should be(0)
+          mockTelemetry.ops.backup.entityCollected should be(0)
+          // (expectedParts - 1) == number of successful parts
+          // x8 == 2 parts X 4 steps for each part
+          // +7 == 1 successful part (+4) and 1 unsuccessful part (+3 steps before push)
+          mockTelemetry.ops.backup.entityChunkProcessed should be((expectedParts - 1) * 8 + 7)
+          mockTelemetry.ops.backup.entityProcessed should be(0)
         }
       }
   }

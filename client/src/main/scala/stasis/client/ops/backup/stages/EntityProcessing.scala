@@ -7,7 +7,7 @@ import akka.util.ByteString
 import akka.{Done, NotUsed}
 import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceSecret}
 import stasis.client.model.{EntityMetadata, SourceEntity}
-import stasis.client.ops.ParallelismConfig
+import stasis.client.ops.{Metrics, ParallelismConfig}
 import stasis.client.ops.backup.Providers
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.shared.model.datasets.DatasetDefinition
@@ -28,6 +28,8 @@ trait EntityProcessing {
   protected implicit def mat: Materializer
   protected implicit def ec: ExecutionContext
 
+  private val metrics = providers.telemetry.metrics[Metrics.BackupOperation]
+
   private val maximumPartSize = math.min(maxPartSize, providers.encryptor.maxPlaintextSize)
 
   def entityProcessing(implicit operation: Operation.Id): Flow[SourceEntity, Either[EntityMetadata, EntityMetadata], NotUsed] =
@@ -36,12 +38,13 @@ trait EntityProcessing {
         case entity if entity.hasContentChanged => processContentChanged(entity).map(Left.apply)
         case entity                             => processMetadataChanged(entity).map(Right.apply)
       }
-      .wireTap(metadata =>
+      .wireTap { metadata =>
+        metrics.recordEntityProcessed(metadata = metadata)
         providers.track.entityProcessed(
           entity = metadata.fold(_.path, _.path),
           contentChanged = metadata.isLeft
         )
-      )
+      }
 
   private def processContentChanged(entity: SourceEntity): Future[EntityMetadata] =
     for {
@@ -66,7 +69,9 @@ trait EntityProcessing {
 
     FileIO
       .fromPath(f = entity, chunkSize = maxChunkSize)
+      .wireTap(bytes => metrics.recordEntityChunkProcessed(step = "read", bytes.length))
       .compress()
+      .wireTap(bytes => metrics.recordEntityChunkProcessed(step = "compressed", bytes.length))
       .partition(withMaximumPartSize = maximumPartSize)
       .stage(withPartSecret = createPartSecret)
   }
@@ -91,7 +96,10 @@ trait EntityProcessing {
           )
 
           providers.clients.core
-            .push(manifest, content)
+            .push(
+              manifest = manifest,
+              content = content.wireTap(bytes => metrics.recordEntityChunkProcessed(step = "pushed", bytes = bytes.length))
+            )
             .map(_ => (partFile, crate))
         }
       )
