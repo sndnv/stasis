@@ -30,7 +30,7 @@ class MetadataPushSpec extends AsyncUnitSpec { spec =>
         Providers(
           checksum = Checksum.MD5,
           staging = new MockFileStaging(),
-          compressor = new MockCompression(),
+          compression = MockCompression(),
           encryptor = mockEncryption,
           decryptor = mockEncryption,
           clients = Clients(

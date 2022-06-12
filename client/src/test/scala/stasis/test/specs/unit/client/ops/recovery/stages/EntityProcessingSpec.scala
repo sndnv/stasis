@@ -1,6 +1,5 @@
 package stasis.test.specs.unit.client.ops.recovery.stages
 
-import java.nio.file.Paths
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
 import akka.stream.{Materializer, SystemMaterializer}
@@ -22,6 +21,7 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks._
 import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 
+import java.nio.file.Paths
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
@@ -96,7 +96,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
     )
 
     val mockStaging = new MockFileStaging()
-    val mockCompression = new MockCompression()
+    val mockCompression = MockCompression()
     val mockEncryption = new MockEncryption()
     val mockApiClient = MockServerApiEndpointClient()
     val mockCoreClient = new MockServerCoreEndpointClient(
@@ -116,7 +116,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
         Providers(
           checksum = Checksum.MD5,
           staging = mockStaging,
-          decompressor = mockCompression,
+          compression = mockCompression,
           decryptor = mockEncryption,
           clients = Clients(api = mockApiClient, core = mockCoreClient),
           track = mockTracker,
@@ -207,7 +207,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
         Providers(
           checksum = Checksum.MD5,
           staging = mockStaging,
-          decompressor = mockCompression,
+          compression = MockCompression(),
           decryptor = mockEncryption,
           clients = Clients(api = mockApiClient, core = mockCoreClient),
           track = mockTracker,

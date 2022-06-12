@@ -90,7 +90,7 @@ object DatasetMetadata {
       filesystem = FilesystemMetadata.empty
     )
 
-  def toByteString(metadata: DatasetMetadata): akka.util.ByteString = {
+  def toByteString(metadata: DatasetMetadata): ByteString = {
     val data = proto.metadata.DatasetMetadata(
       contentChanged = metadata.contentChanged.map { case (entity, metadata) =>
         entity.toAbsolutePath.toString -> EntityMetadata.toProto(metadata)
@@ -101,12 +101,12 @@ object DatasetMetadata {
       filesystem = Some(FilesystemMetadata.toProto(metadata.filesystem))
     )
 
-    akka.util.ByteString(data.toByteArray)
+    ByteString(data.toByteArray)
   }
 
-  def fromByteString(bytes: akka.util.ByteString): Try[DatasetMetadata] =
+  def fromByteString(bytes: ByteString): Try[DatasetMetadata] =
     Try {
-      proto.metadata.DatasetMetadata.parseFrom(bytes.toArray)
+      proto.metadata.DatasetMetadata.parseFrom(bytes.toArrayUnsafe())
     }.flatMap { data =>
       for {
         contentChanged <- foldTryMap(

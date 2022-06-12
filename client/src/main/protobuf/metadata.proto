@@ -30,6 +30,7 @@ message FileMetadata {
     string permissions = 9;
     bytes checksum = 10;
     map<string, Uuid> crates = 11;
+    string compression = 12;
 }
 
 message DirectoryMetadata {

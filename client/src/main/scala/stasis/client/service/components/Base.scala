@@ -6,7 +6,7 @@ import akka.util.Timeout
 import com.typesafe.{config => typesafe}
 import org.slf4j.Logger
 import stasis.client.analysis.Checksum
-import stasis.client.compression.{Compression, Decoder => CompressionDecoder, Encoder => CompressionEncoder}
+import stasis.client.compression.Compression
 import stasis.client.encryption.{Aes, Decoder => EncryptionDecoder, Encoder => EncryptionEncoder}
 import stasis.client.ops
 import stasis.client.service.ApplicationDirectory
@@ -40,7 +40,7 @@ trait Base extends FutureOps {
   def terminationDelay: FiniteDuration
 
   def checksum: Checksum
-  def compression: CompressionEncoder with CompressionDecoder
+  def compression: Compression
   def encryption: EncryptionEncoder with EncryptionDecoder
   def staging: FileStaging
   def tracker: DefaultTracker
@@ -87,8 +87,11 @@ object Base {
           override val checksum: Checksum =
             Checksum(rawConfig.getString("analysis.checksum"))
 
-          override val compression: CompressionEncoder with CompressionDecoder =
-            Compression(rawConfig.getString("compression.type"))
+          override val compression: Compression =
+            Compression(
+              withDefaultCompression = rawConfig.getString("compression.default"),
+              withDisabledExtensions = rawConfig.getString("compression.disabled-extensions.list")
+            )
 
           override val encryption: EncryptionEncoder with EncryptionDecoder =
             Aes

@@ -33,7 +33,7 @@ class CipherStage(
         in,
         new InHandler {
           override def onUpstreamFinish(): Unit = {
-            val lastChunk = ByteString.fromArray(cipher.doFinal())
+            val lastChunk = ByteString.fromArrayUnsafe(cipher.doFinal())
 
             if (lastChunk.nonEmpty) {
               emit(out, lastChunk)
@@ -43,7 +43,7 @@ class CipherStage(
           }
 
           override def onPush(): Unit =
-            Option(cipher.update(grab(in).toArray)).map(ByteString.fromArray) match {
+            Option(cipher.update(grab(in).toArrayUnsafe())).map(ByteString.fromArrayUnsafe) match {
               case Some(nextChunk) => push(out, nextChunk)
               case None            => pull(in)
             }

@@ -11,7 +11,6 @@ import stasis.client.ops.backup.Providers
 import stasis.shared.ops.Operation
 
 import java.nio.file.{Files, Path}
-
 import scala.concurrent.ExecutionContext
 
 trait EntityDiscovery {
@@ -49,7 +48,10 @@ trait EntityDiscovery {
         new BackupCollector.Default(
           entities = entities,
           latestMetadata = latestMetadata,
-          metadataCollector = BackupMetadataCollector.Default(checksum = providers.checksum),
+          metadataCollector = BackupMetadataCollector.Default(
+            checksum = providers.checksum,
+            compression = providers.compression
+          ),
           api = providers.clients.api
         )(ec, parallelism)
       }

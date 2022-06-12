@@ -14,13 +14,13 @@ final case class SourceEntity(
     )
   )
 
-  def hasChanged: Boolean =
+  lazy val hasChanged: Boolean =
     existingMetadata match {
-      case Some(existing) => existing != currentMetadata
+      case Some(existing) => existing.hasChanged(comparedTo = currentMetadata)
       case None           => true
     }
 
-  def hasContentChanged: Boolean =
+  lazy val hasContentChanged: Boolean =
     (existingMetadata, currentMetadata) match {
       case (Some(existing: EntityMetadata.File), current: EntityMetadata.File) =>
         existing.size != current.size || existing.checksum != current.checksum

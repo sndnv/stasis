@@ -8,7 +8,11 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.EncodingHelpers
 
 class GzipSpec extends AsyncUnitSpec with EncodingHelpers {
-  "A Gzip encoder/decoder implementation" should "compress data" in {
+  "A Gzip encoder/decoder implementation" should "provide its name" in {
+    Gzip.name should be("gzip")
+  }
+
+  it should "compress data" in {
     Source
       .single(ByteString(decompressedData))
       .via(Gzip.compress)

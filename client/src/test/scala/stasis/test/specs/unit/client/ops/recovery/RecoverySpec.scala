@@ -331,7 +331,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
         prefix = "staged-",
         suffix = ".tmp"
       ),
-      decompressor = new MockCompression,
+      compression = MockCompression(),
       decryptor = new MockEncryption {
         override def decrypt(metadataSecret: DeviceMetadataSecret): Flow[ByteString, ByteString, NotUsed] =
           Flow[ByteString].map(_ => DatasetMetadata.toByteString(metadata))
@@ -401,7 +401,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
         prefix = "staged-",
         suffix = ".tmp"
       ),
-      decompressor = new MockCompression,
+      compression = MockCompression(),
       decryptor = new MockEncryption,
       clients = Clients(
         api = new MockServerApiEndpointClient(self = Device.generateId()) {
@@ -443,7 +443,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
         prefix = "staged-",
         suffix = ".tmp"
       ),
-      decompressor = new MockCompression,
+      compression = MockCompression(),
       decryptor = new MockEncryption,
       clients = Clients(
         api = MockServerApiEndpointClient(),
@@ -584,7 +584,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
         prefix = "staged-",
         suffix = ".tmp"
       ),
-      decompressor = new MockCompression,
+      compression = MockCompression(),
       decryptor = new MockEncryption,
       clients = clients,
       track = tracker,

@@ -4,12 +4,12 @@ import java.nio.file.attribute.PosixFileAttributes
 import java.nio.file.{Files, LinkOption, Paths}
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-
 import akka.actor.ActorSystem
 import stasis.client.analysis.{Checksum, Metadata}
 import stasis.client.model.{EntityMetadata, TargetEntity}
 import stasis.core.packaging.Crate
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.client.mocks.MockCompression
 import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 
 import scala.concurrent.Future
@@ -130,6 +130,31 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       }
   }
 
+  it should "collect file compression (target file)" in {
+    Metadata
+      .collectCompressionForTargetFile(
+        existingMetadata = Fixtures.Metadata.FileTwoMetadata
+      )
+      .map { compression =>
+        compression should be(Fixtures.Metadata.FileTwoMetadata.compression)
+      }
+  }
+
+  it should "fail to collect file compression with directory metadata (target file)" in {
+    Metadata
+      .collectCompressionForTargetFile(
+        existingMetadata = Fixtures.Metadata.DirectoryOneMetadata
+      )
+      .map { result =>
+        fail(s"Unexpected result received: [$result]")
+      }
+      .recover { case NonFatal(e: IllegalArgumentException) =>
+        e.getMessage should be(
+          s"Expected metadata for file but directory metadata for [${Fixtures.Metadata.DirectoryOneMetadata.path}] provided"
+        )
+      }
+  }
+
   it should "extract metadata from a file" in {
     val sourceFileResourcesPath = "analysis/metadata-source-file"
     val sourceFile = s"/$sourceFileResourcesPath".asTestResource
@@ -145,7 +170,8 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       actualFileMetadata <- Metadata.collectEntityMetadata(
         currentMetadata = baseMetadata,
         checksum = Checksum.MD5,
-        collectCrates = _ => Future.successful(Map(expectedCratePart -> expectedCrateId))
+        collectCrates = _ => Future.successful(Map(expectedCratePart -> expectedCrateId)),
+        collectCompression = () => Future.successful("test")
       )
     } yield {
       actualFileMetadata match {
@@ -161,6 +187,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
           metadata.size should be(26)
           metadata.checksum should be(expectedChecksum)
           metadata.crates should be(Map(expectedCratePart -> expectedCrateId))
+          metadata.compression should be("test")
 
         case _: EntityMetadata.Directory =>
           fail("Expected file but received directory metadata")
@@ -179,7 +206,8 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       actualDirectoryMetadata <- Metadata.collectEntityMetadata(
         currentMetadata = baseMetadata,
         checksum = Checksum.MD5,
-        collectCrates = _ => Future.failed(new IllegalStateException("Not available"))
+        collectCrates = _ => Future.failed(new IllegalStateException("Not available")),
+        collectCompression = () => Future.failed(new IllegalStateException("Not available"))
       )
     } yield {
       actualDirectoryMetadata match {
@@ -215,7 +243,8 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       group = attributes.group().getName,
       permissions = "rwxrwxrwx",
       checksum = BigInt(1),
-      crates = Map(Paths.get(s"${targetFile}_0") -> Crate.generateId())
+      crates = Map(Paths.get(s"${targetFile}_0") -> Crate.generateId()),
+      compression = "none"
     )
 
     for {
@@ -280,14 +309,16 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       group = "root",
       permissions = "rwxrwxrwx",
       checksum = BigInt("338496524657487844672953225842489206917"),
-      crates = Map(Paths.get(s"${sourceFile}_0") -> Crate.generateId())
+      crates = Map(Paths.get(s"${sourceFile}_0") -> Crate.generateId()),
+      compression = "none"
     )
 
     Metadata
       .collectSource(
         checksum = Checksum.MD5,
         entity = sourceFile,
-        existingMetadata = Some(existingFileMetadata)
+        existingMetadata = Some(existingFileMetadata),
+        compression = MockCompression()
       )
       .map { actualSourceFile =>
         actualSourceFile.existingMetadata should not be empty
@@ -304,6 +335,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
             metadata.permissions should not be empty
             metadata.checksum should be(existingFileMetadata.checksum)
             metadata.crates should be(existingFileMetadata.crates)
+            metadata.compression should be("mock")
 
           case _: EntityMetadata.Directory =>
             fail("Expected file but received directory metadata")
@@ -326,7 +358,8 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       group = "root",
       permissions = "rwxrwxrwx",
       checksum = BigInt(1),
-      crates = Map(Paths.get(s"${sourceFile}_0") -> Crate.generateId())
+      crates = Map(Paths.get(s"${sourceFile}_0") -> Crate.generateId()),
+      compression = "none"
     )
 
     val expectedChecksum = BigInt("338496524657487844672953225842489206917")
@@ -335,7 +368,8 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       .collectSource(
         checksum = Checksum.MD5,
         entity = sourceFile,
-        existingMetadata = Some(existingFileMetadata)
+        existingMetadata = Some(existingFileMetadata),
+        compression = MockCompression()
       )
       .map { actualSourceFile =>
         actualSourceFile.existingMetadata should not be empty
@@ -352,6 +386,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
             metadata.permissions should not be empty
             metadata.checksum should be(expectedChecksum)
             metadata.crates should not be existingFileMetadata.crates
+            metadata.compression should be("mock")
 
           case _: EntityMetadata.Directory =>
             fail("Expected file but received directory metadata")
@@ -374,7 +409,8 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       group = "root",
       permissions = "rwxrwxrwx",
       checksum = BigInt(1),
-      crates = Map(Paths.get(s"${targetFile}_0") -> Crate.generateId())
+      crates = Map(Paths.get(s"${targetFile}_0") -> Crate.generateId()),
+      compression = "none"
     )
 
     val expectedChecksum = BigInt("338496524657487844672953225842489206917")
@@ -426,7 +462,8 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       group = "root",
       permissions = "rwxrwxrwx",
       checksum = BigInt(1),
-      crates = Map(Paths.get(s"${targetFile}_0") -> Crate.generateId())
+      crates = Map(Paths.get(s"${targetFile}_0") -> Crate.generateId()),
+      compression = "none"
     )
 
     Metadata

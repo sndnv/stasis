@@ -7,7 +7,11 @@ import stasis.client.compression.Identity
 import stasis.test.specs.unit.AsyncUnitSpec
 
 class IdentitySpec extends AsyncUnitSpec {
-  "An Identity encoder/decoder implementation" should "skip compression" in {
+  "An Identity encoder/decoder implementation" should "provide its name" in {
+    Identity.name should be("none")
+  }
+
+  it should "skip compression" in {
     Source
       .single(ByteString(data))
       .via(Identity.compress)
