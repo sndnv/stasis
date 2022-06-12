@@ -1,7 +1,5 @@
 package stasis.client.ops.recovery.stages
 
-import java.nio.file.attribute.PosixFilePermissions
-import java.nio.file.{Files, Path}
 import akka.NotUsed
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Source}
@@ -9,12 +7,14 @@ import akka.util.ByteString
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.TargetEntity.Destination
 import stasis.client.model.{EntityMetadata, TargetEntity}
-import stasis.client.ops.{Metrics, ParallelismConfig}
 import stasis.client.ops.recovery.Providers
+import stasis.client.ops.{Metrics, ParallelismConfig}
 import stasis.core.packaging.Crate
 import stasis.core.routing.exceptions.PullFailure
 import stasis.shared.ops.Operation
 
+import java.nio.file.attribute.PosixFilePermissions
+import java.nio.file.{Files, Path}
 import scala.concurrent.{ExecutionContext, Future}
 
 trait EntityProcessing {
@@ -64,7 +64,8 @@ trait EntityProcessing {
           crates
             .decrypt(withPartSecret = deviceSecret.toFileSecret)
             .merge()
-            .decompress()
+            .decompress(decompressor = providers.compression.decoderFor(entity))
+            .wireTap(bytes => metrics.recordEntityChunkProcessed(step = "decompressed", bytes = bytes.length))
             .destage(to = entity.destinationPath)
         }
         .map(_ => entity)

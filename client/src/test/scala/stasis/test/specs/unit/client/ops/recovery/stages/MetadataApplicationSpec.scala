@@ -37,7 +37,8 @@ class MetadataApplicationSpec extends AsyncUnitSpec { spec =>
       group = attributes.group().getName,
       permissions = "rwxrwxrwx",
       checksum = BigInt(1),
-      crates = Map(Paths.get(s"${targetFile}_0") -> Crate.generateId())
+      crates = Map(Paths.get(s"${targetFile}_0") -> Crate.generateId()),
+      compression = "none"
     )
 
     val mockTracker = new MockRecoveryTracker
@@ -50,7 +51,7 @@ class MetadataApplicationSpec extends AsyncUnitSpec { spec =>
         Providers(
           checksum = Checksum.MD5,
           staging = new MockFileStaging,
-          decompressor = new MockCompression,
+          compression = MockCompression(),
           decryptor = new MockEncryption,
           clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
           track = mockTracker,

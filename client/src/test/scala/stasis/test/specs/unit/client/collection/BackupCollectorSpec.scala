@@ -6,7 +6,7 @@ import stasis.client.collection.{BackupCollector, BackupMetadataCollector}
 import stasis.client.model.{DatasetMetadata, EntityMetadata, FilesystemMetadata, SourceEntity}
 import stasis.client.ops.ParallelismConfig
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.mocks.MockServerApiEndpointClient
+import stasis.test.specs.unit.client.mocks.{MockCompression, MockServerApiEndpointClient}
 import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 
 import scala.concurrent.Future
@@ -21,7 +21,7 @@ class BackupCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
     val collector = new BackupCollector.Default(
       entities = List(file1, file2),
       latestMetadata = Some(DatasetMetadata.empty),
-      metadataCollector = new BackupMetadataCollector.Default(checksum = Checksum.MD5),
+      metadataCollector = new BackupMetadataCollector.Default(checksum = Checksum.MD5, compression = MockCompression()),
       api = mockApiClient
     )
 

@@ -30,7 +30,7 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
     implicit val providers: Providers = Providers(
       checksum = Checksum.MD5,
       staging = mockStaging,
-      compressor = new MockCompression(),
+      compression = MockCompression(),
       encryptor = mockEncryption,
       decryptor = mockEncryption,
       clients = Clients(
@@ -81,7 +81,7 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
     implicit val providers: Providers = Providers(
       checksum = Checksum.MD5,
       staging = mockStaging,
-      compressor = new MockCompression(),
+      compression = MockCompression(),
       encryptor = new MockEncryption(),
       decryptor = new MockEncryption(),
       clients = Clients(
@@ -133,7 +133,7 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
     implicit val providers: Providers = Providers(
       checksum = Checksum.MD5,
       staging = mockStaging,
-      compressor = new MockCompression(),
+      compression = MockCompression(),
       encryptor = new MockEncryption(),
       decryptor = new MockEncryption(),
       clients = Clients(
@@ -185,7 +185,7 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
     implicit val providers: Providers = Providers(
       checksum = Checksum.MD5,
       staging = mockStaging,
-      compressor = new MockCompression(),
+      compression = MockCompression(),
       encryptor = mockEncryption,
       decryptor = mockEncryption,
       clients = Clients(

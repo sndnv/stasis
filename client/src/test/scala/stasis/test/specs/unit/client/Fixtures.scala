@@ -29,7 +29,8 @@ object Fixtures {
       checksum = 1,
       crates = Map(
         Paths.get("/tmp/file/one_0") -> java.util.UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
-      )
+      ),
+      compression = "none"
     )
 
     final lazy val FileTwoMetadata = EntityMetadata.File(
@@ -45,7 +46,8 @@ object Fixtures {
       checksum = 42,
       crates = Map(
         Paths.get("/tmp/file/two_0") -> java.util.UUID.fromString("e672a956-1a95-4304-8af0-9418f0e43cba")
-      )
+      ),
+      compression = "gzip"
     )
 
     final lazy val FileThreeMetadata = EntityMetadata.File(
@@ -61,7 +63,8 @@ object Fixtures {
       checksum = 0,
       crates = Map(
         Paths.get("/tmp/file/four_0") -> java.util.UUID.fromString("7c98df29-a544-41e5-95ac-463987894fac")
-      )
+      ),
+      compression = "deflate"
     )
 
     final lazy val DirectoryOneMetadata = EntityMetadata.Directory(

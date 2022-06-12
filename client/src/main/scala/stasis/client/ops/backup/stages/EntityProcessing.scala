@@ -49,7 +49,7 @@ trait EntityProcessing {
   private def processContentChanged(entity: SourceEntity): Future[EntityMetadata] =
     for {
       file <- EntityProcessing.expectFileMetadata(entity)
-      staged <- stage(entity.path)
+      staged <- stage(entity)
       crates <- push(staged)
       _ <- discard(staged)
     } yield {
@@ -59,18 +59,18 @@ trait EntityProcessing {
   private def processMetadataChanged(entity: SourceEntity): Future[EntityMetadata] =
     Future.successful(entity.currentMetadata)
 
-  private def stage(entity: Path): Future[Seq[(Path, Path)]] = {
+  private def stage(entity: SourceEntity): Future[Seq[(Path, Path)]] = {
     def createPartSecret(partId: Int): DeviceFileSecret = {
-      val partPath = Paths.get(s"${entity.toAbsolutePath.toString}_${partId.toString}")
+      val partPath = Paths.get(s"${entity.path.toAbsolutePath.toString}_${partId.toString}")
       deviceSecret.toFileSecret(partPath)
     }
 
     implicit val prv: Providers = providers
 
     FileIO
-      .fromPath(f = entity, chunkSize = maxChunkSize)
+      .fromPath(f = entity.path, chunkSize = maxChunkSize)
       .wireTap(bytes => metrics.recordEntityChunkProcessed(step = "read", bytes.length))
-      .compress()
+      .compress(compressor = providers.compression.encoderFor(entity))
       .wireTap(bytes => metrics.recordEntityChunkProcessed(step = "compressed", bytes.length))
       .partition(withMaximumPartSize = maximumPartSize)
       .stage(withPartSecret = createPartSecret)

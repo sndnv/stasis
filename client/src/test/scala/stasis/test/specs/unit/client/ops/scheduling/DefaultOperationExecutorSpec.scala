@@ -265,7 +265,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
   ): DefaultOperationExecutor = {
     val checksum = Checksum.MD5
     val staging = new MockFileStaging()
-    val compression = new MockCompression()
+    val compression = MockCompression()
     val encryption = new MockEncryption() {
       override def encrypt(fileSecret: DeviceFileSecret): Flow[ByteString, ByteString, NotUsed] =
         if (slowEncryption) {
@@ -303,7 +303,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     implicit val backupProviders: backup.Providers = backup.Providers(
       checksum = checksum,
       staging = staging,
-      compressor = compression,
+      compression = compression,
       encryptor = encryption,
       decryptor = encryption,
       clients = clients,
@@ -314,7 +314,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     implicit val recoveryProviders: recovery.Providers = recovery.Providers(
       checksum = checksum,
       staging = staging,
-      decompressor = compression,
+      compression = compression,
       decryptor = encryption,
       clients = clients,
       track = recoveryTracker,

@@ -41,8 +41,8 @@ object Aes extends Encoder with Decoder {
       cipherMode = "GCM",
       padding = "NoPadding",
       operationMode = Cipher.ENCRYPT_MODE,
-      key = new SecretKeySpec(key.toArray, "AES"),
-      spec = Some(new GCMParameterSpec(TagSize, iv.toArray))
+      key = new SecretKeySpec(key.toArrayUnsafe(), "AES"),
+      spec = Some(new GCMParameterSpec(TagSize, iv.toArrayUnsafe()))
     )
 
   def decryption(key: ByteString, iv: ByteString): CipherStage =
@@ -51,7 +51,7 @@ object Aes extends Encoder with Decoder {
       cipherMode = "GCM",
       padding = "NoPadding",
       operationMode = Cipher.DECRYPT_MODE,
-      key = new SecretKeySpec(key.toArray, "AES"),
-      spec = Some(new GCMParameterSpec(TagSize, iv.toArray))
+      key = new SecretKeySpec(key.toArrayUnsafe(), "AES"),
+      spec = Some(new GCMParameterSpec(TagSize, iv.toArrayUnsafe()))
     )
 }

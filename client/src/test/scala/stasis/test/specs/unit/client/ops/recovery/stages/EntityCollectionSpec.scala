@@ -46,7 +46,7 @@ class EntityCollectionSpec extends AsyncUnitSpec {
         Providers(
           checksum = Checksum.MD5,
           staging = new MockFileStaging(),
-          decompressor = new MockCompression(),
+          compression = MockCompression(),
           decryptor = new MockEncryption(),
           clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
           track = mockTracker,

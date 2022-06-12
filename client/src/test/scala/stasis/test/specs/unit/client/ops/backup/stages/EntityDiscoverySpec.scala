@@ -63,7 +63,7 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
         Providers(
           checksum = checksum,
           staging = new MockFileStaging(),
-          compressor = new MockCompression(),
+          compression = MockCompression(),
           encryptor = new MockEncryption(),
           decryptor = new MockEncryption(),
           clients = Clients(
@@ -120,7 +120,7 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
         Providers(
           checksum = Checksum.SHA256,
           staging = new MockFileStaging(),
-          compressor = new MockCompression(),
+          compression = MockCompression(),
           encryptor = new MockEncryption(),
           decryptor = new MockEncryption(),
           clients = Clients(

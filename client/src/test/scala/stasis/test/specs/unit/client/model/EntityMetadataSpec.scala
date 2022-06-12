@@ -28,6 +28,29 @@ class EntityMetadataSpec extends UnitSpec {
     }
   }
 
+  it should "support comparing metadata for changes, ignoring file compression" in {
+    Fixtures.Metadata.FileOneMetadata
+      .hasChanged(comparedTo = Fixtures.Metadata.FileOneMetadata) should be(false)
+
+    Fixtures.Metadata.FileOneMetadata
+      .hasChanged(comparedTo = Fixtures.Metadata.FileTwoMetadata) should be(true)
+
+    Fixtures.Metadata.FileOneMetadata
+      .hasChanged(comparedTo = Fixtures.Metadata.FileThreeMetadata) should be(true)
+
+    Fixtures.Metadata.FileOneMetadata
+      .hasChanged(comparedTo = Fixtures.Metadata.FileOneMetadata.copy(compression = "other")) should be(false)
+
+    Fixtures.Metadata.FileOneMetadata
+      .hasChanged(comparedTo = Fixtures.Metadata.DirectoryOneMetadata) should be(true)
+
+    Fixtures.Metadata.DirectoryOneMetadata
+      .hasChanged(comparedTo = Fixtures.Metadata.DirectoryOneMetadata) should be(false)
+
+    Fixtures.Metadata.DirectoryOneMetadata
+      .hasChanged(comparedTo = Fixtures.Metadata.DirectoryTwoMetadata) should be(true)
+  }
+
   private val actualFileOneMetadata = proto.metadata.FileMetadata(
     path = Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath.toString,
     size = Fixtures.Metadata.FileOneMetadata.size,
@@ -47,7 +70,8 @@ class EntityMetadataSpec extends UnitSpec {
           leastSignificantBits = uuid.getLeastSignificantBits
         )
       )
-    }
+    },
+    compression = Fixtures.Metadata.FileOneMetadata.compression
   )
 
   private val actualFileTwoMetadata = proto.metadata.FileMetadata(
@@ -69,7 +93,8 @@ class EntityMetadataSpec extends UnitSpec {
           leastSignificantBits = uuid.getLeastSignificantBits
         )
       )
-    }
+    },
+    compression = Fixtures.Metadata.FileTwoMetadata.compression
   )
 
   private val fileOneMetadataProto = proto.metadata.EntityMetadata(

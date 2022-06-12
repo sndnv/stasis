@@ -41,7 +41,7 @@ object Ops {
       implicit val backupProviders: ops.backup.Providers = ops.backup.Providers(
         checksum = checksum,
         staging = staging,
-        compressor = compression,
+        compression = compression,
         encryptor = encryption,
         decryptor = encryption,
         clients = clients,
@@ -52,7 +52,7 @@ object Ops {
       implicit val recoveryProviders: ops.recovery.Providers = ops.recovery.Providers(
         checksum = checksum,
         staging = staging,
-        decompressor = compression,
+        compression = compression,
         decryptor = encryption,
         clients = clients,
         track = tracker.recovery,

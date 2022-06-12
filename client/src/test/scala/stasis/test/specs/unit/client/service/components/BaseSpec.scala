@@ -27,7 +27,7 @@ class BaseSpec extends AsyncUnitSpec with ResourceHelpers {
 
     Base(applicationDirectory = createApplicationDirectory(init = _ => ()), terminate = () => ()).map { base =>
       base.checksum should be(Checksum.CRC32)
-      base.compression should be(Gzip)
+      base.compression.defaultCompression should be(Gzip)
       base.encryption should be(Aes)
     }
   }

@@ -8,7 +8,11 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.EncodingHelpers
 
 class DeflateSpec extends AsyncUnitSpec with EncodingHelpers {
-  "A Deflate encoder/decoder implementation" should "compress data" in {
+  "A Deflate encoder/decoder implementation" should "provide its name" in {
+    Deflate.name should be("deflate")
+  }
+
+  it should "compress data" in {
     Source
       .single(ByteString(decompressedData))
       .via(Deflate.compress)

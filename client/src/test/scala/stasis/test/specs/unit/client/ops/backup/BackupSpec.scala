@@ -10,7 +10,6 @@ import org.scalatest.{Assertion, BeforeAndAfterAll}
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.collection.rules.Rule
-import stasis.client.compression.Gzip
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.{DeviceMetadataSecret, DeviceSecret}
 import stasis.client.model.{DatasetMetadata, FilesystemMetadata}
@@ -379,7 +378,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         prefix = "staged-",
         suffix = ".tmp"
       ),
-      compressor = Gzip,
+      compression = MockCompression(),
       encryptor = new MockEncryption(),
       decryptor = new MockEncryption() {
         override def decrypt(metadataSecret: DeviceMetadataSecret): Flow[ByteString, ByteString, NotUsed] =
@@ -506,7 +505,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         prefix = "staged-",
         suffix = ".tmp"
       ),
-      compressor = Gzip,
+      compression = MockCompression(),
       encryptor = encryption,
       decryptor = encryption,
       clients = clients,

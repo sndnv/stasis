@@ -21,7 +21,7 @@ class DecryptedCratesSpec extends AsyncUnitSpec {
     implicit val providers: Providers = Providers(
       checksum = Checksum.MD5,
       staging = new MockFileStaging(),
-      decompressor = new MockCompression(),
+      compression = MockCompression(),
       decryptor = new MockEncryption(),
       clients = Clients(
         api = MockServerApiEndpointClient(),

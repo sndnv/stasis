@@ -33,8 +33,8 @@ SERVER_BOOTSTRAP_URL_INTERNAL="https://server:20002"
 HEADER_JSON="Content-Type: application/json"
 HEADER_DATA="Content-Type: application/octet-stream"
 
-PRIMARY_CLIENT_CONTAINER_NAME="dev_primary-client"
-SECONDARY_CLIENT_CONTAINER_NAME="dev_secondary-client"
+PRIMARY_CLIENT_CONTAINER_NAME="primary-client"
+SECONDARY_CLIENT_CONTAINER_NAME="secondary-client"
 CLIENT_CONTAINER_HOME="/home/demiourgos728"
 CLIENT_CONTAINER_CONFIG="${CLIENT_CONTAINER_OME}/.config/stasis-client"
 

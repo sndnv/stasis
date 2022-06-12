@@ -1,6 +1,5 @@
 package stasis.test.specs.unit.client.ops.backup.stages
 
-import java.util.concurrent.atomic.AtomicInteger
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Flow, Source}
@@ -20,9 +19,10 @@ import stasis.core.routing.Node
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.mocks.{MockBackupTracker, _}
+import stasis.test.specs.unit.client.mocks._
 import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -63,7 +63,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
     )
 
     val mockStaging = new MockFileStaging()
-    val mockCompression = new MockCompression()
+    val mockCompression = MockCompression()
     val mockEncryption = new MockEncryption()
     val mockCoreClient = MockServerCoreEndpointClient()
     val mockTracker = new MockBackupTracker
@@ -78,7 +78,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
         Providers(
           checksum = Checksum.MD5,
           staging = mockStaging,
-          compressor = mockCompression,
+          compression = mockCompression,
           encryptor = mockEncryption,
           decryptor = mockEncryption,
           clients = Clients(
@@ -180,7 +180,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
         Providers(
           checksum = Checksum.MD5,
           staging = mockStaging,
-          compressor = mockCompression,
+          compression = mockCompression,
           encryptor = mockEncryption,
           decryptor = mockEncryption,
           clients = Clients(
@@ -280,7 +280,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
         Providers(
           checksum = Checksum.MD5,
           staging = mockStaging,
-          compressor = mockCompression,
+          compression = mockCompression,
           encryptor = mockEncryption,
           decryptor = mockEncryption,
           clients = Clients(
@@ -403,7 +403,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
         Providers(
           checksum = Checksum.MD5,
           staging = mockStaging,
-          compressor = mockCompression,
+          compression = mockCompression,
           encryptor = mockEncryption,
           decryptor = mockEncryption,
           clients = Clients(

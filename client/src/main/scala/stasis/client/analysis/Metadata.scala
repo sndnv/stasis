@@ -1,20 +1,21 @@
 package stasis.client.analysis
 
+import akka.Done
+import akka.stream.Materializer
+import stasis.client.compression.Compression
+import stasis.client.model.{EntityMetadata, SourceEntity, TargetEntity}
+import stasis.core.packaging.Crate
+
 import java.nio.file.attribute.{FileTime, PosixFileAttributeView, PosixFileAttributes, PosixFilePermissions}
 import java.nio.file.{Files, LinkOption, Path}
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-
-import akka.Done
-import akka.stream.Materializer
-import stasis.client.model.{EntityMetadata, SourceEntity, TargetEntity}
-import stasis.core.packaging.Crate
-
 import scala.concurrent.{ExecutionContext, Future}
 
 object Metadata {
   def collectSource(
     checksum: Checksum,
+    compression: Compression,
     entity: Path,
     existingMetadata: Option[EntityMetadata]
   )(implicit mat: Materializer): Future[SourceEntity] = {
@@ -25,6 +26,7 @@ object Metadata {
       entityMetadata <- collectEntityMetadata(
         currentMetadata = baseMetadata,
         collectCrates = checksum => collectCratesForSourceFile(existingMetadata, checksum),
+        collectCompression = () => Future.successful(compression.algorithmFor(entity)),
         checksum = checksum
       )
     } yield {
@@ -59,7 +61,8 @@ object Metadata {
         entityMetadata <- collectEntityMetadata(
           currentMetadata = baseMetadata,
           collectCrates = _ => collectCratesForTargetFile(existingMetadata),
-          checksum = checksum
+          checksum = checksum,
+          collectCompression = () => collectCompressionForTargetFile(existingMetadata)
         )
       } yield {
         targetEntity.copy(currentMetadata = Some(entityMetadata))
@@ -72,8 +75,9 @@ object Metadata {
   def collectEntityMetadata(
     currentMetadata: BaseEntityMetadata,
     checksum: Checksum,
-    collectCrates: BigInt => Future[Map[Path, Crate.Id]]
-  )(implicit ec: ExecutionContext, mat: Materializer): Future[EntityMetadata] =
+    collectCrates: BigInt => Future[Map[Path, Crate.Id]],
+    collectCompression: () => Future[String]
+  )(implicit mat: Materializer): Future[EntityMetadata] =
     if (currentMetadata.isDirectory) {
       Future.successful(
         EntityMetadata.Directory(
@@ -88,9 +92,12 @@ object Metadata {
         )
       )
     } else {
+      implicit val ec: ExecutionContext = mat.executionContext
+
       for {
         currentChecksum <- checksum.calculate(currentMetadata.path)
         crates <- collectCrates(currentChecksum)
+        compression <- collectCompression()
       } yield {
         EntityMetadata.File(
           path = currentMetadata.path,
@@ -103,12 +110,16 @@ object Metadata {
           group = currentMetadata.group,
           permissions = currentMetadata.permissions,
           checksum = currentChecksum,
-          crates = crates
+          crates = crates,
+          compression = compression
         )
       }
     }
 
-  def collectCratesForSourceFile(existingMetadata: Option[EntityMetadata], currentChecksum: BigInt): Future[Map[Path, Crate.Id]] =
+  def collectCratesForSourceFile(
+    existingMetadata: Option[EntityMetadata],
+    currentChecksum: BigInt
+  ): Future[Map[Path, Crate.Id]] =
     existingMetadata match {
       case Some(file: EntityMetadata.File) if file.checksum == currentChecksum =>
         Future.successful(file.crates)
@@ -128,6 +139,19 @@ object Metadata {
     existingMetadata match {
       case file: EntityMetadata.File =>
         Future.successful(file.crates)
+
+      case directory: EntityMetadata.Directory =>
+        Future.failed(
+          new IllegalArgumentException(
+            s"Expected metadata for file but directory metadata for [${directory.path.toString}] provided"
+          )
+        )
+    }
+
+  def collectCompressionForTargetFile(existingMetadata: EntityMetadata): Future[String] =
+    existingMetadata match {
+      case file: EntityMetadata.File =>
+        Future.successful(file.compression)
 
       case directory: EntityMetadata.Directory =>
         Future.failed(

@@ -1,10 +1,9 @@
 package stasis.client.model
 
-import java.nio.file.{Path, Paths}
-import java.time.Instant
-
 import stasis.core.packaging.Crate
 
+import java.nio.file.{Path, Paths}
+import java.time.Instant
 import scala.util.{Failure, Try}
 
 sealed trait EntityMetadata {
@@ -16,10 +15,15 @@ sealed trait EntityMetadata {
   def owner: String
   def group: String
   def permissions: String
+
+  def hasChanged(comparedTo: EntityMetadata): Boolean = (this, comparedTo) match {
+    case (a: EntityMetadata.File, b: EntityMetadata.File) => a != b.copy(compression = a.compression)
+    case _                                                => this != comparedTo
+  }
 }
 
 object EntityMetadata {
-  final case class File(
+  final case class File private (
     override val path: Path,
     override val link: Option[Path],
     override val isHidden: Boolean,
@@ -30,7 +34,8 @@ object EntityMetadata {
     override val permissions: String,
     size: Long,
     checksum: BigInt,
-    crates: Map[Path, Crate.Id]
+    crates: Map[Path, Crate.Id],
+    compression: String
   ) extends EntityMetadata
 
   final case class Directory(
@@ -58,7 +63,8 @@ object EntityMetadata {
           group = fileMetadata.group,
           permissions = fileMetadata.permissions,
           checksum = com.google.protobuf.ByteString.copyFrom(fileMetadata.checksum.toByteArray),
-          crates = fileMetadata.crates.map(toProtoCrateData)
+          crates = fileMetadata.crates.map(toProtoCrateData),
+          compression = fileMetadata.compression
         )
 
         proto.metadata.EntityMetadata(entity = proto.metadata.EntityMetadata.Entity.File(metadata))
@@ -93,7 +99,8 @@ object EntityMetadata {
             group = fileMetadata.group,
             permissions = fileMetadata.permissions,
             checksum = BigInt(fileMetadata.checksum.toByteArray),
-            crates = fileMetadata.crates.map(fromProtoCrateData)
+            crates = fileMetadata.crates.map(fromProtoCrateData),
+            compression = fileMetadata.compression
           )
         }
 

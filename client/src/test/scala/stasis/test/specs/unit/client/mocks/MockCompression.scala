@@ -1,14 +1,26 @@
 package stasis.test.specs.unit.client.mocks
 
-import java.util.concurrent.atomic.AtomicInteger
-
 import akka.NotUsed
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
-import stasis.client.compression.{Decoder, Encoder}
+import stasis.client.compression.{Compression, Decoder, Encoder}
+import stasis.client.model.{SourceEntity, TargetEntity}
 import stasis.test.specs.unit.client.mocks.MockCompression.Statistic
 
-class MockCompression() extends Encoder with Decoder {
+import java.nio.file.Path
+import java.util.concurrent.atomic.AtomicInteger
+
+class MockCompression() extends Compression with Encoder with Decoder {
+  override val name: String = "mock"
+
+  override val defaultCompression: Encoder with Decoder = this
+
+  override val disabledExtensions: Set[String] = Set("test")
+
+  override def algorithmFor(entity: Path): String = "mock"
+  override def encoderFor(entity: SourceEntity): Encoder = this
+  override def decoderFor(entity: TargetEntity): Decoder = this
+
   private val stats: Map[Statistic, AtomicInteger] = Map(
     Statistic.Compressed -> new AtomicInteger(0),
     Statistic.Decompressed -> new AtomicInteger(0)
@@ -32,6 +44,8 @@ class MockCompression() extends Encoder with Decoder {
 }
 
 object MockCompression {
+  def apply(): MockCompression = new MockCompression()
+
   sealed trait Statistic
   object Statistic {
     case object Compressed extends Statistic

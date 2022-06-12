@@ -5,6 +5,7 @@ import stasis.client.analysis.Checksum
 import stasis.client.collection.BackupMetadataCollector
 import stasis.client.model.EntityMetadata
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.client.mocks.MockCompression
 import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 
 class BackupMetadataCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
@@ -16,7 +17,7 @@ class BackupMetadataCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
     val file2Metadata = Fixtures.Metadata.FileTwoMetadata.copy(path = file2)
     val file3Metadata = Fixtures.Metadata.FileThreeMetadata.copy(path = file3)
 
-    val collector = new BackupMetadataCollector.Default(checksum = Checksum.MD5)
+    val collector = new BackupMetadataCollector.Default(checksum = Checksum.MD5, compression = MockCompression())
 
     for {
       sourceFile1 <- collector.collect(entity = file1, existingMetadata = None)

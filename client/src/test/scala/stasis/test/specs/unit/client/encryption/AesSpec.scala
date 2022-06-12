@@ -99,25 +99,25 @@ class AesSpec extends AsyncUnitSpec with EncodingHelpers with ResourceHelpers {
   )
 
   private val encryptedDatasetMetadata =
-    "C5HjzIPdVWcrNdsnv2CON8fl+zv4MrBAEQqtcgfcq2R1" +
-      "UxFhGnjv6FYG/+oKZu+5qKqaPUF86bO6hu0ayuBSav" +
-      "cdTqs9UD0oJ+gZ0DvlP0n+yNV2EnEv3WRStBDO88H7" +
-      "APkSTo/mxc92ynBTesysey3pgRo7b8qtCbebqqu87I" +
-      "eapqXuJbIy0ZEA6lUQoI1V3SUmsWwsukCbkQb4Sw80" +
-      "xuWOchvITtOBg82nFy5VsftuUwXZWPgdZJjOpFJ0uc" +
-      "GPsjnFK89uWVlAyO6VTbN1+t9QaGKlSNskdV2c+bX5" +
-      "F/h9yhB7Gy2DAxp8LtLXlAzpnTFRfrQKDb5UIAe8CC" +
-      "0LpkEz3sEUD7dqUqAsKgyfwDpBqu/cfhL+T4zGdxZs" +
-      "lKREPSvj0aVaFX2XBNJYgy8tXaxwT3hm0weM9gzmhc" +
-      "KS58yaBZFLzsctTOShg4VOy5IEHdYQJNkzqLrxbt6U" +
-      "Mi+S1C6iVDDmgahAllay1bZjsvpukk6/euvEs1CavF" +
-      "iwBFcNV6ix9RnifVfJYK0/TyOZXwxhxEvHYe7V4DR9" +
-      "13WfNKisBCwI5jFXZY9YuyktMUHjvCa8JCFcNfC/X9" +
-      "Wqueool5JMJXcfoLrC+cc3oisqQ85rZzA6e27JcqaY" +
-      "LlcJLCR9ctD7G5jXtsS2gWtxp86oViQ+WIRTEgd9dI" +
-      "mYclNewoaqRW8quH508nXkrDzy/61riTYWSkvLO27P" +
-      "dzwoBJlrxvovla1SUeydWc5Gs2yK95hpU6Q152SZca" +
-      "MsRiJdYc37jFo="
+    "C2/oy6GGTHp0fNQitirONsySgkCbV7diShOwLU7Trm0/E" +
+      "xBqb2nGQH4+zMhpfNCBVptVM2V9koanOe8kvP1SccFb" +
+      "OLY9SwNrXO0W2j7qNUzx4oZ2SQMN2EQJrQ2Rus7+CbN" +
+      "ST4Tcqu1x18BucsSRPm6YfDjhUpT7NsCy2vQM/2ufws" +
+      "evNM3U//1kqURSpNVcpjRJ5RJW+iZy4CMfI2lcxuWUb" +
+      "SSsPbDL2NSgV1g+x5FuUwDbEvtc9ww0BJWcW5yXzWCA" +
+      "XOEWJqaPSXwBnF34dlqrGzfOTv5Cc2jg+a3uEcUM6mY" +
+      "pM3PxfkJwEaPSqEyP9zFRZKt6W8UuTaxOqpa1PPmcME" +
+      "SCYJobf4UWafUFe9GGJ3Jwr4cEYYqrYglmkNlhThajy" +
+      "604ewvBfKUUgy0vC+d2U3gX5nrBhTGmn8rCSABj1HXK" +
+      "Qm+gNOMxHDW65KAThmX2rnGj3agK7WQv6fccnmveVCj" +
+      "xh+U89lHXs9serf05hFC1bf/IzkrpgQOzBjVwIZHJgl" +
+      "Xif1WfK7A6RVK/Ii4S+RDEY4z1qyliwjmNMrawBCwX+" +
+      "0Y9agTEHtLkwqq+u9J8xue49/eJdQA3Jx9/0Gbesabx" +
+      "LTZHD7Ry3isyVMgmG1gLHgmBdvubO1VRMj9mb+XKf+7" +
+      "PueHC5ghUzIiwXnt+UIgtdSIJCfWAfWYqpe6PMSkysC" +
+      "Ev4XOEy0WGmscYtHYMQinmVQe3ClVORJ9/mbolmc01O" +
+      "Jj4M7176G+IlbUHOlnAAZ6O+Ug0ehuc1TSXT0LKKtz4" +
+      "nzNsDkvUCXI5VZI="
 
   private val metadataSecret = DeviceMetadataSecret(
     iv = encryptionIv.decodeFromBase64,

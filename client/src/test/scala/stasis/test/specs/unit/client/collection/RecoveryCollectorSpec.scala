@@ -32,7 +32,8 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
       checksum = BigInt(1),
       crates = Map(
         Paths.get(s"${file2}_0") -> Crate.generateId()
-      )
+      ),
+      compression = "none"
     )
 
     val file3Metadata = EntityMetadata.File(
@@ -48,7 +49,8 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
       checksum = BigInt(1),
       crates = Map(
         Paths.get(s"${file3}_0") -> Crate.generateId()
-      )
+      ),
+      compression = "none"
     )
 
     val collector = new RecoveryCollector.Default(
