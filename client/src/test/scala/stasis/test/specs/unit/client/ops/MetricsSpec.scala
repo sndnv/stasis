@@ -21,12 +21,14 @@ class MetricsSpec extends UnitSpec {
     noException should be thrownBy backupMetrics.recordEntityExamined(entity = null)
     noException should be thrownBy backupMetrics.recordEntityCollected(entity = null)
     noException should be thrownBy backupMetrics.recordEntityChunkProcessed(step = null, bytes = 0)
+    noException should be thrownBy backupMetrics.recordEntityChunkProcessed(step = null, extra = null, bytes = 0)
     noException should be thrownBy backupMetrics.recordEntityProcessed(metadata = null)
 
     val recoveryMetrics = Metrics.RecoveryOperation.NoOp
     noException should be thrownBy recoveryMetrics.recordEntityExamined(entity = null)
     noException should be thrownBy recoveryMetrics.recordEntityCollected(entity = null)
     noException should be thrownBy recoveryMetrics.recordEntityChunkProcessed(step = null, bytes = 0)
+    noException should be thrownBy recoveryMetrics.recordEntityChunkProcessed(step = null, extra = null, bytes = 0)
     noException should be thrownBy recoveryMetrics.recordEntityProcessed(entity = null)
     noException should be thrownBy recoveryMetrics.recordMetadataApplied(entity = null)
   }
@@ -65,24 +67,26 @@ class MetricsSpec extends UnitSpec {
     backupMetrics.recordEntityCollected(entity = directorySourceEntity)
     backupMetrics.recordEntityChunkProcessed(step = "a", bytes = 1)
     backupMetrics.recordEntityChunkProcessed(step = "b", bytes = 2)
+    backupMetrics.recordEntityChunkProcessed(step = "c", extra = "d", bytes = 2)
     backupMetrics.recordEntityProcessed(metadata = Left(fileSourceEntity.currentMetadata))
 
     meter.metric(name = "test_operations_backup_entities_handled") should be(3)
     meter.metric(name = "test_operations_backup_entity_handled_bytes") should be(3)
-    meter.metric(name = "test_operations_backup_entity_chunks_processed") should be(2)
-    meter.metric(name = "test_operations_backup_entity_chunk_processed_bytes") should be(2)
+    meter.metric(name = "test_operations_backup_entity_chunks_processed") should be(3)
+    meter.metric(name = "test_operations_backup_entity_chunk_processed_bytes") should be(3)
 
     val recoveryMetrics = new Metrics.RecoveryOperation.Default(meter = meter, namespace = "test")
     recoveryMetrics.recordEntityExamined(entity = fileTargetEntity)
     recoveryMetrics.recordEntityCollected(entity = directoryTargetEntity)
     recoveryMetrics.recordEntityChunkProcessed(step = "a", bytes = 1)
     recoveryMetrics.recordEntityChunkProcessed(step = "b", bytes = 2)
+    recoveryMetrics.recordEntityChunkProcessed(step = "c", extra = "d", bytes = 2)
     recoveryMetrics.recordEntityProcessed(entity = fileTargetEntity)
     recoveryMetrics.recordMetadataApplied(entity = directoryTargetEntity)
 
     meter.metric(name = "test_operations_recovery_entities_handled") should be(4)
     meter.metric(name = "test_operations_recovery_entity_handled_bytes") should be(4)
-    meter.metric(name = "test_operations_recovery_entity_chunks_processed") should be(2)
-    meter.metric(name = "test_operations_recovery_entity_chunk_processed_bytes") should be(2)
+    meter.metric(name = "test_operations_recovery_entity_chunks_processed") should be(3)
+    meter.metric(name = "test_operations_recovery_entity_chunk_processed_bytes") should be(3)
   }
 }

@@ -29,6 +29,10 @@ object MockOpsMetrics {
       val _ = entityChunkProcessedRecorded.incrementAndGet()
     }
 
+    override def recordEntityChunkProcessed(step: String, extra: String, bytes: Int): Unit = {
+      val _ = entityChunkProcessedRecorded.incrementAndGet()
+    }
+
     override def recordEntityProcessed(metadata: Either[EntityMetadata, EntityMetadata]): Unit = {
       val _ = entityProcessedRecorded.incrementAndGet()
     }
@@ -61,6 +65,10 @@ object MockOpsMetrics {
     }
 
     override def recordEntityChunkProcessed(step: String, bytes: Int): Unit = {
+      val _ = entityChunkProcessedRecorded.incrementAndGet()
+    }
+
+    override def recordEntityChunkProcessed(step: String, extra: String, bytes: Int): Unit = {
       val _ = entityChunkProcessedRecorded.incrementAndGet()
     }
 

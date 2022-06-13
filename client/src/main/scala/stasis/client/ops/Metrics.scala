@@ -21,6 +21,7 @@ object Metrics {
     def recordEntityExamined(entity: TargetEntity): Unit
     def recordEntityCollected(entity: TargetEntity): Unit
     def recordEntityChunkProcessed(step: String, bytes: Int): Unit
+    def recordEntityChunkProcessed(step: String, extra: String, bytes: Int): Unit
     def recordEntityProcessed(entity: TargetEntity): Unit
     def recordMetadataApplied(entity: TargetEntity): Unit
   }
@@ -30,6 +31,7 @@ object Metrics {
       override def recordEntityExamined(entity: TargetEntity): Unit = ()
       override def recordEntityCollected(entity: TargetEntity): Unit = ()
       override def recordEntityChunkProcessed(step: String, bytes: Int): Unit = ()
+      override def recordEntityChunkProcessed(step: String, extra: String, bytes: Int): Unit = ()
       override def recordEntityProcessed(entity: TargetEntity): Unit = ()
       override def recordMetadataApplied(entity: TargetEntity): Unit = ()
     }
@@ -81,6 +83,11 @@ object Metrics {
         entityChunkProcessedBytes.add(value = bytes.toLong, Labels.Step -> step)
       }
 
+      override def recordEntityChunkProcessed(step: String, extra: String, bytes: Int): Unit = {
+        entityChunksProcessed.inc(Labels.Step -> step, Labels.Extra -> extra)
+        entityChunkProcessedBytes.add(value = bytes.toLong, Labels.Step -> step, Labels.Extra -> extra)
+      }
+
       override def recordEntityProcessed(entity: TargetEntity): Unit = {
         val (entityType, entityState, entitySize) = getEntityLabelsAndSize(from = entity)
 
@@ -130,6 +137,7 @@ object Metrics {
     def recordEntityExamined(entity: SourceEntity): Unit
     def recordEntityCollected(entity: SourceEntity): Unit
     def recordEntityChunkProcessed(step: String, bytes: Int): Unit
+    def recordEntityChunkProcessed(step: String, extra: String, bytes: Int): Unit
     def recordEntityProcessed(metadata: Either[EntityMetadata, EntityMetadata]): Unit
   }
 
@@ -138,6 +146,7 @@ object Metrics {
       override def recordEntityExamined(entity: SourceEntity): Unit = ()
       override def recordEntityCollected(entity: SourceEntity): Unit = ()
       override def recordEntityChunkProcessed(step: String, bytes: Int): Unit = ()
+      override def recordEntityChunkProcessed(step: String, extra: String, bytes: Int): Unit = ()
       override def recordEntityProcessed(metadata: Either[EntityMetadata, EntityMetadata]): Unit = ()
     }
 
@@ -184,6 +193,11 @@ object Metrics {
         entityChunkProcessedBytes.add(value = bytes.toLong, Labels.Step -> step)
       }
 
+      override def recordEntityChunkProcessed(step: String, extra: String, bytes: Int): Unit = {
+        entityChunksProcessed.inc(Labels.Step -> step, Labels.Extra -> extra)
+        entityChunkProcessedBytes.add(value = bytes.toLong, Labels.Step -> step, Labels.Extra -> extra)
+      }
+
       override def recordEntityProcessed(metadata: Either[EntityMetadata, EntityMetadata]): Unit = {
         val (entityType, entitySize) = getEntityLabelsAndSize(from = metadata.fold(identity, identity))
 
@@ -213,6 +227,7 @@ object Metrics {
   object Labels {
     val Operation: AttributeKey[String] = AttributeKey.stringKey("operation")
     val Step: AttributeKey[String] = AttributeKey.stringKey("step")
+    val Extra: AttributeKey[String] = AttributeKey.stringKey("extra")
     val Type: AttributeKey[String] = AttributeKey.stringKey("type")
     val State: AttributeKey[String] = AttributeKey.stringKey("state")
   }
