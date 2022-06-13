@@ -21,6 +21,7 @@ METADATA = {
             'crates': {
                 '/some/path/01_0': str(uuid4()),
             },
+            'compression': 'gzip',
             'entity_type': 'file',
         },
         '/some/path/02': {
@@ -37,6 +38,7 @@ METADATA = {
                 '/some/path/02_0': str(uuid4()),
                 '/some/path/02_1': str(uuid4()),
             },
+            'compression': 'deflate',
             'entity_type': 'file',
         },
         '/some/path/03': {
@@ -56,6 +58,7 @@ METADATA = {
                 '/some/path/03_3': str(uuid4()),
                 '/some/path/03_4': str(uuid4()),
             },
+            'compression': 'none',
             'entity_type': 'file',
         },
     },
@@ -72,6 +75,7 @@ METADATA = {
             'permissions': '444',
             'checksum': 42,
             'crates': {},
+            'compression': 'none',
             'entity_type': 'file',
         },
         '/some/path': {
