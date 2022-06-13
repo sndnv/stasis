@@ -26,7 +26,8 @@ def render_changes_as_table(metadata):
                 'Group',
                 'Permissions',
                 'Checksum',
-                'Crates'
+                'Crates',
+                'Compression'
             ]
         ]
 
@@ -47,6 +48,7 @@ def render_changes_as_table(metadata):
                         entity_metadata['permissions'],
                         entity_metadata['checksum'],
                         entity_metadata['crates'],
+                        entity_metadata['compression'],
                     ],
                     metadata
                 )

@@ -27,6 +27,7 @@ def get_spec_changes():
             'permissions': str,
             'checksum': int,
             'crates': int,
+            'compression': str,
         },
         'sorting': {
             'field': 'entity',
@@ -64,6 +65,7 @@ def flatten_changes(metadata):
                 'permissions': entity_metadata['permissions'],
                 'checksum': entity_metadata.get('checksum', 0),
                 'crates': len(entity_metadata.get('crates', {})),
+                'compression': entity_metadata.get('compression', '-'),
             },
             content_changed + metadata_changed
         )

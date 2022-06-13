@@ -18,7 +18,7 @@ class DatasetMetadataSpec(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.expected_changes_keys = ['changed', 'type', 'entity', 'size', 'link', 'hidden', 'created', 'updated',
-                                     'owner', 'group', 'permissions', 'checksum', 'crates']
+                                     'owner', 'group', 'permissions', 'checksum', 'crates', 'compression']
         cls.expected_crates_keys = ['entity', 'part', 'crate']
         cls.expected_filesystem_keys = ['entity', 'state', 'entry']
         cls.expected_search_results_keys = ['definition', 'info', 'entity', 'state', 'entry']
