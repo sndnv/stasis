@@ -61,11 +61,15 @@ trait EntityProcessing {
         .flatMap { crates =>
           implicit val prv: Providers = providers
 
+          val decompressor = providers.compression.decoderFor(entity)
+
           crates
             .decrypt(withPartSecret = deviceSecret.toFileSecret)
             .merge()
-            .decompress(decompressor = providers.compression.decoderFor(entity))
-            .wireTap(bytes => metrics.recordEntityChunkProcessed(step = "decompressed", bytes = bytes.length))
+            .decompress(decompressor = decompressor)
+            .wireTap(bytes =>
+              metrics.recordEntityChunkProcessed(step = "decompressed", extra = decompressor.name, bytes = bytes.length)
+            )
             .destage(to = entity.destinationPath)
         }
         .map(_ => entity)

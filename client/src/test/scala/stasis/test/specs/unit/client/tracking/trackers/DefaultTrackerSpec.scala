@@ -233,7 +233,7 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
         )
     )
 
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(7.seconds, 300.milliseconds)
 
   private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],

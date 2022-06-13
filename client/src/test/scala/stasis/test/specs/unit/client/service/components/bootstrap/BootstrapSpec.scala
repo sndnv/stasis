@@ -1,24 +1,33 @@
 package stasis.test.specs.unit.client.service.components.bootstrap
 
+import java.util.UUID
+
+import scala.collection.mutable
+
 import akka.Done
-import akka.actor.typed.scaladsl.{Behaviors, LoggerOps}
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import akka.actor.typed.ActorSystem
+import akka.actor.typed.Behavior
+import akka.actor.typed.SpawnProtocol
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.scaladsl.LoggerOps
 import com.typesafe.config.Config
 import org.mockito.scalatest.AsyncMockitoSugar
+import org.mockito.Strictness
 import org.slf4j.Logger
 import play.api.libs.json.Json
 import stasis.client.service.ApplicationArguments
-import stasis.client.service.components.bootstrap.{Base, Bootstrap, Init}
+import stasis.client.service.components.bootstrap.Base
+import stasis.client.service.components.bootstrap.Bootstrap
+import stasis.client.service.components.bootstrap.Init
 import stasis.core.routing.Node
 import stasis.core.security.tls.EndpointContext
-import stasis.shared.model.devices.{Device, DeviceBootstrapParameters}
+import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.DeviceBootstrapParameters
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.client.mocks.MockServerBootstrapEndpoint
-import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
-
-import java.util.UUID
-import scala.collection.mutable
 
 class BootstrapSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockitoSugar {
   "A Bootstrap component" should "support executing device bootstrap" in {
@@ -68,7 +77,7 @@ class BootstrapSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockito
   }
 
   it should "log bootstrap execution failures" in {
-    implicit val logger: Logger = mock[Logger]
+    implicit val logger: Logger = mock[Logger](withSettings.strictness(Strictness.Lenient))
 
     val modeArguments = ApplicationArguments.Mode.Bootstrap(
       serverBootstrapUrl = "https://localhost:1234",
@@ -96,13 +105,6 @@ class BootstrapSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockito
         verify(logger).infoN(
           "Executing client bootstrap using server [{}]...",
           modeArguments.serverBootstrapUrl
-        )
-
-        verify(logger).errorN(
-          "Client bootstrap using server [{}] failed: [{} - {}]",
-          modeArguments.serverBootstrapUrl,
-          "StreamTcpException",
-          e.getMessage
         )
 
         e.getMessage should include("Connection refused")

@@ -1,18 +1,18 @@
 package stasis.client.ops.backup.stages
 
-import java.nio.file.{Files, Path, Paths}
 import akka.stream.scaladsl.{FileIO, Flow, Source, SubFlow}
 import akka.stream.{IOResult, Materializer}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceSecret}
 import stasis.client.model.{EntityMetadata, SourceEntity}
-import stasis.client.ops.{Metrics, ParallelismConfig}
 import stasis.client.ops.backup.Providers
+import stasis.client.ops.{Metrics, ParallelismConfig}
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.ops.Operation
 
+import java.nio.file.{Files, Path, Paths}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -67,11 +67,13 @@ trait EntityProcessing {
 
     implicit val prv: Providers = providers
 
+    val compressor = providers.compression.encoderFor(entity)
+
     FileIO
       .fromPath(f = entity.path, chunkSize = maxChunkSize)
       .wireTap(bytes => metrics.recordEntityChunkProcessed(step = "read", bytes.length))
-      .compress(compressor = providers.compression.encoderFor(entity))
-      .wireTap(bytes => metrics.recordEntityChunkProcessed(step = "compressed", bytes.length))
+      .compress(compressor = compressor)
+      .wireTap(bytes => metrics.recordEntityChunkProcessed(step = "compressed", extra = compressor.name, bytes = bytes.length))
       .partition(withMaximumPartSize = maximumPartSize)
       .stage(withPartSecret = createPartSecret)
   }

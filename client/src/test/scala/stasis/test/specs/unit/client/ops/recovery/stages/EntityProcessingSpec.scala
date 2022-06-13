@@ -280,7 +280,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
       }
   }
 
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(7.seconds, 300.milliseconds)
 
   private implicit val system: ActorSystem = ActorSystem(name = "EntityProcessingSpec")
 }
