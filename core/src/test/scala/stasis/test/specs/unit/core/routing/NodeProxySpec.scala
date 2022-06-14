@@ -230,6 +230,9 @@ object NodeProxySpec {
     override protected def credentials: NodeCredentialsProvider[A, String] =
       (_: A) => Future.successful("test-credentials")
 
+    override def push(address: A, manifest: packaging.Manifest, content: Source[ByteString, NotUsed]): Future[Done] =
+      Future.failed(ExpectedFailure(address))
+
     override def push(
       address: A,
       manifest: packaging.Manifest

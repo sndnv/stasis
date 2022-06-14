@@ -26,7 +26,52 @@ import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
 class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
-  "An HTTP Endpoint Client" should "successfully push crates via a stream sink" in {
+  "An HTTP Endpoint Client" should "successfully push crates" in {
+    val endpointPort = ports.dequeue()
+    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+
+    val endpoint = createTestHttpEndpoint(port = endpointPort)
+
+    val client = HttpEndpointClient(
+      credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
+      requestBufferSize = requestBufferSize,
+      maxChunkSize = maxChunkSize
+    )
+
+    client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).flatMap { _ =>
+      eventually[Assertion] {
+        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+      }
+    }
+  }
+
+  it should "fail to push crates if no credentials are available" in {
+    val endpointPort = ports.dequeue()
+    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
+
+    val _ = createTestHttpEndpoint(port = endpointPort)
+
+    val client = HttpEndpointClient(
+      credentials = new MockHttpNodeCredentialsProvider(Map.empty),
+      requestBufferSize = requestBufferSize,
+      maxChunkSize = maxChunkSize
+    )
+
+    client
+      .push(endpointAddress, testManifest, Source.single(ByteString(crateContent)))
+      .map { response =>
+        fail(s"Received unexpected response from endpoint: [$response]")
+      }
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Push to endpoint [${endpointAddress.uri}] failed for crate [${testManifest.crate}]; " +
+            s"unable to retrieve credentials: [No credentials found for [HttpEndpointAddress(http://localhost:$endpointPort)]]"
+        )
+      }
+  }
+
+  it should "successfully push crates via a stream sink" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
@@ -51,7 +96,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     }
   }
 
-  it should "handle reservation rejections" in {
+  it should "handle reservation rejections when pushing via a stream sink" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
@@ -105,7 +150,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
-  it should "handle push failures" in {
+  it should "handle push failures via a stream sink" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
 
@@ -263,32 +308,6 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     } yield {
       succeed
     }
-  }
-
-  it should "fail to push crates if no credentials are available" in {
-    val endpointPort = ports.dequeue()
-    val endpointAddress = HttpEndpointAddress(s"http://localhost:$endpointPort")
-
-    val _ = createTestHttpEndpoint(port = endpointPort)
-
-    val client = HttpEndpointClient(
-      credentials = new MockHttpNodeCredentialsProvider(Map.empty),
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
-    )
-
-    client
-      .push(endpointAddress, testManifest)
-      .flatMap(sink => Source.single(ByteString(crateContent)).runWith(sink))
-      .map { response =>
-        fail(s"Received unexpected response from endpoint: [$response]")
-      }
-      .recover { case NonFatal(e) =>
-        e.getMessage should be(
-          s"Push to endpoint [${endpointAddress.uri}] via sink failed for crate [${testManifest.crate}]; " +
-            s"unable to retrieve credentials: [No credentials found for [HttpEndpointAddress(http://localhost:$endpointPort)]]"
-        )
-      }
   }
 
   it should "fail to push crates via sink if no credentials are available" in {
