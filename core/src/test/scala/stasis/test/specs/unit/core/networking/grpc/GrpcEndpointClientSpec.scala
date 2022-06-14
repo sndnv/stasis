@@ -24,7 +24,50 @@ import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
 class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
-  "An GRPC Endpoint Client" should "successfully push crates via a stream sink" in {
+  "An GRPC Endpoint Client" should "successfully push crates" in {
+    val endpointPort = ports.dequeue()
+    val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
+
+    val endpoint = createTestGrpcEndpoint(port = endpointPort)
+
+    val client = GrpcEndpointClient(
+      credentials = new MockGrpcNodeCredentialsProvider(endpointAddress, testNode, testSecret),
+      maxChunkSize = maxChunkSize
+    )
+
+    client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).flatMap { _ =>
+      eventually[Assertion] {
+        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
+        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
+      }
+    }
+  }
+
+  it should "fail to push crates if no credentials are available" in {
+    val endpointPort = ports.dequeue()
+    val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
+
+    val _ = createTestGrpcEndpoint(port = endpointPort)
+
+    val client = GrpcEndpointClient(
+      credentials = new MockGrpcNodeCredentialsProvider(Map.empty),
+      maxChunkSize = maxChunkSize
+    )
+
+    client
+      .push(endpointAddress, testManifest, Source.single(ByteString(crateContent)))
+      .map { response =>
+        fail(s"Received unexpected response from endpoint: [$response]")
+      }
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Push to endpoint [${endpointAddress.host}] failed for crate [${testManifest.crate}]; " +
+            s"unable to retrieve credentials: [No credentials found for [GrpcEndpointAddress(localhost,$endpointPort,false)]]"
+        )
+      }
+  }
+
+  it should "successfully push crates via a stream sink" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
@@ -48,7 +91,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     }
   }
 
-  it should "handle reservation rejections" in {
+  it should "handle reservation rejections when pushing via a stream sink" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
@@ -75,7 +118,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
-  it should "handle push failures" in {
+  it should "handle push failures via a stream sink" in {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
@@ -225,31 +268,6 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     } yield {
       succeed
     }
-  }
-
-  it should "fail to push crates if no credentials are available" in {
-    val endpointPort = ports.dequeue()
-    val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
-
-    val _ = createTestGrpcEndpoint(port = endpointPort)
-
-    val client = GrpcEndpointClient(
-      credentials = new MockGrpcNodeCredentialsProvider(Map.empty),
-      maxChunkSize = maxChunkSize
-    )
-
-    client
-      .push(endpointAddress, testManifest)
-      .flatMap { sink => Source.single(ByteString(crateContent)).runWith(sink) }
-      .map { response =>
-        fail(s"Received unexpected response from endpoint: [$response]")
-      }
-      .recover { case NonFatal(e) =>
-        e.getMessage should be(
-          s"Push to endpoint [${endpointAddress.host}] via sink failed for crate [${testManifest.crate}]; " +
-            s"unable to retrieve credentials: [No credentials found for [GrpcEndpointAddress(localhost,$endpointPort,false)]]"
-        )
-      }
   }
 
   it should "fail to push crates via sink if no credentials are available" in {

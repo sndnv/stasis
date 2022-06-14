@@ -33,6 +33,35 @@ class GrpcEndpointClient(
 
   private val log = LoggerFactory.getLogger(this.getClass.getName)
 
+  override def push(address: GrpcEndpointAddress, manifest: Manifest, content: Source[ByteString, NotUsed]): Future[Done] = {
+    log.debugN("Pushing content for endpoint [{}] with manifest [{}]", address.host, manifest)
+
+    for {
+      endpointCredentials <- credentials
+        .provide(address)
+        .recoverWith { case NonFatal(e) =>
+          val message =
+            s"Push to endpoint [${address.host}] failed for crate [${manifest.crate.toString}];" +
+              s" unable to retrieve credentials: [${e.getMessage}]"
+          log.error(message)
+          Future.failed(CredentialsFailure(message))
+        }
+      client = internal.Client(address, context)
+      reservation <- reserveStorage(client, address, manifest, endpointCredentials)
+      result <- pushCrate(
+        client = client,
+        address = address,
+        manifest = manifest,
+        endpointCredentials = endpointCredentials,
+        reservation = reservation,
+        content = content,
+        maxChunkSize = maxChunkSize
+      )
+    } yield {
+      result
+    }
+  }
+
   override def push(
     address: GrpcEndpointAddress,
     manifest: Manifest

@@ -39,6 +39,33 @@ class HttpEndpointClient(
 
   private val log = LoggerFactory.getLogger(this.getClass.getName)
 
+  override def push(address: HttpEndpointAddress, manifest: Manifest, content: Source[ByteString, NotUsed]): Future[Done] = {
+    log.debugN("Pushing content for endpoint [{}] with manifest [{}]", address.uri, manifest)
+
+    for {
+      endpointCredentials <- credentials
+        .provide(address)
+        .recoverWith { case NonFatal(e) =>
+          val message =
+            s"Push to endpoint [${address.uri.toString()}] failed for crate [${manifest.crate.toString}];" +
+              s" unable to retrieve credentials: [${e.getMessage}]"
+          log.error(message)
+          Future.failed(CredentialsFailure(message))
+        }
+      reservation <- reserveStorage(address, manifest, endpointCredentials)
+      result <- pushCrate(
+        address = address,
+        manifest = manifest,
+        content = content,
+        reservation = reservation,
+        endpointCredentials = endpointCredentials,
+        maxChunkSize = maxChunkSize
+      )
+    } yield {
+      result
+    }
+  }
+
   override def push(address: HttpEndpointAddress, manifest: Manifest): Future[Sink[ByteString, Future[Done]]] = {
     log.debugN("Building content sink for endpoint [{}] with manifest [{}]", address.uri, manifest)
 

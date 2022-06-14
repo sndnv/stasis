@@ -43,6 +43,24 @@ class MockHttpEndpointClient(
     Statistic.DiscardFailed -> new AtomicInteger(0)
   )
 
+  override def push(address: HttpEndpointAddress, manifest: Manifest, content: Source[ByteString, NotUsed]): Future[Done] =
+    pushFailureAddresses.get(address) match {
+      case Some(pushFailure) =>
+        stats(Statistic.PushFailed).incrementAndGet()
+        Future.failed(pushFailure)
+
+      case None =>
+        content
+          .fold(ByteString.empty) { case (folded, chunk) =>
+            folded.concat(chunk)
+          }
+          .mapAsyncUnordered(parallelism = 1) { data =>
+            stats(Statistic.PushCompleted).incrementAndGet()
+            store.put((address, manifest.crate), (data, manifest.copies))
+          }
+          .run()
+    }
+
   override def push(address: HttpEndpointAddress, manifest: Manifest): Future[Sink[ByteString, Future[Done]]] =
     pushFailureAddresses.get(address) match {
       case Some(pushFailure) =>

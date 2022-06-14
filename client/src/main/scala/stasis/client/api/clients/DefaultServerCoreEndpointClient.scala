@@ -10,7 +10,7 @@ import stasis.core.packaging
 import stasis.core.routing.Node
 import stasis.core.security.tls.EndpointContext
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 class DefaultServerCoreEndpointClient(
   address: HttpEndpointAddress,
@@ -22,8 +22,6 @@ class DefaultServerCoreEndpointClient(
 )(implicit system: ActorSystem[SpawnProtocol.Command])
     extends ServerCoreEndpointClient {
 
-  private implicit val ec: ExecutionContext = system.executionContext
-
   private val client: HttpEndpointClient = HttpEndpointClient(
     credentials = (_: HttpEndpointAddress) => credentials,
     context = context,
@@ -34,7 +32,7 @@ class DefaultServerCoreEndpointClient(
   override val server: String = address.uri.toString
 
   override def push(manifest: packaging.Manifest, content: Source[ByteString, NotUsed]): Future[Done] =
-    client.push(address, manifest).flatMap(sink => content.runWith(sink))
+    client.push(address, manifest, content)
 
   override def pull(crate: Node.Id): Future[Option[Source[ByteString, NotUsed]]] =
     client.pull(address, crate)
