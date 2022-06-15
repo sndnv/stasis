@@ -2,7 +2,7 @@ package stasis.test.specs.unit.client.ops.recovery.stages
 
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
-import akka.stream.{Materializer, SystemMaterializer}
+import akka.stream.{IOOperationIncompleteException, Materializer, SystemMaterializer}
 import akka.util.ByteString
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
@@ -27,7 +27,20 @@ import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
 class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Eventually { spec =>
-  "A Recovery EntityProcessing stage" should "process files and directories with changed content and metadata" in {
+  "A Recovery EntityProcessing stage" should "extract part IDs from a path" in {
+    EntityProcessing.partIdFromPath(Paths.get("/tmp/a__part=1")) should be(1)
+    EntityProcessing.partIdFromPath(Paths.get("/tmp/a__part=12324")) should be(12324)
+    EntityProcessing.partIdFromPath(Paths.get("/tmp/a__part=0")) should be(0)
+    EntityProcessing.partIdFromPath(Paths.get("/tmp/a__part=-1")) should be(0)
+    EntityProcessing.partIdFromPath(Paths.get("/tmp/a__part=")) should be(0)
+    EntityProcessing.partIdFromPath(Paths.get("/tmp/a__part")) should be(0)
+    EntityProcessing.partIdFromPath(Paths.get("/tmp/a__")) should be(0)
+    EntityProcessing.partIdFromPath(Paths.get("/tmp/a_")) should be(0)
+    EntityProcessing.partIdFromPath(Paths.get("/tmp/a")) should be(0)
+    EntityProcessing.partIdFromPath(Paths.get("/tmp/a__part=other")) should be(0)
+  }
+
+  it should "process files and directories with changed content and metadata" in {
     val targetFile2Metadata = "/ops/source-file-2".asTestResource.extractFileMetadata(
       withChecksum = 2,
       withCrate = Crate.generateId()
@@ -46,10 +59,10 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
       )
       .copy(
         crates = Map(
-          Paths.get(s"${targetFile4Path}_0") -> Crate.generateId(),
-          Paths.get(s"${targetFile4Path}_1") -> Crate.generateId(),
-          Paths.get(s"${targetFile4Path}_2") -> Crate.generateId(),
-          Paths.get(s"${targetFile4Path}_3") -> Crate.generateId()
+          Paths.get(s"${targetFile4Path}__part=0") -> Crate.generateId(),
+          Paths.get(s"${targetFile4Path}__part=1") -> Crate.generateId(),
+          Paths.get(s"${targetFile4Path}__part=2") -> Crate.generateId(),
+          Paths.get(s"${targetFile4Path}__part=3") -> Crate.generateId()
         )
       )
 
@@ -226,13 +239,13 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
       .map { stageOutput =>
         fail(s"Unexpected result received: [$stageOutput]")
       }
-      .recover { case NonFatal(e) =>
-        e shouldBe an[PullFailure]
-        e.getMessage should startWith("Failed to pull crate")
+      .recover { case NonFatal(e: IOOperationIncompleteException) =>
+        e.getCause shouldBe an[PullFailure]
+        e.getCause.getMessage should startWith("Failed to pull crate")
 
         eventually[Assertion] {
-          mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(0)
-          mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(0)
+          mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(1)
+          mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(1)
           mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
 
           mockCompression.statistics(MockCompression.Statistic.Compressed) should be(0)
@@ -277,6 +290,105 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
       }
       .recover { case NonFatal(e: IllegalArgumentException) =>
         e.getMessage should be(s"Expected metadata for file but directory metadata for [${entity.path}] provided")
+      }
+  }
+
+  it should "fail if an unexpected number of crates are provided" in {
+    val targetFile4Path = "/ops/nested/source-file-4".asTestResource
+    val targetFile4Metadata = targetFile4Path
+      .extractFileMetadata(
+        withChecksum = 3,
+        withCrate = Crate.generateId()
+      )
+      .copy(
+        crates = Map(
+          Paths.get(s"${targetFile4Path}__part=0") -> Crate.generateId(),
+          Paths.get(s"${targetFile4Path}__part=1") -> Crate.generateId(),
+          Paths.get(s"${targetFile4Path}__part=2") -> Crate.generateId(),
+          Paths.get(s"${targetFile4Path}__part=5") -> Crate.generateId()
+        )
+      )
+
+    val targetFile4 = TargetEntity(
+      path = targetFile4Metadata.path,
+      destination = TargetEntity.Destination.Default,
+      existingMetadata = targetFile4Metadata,
+      currentMetadata = Some(targetFile4Metadata.copy(checksum = BigInt(9999)))
+    )
+
+    val stage = new EntityProcessing {
+      override protected def deviceSecret: DeviceSecret = Fixtures.Secrets.Default
+      override protected def providers: Providers =
+        Providers(
+          checksum = Checksum.MD5,
+          staging = new MockFileStaging(),
+          compression = MockCompression(),
+          decryptor = new MockEncryption(),
+          clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
+          track = new MockRecoveryTracker,
+          telemetry = MockClientTelemetryContext()
+        )
+      override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
+      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
+      override implicit protected def ec: ExecutionContext = spec.system.dispatcher
+    }
+
+    implicit val operationId: Operation.Id = Operation.generateId()
+
+    Source(List(targetFile4))
+      .via(stage.entityProcessing)
+      .runFold(Seq.empty[TargetEntity])(_ :+ _)
+      .map { result =>
+        fail(s"Unexpected result received: [$result]")
+      }
+      .recover { case NonFatal(e: IllegalArgumentException) =>
+        e.getMessage should include("Unexpected last part ID [5] encountered for an entity with [4] crate(s)")
+      }
+  }
+
+  it should "fail if no crates are provided" in {
+    val targetFile4Path = "/ops/nested/source-file-4".asTestResource
+    val targetFile4Metadata = targetFile4Path
+      .extractFileMetadata(
+        withChecksum = 3,
+        withCrate = Crate.generateId()
+      )
+      .copy(crates = Map.empty)
+
+    val targetFile4 = TargetEntity(
+      path = targetFile4Metadata.path,
+      destination = TargetEntity.Destination.Default,
+      existingMetadata = targetFile4Metadata,
+      currentMetadata = Some(targetFile4Metadata.copy(checksum = BigInt(9999)))
+    )
+
+    val stage = new EntityProcessing {
+      override protected def deviceSecret: DeviceSecret = Fixtures.Secrets.Default
+      override protected def providers: Providers =
+        Providers(
+          checksum = Checksum.MD5,
+          staging = new MockFileStaging(),
+          compression = MockCompression(),
+          decryptor = new MockEncryption(),
+          clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
+          track = new MockRecoveryTracker,
+          telemetry = MockClientTelemetryContext()
+        )
+      override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
+      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
+      override implicit protected def ec: ExecutionContext = spec.system.dispatcher
+    }
+
+    implicit val operationId: Operation.Id = Operation.generateId()
+
+    Source(List(targetFile4))
+      .via(stage.entityProcessing)
+      .runFold(Seq.empty[TargetEntity])(_ :+ _)
+      .map { result =>
+        fail(s"Unexpected result received: [$result]")
+      }
+      .recover { case NonFatal(e: IllegalArgumentException) =>
+        e.getMessage should include("Unexpected last part ID [0] encountered for an entity with [0] crate(s)")
       }
   }
 
