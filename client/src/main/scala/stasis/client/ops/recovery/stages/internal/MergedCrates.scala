@@ -7,9 +7,9 @@ import akka.stream.scaladsl.{Concat, Source}
 import akka.util.ByteString
 import stasis.client.ops.exceptions.EntityProcessingFailure
 
-class MergedCrates(crates: Iterable[(Path, Source[ByteString, NotUsed])]) {
+class MergedCrates(crates: Iterable[(Int, Path, Source[ByteString, NotUsed])]) {
   def merge(): Source[ByteString, NotUsed] =
-    crates.toList.sortBy(_._1).map(_._2) match {
+    crates.toList.sortBy(_._1).map(_._3) match {
       case singleSource :: Nil =>
         singleSource
 

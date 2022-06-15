@@ -16,6 +16,8 @@ import stasis.shared.ops.Operation
 import java.nio.file.attribute.PosixFilePermissions
 import java.nio.file.{Files, Path}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
+import scala.util.matching.Regex
 
 trait EntityProcessing {
   protected def deviceSecret: DeviceSecret
@@ -57,36 +59,36 @@ trait EntityProcessing {
 
   private def processContentChanged(entity: TargetEntity): Future[TargetEntity] =
     EntityProcessing.expectFileMetadata(entity).flatMap { file =>
-      pull(file.crates, entity.originalPath)
-        .flatMap { crates =>
-          implicit val prv: Providers = providers
+      val crates = pull(file.crates, entity.originalPath)
+      implicit val prv: Providers = providers
 
-          val decompressor = providers.compression.decoderFor(entity)
+      val decompressor = providers.compression.decoderFor(entity)
 
-          crates
-            .decrypt(withPartSecret = deviceSecret.toFileSecret)
-            .merge()
-            .decompress(decompressor = decompressor)
-            .wireTap(bytes =>
-              metrics.recordEntityChunkProcessed(step = "decompressed", extra = decompressor.name, bytes = bytes.length)
-            )
-            .destage(to = entity.destinationPath)
-        }
+      crates
+        .decrypt(withPartSecret = deviceSecret.toFileSecret)
+        .merge()
+        .decompress(decompressor = decompressor)
+        .wireTap(bytes =>
+          metrics.recordEntityChunkProcessed(step = "decompressed", extra = decompressor.name, bytes = bytes.length)
+        )
+        .destage(to = entity.destinationPath)
         .map(_ => entity)
     }
 
   private def processMetadataChanged(entity: TargetEntity): Future[TargetEntity] =
     Future.successful(entity)
 
-  private def pull(crates: Map[Path, Crate.Id], entity: Path): Future[Iterable[(Path, Source[ByteString, NotUsed])]] =
-    Future
-      .sequence(
-        crates.map { case (partPath, crate) =>
+  private def pull(crates: Map[Path, Crate.Id], entity: Path): Iterable[(Int, Path, Source[ByteString, NotUsed])] = {
+    val sources = crates.map { case (partPath, crate) =>
+      val partId = EntityProcessing.partIdFromPath(path = partPath)
+
+      val source: Source[ByteString, NotUsed] = Source
+        .lazyFutureSource { () =>
           providers.clients.core
             .pull(crate)
             .flatMap {
               case Some(source) =>
-                Future.successful((partPath, source))
+                Future.successful(source)
 
               case None =>
                 Future.failed(
@@ -96,14 +98,26 @@ trait EntityProcessing {
                 )
             }
         }
-      )
+        .mapMaterializedValue(_ => NotUsed)
+
+      (partId, partPath, source)
+    }
+
+    val lastPartId = sources.map(_._1).maxOption.getOrElse(0)
+    require(
+      lastPartId + 1 == crates.size,
+      s"Unexpected last part ID [${lastPartId.toString}] encountered for an entity with [${crates.size.toString}] crate(s)"
+    )
+
+    sources
+  }
 
   private val targetDirectoryPermissions = "rwx------"
 
   private val targetDirectoryAttributes =
     PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(targetDirectoryPermissions))
 
-  private type CratesSources = Iterable[(Path, Source[ByteString, NotUsed])]
+  private type CratesSources = Iterable[(Int, Path, Source[ByteString, NotUsed])]
   private type EntitySource = Source[ByteString, NotUsed]
 
   private implicit class DecryptedCrates(crates: CratesSources) extends internal.DecryptedCrates(crates)
@@ -113,6 +127,14 @@ trait EntityProcessing {
 }
 
 object EntityProcessing {
+  val pathPartId: Regex = ".*__part=(\\d+)".r
+
+  def partIdFromPath(path: Path): Int =
+    path.getFileName.toString match {
+      case pathPartId(id) => Try(Integer.parseInt(id)).getOrElse(0)
+      case _              => 0
+    }
+
   def expectFileMetadata(entity: TargetEntity): Future[EntityMetadata.File] =
     entity.existingMetadata match {
       case file: EntityMetadata.File =>

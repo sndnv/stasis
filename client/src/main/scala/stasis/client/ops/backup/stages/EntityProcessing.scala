@@ -61,7 +61,7 @@ trait EntityProcessing {
 
   private def stage(entity: SourceEntity): Future[Seq[(Path, Path)]] = {
     def createPartSecret(partId: Int): DeviceFileSecret = {
-      val partPath = Paths.get(s"${entity.path.toAbsolutePath.toString}_${partId.toString}")
+      val partPath = Paths.get(s"${entity.path.toAbsolutePath.toString}__part=${partId.toString}")
       deviceSecret.toFileSecret(partPath)
     }
 

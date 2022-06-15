@@ -37,9 +37,9 @@ class DecryptedCratesSpec extends AsyncUnitSpec with Eventually {
     )
 
     val original = Seq(
-      (Paths.get("/tmp/file/one_0"), Source.single(ByteString("original"))),
-      (Paths.get("/tmp/file/one_1"), Source.single(ByteString("original"))),
-      (Paths.get("/tmp/file/one_2"), Source.single(ByteString("original")))
+      (0, Paths.get("/tmp/file/one__part=0"), Source.single(ByteString("original"))),
+      (1, Paths.get("/tmp/file/one__part=1"), Source.single(ByteString("original"))),
+      (2, Paths.get("/tmp/file/one__part=2"), Source.single(ByteString("original")))
     )
 
     val extended = new DecryptedCrates(original)
@@ -48,12 +48,12 @@ class DecryptedCratesSpec extends AsyncUnitSpec with Eventually {
       .decrypt(
         withPartSecret = partId =>
           DeviceFileSecret(
-            file = Paths.get(s"/tmp/file/one_$partId"),
+            file = Paths.get(s"/tmp/file/one__part=$partId"),
             iv = ByteString.empty,
             key = ByteString.empty
           )
       )
-      .map { case (_, source) => source.runWith(Sink.head) }
+      .map { case (_, _, source) => source.runWith(Sink.head) }
 
     Future
       .sequence(decrypted)
