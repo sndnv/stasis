@@ -13,8 +13,8 @@ import java.nio.file.Paths
 class MergedCratesSpec : WordSpec({
     "MergedCrates" should {
         "support data stream merging (single crate)" {
-            val original: List<Pair<Path, Source>> = listOf(
-                Pair(Paths.get("/tmp/file/one_0"), Buffer().write("original_1".toByteArray()))
+            val original: List<Triple<Int, Path, suspend () -> Source>> = listOf(
+                Triple(0, Paths.get("/tmp/file/one__part=0"), suspend { Buffer().write("original_1".toByteArray()) })
             )
 
             val merged = original.merged().buffer().readUtf8()
@@ -23,10 +23,10 @@ class MergedCratesSpec : WordSpec({
         }
 
         "support data stream merging (multiple crates)" {
-            val original: List<Pair<Path, Source>> = listOf(
-                Pair(Paths.get("/tmp/file/one_0"), Buffer().write("original_1".toByteArray())),
-                Pair(Paths.get("/tmp/file/one_2"), Buffer().write("original_3".toByteArray())),
-                Pair(Paths.get("/tmp/file/one_1"), Buffer().write("original_2".toByteArray()))
+            val original: List<Triple<Int, Path, suspend () -> Source>> = listOf(
+                Triple(0, Paths.get("/tmp/file/one__part=0"), suspend { Buffer().write("original_1".toByteArray()) }),
+                Triple(2, Paths.get("/tmp/file/one__part=2"), suspend { Buffer().write("original_3".toByteArray()) }),
+                Triple(1, Paths.get("/tmp/file/one__part=1"), suspend { Buffer().write("original_2".toByteArray()) })
             )
 
             val merged = original.merged().buffer().readUtf8()
@@ -35,7 +35,7 @@ class MergedCratesSpec : WordSpec({
         }
 
         "fail if no crates are provided" {
-            val original: List<Pair<Path, Source>> = emptyList()
+            val original: List<Triple<Int, Path, suspend () -> Source>> = emptyList()
 
             val e = shouldThrow<IllegalArgumentException> {
                 original.merged()

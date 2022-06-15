@@ -19,6 +19,7 @@ import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
 import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.concurrent.atomic.AtomicBoolean
 
 class DecryptedCratesSpec : WordSpec({
     "DecryptedCrates" should {
@@ -35,26 +36,45 @@ class DecryptedCratesSpec : WordSpec({
                 track = MockRecoveryTracker()
             )
 
-            val original: List<Pair<Path, Source>> = listOf(
-                Pair(Paths.get("/tmp/file/one_0"), Buffer().write("original".toByteArray())),
-                Pair(Paths.get("/tmp/file/one_1"), Buffer().write("original".toByteArray())),
-                Pair(Paths.get("/tmp/file/one_2"), Buffer().write("original".toByteArray()))
+            val firstInvoked = AtomicBoolean(false)
+            val secondInvoked = AtomicBoolean(false)
+            val thirdInvoked = AtomicBoolean(false)
+
+            val original: List<Triple<Int, Path, suspend () -> Source>> = listOf(
+                Triple(
+                    0,
+                    Paths.get("/tmp/file/one__part=0"),
+                    suspend { firstInvoked.set(true); Buffer().write("original".toByteArray()) }),
+                Triple(
+                    1,
+                    Paths.get("/tmp/file/one__part=1"),
+                    suspend { secondInvoked.set(true); Buffer().write("original".toByteArray()) }),
+                Triple(
+                    2,
+                    Paths.get("/tmp/file/one__part=2"),
+                    suspend { thirdInvoked.set(true); Buffer().write("original".toByteArray()) })
             )
 
             val crates = original.decrypt(
                 withPartSecret = { partId ->
                     DeviceFileSecret(
-                        file = Paths.get("/tmp/file/one_$partId"),
+                        file = Paths.get("/tmp/file/one__part=$partId"),
                         iv = ByteString.EMPTY,
                         key = ByteString.EMPTY
                     )
                 },
                 providers = providers
-            ).map { it.second }
+            ).map { it.third }
 
             crates.size shouldBe (3)
-            crates.distinct().size shouldBe (1)
-            crates.first().buffer().readUtf8() shouldBe ("file-decrypted")
+            firstInvoked.get() shouldBe (false)
+            secondInvoked.get() shouldBe (false)
+            thirdInvoked.get() shouldBe (false)
+
+            crates.first().invoke().buffer().readUtf8() shouldBe ("file-decrypted")
+            firstInvoked.get() shouldBe (true)
+            secondInvoked.get() shouldBe (false)
+            thirdInvoked.get() shouldBe (false)
         }
     }
 })

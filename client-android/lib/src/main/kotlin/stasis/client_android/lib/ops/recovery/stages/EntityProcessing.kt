@@ -5,7 +5,6 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import okio.Source
-import okio.buffer
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.model.EntityMetadata
 import stasis.client_android.lib.model.TargetEntity
@@ -83,15 +82,32 @@ interface EntityProcessing {
         return entity
     }
 
-    private suspend fun pull(crates: Map<Path, CrateId>, entity: Path): List<Pair<Path, Source>> =
-        crates.map { (partPath, crate) ->
-            when (val source = providers.clients.core.pull(crate)) {
-                null -> throw RuntimeException("Failed to pull crate [$crate] for entity [$entity]")
-                else -> partPath to source
+    private suspend fun pull(crates: Map<Path, CrateId>, entity: Path): List<Triple<Int, Path, suspend () -> Source>> {
+        val sources = crates.map { (partPath, crate) ->
+            val source = suspend {
+                when (val source = providers.clients.core.pull(crate)) {
+                    null -> throw RuntimeException("Failed to pull crate [$crate] for entity [$entity]")
+                    else -> source
+                }
             }
+
+            Triple(partIdFromPath(partPath), partPath, source)
         }
 
+        val lastPartId = sources.map { it.first }.maxOrNull() ?: 0
+        require(lastPartId + 1 == crates.size) {
+            "Unexpected last part ID [$lastPartId] encountered for an entity with [${crates.size}] crate(s)"
+        }
+
+        return sources
+    }
+
     companion object {
+        private val pathPartId: Regex = ".*__part=(\\d+)".toRegex()
+
+        fun partIdFromPath(path: Path): Int =
+            pathPartId.find(path.fileName.toString())?.groups?.get(1)?.value?.toIntOrNull() ?: 0
+
         fun expectFileMetadata(entity: TargetEntity): EntityMetadata.File {
             return when (entity.existingMetadata) {
                 is EntityMetadata.File -> entity.existingMetadata

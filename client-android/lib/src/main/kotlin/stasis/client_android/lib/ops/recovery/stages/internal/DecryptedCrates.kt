@@ -6,12 +6,13 @@ import stasis.client_android.lib.ops.recovery.Providers
 import java.nio.file.Path
 
 object DecryptedCrates {
-    fun List<Pair<Path, Source>>.decrypt(
+    fun List<Triple<Int, Path, suspend () -> Source>>.decrypt(
         withPartSecret: (Path) -> DeviceFileSecret,
         providers: Providers
-    ): List<Pair<Path, Source>> {
-        return map { (partPath, source) ->
-            partPath to providers.decryptor.decrypt(source, withPartSecret(partPath))
+    ): List<Triple<Int, Path, suspend () -> Source>> {
+        return map { (partId, partPath, source) ->
+            val decrypted = suspend { providers.decryptor.decrypt(source(), withPartSecret(partPath)) }
+            Triple(partId, partPath, decrypted)
         }
     }
 }

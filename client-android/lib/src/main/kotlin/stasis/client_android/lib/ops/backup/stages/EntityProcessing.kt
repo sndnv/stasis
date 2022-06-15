@@ -71,7 +71,7 @@ interface EntityProcessing {
 
     suspend fun stage(entity: Path): List<Pair<Path, Path>> = withContext(Dispatchers.IO) {
         fun createPartSecret(partId: Int): DeviceFileSecret =
-            deviceSecret.toFileSecret(Paths.get("${entity.toAbsolutePath()}_$partId"))
+            deviceSecret.toFileSecret(Paths.get("${entity.toAbsolutePath()}__part=$partId"))
 
         PartitionedSource(
             source = entity.source()

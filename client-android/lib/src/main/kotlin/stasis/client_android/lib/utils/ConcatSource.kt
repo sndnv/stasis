@@ -1,5 +1,6 @@
 package stasis.client_android.lib.utils
 
+import kotlinx.coroutines.runBlocking
 import okio.Buffer
 import okio.BufferedSource
 import okio.Source
@@ -9,25 +10,36 @@ import java.util.LinkedList
 import java.util.Queue
 
 class ConcatSource(
-    sources: List<Source>
+    sources: List<suspend () -> Source>
 ) : Source {
-    private var queue: Queue<BufferedSource>
+    private var queue: Queue<suspend () -> BufferedSource>
+    private var active: BufferedSource? = null
+    private var isClosed: Boolean = false
 
     init {
         require(sources.isNotEmpty()) { "At least one source is required" }
-        queue = LinkedList(sources.map { it.buffer() })
+        queue = LinkedList(sources.map { suspend { it().buffer() } })
+
     }
 
     override fun close() {
-        queue.forEach { source -> source.close() }
+        isClosed = true
+        queue.clear()
+        active?.close()
+        active = null
     }
 
     override fun read(sink: Buffer, byteCount: Long): Long {
         require(byteCount >= 0L) { "Invalid byteCount requested: [$byteCount]" }
+        check(!isClosed) { "Source is already closed" }
+
         if (byteCount == 0L) return 0L
 
         fun readNextBytes(count: Long, buffer: Buffer): Long {
-            val next: BufferedSource = queue.peek() ?: return -1
+            val next = when (val actual = active) {
+                null -> runBlocking { queue.poll()?.invoke() }.also { active = it } ?: return -1
+                else -> actual
+            }
 
             val bytesRead = next.read(buffer, count)
 
@@ -37,12 +49,14 @@ class ConcatSource(
                 }
                 bytesRead > 0 -> {
                     val remaining = count - bytesRead
-                    queue.remove().close()
+                    active?.close()
+                    active = null
                     val additionalBytesRead = readNextBytes(remaining, buffer)
                     if (additionalBytesRead > 0) bytesRead + additionalBytesRead else bytesRead
                 }
                 else -> {
-                    queue.remove().close()
+                    active?.close()
+                    active = null
                     readNextBytes(count, buffer)
                 }
             }
@@ -59,5 +73,5 @@ class ConcatSource(
     }
 
     override fun timeout(): Timeout =
-        queue.peek()?.timeout() ?: Timeout.NONE
+        active?.timeout() ?: Timeout.NONE
 }
