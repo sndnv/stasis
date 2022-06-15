@@ -8,19 +8,18 @@ import okio.buffer
 import stasis.client_android.lib.utils.ConcatSource
 import stasis.client_android.lib.utils.FlatMapSource.Companion.map
 import stasis.test.client_android.lib.utils.mock.MockSource
-import java.lang.IllegalStateException
 
 class ConcatSourceSpec : WordSpec({
     "ConcatSource" should {
         "support reading data from a single source" {
-            val source = ConcatSource(sources = listOf(Buffer().write("test".toByteArray())))
+            val source = ConcatSource(sources = listOf(suspend { Buffer().write("test".toByteArray()) }))
 
             source.buffer().readByteString().utf8() shouldBe ("test")
         }
 
         "support reading data from a single source (large payloads)" {
             val originalSize: Long = 256 * 1024
-            val source = ConcatSource(sources = listOf(MockSource(maxSize = originalSize).buffer()))
+            val source = ConcatSource(sources = listOf(suspend { MockSource(maxSize = originalSize).buffer() }))
 
             val updated = source.buffer().map {
                 val bytes = it.readByteArray()
@@ -33,13 +32,15 @@ class ConcatSourceSpec : WordSpec({
         "support reading data from multiple sources" {
             val source = ConcatSource(
                 sources = listOf(
-                    Buffer().write("test1".toByteArray()),
-                    Buffer().write("test2".toByteArray()),
-                    Buffer().write("test3".toByteArray())
+                    suspend { Buffer().write("test1".toByteArray()) },
+                    suspend { Buffer().write("test2".toByteArray()) },
+                    suspend { Buffer().write("test3".toByteArray()) },
+                    suspend { Buffer().write("test4".toByteArray()) },
+                    suspend { Buffer().write("test5".toByteArray()) }
                 )
             )
 
-            source.buffer().readByteString().utf8() shouldBe ("test1test2test3")
+            source.buffer().readByteString().utf8() shouldBe ("test1test2test3test4test5")
         }
 
         "support reading data from multiple sources (large payloads)" {
@@ -47,11 +48,11 @@ class ConcatSourceSpec : WordSpec({
 
             val source = ConcatSource(
                 sources = listOf(
-                    MockSource(maxSize = originalSize * 1).buffer(),
-                    MockSource(maxSize = originalSize * 2).buffer(),
-                    MockSource(maxSize = originalSize * 3).buffer(),
-                    MockSource(maxSize = originalSize * 4).buffer(),
-                    MockSource(maxSize = originalSize * 5).buffer()
+                    suspend { MockSource(maxSize = originalSize * 1).buffer() },
+                    suspend { MockSource(maxSize = originalSize * 2).buffer() },
+                    suspend { MockSource(maxSize = originalSize * 3).buffer() },
+                    suspend { MockSource(maxSize = originalSize * 4).buffer() },
+                    suspend { MockSource(maxSize = originalSize * 5).buffer() }
                 )
             )
 
@@ -59,7 +60,7 @@ class ConcatSourceSpec : WordSpec({
         }
 
         "fail if an invalid byte count is requested" {
-            val source = ConcatSource(sources = listOf(Buffer().write("test".toByteArray())))
+            val source = ConcatSource(sources = listOf(suspend { Buffer().write("test".toByteArray()) }))
 
             val e = shouldThrow<IllegalArgumentException> {
                 source.read(Buffer(), byteCount = -1)
@@ -69,7 +70,7 @@ class ConcatSourceSpec : WordSpec({
         }
 
         "do nothing if no bytes are requested" {
-            val source = ConcatSource(sources = listOf(Buffer().write("test".toByteArray())))
+            val source = ConcatSource(sources = listOf(suspend { Buffer().write("test".toByteArray()) }))
 
             val bytesRead = source.read(Buffer(), byteCount = 0)
 
@@ -85,7 +86,7 @@ class ConcatSourceSpec : WordSpec({
         }
 
         "close all sources when it is itself closed" {
-            val source = ConcatSource(sources = listOf(Buffer().write("test".toByteArray())))
+            val source = ConcatSource(sources = listOf(suspend { Buffer().write("test".toByteArray()) }))
 
             source.read(Buffer(), byteCount = 1) shouldBe (1)
 
@@ -95,7 +96,7 @@ class ConcatSourceSpec : WordSpec({
                 source.read(Buffer(), byteCount = 1024)
             }
 
-            e.message shouldBe("closed")
+            e.message shouldBe ("Source is already closed")
         }
     }
 })

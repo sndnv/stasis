@@ -3,6 +3,7 @@ package stasis.test.client_android.lib.ops.recovery.stages
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldStartWith
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
@@ -33,6 +34,19 @@ import java.util.UUID
 
 class EntityProcessingSpec : WordSpec({
     "A Recovery EntityProcessing stage" should {
+        "extract part IDs from a path" {
+            EntityProcessing.partIdFromPath(Paths.get("/tmp/a__part=1")) shouldBe (1)
+            EntityProcessing.partIdFromPath(Paths.get("/tmp/a__part=12324")) shouldBe (12324)
+            EntityProcessing.partIdFromPath(Paths.get("/tmp/a__part=0")) shouldBe (0)
+            EntityProcessing.partIdFromPath(Paths.get("/tmp/a__part=-1")) shouldBe (0)
+            EntityProcessing.partIdFromPath(Paths.get("/tmp/a__part=")) shouldBe (0)
+            EntityProcessing.partIdFromPath(Paths.get("/tmp/a__part")) shouldBe (0)
+            EntityProcessing.partIdFromPath(Paths.get("/tmp/a__")) shouldBe (0)
+            EntityProcessing.partIdFromPath(Paths.get("/tmp/a_")) shouldBe (0)
+            EntityProcessing.partIdFromPath(Paths.get("/tmp/a")) shouldBe (0)
+            EntityProcessing.partIdFromPath(Paths.get("/tmp/a__part=other")) shouldBe (0)
+        }
+
         "process files and directories with changed content and metadata" {
             val targetFile2Metadata = "/ops/source-file-2".asTestResource().extractFileMetadata(
                 withChecksum = BigInteger("2"),
@@ -52,10 +66,10 @@ class EntityProcessingSpec : WordSpec({
                 )
                 .copy(
                     crates = mapOf(
-                        Paths.get("${targetFile4Path}_0") to UUID.randomUUID(),
-                        Paths.get("${targetFile4Path}_1") to UUID.randomUUID(),
-                        Paths.get("${targetFile4Path}_2") to UUID.randomUUID(),
-                        Paths.get("${targetFile4Path}_3") to UUID.randomUUID()
+                        Paths.get("${targetFile4Path}__part=0") to UUID.randomUUID(),
+                        Paths.get("${targetFile4Path}__part=1") to UUID.randomUUID(),
+                        Paths.get("${targetFile4Path}__part=2") to UUID.randomUUID(),
+                        Paths.get("${targetFile4Path}__part=3") to UUID.randomUUID()
                     )
                 )
 
@@ -75,7 +89,10 @@ class EntityProcessingSpec : WordSpec({
 
             val targetFile3 = TargetEntity(
                 path = targetFile3Metadata.path,
-                destination = TargetEntity.Destination.Directory(path = targetDirectoryDestination, keepDefaultStructure = false),
+                destination = TargetEntity.Destination.Directory(
+                    path = targetDirectoryDestination,
+                    keepDefaultStructure = false
+                ),
                 existingMetadata = targetFile3Metadata,
                 currentMetadata = targetFile3Metadata.copy(checksum = BigInteger("9999"))
             )
@@ -89,14 +106,20 @@ class EntityProcessingSpec : WordSpec({
 
             val targetDirectory = TargetEntity(
                 path = targetDirectoryMetadata.path,
-                destination = TargetEntity.Destination.Directory(path = targetDirectoryDestination, keepDefaultStructure = true),
+                destination = TargetEntity.Destination.Directory(
+                    path = targetDirectoryDestination,
+                    keepDefaultStructure = true
+                ),
                 existingMetadata = targetDirectoryMetadata,
                 currentMetadata = targetDirectoryMetadata
             )
 
             val ignoredDirectory = TargetEntity(
                 path = ignoredDirectoryMetadata.path,
-                destination = TargetEntity.Destination.Directory(path = targetDirectoryDestination, keepDefaultStructure = false),
+                destination = TargetEntity.Destination.Directory(
+                    path = targetDirectoryDestination,
+                    keepDefaultStructure = false
+                ),
                 existingMetadata = ignoredDirectoryMetadata,
                 currentMetadata = ignoredDirectoryMetadata
             )
@@ -215,12 +238,12 @@ class EntityProcessingSpec : WordSpec({
 
             e.message shouldStartWith ("Failed to pull crate")
 
-            mockStaging.statistics[MockFileStaging.Statistic.TemporaryCreated] shouldBe (0)
-            mockStaging.statistics[MockFileStaging.Statistic.TemporaryDiscarded] shouldBe (0)
+            mockStaging.statistics[MockFileStaging.Statistic.TemporaryCreated] shouldBe (1)
+            mockStaging.statistics[MockFileStaging.Statistic.TemporaryDiscarded] shouldBe (1)
             mockStaging.statistics[MockFileStaging.Statistic.Destaged] shouldBe (0)
 
             mockCompression.statistics[MockCompression.Statistic.Compressed] shouldBe (0)
-            mockCompression.statistics[MockCompression.Statistic.Decompressed] shouldBe (0)
+            mockCompression.statistics[MockCompression.Statistic.Decompressed] shouldBe (1)
 
             mockEncryption.statistics[MockEncryption.Statistic.FileEncrypted] shouldBe (0)
             mockEncryption.statistics[MockEncryption.Statistic.FileDecrypted] shouldBe (0)
@@ -251,6 +274,89 @@ class EntityProcessingSpec : WordSpec({
             }
 
             e.message shouldBe ("Expected metadata for file but directory metadata for [${entity.path}] provided")
+        }
+
+        "fail if an unexpected number of crates are provided" {
+            val targetFile4Path = "/ops/nested/source-file-4".asTestResource()
+            val targetFile4Metadata = targetFile4Path
+                .extractFileMetadata(
+                    withChecksum = BigInteger("3"),
+                    withCrate = UUID.randomUUID()
+                )
+                .copy(
+                    crates = mapOf(
+                        Paths.get("${targetFile4Path}__part=0") to UUID.randomUUID(),
+                        Paths.get("${targetFile4Path}__part=1") to UUID.randomUUID(),
+                        Paths.get("${targetFile4Path}__part=2") to UUID.randomUUID(),
+                        Paths.get("${targetFile4Path}__part=5") to UUID.randomUUID()
+                    )
+                )
+            val targetFile4 = TargetEntity(
+                path = targetFile4Metadata.path,
+                destination = TargetEntity.Destination.Default,
+                existingMetadata = targetFile4Metadata,
+                currentMetadata = targetFile4Metadata.copy(checksum = BigInteger("9999"))
+            )
+
+            val stage = object : EntityProcessing {
+                override val deviceSecret: DeviceSecret = Fixtures.Secrets.Default
+
+                override val providers: Providers = Providers(
+                    checksum = Checksum.Companion.MD5,
+                    staging = MockFileStaging(),
+                    decompressor = MockCompression(),
+                    decryptor = MockEncryption(),
+                    clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
+                    track = MockRecoveryTracker()
+                )
+            }
+
+            val e = shouldThrow<IllegalArgumentException> {
+                stage.entityProcessing(
+                    operation = Operation.generateId(),
+                    flow = listOf(targetFile4).asFlow()
+                ).collect()
+            }
+
+            e.message shouldContain ("Unexpected last part ID [5] encountered for an entity with [4] crate(s)")
+        }
+
+        "fail if no crates are provided" {
+            val targetFile4Path = "/ops/nested/source-file-4".asTestResource()
+            val targetFile4Metadata = targetFile4Path
+                .extractFileMetadata(
+                    withChecksum = BigInteger("3"),
+                    withCrate = UUID.randomUUID()
+                )
+                .copy(crates = emptyMap())
+            val targetFile4 = TargetEntity(
+                path = targetFile4Metadata.path,
+                destination = TargetEntity.Destination.Default,
+                existingMetadata = targetFile4Metadata,
+                currentMetadata = targetFile4Metadata.copy(checksum = BigInteger("9999"))
+            )
+
+            val stage = object : EntityProcessing {
+                override val deviceSecret: DeviceSecret = Fixtures.Secrets.Default
+
+                override val providers: Providers = Providers(
+                    checksum = Checksum.Companion.MD5,
+                    staging = MockFileStaging(),
+                    decompressor = MockCompression(),
+                    decryptor = MockEncryption(),
+                    clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
+                    track = MockRecoveryTracker()
+                )
+            }
+
+            val e = shouldThrow<IllegalArgumentException> {
+                stage.entityProcessing(
+                    operation = Operation.generateId(),
+                    flow = listOf(targetFile4).asFlow()
+                ).collect()
+            }
+
+            e.message shouldContain ("Unexpected last part ID [0] encountered for an entity with [0] crate(s)")
         }
     }
 })
