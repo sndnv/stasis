@@ -9,12 +9,12 @@ plugins {
 dependencies {
     implementation(project(":lib"))
 
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.6.10")
-    implementation("com.google.code.gson:gson:2.8.9")
-    implementation("com.google.android.material:material:1.5.0")
-    implementation("androidx.appcompat:appcompat:1.4.1")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.6.21")
+    implementation("com.google.code.gson:gson:2.9.0")
+    implementation("com.google.android.material:material:1.6.1")
+    implementation("androidx.appcompat:appcompat:1.4.2")
     implementation("androidx.coordinatorlayout:coordinatorlayout:1.2.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.3")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.fragment:fragment-ktx:1.4.1")
     implementation("androidx.navigation:navigation-fragment-ktx:2.4.2")
     implementation("androidx.navigation:navigation-ui-ktx:2.4.2")
@@ -27,19 +27,19 @@ dependencies {
     implementation("androidx.room:room-runtime:2.4.2")
     implementation("androidx.room:room-ktx:2.4.2")
     implementation("androidx.security:security-crypto:1.1.0-alpha03")
-    implementation("org.bitbucket.b_c:jose4j:0.7.9")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.6.10")
+    implementation("org.bitbucket.b_c:jose4j:0.7.12")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.6.21")
     implementation("com.getkeepsafe.taptargetview:taptargetview:1.13.3")
 
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.2")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.2")
 
-    implementation("com.google.dagger:hilt-android:2.40.5")
-    kapt("com.google.dagger:hilt-compiler:2.40.5")
+    implementation("com.google.dagger:hilt-android:2.42")
+    kapt("com.google.dagger:hilt-compiler:2.42")
     kapt("androidx.room:room-compiler:2.4.2")
 
-    testImplementation("io.mockk:mockk:1.12.2")
-    testImplementation("org.robolectric:robolectric:4.7.3")
+    testImplementation("io.mockk:mockk:1.12.4")
+    testImplementation("org.robolectric:robolectric:4.8.1")
     testImplementation("junit:junit:4.13.2")
     testImplementation("androidx.test:core:1.4.0")
 
@@ -49,7 +49,7 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
     androidTestImplementation("androidx.room:room-testing:2.4.2")
     androidTestImplementation("androidx.arch.core:core-testing:2.1.0")
-    androidTestImplementation("io.mockk:mockk-android:1.12.2")
+    androidTestImplementation("io.mockk:mockk-android:1.12.4")
 
     debugImplementation("androidx.fragment:fragment-testing:1.4.1") {
         exclude(group = "androidx.test", module = "monitor")
