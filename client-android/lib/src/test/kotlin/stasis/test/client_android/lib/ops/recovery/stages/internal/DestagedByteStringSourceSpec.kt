@@ -25,7 +25,7 @@ class DestagedByteStringSourceSpec : WordSpec({
             val providers: Providers = Providers(
                 checksum = Checksum.Companion.MD5,
                 staging = mockStaging,
-                decompressor = MockCompression(),
+                compression = MockCompression(),
                 decryptor = MockEncryption(),
                 clients = Clients(
                     api = MockServerApiEndpointClient(),
@@ -56,7 +56,7 @@ class DestagedByteStringSourceSpec : WordSpec({
             val providers: Providers = Providers(
                 checksum = Checksum.Companion.MD5,
                 staging = mockStaging,
-                decompressor = MockCompression(),
+                compression = MockCompression(),
                 decryptor = MockEncryption(),
                 clients = Clients(
                     api = MockServerApiEndpointClient(),

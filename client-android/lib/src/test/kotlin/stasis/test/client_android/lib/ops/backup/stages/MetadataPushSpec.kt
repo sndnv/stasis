@@ -37,7 +37,7 @@ class MetadataPushSpec : WordSpec({
                 override val providers: Providers = Providers(
                     checksum = Checksum.Companion.MD5,
                     staging = MockFileStaging(),
-                    compressor = MockCompression(),
+                    compression = MockCompression(),
                     encryptor = mockEncryption,
                     decryptor = mockEncryption,
                     clients = Clients(

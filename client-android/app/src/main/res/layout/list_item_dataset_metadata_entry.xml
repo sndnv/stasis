@@ -163,6 +163,12 @@
                 layout="@layout/layout_dataset_metadata_entry_details_row"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
+
+            <include
+                android:id="@+id/dataset_metadata_entry_details_compression"
+                layout="@layout/layout_dataset_metadata_entry_details_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
         </LinearLayout>
     </LinearLayout>
 </layout>

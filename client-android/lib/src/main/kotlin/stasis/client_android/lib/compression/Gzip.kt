@@ -7,6 +7,8 @@ import stasis.client_android.lib.compression.internal.BaseCompressor
 import java.util.zip.GZIPOutputStream
 
 object Gzip : Compressor {
+   override fun name(): String = "gzip"
+
     override fun compress(source: Source): Source =
         BaseCompressor(source = source.buffer()) { compressed ->
             GZIPOutputStream(compressed.outputStream(), SyncFlush)

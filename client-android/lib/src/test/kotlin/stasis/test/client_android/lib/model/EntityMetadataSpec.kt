@@ -27,7 +27,8 @@ class EntityMetadataSpec : WordSpec({
                     mostSignificantBits = uuid.mostSignificantBits,
                     leastSignificantBits = uuid.leastSignificantBits
                 )
-            }.toMap()
+            }.toMap(),
+            compression = "none"
         )
 
         val actualFileTwoMetadata = stasis.client_android.lib.model.proto.FileMetadata(
@@ -46,7 +47,8 @@ class EntityMetadataSpec : WordSpec({
                     mostSignificantBits = uuid.mostSignificantBits,
                     leastSignificantBits = uuid.leastSignificantBits
                 )
-            }.toMap()
+            }.toMap(),
+            compression = "gzip"
         )
 
         val fileOneMetadataProto = stasis.client_android.lib.model.proto.EntityMetadata(file_ = actualFileOneMetadata)
@@ -100,6 +102,29 @@ class EntityMetadataSpec : WordSpec({
         "fail to be deserialized when empty entity is provided" {
             val e = shouldThrow<IllegalArgumentException> { emptyMetadataProto.toModel().get() }
             e.message shouldBe ("Expected entity in metadata but none was found")
+        }
+
+        "support comparing metadata for changes, ignoring file compression" {
+            Fixtures.Metadata.FileOneMetadata
+                .hasChanged(comparedTo = Fixtures.Metadata.FileOneMetadata) shouldBe (false)
+
+            Fixtures.Metadata.FileOneMetadata
+                .hasChanged(comparedTo = Fixtures.Metadata.FileTwoMetadata) shouldBe (true)
+
+            Fixtures.Metadata.FileOneMetadata
+                .hasChanged(comparedTo = Fixtures.Metadata.FileThreeMetadata) shouldBe (true)
+
+            Fixtures.Metadata.FileOneMetadata
+                .hasChanged(comparedTo = Fixtures.Metadata.FileOneMetadata.copy(compression = "other")) shouldBe (false)
+
+            Fixtures.Metadata.FileOneMetadata
+                .hasChanged(comparedTo = Fixtures.Metadata.DirectoryOneMetadata) shouldBe (true)
+
+            Fixtures.Metadata.DirectoryOneMetadata
+                .hasChanged(comparedTo = Fixtures.Metadata.DirectoryOneMetadata) shouldBe (false)
+
+            Fixtures.Metadata.DirectoryOneMetadata
+                .hasChanged(comparedTo = Fixtures.Metadata.DirectoryTwoMetadata) shouldBe (true)
         }
     }
 })

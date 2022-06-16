@@ -52,25 +52,25 @@ class AesSpec : WordSpec({
         )
 
         val encryptedDatasetMetadata =
-            "C5HjzIPdVWcrNdsnv2CON8fl+zv4MrBAEQqtcgfcq2R1" +
-                    "UxFhGnjv6FYG/+oKZu+5qKqaPUF86bO6hu0ayuBSav" +
-                    "cdTqs9UD0oJ+gZ0DvlP0n+yNV2EnEv3WRStBDO88H7" +
-                    "APkSTo/mxc92ynBTesysey3pgRo7b8qtCbebqqu87I" +
-                    "eapqXuJbIy0ZEA6lUQoI1V3SUmsWwsukCbkQb4Sw80" +
-                    "xuWOchvITtOBg82nFy5VsftuUwXZWPgdZJjOpFJ0uc" +
-                    "GPsjnFK89uWVlAyO6VTbN1+t9QaGKlSNskdV2c+bX5" +
-                    "F/h9yhB7Gy2DAxp8LtLXlAzpnTFRfrQKDb5UIAe8CC" +
-                    "0LpkEz3sEUD7dqUqAsKgyfwDpBqu/cfhL+T4zGdxZs" +
-                    "lKREPSvj0aVaFX2XBNJYgy8tXaxwT3hm0weM9gzmhc" +
-                    "KS58yaBZFLzsctTOShg4VOy5IEHdYQJNkzqLrxbt6U" +
-                    "Mi+S1C6iVDDmgahAllay1bZjsvpukk6/euvEs1CavF" +
-                    "iwBFcNV6ix9RnifVfJYK0/TyOZXwxhxEvHYe7V4DR9" +
-                    "13WfNKisBCwI5jFXZY9YuyktMUHjvCa8JCFcNfC/X9" +
-                    "Wqueool5JMJXcfoLrC+cc3oisqQ85rZzA6e27JcqaY" +
-                    "LlcJLCR9ctD7G5jXtsS2gWtxp86oViQ+WIRTEgd9dI" +
-                    "mYclNewoaqRW8quH508nXkrDzy/61riTYWSkvLO27P" +
-                    "dzwoBJlrxvovla1SUeydWc5Gs2yK95hpU6Q152SZca" +
-                    "MsRiJdYc37jFo="
+            "C2/oy6GGTHp0fNQitirONsySgkCbV7diShOwLU7Trm0/" +
+                    "ExBqb2nGQH4+zMhpfNCBVptVM2V9koanOe8kvP1Scc" +
+                    "FbOLY9SwNrXO0W2j7qNUzx4oZ2SQMN2EQJrQ2Rus7+" +
+                    "CbNST4Tcqu1x18BucsSRPm6YfDjhUpT7NsCy2vQM/2" +
+                    "ufwsevNM3U//1kqURSpNVcpjRJ5RJW+iZy4CMfI2lc" +
+                    "xuWUbSSsPbDL2NSgV1g+x5FuUwDbEvtc9ww0BJWcW5" +
+                    "yXzWCAXOEWJqaPSXwBnF34dlqrGzfOTv5Cc2jg+a3u" +
+                    "EcUM6mYpM3PxfkJwEaPSqEyP9zFRZKt6W8UuTaxOqp" +
+                    "a1PPmcMESCYJobf4UWafUFe9GGJ3Jwr4cEYYqrYglm" +
+                    "kNlhThajy604ewvBfKUUgy0vC+d2U3gX5nrBhTGmn8" +
+                    "rCSABj1HXKQm+gNOMxHDW65KAThmX2rnGj3agK7WQv" +
+                    "6fccnmveVCjxh+U89lHXs9serf05hFC1bf/IzkrpgQ" +
+                    "OzBjVwIZHJglXif1WfK7A6RVK/Ii4S+RDEY4z1qyli" +
+                    "wjmNMrawBCwX+0Y9agTEHtLkwqq+u9J8xue49/eJdQ" +
+                    "A3Jx9/0GbesabxLTZHD7Ry3isyVMgmG1gLHgmBdvub" +
+                    "O1VRMj9mb+XKf+7PueHC5ghUzIiwXnt+UIgtdSIJCf" +
+                    "WAfWYqpe6PMSkysCEv4XOEy0WGmscYtHYMQinmVQe3" +
+                    "ClVORJ9/mbolmc01OJj4M7176G+IlbUHOlnAAZ6O+U" +
+                    "g0ehuc1TSXT0LKKtz4nzNsDkvUCXI5VZI="
 
         val metadataSecret = DeviceMetadataSecret(
             iv = encryptionIv.decodeBase64()!!,

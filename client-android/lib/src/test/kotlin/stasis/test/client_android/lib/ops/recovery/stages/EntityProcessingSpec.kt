@@ -146,7 +146,7 @@ class EntityProcessingSpec : WordSpec({
                 override val providers: Providers = Providers(
                     checksum = Checksum.Companion.MD5,
                     staging = mockStaging,
-                    decompressor = mockCompression,
+                    compression = mockCompression,
                     decryptor = mockEncryption,
                     clients = Clients(api = mockApiClient, core = mockCoreClient),
                     track = mockTracker
@@ -222,7 +222,7 @@ class EntityProcessingSpec : WordSpec({
                 override val providers: Providers = Providers(
                     checksum = Checksum.Companion.MD5,
                     staging = mockStaging,
-                    decompressor = mockCompression,
+                    compression = mockCompression,
                     decryptor = mockEncryption,
                     clients = Clients(api = mockApiClient, core = mockCoreClient),
                     track = mockTracker
@@ -304,7 +304,7 @@ class EntityProcessingSpec : WordSpec({
                 override val providers: Providers = Providers(
                     checksum = Checksum.Companion.MD5,
                     staging = MockFileStaging(),
-                    decompressor = MockCompression(),
+                    compression = MockCompression(),
                     decryptor = MockEncryption(),
                     clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
                     track = MockRecoveryTracker()
@@ -342,7 +342,7 @@ class EntityProcessingSpec : WordSpec({
                 override val providers: Providers = Providers(
                     checksum = Checksum.Companion.MD5,
                     staging = MockFileStaging(),
-                    decompressor = MockCompression(),
+                    compression = MockCompression(),
                     decryptor = MockEncryption(),
                     clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
                     track = MockRecoveryTracker()

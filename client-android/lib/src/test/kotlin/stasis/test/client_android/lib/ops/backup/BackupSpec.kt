@@ -11,7 +11,6 @@ import okio.Source
 import stasis.client_android.lib.analysis.Checksum
 import stasis.client_android.lib.api.clients.Clients
 import stasis.client_android.lib.collection.rules.Rule
-import stasis.client_android.lib.compression.Gzip
 import stasis.client_android.lib.encryption.Aes
 import stasis.client_android.lib.encryption.secrets.DeviceMetadataSecret
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
@@ -33,6 +32,7 @@ import stasis.test.client_android.lib.ResourceHelpers.extractDirectoryMetadata
 import stasis.test.client_android.lib.ResourceHelpers.extractFileMetadata
 import stasis.test.client_android.lib.eventually
 import stasis.test.client_android.lib.mocks.MockBackupTracker
+import stasis.test.client_android.lib.mocks.MockCompression
 import stasis.test.client_android.lib.mocks.MockEncryption
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
 import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
@@ -89,7 +89,7 @@ class BackupSpec : WordSpec({
                     prefix = "staged-",
                     suffix = ".tmp"
                 ),
-                compressor = Gzip,
+                compression = MockCompression(),
                 encryptor = Aes,
                 decryptor = Aes,
                 clients = clients,
@@ -443,7 +443,7 @@ class BackupSpec : WordSpec({
                     prefix = "staged-",
                     suffix = ".tmp"
                 ),
-                compressor = Gzip,
+                compression = MockCompression(),
                 encryptor = MockEncryption(),
                 decryptor = object : MockEncryption() {
                     override fun decrypt(

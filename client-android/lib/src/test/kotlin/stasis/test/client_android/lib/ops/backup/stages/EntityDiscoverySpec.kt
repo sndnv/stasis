@@ -90,7 +90,7 @@ class EntityDiscoverySpec : WordSpec({
                 override val providers: Providers = Providers(
                     checksum = checksum,
                     staging = MockFileStaging(),
-                    compressor = MockCompression(),
+                    compression = MockCompression(),
                     encryptor = MockEncryption(),
                     decryptor = MockEncryption(),
                     clients = Clients(
@@ -141,7 +141,7 @@ class EntityDiscoverySpec : WordSpec({
                 override val providers: Providers = Providers(
                     checksum = Checksum.Companion.SHA256,
                     staging = MockFileStaging(),
-                    compressor = MockCompression(),
+                    compression = MockCompression(),
                     encryptor = MockEncryption(),
                     decryptor = MockEncryption(),
                     clients = Clients(

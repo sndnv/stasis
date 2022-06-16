@@ -12,6 +12,10 @@ class GzipSpec : WordSpec({
         val decompressedData = "some-decompressed-data"
         val compressedData = "H4sIAAAAAAAAACrOz03VTUlNzs8tKEotLk5N0U1JLEkEAAAA//8DAG894xUWAAAA"
 
+        "provide its name" {
+            Gzip.name() shouldBe ("gzip")
+        }
+
         "compress data" {
             val source = Buffer().write(decompressedData.toByteArray())
 

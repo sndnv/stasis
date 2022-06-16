@@ -112,7 +112,7 @@ class RecoverySpec : WordSpec({
                     prefix = "staged-",
                     suffix = ".tmp"
                 ),
-                decompressor = MockCompression(),
+                compression = MockCompression(),
                 decryptor = MockEncryption(),
                 clients = clients,
                 track = tracker
@@ -433,7 +433,7 @@ class RecoverySpec : WordSpec({
                     prefix = "staged-",
                     suffix = ".tmp"
                 ),
-                decompressor = MockCompression(),
+                compression = MockCompression(),
                 decryptor = object : MockEncryption() {
                     override fun decrypt(
                         source: Source,
@@ -507,7 +507,7 @@ class RecoverySpec : WordSpec({
                     prefix = "staged-",
                     suffix = ".tmp"
                 ),
-                decompressor = MockCompression(),
+                compression = MockCompression(),
                 decryptor = MockEncryption(),
                 clients = Clients(
                     api = object : MockServerApiEndpointClient(self = UUID.randomUUID()) {
@@ -546,7 +546,7 @@ class RecoverySpec : WordSpec({
                     prefix = "staged-",
                     suffix = ".tmp"
                 ),
-                decompressor = MockCompression(),
+                compression = MockCompression(),
                 decryptor = MockEncryption(),
                 clients = Clients(
                     api = MockServerApiEndpointClient(),

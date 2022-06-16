@@ -59,7 +59,7 @@ interface EntityProcessing {
 
     suspend fun processContentChanged(entity: SourceEntity): EntityMetadata {
         val file = expectFileMetadata(entity)
-        val staged = stage(entity.path)
+        val staged = stage(entity)
         val crates = push(staged)
 
         discard(staged)
@@ -69,14 +69,14 @@ interface EntityProcessing {
     suspend fun processMetadataChanged(entity: SourceEntity): EntityMetadata =
         entity.currentMetadata
 
-    suspend fun stage(entity: Path): List<Pair<Path, Path>> = withContext(Dispatchers.IO) {
+    suspend fun stage(entity: SourceEntity): List<Pair<Path, Path>> = withContext(Dispatchers.IO) {
         fun createPartSecret(partId: Int): DeviceFileSecret =
-            deviceSecret.toFileSecret(Paths.get("${entity.toAbsolutePath()}__part=$partId"))
+            deviceSecret.toFileSecret(Paths.get("${entity.path.toAbsolutePath()}__part=$partId"))
 
         PartitionedSource(
-            source = entity.source()
+            source = entity.path.source()
                 .buffer()
-                .let { providers.compressor.compress(it).buffer() },
+                .let { providers.compression.encoderFor(entity).compress(it).buffer() },
             providers = providers,
             withPartSecret = ::createPartSecret,
             withMaximumPartSize = maximumPartSize

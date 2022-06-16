@@ -14,6 +14,7 @@ import stasis.client_android.activities.helpers.Common.asChangedString
 import stasis.client_android.activities.helpers.Common.asSizeString
 import stasis.client_android.activities.helpers.Common.asString
 import stasis.client_android.activities.helpers.Common.checksum
+import stasis.client_android.activities.helpers.Common.compression
 import stasis.client_android.activities.helpers.Common.crates
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.Common.size
@@ -233,6 +234,12 @@ class DatasetMetadataEntryListItemAdapter(
                 label = R.string.dataset_metadata_field_title_crates,
                 content = R.string.dataset_metadata_field_content_crates,
                 value = (contentChanged ?: metadataChanged)?.crates().asString(context)
+            )
+
+            binding.datasetMetadataEntryDetailsCrates.set(
+                label = R.string.dataset_metadata_field_title_compression,
+                content = R.string.dataset_metadata_field_content_crates,
+                value = contentChanged?.compression().asString(context)
             )
 
             binding.datasetMetadataEntryDetails.isVisible = false

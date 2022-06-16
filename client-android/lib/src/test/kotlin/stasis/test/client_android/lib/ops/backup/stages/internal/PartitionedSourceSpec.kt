@@ -35,7 +35,7 @@ class PartitionedSourceSpec : WordSpec({
             val providers = Providers(
                 checksum = MockChecksum(checksums = emptyMap()),
                 staging = staging,
-                compressor = compression,
+                compression = compression,
                 encryptor = encryption,
                 decryptor = encryption,
                 clients = Clients(
@@ -92,7 +92,7 @@ class PartitionedSourceSpec : WordSpec({
             val providers = Providers(
                 checksum = MockChecksum(checksums = emptyMap()),
                 staging = staging,
-                compressor = MockCompression(),
+                compression = MockCompression(),
                 encryptor = MockEncryption(),
                 decryptor = MockEncryption(),
                 clients = Clients(

@@ -14,6 +14,7 @@ import stasis.client_android.lib.model.FilesystemMetadata
 import stasis.client_android.lib.model.SourceEntity
 import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
+import stasis.test.client_android.lib.mocks.MockCompression
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
 
 class DefaultBackupCollectorSpec : WordSpec({
@@ -27,7 +28,10 @@ class DefaultBackupCollectorSpec : WordSpec({
             val collector = DefaultBackupCollector(
                 entities = listOf(file1, file2),
                 latestMetadata = DatasetMetadata.empty(),
-                metadataCollector = BackupMetadataCollector.Default(checksum = Checksum.Companion.MD5),
+                metadataCollector = BackupMetadataCollector.Default(
+                    checksum = Checksum.Companion.MD5,
+                    compression = MockCompression()
+                ),
                 api = mockApiClient
             )
 

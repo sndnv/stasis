@@ -27,8 +27,9 @@ object Fixtures {
             permissions = "rwxrwxrwx",
             checksum = BigInteger("1"),
             crates = mapOf(
-                Paths.get("/tmp/file/one_0") to java.util.UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
-            )
+                Paths.get("/tmp/file/one_0") to UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
+            ),
+            compression = "none"
         )
 
         val FileTwoMetadata = EntityMetadata.File(
@@ -43,8 +44,9 @@ object Fixtures {
             permissions = "rwxrwxrwx",
             checksum = BigInteger("42"),
             crates = mapOf(
-                Paths.get("/tmp/file/two_0") to java.util.UUID.fromString("e672a956-1a95-4304-8af0-9418f0e43cba")
-            )
+                Paths.get("/tmp/file/two_0") to UUID.fromString("e672a956-1a95-4304-8af0-9418f0e43cba")
+            ),
+            compression = "gzip"
         )
 
         val FileThreeMetadata = EntityMetadata.File(
@@ -59,8 +61,9 @@ object Fixtures {
             permissions = "rwxrwxrwx",
             checksum = BigInteger("0"),
             crates = mapOf(
-                Paths.get("/tmp/file/four_0") to java.util.UUID.fromString("7c98df29-a544-41e5-95ac-463987894fac")
-            )
+                Paths.get("/tmp/file/four_0") to UUID.fromString("7c98df29-a544-41e5-95ac-463987894fac")
+            ),
+            compression = "deflate"
         )
 
         val DirectoryOneMetadata = EntityMetadata.Directory(

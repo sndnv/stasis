@@ -234,6 +234,7 @@
     <string name="dataset_metadata_field_title_size">Size</string>
     <string name="dataset_metadata_field_title_checksum">Checksum</string>
     <string name="dataset_metadata_field_title_crates">Crates</string>
+    <string name="dataset_metadata_field_title_compression">Compression</string>
     <string name="dataset_metadata_field_content_path">%1$s</string>
     <string name="dataset_metadata_field_content_link">%1$s</string>
     <string name="dataset_metadata_field_content_hidden">%1$s</string>

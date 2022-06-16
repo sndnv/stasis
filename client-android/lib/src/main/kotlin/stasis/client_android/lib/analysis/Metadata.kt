@@ -2,6 +2,7 @@ package stasis.client_android.lib.analysis
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import stasis.client_android.lib.compression.Compression
 import stasis.client_android.lib.model.EntityMetadata
 import stasis.client_android.lib.model.SourceEntity
 import stasis.client_android.lib.model.TargetEntity
@@ -20,6 +21,7 @@ import java.time.temporal.ChronoUnit
 object Metadata {
     suspend fun collectSource(
         checksum: Checksum,
+        compression: Compression,
         entity: Path,
         existingMetadata: EntityMetadata?
     ): SourceEntity {
@@ -27,8 +29,9 @@ object Metadata {
 
         val entityMetadata = collectEntityMetadata(
             currentMetadata = baseMetadata,
+            checksum = checksum,
             collectCrates = { currentChecksum -> collectCratesForSourceFile(existingMetadata, currentChecksum) },
-            checksum = checksum
+            collectCompression = { compression.algorithmFor(entity) }
         )
 
         return SourceEntity(
@@ -58,8 +61,9 @@ object Metadata {
 
             val entityMetadata = collectEntityMetadata(
                 currentMetadata = baseMetadata,
+                checksum = checksum,
                 collectCrates = { collectCratesForTargetFile(existingMetadata) },
-                checksum = checksum
+                collectCompression = { collectCompressionForTargetFile(existingMetadata) }
             )
 
             targetEntity.copy(currentMetadata = entityMetadata)
@@ -71,7 +75,8 @@ object Metadata {
     suspend fun collectEntityMetadata(
         currentMetadata: BaseEntityMetadata,
         checksum: Checksum,
-        collectCrates: (BigInteger) -> Map<Path, CrateId>
+        collectCrates: (BigInteger) -> Map<Path, CrateId>,
+        collectCompression: () -> String
     ): EntityMetadata = if (currentMetadata.isDirectory) {
         EntityMetadata.Directory(
             path = currentMetadata.path,
@@ -98,7 +103,8 @@ object Metadata {
             group = currentMetadata.group,
             permissions = currentMetadata.permissions,
             checksum = currentChecksum,
-            crates = crates
+            crates = crates,
+            compression = collectCompression()
         )
     }
 
@@ -121,6 +127,16 @@ object Metadata {
         existingMetadata: EntityMetadata
     ): Map<Path, CrateId> = when (existingMetadata) {
         is EntityMetadata.File -> existingMetadata.crates
+        is EntityMetadata.Directory -> throw IllegalArgumentException(
+            "Expected metadata for file but directory metadata for [${existingMetadata.path}] provided"
+        )
+    }
+
+    fun collectCompressionForTargetFile(
+        existingMetadata: EntityMetadata
+    ): String = when (existingMetadata) {
+        is EntityMetadata.File -> existingMetadata.compression
+
         is EntityMetadata.Directory -> throw IllegalArgumentException(
             "Expected metadata for file but directory metadata for [${existingMetadata.path}] provided"
         )
@@ -158,7 +174,8 @@ object Metadata {
         metadata: EntityMetadata,
         entity: Path
     ): Unit = withContext(Dispatchers.IO) {
-        val attributes = Files.getFileAttributeView(entity, PosixFileAttributeView::class.java, LinkOption.NOFOLLOW_LINKS)
+        val attributes =
+            Files.getFileAttributeView(entity, PosixFileAttributeView::class.java, LinkOption.NOFOLLOW_LINKS)
 
         attributes.setPermissions(PosixFilePermissions.fromString(metadata.permissions))
 

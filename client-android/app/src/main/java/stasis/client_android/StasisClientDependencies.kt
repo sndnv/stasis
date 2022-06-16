@@ -16,6 +16,7 @@ import stasis.client_android.lib.api.clients.DefaultServerApiEndpointClient
 import stasis.client_android.lib.api.clients.DefaultServerBootstrapEndpointClient
 import stasis.client_android.lib.api.clients.DefaultServerCoreEndpointClient
 import stasis.client_android.lib.api.clients.ServerBootstrapEndpointClient
+import stasis.client_android.lib.compression.Compression
 import stasis.client_android.lib.compression.Gzip
 import stasis.client_android.lib.encryption.Aes
 import stasis.client_android.lib.model.DatasetMetadata
@@ -178,7 +179,17 @@ object StasisClientDependencies {
                             )
 
                             val encryption = Aes
-                            val compression = Gzip
+
+                            val compression = Compression(
+                                withDefaultCompression = Gzip,
+                                withDisabledExtensions = setOf(
+                                    "3gp", "mp4", "m4a", "aac", "ts", "amr",
+                                    "flac", "mid", "xmf", "mxmf", "mp3", "mkv",
+                                    "ogg", "wav", "webm", "bmp", "gif", "jpg",
+                                    "jpeg", "png", "webp", "heic", "heif"
+                                )
+                            )
+
                             val checksum = Checksum.Companion.SHA256
 
                             val staging = DefaultFileStaging(
@@ -199,7 +210,7 @@ object StasisClientDependencies {
                                 backupProviders = BackupProviders(
                                     checksum = checksum,
                                     staging = staging,
-                                    compressor = compression,
+                                    compression = compression,
                                     encryptor = encryption,
                                     decryptor = encryption,
                                     clients = clients,
@@ -208,7 +219,7 @@ object StasisClientDependencies {
                                 recoveryProviders = RecoveryProviders(
                                     checksum = checksum,
                                     staging = staging,
-                                    decompressor = compression,
+                                    compression = compression,
                                     decryptor = encryption,
                                     clients = clients,
                                     track = tracker.recovery

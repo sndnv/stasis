@@ -50,7 +50,7 @@ class EntityCollectionSpec : WordSpec({
                 override val providers: Providers = Providers(
                     checksum = Checksum.Companion.MD5,
                     staging = MockFileStaging(),
-                    compressor = MockCompression(),
+                    compression = MockCompression(),
                     encryptor = MockEncryption(),
                     decryptor = MockEncryption(),
                     clients = Clients(

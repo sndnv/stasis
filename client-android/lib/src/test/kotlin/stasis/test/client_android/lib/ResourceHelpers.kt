@@ -90,7 +90,8 @@ object ResourceHelpers {
             group = baseMetadata.group,
             permissions = baseMetadata.permissions,
             checksum = withChecksum,
-            crates = mapOf(baseMetadata.path to withCrate)
+            crates = mapOf(baseMetadata.path to withCrate),
+            compression = "none"
         )
     }
 
@@ -127,7 +128,8 @@ object ResourceHelpers {
             group = baseMetadata.group,
             permissions = baseMetadata.permissions,
             checksum = calculatedChecksum,
-            crates = mapOf(baseMetadata.path to UUID.randomUUID())
+            crates = mapOf(baseMetadata.path to UUID.randomUUID()),
+            compression = "gzip"
         )
     }
 
