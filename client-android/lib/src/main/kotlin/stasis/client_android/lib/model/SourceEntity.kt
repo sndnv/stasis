@@ -18,7 +18,7 @@ data class SourceEntity(
     val hasChanged: Boolean by lazy {
         when (existingMetadata) {
             null -> true
-            else -> existingMetadata != currentMetadata
+            else -> existingMetadata.hasChanged(comparedTo = currentMetadata)
         }
     }
 

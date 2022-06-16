@@ -27,7 +27,7 @@ class DecryptedCratesSpec : WordSpec({
             val providers: Providers = Providers(
                 checksum = Checksum.Companion.MD5,
                 staging = MockFileStaging(),
-                decompressor = MockCompression(),
+                compression = MockCompression(),
                 decryptor = MockEncryption(),
                 clients = Clients(
                     api = MockServerApiEndpointClient(),

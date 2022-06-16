@@ -8,6 +8,7 @@ import stasis.client_android.lib.collection.BackupMetadataCollector
 import stasis.client_android.lib.model.EntityMetadata
 import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
+import stasis.test.client_android.lib.mocks.MockCompression
 
 class BackupMetadataCollectorSpec : WordSpec({
     "A BackupMetadataCollector" should {
@@ -19,7 +20,10 @@ class BackupMetadataCollectorSpec : WordSpec({
             val file2Metadata = Fixtures.Metadata.FileTwoMetadata.copy(path = file2)
             val file3Metadata = Fixtures.Metadata.FileThreeMetadata.copy(path = file3)
 
-            val collector = BackupMetadataCollector.Default(checksum = Checksum.Companion.MD5)
+            val collector = BackupMetadataCollector.Default(
+                checksum = Checksum.Companion.MD5,
+                compression = MockCompression()
+            )
 
             val sourceFile1 = collector.collect(entity = file1, existingMetadata = null)
             val sourceFile2 = collector.collect(entity = file2, existingMetadata = file2Metadata)

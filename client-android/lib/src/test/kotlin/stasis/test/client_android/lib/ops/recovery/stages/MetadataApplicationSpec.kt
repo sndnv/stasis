@@ -46,7 +46,8 @@ class MetadataApplicationSpec : WordSpec({
                 group = attributes.group().name,
                 permissions = "rwxrwxrwx",
                 checksum = BigInteger("1"),
-                crates = mapOf(Paths.get("${targetFile}_0") to UUID.randomUUID())
+                crates = mapOf(Paths.get("${targetFile}_0") to UUID.randomUUID()),
+                compression = "none"
             )
 
             val mockTracker = MockRecoveryTracker()
@@ -55,7 +56,7 @@ class MetadataApplicationSpec : WordSpec({
                 override val providers: Providers = Providers(
                     checksum = Checksum.Companion.MD5,
                     staging = MockFileStaging(),
-                    decompressor = MockCompression(),
+                    compression = MockCompression(),
                     decryptor = MockEncryption(),
                     clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
                     track = mockTracker

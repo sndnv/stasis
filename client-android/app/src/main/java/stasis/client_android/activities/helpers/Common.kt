@@ -172,6 +172,9 @@ object Common {
     fun EntityMetadata.crates(): Int? =
         (this as? EntityMetadata.File)?.crates?.size
 
+    fun EntityMetadata.compression(): String? =
+        (this as? EntityMetadata.File)?.compression
+
     fun String.asChangedString(context: Context): String =
         when (this) {
             "content" -> context.getString(R.string.dataset_metadata_field_content_summary_changed_content)

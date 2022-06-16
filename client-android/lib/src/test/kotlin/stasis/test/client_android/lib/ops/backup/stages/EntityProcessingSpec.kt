@@ -80,7 +80,7 @@ class EntityProcessingSpec : WordSpec({
                 override val providers: Providers = Providers(
                     checksum = Checksum.Companion.MD5,
                     staging = mockStaging,
-                    compressor = mockCompression,
+                    compression = mockCompression,
                     encryptor = mockEncryption,
                     decryptor = mockEncryption,
                     clients = Clients(
@@ -175,7 +175,7 @@ class EntityProcessingSpec : WordSpec({
                 override val providers: Providers = Providers(
                     checksum = Checksum.Companion.MD5,
                     staging = mockStaging,
-                    compressor = mockCompression,
+                    compression = mockCompression,
                     encryptor = mockEncryption,
                     decryptor = mockEncryption,
                     clients = Clients(
@@ -260,7 +260,7 @@ class EntityProcessingSpec : WordSpec({
                 override val providers: Providers = Providers(
                     checksum = Checksum.Companion.MD5,
                     staging = mockStaging,
-                    compressor = mockCompression,
+                    compression = mockCompression,
                     encryptor = mockEncryption,
                     decryptor = mockEncryption,
                     clients = Clients(
@@ -361,7 +361,7 @@ class EntityProcessingSpec : WordSpec({
                 override val providers: Providers = Providers(
                     checksum = Checksum.Companion.MD5,
                     staging = mockStaging,
-                    compressor = mockCompression,
+                    compression = mockCompression,
                     encryptor = mockEncryption,
                     decryptor = mockEncryption,
                     clients = Clients(

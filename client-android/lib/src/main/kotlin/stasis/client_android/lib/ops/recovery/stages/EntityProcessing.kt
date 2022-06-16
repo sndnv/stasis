@@ -72,7 +72,7 @@ interface EntityProcessing {
         pull(expectFileMetadata(entity).crates, entity.originalPath)
             .decrypt(withPartSecret = deviceSecret::toFileSecret, providers = providers)
             .merged()
-            .decompress(providers = providers)
+            .decompress(decompressor = providers.compression.decoderFor(entity))
             .destage(to = entity.destinationPath, providers = providers)
 
         return entity

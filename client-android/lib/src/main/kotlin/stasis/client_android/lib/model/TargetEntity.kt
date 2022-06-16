@@ -19,7 +19,7 @@ data class TargetEntity(
     val hasChanged: Boolean by lazy {
         when (currentMetadata) {
             null -> true
-            else -> existingMetadata != currentMetadata
+            else -> existingMetadata.hasChanged(comparedTo = currentMetadata)
         }
     }
 

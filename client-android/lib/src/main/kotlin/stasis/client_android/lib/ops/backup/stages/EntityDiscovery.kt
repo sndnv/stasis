@@ -48,7 +48,10 @@ interface EntityDiscovery {
                 DefaultBackupCollector(
                     entities = entities,
                     latestMetadata = latestMetadata,
-                    metadataCollector = BackupMetadataCollector.Default(checksum = providers.checksum),
+                    metadataCollector = BackupMetadataCollector.Default(
+                        checksum = providers.checksum,
+                        compression = providers.compression
+                    ),
                     api = providers.clients.api
                 )
             }

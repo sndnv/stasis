@@ -66,45 +66,46 @@ class DatasetMetadataSpec : WordSpec({
         )
 
         val serializedDatasetMetadata =
-            "CnwKDS90bXAvZmlsZS9vbmUSawppCg0vdG1wL2ZpbGUv" +
-                    "b25lEAEogKiQo4Hi+Mf/ATD/8dXUr5qHODoEcm9vdE" +
-                    "IEcm9vdEoJcnd4cnd4cnd4UgEBWigKDy90bXAvZmls" +
-                    "ZS9vbmVfMBIVCLiFjYW4/b7PMhDK96n/wLee7rEBEo" +
-                    "4BCg0vdG1wL2ZpbGUvdHdvEn0KewoNL3RtcC9maWxl" +
-                    "L3R3bxACGg8vdG1wL2ZpbGUvdGhyZWUo//HV1K+ahz" +
-                    "gwgKiQo4Hi+Mf/AToEcm9vdEIEcm9vdEoJcnd4cnd4" +
-                    "cnd4UgEqWikKDy90bXAvZmlsZS90d29fMBIWCISG1d" +
-                    "Thqqq55gEQuvmQh4+DpfiKARJXChIvdG1wL2RpcmVj" +
-                    "dG9yeS9vbmUSQRI/ChIvdG1wL2RpcmVjdG9yeS9vbm" +
-                    "UggKiQo4Hi+Mf/ASj/8dXUr5qHODIEcm9vdDoEcm9v" +
-                    "dEIJcnd4cnd4cnd4EmgKEi90bXAvZGlyZWN0b3J5L3" +
-                    "R3bxJSElAKEi90bXAvZGlyZWN0b3J5L3R3bxIPL3Rt" +
-                    "cC9maWxlL3RocmVlIP/x1dSvmoc4KICokKOB4vjH/w" +
-                    "EyBHJvb3Q6BHJvb3RCCXJ3eHJ3eHJ3eBpeChMKDS90" +
-                    "bXAvZmlsZS9vbmUSAgoAChMKDS90bXAvZmlsZS90d2" +
-                    "8SAhoAChgKEi90bXAvZGlyZWN0b3J5L29uZRICCgAK" +
-                    "GAoSL3RtcC9kaXJlY3RvcnkvdHdvEgIKAA=="
+            "CoIBCg0vdG1wL2ZpbGUvb25lEnEKbwoNL3RtcC9maWxl" +
+                    "L29uZRABKICokKOB4vjH/wEw//HV1K+ahzg6BHJvb3" +
+                    "RCBHJvb3RKCXJ3eHJ3eHJ3eFIBAVooCg8vdG1wL2Zp" +
+                    "bGUvb25lXzASFQi4hY2FuP2+zzIQyvep/8C3nu6xAW" +
+                    "IEbm9uZRKWAQoNL3RtcC9maWxlL3R3bxKEAQqBAQoN" +
+                    "L3RtcC9maWxlL3R3bxACGg8vdG1wL2ZpbGUvdGhyZW" +
+                    "Uo//HV1K+ahzgwgKiQo4Hi+Mf/AToEcm9vdEIEcm9v" +
+                    "dEoJcnd4cnd4cnd4UgEqWikKDy90bXAvZmlsZS90d2" +
+                    "9fMBIWCISG1dThqqq55gEQuvmQh4+DpfiKAWIEZ3pp" +
+                    "cBJXChIvdG1wL2RpcmVjdG9yeS9vbmUSQRI/ChIvdG" +
+                    "1wL2RpcmVjdG9yeS9vbmUggKiQo4Hi+Mf/ASj/8dXU" +
+                    "r5qHODIEcm9vdDoEcm9vdEIJcnd4cnd4cnd4EmgKEi" +
+                    "90bXAvZGlyZWN0b3J5L3R3bxJSElAKEi90bXAvZGly" +
+                    "ZWN0b3J5L3R3bxIPL3RtcC9maWxlL3RocmVlIP/x1d" +
+                    "Svmoc4KICokKOB4vjH/wEyBHJvb3Q6BHJvb3RCCXJ3" +
+                    "eHJ3eHJ3eBpeChMKDS90bXAvZmlsZS9vbmUSAgoACh" +
+                    "MKDS90bXAvZmlsZS90d28SAhoAChgKEi90bXAvZGly" +
+                    "ZWN0b3J5L29uZRICCgAKGAoSL3RtcC9kaXJlY3Rvcn" +
+                    "kvdHdvEgIKAA=="
 
         val encryptedDatasetMetadata =
-            "qhDLc95bEH10i52w4MHCXTqvKuiOtlic12HeBhkiocPe" +
-                    "FzxcgvD6PNHUralmkmdwSuCPRf6laTMO5uO03XoTSm" +
-                    "brfhaQTsc32Unk9H1E0mNuYwLRNxGO96Im4YdXFPPi" +
-                    "/2qfrXs3Q1oLYenJqGdSg3S8thw544E3NN1nrNgOpL" +
-                    "cxsXp6L/0snOdm2nDvIiQkM17+E5N6qIPdVkIHnOM/" +
-                    "lPuruyvbssZIDVpyjvIgNNWFVXZfKncaeY/xZKs5RI" +
-                    "kaEKUxOxadp0S5M3QMjg/f+o0oBR6uIz/ynY1MFvib" +
-                    "GqydsvRjwK2TPVXrnV6Hk+Y3NeSYsEtLV496ZyP1KC" +
-                    "iF+ToeEFlHS6KpW4j2iHEy+5m38SdzsAN3sSh/NmBv" +
-                    "4r2/jKRqqNV6QQJQVpF7aydsD8/I24Ta7OfV29aCfC" +
-                    "L2k0yvUhCmuwoOaaNNNU0P0HoVLu9ajauDl0Tm1yep" +
-                    "Ii8ivJZGPRoEukR6wj5zSx+5Qqc+r5i8dT4WtGQkPc" +
-                    "AIdnaERZ3ESBdZ5Zgb1NsWwFvDmq2Q65+h9Kzl/c+0" +
-                    "1AApC/OBSTiT0EAZreZoCQNN2eCIx/YJdrI2L4FElq" +
-                    "Jc2EU1DDzYL000XDHjkpKj1qNsLSusyh7R/F6gMFYh" +
-                    "fpRNxDMdPpNdOSfTwgKNODTPW6kPL7r+lW4cwTvx94" +
-                    "ljUSP4cC4U7NSijVxkidJG7iF14GLt9vySrlEeGncs" +
-                    "j7tE8O3OQpoO7jgT/miPLe8VIY1rQKNQyKbPsBHSI3" +
-                    "V2c8BqNGNyUDA="
+            "qu7AdPwACWArwpK16YuCXDHYU5Pt01++jHjDWVAtpMqU" +
+                    "Vz1X9+HTlPnsnosFiFhItNFAS9qkEgYTWeGKq2cTUV" +
+                    "CtCAuQVfl0okzr/nhL2GZhSVHRbGOs8oJ9+JoIXfzn" +
+                    "9iDfrHANLHgMfFn0oG9vxjfNSz7j3t9hC6pO3Ie+t1" +
+                    "s01Rg7PoLKsosCmWGtJnwtSE+RR+0A6OU0J2fg9IVX" +
+                    "lPuxpBS/waUCVkN1zoRLQr+FVXNdYHRb6hsLxGzRpt" +
+                    "QCb/x0TDjl2Lt2suaYX+FSdgjTdkvFJRqUm7gwFuCM" +
+                    "HJHskoIx6PPhQA3noi+Cr6ZRX+SYqlQ7AfQACogHip" +
+                    "M7Y4Kx/tzRJI/Ydq3My4ioQHJwfLrfYZaNny4SI39l" +
+                    "5sCa/5kqst0YL3QGLuY3ayVuWYTOx4Sr2ZqYqOvCZi" +
+                    "qmPIBWg/QnN6KDEaTdqv37/0gCtVy8BwMT4lYdVJ0S" +
+                    "+fes9tM6PQITvAkGojkWLXLEXaBpuYa2YioayX5XAJ" +
+                    "sLdBT5M6S8P1tZ55pNn8YTyirl54/j1sSi9s7FttKr" +
+                    "wUw7De2dSTiMzTdzom30rPiEKgvVwALJlHTS7YZyvH" +
+                    "fBRrBiS8hKu5za0b1mZOHmqqN0Oi3htnbgmTnoNAsi" +
+                    "a5YV2igGI6ZsXVHLzSf5X1fqMO8XJ+W+nWJiph6Fiv" +
+                    "V7XhaMF0YxmJK6hQM/mtQmiVgBhQiey7yIpjMzdB5U" +
+                    "8tIisOvaHdoE4lh0lxzqR5woeo5pIo4+oedlYpW81a" +
+                    "R/RPpfGBs6vDGidQBeiZ+fnZHN4JeWwwQ="
 
         "retrieve metadata for individual files (new and updated)" {
             val mockApiClient = MockServerApiEndpointClient()

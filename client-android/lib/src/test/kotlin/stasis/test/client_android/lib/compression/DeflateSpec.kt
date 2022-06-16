@@ -12,6 +12,10 @@ class DeflateSpec : WordSpec({
         val decompressedData = "some-decompressed-data"
         val compressedData = "eNoqzs9N1U1JTc7PLShKLS5OTdFNSSxJBAAAAP//AwBkTwin"
 
+        "provide its name" {
+            Deflate.name() shouldBe ("deflate")
+        }
+
         "compress data" {
             val source = Buffer().write(decompressedData.toByteArray())
 

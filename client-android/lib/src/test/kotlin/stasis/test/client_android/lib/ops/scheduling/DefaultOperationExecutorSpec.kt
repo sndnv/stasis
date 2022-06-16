@@ -108,7 +108,7 @@ class DefaultOperationExecutorSpec : WordSpec({
                 backupProviders = stasis.client_android.lib.ops.backup.Providers(
                     checksum = checksum,
                     staging = staging,
-                    compressor = compression,
+                    compression = compression,
                     encryptor = encryption,
                     decryptor = encryption,
                     clients = clients,
@@ -120,7 +120,7 @@ class DefaultOperationExecutorSpec : WordSpec({
                     decryptor = encryption,
                     clients = clients,
                     track = recoveryTracker,
-                    decompressor = compression
+                    compression = compression
                 ),
                 operationDispatcher = Dispatchers.IO
             )

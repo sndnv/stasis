@@ -18,6 +18,7 @@ import stasis.client_android.activities.helpers.Common.asQuantityString
 import stasis.client_android.activities.helpers.Common.asSizeString
 import stasis.client_android.activities.helpers.Common.asString
 import stasis.client_android.activities.helpers.Common.checksum
+import stasis.client_android.activities.helpers.Common.compression
 import stasis.client_android.activities.helpers.Common.crates
 import stasis.client_android.activities.helpers.Common.fromAssignmentTypeString
 import stasis.client_android.activities.helpers.Common.fromPolicyTypeString
@@ -305,6 +306,12 @@ class CommonSpec {
     }
 
     @Test
+    fun extractEntityMetadataCompression() {
+        assertThat(fileMetadata.compression(), equalTo(fileMetadata.compression))
+        assertThat(directoryMetadata.compression(), equalTo(null))
+    }
+
+    @Test
     fun convertEntityMetadataChangedStrings() {
         val context = ApplicationProvider.getApplicationContext<Context>()
 
@@ -457,7 +464,8 @@ class CommonSpec {
         checksum = BigInteger("1"),
         crates = mapOf(
             Paths.get("/tmp/file/one_0") to UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
-        )
+        ),
+        compression = "none"
     )
 
     private val directoryMetadata = EntityMetadata.Directory(

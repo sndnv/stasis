@@ -19,6 +19,11 @@ sealed class EntityMetadata {
     abstract val group: String
     abstract val permissions: String
 
+    fun hasChanged(comparedTo: EntityMetadata): Boolean = when {
+        this is File && comparedTo is File -> this != comparedTo.copy(compression = this.compression)
+        else -> this != comparedTo
+    }
+
     data class File(
         override val path: Path,
         override val link: Path?,
@@ -30,7 +35,8 @@ sealed class EntityMetadata {
         override val permissions: String,
         val size: Long,
         val checksum: BigInteger,
-        val crates: Map<Path, UUID>
+        val crates: Map<Path, UUID>,
+        val compression: String
     ) : EntityMetadata()
 
     data class Directory(
@@ -59,7 +65,8 @@ sealed class EntityMetadata {
                         group = group,
                         permissions = permissions,
                         checksum = checksum.toByteArray().toByteString(),
-                        crates = crates.map { it.toProto() }.toMap()
+                        crates = crates.map { it.toProto() }.toMap(),
+                        compression = compression
                     )
 
                     stasis.client_android.lib.model.proto.EntityMetadata(file_ = metadata)
@@ -95,7 +102,8 @@ sealed class EntityMetadata {
                         group = file_.group,
                         permissions = file_.permissions,
                         checksum = BigInteger(file_.checksum.toByteArray()),
-                        crates = file_.crates.map { it.toModel() }.toMap()
+                        crates = file_.crates.map { it.toModel() }.toMap(),
+                        compression = file_.compression
                     )
                 }
 

@@ -37,7 +37,8 @@ class DefaultRecoveryCollectorSpec : WordSpec({
                 checksum = BigInteger("1"),
                 crates = mapOf(
                     Paths.get("${file2}_0") to UUID.randomUUID()
-                )
+                ),
+                compression = "none"
             )
 
             val file3Metadata = EntityMetadata.File(
@@ -53,7 +54,8 @@ class DefaultRecoveryCollectorSpec : WordSpec({
                 checksum = BigInteger("1"),
                 crates = mapOf(
                     Paths.get("${file3}_0") to UUID.randomUUID()
-                )
+                ),
+                compression = "none"
             )
 
             val collector = DefaultRecoveryCollector(

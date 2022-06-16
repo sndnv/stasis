@@ -8,6 +8,8 @@ import java.util.zip.Deflater
 import java.util.zip.DeflaterOutputStream
 
 object Deflate : Compressor {
+    override fun name(): String = "deflate"
+
     override fun compress(source: Source): Source =
         BaseCompressor(source = source.buffer()) { compressed ->
             DeflaterOutputStream(
