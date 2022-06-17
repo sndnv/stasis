@@ -3,6 +3,7 @@ package stasis.test.specs.unit.client.tracking.trackers
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.scaladsl.Sink
+import akka.util.Timeout
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{Assertion, BeforeAndAfterAll}
 import stasis.client.collection.rules.Rule
@@ -167,6 +168,7 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
 
     val expectedUpdates = 3
     val updates = tracker.stateUpdates.take(expectedUpdates.toLong).runWith(Sink.seq)
+    await(50.millis, withSystem = system)
 
     tracker.backup.entityExamined(entity = file, metadataChanged = true, contentChanged = false)
     await(50.millis, withSystem = system)
@@ -234,6 +236,8 @@ class DefaultTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAft
     )
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(7.seconds, 300.milliseconds)
+
+  override implicit val timeout: Timeout = 5.seconds
 
   private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],

@@ -1,7 +1,7 @@
 package stasis.client.ops.backup.stages
 
 import akka.stream.scaladsl.{FileIO, Flow, Source, SubFlow}
-import akka.stream.{IOResult, Materializer}
+import akka.stream.{IOResult, Materializer, SharedKillSwitch}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceSecret}
@@ -32,7 +32,10 @@ trait EntityProcessing {
 
   private val maximumPartSize = math.min(maxPartSize, providers.encryptor.maxPlaintextSize)
 
-  def entityProcessing(implicit operation: Operation.Id): Flow[SourceEntity, Either[EntityMetadata, EntityMetadata], NotUsed] =
+  def entityProcessing(implicit
+    operation: Operation.Id,
+    killSwitch: SharedKillSwitch
+  ): Flow[SourceEntity, Either[EntityMetadata, EntityMetadata], NotUsed] =
     Flow[SourceEntity]
       .mapAsyncUnordered(parallelism.value) {
         case entity if entity.hasContentChanged => processContentChanged(entity).map(Left.apply)
@@ -46,7 +49,9 @@ trait EntityProcessing {
         )
       }
 
-  private def processContentChanged(entity: SourceEntity): Future[EntityMetadata] =
+  private def processContentChanged(
+    entity: SourceEntity
+  )(implicit killSwitch: SharedKillSwitch): Future[EntityMetadata] =
     for {
       file <- EntityProcessing.expectFileMetadata(entity)
       staged <- stage(entity)
@@ -59,7 +64,9 @@ trait EntityProcessing {
   private def processMetadataChanged(entity: SourceEntity): Future[EntityMetadata] =
     Future.successful(entity.currentMetadata)
 
-  private def stage(entity: SourceEntity): Future[Seq[(Path, Path)]] = {
+  private def stage(
+    entity: SourceEntity
+  )(implicit killSwitch: SharedKillSwitch): Future[Seq[(Path, Path)]] = {
     def createPartSecret(partId: Int): DeviceFileSecret = {
       val partPath = Paths.get(s"${entity.path.toAbsolutePath.toString}__part=${partId.toString}")
       deviceSecret.toFileSecret(partPath)
@@ -71,6 +78,7 @@ trait EntityProcessing {
 
     FileIO
       .fromPath(f = entity.path, chunkSize = maxChunkSize)
+      .via(killSwitch.flow)
       .wireTap(bytes => metrics.recordEntityChunkProcessed(step = "read", bytes.length))
       .compress(compressor = compressor)
       .wireTap(bytes => metrics.recordEntityChunkProcessed(step = "compressed", extra = compressor.name, bytes = bytes.length))

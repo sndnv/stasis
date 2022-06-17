@@ -1,7 +1,5 @@
 package stasis.client.ops.scheduling
 
-import java.nio.file.Path
-import java.time.Instant
 import akka.Done
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
@@ -9,13 +7,15 @@ import akka.util.Timeout
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.collection.rules.Specification
 import stasis.client.encryption.secrets.DeviceSecret
-import stasis.client.ops.exceptions.OperationExecutionFailure
+import stasis.client.ops.exceptions.{OperationExecutionFailure, OperationStopped}
 import stasis.client.ops.{backup, recovery, ParallelismConfig}
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.telemetry.TelemetryContext
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.ops.Operation
 
+import java.nio.file.Path
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -173,14 +173,19 @@ class DefaultOperationExecutor(
       log.debugN("Starting operation [{}]", operation.id)
       operation
         .start()
-        .recover { case NonFatal(e) =>
-          log.errorN(
-            "Failure encountered when running operation [{}]: [{} - {}]",
-            operation.id,
-            e.getClass.getSimpleName,
-            e.getMessage
-          )
-          Done
+        .recover {
+          case NonFatal(e: OperationStopped) =>
+            log.debugN(e.message)
+            Done
+
+          case NonFatal(e) =>
+            log.errorN(
+              "Failure encountered when running operation [{}]: [{} - {}]",
+              operation.id,
+              e.getClass.getSimpleName,
+              e.getMessage
+            )
+            Done
         }
         .flatMap { _ =>
           for {

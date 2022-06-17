@@ -1,7 +1,5 @@
 package stasis.test.specs.unit.client
 
-import java.nio.file._
-
 import akka.Done
 import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Source}
@@ -12,6 +10,7 @@ import stasis.client.model.EntityMetadata
 import stasis.client.service.ApplicationDirectory
 import stasis.core.packaging.Crate
 
+import java.nio.file._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 
@@ -76,8 +75,14 @@ trait ResourceHelpers {
         .filter(path => !Files.isHidden(path) && path != resourcePath)
         .sorted()
         .map {
-          case path if Files.isDirectory(path) => path.clear().flatMap(_ => deleteEntity(path))
-          case path                            => deleteEntity(path)
+          case path if Files.isDirectory(path) =>
+            path
+              .clear()
+              .flatMap(_ => deleteEntity(path))
+              .recoverWith { case _: NoSuchFileException => Future.successful(Done) }
+
+          case path =>
+            deleteEntity(path)
         }
 
       Future.sequence(stream.iterator().asScala).map(_ => Done)

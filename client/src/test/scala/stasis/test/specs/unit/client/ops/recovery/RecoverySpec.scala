@@ -315,6 +315,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     recovery.stop()
 
     eventually[Assertion] {
+      mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(1)
     }
   }

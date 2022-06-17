@@ -2,8 +2,8 @@ package stasis.test.specs.unit.client.ops.backup.stages
 
 import akka.NotUsed
 import akka.actor.ActorSystem
+import akka.stream._
 import akka.stream.scaladsl.{Flow, Source}
-import akka.stream.{ActorAttributes, Materializer, Supervision, SystemMaterializer}
 import akka.util.ByteString
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
@@ -14,6 +14,7 @@ import stasis.client.model.{EntityMetadata, SourceEntity}
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.backup.stages.EntityProcessing
+import stasis.client.ops.exceptions.OperationStopped
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
 import stasis.shared.model.datasets.DatasetDefinition
@@ -94,6 +95,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
       override implicit protected def ec: ExecutionContext = spec.system.dispatcher
     }
+
+    implicit val killSwitch: SharedKillSwitch = KillSwitches.shared("test")
 
     Source(List(sourceFile1, sourceFile2, sourceFile3))
       .via(stage.entityProcessing)
@@ -197,6 +200,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
       override implicit protected def ec: ExecutionContext = spec.system.dispatcher
     }
 
+    implicit val killSwitch: SharedKillSwitch = KillSwitches.shared("test")
+
     Source(List(largeSourceFile))
       .via(stage.entityProcessing)
       .runFold(Seq.empty[Either[EntityMetadata, EntityMetadata]])(_ :+ _)
@@ -240,9 +245,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
 
           mockTelemetry.ops.backup.entityExamined should be(0)
           mockTelemetry.ops.backup.entityCollected should be(0)
-          // (expectedChunks * 3) == each chunk X each step
-          // + expectedParts == each part X push
-          mockTelemetry.ops.backup.entityChunkProcessed should be((expectedChunks * 3) + expectedParts)
+          mockTelemetry.ops.backup.entityChunkProcessed should be >= (expectedChunks * 3)
           mockTelemetry.ops.backup.entityProcessed should be(1)
         }
       }
@@ -296,6 +299,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
       override implicit protected def ec: ExecutionContext = spec.system.dispatcher
     }
+
+    implicit val killSwitch: SharedKillSwitch = KillSwitches.shared("test")
 
     Source(List(sourceFile1))
       .via(stage.entityProcessing)
@@ -420,6 +425,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
       override implicit protected def ec: ExecutionContext = spec.system.dispatcher
     }
 
+    implicit val killSwitch: SharedKillSwitch = KillSwitches.shared("test")
+
     Source(List(largeSourceFile))
       .via(stage.entityProcessing)
       .withAttributes(ActorAttributes.supervisionStrategy(supervision))
@@ -461,6 +468,119 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           // +7 == 1 successful part (+4) and 1 unsuccessful part (+3 steps before push)
           mockTelemetry.ops.backup.entityChunkProcessed should be((expectedParts - 1) * 8 + 7)
           mockTelemetry.ops.backup.entityProcessed should be(0)
+        }
+      }
+  }
+
+  it should "support stopping processing via kill-switch" in {
+    val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(
+      withChecksum = 1,
+      withCrate = Crate.generateId()
+    )
+
+    val sourceFile2Metadata = "/ops/source-file-2".asTestResource.extractFileMetadata(
+      withChecksum = 2,
+      withCrate = Crate.generateId()
+    )
+
+    val sourceFile3Metadata = "/ops/source-file-3".asTestResource.extractFileMetadata(
+      withChecksum = 3,
+      withCrate = Crate.generateId()
+    )
+
+    val sourceFile1 = SourceEntity(
+      path = sourceFile1Metadata.path,
+      existingMetadata = None,
+      currentMetadata = sourceFile1Metadata
+    )
+
+    val sourceFile2 = SourceEntity(
+      path = sourceFile2Metadata.path,
+      existingMetadata = Some(sourceFile2Metadata.copy(isHidden = true)),
+      currentMetadata = sourceFile2Metadata
+    )
+
+    val sourceFile3 = SourceEntity(
+      path = sourceFile3Metadata.path,
+      existingMetadata = Some(sourceFile3Metadata.copy(checksum = BigInt(9999))),
+      currentMetadata = sourceFile3Metadata
+    )
+
+    val mockStaging = new MockFileStaging()
+    val mockCompression = MockCompression()
+    val mockEncryption = new MockEncryption()
+    val mockCoreClient = MockServerCoreEndpointClient()
+    val mockTracker = new MockBackupTracker
+
+    implicit val operationId: Operation.Id = Operation.generateId()
+
+    val stage = new EntityProcessing {
+      override protected def targetDataset: DatasetDefinition = Fixtures.Datasets.Default
+      override protected def deviceSecret: DeviceSecret = Fixtures.Secrets.Default
+      override protected def providers: Providers =
+        Providers(
+          checksum = Checksum.MD5,
+          staging = mockStaging,
+          compression = mockCompression,
+          encryptor = mockEncryption,
+          decryptor = mockEncryption,
+          clients = Clients(
+            api = MockServerApiEndpointClient(),
+            core = mockCoreClient
+          ),
+          track = mockTracker,
+          telemetry = MockClientTelemetryContext()
+        )
+      override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
+      override protected def maxChunkSize: Int = 8192
+      override protected def maxPartSize: Long = 16384
+      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
+      override implicit protected def ec: ExecutionContext = spec.system.dispatcher
+    }
+
+    implicit val killSwitch: SharedKillSwitch = KillSwitches.shared("test")
+    val entitiesProcessed = new AtomicInteger(0)
+
+    Source(List(sourceFile1, sourceFile2, sourceFile3))
+      .wireTap { _ =>
+        val processed = entitiesProcessed.incrementAndGet()
+        if (processed > 1) {
+          killSwitch.abort(OperationStopped("Stopped"))
+        }
+      }
+      .via(stage.entityProcessing)
+      .runFold(Seq.empty[Either[EntityMetadata, EntityMetadata]])(_ :+ _)
+      .map { result =>
+        fail(s"Unexpected result received: [$result]")
+      }
+      .recover { case NonFatal(e: OperationStopped) =>
+        e.getMessage should be("Stopped")
+
+        eventually[Assertion] {
+          mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(1)
+          mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(1)
+          mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
+
+          mockCompression.statistics(MockCompression.Statistic.Compressed) should be(1)
+          mockCompression.statistics(MockCompression.Statistic.Decompressed) should be(0)
+
+          mockEncryption.statistics(MockEncryption.Statistic.FileEncrypted) should be(1)
+          mockEncryption.statistics(MockEncryption.Statistic.FileDecrypted) should be(0)
+          mockEncryption.statistics(MockEncryption.Statistic.MetadataEncrypted) should be(0)
+          mockEncryption.statistics(MockEncryption.Statistic.MetadataDecrypted) should be(0)
+
+          mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
+          mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(1)
+
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(2)
+          mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
         }
       }
   }

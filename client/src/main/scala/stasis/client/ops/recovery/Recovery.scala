@@ -1,20 +1,21 @@
 package stasis.client.ops.recovery
 
-import java.nio.file.{FileSystem, FileSystems, Path}
-import java.time.Instant
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.stream._
-import akka.stream.scaladsl.{Keep, Sink, Source}
+import akka.stream.scaladsl.{Sink, Source}
 import akka.{Done, NotUsed}
 import stasis.client.collection.{RecoveryCollector, RecoveryMetadataCollector}
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.{DatasetMetadata, TargetEntity}
 import stasis.client.ops.ParallelismConfig
+import stasis.client.ops.exceptions.OperationStopped
 import stasis.client.ops.recovery.stages.{EntityCollection, EntityProcessing, MetadataApplication}
 import stasis.client.tracking.RecoveryTracker
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.ops.Operation
 
+import java.nio.file.{FileSystem, FileSystems, Path}
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 import scala.util.{Failure, Success}
@@ -41,13 +42,14 @@ class Recovery(
 
   private val collector: RecoveryCollector = parent.descriptor.toRecoveryCollector()
 
-  private val (killSwitch: UniqueKillSwitch, stream: Source[Done, NotUsed]) =
+  private implicit val killSwitch: SharedKillSwitch = KillSwitches.shared("recovery-kill-switch")
+
+  private val stream: Source[Done, NotUsed] =
     stages.entityCollection
       .via(stages.entityProcessing)
       .via(stages.metadataApplication)
-      .viaMat(KillSwitches.single)(Keep.right[NotUsed, UniqueKillSwitch])
+      .via(killSwitch.flow)
       .withAttributes(ActorAttributes.supervisionStrategy(supervision))
-      .preMaterialize()
 
   override def start(): Future[Done] =
     stream
@@ -55,7 +57,7 @@ class Recovery(
       .trackWith(providers.track)
 
   override def stop(): Unit =
-    killSwitch.shutdown()
+    killSwitch.abort(OperationStopped(s"Operation [${id.toString}] stopped by user"))
 
   private object stages extends EntityCollection with EntityProcessing with MetadataApplication {
     override protected lazy val deviceSecret: DeviceSecret = parent.descriptor.deviceSecret
@@ -187,7 +189,7 @@ object Recovery {
   implicit class TrackedOperation(operation: Future[Done]) {
     def trackWith(track: RecoveryTracker)(implicit id: Operation.Id, ec: ExecutionContext): Future[Done] = {
       operation.onComplete {
-        case Success(_) =>
+        case Success(_) | Failure(_: OperationStopped) =>
           track.completed()
 
         case Failure(e) =>

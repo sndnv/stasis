@@ -1,8 +1,8 @@
 package stasis.client.ops.recovery.stages
 
 import akka.NotUsed
-import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Source}
+import akka.stream.{Materializer, SharedKillSwitch}
 import akka.util.ByteString
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.TargetEntity.Destination
@@ -29,7 +29,10 @@ trait EntityProcessing {
 
   private val metrics = providers.telemetry.metrics[Metrics.RecoveryOperation]
 
-  def entityProcessing(implicit operation: Operation.Id): Flow[TargetEntity, TargetEntity, NotUsed] =
+  def entityProcessing(implicit
+    operation: Operation.Id,
+    killSwitch: SharedKillSwitch
+  ): Flow[TargetEntity, TargetEntity, NotUsed] =
     Flow[TargetEntity]
       .collect {
         case entity @ TargetEntity(_, Destination.Default, _, _)                                  => createEntityDirectory(entity)
@@ -57,7 +60,9 @@ trait EntityProcessing {
     entity
   }
 
-  private def processContentChanged(entity: TargetEntity): Future[TargetEntity] =
+  private def processContentChanged(
+    entity: TargetEntity
+  )(implicit killSwitch: SharedKillSwitch): Future[TargetEntity] =
     EntityProcessing.expectFileMetadata(entity).flatMap { file =>
       val crates = pull(file.crates, entity.originalPath)
       implicit val prv: Providers = providers
@@ -67,6 +72,7 @@ trait EntityProcessing {
       crates
         .decrypt(withPartSecret = deviceSecret.toFileSecret)
         .merge()
+        .via(killSwitch.flow)
         .decompress(decompressor = decompressor)
         .wireTap(bytes =>
           metrics.recordEntityChunkProcessed(step = "decompressed", extra = decompressor.name, bytes = bytes.length)

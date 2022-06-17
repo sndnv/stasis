@@ -2,13 +2,14 @@ package stasis.client.ops.backup
 
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.stream._
-import akka.stream.scaladsl.{Keep, Sink, Source}
+import akka.stream.scaladsl.{Sink, Source}
 import akka.{Done, NotUsed}
 import stasis.client.collection.rules.Rule
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.DatasetMetadata
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.backup.stages._
+import stasis.client.ops.exceptions.OperationStopped
 import stasis.client.tracking.BackupTracker
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.ops.Operation
@@ -37,15 +38,16 @@ class Backup(
 
   override val `type`: Operation.Type = Operation.Type.Backup
 
-  private val (killSwitch: UniqueKillSwitch, stream: Source[Done, NotUsed]) =
+  private implicit val killSwitch: SharedKillSwitch = KillSwitches.shared("backup-kill-switch")
+
+  private val stream: Source[Done, NotUsed] =
     stages.entityDiscovery
       .via(stages.entityCollection)
       .via(stages.entityProcessing)
       .via(stages.metadataCollection)
       .via(stages.metadataPush)
-      .viaMat(KillSwitches.single)(Keep.right[NotUsed, UniqueKillSwitch])
+      .via(killSwitch.flow)
       .withAttributes(ActorAttributes.supervisionStrategy(supervision))
-      .preMaterialize()
 
   override def start(): Future[Done] =
     stream
@@ -53,7 +55,7 @@ class Backup(
       .trackWith(providers.track)
 
   override def stop(): Unit =
-    killSwitch.shutdown()
+    killSwitch.abort(OperationStopped(s"Operation [${id.toString}] stopped by user"))
 
   private object stages
       extends EntityDiscovery
@@ -139,7 +141,7 @@ object Backup {
   implicit class TrackedOperation(operation: Future[Done]) {
     def trackWith(track: BackupTracker)(implicit id: Operation.Id, ec: ExecutionContext): Future[Done] = {
       operation.onComplete {
-        case Success(_) =>
+        case Success(_) | Failure(_: OperationStopped) =>
           track.completed()
 
         case Failure(e) =>
