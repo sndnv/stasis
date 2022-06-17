@@ -1,7 +1,5 @@
 package stasis.test.specs.unit.client.mocks
 
-import java.util.concurrent.atomic.AtomicInteger
-
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -12,6 +10,7 @@ import stasis.core.packaging.Crate
 import stasis.core.routing.Node
 import stasis.test.specs.unit.client.mocks.MockServerCoreEndpointClient.Statistic
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.{ExecutionContext, Future}
 
 class MockServerCoreEndpointClient(

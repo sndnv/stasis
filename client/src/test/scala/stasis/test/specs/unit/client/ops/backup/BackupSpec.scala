@@ -360,6 +360,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     backup.stop()
 
     eventually[Assertion] {
+      mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
     }
   }

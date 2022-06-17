@@ -2,7 +2,7 @@ package stasis.test.specs.unit.client.ops.recovery.stages
 
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
-import akka.stream.{IOOperationIncompleteException, Materializer, SystemMaterializer}
+import akka.stream._
 import akka.util.ByteString
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
@@ -11,6 +11,7 @@ import stasis.client.api.clients.Clients
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.TargetEntity
 import stasis.client.ops.ParallelismConfig
+import stasis.client.ops.exceptions.OperationStopped
 import stasis.client.ops.recovery.Providers
 import stasis.client.ops.recovery.stages.EntityProcessing
 import stasis.core.packaging.Crate
@@ -22,6 +23,7 @@ import stasis.test.specs.unit.client.mocks._
 import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 
 import java.nio.file.Paths
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
@@ -142,6 +144,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
 
     implicit val operationId: Operation.Id = Operation.generateId()
 
+    implicit val killSwitch: SharedKillSwitch = KillSwitches.shared("test")
+
     Source(List(targetFile2, targetFile3, targetFile4, targetDirectory, ignoredDirectory))
       .via(stage.entityProcessing)
       .runFold(Seq.empty[TargetEntity])(_ :+ _)
@@ -232,6 +236,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
     }
 
     implicit val operationId: Operation.Id = Operation.generateId()
+
+    implicit val killSwitch: SharedKillSwitch = KillSwitches.shared("test")
 
     Source(List(targetFile1))
       .via(stage.entityProcessing)
@@ -335,6 +341,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
 
     implicit val operationId: Operation.Id = Operation.generateId()
 
+    implicit val killSwitch: SharedKillSwitch = KillSwitches.shared("test")
+
     Source(List(targetFile4))
       .via(stage.entityProcessing)
       .runFold(Seq.empty[TargetEntity])(_ :+ _)
@@ -381,6 +389,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
 
     implicit val operationId: Operation.Id = Operation.generateId()
 
+    implicit val killSwitch: SharedKillSwitch = KillSwitches.shared("test")
+
     Source(List(targetFile4))
       .via(stage.entityProcessing)
       .runFold(Seq.empty[TargetEntity])(_ :+ _)
@@ -389,6 +399,110 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
       }
       .recover { case NonFatal(e: IllegalArgumentException) =>
         e.getMessage should include("Unexpected last part ID [0] encountered for an entity with [0] crate(s)")
+      }
+  }
+
+  it should "support stopping processing via kill-switch" in {
+    val targetFile2Metadata = "/ops/source-file-2".asTestResource.extractFileMetadata(
+      withChecksum = 2,
+      withCrate = Crate.generateId()
+    )
+
+    val targetFile3Metadata = "/ops/source-file-3".asTestResource.extractFileMetadata(
+      withChecksum = 3,
+      withCrate = Crate.generateId()
+    )
+
+    val targetDirectoryDestination = "/ops/processing".asTestResource
+    targetDirectoryDestination.clear().await
+
+    val targetFile2 = TargetEntity(
+      path = targetFile2Metadata.path,
+      destination = TargetEntity.Destination.Default,
+      existingMetadata = targetFile2Metadata,
+      currentMetadata = Some(targetFile2Metadata.copy(isHidden = true))
+    )
+
+    val targetFile3 = TargetEntity(
+      path = targetFile3Metadata.path,
+      destination = TargetEntity.Destination.Directory(path = targetDirectoryDestination, keepDefaultStructure = false),
+      existingMetadata = targetFile3Metadata,
+      currentMetadata = Some(targetFile3Metadata.copy(checksum = BigInt(9999)))
+    )
+
+    val mockStaging = new MockFileStaging()
+    val mockCompression = MockCompression()
+    val mockEncryption = new MockEncryption()
+    val mockApiClient = MockServerApiEndpointClient()
+    val mockCoreClient = new MockServerCoreEndpointClient(
+      self = Node.generateId(),
+      crates = (
+        targetFile2Metadata.crates.values.map((_, ByteString("source-file-2")))
+          ++ targetFile3Metadata.crates.values.map((_, ByteString("source-file-3")))
+      ).toMap
+    )
+    val mockTracker = new MockRecoveryTracker
+
+    val stage = new EntityProcessing {
+      override protected def deviceSecret: DeviceSecret = Fixtures.Secrets.Default
+      override protected def providers: Providers =
+        Providers(
+          checksum = Checksum.MD5,
+          staging = mockStaging,
+          compression = mockCompression,
+          decryptor = mockEncryption,
+          clients = Clients(api = mockApiClient, core = mockCoreClient),
+          track = mockTracker,
+          telemetry = MockClientTelemetryContext()
+        )
+      override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 4)
+      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
+      override implicit protected def ec: ExecutionContext = spec.system.dispatcher
+    }
+
+    implicit val operationId: Operation.Id = Operation.generateId()
+
+    implicit val killSwitch: SharedKillSwitch = KillSwitches.shared("test")
+    val entitiesProcessed = new AtomicInteger(0)
+
+    Source(List(targetFile2, targetFile3))
+      .wireTap { _ =>
+        val processed = entitiesProcessed.incrementAndGet()
+        if (processed > 1) {
+          killSwitch.abort(OperationStopped("Stopped"))
+        }
+      }
+      .via(stage.entityProcessing)
+      .runFold(Seq.empty[TargetEntity])(_ :+ _)
+      .map { result =>
+        fail(s"Unexpected result received: [$result]")
+      }
+      .recover { case NonFatal(e) =>
+        e.getCause.getMessage should be("Stopped")
+
+        eventually[Assertion] {
+          mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(1)
+          mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(1)
+          mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
+
+          mockCompression.statistics(MockCompression.Statistic.Compressed) should be(0)
+          mockCompression.statistics(MockCompression.Statistic.Decompressed) should be(0)
+
+          mockEncryption.statistics(MockEncryption.Statistic.FileEncrypted) should be(0)
+          mockEncryption.statistics(MockEncryption.Statistic.FileDecrypted) should be(0)
+          mockEncryption.statistics(MockEncryption.Statistic.MetadataEncrypted) should be(0)
+          mockEncryption.statistics(MockEncryption.Statistic.MetadataDecrypted) should be(0)
+
+          mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
+          mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
+
+          mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(1)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(0)
+        }
       }
   }
 
