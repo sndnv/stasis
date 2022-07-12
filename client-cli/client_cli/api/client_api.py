@@ -91,10 +91,11 @@ class ClientApi(ABC):
         """
 
     @abstractmethod
-    def operations(self):
+    def operations(self, state):
         """
         Retrieves the currently active operations.
 
+        :param state: operation state to use for limiting search
         :return: active operations
         """
 

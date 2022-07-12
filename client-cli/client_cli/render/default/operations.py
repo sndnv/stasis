@@ -1,6 +1,7 @@
 """Utility functions for rendering operations and operation responses."""
 
 import os
+from functools import lru_cache
 
 from click import style
 from terminaltables import AsciiTable
@@ -42,10 +43,13 @@ def render_operation_progress(progress):
     :return: rendered progress string
     """
 
-    stages = {k: v for k, v in progress['stages'].items() if k in OPERATION_STAGE_DESCRIPTIONS}
+    stages = {k: v for k, v in progress['entities'].items() if k in OPERATION_STAGE_DESCRIPTIONS}
     files = _render_files_tree(stage_descriptions=OPERATION_STAGE_DESCRIPTIONS, stages=stages)
-    failures = _render_progress_failures(failures=progress['failures'])
-    stats = _render_progress_stats(stage_descriptions=OPERATION_STAGE_DESCRIPTIONS, progress=progress)
+    failures = _render_progress_failures(backup_failures=progress['failures'],
+                                         entity_failures=progress['entities']['failed'],
+                                         entity_unmatched=progress['entities'].get('unmatched'))
+    stats = _render_progress_stats(stage_descriptions=OPERATION_STAGE_DESCRIPTIONS,
+                                   stages={k: v for k, v in stages.items() if k != 'failed'})
     metadata = _render_progress_metadata(progress=progress)
     completed = _render_progress_completed(progress=progress)
 
@@ -62,42 +66,16 @@ def render_operation_progress_summary(progress):
     return '\n'.join(
         [
             'state:    {}'.format(
-                'Done ({})'.format(progress['completed']) if 'completed' in progress else 'Running ({})'.format(
-                    _calculate_progress_pct(progress)
+                'Done ({})'.format(progress['completed']) if progress.get('completed') else 'Running ({})'.format(
+                    _calculate_progress_summary_pct(progress)
                 )
             ),
-            'stages:   {}'.format(render_operation_progress_summary_stages(progress['stages'])),
-            'failures: {}'.format(render_operation_failures(progress['failures']))
+            'steps:',
+            '└─ total:     {}'.format(progress['total']),
+            '└─ processed: {}'.format(progress['processed']),
+            'failures:     {}'.format(progress['failures'])
         ]
     )
-
-
-def render_operation_progress_summary_stages(stages):
-    """
-    Renders the provided operation progress stages.
-
-    :param stages: progress stages to render
-    :return: rendered string
-    """
-    result = '\n└─ '.join(
-        map(
-            lambda entry: '{}: [{}] step(s) done'.format(entry[0], len(entry[1]['steps'])),
-            stages.items()
-        )
-    )
-
-    return '\n└─ {}'.format(result) if result else '-'
-
-
-def render_operation_failures(failures):
-    """
-    Renders the provided operation failures.
-
-    :param failures: failures to render
-    :return: rendered string
-    """
-    result = '\n└─ '.join(failures)
-    return '\n└─ {}'.format(result) if result else '-'
 
 
 def render_operation_response(response):
@@ -116,6 +94,19 @@ def render_operation_response(response):
         return 'Failed: {}'.format(response['failure'])
 
 
+@lru_cache(maxsize=10000)
+def is_entity_file(path):
+    """
+    Checks if the provided path is a file or not.
+
+    Note: The results are cached for each path.
+
+    :param path: directory or file path to check
+    :return: True, if the provided path is a file
+    """
+    return os.path.isfile(path)
+
+
 def _render_files_tree(stage_descriptions, stages):
     files = _transform_stages_to_files(stages)
     files_tree = _transform_files_to_tree(files)
@@ -130,12 +121,36 @@ def _render_files_tree(stage_descriptions, stages):
                 last_stage = prioritised_stages[-1]
 
                 child_fg = stage_descriptions[last_stage]['fg']
-                child_title = stage_descriptions[last_stage]['title']
+                last_title = stage_descriptions[last_stage]['title']
+
+                if data['parts'] and data['parts']['expected_parts'] > 1:
+                    child_title = '{} - {} of {}'.format(
+                        last_title,
+                        data['parts']['processed_parts'],
+                        data['parts']['expected_parts']
+                    )
+                else:
+                    child_title = last_title
 
                 type_mark = style('▶' if data['is_file'] else '▼', fg=child_fg)
-                progress_marks = ''.join(map(lambda s: style('✔', fg=stage_descriptions[s]['fg']), prioritised_stages))
 
-                entry = '{} {} {} ({})'.format(type_mark, child, progress_marks, style(child_title, fg=child_fg))
+                if 'processed' in prioritised_stages:
+                    prioritised_stages = filter(lambda s: s not in ('pending', 'discovered'), prioritised_stages)
+                else:
+                    prioritised_stages = filter(lambda s: s != 'discovered', prioritised_stages)
+
+                progress_marks = ''.join(
+                    map(
+                        lambda s: style('✔' if s != 'failed' else '✕', fg=stage_descriptions[s]['fg']),
+                        prioritised_stages
+                    )
+                )
+
+                if progress_marks:
+                    entry = '{} {} {} ({})'.format(type_mark, child, progress_marks, style(child_title, fg=child_fg))
+                else:
+                    entry = '{} {} ({})'.format(type_mark, child, style(child_title, fg=child_fg))
+
                 yield '{}{}{}'.format(prefix, element, entry)
             else:
                 entry = style(child, dim=True)
@@ -175,48 +190,63 @@ def _transform_stages_to_files(stages):
     files = {}
 
     for stage in stages:
-        for step in stages[stage]['steps']:
-            original = step['name']
+        for entity in stages[stage]:
+            if stage in ('pending', 'processed'):
+                original = entity
+                parts = stages[stage][entity]
+            else:
+                original = entity
+                parts = None
 
             if original in files:
                 existing = files[original]
                 existing['stages'] += [stage]
+                if parts and not existing['parts']:
+                    existing['parts'] = parts
             else:
                 normalized = os.path.normpath(original)
                 split = list(map(lambda part: part or '/', normalized.split(os.path.sep)))
                 files[original] = {
                     'path': split,
                     'stages': [stage],
-                    'is_file': os.path.isfile(normalized),
+                    'parts': parts,
+                    'is_file': is_entity_file(normalized),
                 }
 
     return files
 
 
-def _render_progress_failures(failures):
-    if failures:
-        return ['Failures ({}):'.format(len(failures))] + list(
+def _render_progress_failures(backup_failures, entity_failures, entity_unmatched):
+    failures = len(backup_failures) + len(entity_failures) + (len(entity_unmatched) if entity_unmatched else 0)
+
+    if failures > 0:
+        return ['Failures ({}):'.format(failures)] + list(
             map(
                 lambda failure: '{}{} {}'.format(RENDERING_ELEMENTS['child_last'], style('✕', fg='red'), failure),
-                failures
+                backup_failures + (entity_unmatched if entity_unmatched else [])
+            )
+        ) + list(
+            map(
+                lambda e: '{}{} [{}] - {}'.format(RENDERING_ELEMENTS['child_last'], style('✕', fg='red'), e[0], e[1]),
+                entity_failures.items()
             )
         )
     else:
         return []
 
 
-def _render_progress_stats(stage_descriptions, progress):
-    if progress['stages']:
+def _render_progress_stats(stage_descriptions, stages):
+    if any(v for v in stages.values()):
         return ['Stats:'] + list(
             map(
                 lambda stage: '{}{} {}:\t{}'.format(
                     RENDERING_ELEMENTS['child_last'],
                     style('✔', fg=stage_descriptions[stage]['fg']),
                     style(stage_descriptions[stage]['title'], fg=stage_descriptions[stage]['fg']),
-                    len(progress['stages'][stage]['steps'])
+                    len(stages[stage])
                 ),
                 filter(
-                    lambda stage: stage in progress['stages'],
+                    lambda stage: stage in stages,
                     map(lambda e: e[0], (sorted(stage_descriptions.items(), key=lambda e: e[1]['priority'])))
                 )
             )
@@ -226,11 +256,11 @@ def _render_progress_stats(stage_descriptions, progress):
 
 
 def _render_progress_metadata(progress):
-    if 'metadata' in progress['stages']:
-        metadata = {step['name']: step['completed'] for step in progress['stages']['metadata']['steps']}
+    if progress.get('metadata_collected') or progress.get('metadata_pushed'):
         pending = style('pending', fg='yellow')
-        collected = style(metadata['collection'], fg='green') if 'collection' in metadata else pending
-        pushed = style(metadata['push'], fg='green') if 'push' in metadata else pending
+
+        collected = style(progress['metadata_collected'], fg='green') if progress.get('metadata_collected') else pending
+        pushed = style(progress['metadata_pushed'], fg='green') if progress.get('metadata_pushed') else pending
 
         return [
             'Metadata:',
@@ -242,12 +272,12 @@ def _render_progress_metadata(progress):
 
 
 def _render_progress_completed(progress):
-    if 'completed' in progress:
+    if progress.get('completed'):
         return [
             'Completed:',
             '{}{}'.format(RENDERING_ELEMENTS['child_last'], style(progress['completed'], fg='green'))
         ]
-    elif progress and (progress['stages'] or progress['failures']):
+    elif any(v for v in progress['entities'].values()) or progress['failures']:
         return [
             'Completed:',
             '{}{}'.format(RENDERING_ELEMENTS['child_last'], style(_calculate_progress_pct(progress), fg='green')),
@@ -260,9 +290,16 @@ def _with_prefix(item):
     return '{}_{}'.format(INTERNAL_DATA_PREFIX, item)
 
 
+def _calculate_progress_summary_pct(progress):
+    expected_steps = progress['total']
+    actual_steps = progress['processed']
+
+    return '{}%'.format(round(actual_steps / expected_steps * 100, 2)) if expected_steps > 0 else '-'
+
+
 def _calculate_progress_pct(progress):
-    expected_steps = len(progress['stages']['discovery']['steps']) if 'discovery' in progress['stages'] else 0
-    actual_steps = len(progress['stages']['processing']['steps']) if 'processing' in progress['stages'] else 0
+    expected_steps = len(progress['entities'].get('discovered') or progress['entities'].get('examined'))
+    actual_steps = len(progress['entities']['processed'])
 
     return '{}%'.format(round(actual_steps / expected_steps * 100, 2)) if expected_steps > 0 else '-'
 
@@ -277,9 +314,11 @@ RENDERING_ELEMENTS = {
 }
 
 OPERATION_STAGE_DESCRIPTIONS = {
-    'discovery': {'fg': 'white', 'title': 'found', 'priority': 0},
-    'examination': {'fg': 'yellow', 'title': 'examined', 'priority': 1},
-    'collection': {'fg': 'cyan', 'title': 'collected', 'priority': 2},
-    'processing': {'fg': 'green', 'title': 'processed', 'priority': 3},
-    'metadata-applied': {'fg': 'bright_blue', 'title': 'metadata applied', 'priority': 4},
+    'discovered': {'fg': 'white', 'title': 'found', 'priority': 0},
+    'examined': {'fg': 'yellow', 'title': 'examined', 'priority': 1},
+    'collected': {'fg': 'cyan', 'title': 'collected', 'priority': 2},
+    'pending': {'fg': 'cyan', 'title': 'pending', 'priority': 3},
+    'processed': {'fg': 'green', 'title': 'processed', 'priority': 4},
+    'metadata_applied': {'fg': 'bright_blue', 'title': 'metadata applied', 'priority': 5},
+    'failed': {'fg': 'red', 'title': 'failed', 'priority': 6},
 }

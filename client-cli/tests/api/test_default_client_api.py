@@ -166,23 +166,52 @@ class DefaultClientApiSpec(unittest.TestCase):
     @patch('requests.request')
     def test_should_get_active_operations(self, mock_request):
         client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
-        mock_request.return_value = MockResponse.success(mock_data.ACTIVE_OPERATIONS)
+        mock_request.return_value = MockResponse.success(mock_data.OPERATIONS)
 
-        self.assertEqual(client.operations(), mock_data.ACTIVE_OPERATIONS)
+        self.assertEqual(client.operations(state='active'), mock_data.OPERATIONS)
 
         self.assert_valid_request(
             mock=mock_request,
             expected_method='get',
-            expected_url='/operations'
+            expected_url='/operations',
+            expected_request_params={'state': 'active'}
+        )
+
+    @patch('requests.request')
+    def test_should_get_completed_operations(self, mock_request):
+        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        mock_request.return_value = MockResponse.success(mock_data.OPERATIONS)
+
+        self.assertEqual(client.operations(state='completed'), mock_data.OPERATIONS)
+
+        self.assert_valid_request(
+            mock=mock_request,
+            expected_method='get',
+            expected_url='/operations',
+            expected_request_params={'state': 'completed'}
+        )
+
+    @patch('requests.request')
+    def test_should_get_all_operations(self, mock_request):
+        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        mock_request.return_value = MockResponse.success(mock_data.OPERATIONS)
+
+        self.assertEqual(client.operations(state='all'), mock_data.OPERATIONS)
+
+        self.assert_valid_request(
+            mock=mock_request,
+            expected_method='get',
+            expected_url='/operations',
+            expected_request_params={'state': 'all'}
         )
 
     @patch('requests.request')
     def test_should_get_operation_progress(self, mock_request):
         client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
-        mock_request.return_value = MockResponse.success(mock_data.OPERATION_PROGRESS[0])
+        mock_request.return_value = MockResponse.success(mock_data.BACKUP_PROGRESS[0])
 
         operation = uuid4()
-        self.assertEqual(client.operation_progress(operation), mock_data.OPERATION_PROGRESS[0])
+        self.assertEqual(client.operation_progress(operation), mock_data.BACKUP_PROGRESS[0])
 
         self.assert_valid_request(
             mock=mock_request,
@@ -195,7 +224,7 @@ class DefaultClientApiSpec(unittest.TestCase):
         client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
 
         def sse_response():
-            for e in mock_data.OPERATION_PROGRESS:
+            for e in mock_data.BACKUP_PROGRESS:
                 yield 'data: {}\n\n'.format(json.dumps(e)).encode('utf-8')
 
         mock_response = MockResponse.success(sse_response())
@@ -203,7 +232,7 @@ class DefaultClientApiSpec(unittest.TestCase):
 
         operation = uuid4()
 
-        self.assertEqual(list(client.operation_follow(operation)), mock_data.OPERATION_PROGRESS)
+        self.assertEqual(list(client.operation_follow(operation)), mock_data.BACKUP_PROGRESS)
 
         self.assertTrue(mock_response.closed)
 
@@ -407,7 +436,7 @@ class DefaultClientApiSpec(unittest.TestCase):
         mock_request.return_value = MockResponse.failure(response='test failure')
 
         with self.assertRaises(Abort):
-            client.operations()
+            client.operations(state='completed')
 
     @patch('requests.request')
     def test_should_handle_streaming_request_failures(self, mock_request):

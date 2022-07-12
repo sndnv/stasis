@@ -52,12 +52,12 @@ class JsonWriterSpec(unittest.TestCase):
 
     def test_should_render_operations(self):
         self.assertTrue(
-            JsonWriter().render_operations(operations=mock_data.ACTIVE_OPERATIONS)
+            JsonWriter().render_operations(operations=mock_data.OPERATIONS)
         )
 
     def test_should_render_operation_progress(self):
         self.assertTrue(
-            JsonWriter().render_operation_progress(progress=mock_data.OPERATION_PROGRESS[-1])
+            JsonWriter().render_operation_progress(progress=mock_data.BACKUP_PROGRESS[-1])
         )
 
     def test_should_render_backup_rules_matched(self):

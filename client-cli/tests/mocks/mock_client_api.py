@@ -72,17 +72,17 @@ class MockClientApi(ClientApi):
         self.stats['device_connections'] += 1
         return mock_data.ACTIVE_CONNECTIONS
 
-    def operations(self):
+    def operations(self, state):
         self.stats['operations'] += 1
-        return mock_data.ACTIVE_OPERATIONS
+        return mock_data.OPERATIONS
 
     def operation_progress(self, operation):
         self.stats['operation_progress'] += 1
-        return mock_data.OPERATION_PROGRESS[0]
+        return mock_data.RECOVERY_PROGRESS[0]
 
     def operation_follow(self, operation):
         self.stats['operation_follow'] += 1
-        for progress in mock_data.OPERATION_PROGRESS:
+        for progress in mock_data.RECOVERY_PROGRESS:
             yield progress
 
     def operation_stop(self, operation):
