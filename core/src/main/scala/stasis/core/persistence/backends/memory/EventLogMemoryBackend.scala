@@ -3,8 +3,8 @@ package stasis.core.persistence.backends.memory
 import akka.actor.typed._
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.Behaviors
-import akka.stream.{CompletionStrategy, OverflowStrategy}
 import akka.stream.scaladsl.Source
+import akka.stream.{CompletionStrategy, OverflowStrategy}
 import akka.util.Timeout
 import akka.{Done, NotUsed}
 import stasis.core.persistence.Metrics
@@ -14,6 +14,7 @@ import stasis.core.telemetry.TelemetryContext
 import scala.collection.immutable.Queue
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
+import scala.util.{Failure, Success, Try}
 
 class EventLogMemoryBackend[E, S] private (
   name: String,
@@ -54,10 +55,16 @@ class EventLogMemoryBackend[E, S] private (
 
   override def storeEventAndUpdateState(event: E, update: (E, S) => S): Future[Done] =
     storeRef
-      .flatMap(_ ? ((ref: ActorRef[Done]) => StoreEventAndUpdateState(event, update, ref)))
-      .map { result =>
-        metrics.recordEvent(backend = name)
-        result
+      .flatMap { messageRef =>
+        (messageRef ? ((responseRef: ActorRef[Try[Done]]) => StoreEventAndUpdateState(event, update, responseRef))).flatMap {
+          case Success(result) =>
+            metrics.recordEvent(backend = name)
+            Future.successful(result)
+
+          case Failure(e) =>
+            metrics.recordEventFailure(backend = name)
+            Future.failed(e)
+        }
       }
 }
 
@@ -105,7 +112,7 @@ object EventLogMemoryBackend {
   private final case class StoreEventAndUpdateState[E, S](
     event: E,
     update: (E, S) => S,
-    replyTo: ActorRef[Done]
+    replyTo: ActorRef[Try[Done]]
   ) extends Message[E, S]
 
   private def store[E, S](
@@ -115,11 +122,17 @@ object EventLogMemoryBackend {
     Behaviors.receive { (context, message) =>
       message match {
         case StoreEventAndUpdateState(event, update, replyTo) =>
-          val updated = update(event, state)
-          context.system.classicSystem.eventStream.publish(updated)
+          Try(update(event, state)) match {
+            case Success(updated) =>
+              context.system.classicSystem.eventStream.publish(updated)
 
-          replyTo ! Done
-          store(state = updated, events = events :+ event)
+              replyTo ! Success(Done)
+              store(state = updated, events = events :+ event)
+
+            case Failure(e) =>
+              replyTo ! Failure(e)
+              Behaviors.same
+          }
 
         case GetState(replyTo) =>
           replyTo ! state

@@ -122,20 +122,26 @@ object Metrics {
 
   trait EventLogBackend extends MetricsProvider {
     def recordEvent(backend: String): Unit
+    def recordEventFailure(backend: String): Unit
   }
 
   object EventLogBackend {
     object NoOp extends EventLogBackend {
       override def recordEvent(backend: String): Unit = ()
+      override def recordEventFailure(backend: String): Unit = ()
     }
 
     class Default(meter: Meter, namespace: String) extends EventLogBackend {
       private val subsystem: String = "persistence_event_log"
 
       private val events = meter.counter(name = s"${namespace}_${subsystem}_events")
+      private val eventFailures = meter.counter(name = s"${namespace}_${subsystem}_event_failures")
 
       override def recordEvent(backend: String): Unit =
         events.inc(Labels.Backend -> backend)
+
+      override def recordEventFailure(backend: String): Unit =
+        eventFailures.inc(Labels.Backend -> backend)
     }
   }
 

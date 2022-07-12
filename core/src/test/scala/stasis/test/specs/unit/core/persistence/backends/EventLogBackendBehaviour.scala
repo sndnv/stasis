@@ -10,6 +10,8 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 import scala.collection.immutable.Queue
+import scala.concurrent.Future
+import scala.util.control.NonFatal
 
 trait EventLogBackendBehaviour { _: AsyncUnitSpec with Eventually =>
   def eventLogBackend[B <: EventLogBackend[String, Queue[String]]](
@@ -36,6 +38,48 @@ trait EventLogBackendBehaviour { _: AsyncUnitSpec with Eventually =>
         stateAfter should be(Queue(testEvent))
 
         telemetry.persistence.eventLog.event should be(1)
+        telemetry.persistence.eventLog.eventFailure should be(0)
+      }
+    }
+
+    it should "handle state update failures" in {
+      val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+      val store = createBackend(telemetry)
+
+      for {
+        eventsBefore <- store.getEvents
+        stateBefore <- store.getState
+        _ <- store.storeEventAndUpdateState(
+          event = testEvent,
+          update = (event, state) => state :+ event
+        )
+        eventsBeforeFailure <- store.getEvents
+        stateBeforeFailure <- store.getState
+        failure <- store
+          .storeEventAndUpdateState(
+            event = testEvent,
+            update = (_, _) => throw new RuntimeException("Test failure")
+          )
+          .map { response =>
+            fail(s"Received unexpected response: [$response]")
+          }
+          .recoverWith { case NonFatal(e) => Future.successful(e) }
+        eventsAfterFailure <- store.getEvents
+        stateAfterFailure <- store.getState
+      } yield {
+        eventsBefore should be(Queue.empty)
+        stateBefore should be(Queue.empty)
+        eventsBeforeFailure should be(Queue(testEvent))
+        stateBeforeFailure should be(Queue(testEvent))
+        eventsAfterFailure should be(Queue(testEvent))
+        stateAfterFailure should be(Queue(testEvent))
+
+        failure should be(a[RuntimeException])
+        failure.getMessage should be("Test failure")
+
+        telemetry.persistence.eventLog.event should be(1)
+        telemetry.persistence.eventLog.eventFailure should be(1)
       }
     }
 
@@ -68,6 +112,7 @@ trait EventLogBackendBehaviour { _: AsyncUnitSpec with Eventually =>
             third should be(Queue(testEvent, testEvent, testEvent))
 
             telemetry.persistence.eventLog.event should be >= 3
+            telemetry.persistence.eventLog.eventFailure should be(0)
 
           case other =>
             fail(s"Received unexpected result: [$other]")
