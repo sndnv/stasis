@@ -3,7 +3,7 @@ package stasis.test.specs.unit.core.streaming
 import akka.Done
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import stasis.test.specs.unit.AsyncUnitSpec
 
@@ -55,6 +55,28 @@ class OperatorsSpec extends AsyncUnitSpec {
     source.ignored().map { _ =>
       counter.get() should be(3)
     }
+  }
+
+  they should "drop duplicates" in {
+    import stasis.core.streaming.Operators.ExtendedSource
+
+    val source = Source(List("a", "b", "a", "a", "a", "b", "b", "b", "c", "d", "c", "e"))
+
+    source
+      .dropLatestDuplicates(Option.apply)
+      .runWith(Sink.seq)
+      .await should be(
+      Seq(
+        "a",
+        "b",
+        "a",
+        "b",
+        "c",
+        "d",
+        "c",
+        "e"
+      )
+    )
   }
 
   they should "support repartitioning individual stream elements" in {
