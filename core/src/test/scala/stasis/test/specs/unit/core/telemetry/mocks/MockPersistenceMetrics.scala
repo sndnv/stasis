@@ -88,11 +88,17 @@ object MockPersistenceMetrics {
 
   class EventLogBackend extends Metrics.EventLogBackend {
     private val eventRecorded: AtomicInteger = new AtomicInteger(0)
+    private val eventFailureRecorded: AtomicInteger = new AtomicInteger(0)
 
     def event: Int = eventRecorded.get()
+    def eventFailure: Int = eventFailureRecorded.get()
 
     override def recordEvent(backend: String): Unit = {
       val _ = eventRecorded.incrementAndGet()
+    }
+
+    override def recordEventFailure(backend: String): Unit = {
+      val _ = eventFailureRecorded.incrementAndGet()
     }
   }
 
