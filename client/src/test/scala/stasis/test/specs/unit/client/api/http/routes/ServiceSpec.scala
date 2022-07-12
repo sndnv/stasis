@@ -48,7 +48,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
       api = MockServerApiEndpointClient(),
       executor = MockOperationExecutor(),
       scheduler = MockOperationScheduler(),
-      tracker = MockTrackerView(),
+      trackers = MockTrackerViews(),
       search = MockSearch(),
       terminateService = terminate,
       log = LoggerFactory.getLogger(this.getClass.getName)

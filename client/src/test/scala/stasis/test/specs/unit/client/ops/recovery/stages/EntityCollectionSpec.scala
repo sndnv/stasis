@@ -63,6 +63,8 @@ class EntityCollectionSpec extends AsyncUnitSpec {
 
         mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(3)
         mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(2)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessingStarted) should be(0)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityPartProcessed) should be(0)
         mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(0)
         mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
         mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)

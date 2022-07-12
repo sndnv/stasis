@@ -12,35 +12,149 @@ import org.slf4j.LoggerFactory
 import stasis.client.api.http.Context
 import stasis.client.api.http.routes.Operations
 import stasis.client.ops.recovery.Recovery.PathQuery
-import stasis.client.tracking.TrackerView
+import stasis.client.tracking.state.{BackupState, RecoveryState}
+import stasis.client.tracking.{BackupTracker, RecoveryTracker}
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.ops.Operation
-import stasis.shared.ops.Operation.Id
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.client.api.http.routes.OperationsSpec.{PartialBackupState, PartialRecoveryState}
 import stasis.test.specs.unit.client.mocks._
 
+import java.nio.file.Paths
 import java.time.Instant
-import java.time.temporal.ChronoUnit
-import scala.collection.immutable.Queue
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
-  "Operations routes" should "provide current operations state" in {
+  "Operations routes" should "provide current operations state (default / active)" in {
     import Operations._
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-    val mockTracker = MockTrackerView()
-    val mockExecutor = MockOperationExecutor()
-    val routes = createRoutes(executor = mockExecutor, tracker = mockTracker)
+    val operations: Map[Operation.Id, Operation.Type] = Map(
+      Operation.generateId() -> Operation.Type.Backup,
+      Operation.generateId() -> Operation.Type.Recovery,
+      Operation.generateId() -> Operation.Type.Backup
+    )
+
+    val mockTrackers = new MockTrackerViews() {
+      override val backup: BackupTracker.View = new MockBackupTracker {
+        override def state: Future[Map[Operation.Id, BackupState]] =
+          super.state.map { _ =>
+            operations.collect { case (k, Operation.Type.Backup) => k -> BackupState.start(k).backupCompleted() }
+          }
+      }
+      override val recovery: RecoveryTracker.View = new MockRecoveryTracker {
+        override def state: Future[Map[Operation.Id, RecoveryState]] =
+          super.state.map { _ =>
+            operations.collect { case (k, Operation.Type.Recovery) => k -> RecoveryState.start(k) }
+          }
+      }
+    }
+
+    val mockExecutor = new MockOperationExecutor() {
+      override def active: Future[Map[Operation.Id, Operation.Type]] =
+        super.active.map { _ => operations.filter(_._2 == Operation.Type.Recovery) }
+    }
+
+    val routes = createRoutes(executor = mockExecutor, trackers = mockTrackers)
 
     Get("/") ~> routes ~> check {
       status should be(StatusCodes.OK)
-      responseAs[Seq[OperationState]] should not be empty
+      responseAs[Seq[OperationProgress]].size should be(1)
 
-      mockTracker.statistics(MockTrackerView.Statistic.GetState) should be(1)
-      mockTracker.statistics(MockTrackerView.Statistic.GetStateUpdates) should be(0)
-      mockTracker.statistics(MockTrackerView.Statistic.GetOperationUpdates) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(1)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithEntry) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartExpiration) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartValidation) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartKeyRotation) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.Stop) should be(0)
+    }
+  }
+
+  they should "provide current operations state (completed)" in {
+    import Operations._
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+
+    val operations: Map[Operation.Id, Operation.Type] = Map(
+      Operation.generateId() -> Operation.Type.Backup,
+      Operation.generateId() -> Operation.Type.Recovery,
+      Operation.generateId() -> Operation.Type.Backup
+    )
+
+    val mockTrackers = new MockTrackerViews() {
+      override val backup: BackupTracker.View = new MockBackupTracker {
+        override def state: Future[Map[Operation.Id, BackupState]] =
+          super.state.map { _ =>
+            operations.collect { case (k, Operation.Type.Backup) => k -> BackupState.start(k).backupCompleted() }
+          }
+      }
+      override val recovery: RecoveryTracker.View = new MockRecoveryTracker {
+        override def state: Future[Map[Operation.Id, RecoveryState]] =
+          super.state.map { _ =>
+            operations.collect { case (k, Operation.Type.Recovery) => k -> RecoveryState.start(k) }
+          }
+      }
+    }
+
+    val mockExecutor = MockOperationExecutor()
+
+    val routes = createRoutes(executor = mockExecutor, trackers = mockTrackers)
+
+    Get("/?state=completed") ~> routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[Seq[OperationProgress]].size should be(2)
+
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(1)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithEntry) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartExpiration) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartValidation) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartKeyRotation) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.Stop) should be(0)
+    }
+  }
+
+  they should "provide current operations state (all)" in {
+    import Operations._
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+
+    val operations: Map[Operation.Id, Operation.Type] = Map(
+      Operation.generateId() -> Operation.Type.Backup,
+      Operation.generateId() -> Operation.Type.Recovery,
+      Operation.generateId() -> Operation.Type.Backup
+    )
+
+    val mockTrackers = new MockTrackerViews() {
+      override val backup: BackupTracker.View = new MockBackupTracker {
+        override def state: Future[Map[Operation.Id, BackupState]] =
+          super.state.map { _ =>
+            operations.collect { case (k, Operation.Type.Backup) => k -> BackupState.start(k).backupCompleted() }
+          }
+      }
+      override val recovery: RecoveryTracker.View = new MockRecoveryTracker {
+        override def state: Future[Map[Operation.Id, RecoveryState]] =
+          super.state.map { _ =>
+            operations.collect { case (k, Operation.Type.Recovery) => k -> RecoveryState.start(k) }
+          }
+      }
+    }
+
+    val mockExecutor = MockOperationExecutor()
+
+    val routes = createRoutes(executor = mockExecutor, trackers = mockTrackers)
+
+    Get("/?state=all") ~> routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[Seq[OperationProgress]].size should be(3)
 
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(1)
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
@@ -178,73 +292,139 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "support retrieving progress of specific operations" in {
+  they should "support retrieving progress of specific operations (backup)" in {
+    import OperationsSpec._
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
-    import stasis.shared.api.Formats.operationProgressFormat
 
     val operation = Operation.generateId()
-    val expectedProgress = Operation.Progress.empty
 
-    val mockTracker = new MockTrackerView() {
-      override def state: Future[TrackerView.State] =
-        Future.successful(
-          TrackerView.State(
-            operations = Map(operation -> expectedProgress),
-            servers = Map.empty
+    val mockTrackers = new MockTrackerViews() {
+      override val backup: BackupTracker.View = new MockBackupTracker() {
+        override def state: Future[Map[Operation.Id, BackupState]] =
+          Future.successful(
+            Map(
+              operation -> BackupState.start(operation = operation)
+            )
           )
-        )
+      }
     }
 
-    val routes = createRoutes(tracker = mockTracker)
+    val mockExecutor = new MockOperationExecutor() {
+      override def active: Future[Map[Operation.Id, Operation.Type]] =
+        Future.successful(Map(operation -> Operation.Type.Backup))
+    }
+
+    val routes = createRoutes(executor = mockExecutor, trackers = mockTrackers)
 
     Get(s"/$operation/progress") ~> routes ~> check {
       status should be(StatusCodes.OK)
-      responseAs[Operation.Progress] should be(expectedProgress)
+
+      responseAs[PartialBackupState] should be(
+        PartialBackupState(
+          operation = operation,
+          entities = PartialBackupState.Entities(
+            discovered = Seq.empty,
+            unmatched = Seq.empty,
+            examined = Seq.empty,
+            collected = Seq.empty,
+            pending = Map.empty,
+            processed = Map.empty,
+            failed = Map.empty
+          ),
+          metadataCollected = None,
+          metadataPushed = None,
+          failures = Seq.empty,
+          completed = None
+        )
+      )
+    }
+  }
+
+  they should "support retrieving progress of specific operations (recovery)" in {
+    import OperationsSpec._
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+
+    val operation = Operation.generateId()
+    val mockTrackers = new MockTrackerViews() {
+      override val recovery: RecoveryTracker.View = new MockRecoveryTracker() {
+        override def state: Future[Map[Operation.Id, RecoveryState]] =
+          Future.successful(
+            Map(
+              operation -> RecoveryState.start(operation = operation)
+            )
+          )
+      }
+    }
+
+    val mockExecutor = new MockOperationExecutor() {
+      override def active: Future[Map[Operation.Id, Operation.Type]] =
+        Future.successful(Map(operation -> Operation.Type.Recovery))
+    }
+
+    val routes = createRoutes(executor = mockExecutor, trackers = mockTrackers)
+
+    Get(s"/$operation/progress") ~> routes ~> check {
+      status should be(StatusCodes.OK)
+
+      responseAs[PartialRecoveryState] should be(
+        PartialRecoveryState(
+          operation = operation,
+          entities = PartialRecoveryState.Entities(
+            examined = Seq.empty,
+            collected = Seq.empty,
+            pending = Map.empty,
+            processed = Map.empty,
+            metadataApplied = Seq.empty,
+            failed = Map.empty
+          ),
+          failures = Seq.empty,
+          completed = None
+        )
+      )
     }
   }
 
   they should "fail to retrieve progress of a specific operation if it does not exist" in {
     val operation = Operation.generateId()
 
-    val mockTracker = MockTrackerView()
-    val routes = createRoutes(tracker = mockTracker)
+    val routes = createRoutes()
 
     Get(s"/$operation/progress") ~> routes ~> check {
       status should be(StatusCodes.NotFound)
-
-      mockTracker.statistics(MockTrackerView.Statistic.GetState) should be(1)
-      mockTracker.statistics(MockTrackerView.Statistic.GetStateUpdates) should be(0)
-      mockTracker.statistics(MockTrackerView.Statistic.GetOperationUpdates) should be(0)
     }
   }
 
-  they should "support retrieve progress stream for specific operations" in {
+  they should "support retrieving progress stream for specific operations (backup)" in {
     import akka.http.scaladsl.unmarshalling.sse.EventStreamUnmarshalling._
     import play.api.libs.json.Json
-    import stasis.shared.api.Formats.operationProgressFormat
 
     val operation = Operation.generateId()
-    val expectedEvents = List(
-      Operation.Progress.empty,
-      Operation.Progress(
-        stages = Map("test-1" -> Operation.Progress.Stage(steps = Queue.empty)),
-        failures = Queue("a", "b", "c"),
-        completed = None
-      ),
-      Operation.Progress(
-        stages = Map("test-1" -> Operation.Progress.Stage(steps = Queue.empty)),
-        failures = Queue("a", "b", "c", "d"),
-        completed = Some(Instant.now().truncatedTo(ChronoUnit.SECONDS))
-      )
+
+    val backup = BackupState.start(operation = operation)
+
+    val entity1 = Paths.get("/tmp/a")
+
+    val events = List(
+      backup,
+      backup.entityExamined(entity1),
+      backup.entityExamined(entity1).entityFailed(entity1, new RuntimeException("Test failure"))
     )
 
     val heartbeatInterval = 50.millis
 
-    val mockTracker = new MockTrackerView() {
-      override def operationUpdates(operation: Id): Source[Operation.Progress, NotUsed] =
-        Source(expectedEvents).throttle(elements = 1, per = heartbeatInterval * 4)
+    val mockTrackers = new MockTrackerViews() {
+      override val backup: BackupTracker.View = new MockBackupTracker() {
+        override def updates(operation: Operation.Id): Source[BackupState, NotUsed] =
+          Source(events).throttle(elements = 1, per = heartbeatInterval * 4)
+      }
     }
-    val routes = createRoutes(tracker = mockTracker)
+
+    val mockExecutor = new MockOperationExecutor() {
+      override def active: Future[Map[Operation.Id, Operation.Type]] =
+        Future.successful(Map(operation -> Operation.Type.Backup))
+    }
+
+    val routes = createRoutes(executor = mockExecutor, trackers = mockTrackers)
 
     Get(s"/$operation/follow?heartbeat=${heartbeatInterval.toMillis}ms") ~> routes ~> check {
       status should be(StatusCodes.OK)
@@ -253,10 +433,98 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       val actualEvents =
         Unmarshal(response)
           .to[Source[ServerSentEvent, NotUsed]]
-          .flatMap(_.map(event => Json.parse(event.data).as[Operation.Progress]).runWith(Sink.seq))
+          .flatMap(_.map(event => Json.parse(event.data).as[PartialBackupState]).runWith(Sink.seq))
           .await
 
-      actualEvents should be(expectedEvents)
+      actualEvents.toList match {
+        case first :: second :: third :: Nil =>
+          first.operation should be(backup.operation)
+          first.entities.examined should be(empty)
+          first.entities.failed should be(empty)
+
+          second.operation should be(backup.operation)
+          second.entities.examined should be(Seq("/tmp/a"))
+          second.entities.failed should be(empty)
+
+          third.operation should be(backup.operation)
+          third.entities.examined should be(Seq("/tmp/a"))
+          third.entities.failed should be(Map("/tmp/a" -> "RuntimeException - Test failure"))
+
+        case other =>
+          fail(s"Unexpected events encountered: [$other]")
+      }
+    }
+  }
+
+  they should "support retrieving progress stream for specific operations (recovery)" in {
+    import akka.http.scaladsl.unmarshalling.sse.EventStreamUnmarshalling._
+    import play.api.libs.json.Json
+
+    val operation = Operation.generateId()
+
+    val recovery = RecoveryState.start(operation = operation)
+
+    val entity1 = Paths.get("/tmp/a")
+
+    val events = List(
+      recovery,
+      recovery.entityExamined(entity1),
+      recovery.entityExamined(entity1).entityFailed(entity1, new RuntimeException("Test failure"))
+    )
+
+    val heartbeatInterval = 50.millis
+
+    val mockTrackers = new MockTrackerViews() {
+      override val recovery: RecoveryTracker.View = new MockRecoveryTracker() {
+        override def updates(operation: Operation.Id): Source[RecoveryState, NotUsed] =
+          Source(events).throttle(elements = 1, per = heartbeatInterval * 4)
+      }
+    }
+
+    val mockExecutor = new MockOperationExecutor() {
+      override def active: Future[Map[Operation.Id, Operation.Type]] =
+        Future.successful(Map(operation -> Operation.Type.Recovery))
+    }
+
+    val routes = createRoutes(executor = mockExecutor, trackers = mockTrackers)
+
+    Get(s"/$operation/follow?heartbeat=${heartbeatInterval.toMillis}ms") ~> routes ~> check {
+      status should be(StatusCodes.OK)
+      mediaType should be(MediaTypes.`text/event-stream`)
+
+      val actualEvents =
+        Unmarshal(response)
+          .to[Source[ServerSentEvent, NotUsed]]
+          .flatMap(_.map(event => Json.parse(event.data).as[PartialRecoveryState]).runWith(Sink.seq))
+          .await
+
+      actualEvents.toList match {
+        case first :: second :: third :: Nil =>
+          first.operation should be(recovery.operation)
+          first.entities.examined should be(empty)
+          first.entities.failed should be(empty)
+
+          second.operation should be(recovery.operation)
+          second.entities.examined should be(Seq("/tmp/a"))
+          second.entities.failed should be(empty)
+
+          third.operation should be(recovery.operation)
+          third.entities.examined should be(Seq("/tmp/a"))
+          third.entities.failed should be(Map("/tmp/a" -> "RuntimeException - Test failure"))
+
+        case other =>
+          fail(s"Unexpected events encountered: [$other]")
+      }
+    }
+  }
+
+  they should "fail to retrieve a progress stream for a specific operation if it does not exist" in {
+    val operation = Operation.generateId()
+
+    val routes = createRoutes()
+
+    Get(s"/$operation/follow") ~> routes ~> check {
+      status should be(StatusCodes.NotFound)
     }
   }
 
@@ -283,7 +551,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "provide support for parameters" in {
+  they should "provide support for path query parameters" in {
     import stasis.client.api.http.routes.Operations._
 
     val route = Route.seal(
@@ -297,6 +565,30 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     (matchingFileNameRegexes ++ matchingPathRegexes).foreach { regex =>
       withClue(s"Parsing supported regex [$regex]:") {
         Get(Uri("/").withQuery(query = Uri.Query("regex" -> regex))) ~> route ~> check {
+          status should be(StatusCodes.OK)
+        }
+      }
+    }
+
+    succeed
+  }
+
+  they should "provide support for operation state parameters" in {
+    import stasis.client.api.http.routes.Operations._
+
+    val route = Route.seal(
+      pathEndOrSingleSlash {
+        parameter("state".as[State]) { _ =>
+          Directives.complete(StatusCodes.OK)
+        }
+      }
+    )
+
+    val states = Seq("active", "completed", "all")
+
+    states.foreach { state =>
+      withClue(s"Parsing supported state [$state]:") {
+        Get(Uri("/").withQuery(query = Uri.Query("state" -> state))) ~> route ~> check {
           status should be(StatusCodes.OK)
         }
       }
@@ -333,6 +625,16 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
+  they should "extract operation state from string" in {
+    import stasis.client.api.http.routes.Operations.State
+
+    State(state = "active") should be(State.Active)
+    State(state = "completed") should be(State.Completed)
+    State(state = "all") should be(State.All)
+
+    an[IllegalArgumentException] should be thrownBy State(state = "other")
+  }
+
   private val matchingFileNameRegexes = Seq(
     """test-file""",
     """test-file\.json""",
@@ -348,13 +650,13 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     api: MockServerApiEndpointClient = MockServerApiEndpointClient(),
     executor: MockOperationExecutor = MockOperationExecutor(),
     scheduler: MockOperationScheduler = MockOperationScheduler(),
-    tracker: MockTrackerView = MockTrackerView()
+    trackers: MockTrackerViews = MockTrackerViews()
   ): Route = {
     implicit val context: Context = Context(
       api = api,
       executor = executor,
       scheduler = scheduler,
-      tracker = tracker,
+      trackers = trackers,
       search = MockSearch(),
       terminateService = () => (),
       log = LoggerFactory.getLogger(this.getClass.getName)
@@ -362,4 +664,61 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     new Operations().routes()
   }
+}
+
+object OperationsSpec {
+  import play.api.libs.json._
+
+  final case class PartialBackupState(
+    operation: Operation.Id,
+    entities: PartialBackupState.Entities,
+    metadataCollected: Option[Instant],
+    metadataPushed: Option[Instant],
+    failures: Seq[String],
+    completed: Option[Instant]
+  )
+
+  object PartialBackupState {
+    final case class Entities(
+      discovered: Seq[String],
+      unmatched: Seq[String],
+      examined: Seq[String],
+      collected: Seq[String],
+      pending: Map[String, JsObject],
+      processed: Map[String, JsObject],
+      failed: Map[String, String]
+    )
+  }
+
+  final case class PartialRecoveryState(
+    operation: Operation.Id,
+    entities: PartialRecoveryState.Entities,
+    failures: Seq[String],
+    completed: Option[Instant]
+  )
+
+  object PartialRecoveryState {
+    final case class Entities(
+      examined: Seq[String],
+      collected: Seq[String],
+      pending: Map[String, JsObject],
+      processed: Map[String, JsObject],
+      metadataApplied: Seq[String],
+      failed: Map[String, String]
+    )
+  }
+
+  implicit val jsonConfig: JsonConfiguration = JsonConfiguration(JsonNaming.SnakeCase)
+
+  implicit val partialBackupStateEntitiesFormat: Reads[PartialBackupState.Entities] =
+    Json.reads[PartialBackupState.Entities]
+
+  implicit val partialBackupStateFormat: Reads[PartialBackupState] =
+    Json.reads[PartialBackupState]
+
+  implicit val partialRecoveryStateEntitiesFormat: Reads[PartialRecoveryState.Entities] =
+    Json.reads[PartialRecoveryState.Entities]
+
+  implicit val partialRecoveryStateFormat: Reads[PartialRecoveryState] =
+    Json.reads[PartialRecoveryState]
 }

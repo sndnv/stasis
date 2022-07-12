@@ -20,7 +20,7 @@ trait MetadataApplication {
 
   def metadataApplication(implicit operation: Operation.Id): Flow[TargetEntity, Done, NotUsed] =
     Flow[TargetEntity]
-      .mapAsync(parallelism.value) { targetEntity =>
+      .mapAsync(parallelism.entities) { targetEntity =>
         Metadata
           .applyEntityMetadataTo(
             metadata = targetEntity.existingMetadata,

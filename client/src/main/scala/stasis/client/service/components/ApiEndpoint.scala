@@ -44,7 +44,7 @@ object ApiEndpoint {
         api = clients.api,
         executor = executor,
         scheduler = scheduler,
-        tracker = tracker,
+        trackers = trackers.views,
         search = search,
         terminateService = () => {
           val _ = akka.pattern.after(

@@ -2,6 +2,7 @@ package stasis.test.specs.unit.client.ops.backup
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
@@ -28,7 +29,7 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks._
 import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 
-import java.nio.file.Paths
+import java.nio.file.{Path, Paths}
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.Future
@@ -46,7 +47,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
 
     val mockApiClient = MockServerApiEndpointClient()
     val mockCoreClient = MockServerCoreEndpointClient()
-    val mockTracker = new MockBackupTracker
+    val tracker = new MockBackupTracker
 
     val backup = createBackup(
       collector = Backup.Descriptor.Collector.WithRules(
@@ -77,7 +78,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         api = mockApiClient,
         core = mockCoreClient
       ),
-      tracker = mockTracker
+      tracker = tracker
     )
 
     backup.start().map { _ =>
@@ -105,15 +106,17 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(4)
 
-        mockTracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(7) // 2 directories + 5 files
-        mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(1)
-        mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(7) // 2 directories + 5 files
-        mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(5) // 2 unchanged + 5 changed entities
-        mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(5) // 2 unchanged + 5 changed entities
-        mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(1)
-        mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(1)
-        mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
+        tracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(7) // 2 directories + 5 files
+        tracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(1)
+        tracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(7) // 2 directories + 5 files
+        tracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(5) // 2 unchanged + 5 changed entities
+        tracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(5) // 2 unchanged + 5 changed entities
+        tracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(3) // 3 files
+        tracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(5) // 2 unchanged + 5 changed entities
+        tracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(1)
+        tracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(1)
+        tracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
+        tracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
       }
     }
   }
@@ -125,7 +128,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
 
     val mockApiClient = MockServerApiEndpointClient()
     val mockCoreClient = MockServerCoreEndpointClient()
-    val mockTracker = new MockBackupTracker
+    val tracker = new MockBackupTracker
 
     val backup = createBackup(
       collector = Backup.Descriptor.Collector.WithEntities(
@@ -154,7 +157,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         api = mockApiClient,
         core = mockCoreClient
       ),
-      tracker = mockTracker
+      tracker = tracker
     )
 
     backup.start().map { _ =>
@@ -179,15 +182,17 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(2)
 
-        mockTracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(3)
-        mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(3)
-        mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(2)
-        mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(2)
-        mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(1)
-        mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(1)
-        mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
+        tracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(3)
+        tracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
+        tracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(3)
+        tracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(2)
+        tracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(2)
+        tracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(1)
+        tracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(2)
+        tracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(1)
+        tracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(1)
+        tracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
+        tracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
       }
     }
   }
@@ -216,7 +221,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
             }
           }
     }
-    val mockTracker = new MockBackupTracker
+    val tracker = new MockBackupTracker
 
     val backup = createBackup(
       collector = Backup.Descriptor.Collector.WithEntities(
@@ -244,7 +249,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         api = mockApiClient,
         core = mockCoreClient
       ),
-      tracker = mockTracker
+      tracker = tracker
     )
 
     backup.start().map { _ =>
@@ -269,42 +274,102 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(2)
 
-        mockTracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(3)
-        mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
-        mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(3)
-        mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(2)
-        mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(1)
-        mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(1)
-        mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(1)
-        mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(1)
-        mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
+        tracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(3)
+        tracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
+        tracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(3)
+        tracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(2)
+        tracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(2)
+        tracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(1)
+        tracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(1)
+        tracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(1)
+        tracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(1)
+        tracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(1)
+        tracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
       }
+    }
+  }
+
+  it should "handle general backup failures" in {
+    val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(checksum)
+
+    val mockApiClient = MockServerApiEndpointClient()
+    val mockCoreClient = MockServerCoreEndpointClient()
+    val tracker = new MockBackupTracker
+
+    val backup = createBackup(
+      collector = Backup.Descriptor.Collector.WithEntities(
+        entities = List(sourceFile1Metadata.path)
+      ),
+      latestMetadata = DatasetMetadata.empty,
+      clients = Clients(
+        api = mockApiClient,
+        core = mockCoreClient
+      ),
+      tracker = tracker,
+      checksum = new Checksum {
+        override def calculate(file: Path)(implicit mat: Materializer): Future[BigInt] =
+          Future.failed(new RuntimeException("Test failure"))
+      }
+    )
+
+    backup.start().map { _ =>
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryCreated) should be(1)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntriesRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetDefinitionCreated) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetDefinitionRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetDefinitionsRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.PublicSchedulesRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.PublicScheduleRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.UserRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+
+      mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
+      mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(1)
+
+      tracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(1)
+      tracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
+      tracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+      tracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+      tracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(0)
+      tracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(0)
+      tracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
+      tracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(1)
+      tracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(1)
+      tracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(1)
+      tracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
     }
   }
 
   it should "track successful backup operations" in {
     import Backup._
 
-    val mockTracker = new MockBackupTracker
+    val tracker = new MockBackupTracker
     implicit val id: Operation.Id = Operation.generateId()
 
     val operation: Future[Done] = Future.successful(Done)
-    val trackedOperation: Future[Done] = operation.trackWith(mockTracker)
+    val trackedOperation: Future[Done] = operation.trackWith(tracker)
 
     trackedOperation
       .map { result =>
         result should be(Done)
 
         eventually[Assertion] {
-          mockTracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
+          tracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
         }
       }
   }
@@ -312,11 +377,11 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
   it should "track failed backup operations" in {
     import Backup._
 
-    val mockTracker = new MockBackupTracker
+    val tracker = new MockBackupTracker
     implicit val id: Operation.Id = Operation.generateId()
 
     val operation: Future[Done] = Future.failed(new RuntimeException("Test Failure"))
-    val trackedOperation: Future[Done] = operation.trackWith(mockTracker)
+    val trackedOperation: Future[Done] = operation.trackWith(tracker)
 
     trackedOperation
       .map { result =>
@@ -326,15 +391,17 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         e shouldBe a[RuntimeException]
 
         eventually[Assertion] {
-          mockTracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(1)
-          mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
+          tracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(1)
+          tracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
         }
       }
   }
@@ -342,7 +409,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
   it should "allow stopping a running backup" in {
     val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(checksum)
 
-    val mockTracker = new MockBackupTracker
+    val tracker = new MockBackupTracker
 
     val backup = createBackup(
       collector = Backup.Descriptor.Collector.WithEntities(
@@ -353,15 +420,15 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         api = MockServerApiEndpointClient(),
         core = MockServerCoreEndpointClient()
       ),
-      tracker = mockTracker
+      tracker = tracker
     )
 
     val _ = backup.start()
     backup.stop()
 
     eventually[Assertion] {
-      mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
-      mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
+      tracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
+      tracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
     }
   }
 
@@ -469,7 +536,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     "BackupSpec"
   )
 
-  private implicit val parallelismConfig: ParallelismConfig = ParallelismConfig(value = 1)
+  private implicit val parallelismConfig: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
 
   private implicit val secretsConfig: SecretsConfig = SecretsConfig(
     derivation = SecretsConfig.Derivation(
@@ -495,7 +562,8 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     latestMetadata: DatasetMetadata,
     collector: Backup.Descriptor.Collector,
     clients: Clients,
-    tracker: MockBackupTracker
+    tracker: MockBackupTracker,
+    checksum: Checksum = checksum
   ): Backup = {
     val encryption = Aes
 

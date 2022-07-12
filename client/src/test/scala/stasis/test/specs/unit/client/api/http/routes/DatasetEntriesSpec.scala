@@ -136,7 +136,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       api = api,
       executor = executor,
       scheduler = scheduler,
-      tracker = MockTrackerView(),
+      trackers = MockTrackerViews(),
       search = MockSearch(),
       terminateService = () => (),
       log = LoggerFactory.getLogger(this.getClass.getName)

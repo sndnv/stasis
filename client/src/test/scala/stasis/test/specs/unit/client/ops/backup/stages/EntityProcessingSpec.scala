@@ -14,7 +14,7 @@ import stasis.client.model.{EntityMetadata, SourceEntity}
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.backup.stages.EntityProcessing
-import stasis.client.ops.exceptions.OperationStopped
+import stasis.client.ops.exceptions.{EntityProcessingFailure, OperationStopped}
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
 import stasis.shared.model.datasets.DatasetDefinition
@@ -29,7 +29,80 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Eventually { spec =>
-  "A Backup EntityProcessing stage" should "process files with changed content and metadata" in {
+  "A Backup EntityProcessing stage" should "extract and expect file metadata" in {
+    val entity = SourceEntity(
+      path = Fixtures.Metadata.FileOneMetadata.path,
+      existingMetadata = None,
+      currentMetadata = Fixtures.Metadata.FileOneMetadata
+    )
+
+    EntityProcessing
+      .expectFileMetadata(entity = entity)
+      .map { metadata =>
+        metadata should be(Fixtures.Metadata.FileOneMetadata)
+      }
+  }
+
+  it should "fail if unexpected target entity metadata is provided" in {
+    val entity = SourceEntity(
+      path = Fixtures.Metadata.DirectoryOneMetadata.path,
+      existingMetadata = None,
+      currentMetadata = Fixtures.Metadata.DirectoryOneMetadata
+    )
+
+    EntityProcessing
+      .expectFileMetadata(entity = entity)
+      .map { result =>
+        fail(s"Unexpected result received: [$result]")
+      }
+      .recover { case NonFatal(e: IllegalArgumentException) =>
+        e.getMessage should be(s"Expected metadata for file but directory metadata for [${entity.path}] provided")
+      }
+  }
+
+  it should "calculate expected parts for an entity" in {
+    val fileEntity = SourceEntity(
+      path = Fixtures.Metadata.FileOneMetadata.path,
+      existingMetadata = None,
+      currentMetadata = Fixtures.Metadata.FileOneMetadata.copy(size = 10)
+    )
+
+    val directoryEntity = SourceEntity(
+      path = Fixtures.Metadata.DirectoryOneMetadata.path,
+      existingMetadata = None,
+      currentMetadata = Fixtures.Metadata.DirectoryOneMetadata
+    )
+
+    val fileEntityWithoutChanges = SourceEntity(
+      path = Fixtures.Metadata.FileOneMetadata.path,
+      existingMetadata = Some(Fixtures.Metadata.FileOneMetadata),
+      currentMetadata = Fixtures.Metadata.FileOneMetadata
+    )
+
+    an[IllegalArgumentException] should be thrownBy EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 0)
+
+    EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 1) should be(10)
+    EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 2) should be(5)
+    EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 3) should be(4)
+    EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 4) should be(3)
+    EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 5) should be(2)
+    EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 6) should be(2)
+    EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 7) should be(2)
+    EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 8) should be(2)
+    EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 9) should be(2)
+    EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 10) should be(1)
+    EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 11) should be(1)
+
+    EntityProcessing.expectedParts(entity = directoryEntity, withMaximumPartSize = 1) should be(0)
+    EntityProcessing.expectedParts(entity = directoryEntity, withMaximumPartSize = 10) should be(0)
+    EntityProcessing.expectedParts(entity = directoryEntity, withMaximumPartSize = 100) should be(0)
+
+    EntityProcessing.expectedParts(entity = fileEntityWithoutChanges, withMaximumPartSize = 1) should be(0)
+    EntityProcessing.expectedParts(entity = fileEntityWithoutChanges, withMaximumPartSize = 10) should be(0)
+    EntityProcessing.expectedParts(entity = fileEntityWithoutChanges, withMaximumPartSize = 100) should be(0)
+  }
+
+  it should "process files with changed content and metadata" in {
     val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(
       withChecksum = 1,
       withCrate = Crate.generateId()
@@ -89,7 +162,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           track = mockTracker,
           telemetry = mockTelemetry
         )
-      override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
+      override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override protected def maxChunkSize: Int = 8192
       override protected def maxPartSize: Long = 16384
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
@@ -139,6 +212,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(3)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(2)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(3)
           mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
@@ -193,7 +268,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           track = mockTracker,
           telemetry = mockTelemetry
         )
-      override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
+      override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override protected def maxChunkSize: Int = 5
       override protected def maxPartSize: Long = 10
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
@@ -293,7 +368,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           track = mockTracker,
           telemetry = mockTelemetry
         )
-      override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
+      override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override protected def maxChunkSize: Int = 8192
       override protected def maxPartSize: Long = 16384
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
@@ -308,9 +383,9 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
       .map { stageOutput =>
         fail(s"Unexpected result received: [$stageOutput]")
       }
-      .recover { case NonFatal(e) =>
-        e shouldBe a[RuntimeException]
-        e.getMessage should be("[pushDisabled] is set to [true]")
+      .recover { case NonFatal(e: EntityProcessingFailure) =>
+        e.getCause shouldBe a[RuntimeException]
+        e.getCause.getMessage should be("[pushDisabled] is set to [true]")
 
         eventually[Assertion] {
           mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(1)
@@ -342,23 +417,6 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockTelemetry.ops.backup.entityChunkProcessed should be(3) // x3 == one for each step before push
           mockTelemetry.ops.backup.entityProcessed should be(0)
         }
-      }
-  }
-
-  it should "fail if unexpected target entity metadata is provided" in {
-    val entity = SourceEntity(
-      path = Fixtures.Metadata.DirectoryOneMetadata.path,
-      existingMetadata = None,
-      currentMetadata = Fixtures.Metadata.DirectoryOneMetadata
-    )
-
-    EntityProcessing
-      .expectFileMetadata(entity = entity)
-      .map { result =>
-        fail(s"Unexpected result received: [$result]")
-      }
-      .recover { case NonFatal(e: IllegalArgumentException) =>
-        e.getMessage should be(s"Expected metadata for file but directory metadata for [${entity.path}] provided")
       }
   }
 
@@ -418,7 +476,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           track = mockTracker,
           telemetry = mockTelemetry
         )
-      override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
+      override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override protected def maxChunkSize: Int = 5
       override protected def maxPartSize: Long = 10
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
@@ -531,7 +589,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           track = mockTracker,
           telemetry = MockClientTelemetryContext()
         )
-      override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
+      override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override protected def maxChunkSize: Int = 8192
       override protected def maxPartSize: Long = 16384
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
@@ -576,7 +634,9 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
-          mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(2)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be >= 1
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be >= 1
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be >= 1
           mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)

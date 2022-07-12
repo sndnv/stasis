@@ -1,3 +1,3 @@
 package stasis.client.ops
 
-final case class ParallelismConfig(value: Int) extends AnyVal
+final case class ParallelismConfig(entities: Int, entityParts: Int)

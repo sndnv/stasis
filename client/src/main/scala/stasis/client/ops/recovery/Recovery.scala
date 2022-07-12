@@ -8,7 +8,7 @@ import stasis.client.collection.{RecoveryCollector, RecoveryMetadataCollector}
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.{DatasetMetadata, TargetEntity}
 import stasis.client.ops.ParallelismConfig
-import stasis.client.ops.exceptions.OperationStopped
+import stasis.client.ops.exceptions.{EntityProcessingFailure, OperationStopped}
 import stasis.client.ops.recovery.stages.{EntityCollection, EntityProcessing, MetadataApplication}
 import stasis.client.tracking.RecoveryTracker
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
@@ -28,10 +28,21 @@ class Recovery(
 
   private implicit val mat: Materializer = SystemMaterializer(system).materializer
 
-  private val supervision: Supervision.Decider = { e =>
-    system.log.error("Recovery stream encountered failure: [{} - {}]; resuming", e.getClass.getSimpleName, e.getMessage)
-    providers.track.failureEncountered(failure = e)
-    Supervision.Resume
+  private val supervision: Supervision.Decider = {
+    case e: EntityProcessingFailure =>
+      system.log.error(
+        "Recovery stream encountered failure while processing entity [{}]: [{} - {}]; resuming",
+        e.entity,
+        e.cause.getClass.getSimpleName,
+        e.cause.getMessage
+      )
+      providers.track.failureEncountered(e.entity, failure = e.cause)
+      Supervision.Resume
+
+    case e =>
+      system.log.error("Recovery stream encountered failure: [{} - {}]; resuming", e.getClass.getSimpleName, e.getMessage)
+      providers.track.failureEncountered(failure = e)
+      Supervision.Resume
   }
 
   private implicit val ec: ExecutionContext = system.executionContext
@@ -190,6 +201,10 @@ object Recovery {
     def trackWith(track: RecoveryTracker)(implicit id: Operation.Id, ec: ExecutionContext): Future[Done] = {
       operation.onComplete {
         case Success(_) | Failure(_: OperationStopped) =>
+          track.completed()
+
+        case Failure(e: EntityProcessingFailure) =>
+          track.failureEncountered(entity = e.entity, failure = e.cause)
           track.completed()
 
         case Failure(e) =>

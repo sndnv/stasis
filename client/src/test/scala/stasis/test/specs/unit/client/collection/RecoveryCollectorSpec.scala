@@ -136,5 +136,5 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
 
   private implicit val system: ActorSystem = ActorSystem(name = "DatasetMetadataRecoveryCollectorSpec")
 
-  private implicit val parallelismConfig: ParallelismConfig = ParallelismConfig(value = 1)
+  private implicit val parallelismConfig: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
 }

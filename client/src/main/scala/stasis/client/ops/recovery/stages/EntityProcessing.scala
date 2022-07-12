@@ -7,6 +7,7 @@ import akka.util.ByteString
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.TargetEntity.Destination
 import stasis.client.model.{EntityMetadata, TargetEntity}
+import stasis.client.ops.exceptions.{EntityProcessingFailure, OperationStopped}
 import stasis.client.ops.recovery.Providers
 import stasis.client.ops.{Metrics, ParallelismConfig}
 import stasis.core.packaging.Crate
@@ -17,6 +18,7 @@ import java.nio.file.attribute.PosixFilePermissions
 import java.nio.file.{Files, Path}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
+import scala.util.control.NonFatal
 import scala.util.matching.Regex
 
 trait EntityProcessing {
@@ -40,7 +42,7 @@ trait EntityProcessing {
         case entity @ TargetEntity(_, Destination.Directory(_, false), _: EntityMetadata.File, _) => entity
       }
       .map(createEntityDirectory)
-      .mapAsync(parallelism.value) {
+      .mapAsync(parallelism.entities) {
         case entity if entity.hasContentChanged => processContentChanged(entity)
         case entity                             => processMetadataChanged(entity)
       }
@@ -62,16 +64,24 @@ trait EntityProcessing {
 
   private def processContentChanged(
     entity: TargetEntity
-  )(implicit killSwitch: SharedKillSwitch): Future[TargetEntity] =
+  )(implicit killSwitch: SharedKillSwitch, operation: Operation.Id): Future[TargetEntity] =
     EntityProcessing.expectFileMetadata(entity).flatMap { file =>
       val crates = pull(file.crates, entity.originalPath)
       implicit val prv: Providers = providers
 
       val decompressor = providers.compression.decoderFor(entity)
 
+      providers.track.entityProcessingStarted(
+        entity = entity.path,
+        expectedParts = crates.size
+      )
+
+      def recordPartProcessed(): Unit =
+        providers.track.entityPartProcessed(entity = entity.path)
+
       crates
         .decrypt(withPartSecret = deviceSecret.toFileSecret)
-        .merge()
+        .merge(onPartProcessed = recordPartProcessed)
         .via(killSwitch.flow)
         .decompress(decompressor = decompressor)
         .wireTap(bytes =>
@@ -79,10 +89,16 @@ trait EntityProcessing {
         )
         .destage(to = entity.destinationPath)
         .map(_ => entity)
+        .recoverWith {
+          case OperationStopped(e) => Future.failed(e)
+          case NonFatal(e)         => Future.failed(EntityProcessingFailure(entity = entity.path, cause = e))
+        }
     }
 
-  private def processMetadataChanged(entity: TargetEntity): Future[TargetEntity] =
+  private def processMetadataChanged(entity: TargetEntity)(implicit operation: Operation.Id): Future[TargetEntity] = {
+    providers.track.entityProcessingStarted(entity = entity.path, expectedParts = 0)
     Future.successful(entity)
+  }
 
   private def pull(crates: Map[Path, Crate.Id], entity: Path): Iterable[(Int, Path, Source[ByteString, NotUsed])] = {
     val sources = crates.map { case (partPath, crate) =>
@@ -153,4 +169,5 @@ object EntityProcessing {
           )
         )
     }
+
 }

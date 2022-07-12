@@ -1,12 +1,13 @@
 package stasis.client.ops.backup.stages
 
-import akka.stream.scaladsl.{FileIO, Flow, Source, SubFlow}
+import akka.stream.scaladsl.{FileIO, Flow, Sink, Source, SubFlow}
 import akka.stream.{IOResult, Materializer, SharedKillSwitch}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceSecret}
 import stasis.client.model.{EntityMetadata, SourceEntity}
 import stasis.client.ops.backup.Providers
+import stasis.client.ops.exceptions.{EntityProcessingFailure, OperationStopped}
 import stasis.client.ops.{Metrics, ParallelismConfig}
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.shared.model.datasets.DatasetDefinition
@@ -37,7 +38,7 @@ trait EntityProcessing {
     killSwitch: SharedKillSwitch
   ): Flow[SourceEntity, Either[EntityMetadata, EntityMetadata], NotUsed] =
     Flow[SourceEntity]
-      .mapAsyncUnordered(parallelism.value) {
+      .mapAsyncUnordered(parallelism.entities) {
         case entity if entity.hasContentChanged => processContentChanged(entity).map(Left.apply)
         case entity                             => processMetadataChanged(entity).map(Right.apply)
       }
@@ -45,14 +46,14 @@ trait EntityProcessing {
         metrics.recordEntityProcessed(metadata = metadata)
         providers.track.entityProcessed(
           entity = metadata.fold(_.path, _.path),
-          contentChanged = metadata.isLeft
+          metadata = metadata
         )
       }
 
   private def processContentChanged(
     entity: SourceEntity
-  )(implicit killSwitch: SharedKillSwitch): Future[EntityMetadata] =
-    for {
+  )(implicit operation: Operation.Id, killSwitch: SharedKillSwitch): Future[EntityMetadata] = {
+    val result = for {
       file <- EntityProcessing.expectFileMetadata(entity)
       staged <- stage(entity)
       crates <- push(staged)
@@ -61,16 +62,34 @@ trait EntityProcessing {
       file.copy(crates = crates.toMap)
     }
 
-  private def processMetadataChanged(entity: SourceEntity): Future[EntityMetadata] =
+    result.recoverWith {
+      case NonFatal(e: OperationStopped) => Future.failed(e)
+      case NonFatal(e)                   => Future.failed(EntityProcessingFailure(entity = entity.path, cause = e))
+    }
+  }
+
+  private def processMetadataChanged(
+    entity: SourceEntity
+  )(implicit operation: Operation.Id): Future[EntityMetadata] = {
+    providers.track.entityProcessingStarted(entity = entity.path, expectedParts = 0)
     Future.successful(entity.currentMetadata)
+  }
 
   private def stage(
     entity: SourceEntity
-  )(implicit killSwitch: SharedKillSwitch): Future[Seq[(Path, Path)]] = {
+  )(implicit operation: Operation.Id, killSwitch: SharedKillSwitch): Future[Seq[(Path, Path)]] = {
+    providers.track.entityProcessingStarted(
+      entity = entity.path,
+      expectedParts = EntityProcessing.expectedParts(entity, maximumPartSize)
+    )
+
     def createPartSecret(partId: Int): DeviceFileSecret = {
       val partPath = Paths.get(s"${entity.path.toAbsolutePath.toString}__part=${partId.toString}")
       deviceSecret.toFileSecret(partPath)
     }
+
+    def recordPartProcessed(): Unit =
+      providers.track.entityPartProcessed(entity = entity.path)
 
     implicit val prv: Providers = providers
 
@@ -83,36 +102,35 @@ trait EntityProcessing {
       .compress(compressor = compressor)
       .wireTap(bytes => metrics.recordEntityChunkProcessed(step = "compressed", extra = compressor.name, bytes = bytes.length))
       .partition(withMaximumPartSize = maximumPartSize)
-      .stage(withPartSecret = createPartSecret)
+      .stage(withPartSecret = createPartSecret, onPartStaged = recordPartProcessed)
   }
 
   private def push(staged: Seq[(Path, Path)]): Future[Seq[(Path, Crate.Id)]] =
-    Future
-      .sequence(
-        staged.map { case (partFile, staged) =>
-          val crate = Crate.generateId()
+    Source(staged.toList)
+      .mapAsync(parallelism = parallelism.entityParts) { case (partFile, staged) =>
+        val crate = Crate.generateId()
 
-          val content: Source[ByteString, NotUsed] =
-            FileIO
-              .fromPath(staged)
-              .mapMaterializedValue(_ => NotUsed)
+        val content: Source[ByteString, NotUsed] =
+          FileIO
+            .fromPath(staged)
+            .mapMaterializedValue(_ => NotUsed)
 
-          val manifest: Manifest = Manifest(
-            crate = crate,
-            origin = providers.clients.core.self,
-            source = providers.clients.core.self,
-            size = Files.size(staged),
-            copies = targetDataset.redundantCopies
+        val manifest: Manifest = Manifest(
+          crate = crate,
+          origin = providers.clients.core.self,
+          source = providers.clients.core.self,
+          size = Files.size(staged),
+          copies = targetDataset.redundantCopies
+        )
+
+        providers.clients.core
+          .push(
+            manifest = manifest,
+            content = content.wireTap(bytes => metrics.recordEntityChunkProcessed(step = "pushed", bytes = bytes.length))
           )
-
-          providers.clients.core
-            .push(
-              manifest = manifest,
-              content = content.wireTap(bytes => metrics.recordEntityChunkProcessed(step = "pushed", bytes = bytes.length))
-            )
-            .map(_ => (partFile, crate))
-        }
-      )
+          .map(_ => (partFile, crate))
+      }
+      .runWith(Sink.seq)
       .recoverWith(discardOnPushFailure(staged))
 
   private def discardOnPushFailure[T](staged: Seq[(Path, Path)]): PartialFunction[Throwable, Future[T]] = { case NonFatal(e) =>
@@ -149,4 +167,16 @@ object EntityProcessing {
           )
         )
     }
+
+  def expectedParts(entity: SourceEntity, withMaximumPartSize: Long): Int = {
+    require(withMaximumPartSize > 0, s"Invalid [maximumPartSize] provided: [${withMaximumPartSize.toString}]")
+
+    entity.currentMetadata match {
+      case file: EntityMetadata.File if entity.hasContentChanged =>
+        val fullParts = (file.size / withMaximumPartSize).toInt
+        if (file.size % withMaximumPartSize == 0) fullParts else fullParts + 1
+
+      case _ => 0
+    }
+  }
 }

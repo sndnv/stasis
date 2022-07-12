@@ -45,7 +45,7 @@ class MetadataApplicationSpec extends AsyncUnitSpec { spec =>
     val mockTelemetry = MockClientTelemetryContext()
 
     val stage = new MetadataApplication {
-      override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
+      override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
 
       override protected def providers: Providers =
         Providers(
@@ -85,6 +85,8 @@ class MetadataApplicationSpec extends AsyncUnitSpec { spec =>
 
       mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(0)
+      mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessingStarted) should be(0)
+      mockTracker.statistics(MockRecoveryTracker.Statistic.EntityPartProcessed) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(1)
       mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)

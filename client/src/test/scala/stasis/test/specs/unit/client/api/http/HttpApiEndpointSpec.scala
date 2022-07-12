@@ -210,7 +210,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       api = api,
       executor = MockOperationExecutor(),
       scheduler = MockOperationScheduler(),
-      tracker = MockTrackerView(),
+      trackers = MockTrackerViews(),
       search = MockSearch(),
       terminateService = () => (),
       log = LoggerFactory.getLogger(this.getClass.getName)

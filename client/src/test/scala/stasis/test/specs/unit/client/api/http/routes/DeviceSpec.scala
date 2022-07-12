@@ -1,18 +1,17 @@
 package stasis.test.specs.unit.client.api.http.routes
 
-import java.time.Instant
-
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.LoggerFactory
 import stasis.client.api.http.Context
 import stasis.client.api.http.routes.Device
-import stasis.client.tracking.TrackerView
+import stasis.client.tracking.ServerTracker
 import stasis.shared.model
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks._
 
+import java.time.Instant
 import scala.concurrent.Future
 
 class DeviceSpec extends AsyncUnitSpec with ScalatestRouteTest {
@@ -47,24 +46,22 @@ class DeviceSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
   they should "respond with the current state of the device connections" in {
     val expectedServers = Map(
-      "server-01" -> TrackerView.ServerState(reachable = true, timestamp = Instant.now()),
-      "server-02" -> TrackerView.ServerState(reachable = false, timestamp = Instant.now())
+      "server-01" -> ServerTracker.ServerState(reachable = true, timestamp = Instant.now()),
+      "server-02" -> ServerTracker.ServerState(reachable = false, timestamp = Instant.now())
     )
 
-    val mockTracker = new MockTrackerView() {
-      override def state: Future[TrackerView.State] =
-        Future.successful(
-          TrackerView.State(
-            operations = Map.empty,
-            servers = expectedServers
-          )
-        )
+    val mockTrackers = new MockTrackerViews() {
+      override val server: ServerTracker.View = new MockServerTracker() {
+        override def state: Future[Map[String, ServerTracker.ServerState]] =
+          Future.successful(expectedServers)
+      }
     }
-    val routes = createRoutes(tracker = mockTracker)
+
+    val routes = createRoutes(trackers = mockTrackers)
 
     Get("/connections") ~> routes ~> check {
       status should be(StatusCodes.OK)
-      val actualServers = responseAs[Map[String, TrackerView.ServerState]]
+      val actualServers = responseAs[Map[String, ServerTracker.ServerState]]
 
       actualServers should be(expectedServers)
     }
@@ -74,13 +71,13 @@ class DeviceSpec extends AsyncUnitSpec with ScalatestRouteTest {
     api: MockServerApiEndpointClient = MockServerApiEndpointClient(),
     executor: MockOperationExecutor = MockOperationExecutor(),
     scheduler: MockOperationScheduler = MockOperationScheduler(),
-    tracker: MockTrackerView = MockTrackerView()
+    trackers: MockTrackerViews = MockTrackerViews()
   ): Route = {
     implicit val context: Context = Context(
       api = api,
       executor = executor,
       scheduler = scheduler,
-      tracker = tracker,
+      trackers = trackers,
       search = MockSearch(),
       terminateService = () => (),
       log = LoggerFactory.getLogger(this.getClass.getName)

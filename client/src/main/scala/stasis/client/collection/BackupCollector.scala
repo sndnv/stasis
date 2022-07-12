@@ -29,7 +29,7 @@ object BackupCollector {
           latestMetadata = latestMetadata,
           api = api
         ).toList
-      ).mapAsyncUnordered(parallelism.value) { case (entity, entityMetadataFuture) =>
+      ).mapAsyncUnordered(parallelism.entities) { case (entity, entityMetadataFuture) =>
         for {
           entityMetadata <- entityMetadataFuture
           sourceEntity <- metadataCollector.collect(entity = entity, existingMetadata = entityMetadata)

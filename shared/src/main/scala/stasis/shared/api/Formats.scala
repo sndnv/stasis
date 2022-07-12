@@ -334,12 +334,6 @@ object Formats {
     tjs = operationType => Json.toJson(operationTypeToString(operationType))
   )
 
-  implicit val operationProgressStageStepFormat: Format[Operation.Progress.Stage.Step] =
-    Json.format[Operation.Progress.Stage.Step]
-
-  implicit val operationProgressStageFormat: Format[Operation.Progress.Stage] =
-    Json.format[Operation.Progress.Stage]
-
   implicit val operationProgressFormat: Format[Operation.Progress] =
     Json.format[Operation.Progress]
 

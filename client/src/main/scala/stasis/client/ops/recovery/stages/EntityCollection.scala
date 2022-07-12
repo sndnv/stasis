@@ -29,6 +29,6 @@ trait EntityCollection {
       .filter(_.hasChanged)
       .wireTap { entity =>
         metrics.recordEntityCollected(entity = entity)
-        providers.track.entityCollected(entity = entity.path)
+        providers.track.entityCollected(entity = entity)
       }
 }
