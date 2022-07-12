@@ -14,6 +14,7 @@ import java.util.UUID
 class MockOperationExecutor : OperationExecutor {
     override suspend fun active(): Map<OperationId, Operation.Type> = emptyMap()
     override suspend fun completed(): Map<OperationId, Operation.Type> = emptyMap()
+    override suspend fun find(operation: OperationId): Operation.Type? = null
 
     override suspend fun startBackupWithRules(
         definition: DatasetDefinitionId,

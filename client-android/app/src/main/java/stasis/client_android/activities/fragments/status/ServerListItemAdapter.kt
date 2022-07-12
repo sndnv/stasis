@@ -7,10 +7,10 @@ import androidx.recyclerview.widget.RecyclerView
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullDateTime
 import stasis.client_android.databinding.ListItemServerConnectionBinding
-import stasis.client_android.tracking.TrackerView
+import stasis.client_android.lib.tracking.ServerTracker
 
 class ServerListItemAdapter : RecyclerView.Adapter<ServerListItemAdapter.ItemViewHolder>() {
-    private var servers = emptyList<Pair<String, TrackerView.ServerState>>()
+    private var servers = emptyList<Pair<String, ServerTracker.ServerState>>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -29,7 +29,7 @@ class ServerListItemAdapter : RecyclerView.Adapter<ServerListItemAdapter.ItemVie
         private val context: Context,
         private val binding: ListItemServerConnectionBinding
     ) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(server: String, state: TrackerView.ServerState) {
+        fun bind(server: String, state: ServerTracker.ServerState) {
             binding.serverInfo.text = context.getString(
                 if (state.reachable) R.string.server_field_content_info_reachable
                 else R.string.server_field_content_info_unreachable,
@@ -43,7 +43,7 @@ class ServerListItemAdapter : RecyclerView.Adapter<ServerListItemAdapter.ItemVie
         }
     }
 
-    internal fun setServers(servers: Map<String, TrackerView.ServerState>) {
+    internal fun setServers(servers: Map<String, ServerTracker.ServerState>) {
         this.servers = servers.toList()
 
         notifyDataSetChanged()

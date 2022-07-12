@@ -256,5 +256,6 @@ class RecoveryConfigSpec {
         override suspend fun stop(operation: OperationId) = Unit
         override suspend fun active(): Map<OperationId, Operation.Type> = emptyMap()
         override suspend fun completed(): Map<OperationId, Operation.Type> = emptyMap()
+        override suspend fun find(operation: OperationId): Operation.Type? = null
     }
 }

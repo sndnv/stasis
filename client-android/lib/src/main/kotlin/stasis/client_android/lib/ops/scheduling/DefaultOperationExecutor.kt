@@ -40,6 +40,12 @@ class DefaultOperationExecutor(
     override suspend fun completed(): Map<OperationId, Operation.Type> =
         completeOperations
 
+    override suspend fun find(operation: OperationId): Operation.Type? =
+        when (val active = activeOperations[operation]) {
+            null -> completeOperations[operation]
+            else -> active.type()
+        }
+
     override suspend fun startBackupWithRules(
         definition: DatasetDefinitionId,
         rules: List<Rule>,

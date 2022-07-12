@@ -96,6 +96,8 @@ class MetadataPushSpec : WordSpec({
             mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessingStarted] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityPartProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.MetadataCollected] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.MetadataPushed] shouldBe (1)

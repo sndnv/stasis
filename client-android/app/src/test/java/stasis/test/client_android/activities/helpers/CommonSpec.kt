@@ -28,7 +28,6 @@ import stasis.client_android.activities.helpers.Common.toAssignmentTypeString
 import stasis.client_android.activities.helpers.Common.toFields
 import stasis.client_android.activities.helpers.Common.toMinimizedString
 import stasis.client_android.activities.helpers.Common.toOperationStageString
-import stasis.client_android.activities.helpers.Common.toOperationStepString
 import stasis.client_android.activities.helpers.Common.toPolicyTypeString
 import stasis.client_android.lib.model.EntityMetadata
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
@@ -267,24 +266,13 @@ class CommonSpec {
     fun convertOperationStageStrings() {
         val context = ApplicationProvider.getApplicationContext<Context>()
 
-        assertThat("discovery".toOperationStageString(context), equalTo("Discovery"))
-        assertThat("specification".toOperationStageString(context), equalTo("Specification"))
-        assertThat("examination".toOperationStageString(context), equalTo("Examination"))
-        assertThat("collection".toOperationStageString(context), equalTo("Collection"))
-        assertThat("processing".toOperationStageString(context), equalTo("Processing"))
-        assertThat("metadata".toOperationStageString(context), equalTo("Metadata"))
+        assertThat("discovered".toOperationStageString(context), equalTo("Discovered"))
+        assertThat("examined".toOperationStageString(context), equalTo("Examined"))
+        assertThat("collected".toOperationStageString(context), equalTo("Collected"))
+        assertThat("pending".toOperationStageString(context), equalTo("Pending"))
+        assertThat("processed".toOperationStageString(context), equalTo("Processed"))
         assertThat("metadata-applied".toOperationStageString(context), equalTo("Metadata Applied"))
         assertThat("other".toOperationStageString(context), equalTo("other"))
-    }
-
-    @Test
-    fun convertOperationStepStrings() {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-
-        assertThat("processing".toOperationStepString(context), equalTo("Processing"))
-        assertThat("collection".toOperationStepString(context), equalTo("Collection"))
-        assertThat("push".toOperationStepString(context), equalTo("Push"))
-        assertThat("other".toOperationStepString(context), equalTo("other"))
     }
 
     @Test

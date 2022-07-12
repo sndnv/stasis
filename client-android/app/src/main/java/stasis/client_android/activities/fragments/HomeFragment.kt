@@ -31,6 +31,7 @@ import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.providers.ProviderContext
+import stasis.client_android.utils.LiveDataExtensions.and
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -73,22 +74,18 @@ class HomeFragment : Fragment() {
                 }
             }
 
-            providerContext.tracker.state.map { state ->
-                state.operations
-                    .filterValues { it.completed != null }
-                    .maxByOrNull { it.component2().completed!! }
+            (providerContext.trackers.backup.state and providerContext.trackers.recovery.state).map { (backups, recoveries) ->
+                (backups + recoveries).filterValues { it.completed != null }
+                     .maxByOrNull { it.component2().completed!! }
             }.observe(viewLifecycleOwner) { entry ->
                 when (entry) {
                     null -> showLastOperationNoData(binding)
                     else -> lifecycleScope.launch {
-                        val operations =
-                            providerContext.executor.active() + providerContext.executor.completed()
-
                         showLastOperationDetails(
                             binding = binding,
                             operation = entry.key,
-                            operationType = operations[entry.key],
-                            progress = entry.value
+                            operationType = entry.value.type,
+                            progress = entry.value.asProgress()
                         )
                     }
                 }
@@ -223,22 +220,22 @@ class HomeFragment : Fragment() {
             )
 
         binding.operationDetails.text = context.getString(
-            if (progress.failures.isEmpty()) R.string.operation_field_content_details
+            if (progress.failures == 0) R.string.operation_field_content_details
             else R.string.operation_field_content_details_with_failures
         ).renderAsSpannable(
             StyledString(
                 placeholder = "%1\$s",
-                content = progress.stages.size.toString(),
+                content = progress.processed.toString(),
                 style = StyleSpan(Typeface.BOLD)
             ),
             StyledString(
                 placeholder = "%2\$s",
-                content = progress.stages.values.sumOf { it.steps.size }.toString(),
+                content = progress.total.toString(),
                 style = StyleSpan(Typeface.BOLD)
             ),
             StyledString(
                 placeholder = "%3\$s",
-                content = progress.failures.size.toString(),
+                content = progress.failures.toString(),
                 style = StyleSpan(Typeface.BOLD)
             )
         )

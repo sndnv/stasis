@@ -9,22 +9,21 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.LinearLayout
 import android.widget.TextView
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import androidx.fragment.app.FragmentManager
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.Common.toOperationStageString
-import stasis.client_android.activities.helpers.Common.toOperationStepString
-import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullDateTime
-import stasis.client_android.lib.ops.Operation
+import java.nio.file.Path
 
 class OperationStageListItemAdapter(
     context: Context,
     private val resource: Int,
-    private val stages: List<Pair<String, Operation.Progress.Stage>>
-) : ArrayAdapter<Pair<String, Operation.Progress.Stage>>(context, resource, stages) {
+    private val fragmentManager: FragmentManager,
+    private val stages: List<Pair<String, List<Triple<Path, Int, Int>>>>
+) : ArrayAdapter<Pair<String, List<Triple<Path, Int, Int>>>>(context, resource, stages) {
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-        val (name, stage) = stages[position]
+        val (name, steps) = stages[position]
         val stageName = name.toOperationStageString(context)
 
         val layout = (convertView ?: LayoutInflater.from(parent.context).inflate(resource, parent, false))
@@ -41,34 +40,22 @@ class OperationStageListItemAdapter(
                 ),
                 StyledString(
                     placeholder = "%2\$s",
-                    content = stage.steps.size.toString(),
+                    content = steps.size.toString(),
                     style = StyleSpan(Typeface.BOLD)
                 )
             )
 
         stageContainer.setOnClickListener {
-            if (stage.steps.isNotEmpty()) {
-                MaterialAlertDialogBuilder(context)
-                    .setTitle(context.getString(R.string.operation_stage_title, stageName))
-                    .setItems(
-                        stage.steps.reversed().map { step ->
-                            context.getString(R.string.operation_stage_message)
-                                .renderAsSpannable(
-                                    StyledString(
-                                        placeholder = "%1\$s",
-                                        content = step.name.toOperationStepString(context),
-                                        style = StyleSpan(Typeface.BOLD)
-                                    ),
-                                    StyledString(
-                                        placeholder = "%2\$s",
-                                        content = step.completed.formatAsFullDateTime(context),
-                                        style = StyleSpan(Typeface.NORMAL)
-                                    )
-                                )
-                        }.toTypedArray(),
-                        null
-                    )
-                    .show()
+            if (steps.isNotEmpty()) {
+                OperationStageStepsDialogFragment(
+                    steps = steps.map { (entity, processed, total) ->
+                        OperationStageStepsDialogFragment.StageStep(
+                            entity = entity,
+                            processed = processed,
+                            total = total
+                        )
+                    }
+                ).show(fragmentManager, OperationStageStepsDialogFragment.Tag)
             }
         }
 

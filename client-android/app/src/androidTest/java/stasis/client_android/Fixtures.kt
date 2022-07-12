@@ -4,6 +4,11 @@ import okio.ByteString.Companion.toByteString
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.encryption.secrets.Secret
 import stasis.client_android.lib.encryption.secrets.UserPassword
+import stasis.client_android.lib.model.EntityMetadata
+import java.math.BigInteger
+import java.nio.file.Paths
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.*
 
 object Fixtures {
@@ -40,6 +45,25 @@ object Fixtures {
             salt = "test-salt",
             password = "some-password".toCharArray(),
             target = DefaultConfig
+        )
+    }
+
+    object Metadata {
+        val FileOneMetadata = EntityMetadata.File(
+            path = Paths.get("/tmp/file/one"),
+            size = 1,
+            link = null,
+            isHidden = false,
+            created = Instant.MIN.truncatedTo(ChronoUnit.SECONDS),
+            updated = Instant.MAX.truncatedTo(ChronoUnit.SECONDS),
+            owner = "root",
+            group = "root",
+            permissions = "rwxrwxrwx",
+            checksum = BigInteger("1"),
+            crates = mapOf(
+                Paths.get("/tmp/file/one_0") to UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
+            ),
+            compression = "none"
         )
     }
 }

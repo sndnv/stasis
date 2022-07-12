@@ -8,7 +8,6 @@ import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.map
 import dagger.hilt.android.AndroidEntryPoint
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.Transitions.operationComplete
@@ -44,7 +43,7 @@ class ConnectionsFragment : Fragment() {
 
         binding.serversList.adapter = adapter
 
-        providerContext.tracker.state.map { it.servers }
+        providerContext.trackers.server.state
             .observe(viewLifecycleOwner) { servers ->
                 adapter.setServers(servers)
 

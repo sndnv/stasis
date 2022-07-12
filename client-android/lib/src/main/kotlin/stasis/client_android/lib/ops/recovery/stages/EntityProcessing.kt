@@ -10,11 +10,13 @@ import stasis.client_android.lib.model.EntityMetadata
 import stasis.client_android.lib.model.TargetEntity
 import stasis.client_android.lib.model.core.CrateId
 import stasis.client_android.lib.ops.OperationId
+import stasis.client_android.lib.ops.exceptions.EntityProcessingFailure
 import stasis.client_android.lib.ops.recovery.Providers
 import stasis.client_android.lib.ops.recovery.stages.internal.DecompressedSource.decompress
 import stasis.client_android.lib.ops.recovery.stages.internal.DecryptedCrates.decrypt
 import stasis.client_android.lib.ops.recovery.stages.internal.DestagedByteStringSource.destage
 import stasis.client_android.lib.ops.recovery.stages.internal.MergedCrates.merged
+import stasis.client_android.lib.utils.NonFatal.nonFatal
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.FileAttribute
@@ -49,8 +51,8 @@ interface EntityProcessing {
             .map { createEntityDirectory(it) }
             .map {
                 when {
-                    it.hasContentChanged -> processContentChanged(it)
-                    else -> processMetadataChanged(it)
+                    it.hasContentChanged -> processContentChanged(operation, it)
+                    else -> processMetadataChanged(operation, it)
                 }
             }
             .onEach { targetEntity ->
@@ -68,17 +70,33 @@ interface EntityProcessing {
         return entity
     }
 
-    private suspend fun processContentChanged(entity: TargetEntity): TargetEntity {
-        pull(expectFileMetadata(entity).crates, entity.originalPath)
-            .decrypt(withPartSecret = deviceSecret::toFileSecret, providers = providers)
-            .merged()
-            .decompress(decompressor = providers.compression.decoderFor(entity))
-            .destage(to = entity.destinationPath, providers = providers)
+    private suspend fun processContentChanged(operation: OperationId, entity: TargetEntity): TargetEntity {
+        val crates = expectFileMetadata(entity).crates
+
+        providers.track.entityProcessingStarted(
+            operation = operation,
+            entity = entity.path,
+            expectedParts = crates.size
+        )
+
+        fun recordPartProcessed(): Unit =
+            providers.track.entityPartProcessed(operation, entity = entity.path)
+
+        try {
+            pull(crates, entity.originalPath)
+                .decrypt(withPartSecret = deviceSecret::toFileSecret, providers = providers)
+                .merged(onPartProcessed = ::recordPartProcessed)
+                .decompress(decompressor = providers.compression.decoderFor(entity))
+                .destage(to = entity.destinationPath, providers = providers)
+        } catch (e: Throwable) {
+            throw EntityProcessingFailure(entity = entity.path, cause = e.nonFatal())
+        }
 
         return entity
     }
 
-    private fun processMetadataChanged(entity: TargetEntity): TargetEntity {
+    private fun processMetadataChanged(operation: OperationId, entity: TargetEntity): TargetEntity {
+        providers.track.entityProcessingStarted(operation = operation, entity = entity.path, expectedParts = 0)
         return entity
     }
 

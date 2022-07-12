@@ -23,14 +23,17 @@ import stasis.client_android.lib.security.CredentialsProvider
 import stasis.client_android.lib.utils.Reference
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Success
+import stasis.client_android.mocks.MockBackupTracker
 import stasis.client_android.mocks.MockOAuthClient
 import stasis.client_android.mocks.MockOperationExecutor
+import stasis.client_android.mocks.MockRecoveryTracker
 import stasis.client_android.mocks.MockServerApiEndpointClient
 import stasis.client_android.mocks.MockServerCoreEndpointClient
 import stasis.client_android.mocks.MockServerMonitor
-import stasis.client_android.mocks.MockTrackerView
+import stasis.client_android.mocks.MockServerTracker
 import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.providers.ProviderContext
+import stasis.client_android.tracking.TrackerViews
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
@@ -128,7 +131,11 @@ class CredentialsViewModelSpec {
                                     Success(Search.Result(definitions = emptyMap()))
                             },
                             executor = MockOperationExecutor(),
-                            tracker = MockTrackerView(),
+                            trackers = TrackerViews(
+                                backup = MockBackupTracker(),
+                                recovery = MockRecoveryTracker(),
+                                server = MockServerTracker()
+                            ),
                             credentials = CredentialsProvider(
                                 config = CredentialsProvider.Config(
                                     coreScope = "core",

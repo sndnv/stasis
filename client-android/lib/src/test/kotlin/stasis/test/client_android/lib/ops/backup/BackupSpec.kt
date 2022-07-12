@@ -3,6 +3,7 @@ package stasis.test.client_android.lib.ops.backup
 import io.kotest.assertions.fail
 import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import okio.ByteString
@@ -37,6 +38,7 @@ import stasis.test.client_android.lib.mocks.MockEncryption
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
 import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
 import java.math.BigInteger
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Instant
 import java.util.UUID
@@ -80,10 +82,11 @@ class BackupSpec : WordSpec({
             latestMetadata: DatasetMetadata,
             collector: Backup.Descriptor.Collector,
             clients: Clients,
-            tracker: MockBackupTracker
+            tracker: MockBackupTracker,
+            withChecksum: Checksum = checksum
         ): Backup {
             val providers = Providers(
-                checksum = checksum,
+                checksum = withChecksum,
                 staging = DefaultFileStaging(
                     storeDirectory = null,
                     prefix = "staged-",
@@ -207,6 +210,8 @@ class BackupSpec : WordSpec({
             mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (1)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (7) // 2 directories + 5 files
             mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (5) // 2 unchanged + 5 changed entities
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessingStarted] shouldBe (5) // ...
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityPartProcessed] shouldBe (3) // 3 files
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (5) // 2 unchanged + 5 changed entities
             mockTracker.statistics[MockBackupTracker.Statistic.MetadataCollected] shouldBe (1)
             mockTracker.statistics[MockBackupTracker.Statistic.MetadataPushed] shouldBe (1)
@@ -290,6 +295,8 @@ class BackupSpec : WordSpec({
             mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (3)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (2)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessingStarted] shouldBe (2)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityPartProcessed] shouldBe (1)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (2)
             mockTracker.statistics[MockBackupTracker.Statistic.MetadataCollected] shouldBe (1)
             mockTracker.statistics[MockBackupTracker.Statistic.MetadataPushed] shouldBe (1)
@@ -362,7 +369,7 @@ class BackupSpec : WordSpec({
             }
 
             eventually {
-                operationResult.get()?.message shouldBe ("Test failure")
+                operationResult.get()?.message shouldContain ("Test failure")
             }
 
             // dataset entry for backup created; metadata crate pushed
@@ -389,11 +396,76 @@ class BackupSpec : WordSpec({
             mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (3)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (2)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessingStarted] shouldBe (2)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityPartProcessed] shouldBe (1)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (1)
             mockTracker.statistics[MockBackupTracker.Statistic.MetadataCollected] shouldBe (1)
             mockTracker.statistics[MockBackupTracker.Statistic.MetadataPushed] shouldBe (1)
             mockTracker.statistics[MockBackupTracker.Statistic.FailureEncountered] shouldBe (1)
             mockTracker.statistics[MockBackupTracker.Statistic.Completed] shouldBe (1)
+        }
+
+        "handle general backup failures" {
+            val operationResult = AtomicReference<Throwable>()
+
+            val sourceFile1Metadata = "/ops/source-file-1".asTestResource().extractFileMetadata(checksum)
+
+            val mockApiClient = MockServerApiEndpointClient()
+            val mockCoreClient = MockServerCoreEndpointClient()
+            val tracker = MockBackupTracker()
+
+            val backup = createBackup(
+                collector = Backup.Descriptor.Collector.WithEntities(
+                    entities = listOf(sourceFile1Metadata.path)
+                ),
+                latestMetadata = DatasetMetadata.empty(),
+                clients = Clients(
+                    api = mockApiClient,
+                    core = mockCoreClient
+                ),
+                tracker = tracker,
+                withChecksum = object : Checksum {
+                    override suspend fun calculate(file: Path): BigInteger = throw RuntimeException("Test failure")
+                }
+            )
+
+            backup.start(withScope = operationScope) { e ->
+                operationResult.set(e)
+            }
+
+            eventually {
+                operationResult.get()?.message shouldBe ("Test failure")
+            }
+
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (1)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetEntriesRetrieved] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionCreated] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionRetrieved] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionsRetrieved] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.PublicSchedulesRetrieved] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.PublicScheduleRetrieved] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.UserRetrieved] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
+
+            mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
+            mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (1)
+
+            tracker.statistics[MockBackupTracker.Statistic.EntityDiscovered] shouldBe (1)
+            tracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
+            tracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
+            tracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (0)
+            tracker.statistics[MockBackupTracker.Statistic.EntityProcessingStarted] shouldBe (0)
+            tracker.statistics[MockBackupTracker.Statistic.EntityPartProcessed] shouldBe (0)
+            tracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (0)
+            tracker.statistics[MockBackupTracker.Statistic.MetadataCollected] shouldBe (1)
+            tracker.statistics[MockBackupTracker.Statistic.MetadataPushed] shouldBe (1)
+            tracker.statistics[MockBackupTracker.Statistic.FailureEncountered] shouldBe (1)
+            tracker.statistics[MockBackupTracker.Statistic.Completed] shouldBe (1)
         }
 
         "allow stopping a running backup" {

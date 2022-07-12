@@ -23,13 +23,11 @@ interface EntityCollection {
             .onEach { entity ->
                 providers.track.entityExamined(
                     operation = operation,
-                    entity = entity.path,
-                    metadataChanged = entity.hasChanged,
-                    contentChanged = entity.hasContentChanged
+                    entity = entity.path
                 )
             }
             .filter { it.hasChanged }
             .onEach { entity ->
-                providers.track.entityCollected(operation = operation, entity = entity.path)
+                providers.track.entityCollected(operation = operation, entity = entity)
             }
 }

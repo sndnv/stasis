@@ -3,7 +3,9 @@ package stasis.test.client_android.lib.ops.backup.stages
 import io.kotest.assertions.fail
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.WordSpec
+import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.toList
 import okio.Source
@@ -17,6 +19,7 @@ import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.backup.Providers
 import stasis.client_android.lib.ops.backup.stages.EntityProcessing
+import stasis.client_android.lib.ops.exceptions.EntityProcessingFailure
 import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
 import stasis.test.client_android.lib.ResourceHelpers.extractFileMetadata
@@ -32,6 +35,74 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class EntityProcessingSpec : WordSpec({
     "A Backup EntityProcessing stage" should {
+        "extract and expect file metadata"  {
+            val entity = SourceEntity(
+                path = Fixtures.Metadata.FileOneMetadata.path,
+                existingMetadata = null,
+                currentMetadata = Fixtures.Metadata.FileOneMetadata
+            )
+
+            EntityProcessing.expectFileMetadata(entity = entity) shouldBe (Fixtures.Metadata.FileOneMetadata)
+        }
+
+        "fail if unexpected target entity metadata is provided" {
+            val entity = SourceEntity(
+                path = Fixtures.Metadata.DirectoryOneMetadata.path,
+                existingMetadata = null,
+                currentMetadata = Fixtures.Metadata.DirectoryOneMetadata
+            )
+
+            val e = shouldThrow<IllegalArgumentException> {
+                EntityProcessing.expectFileMetadata(entity = entity)
+            }
+
+            e.message shouldBe ("Expected metadata for file but directory metadata for [${entity.path}] provided")
+        }
+
+        "calculate expected parts for an entity" {
+            val fileEntity = SourceEntity(
+                path = Fixtures.Metadata.FileOneMetadata.path,
+                existingMetadata = null,
+                currentMetadata = Fixtures.Metadata.FileOneMetadata.copy(size = 10)
+            )
+
+            val directoryEntity = SourceEntity(
+                path = Fixtures.Metadata.DirectoryOneMetadata.path,
+                existingMetadata = null,
+                currentMetadata = Fixtures.Metadata.DirectoryOneMetadata
+            )
+
+            val fileEntityWithoutChanges = SourceEntity(
+                path = Fixtures.Metadata.FileOneMetadata.path,
+                existingMetadata = Fixtures.Metadata.FileOneMetadata,
+                currentMetadata = Fixtures.Metadata.FileOneMetadata
+            )
+
+            shouldThrow<IllegalArgumentException> {
+                EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 0)
+            }
+
+            EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 1) shouldBe (10)
+            EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 2) shouldBe (5)
+            EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 3) shouldBe (4)
+            EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 4) shouldBe (3)
+            EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 5) shouldBe (2)
+            EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 6) shouldBe (2)
+            EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 7) shouldBe (2)
+            EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 8) shouldBe (2)
+            EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 9) shouldBe (2)
+            EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 10) shouldBe (1)
+            EntityProcessing.expectedParts(entity = fileEntity, withMaximumPartSize = 11) shouldBe (1)
+
+            EntityProcessing.expectedParts(entity = directoryEntity, withMaximumPartSize = 1) shouldBe (0)
+            EntityProcessing.expectedParts(entity = directoryEntity, withMaximumPartSize = 10) shouldBe (0)
+            EntityProcessing.expectedParts(entity = directoryEntity, withMaximumPartSize = 100) shouldBe (0)
+
+            EntityProcessing.expectedParts(entity = fileEntityWithoutChanges, withMaximumPartSize = 1) shouldBe (0)
+            EntityProcessing.expectedParts(entity = fileEntityWithoutChanges, withMaximumPartSize = 10) shouldBe (0)
+            EntityProcessing.expectedParts(entity = fileEntityWithoutChanges, withMaximumPartSize = 100) shouldBe (0)
+        }
+
         "process files with changed content and metadata" {
             val sourceFile1Metadata = "/ops/source-file-1".asTestResource().extractFileMetadata(
                 withChecksum = BigInteger("1"),
@@ -140,6 +211,8 @@ class EntityProcessingSpec : WordSpec({
             mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessingStarted] shouldBe (3)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityPartProcessed] shouldBe (2)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (3)
             mockTracker.statistics[MockBackupTracker.Statistic.MetadataCollected] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.MetadataPushed] shouldBe (0)
@@ -273,13 +346,13 @@ class EntityProcessingSpec : WordSpec({
                 override val maxPartSize: Long = 16384
             }
 
-            val e = shouldThrow<RuntimeException> {
+            val e = shouldThrow<EntityProcessingFailure> {
                 stage
                     .entityProcessing(operation = Operation.generateId(), flow = listOf(sourceFile1).asFlow())
                     .toList()
             }
 
-            e.message shouldBe ("[pushDisabled] is set to [true]")
+            e.message shouldContain ("[pushDisabled] is set to [true]")
 
             mockStaging.statistics[MockFileStaging.Statistic.TemporaryCreated] shouldBe (1)
             mockStaging.statistics[MockFileStaging.Statistic.TemporaryDiscarded] shouldBe (1)
@@ -305,20 +378,6 @@ class EntityProcessingSpec : WordSpec({
             mockTracker.statistics[MockBackupTracker.Statistic.MetadataPushed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.FailureEncountered] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.Completed] shouldBe (0)
-        }
-
-        "fail if unexpected target entity metadata is provided" {
-            val entity = SourceEntity(
-                path = Fixtures.Metadata.DirectoryOneMetadata.path,
-                existingMetadata = null,
-                currentMetadata = Fixtures.Metadata.DirectoryOneMetadata
-            )
-
-            val e = shouldThrow<IllegalArgumentException> {
-                EntityProcessing.expectFileMetadata(entity = entity)
-            }
-
-            e.message shouldBe ("Expected metadata for file but directory metadata for [${entity.path}] provided")
         }
 
         "fail processing a file if processing for a part fails" {
@@ -374,13 +433,13 @@ class EntityProcessingSpec : WordSpec({
                 override val maxPartSize: Long = 10
             }
 
-            val e = shouldThrow<RuntimeException> {
+            val e = shouldThrow<EntityProcessingFailure> {
                 stage
                     .entityProcessing(operation = Operation.generateId(), flow = listOf(largeSourceFile).asFlow())
                     .toList()
             }
 
-            e.message shouldBe ("Test failure")
+            e.message shouldContain ("Test failure")
 
             val expectedParts = 4
 
@@ -400,6 +459,8 @@ class EntityProcessingSpec : WordSpec({
             mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessingStarted]!! shouldBeGreaterThanOrEqual (1)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityPartProcessed]!! shouldBeGreaterThanOrEqual (1)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.MetadataCollected] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.MetadataPushed] shouldBe (0)

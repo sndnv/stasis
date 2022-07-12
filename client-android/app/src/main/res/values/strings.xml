@@ -333,8 +333,8 @@
     <string name="operation_type_garbage_collection">Garbage Collection</string>
     <string name="operation_type_garbage_unknown">Unknown</string>
     <string name="operation_field_content_info">%1$s (%2$s)</string>
-    <string name="operation_field_content_details">Stages: %1$s, Steps: %2$s</string>
-    <string name="operation_field_content_details_with_failures">Stages: %1$s, Steps: %2$s, Errors: %3$s</string>
+    <string name="operation_field_content_details">Processed: %1$s of %2$s</string>
+    <string name="operation_field_content_details_with_failures">Processed: %1$s of %2$s, Errors: %3$s</string>
     <string name="operation_field_content_completed">Completed: %1$s</string>
     <string name="operation_field_content_completed_progress">Completed: %1$s%</string>
     <string name="operation_field_content_stage_info">%1$s (steps: %2$s)</string>
@@ -342,27 +342,27 @@
     <string name="operation_stop_confirm_title">Stop operation [%1$s]?</string>
     <string name="operation_stop_confirm_cancel_button_title">Cancel</string>
     <string name="operation_stop_confirm_ok_button_title">OK</string>
+    <string name="operation_field_title_metadata">Metadata</string>
     <string name="operation_field_title_errors">Errors</string>
     <string name="operation_field_title_stages">Stages</string>
     <string name="operation_no_progress">No Data</string>
-    <string name="operation_stage_title">%1$s</string>
-    <string name="operation_stage_message">%1$s (%2$s)</string>
+    <string name="operation_metadata_collected_message">Collected: %1$s</string>
+    <string name="operation_metadata_pushed_message">Pushed: %1$s</string>
     <string name="operation_failure_title">Error</string>
     <string name="operation_failure_message">%1$s</string>
+    <string name="operation_stage_steps_list_empty">No Data</string>
+    <string name="operation_stage_step_name_with_progress">%1$s (%2$s of %3$s)</string>
+    <string name="operation_stage_step_name_without_progress">%1$s</string>
+    <string name="operation_stage_step_parent">%1$s/</string>
 
     <!-- Operation Stages/Steps -->
-    <string name="operation_stage_discovery">Discovery</string>
-    <string name="operation_stage_specification">Specification</string>
-    <string name="operation_stage_examination">Examination</string>
-    <string name="operation_stage_collection">Collection</string>
-    <string name="operation_stage_processing">Processing</string>
-    <string name="operation_stage_metadata">Metadata</string>
+    <string name="operation_stage_discovered">Discovered</string>
+    <string name="operation_stage_examined">Examined</string>
+    <string name="operation_stage_collected">Collected</string>
+    <string name="operation_stage_pending">Pending</string>
+    <string name="operation_stage_processed">Processed</string>
     <string name="operation_stage_metadata_applied">Metadata Applied</string>
     <string name="operation_stage_unknown">%1$s</string>
-    <string name="operation_step_processing">Processing</string>
-    <string name="operation_step_collection">Collection</string>
-    <string name="operation_step_push">Push</string>
-    <string name="operation_step_unknown">%1$s</string>
 
     <!-- Status -->
     <string name="device_header_title">Device</string>

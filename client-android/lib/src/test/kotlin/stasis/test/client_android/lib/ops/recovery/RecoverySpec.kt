@@ -28,8 +28,8 @@ import stasis.client_android.lib.ops.recovery.Recovery
 import stasis.client_android.lib.ops.recovery.Recovery.Destination.Companion.toTargetEntityDestination
 import stasis.client_android.lib.staging.DefaultFileStaging
 import stasis.client_android.lib.utils.Try
-import stasis.client_android.lib.utils.Try.Success
 import stasis.client_android.lib.utils.Try.Failure
+import stasis.client_android.lib.utils.Try.Success
 import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.ResourceHelpers
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
@@ -39,11 +39,15 @@ import stasis.test.client_android.lib.ResourceHelpers.extractDirectoryMetadata
 import stasis.test.client_android.lib.ResourceHelpers.extractFileMetadata
 import stasis.test.client_android.lib.ResourceHelpers.withRootAt
 import stasis.test.client_android.lib.eventually
-import stasis.test.client_android.lib.mocks.*
+import stasis.test.client_android.lib.mocks.MockCompression
+import stasis.test.client_android.lib.mocks.MockEncryption
+import stasis.test.client_android.lib.mocks.MockRecoveryTracker
+import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
+import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
 import java.math.BigInteger
 import java.nio.file.Paths
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
@@ -198,6 +202,8 @@ class RecoverySpec : WordSpec({
 
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityExamined] shouldBe (3)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityCollected] shouldBe (2)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessingStarted] shouldBe (2)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityPartProcessed] shouldBe (1)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessed] shouldBe (2)
             mockTracker.statistics[MockRecoveryTracker.Statistic.MetadataApplied] shouldBe (2)
             mockTracker.statistics[MockRecoveryTracker.Statistic.FailureEncountered] shouldBe (0)
@@ -299,6 +305,8 @@ class RecoverySpec : WordSpec({
 
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityExamined] shouldBe (7)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityCollected] shouldBe (7)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessingStarted] shouldBe (7)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityPartProcessed] shouldBe (5)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessed] shouldBe (7)
             mockTracker.statistics[MockRecoveryTracker.Statistic.MetadataApplied] shouldBe (7)
             mockTracker.statistics[MockRecoveryTracker.Statistic.FailureEncountered] shouldBe (0)
@@ -369,8 +377,64 @@ class RecoverySpec : WordSpec({
 
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityExamined] shouldBe (3)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityCollected] shouldBe (3)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessingStarted] shouldBe (3)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityPartProcessed] shouldBe (2)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessed] shouldBe (2)
             mockTracker.statistics[MockRecoveryTracker.Statistic.MetadataApplied] shouldBe (2)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.FailureEncountered] shouldBe (1)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.Completed] shouldBe (1)
+        }
+
+        "handle general recovery failures" {
+            val operationResult = AtomicReference<Throwable>()
+
+            val currentSourceFile1Metadata = "/ops/source-file-1".asTestResource().extractFileMetadata(checksum)
+            val originalSourceFile1Metadata = currentSourceFile1Metadata.copy(checksum = BigInteger("0"))
+
+            val originalMetadata = DatasetMetadata(
+                contentChanged = mapOf(
+                    originalSourceFile1Metadata.path to originalSourceFile1Metadata
+                ),
+                metadataChanged = emptyMap(),
+                filesystem = FilesystemMetadata(
+                    entities = mapOf(
+                        currentSourceFile1Metadata.path to FilesystemMetadata.EntityState.Existing(UUID.randomUUID())
+                    )
+                )
+            )
+
+            val mockApiClient = object : MockServerApiEndpointClient(self = UUID.randomUUID()) {
+                override suspend fun datasetMetadata(entry: DatasetEntryId): Try<DatasetMetadata> =
+                    Failure(RuntimeException("Test failure"))
+            }
+
+            val mockCoreClient = MockServerCoreEndpointClient()
+
+            val mockTracker = MockRecoveryTracker()
+
+            val recovery = createRecovery(
+                metadata = originalMetadata,
+                clients = Clients(api = mockApiClient, core = mockCoreClient),
+                tracker = mockTracker
+            )
+
+            recovery.start(withScope = operationScope) { e ->
+                operationResult.set(e)
+            }
+
+            eventually {
+                operationResult.get()?.message shouldContain ("Test failure")
+            }
+
+            mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
+            mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (0)
+
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityExamined] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityCollected] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessingStarted] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityPartProcessed] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessed] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.MetadataApplied] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.FailureEncountered] shouldBe (1)
             mockTracker.statistics[MockRecoveryTracker.Statistic.Completed] shouldBe (1)
         }

@@ -17,6 +17,7 @@ import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.OperationId
+import stasis.client_android.lib.ops.exceptions.EntityProcessingFailure
 import stasis.client_android.lib.ops.recovery.Recovery.Destination.Companion.toTargetEntityDestination
 import stasis.client_android.lib.ops.recovery.stages.EntityCollection
 import stasis.client_android.lib.ops.recovery.stages.EntityProcessing
@@ -51,6 +52,9 @@ class Recovery(
                     .let { flow -> stages.entityProcessing(id, flow) }
                     .let { flow -> stages.metadataApplication(id, flow) }
                     .collect()
+            } catch (e: EntityProcessingFailure) {
+                providers.track.failureEncountered(id, e.entity, e.cause)
+                throw e
             } catch (e: Throwable) {
                 providers.track.failureEncountered(id, e)
                 throw e

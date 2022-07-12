@@ -25,6 +25,6 @@ interface EntityCollection {
             }
             .filter { it.hasChanged }
             .onEach { entity ->
-                providers.track.entityCollected(operation = operation, entity = entity.path)
+                providers.track.entityCollected(operation = operation, entity = entity)
             }
 }
