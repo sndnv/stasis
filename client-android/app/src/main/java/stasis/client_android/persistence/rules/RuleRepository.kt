@@ -45,13 +45,13 @@ class RuleRepository(private val dao: RuleEntityDao) {
             ), // includes all accessible user storage
             RuleEntity(
                 operation = Rule.Operation.Exclude,
-                directory = "/storage/emulated/0/Android",
-                pattern = "{data,obb,data/**,obb/**}"
+                directory = "/storage/emulated/0",
+                pattern = "{Android,Android/**}"
             ), // exclude private app data
             RuleEntity(
                 operation = Rule.Operation.Exclude,
-                directory = "/storage/emulated/0/DCIM",
-                pattern = "{.thumbnails,.thumbnails/**}"
+                directory = "/storage/emulated/0",
+                pattern = "**/.thumbnails"
             ) // exclude thumbnails
         )
     }
