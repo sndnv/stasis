@@ -6,10 +6,12 @@ import click
 
 
 @click.command(name='state')
+@click.argument('state', type=click.Choice(['active', 'completed', 'all'], case_sensitive=False),
+                default='active')
 @click.pass_context
-def show_operations_state(ctx):
+def show_operations_state(ctx, state):
     """Show currently active operations."""
-    click.echo(ctx.obj.rendering.render_operations(ctx.obj.api.operations()))
+    click.echo(ctx.obj.rendering.render_operations(ctx.obj.api.operations(state=state)))
 
 
 @click.command(name='progress')

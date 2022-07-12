@@ -18,7 +18,7 @@ class OperationsSpec(unittest.TestCase):
         context.rendering = JsonWriter()
 
         runner = Runner(cli)
-        result = runner.invoke(args=['show', 'state'], obj=context)
+        result = runner.invoke(args=['show', 'state', 'all'], obj=context)
 
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertTrue(json.loads(result.output))

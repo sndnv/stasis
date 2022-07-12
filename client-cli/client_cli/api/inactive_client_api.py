@@ -44,7 +44,7 @@ class InactiveClientApi(ClientApi):
     def device_connections(self):
         InactiveClientApi._abort()
 
-    def operations(self):
+    def operations(self, state):
         InactiveClientApi._abort()
 
     def operation_progress(self, operation):

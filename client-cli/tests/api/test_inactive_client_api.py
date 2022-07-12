@@ -50,7 +50,7 @@ class InactiveClientApiSpec(unittest.TestCase):
             api.device_connections()
 
         with self.assertRaises(Abort):
-            api.operations()
+            api.operations(state='all')
 
         with self.assertRaises(Abort):
             api.operation_progress(operation=operation)

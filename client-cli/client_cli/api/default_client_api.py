@@ -55,8 +55,8 @@ class DefaultClientApi(ClientApi):
     def device_connections(self):
         return self.get(url='/device/connections')
 
-    def operations(self):
-        return self.get(url='/operations')
+    def operations(self, state):
+        return self.get(url='/operations', params={'state': state})
 
     def operation_progress(self, operation):
         return self.get(url='/operations/{}/progress'.format(operation))

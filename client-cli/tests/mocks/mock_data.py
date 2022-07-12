@@ -303,38 +303,14 @@ SCHEDULES_CONFIGURED = [
     },
 ]
 
-ACTIVE_OPERATIONS = [
+OPERATIONS = [
     {
         'operation': str(uuid4()),
         'type': 'backup',
         'progress': {
-            'stages': {
-                'discovery': {
-                    'steps': [
-                        {'name': 'test-file-01', 'completed': int(round(time.time() * 1000))},
-                        {'name': 'test-file-02', 'completed': int(round(time.time() * 1000))},
-                        {'name': 'test-file-03', 'completed': int(round(time.time() * 1000))},
-                    ]
-                },
-                'specification': {
-                    'steps': [
-                        {'name': 'processed', 'completed': int(round(time.time() * 1000))}
-                    ]
-                },
-                'collection': {
-                    'steps': [
-                        {'name': 'test-file-01', 'completed': int(round(time.time() * 1000))},
-                        {'name': 'test-file-02', 'completed': int(round(time.time() * 1000))},
-                        {'name': 'test-file-03', 'completed': int(round(time.time() * 1000))},
-                    ]
-                },
-                'processing': {
-                    'steps': [
-                        {'name': 'test-file-01', 'completed': int(round(time.time() * 1000))},
-                    ]
-                }
-            },
-            'failures': ['test-failure-01', 'test-failure-02'],
+            'total': 5,
+            'processed': 2,
+            'failures': 2,
             'completed': None,
         }
     },
@@ -342,8 +318,9 @@ ACTIVE_OPERATIONS = [
         'operation': str(uuid4()),
         'type': 'expiration',
         'progress': {
-            'stages': {},
-            'failures': [],
+            'total': 3,
+            'processed': 0,
+            'failures': 0,
             'completed': None,
         }
     },
@@ -351,146 +328,126 @@ ACTIVE_OPERATIONS = [
         'operation': str(uuid4()),
         'type': 'validation',
         'progress': {
-            'stages': {},
-            'failures': [],
+            'total': 0,
+            'processed': 0,
+            'failures': 0,
             'completed': int(round(time.time() * 1000)),
         }
     },
 ]
 
 EMPTY_OPERATION_PROGRESS = {
-    'stages': {},
-    'failures': []
+    'operation': str(uuid4()),
+    'type': 'backup',
+    'entities': {
+        'discovered': [],
+        'unmatched': [],
+        'examined': [],
+        'collected': [],
+        'pending': {},
+        'processed': {},
+        'failed': {},
+    },
+    'metadata_collected': None,
+    'metadata_pushed': None,
+    'failures': [],
+    'completed': None,
 }
 
-OPERATION_PROGRESS = [
+BACKUP_PROGRESS = [
     {
-        'stages': {
-            'discovery': {
-                'steps': [
-                    {
-                        'name': '/some/path/01',
-                        'completed': '2020-12-21T01:02:05',
-                    },
-                ]
-            },
-            'examination': {
-                'steps': [
-                    {
-                        'name': '/some/path/01',
-                        'completed': '2020-12-21T01:02:05',
-                    },
-                ]
-            },
+        'operation': str(uuid4()),
+        'type': 'backup',
+        'entities': {
+            'discovered': ['/some/path/01'],
+            'unmatched': [],
+            'examined': [],
+            'collected': [],
+            'pending': {},
+            'processed': {},
+            'failed': {},
         },
-        'failures': []
+        'metadata_collected': None,
+        'metadata_pushed': None,
+        'failures': [],
+        'completed': None,
     },
     {
-        'stages': {
-            'discovery': {
-                'steps': [
-                    {
-                        'name': '/some/path/01',
-                        'completed': '2020-12-21T01:02:05',
-                    },
-                    {
-                        'name': '/some/path/02',
-                        'completed': '2020-12-21T01:02:06',
-                    },
-                    {
-                        'name': '/some/path/03',
-                        'completed': '2020-12-21T01:02:07',
-                    },
-                ]
-            },
-            'examination': {
-                'steps': [
-                    {
-                        'name': '/some/path/01',
-                        'completed': '2020-12-21T01:02:05',
-                    },
-                    {
-                        'name': '/some/path/02',
-                        'completed': '2020-12-21T01:02:06',
-                    },
-                    {
-                        'name': '/some/path/03',
-                        'completed': '2020-12-21T01:02:07',
-                    },
-                ]
-            },
-            'processing': {
-                'steps': [
-                    {
-                        'name': '/some/path/01',
-                        'completed': '2020-12-21T01:02:10',
-                    },
-                ]
-            },
+        'operation': str(uuid4()),
+        'type': 'backup',
+        'entities': {
+            'discovered': ['/some/path/01', '/some/path/02', '/some/path/03'],
+            'unmatched': ['/a/b/c'],
+            'examined': ['/some/path/01', '/some/path/02', '/some/path/03'],
+            'collected': [],
+            'pending': {},
+            'processed': {'/some/path/01': {'expected_parts': 1, 'processed_parts': 1}},
+            'failed': {},
         },
-        'failures': []
+        'metadata_collected': None,
+        'metadata_pushed': None,
+        'failures': [],
+        'completed': None,
     },
     {
-        'stages': {
-            'examination': {
-                'steps': [
-                    {
-                        'name': '/some/path/01',
-                        'completed': '2020-12-21T01:02:05',
-                    },
-                    {
-                        'name': '/some/path/02',
-                        'completed': '2020-12-21T01:02:06',
-                    },
-                    {
-                        'name': '/some/path/03',
-                        'completed': '2020-12-21T01:02:07',
-                    },
-                    {
-                        'name': '/some/path',
-                        'completed': '2020-12-21T01:02:04',
-                    },
-                ]
+        'operation': str(uuid4()),
+        'type': 'backup',
+        'entities': {
+            'discovered': ['/some/path/01', '/some/path/02', '/some/path/03', '/some/path'],
+            'unmatched': ['/a/b/c'],
+            'examined': ['/some/path/01', '/some/path/02', '/some/path/03', '/some/path'],
+            'collected': ['/some/path/01', '/some/path/02', '/some/path/03'],
+            'pending': {'/some/path/03': {'expected_parts': 3, 'processed_parts': 1}},
+            'processed': {
+                '/some/path/01': {'expected_parts': 1, 'processed_parts': 1},
+                '/some/path/02': {'expected_parts': 2, 'processed_parts': 2},
             },
-            'metadata': {
-                'steps': [
-                    {
-                        'name': 'collection',
-                        'completed': '2020-12-21T01:02:08',
-                    },
-                    {
-                        'name': 'push',
-                        'completed': '2020-12-21T01:02:09',
-                    }
-                ]
+            'failed': {
+                '/some/path/04': 'FileNotFoundException: File [/some/path/04] not found',
+                '/some/path/05': 'FileSystemException: /some/path/05: Operation not permitted',
             },
-            'processing': {
-                'steps': [
-                    {
-                        'name': '/some/path/01',
-                        'completed': '2020-12-21T01:02:10',
-                    },
-                    {
-                        'name': '/some/path/02',
-                        'completed': '2020-12-21T01:02:11',
-                    },
-                ]
-            },
-            'collection': {
-                'steps': [
-                    {
-                        'name': '/some/path/01',
-                        'completed': '2020-12-21T01:02:12',
-                    },
-                ]
-            }
         },
+        'metadata_collected': '2020-12-21T01:02:08',
+        'metadata_pushed': '2020-12-21T01:02:09',
+        'failures': ['Test Failure'],
         'completed': '2020-12-21T01:02:13',
-        'failures': [
-            'FileNotFoundException: File [/some/path/04] not found',
-            'FileSystemException: /some/path/05: Operation not permitted',
-            'Test Failure',
-        ]
+    }
+]
+
+RECOVERY_PROGRESS = [
+    {
+        'operation': str(uuid4()),
+        'type': 'recovery',
+        'entities': {
+            'examined': ['/some/path/01'],
+            'collected': [],
+            'pending': {},
+            'processed': {},
+            'metadata_applied': [],
+            'failed': {},
+        },
+        'failures': [],
+        'completed': None,
+    },
+    {
+        'operation': str(uuid4()),
+        'type': 'recovery',
+        'entities': {
+            'examined': ['/some/path/01', '/some/path/02', '/some/path/03', '/some/path'],
+            'collected': ['/some/path/01', '/some/path/02', '/some/path/03'],
+            'pending': {'/some/path/03': {'expected_parts': 3, 'processed_parts': 1}},
+            'processed': {
+                '/some/path/01': {'expected_parts': 1, 'processed_parts': 1},
+                '/some/path/02': {'expected_parts': 2, 'processed_parts': 2},
+            },
+            'metadata_applied': ['/some/path/01'],
+            'failed': {
+                '/some/path/04': 'FileNotFoundException: File [/some/path/04] not found',
+                '/some/path/05': 'FileSystemException: /some/path/05: Operation not permitted',
+            },
+        },
+        'failures': ['Test Failure'],
+        'completed': '2020-12-21T01:02:13',
     }
 ]
 
