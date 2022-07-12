@@ -10,7 +10,6 @@ import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.map
 import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
@@ -20,6 +19,7 @@ import stasis.client_android.activities.helpers.Transitions.configureSourceTrans
 import stasis.client_android.databinding.FragmentOperationsBinding
 import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.providers.ProviderContext
+import stasis.client_android.utils.LiveDataExtensions.and
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -58,7 +58,7 @@ class OperationsFragment : Fragment() {
                 findNavController().navigate(
                     OperationsFragmentDirections.actionOperationsFragmentToOperationDetailsFragment(
                         operation = operation,
-                        operationType = operationType?.toString()
+                        operationType = operationType.toString()
                     ),
                     FragmentNavigatorExtras(
                         itemView to getString(OperationDetailsFragment.TargetTransitionId)
@@ -75,12 +75,11 @@ class OperationsFragment : Fragment() {
         binding.operationsList.adapter = adapter
 
         lifecycleScope.launch {
-            val operationTypes =
-                providerContext.executor.active() + providerContext.executor.completed()
+            (providerContext.trackers.backup.state and providerContext.trackers.recovery.state)
+                .observe(viewLifecycleOwner) { (backups, recoveries) ->
+                    val operations = backups + recoveries
 
-            providerContext.tracker.state.map { it.operations }
-                .observe(viewLifecycleOwner) { operations ->
-                    adapter.setOperations(operations, operationTypes)
+                    adapter.setOperations(operations)
 
                     if (operations.isEmpty()) {
                         binding.operationsListEmpty.isVisible = true

@@ -9,6 +9,7 @@ import okio.buffer
 import stasis.client_android.lib.ops.recovery.stages.internal.MergedCrates.merged
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.concurrent.atomic.AtomicInteger
 
 class MergedCratesSpec : WordSpec({
     "MergedCrates" should {
@@ -17,7 +18,11 @@ class MergedCratesSpec : WordSpec({
                 Triple(0, Paths.get("/tmp/file/one__part=0"), suspend { Buffer().write("original_1".toByteArray()) })
             )
 
-            val merged = original.merged().buffer().readUtf8()
+            val partsProcessed = AtomicInteger(0)
+
+            val merged = original.merged(onPartProcessed = { partsProcessed.incrementAndGet() }).buffer().readUtf8()
+
+            partsProcessed.get() shouldBe(1)
 
             merged shouldBe ("original_1")
         }
@@ -29,7 +34,11 @@ class MergedCratesSpec : WordSpec({
                 Triple(1, Paths.get("/tmp/file/one__part=1"), suspend { Buffer().write("original_2".toByteArray()) })
             )
 
-            val merged = original.merged().buffer().readUtf8()
+            val partsProcessed = AtomicInteger(0)
+
+            val merged = original.merged(onPartProcessed = { partsProcessed.incrementAndGet() }).buffer().readUtf8()
+
+            partsProcessed.get() shouldBe(3)
 
             merged shouldBe ("original_1original_2original_3")
         }
@@ -37,9 +46,13 @@ class MergedCratesSpec : WordSpec({
         "fail if no crates are provided" {
             val original: List<Triple<Int, Path, suspend () -> Source>> = emptyList()
 
+            val partsProcessed = AtomicInteger(0)
+
             val e = shouldThrow<IllegalArgumentException> {
-                original.merged()
+                original.merged(onPartProcessed = { partsProcessed.incrementAndGet() })
             }
+
+            partsProcessed.get() shouldBe(0)
 
             e.message shouldBe ("Expected at least one crate but none were found")
         }

@@ -17,6 +17,7 @@ class PartitionedSource(
     private val source: BufferedSource,
     private val providers: Providers,
     private val withPartSecret: (Int) -> DeviceFileSecret,
+    private val onPartStaged: () -> Unit,
     private val withMaximumPartSize: Long
 ) {
     suspend fun partitionAndStage(): List<Pair<Path, Path>> = withContext(Dispatchers.IO) {
@@ -41,6 +42,7 @@ class PartitionedSource(
                         staged.flush()
                         staged.flush()
                         staged.close()
+                        onPartStaged()
 
                         collected = read
                         partId += 1
@@ -62,6 +64,7 @@ class PartitionedSource(
         } finally {
             staged.flush()
             staged.close()
+            onPartStaged()
 
             source.close()
         }

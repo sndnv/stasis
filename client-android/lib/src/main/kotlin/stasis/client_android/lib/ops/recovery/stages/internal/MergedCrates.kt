@@ -5,11 +5,11 @@ import stasis.client_android.lib.utils.ConcatSource
 import java.nio.file.Path
 
 object MergedCrates {
-    fun List<Triple<Int, Path, suspend () -> Source>>.merged(): Source {
+    fun List<Triple<Int, Path, suspend () -> Source>>.merged(onPartProcessed: () -> Unit): Source {
         val sorted = this.sortedBy { it.first }.map { it.third }
 
         return when {
-            sorted.isNotEmpty() -> ConcatSource(sorted)
+            sorted.isNotEmpty() -> ConcatSource(sorted, onSourceConsumed = onPartProcessed)
             else -> throw IllegalArgumentException("Expected at least one crate but none were found")
         }
     }

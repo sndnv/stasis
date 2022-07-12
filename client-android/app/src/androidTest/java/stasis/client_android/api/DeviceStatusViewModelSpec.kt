@@ -22,6 +22,7 @@ import stasis.client_android.lib.utils.Reference
 import stasis.client_android.lib.utils.Try.Success
 import stasis.client_android.mocks.*
 import stasis.client_android.providers.ProviderContext
+import stasis.client_android.tracking.TrackerViews
 import java.time.Duration
 
 @RunWith(AndroidJUnit4::class)
@@ -46,7 +47,11 @@ class DeviceStatusViewModelSpec {
                             api = mockApiClient,
                             search = MockSearch(),
                             executor = MockOperationExecutor(),
-                            tracker = MockTrackerView(),
+                            trackers = TrackerViews(
+                                backup = MockBackupTracker(),
+                                recovery = MockRecoveryTracker(),
+                                server = MockServerTracker()
+                            ),
                             credentials = CredentialsProvider(
                                 config = CredentialsProvider.Config(
                                     coreScope = "core",

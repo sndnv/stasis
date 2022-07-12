@@ -27,9 +27,15 @@ import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.eventually
-import stasis.test.client_android.lib.mocks.*
+import stasis.test.client_android.lib.mocks.MockBackupTracker
+import stasis.test.client_android.lib.mocks.MockCompression
+import stasis.test.client_android.lib.mocks.MockEncryption
+import stasis.test.client_android.lib.mocks.MockFileStaging
+import stasis.test.client_android.lib.mocks.MockRecoveryTracker
+import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
+import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
@@ -165,6 +171,8 @@ class DefaultOperationExecutorSpec : WordSpec({
                 mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (1)
                 mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
                 mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessingStarted] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.EntityPartProcessed] shouldBe (0)
                 mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (0)
                 mockTracker.statistics[MockBackupTracker.Statistic.MetadataCollected] shouldBe (1)
                 mockTracker.statistics[MockBackupTracker.Statistic.MetadataPushed] shouldBe (1)
@@ -219,6 +227,8 @@ class DefaultOperationExecutorSpec : WordSpec({
                 mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
                 mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
                 mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessingStarted] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.EntityPartProcessed] shouldBe (0)
                 mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (0)
                 mockTracker.statistics[MockBackupTracker.Statistic.MetadataCollected] shouldBe (1)
                 mockTracker.statistics[MockBackupTracker.Statistic.MetadataPushed] shouldBe (1)
@@ -274,6 +284,8 @@ class DefaultOperationExecutorSpec : WordSpec({
             eventually {
                 mockTracker.statistics[MockRecoveryTracker.Statistic.EntityExamined] shouldBe (0)
                 mockTracker.statistics[MockRecoveryTracker.Statistic.EntityCollected] shouldBe (0)
+                mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessingStarted] shouldBe (0)
+                mockTracker.statistics[MockRecoveryTracker.Statistic.EntityPartProcessed] shouldBe (0)
                 mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessed] shouldBe (0)
                 mockTracker.statistics[MockRecoveryTracker.Statistic.MetadataApplied] shouldBe (0)
                 mockTracker.statistics[MockRecoveryTracker.Statistic.FailureEncountered] shouldBe (0)
@@ -331,6 +343,8 @@ class DefaultOperationExecutorSpec : WordSpec({
             eventually {
                 mockTracker.statistics[MockRecoveryTracker.Statistic.EntityExamined] shouldBe (0)
                 mockTracker.statistics[MockRecoveryTracker.Statistic.EntityCollected] shouldBe (0)
+                mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessingStarted] shouldBe (0)
+                mockTracker.statistics[MockRecoveryTracker.Statistic.EntityPartProcessed] shouldBe (0)
                 mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessed] shouldBe (0)
                 mockTracker.statistics[MockRecoveryTracker.Statistic.MetadataApplied] shouldBe (0)
                 mockTracker.statistics[MockRecoveryTracker.Statistic.FailureEncountered] shouldBe (0)
@@ -454,6 +468,32 @@ class DefaultOperationExecutorSpec : WordSpec({
                 executor.active() shouldBe (emptyMap())
                 executor.completed()[backup] shouldBe (Operation.Type.Backup)
             }
+        }
+
+        "support searching for operations" {
+            val executor = createExecutor()
+
+            executor.active().size shouldBe (0)
+            executor.completed().size shouldBe (0)
+
+            executor.find(operation = Operation.generateId()) shouldBe (null)
+
+            val backup = executor.startBackupWithEntities(
+                definition = UUID.randomUUID(),
+                entities = emptyList(),
+                f = {}
+            )
+
+            executor.find(backup) shouldBe (Operation.Type.Backup)
+
+            val recovery = executor.startRecoveryWithEntry(
+                entry = UUID.randomUUID(),
+                query = null,
+                destination = null,
+                f = {}
+            )
+
+            executor.find(recovery) shouldBe (Operation.Type.Recovery)
         }
 
         "fail to start an operation if one of the same type is already running" {

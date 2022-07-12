@@ -24,6 +24,7 @@ import stasis.client_android.activities.helpers.Transitions.operationComplete
 import stasis.client_android.activities.helpers.Transitions.operationInProgress
 import stasis.client_android.activities.receivers.LogoutReceiver
 import stasis.client_android.databinding.ActivityMainBinding
+import stasis.client_android.lib.tracking.ServerTracker
 import stasis.client_android.lib.utils.Try.Companion.flatMap
 import stasis.client_android.lib.utils.Try.Companion.map
 import stasis.client_android.lib.utils.Try.Failure
@@ -33,7 +34,7 @@ import stasis.client_android.persistence.config.ConfigRepository.Companion.first
 import stasis.client_android.persistence.config.ConfigRepository.Companion.isFirstRun
 import stasis.client_android.persistence.credentials.CredentialsViewModel
 import stasis.client_android.scheduling.SchedulerService
-import stasis.client_android.tracking.TrackerView
+import stasis.client_android.tracking.TrackerViews
 import stasis.client_android.utils.LiveDataExtensions.and
 import stasis.client_android.utils.NotificationManagerExtensions.createSchedulingNotificationChannels
 import stasis.client_android.utils.Permissions.requestMissingPermissions
@@ -47,7 +48,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var credentials: CredentialsViewModel
 
     @Inject
-    lateinit var trackerView: TrackerView
+    lateinit var trackerViews: TrackerViews
 
     private lateinit var broadcastManager: LocalBroadcastManager
     private lateinit var logoutReceiver: LogoutReceiver
@@ -101,7 +102,7 @@ class MainActivity : AppCompatActivity() {
         controller: NavController
     ) {
         val contextHelpRef = AtomicReference<Int?>(null)
-        val unreachableServersRef = AtomicReference<Map<String, TrackerView.ServerState>?>()
+        val unreachableServersRef = AtomicReference<Map<String, ServerTracker.ServerState>?>()
 
         binding.topAppBar.setNavigationOnClickListener {
             binding.drawerLayout.open()
@@ -309,7 +310,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        trackerView.state.map { it.servers }.observe(this) { servers ->
+        trackerViews.server.state.observe(this) { servers ->
             val unreachable = servers.filterValues { !it.reachable }
 
             binding.topAppBar.menu.findItem(R.id.unreachable_servers).isVisible = unreachable.isNotEmpty()

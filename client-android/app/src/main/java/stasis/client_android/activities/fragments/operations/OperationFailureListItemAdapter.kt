@@ -9,6 +9,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import stasis.client_android.R
+import java.nio.file.Path
 
 class OperationFailureListItemAdapter(
     context: Context,

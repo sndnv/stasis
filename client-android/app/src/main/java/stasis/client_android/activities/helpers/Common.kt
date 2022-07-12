@@ -146,21 +146,13 @@ object Common {
     }.toAssignmentTypeString(context)
 
     fun String.toOperationStageString(context: Context): String = when (this) {
-        "discovery" -> context.getString(R.string.operation_stage_discovery)
-        "specification" -> context.getString(R.string.operation_stage_specification)
-        "examination" -> context.getString(R.string.operation_stage_examination)
-        "collection" -> context.getString(R.string.operation_stage_collection)
-        "processing" -> context.getString(R.string.operation_stage_processing)
-        "metadata" -> context.getString(R.string.operation_stage_metadata)
+        "discovered" -> context.getString(R.string.operation_stage_discovered)
+        "examined" -> context.getString(R.string.operation_stage_examined)
+        "collected" -> context.getString(R.string.operation_stage_collected)
+        "pending" -> context.getString(R.string.operation_stage_pending)
+        "processed" -> context.getString(R.string.operation_stage_processed)
         "metadata-applied" -> context.getString(R.string.operation_stage_metadata_applied)
         else -> context.getString(R.string.operation_stage_unknown, this)
-    }
-
-    fun String.toOperationStepString(context: Context): String = when (this) {
-        "processing" -> context.getString(R.string.operation_step_processing)
-        "collection" -> context.getString(R.string.operation_step_collection)
-        "push" -> context.getString(R.string.operation_step_push)
-        else -> context.getString(R.string.operation_step_unknown, this)
     }
 
     fun EntityMetadata.size(): Long? =

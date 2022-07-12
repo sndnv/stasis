@@ -20,12 +20,13 @@ import stasis.client_android.activities.helpers.Transitions.setSourceTransitionN
 import stasis.client_android.databinding.ListItemOperationBinding
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.OperationId
+import stasis.client_android.lib.tracking.state.OperationState
 
 class OperationListItemAdapter(
-    private val onOperationDetailsRequested: (View, OperationId, Operation.Type?) -> Unit,
+    private val onOperationDetailsRequested: (View, OperationId, Operation.Type) -> Unit,
     private val onOperationStopRequested: (OperationId) -> Unit
 ) : RecyclerView.Adapter<OperationListItemAdapter.ItemViewHolder>() {
-    private var operations = emptyList<Triple<OperationId, Operation.Type?, Operation.Progress>>()
+    private var operations = emptyList<Pair<OperationId, OperationState>>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -37,22 +38,24 @@ class OperationListItemAdapter(
     override fun getItemCount(): Int = operations.size
 
     override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
-        val (operation, operationType, progress) = operations[position]
-        holder.bind(operation, operationType, progress)
+        val (operation, state) = operations[position]
+        holder.bind(operation, state)
     }
 
     class ItemViewHolder(
         private val context: Context,
         private val binding: ListItemOperationBinding,
-        private val onOperationDetailsRequested: (View, OperationId, Operation.Type?) -> Unit,
+        private val onOperationDetailsRequested: (View, OperationId, Operation.Type) -> Unit,
         private val onOperationStopRequested: (OperationId) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(operation: OperationId, operationType: Operation.Type?, progress: Operation.Progress) {
+        fun bind(operation: OperationId, state: OperationState) {
+            val progress = state.asProgress()
+
             binding.operationInfo.text = context.getString(R.string.operation_field_content_info)
                 .renderAsSpannable(
                     StyledString(
                         placeholder = "%1\$s",
-                        content = operationType.asString(context),
+                        content = state.type.asString(context),
                         style = StyleSpan(Typeface.BOLD)
                     ),
                     StyledString(
@@ -63,30 +66,30 @@ class OperationListItemAdapter(
                 )
 
             binding.operationDetails.text = context.getString(
-                if (progress.failures.isEmpty()) R.string.operation_field_content_details
+                if (progress.failures == 0) R.string.operation_field_content_details
                 else R.string.operation_field_content_details_with_failures
             ).renderAsSpannable(
                 StyledString(
                     placeholder = "%1\$s",
-                    content = progress.stages.size.toString(),
+                    content = progress.processed.toString(),
                     style = StyleSpan(Typeface.BOLD)
                 ),
                 StyledString(
                     placeholder = "%2\$s",
-                    content = progress.stages.values.sumOf { it.steps.size }.toString(),
+                    content = progress.total.toString(),
                     style = StyleSpan(Typeface.BOLD)
                 ),
                 StyledString(
                     placeholder = "%3\$s",
-                    content = progress.failures.size.toString(),
+                    content = progress.failures.toString(),
                     style = StyleSpan(Typeface.BOLD)
                 )
             )
 
             when (val completed = progress.completed) {
                 null -> {
-                    val expectedSteps = progress.stages["discovery"]?.steps?.size ?: 0
-                    val actualSteps = progress.stages["processing"]?.steps?.size ?: 0
+                    val expectedSteps = progress.total
+                    val actualSteps = progress.processed
 
                     binding.operationCompleted.isVisible = false
                     binding.operationProgress.isVisible = true
@@ -139,22 +142,21 @@ class OperationListItemAdapter(
             binding.root.setSourceTransitionName(R.string.operation_details_transition_name, operation)
 
             binding.root.setOnClickListener { view ->
-                onOperationDetailsRequested(view, operation, operationType)
+                onOperationDetailsRequested(view, operation, state.type)
             }
         }
     }
 
     internal fun setOperations(
-        operations: Map<OperationId, Operation.Progress>,
-        operationTypes: Map<OperationId, Operation.Type>
+        operations: Map<OperationId, OperationState>
     ) {
         val (pending, completed) = operations.toList()
-            .map { (operation, progress) ->
-                Triple(operation, operationTypes[operation], progress)
+            .map { (operation, state) ->
+                operation to state
             }
-            .partition { it.third.completed == null }
+            .partition { it.second.completed == null }
 
-        this.operations = pending + completed.sortedByDescending { it.third.completed }
+        this.operations = pending + completed.sortedByDescending { it.second.completed }
 
         notifyDataSetChanged()
     }

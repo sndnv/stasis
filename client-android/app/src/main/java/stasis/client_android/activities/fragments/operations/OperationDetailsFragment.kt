@@ -23,8 +23,11 @@ import stasis.client_android.activities.helpers.Transitions.configureTargetTrans
 import stasis.client_android.activities.helpers.Transitions.setTargetTransitionName
 import stasis.client_android.databinding.FragmentOperationDetailsBinding
 import stasis.client_android.lib.ops.Operation
+import stasis.client_android.lib.tracking.state.BackupState
+import stasis.client_android.lib.tracking.state.RecoveryState
 import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.providers.ProviderContext
+import java.nio.file.Path
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -70,86 +73,163 @@ class OperationDetailsFragment : Fragment() {
                 )
             )
 
-        providerContext.tracker.operationUpdates(operation)
-            .observe(viewLifecycleOwner) { progress ->
-                binding.operationDetails.text = context.getString(
-                    if (progress.failures.isEmpty()) R.string.operation_field_content_details
-                    else R.string.operation_field_content_details_with_failures
+        val updates = when (operationType) {
+            is Operation.Type.Backup -> providerContext.trackers.backup.updates(operation)
+            is Operation.Type.Recovery -> providerContext.trackers.recovery.updates(operation)
+            else -> null
+        }
+
+        updates?.observe(viewLifecycleOwner) { state ->
+            val progress = state.asProgress()
+
+            binding.operationDetails.text = context.getString(
+                if (progress.failures == 0) R.string.operation_field_content_details
+                else R.string.operation_field_content_details_with_failures
+            )
+                .renderAsSpannable(
+                    StyledString(
+                        placeholder = "%1\$s",
+                        content = progress.processed.toString(),
+                        style = StyleSpan(Typeface.BOLD)
+                    ),
+                    StyledString(
+                        placeholder = "%2\$s",
+                        content = progress.total.toString(),
+                        style = StyleSpan(Typeface.BOLD)
+                    ),
+                    StyledString(
+                        placeholder = "%3\$s",
+                        content = progress.failures.toString(),
+                        style = StyleSpan(Typeface.BOLD)
+                    )
                 )
-                    .renderAsSpannable(
-                        StyledString(
-                            placeholder = "%1\$s",
-                            content = progress.stages.size.toString(),
-                            style = StyleSpan(Typeface.BOLD)
-                        ),
-                        StyledString(
-                            placeholder = "%2\$s",
-                            content = progress.stages.values.sumOf { it.steps.size }.toString(),
-                            style = StyleSpan(Typeface.BOLD)
-                        ),
-                        StyledString(
-                            placeholder = "%3\$s",
-                            content = progress.failures.size.toString(),
-                            style = StyleSpan(Typeface.BOLD)
-                        )
-                    )
 
-                when (val completed = progress.completed) {
-                    null -> {
-                        val expectedSteps = progress.stages["discovery"]?.steps?.size ?: 0
-                        val actualSteps = progress.stages["processing"]?.steps?.size ?: 0
-                        val progressPct = actualSteps / expectedSteps.toDouble() * 100
+            when (val completed = progress.completed) {
+                null -> {
+                    val expectedSteps = progress.total
+                    val actualSteps = progress.processed
+                    val progressPct = actualSteps / expectedSteps.toDouble() * 100
 
-                        binding.operationCompleted.text =
-                            context.getString(R.string.operation_field_content_completed_progress)
-                                .renderAsSpannable(
-                                    StyledString(
-                                        placeholder = "%1\$s",
-                                        content = String.format("%.2f", progressPct),
-                                        style = StyleSpan(Typeface.BOLD)
-                                    )
+                    binding.operationCompleted.text =
+                        context.getString(R.string.operation_field_content_completed_progress)
+                            .renderAsSpannable(
+                                StyledString(
+                                    placeholder = "%1\$s",
+                                    content = String.format("%.2f", progressPct),
+                                    style = StyleSpan(Typeface.BOLD)
                                 )
-                    }
-                    else -> {
-                        binding.operationCompleted.text =
-                            context.getString(R.string.operation_field_content_completed)
-                                .renderAsSpannable(
-                                    StyledString(
-                                        placeholder = "%1\$s",
-                                        content = completed.formatAsFullDateTime(context),
-                                        style = StyleSpan(Typeface.BOLD)
-                                    )
+                            )
+                }
+                else -> {
+                    binding.operationCompleted.text =
+                        context.getString(R.string.operation_field_content_completed)
+                            .renderAsSpannable(
+                                StyledString(
+                                    placeholder = "%1\$s",
+                                    content = completed.formatAsFullDateTime(context),
+                                    style = StyleSpan(Typeface.BOLD)
                                 )
-                    }
+                            )
                 }
-
-                if (progress.stages.isEmpty()) {
-                    binding.operationStages.isVisible = false
-                } else {
-                    binding.operationStages.isVisible = true
-
-                    binding.operationStagesList.adapter = OperationStageListItemAdapter(
-                        context = context,
-                        resource = R.layout.list_item_operation_stage,
-                        stages = progress.stages.toList()
-                    )
-                }
-
-                if (progress.failures.isEmpty()) {
-                    binding.operationFailures.isVisible = false
-                } else {
-                    binding.operationFailures.isVisible = true
-
-                    binding.operationFailuresList.adapter = OperationFailureListItemAdapter(
-                        context = context,
-                        resource = R.layout.list_item_operation_failure,
-                        failures = progress.failures
-                    )
-                }
-
-                binding.operationNoProgress.isVisible =
-                    progress.stages.isEmpty() && progress.failures.isEmpty()
             }
+
+            when (state) {
+                is BackupState -> {
+                    if (state.metadataCollected != null || state.metadataPushed != null) {
+                        binding.operationMetadata.isVisible = true
+
+                        val empty = context.getString(R.string.empty_value)
+
+                        binding.operationMetadataCollected.text =
+                            context.getString(R.string.operation_metadata_collected_message)
+                                .renderAsSpannable(
+                                    StyledString(
+                                        placeholder = "%1\$s",
+                                        content = state.metadataCollected?.formatAsFullDateTime(context) ?: empty,
+                                        style = StyleSpan(Typeface.BOLD)
+                                    )
+                                )
+
+                        binding.operationMetadataPushed.text =
+                            context.getString(R.string.operation_metadata_pushed_message)
+                                .renderAsSpannable(
+                                    StyledString(
+                                        placeholder = "%1\$s",
+                                        content = state.metadataPushed?.formatAsFullDateTime(context) ?: empty,
+                                        style = StyleSpan(Typeface.BOLD)
+                                    )
+                                )
+                    } else {
+                        binding.operationMetadata.isVisible = false
+                    }
+                }
+                else -> binding.operationMetadata.isVisible = false
+            }
+
+            if (progress.total == 0) {
+                binding.operationStages.isVisible = false
+            } else {
+                binding.operationStages.isVisible = true
+
+                val stages: Map<String, List<Triple<Path, Int, Int>>> = when (state) {
+                    is BackupState -> mapOf(
+                        "discovered" to state.entities.discovered.map { Triple(it, 1, 1) }.toList(),
+                        "examined" to state.entities.examined.map { Triple(it, 1, 1) }.toList(),
+                        "collected" to state.entities.collected.keys.map { Triple(it, 1, 1) }.toList(),
+                        "pending" to state.entities.pending.map { (entity, pending) ->
+                            Triple(entity, pending.processedParts, pending.expectedParts)
+                        }.toList(),
+                        "processed" to state.entities.processed.map { (entity, processed) ->
+                            Triple(entity, processed.processedParts, processed.expectedParts)
+                        }.toList()
+                    )
+                    is RecoveryState -> mapOf(
+                        "examined" to state.entities.examined.map { Triple(it, 1, 1) }.toList(),
+                        "collected" to state.entities.collected.keys.map { Triple(it, 1, 1) }.toList(),
+                        "pending" to state.entities.pending.map { (entity, pending) ->
+                            Triple(entity, pending.processedParts, pending.expectedParts)
+                        }.toList(),
+                        "processed" to state.entities.processed.map { (entity, processed) ->
+                            Triple(entity, processed.processedParts, processed.expectedParts)
+                        }.toList(),
+                        "metadata-applied" to state.entities.metadataApplied.map { Triple(it, 1, 1) }.toList()
+                    )
+                    else -> emptyMap()
+                }
+
+                binding.operationStagesList.adapter = OperationStageListItemAdapter(
+                    context = context,
+                    fragmentManager = parentFragmentManager,
+                    resource = R.layout.list_item_operation_stage,
+                    stages = stages.toList()
+                )
+            }
+
+            val failures: List<String> = when (state) {
+                is BackupState -> {
+                    state.entities.unmatched + state.failures + state.entities.failed.map { (k, v) -> "[$k] - $v" }
+                }
+                is RecoveryState -> {
+                    state.failures + state.entities.failed.map { (k, v) -> "[$k] - $v" }
+                }
+                else -> emptyList()
+            }
+
+            if (failures.isEmpty()) {
+                binding.operationFailures.isVisible = false
+            } else {
+                binding.operationFailures.isVisible = true
+
+                binding.operationFailuresList.adapter = OperationFailureListItemAdapter(
+                    context = context,
+                    resource = R.layout.list_item_operation_failure,
+                    failures = failures
+                )
+            }
+
+            binding.operationNoProgress.isVisible =
+                progress.total == 0 && progress.failures == 0
+        }
 
         binding.operationDetailsContainer.setTargetTransitionName(TargetTransitionId)
         configureTargetTransition()

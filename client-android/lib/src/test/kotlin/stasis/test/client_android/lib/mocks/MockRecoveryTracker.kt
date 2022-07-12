@@ -1,5 +1,6 @@
 package stasis.test.client_android.lib.mocks
 
+import stasis.client_android.lib.model.TargetEntity
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.tracking.RecoveryTracker
 import java.nio.file.Path
@@ -9,6 +10,8 @@ class MockRecoveryTracker : RecoveryTracker {
     private val stats: Map<Statistic, AtomicInteger> = mapOf(
         Statistic.EntityExamined to AtomicInteger(0),
         Statistic.EntityCollected to AtomicInteger(0),
+        Statistic.EntityProcessingStarted to AtomicInteger(0),
+        Statistic.EntityPartProcessed to AtomicInteger(0),
         Statistic.EntityProcessed to AtomicInteger(0),
         Statistic.MetadataApplied to AtomicInteger(0),
         Statistic.FailureEncountered to AtomicInteger(0),
@@ -19,8 +22,16 @@ class MockRecoveryTracker : RecoveryTracker {
         stats[Statistic.EntityExamined]?.getAndIncrement()
     }
 
-    override fun entityCollected(operation: OperationId, entity: Path) {
+    override fun entityCollected(operation: OperationId, entity: TargetEntity) {
         stats[Statistic.EntityCollected]?.getAndIncrement()
+    }
+
+    override fun entityProcessingStarted(operation: OperationId, entity: Path, expectedParts: Int) {
+        stats[Statistic.EntityProcessingStarted]?.getAndIncrement()
+    }
+
+    override fun entityPartProcessed(operation: OperationId, entity: Path) {
+        stats[Statistic.EntityPartProcessed]?.getAndIncrement()
     }
 
     override fun entityProcessed(operation: OperationId, entity: Path) {
@@ -29,6 +40,10 @@ class MockRecoveryTracker : RecoveryTracker {
 
     override fun metadataApplied(operation: OperationId, entity: Path) {
         stats[Statistic.MetadataApplied]?.getAndIncrement()
+    }
+
+    override fun failureEncountered(operation: OperationId, entity: Path, failure: Throwable) {
+        stats[Statistic.FailureEncountered]?.getAndIncrement()
     }
 
     override fun failureEncountered(operation: OperationId, failure: Throwable) {
@@ -45,6 +60,8 @@ class MockRecoveryTracker : RecoveryTracker {
     sealed class Statistic {
         object EntityExamined : Statistic()
         object EntityCollected : Statistic()
+        object EntityProcessingStarted : Statistic()
+        object EntityPartProcessed : Statistic()
         object EntityProcessed : Statistic()
         object MetadataApplied : Statistic()
         object FailureEncountered : Statistic()

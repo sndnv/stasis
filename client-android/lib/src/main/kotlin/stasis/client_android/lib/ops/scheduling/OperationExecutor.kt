@@ -12,6 +12,7 @@ import java.time.Instant
 interface OperationExecutor {
     suspend fun active(): Map<OperationId, Operation.Type>
     suspend fun completed(): Map<OperationId, Operation.Type>
+    suspend fun find(operation: OperationId): Operation.Type?
 
     suspend fun startBackupWithRules(
         definition: DatasetDefinitionId,

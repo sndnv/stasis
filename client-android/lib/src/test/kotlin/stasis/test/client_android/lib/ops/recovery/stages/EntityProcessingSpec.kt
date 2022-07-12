@@ -4,7 +4,6 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.string.shouldStartWith
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.toList
@@ -14,6 +13,7 @@ import stasis.client_android.lib.api.clients.Clients
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.model.TargetEntity
 import stasis.client_android.lib.ops.Operation
+import stasis.client_android.lib.ops.exceptions.EntityProcessingFailure
 import stasis.client_android.lib.ops.recovery.Providers
 import stasis.client_android.lib.ops.recovery.stages.EntityProcessing
 import stasis.test.client_android.lib.Fixtures
@@ -190,6 +190,8 @@ class EntityProcessingSpec : WordSpec({
 
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityExamined] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityCollected] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessingStarted] shouldBe (totalChanged)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityPartProcessed] shouldBe (contentCrates)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessed] shouldBe (totalChanged)
             mockTracker.statistics[MockRecoveryTracker.Statistic.MetadataApplied] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.FailureEncountered] shouldBe (0)
@@ -229,14 +231,14 @@ class EntityProcessingSpec : WordSpec({
                 )
             }
 
-            val e = shouldThrow<RuntimeException> {
+            val e = shouldThrow<EntityProcessingFailure> {
                 stage.entityProcessing(
                     operation = Operation.generateId(),
                     flow = listOf(targetFile1).asFlow()
                 ).collect()
             }
 
-            e.message shouldStartWith ("Failed to pull crate")
+            e.message shouldContain ("Failed to pull crate")
 
             mockStaging.statistics[MockFileStaging.Statistic.TemporaryCreated] shouldBe (1)
             mockStaging.statistics[MockFileStaging.Statistic.TemporaryDiscarded] shouldBe (1)
@@ -255,6 +257,8 @@ class EntityProcessingSpec : WordSpec({
 
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityExamined] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityCollected] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessingStarted] shouldBe (1)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityPartProcessed] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessed] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.MetadataApplied] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.FailureEncountered] shouldBe (0)
@@ -311,7 +315,7 @@ class EntityProcessingSpec : WordSpec({
                 )
             }
 
-            val e = shouldThrow<IllegalArgumentException> {
+            val e = shouldThrow<EntityProcessingFailure> {
                 stage.entityProcessing(
                     operation = Operation.generateId(),
                     flow = listOf(targetFile4).asFlow()
@@ -349,7 +353,7 @@ class EntityProcessingSpec : WordSpec({
                 )
             }
 
-            val e = shouldThrow<IllegalArgumentException> {
+            val e = shouldThrow<EntityProcessingFailure> {
                 stage.entityProcessing(
                     operation = Operation.generateId(),
                     flow = listOf(targetFile4).asFlow()

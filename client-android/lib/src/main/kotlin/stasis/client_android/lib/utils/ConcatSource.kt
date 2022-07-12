@@ -10,7 +10,8 @@ import java.util.LinkedList
 import java.util.Queue
 
 class ConcatSource(
-    sources: List<suspend () -> Source>
+    sources: List<suspend () -> Source>,
+    private val onSourceConsumed: () -> Unit
 ) : Source {
     private var queue: Queue<suspend () -> BufferedSource>
     private var active: BufferedSource? = null
@@ -19,7 +20,6 @@ class ConcatSource(
     init {
         require(sources.isNotEmpty()) { "At least one source is required" }
         queue = LinkedList(sources.map { suspend { it().buffer() } })
-
     }
 
     override fun close() {
@@ -51,12 +51,14 @@ class ConcatSource(
                     val remaining = count - bytesRead
                     active?.close()
                     active = null
+                    onSourceConsumed()
                     val additionalBytesRead = readNextBytes(remaining, buffer)
                     if (additionalBytesRead > 0) bytesRead + additionalBytesRead else bytesRead
                 }
                 else -> {
                     active?.close()
                     active = null
+                    onSourceConsumed()
                     readNextBytes(count, buffer)
                 }
             }

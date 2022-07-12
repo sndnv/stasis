@@ -39,25 +39,11 @@ interface Operation {
     }
 
     data class Progress(
-        val stages: Map<String, Stage>,
-        val failures: List<String>,
+        val total: Int,
+        val processed: Int,
+        val failures: Int,
         val completed: Instant?
-    ) {
-        data class Stage(val steps: List<Step>) {
-            fun withStep(step: Step): Stage = copy(steps = steps + step)
-
-            data class Step(val name: String, val completed: Instant)
-        }
-
-        companion object {
-            fun empty(): Progress =
-                Progress(
-                    failures = emptyList(),
-                    stages = emptyMap(),
-                    completed = null
-                )
-        }
-    }
+    )
 }
 
 typealias OperationId = UUID

@@ -1,19 +1,27 @@
 package stasis.client_android.mocks
 
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import stasis.client_android.lib.collection.rules.Rule
-import stasis.client_android.lib.collection.rules.Specification
+import stasis.client_android.lib.model.EntityMetadata
+import stasis.client_android.lib.model.SourceEntity
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.tracking.BackupTracker
+import stasis.client_android.lib.tracking.state.BackupState
+import stasis.client_android.lib.utils.Either
+import stasis.client_android.tracking.BackupTrackerView
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 
-class MockBackupTracker : BackupTracker {
+class MockBackupTracker : BackupTracker, BackupTrackerView {
     private val stats: Map<Statistic, AtomicInteger> = mapOf(
         Statistic.EntityDiscovered to AtomicInteger(0),
         Statistic.SpecificationProcessed to AtomicInteger(0),
         Statistic.EntityExamined to AtomicInteger(0),
         Statistic.EntityCollected to AtomicInteger(0),
+        Statistic.EntityProcessingStarted to AtomicInteger(0),
+        Statistic.EntityPartProcessed to AtomicInteger(0),
         Statistic.EntityProcessed to AtomicInteger(0),
         Statistic.MetadataCollected to AtomicInteger(0),
         Statistic.MetadataPushed to AtomicInteger(0),
@@ -21,7 +29,16 @@ class MockBackupTracker : BackupTracker {
         Statistic.Completed to AtomicInteger(0)
     )
 
-    override fun entityDiscovered(operation: OperationId, entity: Path) {
+    override val state: LiveData<Map<OperationId, BackupState>>
+        get() = MutableLiveData(emptyMap())
+
+    override fun updates(operation: OperationId): LiveData<BackupState> =
+        MutableLiveData(BackupState.start(operation))
+
+    override fun entityDiscovered(
+        operation: OperationId,
+        entity: Path
+    ) {
         stats[Statistic.EntityDiscovered]?.getAndIncrement()
     }
 
@@ -32,20 +49,27 @@ class MockBackupTracker : BackupTracker {
         stats[Statistic.SpecificationProcessed]?.getAndIncrement()
     }
 
-    override fun entityExamined(
-        operation: OperationId,
-        entity: Path,
-        metadataChanged: Boolean,
-        contentChanged: Boolean
-    ) {
+    override fun entityExamined(operation: OperationId, entity: Path) {
         stats[Statistic.EntityExamined]?.getAndIncrement()
     }
 
-    override fun entityCollected(operation: OperationId, entity: Path) {
+    override fun entityCollected(operation: OperationId, entity: SourceEntity) {
         stats[Statistic.EntityCollected]?.getAndIncrement()
     }
 
-    override fun entityProcessed(operation: OperationId, entity: Path, contentChanged: Boolean) {
+    override fun entityProcessingStarted(operation: OperationId, entity: Path, expectedParts: Int) {
+        stats[Statistic.EntityProcessingStarted]?.getAndIncrement()
+    }
+
+    override fun entityPartProcessed(operation: OperationId, entity: Path) {
+        stats[Statistic.EntityPartProcessed]?.getAndIncrement()
+    }
+
+    override fun entityProcessed(
+        operation: OperationId,
+        entity: Path,
+        metadata: Either<EntityMetadata, EntityMetadata>
+    ) {
         stats[Statistic.EntityProcessed]?.getAndIncrement()
     }
 
@@ -55,6 +79,10 @@ class MockBackupTracker : BackupTracker {
 
     override fun metadataPushed(operation: OperationId, entry: DatasetEntryId) {
         stats[Statistic.MetadataPushed]?.getAndIncrement()
+    }
+
+    override fun failureEncountered(operation: OperationId, entity: Path, failure: Throwable) {
+        stats[Statistic.FailureEncountered]?.getAndIncrement()
     }
 
     override fun failureEncountered(operation: OperationId, failure: Throwable) {
@@ -73,6 +101,8 @@ class MockBackupTracker : BackupTracker {
         object SpecificationProcessed : Statistic()
         object EntityExamined : Statistic()
         object EntityCollected : Statistic()
+        object EntityProcessingStarted : Statistic()
+        object EntityPartProcessed : Statistic()
         object EntityProcessed : Statistic()
         object MetadataCollected : Statistic()
         object MetadataPushed : Statistic()

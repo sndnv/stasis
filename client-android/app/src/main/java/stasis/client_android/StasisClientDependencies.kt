@@ -3,6 +3,8 @@ package stasis.client_android
 import stasis.client_android.lib.ops.backup.Providers as BackupProviders
 import stasis.client_android.lib.ops.recovery.Providers as RecoveryProviders
 import android.content.SharedPreferences
+import android.os.HandlerThread
+import android.os.Process
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -45,8 +47,11 @@ import stasis.client_android.persistence.config.ConfigRepository.Companion.getSe
 import stasis.client_android.providers.ProviderContext
 import stasis.client_android.security.Secrets
 import stasis.client_android.settings.Settings.getPingInterval
-import stasis.client_android.tracking.DefaultTracker
-import stasis.client_android.tracking.TrackerView
+import stasis.client_android.tracking.DefaultBackupTracker
+import stasis.client_android.tracking.DefaultRecoveryTracker
+import stasis.client_android.tracking.DefaultServerTracker
+import stasis.client_android.tracking.DefaultTrackers
+import stasis.client_android.tracking.TrackerViews
 import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
@@ -74,19 +79,34 @@ object StasisClientDependencies {
 
     @Singleton
     @Provides
-    fun provideDefaultTracker(): DefaultTracker =
-        DefaultTracker()
+    fun provideDefaultTrackers(): DefaultTrackers {
+        val trackerHandler = HandlerThread(
+            "DefaultTracker",
+            Process.THREAD_PRIORITY_BACKGROUND
+        ).apply { start() }
+
+        return DefaultTrackers(
+            backup = DefaultBackupTracker(trackerHandler.looper),
+            recovery = DefaultRecoveryTracker(trackerHandler.looper),
+            server = DefaultServerTracker(trackerHandler.looper)
+        )
+    }
 
     @Singleton
     @Provides
-    fun provideTrackerView(tracker: DefaultTracker): TrackerView =
-        tracker
+    fun provideTrackerView(trackers: DefaultTrackers): TrackerViews =
+        TrackerViews(
+            backup = trackers.backup,
+            recovery = trackers.recovery,
+            server = trackers.server
+        )
 
     @Singleton
     @Provides
     fun provideProviderContextFactory(
         dispatcher: CoroutineDispatcher,
-        tracker: DefaultTracker
+        trackers: DefaultTrackers,
+        trackerViews: TrackerViews
     ): ProviderContext.Factory =
         object : ProviderContext.Factory {
             override fun getOrCreate(preferences: SharedPreferences): Reference<ProviderContext> =
@@ -214,7 +234,7 @@ object StasisClientDependencies {
                                     encryptor = encryption,
                                     decryptor = encryption,
                                     clients = clients,
-                                    track = tracker.backup,
+                                    track = trackers.backup,
                                 ),
                                 recoveryProviders = RecoveryProviders(
                                     checksum = checksum,
@@ -222,7 +242,7 @@ object StasisClientDependencies {
                                     compression = compression,
                                     decryptor = encryption,
                                     clients = clients,
-                                    track = tracker.recovery
+                                    track = trackers.recovery
                                 ),
                                 operationDispatcher = dispatcher
                             )
@@ -231,7 +251,7 @@ object StasisClientDependencies {
                                 initialDelay = Duration.ofSeconds(5),
                                 interval = preferences.getPingInterval(),
                                 api = apiClient,
-                                tracker = tracker.server,
+                                tracker = trackers.server,
                                 scope = coroutineScope
                             )
 
@@ -240,7 +260,7 @@ object StasisClientDependencies {
                                 api = apiClient,
                                 search = search,
                                 executor = executor,
-                                tracker = tracker,
+                                trackers = trackerViews,
                                 credentials = credentials,
                                 monitor = monitor
                             )

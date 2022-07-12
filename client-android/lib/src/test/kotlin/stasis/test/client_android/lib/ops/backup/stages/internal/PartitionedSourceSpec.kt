@@ -20,6 +20,7 @@ import stasis.test.client_android.lib.mocks.MockEncryption
 import stasis.test.client_android.lib.mocks.MockFileStaging
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
 import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
+import java.util.concurrent.atomic.AtomicInteger
 
 class PartitionedSourceSpec : WordSpec({
     "PartitionedSource" should {
@@ -45,14 +46,19 @@ class PartitionedSourceSpec : WordSpec({
                 track = MockBackupTracker()
             )
 
+            val partsStaged = AtomicInteger(0)
+
             val extended = PartitionedSource(
                 source = original,
                 providers = providers,
                 withPartSecret = { Fixtures.Secrets.Default.toFileSecret("/ops/source-file-1".asTestResource()) },
-                withMaximumPartSize = maximumPartSize
+                withMaximumPartSize = maximumPartSize,
+                onPartStaged = { partsStaged.incrementAndGet() }
             )
 
             val entries = extended.partitionAndStage().map { it.second.content() }
+
+            partsStaged.get() shouldBe(3)
 
             entries shouldBe (listOf("ori", "gin", "al"))
 
@@ -102,16 +108,21 @@ class PartitionedSourceSpec : WordSpec({
                 track = MockBackupTracker()
             )
 
+            val partsStaged = AtomicInteger(0)
+
             val extended = PartitionedSource(
                 source = original.buffer(),
                 providers = providers,
                 withPartSecret = { Fixtures.Secrets.Default.toFileSecret("/ops/source-file-1".asTestResource()) },
-                withMaximumPartSize = maximumPartSize
+                withMaximumPartSize = maximumPartSize,
+                onPartStaged = { partsStaged.incrementAndGet() }
             )
 
             val e = shouldThrow<java.lang.RuntimeException> {
                 extended.partitionAndStage().map { it.second.content() }
             }
+
+            partsStaged.get() shouldBe(2)
 
             e.message shouldBe ("Test failure")
 

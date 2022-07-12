@@ -8,14 +8,14 @@ import stasis.client_android.lib.ops.scheduling.OperationExecutor
 import stasis.client_android.lib.ops.search.Search
 import stasis.client_android.lib.security.CredentialsProvider
 import stasis.client_android.lib.utils.Reference
-import stasis.client_android.tracking.TrackerView
+import stasis.client_android.tracking.TrackerViews
 
 data class ProviderContext(
     val core: ServerCoreEndpointClient,
     val api: ServerApiEndpointClient,
     val search: Search,
     val executor: OperationExecutor,
-    val tracker: TrackerView,
+    val trackers: TrackerViews,
     val credentials: CredentialsProvider,
     val monitor: ServerMonitor
 ) {

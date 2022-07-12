@@ -89,6 +89,8 @@ class MetadataApplicationSpec : WordSpec({
 
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityExamined] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityCollected] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessingStarted] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityPartProcessed] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessed] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.MetadataApplied] shouldBe (1)
             mockTracker.statistics[MockRecoveryTracker.Statistic.FailureEncountered] shouldBe (0)
