@@ -30,7 +30,7 @@ object RecoveryCollector {
           keep = keep,
           api = api
         ).toList
-      ).mapAsync(parallelism.value) { entityMetadataFuture =>
+      ).mapAsync(parallelism.entities) { entityMetadataFuture =>
         for {
           entityMetadata <- entityMetadataFuture
           targetEntity <- metadataCollector.collect(

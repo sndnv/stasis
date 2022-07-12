@@ -7,7 +7,6 @@ import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.{DatasetMetadata, FilesystemMetadata}
-import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.backup.stages.MetadataPush
 import stasis.shared.model.datasets.DatasetDefinition
@@ -40,7 +39,7 @@ class MetadataPushSpec extends AsyncUnitSpec { spec =>
           track = mockTracker,
           telemetry = MockClientTelemetryContext()
         )
-      override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
+
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
     }
 
@@ -95,6 +94,8 @@ class MetadataPushSpec extends AsyncUnitSpec { spec =>
         mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+        mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(0)
+        mockTracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(1)

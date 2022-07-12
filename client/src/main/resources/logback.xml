@@ -5,7 +5,7 @@
         <file>${HOME}/stasis-client/logs/stasis-client.log</file>
         <immediateFlush>true</immediateFlush>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>stasis-client-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>${HOME}/stasis-client/logs/stasis-client-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <maxFileSize>128MB</maxFileSize>
             <maxHistory>30</maxHistory>
             <totalSizeCap>2GB</totalSizeCap>

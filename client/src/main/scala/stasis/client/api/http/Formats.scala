@@ -1,16 +1,19 @@
 package stasis.client.api.http
 
-import java.nio.file.{Path, Paths}
-
 import stasis.client.collection.rules.{Rule, Specification}
 import stasis.client.model.{DatasetMetadata, EntityMetadata, FilesystemMetadata}
 import stasis.client.ops.exceptions.ScheduleRetrievalFailure
 import stasis.client.ops.scheduling.OperationScheduleAssignment
 import stasis.client.ops.scheduling.OperationScheduler.ActiveSchedule
 import stasis.client.ops.search.Search
-import stasis.client.tracking.TrackerView.ServerState
+import stasis.client.tracking.ServerTracker.ServerState
+import stasis.client.tracking.state.BackupState.{PendingSourceEntity, ProcessedSourceEntity}
+import stasis.client.tracking.state.RecoveryState.{PendingTargetEntity, ProcessedTargetEntity}
+import stasis.client.tracking.state.{BackupState, RecoveryState}
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.schedules.Schedule
+
+import java.nio.file.{Path, Paths}
 
 object Formats {
   import play.api.libs.json._
@@ -171,4 +174,60 @@ object Formats {
 
   implicit val specificationEntryExplanationFormat: Format[Specification.Entry.Explanation] =
     Json.format[Specification.Entry.Explanation]
+
+  implicit val pendingSourceEntityFormat: Writes[PendingSourceEntity] =
+    Json.writes[PendingSourceEntity]
+
+  implicit val pendingTargetEntityFormat: Writes[PendingTargetEntity] =
+    Json.writes[PendingTargetEntity]
+
+  implicit val processedSourceEntityFormat: Writes[ProcessedSourceEntity] =
+    Writes { entity =>
+      Json.obj(
+        "expected_parts" -> Json.toJson(entity.expectedParts),
+        "processed_parts" -> Json.toJson(entity.processedParts)
+      )
+    }
+
+  implicit val processedTargetEntityFormat: Writes[ProcessedTargetEntity] =
+    Json.writes[ProcessedTargetEntity]
+
+  implicit val backupStateFormat: Writes[BackupState] =
+    Writes { backup =>
+      Json.obj(
+        "operation" -> Json.toJson(backup.operation),
+        "type" -> Json.toJson("backup"),
+        "entities" -> Json.obj(
+          "discovered" -> Json.toJson(backup.entities.discovered),
+          "unmatched" -> Json.toJson(backup.entities.unmatched),
+          "examined" -> Json.toJson(backup.entities.examined),
+          "collected" -> Json.toJson(backup.entities.collected.keySet),
+          "pending" -> Json.toJson(backup.entities.pending.map(e => e._1.toAbsolutePath.toString -> e._2)),
+          "processed" -> Json.toJson(backup.entities.processed.map(e => e._1.toAbsolutePath.toString -> e._2)),
+          "failed" -> Json.toJson(backup.entities.failed.map(e => e._1.toAbsolutePath.toString -> e._2))
+        ),
+        "metadata_collected" -> Json.toJson(backup.metadataCollected),
+        "metadata_pushed" -> Json.toJson(backup.metadataPushed),
+        "failures" -> Json.toJson(backup.failures),
+        "completed" -> Json.toJson(backup.completed)
+      )
+    }
+
+  implicit val recoveryStateFormat: Writes[RecoveryState] =
+    Writes { recovery =>
+      Json.obj(
+        "operation" -> Json.toJson(recovery.operation),
+        "type" -> Json.toJson("recovery"),
+        "entities" -> Json.obj(
+          "examined" -> Json.toJson(recovery.entities.examined),
+          "collected" -> Json.toJson(recovery.entities.collected.keySet),
+          "pending" -> Json.toJson(recovery.entities.pending.map(e => e._1.toAbsolutePath.toString -> e._2)),
+          "processed" -> Json.toJson(recovery.entities.processed.map(e => e._1.toAbsolutePath.toString -> e._2)),
+          "metadata_applied" -> Json.toJson(recovery.entities.metadataApplied),
+          "failed" -> Json.toJson(recovery.entities.failed.map(e => e._1.toAbsolutePath.toString -> e._2))
+        ),
+        "failures" -> Json.toJson(recovery.failures),
+        "completed" -> Json.toJson(recovery.completed)
+      )
+    }
 }

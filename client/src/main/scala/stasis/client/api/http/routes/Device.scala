@@ -22,9 +22,9 @@ class Device()(implicit context: Context) extends ApiRoutes {
       },
       path("connections") {
         get {
-          onSuccess(context.tracker.state) { state =>
-            log.debugN("API successfully retrieved connection state for [{}] servers", state.servers.size)
-            consumeEntity & complete(state.servers)
+          onSuccess(context.trackers.server.state) { state =>
+            log.debugN("API successfully retrieved connection state for [{}] servers", state.size)
+            consumeEntity & complete(state)
           }
         }
       }

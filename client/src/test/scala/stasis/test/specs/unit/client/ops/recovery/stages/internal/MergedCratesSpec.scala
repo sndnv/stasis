@@ -1,14 +1,13 @@
 package stasis.test.specs.unit.client.ops.recovery.stages.internal
 
-import java.nio.file.Paths
-
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
-import stasis.client.ops.exceptions.EntityProcessingFailure
 import stasis.client.ops.recovery.stages.internal.MergedCrates
 import stasis.test.specs.unit.AsyncUnitSpec
 
+import java.nio.file.Paths
+import java.util.concurrent.atomic.AtomicInteger
 import scala.util.control.NonFatal
 
 class MergedCratesSpec extends AsyncUnitSpec {
@@ -19,11 +18,14 @@ class MergedCratesSpec extends AsyncUnitSpec {
 
     val extended = new MergedCrates(original)
 
+    val partsProcessed = new AtomicInteger(0)
+
     extended
-      .merge()
+      .merge(onPartProcessed = () => partsProcessed.incrementAndGet())
       .runWith(Sink.seq)
       .map { merged =>
-        merged.length should be(1)
+        partsProcessed.get() should be(1)
+
         merged.toList match {
           case part1 :: Nil =>
             part1 should be(ByteString("original_1"))
@@ -43,11 +45,14 @@ class MergedCratesSpec extends AsyncUnitSpec {
 
     val extended = new MergedCrates(original)
 
+    val partsProcessed = new AtomicInteger(0)
+
     extended
-      .merge()
+      .merge(onPartProcessed = () => partsProcessed.incrementAndGet())
       .runWith(Sink.seq)
       .map { merged =>
-        merged.length should be(3)
+        partsProcessed.get() should be(3)
+
         merged.toList match {
           case part1 :: part2 :: part3 :: Nil =>
             part1 should be(ByteString("original_1"))
@@ -63,13 +68,16 @@ class MergedCratesSpec extends AsyncUnitSpec {
   it should "fail if no crates are provided" in {
     val extended = new MergedCrates(Seq.empty)
 
+    val partsProcessed = new AtomicInteger(0)
+
     extended
-      .merge()
+      .merge(onPartProcessed = () => partsProcessed.incrementAndGet())
       .runWith(Sink.seq)
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recoverWith { case NonFatal(e: EntityProcessingFailure) =>
+      .recoverWith { case NonFatal(e) =>
+        partsProcessed.get() should be(0)
         e.getMessage should be("Expected at least one crate but none were found")
       }
   }

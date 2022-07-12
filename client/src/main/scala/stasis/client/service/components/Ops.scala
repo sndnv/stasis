@@ -31,7 +31,10 @@ object Ops {
       _ = log.debug("Loading schedules file [{}]...", schedulesFile)
     } yield {
       implicit val parallelismConfig: ParallelismConfig =
-        ParallelismConfig(value = rawConfig.getInt("service.parallelism"))
+        ParallelismConfig(
+          entities = rawConfig.getInt("service.parallelism.entities"),
+          entityParts = rawConfig.getInt("service.parallelism.entity-parts")
+        )
 
       val backupLimits = ops.backup.Backup.Limits(
         maxChunkSize = rawConfig.getMemorySize("ops.backup.max-chunk-size").toBytes.toInt,
@@ -45,7 +48,7 @@ object Ops {
         encryptor = encryption,
         decryptor = encryption,
         clients = clients,
-        track = tracker.backup,
+        track = trackers.backup,
         telemetry = telemetry
       )
 
@@ -55,7 +58,7 @@ object Ops {
         compression = compression,
         decryptor = encryption,
         clients = clients,
-        track = tracker.recovery,
+        track = trackers.recovery,
         telemetry = telemetry
       )
 
@@ -87,7 +90,7 @@ object Ops {
             initialDelay = rawConfig.getDuration("ops.monitoring.initial-delay").toMillis.millis,
             interval = rawConfig.getDuration("ops.monitoring.interval").toMillis.millis,
             api = clients.api,
-            tracker = tracker.server
+            tracker = trackers.server
           )
 
         override val search: Search =

@@ -1,13 +1,12 @@
 package stasis.test.specs.unit.client.ops.scheduling
 
-import java.util.concurrent.atomic.AtomicBoolean
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import akka.{Done, NotUsed}
-import org.scalatest.{Assertion, BeforeAndAfterAll}
 import org.scalatest.concurrent.Eventually
+import org.scalatest.{Assertion, BeforeAndAfterAll}
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceMetadataSecret}
@@ -21,6 +20,7 @@ import stasis.test.specs.unit.client.mocks._
 import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
+import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionException, Future}
 import scala.util.control.NonFatal
@@ -41,6 +41,8 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(1)
       mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+      mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(0)
+      mockTracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(1)
       mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(1)
@@ -65,6 +67,8 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+      mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(0)
+      mockTracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(1)
       mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(1)
@@ -89,6 +93,8 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     eventually[Assertion] {
       mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(0)
+      mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessingStarted) should be(0)
+      mockTracker.statistics(MockRecoveryTracker.Statistic.EntityPartProcessed) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
@@ -111,6 +117,8 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     eventually[Assertion] {
       mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(0)
+      mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessingStarted) should be(0)
+      mockTracker.statistics(MockRecoveryTracker.Statistic.EntityPartProcessed) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
@@ -221,6 +229,25 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     eventually[Assertion] {
       executor.active.await should be(empty)
       executor.completed.await.values.toSeq.distinct should be(Seq(Operation.Type.Backup))
+    }
+  }
+
+  it should "support searching for operations" in {
+    val executor = createExecutor()
+
+    executor.active.await should be(empty)
+    executor.completed.await should be(empty)
+
+    executor.find(operation = Operation.generateId()).await should be(None)
+
+    eventually[Assertion] {
+      val backup = executor.startBackupWithRules(definition = DatasetDefinition.generateId()).await
+      executor.find(backup).await should be(Some(Operation.Type.Backup))
+    }
+
+    eventually[Assertion] {
+      val recovery = executor.startRecoveryWithEntry(entry = DatasetEntry.generateId(), query = None, destination = None).await
+      executor.find(recovery).await should be(Some(Operation.Type.Recovery))
     }
   }
 
@@ -344,7 +371,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
 
   private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
-  private implicit val parallelismConfig: ParallelismConfig = ParallelismConfig(value = 1)
+  private implicit val parallelismConfig: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
 
   override protected def afterAll(): Unit =
     typedSystem.terminate()

@@ -47,6 +47,12 @@ class DefaultOperationExecutor(
   override def completed: Future[Map[Operation.Id, Operation.Type]] =
     completedOperations.entries
 
+  override def find(operation: Operation.Id): Future[Option[Operation.Type]] =
+    activeOperations.get(operation).flatMap {
+      case Some(active) => Future.successful(Some(active.`type`))
+      case None         => completedOperations.get(operation)
+    }
+
   override def rules: Future[Specification] =
     SchedulingConfig.rules(file = config.backup.rulesFile).flatMap(Specification.untracked)
 

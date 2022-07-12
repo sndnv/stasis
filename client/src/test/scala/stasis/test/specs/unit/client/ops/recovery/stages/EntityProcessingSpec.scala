@@ -16,7 +16,6 @@ import stasis.client.ops.recovery.Providers
 import stasis.client.ops.recovery.stages.EntityProcessing
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
-import stasis.core.routing.exceptions.PullFailure
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks._
@@ -137,7 +136,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           track = mockTracker,
           telemetry = mockTelemetry
         )
-      override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
+      override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
       override implicit protected def ec: ExecutionContext = spec.system.dispatcher
     }
@@ -183,6 +182,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
 
           mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessingStarted) should be(totalChanged)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.EntityPartProcessed) should be(contentCrates)
           mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(totalChanged)
           mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
@@ -230,7 +231,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           track = mockTracker,
           telemetry = mockTelemetry
         )
-      override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
+      override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
       override implicit protected def ec: ExecutionContext = spec.system.dispatcher
     }
@@ -245,9 +246,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
       .map { stageOutput =>
         fail(s"Unexpected result received: [$stageOutput]")
       }
-      .recover { case NonFatal(e: IOOperationIncompleteException) =>
-        e.getCause shouldBe an[PullFailure]
-        e.getCause.getMessage should startWith("Failed to pull crate")
+      .recover { case NonFatal(e) =>
+        e.getMessage should include("Failed to pull crate")
 
         eventually[Assertion] {
           mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(1)
@@ -267,6 +267,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
 
           mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessingStarted) should be(1)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.EntityPartProcessed) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
@@ -334,7 +336,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           track = new MockRecoveryTracker,
           telemetry = MockClientTelemetryContext()
         )
-      override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
+      override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
       override implicit protected def ec: ExecutionContext = spec.system.dispatcher
     }
@@ -382,7 +384,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           track = new MockRecoveryTracker,
           telemetry = MockClientTelemetryContext()
         )
-      override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
+      override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
       override implicit protected def ec: ExecutionContext = spec.system.dispatcher
     }
@@ -455,7 +457,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           track = mockTracker,
           telemetry = MockClientTelemetryContext()
         )
-      override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 4)
+      override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 4, entityParts = 4)
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
       override implicit protected def ec: ExecutionContext = spec.system.dispatcher
     }
@@ -477,8 +479,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
-      .recover { case NonFatal(e) =>
-        e.getCause.getMessage should be("Stopped")
+      .recover { case NonFatal(e: OperationStopped) =>
+        e.getMessage should be("Stopped")
 
         eventually[Assertion] {
           mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(1)

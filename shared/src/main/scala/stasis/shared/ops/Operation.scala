@@ -1,10 +1,8 @@
 package stasis.shared.ops
 
-import java.time.Instant
-
 import akka.Done
 
-import scala.collection.immutable.Queue
+import java.time.Instant
 import scala.concurrent.Future
 
 trait Operation {
@@ -34,25 +32,9 @@ object Operation {
   }
 
   final case class Progress(
-    stages: Map[String, Progress.Stage],
-    failures: Queue[String],
+    total: Int,
+    processed: Int,
+    failures: Int,
     completed: Option[Instant]
   )
-
-  object Progress {
-    def empty: Progress =
-      Progress(
-        failures = Queue.empty,
-        stages = Map.empty,
-        completed = None
-      )
-
-    final case class Stage(steps: Queue[Stage.Step]) {
-      def withStep(step: Stage.Step): Stage = copy(steps = steps :+ step)
-    }
-
-    object Stage {
-      final case class Step(name: String, completed: Instant)
-    }
-  }
 }

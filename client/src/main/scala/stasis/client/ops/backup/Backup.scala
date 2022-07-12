@@ -9,7 +9,7 @@ import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.DatasetMetadata
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.backup.stages._
-import stasis.client.ops.exceptions.OperationStopped
+import stasis.client.ops.exceptions.{EntityProcessingFailure, OperationStopped}
 import stasis.client.tracking.BackupTracker
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.ops.Operation
@@ -26,10 +26,21 @@ class Backup(
 
   private implicit val mat: Materializer = SystemMaterializer(system).materializer
 
-  private val supervision: Supervision.Decider = { e =>
-    system.log.error("Backup stream encountered failure: [{} - {}]; resuming", e.getClass.getSimpleName, e.getMessage)
-    providers.track.failureEncountered(failure = e)
-    Supervision.Resume
+  private val supervision: Supervision.Decider = {
+    case e: EntityProcessingFailure =>
+      system.log.error(
+        "Backup stream encountered failure while processing entity [{}]: [{} - {}]; resuming",
+        e.entity,
+        e.cause.getClass.getSimpleName,
+        e.cause.getMessage
+      )
+      providers.track.failureEncountered(e.entity, failure = e.cause)
+      Supervision.Resume
+
+    case e =>
+      system.log.error("Backup stream encountered failure: [{} - {}]; resuming", e.getClass.getSimpleName, e.getMessage)
+      providers.track.failureEncountered(failure = e)
+      Supervision.Resume
   }
 
   private implicit val ec: ExecutionContext = system.executionContext
@@ -142,6 +153,10 @@ object Backup {
     def trackWith(track: BackupTracker)(implicit id: Operation.Id, ec: ExecutionContext): Future[Done] = {
       operation.onComplete {
         case Success(_) | Failure(_: OperationStopped) =>
+          track.completed()
+
+        case Failure(e: EntityProcessingFailure) =>
+          track.failureEncountered(entity = e.entity, failure = e.cause)
           track.completed()
 
         case Failure(e) =>

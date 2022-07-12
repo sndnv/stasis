@@ -88,6 +88,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
 
         mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(3)
         mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(2)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessingStarted) should be(2)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityPartProcessed) should be(1)
         mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(2)
         mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(2)
         mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
@@ -168,6 +170,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
 
         mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(7)
         mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(7)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessingStarted) should be(7)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityPartProcessed) should be(5)
         mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(7)
         mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(7)
         mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
@@ -226,8 +230,58 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
 
         mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(3)
         mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(3)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessingStarted) should be(3)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityPartProcessed) should be(2)
         mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(2)
         mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(2)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(1)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(1)
+      }
+    }
+  }
+
+  it should "handle general recovery failures" in {
+    val currentSourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(checksum)
+    val originalSourceFile1Metadata = currentSourceFile1Metadata.copy(checksum = BigInt(0))
+
+    val originalMetadata = DatasetMetadata(
+      contentChanged = Map(
+        originalSourceFile1Metadata.path -> originalSourceFile1Metadata
+      ),
+      metadataChanged = Map.empty,
+      filesystem = FilesystemMetadata(
+        entities = Map(
+          currentSourceFile1Metadata.path -> FilesystemMetadata.EntityState.Existing(DatasetEntry.generateId())
+        )
+      )
+    )
+
+    val mockApiClient = new MockServerApiEndpointClient(self = Device.generateId()) {
+      override def datasetMetadata(entry: DatasetEntry.Id): Future[DatasetMetadata] =
+        Future.failed(new RuntimeException("Test failure"))
+    }
+
+    val mockCoreClient = MockServerCoreEndpointClient()
+
+    val mockTracker = new MockRecoveryTracker
+
+    val recovery = createRecovery(
+      metadata = originalMetadata,
+      clients = Clients(api = mockApiClient, core = mockCoreClient),
+      tracker = mockTracker
+    )
+
+    recovery.start().map { _ =>
+      eventually[Assertion] {
+        mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
+        mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
+
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(0)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(0)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessingStarted) should be(0)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityPartProcessed) should be(0)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(0)
+        mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
         mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(1)
         mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(1)
       }
@@ -250,6 +304,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
         eventually[Assertion] {
           mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessingStarted) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.EntityPartProcessed) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
@@ -277,6 +333,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
         eventually[Assertion] {
           mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessingStarted) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.EntityPartProcessed) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(1)
@@ -531,7 +589,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     "RecoverySpec"
   )
 
-  private implicit val parallelismConfig: ParallelismConfig = ParallelismConfig(value = 1)
+  private implicit val parallelismConfig: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
 
   private implicit val secretsConfig: SecretsConfig = SecretsConfig(
     derivation = SecretsConfig.Derivation(

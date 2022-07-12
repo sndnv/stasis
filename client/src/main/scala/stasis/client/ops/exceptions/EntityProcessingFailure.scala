@@ -1,3 +1,5 @@
 package stasis.client.ops.exceptions
 
-class EntityProcessingFailure(val message: String) extends Exception(message)
+import java.nio.file.Path
+
+final case class EntityProcessingFailure(entity: Path, cause: Throwable) extends Exception(cause)

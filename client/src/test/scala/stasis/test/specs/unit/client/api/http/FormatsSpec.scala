@@ -3,17 +3,20 @@ package stasis.test.specs.unit.client.api.http
 import java.nio.file.{Path, Paths}
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-
 import play.api.libs.json._
 import stasis.client.api.http.Formats._
 import stasis.client.collection.rules.Rule
-import stasis.client.model.{EntityMetadata, FilesystemMetadata}
+import stasis.client.model.{EntityMetadata, FilesystemMetadata, SourceEntity, TargetEntity}
 import stasis.client.ops.exceptions.ScheduleRetrievalFailure
 import stasis.client.ops.scheduling.OperationScheduleAssignment
+import stasis.client.tracking.state.{BackupState, RecoveryState}
+import stasis.client.tracking.state.BackupState.{PendingSourceEntity, ProcessedSourceEntity}
+import stasis.client.tracking.state.RecoveryState.{PendingTargetEntity, ProcessedTargetEntity}
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.model.schedules.Schedule
+import stasis.shared.ops.Operation
 import stasis.test.specs.unit.UnitSpec
-import stasis.test.specs.unit.client.ResourceHelpers
+import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 import stasis.test.specs.unit.shared.model.Generators
 
 class FormatsSpec extends UnitSpec with ResourceHelpers {
@@ -158,5 +161,129 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
       ruleOperationFormat.writes(operation).toString should be(json)
       ruleOperationFormat.reads(Json.parse(json)).asOpt should be(Some(operation))
     }
+  }
+
+  they should "convert processed source entities to/from JSON" in {
+    val entity = ProcessedSourceEntity(
+      expectedParts = 1,
+      processedParts = 2,
+      metadata = Left(Fixtures.Metadata.FileOneMetadata)
+    )
+
+    val json = """{"expected_parts":1,"processed_parts":2}"""
+
+    processedSourceEntityFormat.writes(entity).toString should be(json)
+  }
+
+  they should "convert backup state to JSON" in {
+    val entity1 = Fixtures.Metadata.FileOneMetadata.path
+    val entity2 = Fixtures.Metadata.FileTwoMetadata.path
+    val entity3 = Fixtures.Metadata.FileThreeMetadata.path
+
+    val sourceEntity = SourceEntity(
+      path = entity1,
+      existingMetadata = None,
+      currentMetadata = Fixtures.Metadata.FileOneMetadata
+    )
+
+    val now = Instant.now()
+
+    val backup = BackupState(
+      operation = Operation.generateId(),
+      entities = BackupState.Entities(
+        discovered = Set(entity1),
+        unmatched = Seq("a", "b", "c"),
+        examined = Set(entity2),
+        collected = Map(entity1 -> sourceEntity),
+        pending = Map(entity2 -> PendingSourceEntity(expectedParts = 1, processedParts = 2)),
+        processed = Map(
+          entity1 -> ProcessedSourceEntity(
+            expectedParts = 1,
+            processedParts = 1,
+            metadata = Left(Fixtures.Metadata.FileOneMetadata)
+          ),
+          entity2 -> ProcessedSourceEntity(
+            expectedParts = 0,
+            processedParts = 0,
+            metadata = Right(Fixtures.Metadata.FileTwoMetadata)
+          )
+        ),
+        failed = Map(entity3 -> "x")
+      ),
+      metadataCollected = Some(now),
+      metadataPushed = Some(now),
+      failures = Seq("y", "z"),
+      completed = Some(now)
+    )
+
+    val json =
+      s"""
+         |{
+         |"operation":"${backup.operation.toString}",
+         |"type":"backup",
+         |"entities":{
+         |"discovered":["/tmp/file/one"],
+         |"unmatched":["a","b","c"],
+         |"examined":["/tmp/file/two"],
+         |"collected":["/tmp/file/one"],
+         |"pending":{"/tmp/file/two":{"expected_parts":1,"processed_parts":2}},
+         |"processed":{"/tmp/file/one":{"expected_parts":1,"processed_parts":1},"/tmp/file/two":{"expected_parts":0,"processed_parts":0}},
+         |"failed":{"/tmp/file/four":"x"}
+         |},
+         |"metadata_collected":"${now.toString}",
+         |"metadata_pushed":"${now.toString}",
+         |"failures":["y","z"],
+         |"completed":"${now.toString}"
+         |}""".stripMargin.replaceAll("\n", "").trim
+
+    backupStateFormat.writes(backup).toString should be(json)
+  }
+
+  they should "convert recovery state to JSON" in {
+    val entity1 = Fixtures.Metadata.FileOneMetadata.path
+    val entity2 = Fixtures.Metadata.FileTwoMetadata.path
+    val entity3 = Fixtures.Metadata.FileThreeMetadata.path
+
+    val targetEntity = TargetEntity(
+      path = entity1,
+      existingMetadata = Fixtures.Metadata.FileOneMetadata,
+      currentMetadata = None,
+      destination = TargetEntity.Destination.Default
+    )
+
+    val now = Instant.now()
+
+    val recovery = RecoveryState(
+      operation = Operation.generateId(),
+      entities = RecoveryState.Entities(
+        examined = Set(entity1, entity2, entity3),
+        collected = Map(entity1 -> targetEntity),
+        pending = Map(entity3 -> PendingTargetEntity(expectedParts = 3, processedParts = 1)),
+        processed = Map(entity1 -> ProcessedTargetEntity(expectedParts = 1, processedParts = 1)),
+        metadataApplied = Set(entity1),
+        failed = Map(entity3 -> "x")
+      ),
+      failures = Seq("y", "z"),
+      completed = Some(now)
+    )
+
+    val json =
+      s"""
+         |{
+         |"operation":"${recovery.operation.toString}",
+         |"type":"recovery",
+         |"entities":{
+         |"examined":["/tmp/file/one","/tmp/file/two","/tmp/file/four"],
+         |"collected":["/tmp/file/one"],
+         |"pending":{"/tmp/file/four":{"expected_parts":3,"processed_parts":1}},
+         |"processed":{"/tmp/file/one":{"expected_parts":1,"processed_parts":1}},
+         |"metadata_applied":["/tmp/file/one"],
+         |"failed":{"/tmp/file/four":"x"}
+         |},
+         |"failures":["y","z"],
+         |"completed":"${now.toString}"
+         |}""".stripMargin.replaceAll("\n", "").trim
+
+    recoveryStateFormat.writes(recovery).toString should be(json)
   }
 }

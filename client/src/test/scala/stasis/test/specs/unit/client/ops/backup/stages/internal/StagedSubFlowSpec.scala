@@ -16,6 +16,7 @@ import stasis.client.ops.backup.stages.internal.StagedSubFlow
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks._
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
@@ -196,6 +197,8 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
       telemetry = mockTelemetry
     )
 
+    val partsStaged = new AtomicInteger(0)
+
     extended
       .stage(
         withPartSecret = partId =>
@@ -203,9 +206,12 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
             file = Paths.get(s"/tmp/file/one_$partId"),
             iv = ByteString.empty,
             key = ByteString.empty
-          )
+          ),
+        onPartStaged = () => partsStaged.incrementAndGet()
       )
       .map { result =>
+        partsStaged.get() should be(2)
+
         result.toList match {
           case (part1Path, part1Staged) :: (part2Path, part2Staged) :: Nil =>
             part1Path.toString should be("/tmp/file/one_0")

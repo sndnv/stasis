@@ -73,7 +73,7 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
           track = mockTracker,
           telemetry = MockClientTelemetryContext()
         )
-      override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
+      override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override protected implicit def mat: Materializer = SystemMaterializer(system).materializer
       override protected implicit def ec: ExecutionContext = system.dispatcher
     }
@@ -94,6 +94,8 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
     mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(1)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+    mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(0)
+    mockTracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
@@ -130,7 +132,7 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
           track = mockTracker,
           telemetry = MockClientTelemetryContext()
         )
-      override protected def parallelism: ParallelismConfig = ParallelismConfig(value = 1)
+      override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override protected implicit def mat: Materializer = SystemMaterializer(system).materializer
       override protected implicit def ec: ExecutionContext = system.dispatcher
     }
@@ -151,6 +153,8 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
     mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+    mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(0)
+    mockTracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)

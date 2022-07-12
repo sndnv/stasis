@@ -5,7 +5,6 @@ import akka.stream.scaladsl.{Flow, Source}
 import akka.{Done, NotUsed}
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.{DatasetMetadata, EntityMetadata}
-import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.backup.Providers
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.shared.api.requests.CreateDatasetEntry
@@ -18,7 +17,6 @@ trait MetadataPush {
   protected def targetDataset: DatasetDefinition
   protected def deviceSecret: DeviceSecret
   protected def providers: Providers
-  protected def parallelism: ParallelismConfig
 
   protected implicit def mat: Materializer
 
@@ -26,7 +24,7 @@ trait MetadataPush {
 
   def metadataPush(implicit operation: Operation.Id): Flow[DatasetMetadata, Done, NotUsed] =
     Flow[DatasetMetadata]
-      .mapAsyncUnordered(parallelism.value)(pushMetadata)
+      .mapAsyncUnordered(parallelism = 1)(pushMetadata)
       .wireTap(entry => providers.track.metadataPushed(entry))
       .map(_ => Done)
 
