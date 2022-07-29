@@ -50,9 +50,6 @@ class EventLogMemoryBackend[E, S] private (
     source
   }
 
-  override def getEvents: Future[Queue[E]] =
-    storeRef.flatMap(_ ? ((ref: ActorRef[Queue[E]]) => GetEvents(ref)))
-
   override def storeEventAndUpdateState(event: E, update: (E, S) => S): Future[Done] =
     storeRef
       .flatMap { messageRef =>
@@ -79,7 +76,11 @@ object EventLogMemoryBackend {
     telemetry: TelemetryContext,
     timeout: Timeout
   ): EventLogMemoryBackend[E, S] =
-    apply(name = name, stateStreamBufferSize = DefaultStreamBufferSize, initialState = initialState)
+    apply(
+      name = name,
+      stateStreamBufferSize = DefaultStreamBufferSize,
+      initialState = initialState
+    )
 
   def apply[E, S: ClassTag](
     name: String,
@@ -103,10 +104,6 @@ object EventLogMemoryBackend {
 
   private final case class GetState[E, S](
     replyTo: ActorRef[S]
-  ) extends Message[E, S]
-
-  private final case class GetEvents[E, S](
-    replyTo: ActorRef[Queue[E]]
   ) extends Message[E, S]
 
   private final case class StoreEventAndUpdateState[E, S](
@@ -136,10 +133,6 @@ object EventLogMemoryBackend {
 
         case GetState(replyTo) =>
           replyTo ! state
-          Behaviors.same
-
-        case GetEvents(replyTo) =>
-          replyTo ! events
           Behaviors.same
       }
     }

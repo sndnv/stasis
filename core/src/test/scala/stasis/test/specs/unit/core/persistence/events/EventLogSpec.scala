@@ -25,15 +25,11 @@ class EventLogSpec extends AsyncUnitSpec with Eventually {
     val testEvent = "test-event"
 
     for {
-      eventsBefore <- backend.getEvents
       stateBefore <- backend.getState
       _ <- store.store(testEvent)
-      eventsAfter <- backend.getEvents
       stateAfter <- backend.getState
     } yield {
-      eventsBefore should be(Queue.empty)
       stateBefore should be(Queue.empty)
-      eventsAfter should be(Queue(testEvent))
       stateAfter should be(Queue(testEvent))
 
       telemetry.persistence.eventLog.event should be(1)
