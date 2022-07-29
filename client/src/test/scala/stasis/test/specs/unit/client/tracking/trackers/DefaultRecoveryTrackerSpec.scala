@@ -113,7 +113,39 @@ class DefaultRecoveryTrackerSpec extends AsyncUnitSpec with Eventually with Befo
     }
   }
 
-  private def createTracker(): DefaultRecoveryTracker = DefaultRecoveryTracker(
+  it should "support dropping old state" in {
+    val tracker = createTracker(maxRetention = 250.millis)
+
+    val entity = Fixtures.Metadata.FileOneMetadata.path
+
+    val operation1 = Operation.generateId()
+
+    tracker.entityProcessed(entity)(operation1)
+    tracker.completed()(operation1)
+
+    eventually[Assertion] {
+      tracker.state.await.keys.toSeq should be(Seq(operation1))
+    }
+
+    val operation2 = Operation.generateId()
+    tracker.entityProcessed(entity)(operation2)
+
+    eventually[Assertion] {
+      tracker.state.await.keys.toSeq.sorted should be(Seq(operation1, operation2).sorted)
+    }
+
+    await(250.millis, withSystem = system)
+
+    val operation3 = Operation.generateId()
+    tracker.entityProcessed(entity)(operation3)
+
+    eventually[Assertion] {
+      tracker.state.await.keys.toSeq should be(Seq(operation3))
+    }
+  }
+
+  private def createTracker(maxRetention: FiniteDuration = 1.minute): DefaultRecoveryTracker = DefaultRecoveryTracker(
+    maxRetention = maxRetention,
     createBackend = state =>
       EventLogMemoryBackend(
         name = s"test-recovery-tracker-${java.util.UUID.randomUUID()}",

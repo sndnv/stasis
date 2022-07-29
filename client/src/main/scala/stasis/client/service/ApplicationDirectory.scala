@@ -22,6 +22,8 @@ trait ApplicationDirectory {
   )(implicit ec: ExecutionContext, m: T => ByteString): Future[Path]
 
   def configDirectory: Option[Path]
+
+  def appDirectory: Path
 }
 
 object ApplicationDirectory {
@@ -99,8 +101,14 @@ object ApplicationDirectory {
       }
     }
 
-    override val configDirectory: Option[Path] =
+    override lazy val configDirectory: Option[Path] =
       configLocations.headOption
+
+    override lazy val appDirectory: Path = Default.provideAppDirectory(
+      applicationName = applicationName,
+      userDirectory = user,
+      configDirectory = configDirectory
+    )
   }
 
   object Default {
@@ -117,5 +125,16 @@ object ApplicationDirectory {
         applicationName = applicationName,
         filesystem = FileSystems.getDefault
       )
+
+    @SuppressWarnings(Array("org.wartremover.warts.Throw"))
+    def provideAppDirectory(
+      applicationName: String,
+      userDirectory: Option[Path],
+      configDirectory: Option[Path]
+    ): Path =
+      userDirectory.orElse(configDirectory) match {
+        case Some(path) => path.resolve(applicationName)
+        case None       => throw new IllegalStateException("No suitable application directory found")
+      }
   }
 }

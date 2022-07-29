@@ -53,6 +53,7 @@ CLIENT_PATH="${CLIENT_USER_HOME}/stasis-client"
 CLIENT_CONFIG_PATH="${CLIENT_USER_HOME}/.config/stasis-client"
 CLIENT_CERTS_PATH="${CLIENT_CONFIG_PATH}/certs"
 CLIENT_LOGS_PATH="${CLIENT_PATH}/logs"
+CLIENT_STATE_PATH="${CLIENT_PATH}/state"
 
 echo "[$(now)] Installing [stasis-client]..."
 
@@ -74,6 +75,12 @@ mkdir -p ${CLIENT_LOGS_PATH} || failed
 chown -R ${CLIENT_USER} ${CLIENT_LOGS_PATH} || failed
 chmod +w ${CLIENT_LOGS_PATH} || failed
 touch "${CLIENT_LOGS_PATH}/stasis-client.log" || failed
+
+echo "[$(now)] Setting up client state directory [${CLIENT_STATE_PATH}]..."
+mkdir -p "${CLIENT_STATE_PATH}/backups" || failed
+mkdir -p "${CLIENT_STATE_PATH}/recoveries" || failed
+chown -R ${CLIENT_USER} ${CLIENT_STATE_PATH} || failed
+chmod +w ${CLIENT_STATE_PATH} || failed
 
 echo "[$(now)] Extracting client from [${CLIENT_ARCHIVE}] to [${CLIENT_PATH}]..."
 unzip -q -d "${CLIENT_PATH}/" ${CLIENT_ARCHIVE} || failed

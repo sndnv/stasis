@@ -1,11 +1,13 @@
 package stasis.test.specs.unit.client.tracking.state
 
-import stasis.client.model.TargetEntity
+import stasis.client.model.{proto, TargetEntity}
 import stasis.client.tracking.state.RecoveryState
 import stasis.client.tracking.state.RecoveryState.{PendingTargetEntity, ProcessedTargetEntity}
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.Fixtures
+
+import scala.util.{Failure, Success}
 
 class RecoveryStateSpec extends UnitSpec {
   "A RecoveryState" should "provide its type and state" in {
@@ -86,6 +88,85 @@ class RecoveryStateSpec extends UnitSpec {
         completed = recovery.completed
       )
     )
+  }
+
+  it should "be serializable to protobuf data" in {
+    RecoveryState.toProto(Fixtures.State.RecoveryOneState) should be(Fixtures.Proto.State.RecoveryOneStateProto)
+    RecoveryState.toProto(Fixtures.State.RecoveryTwoState) should be(Fixtures.Proto.State.RecoveryTwoStateProto)
+  }
+
+  it should "be deserializable from valid protobuf data" in {
+    RecoveryState.fromProto(
+      operation = Fixtures.State.RecoveryOneState.operation,
+      state = Fixtures.Proto.State.RecoveryOneStateProto
+    ) should be(
+      Success(Fixtures.State.RecoveryOneState)
+    )
+
+    RecoveryState.fromProto(
+      operation = Fixtures.State.RecoveryTwoState.operation,
+      state = Fixtures.Proto.State.RecoveryTwoStateProto
+    ) should be(
+      Success(Fixtures.State.RecoveryTwoState)
+    )
+  }
+
+  it should "fail to be deserialized when no entities are provided" in {
+    RecoveryState.fromProto(
+      operation = Fixtures.State.RecoveryOneState.operation,
+      state = Fixtures.Proto.State.RecoveryOneStateProto.copy(entities = None)
+    ) match {
+      case Success(state) =>
+        fail(s"Unexpected successful result received: [$state]")
+
+      case Failure(e) =>
+        e shouldBe an[IllegalArgumentException]
+        e.getMessage should be("Expected entities in recovery state but none were found")
+    }
+  }
+
+  it should "fail to be deserialized when target entity metadata is not provided" in {
+    RecoveryState.fromProto(
+      operation = Fixtures.State.RecoveryOneState.operation,
+      state = Fixtures.Proto.State.RecoveryOneStateProto.copy(
+        entities = Fixtures.Proto.State.RecoveryOneStateProto.entities.map { entities =>
+          entities.copy(
+            collected = entities.collected.map { case (k, v) =>
+              k -> v.copy(existingMetadata = None)
+            }
+          )
+        }
+      )
+    ) match {
+      case Success(state) =>
+        fail(s"Unexpected successful result received: [$state]")
+
+      case Failure(e) =>
+        e shouldBe an[IllegalArgumentException]
+        e.getMessage should be("Expected existing metadata in recovery state but none was found")
+    }
+
+    RecoveryState.fromProto(
+      operation = Fixtures.State.RecoveryOneState.operation,
+      state = Fixtures.Proto.State.RecoveryOneStateProto.copy(
+        entities = Fixtures.Proto.State.RecoveryOneStateProto.entities.map { entities =>
+          entities.copy(
+            collected = entities.collected.map { case (k, v) =>
+              k -> v.copy(
+                currentMetadata = v.currentMetadata.map(_.copy(entity = proto.metadata.EntityMetadata.Entity.Empty))
+              )
+            }
+          )
+        }
+      )
+    ) match {
+      case Success(state) =>
+        fail(s"Unexpected successful result received: [$state]")
+
+      case Failure(e) =>
+        e shouldBe an[IllegalArgumentException]
+        e.getMessage should be("Expected entity in metadata but none was found")
+    }
   }
 
   "A PendingTargetEntity" should "support incrementing its number of processed parts" in {

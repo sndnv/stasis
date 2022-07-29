@@ -25,6 +25,7 @@ import stasis.shared.secrets.SecretsConfig
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks._
 import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
+import stasis.test.specs.unit.core.FileSystemHelpers.FileSystemSetup
 
 import java.nio.file.Paths
 import java.time.Instant
@@ -561,7 +562,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     import stasis.client.model.TargetEntity
 
     val (filesystem, _) = createMockFileSystem(
-      setup = ResourceHelpers.FileSystemSetup.Unix
+      setup = FileSystemSetup.Unix
     )
 
     val recoveryDestination = Destination(

@@ -1,13 +1,15 @@
 package stasis.client.tracking.state
 
-import stasis.client.model.{EntityMetadata, SourceEntity}
+import stasis.client.model.{proto, EntityMetadata, SourceEntity}
 import stasis.shared.ops.Operation
 
-import java.nio.file.Path
+import java.nio.file.{Path, Paths}
 import java.time.Instant
+import scala.util.{Failure, Success, Try}
 
 final case class BackupState(
   operation: Operation.Id,
+  started: Instant,
   entities: BackupState.Entities,
   metadataCollected: Option[Instant],
   metadataPushed: Option[Instant],
@@ -101,6 +103,7 @@ final case class BackupState(
 object BackupState {
   def start(operation: Operation.Id): BackupState = BackupState(
     operation = operation,
+    started = Instant.now,
     entities = Entities.empty,
     metadataCollected = None,
     metadataPushed = None,
@@ -150,4 +153,125 @@ object BackupState {
     processedParts: Int,
     metadata: Either[EntityMetadata, EntityMetadata]
   )
+
+  def toProto(state: BackupState): proto.state.BackupState =
+    proto.state.BackupState(
+      started = state.started.toEpochMilli,
+      entities = Some(
+        proto.state.BackupEntities(
+          discovered = state.entities.discovered.map(_.toAbsolutePath.toString).toSeq,
+          unmatched = state.entities.unmatched,
+          examined = state.entities.examined.map(_.toAbsolutePath.toString).toSeq,
+          collected = state.entities.collected.map { case (k, v) =>
+            k.toAbsolutePath.toString -> toProtoSourceEntity(v)
+          },
+          pending = state.entities.pending.map { case (k, v) =>
+            k.toAbsolutePath.toString -> toProtoPendingSourceEntity(v)
+          },
+          processed = state.entities.processed.map { case (k, v) =>
+            k.toAbsolutePath.toString -> toProtoProcessedSourceEntity(v)
+          },
+          failed = state.entities.failed.map { case (k, v) => k.toAbsolutePath.toString -> v }
+        )
+      ),
+      metadataCollected = state.metadataCollected.map(_.toEpochMilli),
+      metadataPushed = state.metadataPushed.map(_.toEpochMilli),
+      failures = state.failures,
+      completed = state.completed.map(_.toEpochMilli)
+    )
+
+  def fromProto(operation: Operation.Id, state: proto.state.BackupState): Try[BackupState] =
+    state.entities match {
+      case Some(entities) =>
+        Try {
+          BackupState(
+            operation = operation,
+            started = Instant.ofEpochMilli(state.started),
+            entities = BackupState.Entities(
+              discovered = entities.discovered.map(Paths.get(_)).toSet,
+              unmatched = entities.unmatched,
+              examined = entities.examined.map(Paths.get(_)).toSet,
+              collected = entities.collected.map { case (k, v) => Paths.get(k) -> fromProtoSourceEntity(v) },
+              pending = entities.pending.map { case (k, v) => Paths.get(k) -> fromProtoPendingSourceEntity(v) },
+              processed = entities.processed.map { case (k, v) => Paths.get(k) -> fromProtoProcessedSourceEntity(v) },
+              failed = entities.failed.map { case (k, v) => Paths.get(k) -> v }
+            ),
+            metadataCollected = state.metadataCollected.map(Instant.ofEpochMilli),
+            metadataPushed = state.metadataPushed.map(Instant.ofEpochMilli),
+            failures = state.failures,
+            completed = state.completed.map(Instant.ofEpochMilli)
+          )
+        }
+
+      case None =>
+        Failure(new IllegalArgumentException("Expected entities in backup state but none were found"))
+    }
+
+  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
+  private def fromProtoSourceEntity(entity: proto.state.SourceEntity): SourceEntity =
+    SourceEntity(
+      path = Paths.get(entity.path),
+      existingMetadata = entity.existingMetadata.map { metadata =>
+        EntityMetadata.fromProto(metadata) match {
+          case Success(metadata) => metadata
+          case Failure(e)        => throw e
+        }
+      },
+      currentMetadata = entity.currentMetadata.flatMap(metadata => EntityMetadata.fromProto(metadata).toOption) match {
+        case Some(metadata) => metadata
+        case None           => throw new IllegalArgumentException("Expected current metadata in backup state but none was found")
+      }
+    )
+
+  private def toProtoSourceEntity(entity: SourceEntity): proto.state.SourceEntity =
+    proto.state.SourceEntity(
+      path = entity.path.toAbsolutePath.toString,
+      existingMetadata = entity.existingMetadata.map(EntityMetadata.toProto),
+      currentMetadata = Some(EntityMetadata.toProto(entity.currentMetadata))
+    )
+
+  private def fromProtoPendingSourceEntity(entity: proto.state.PendingSourceEntity): PendingSourceEntity =
+    PendingSourceEntity(
+      expectedParts = entity.expectedParts,
+      processedParts = entity.processedParts
+    )
+
+  private def toProtoPendingSourceEntity(entity: PendingSourceEntity): proto.state.PendingSourceEntity =
+    proto.state.PendingSourceEntity(
+      expectedParts = entity.expectedParts,
+      processedParts = entity.processedParts
+    )
+
+  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
+  private def fromProtoProcessedSourceEntity(entity: proto.state.ProcessedSourceEntity): ProcessedSourceEntity =
+    ProcessedSourceEntity(
+      expectedParts = entity.expectedParts,
+      processedParts = entity.processedParts,
+      metadata = entity.metadata match {
+        case proto.state.ProcessedSourceEntity.Metadata.Left(metadata) =>
+          EntityMetadata.fromProto(metadata) match {
+            case Success(value) => Left(value)
+            case Failure(e)     => throw e
+          }
+
+        case proto.state.ProcessedSourceEntity.Metadata.Right(metadata) =>
+          EntityMetadata.fromProto(metadata) match {
+            case Success(value) => Right(value)
+            case Failure(e)     => throw e
+          }
+
+        case proto.state.ProcessedSourceEntity.Metadata.Empty =>
+          throw new IllegalArgumentException("Expected entity metadata in backup state but none was found")
+      }
+    )
+
+  private def toProtoProcessedSourceEntity(entity: ProcessedSourceEntity): proto.state.ProcessedSourceEntity =
+    proto.state.ProcessedSourceEntity(
+      expectedParts = entity.expectedParts,
+      processedParts = entity.processedParts,
+      metadata = entity.metadata match {
+        case Left(value)  => proto.state.ProcessedSourceEntity.Metadata.Left(EntityMetadata.toProto(value))
+        case Right(value) => proto.state.ProcessedSourceEntity.Metadata.Right(EntityMetadata.toProto(value))
+      }
+    )
 }

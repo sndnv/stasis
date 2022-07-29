@@ -16,9 +16,12 @@ import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation
 
 import java.nio.file.Path
+import java.time.Instant
 import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 
 class DefaultBackupTracker(
+  maxRetention: FiniteDuration,
   backend: EventLogBackend[DefaultBackupTracker.BackupEvent, Map[Operation.Id, BackupState]]
 ) extends BackupTracker {
   import DefaultBackupTracker.BackupEvent
@@ -27,7 +30,7 @@ class DefaultBackupTracker(
 
   private val events: EventLog[BackupEvent, Map[Operation.Id, BackupState]] = EventLog(
     backend = backend,
-    updateState = { case (event, state) => updateState(event, state) }
+    updateState = { case (event, state) => updateState(event, state, maxRetention) }
   )
 
   override def state: Future[Map[Operation.Id, BackupState]] = events.state
@@ -165,9 +168,10 @@ class DefaultBackupTracker(
 
 object DefaultBackupTracker {
   def apply(
+    maxRetention: FiniteDuration,
     createBackend: Map[Operation.Id, BackupState] => EventLogBackend[BackupEvent, Map[Operation.Id, BackupState]]
   ): DefaultBackupTracker =
-    new DefaultBackupTracker(backend = createBackend(Map.empty))
+    new DefaultBackupTracker(backend = createBackend(Map.empty), maxRetention = maxRetention)
 
   sealed trait BackupEvent {
     def operation: Operation.Id
@@ -237,7 +241,8 @@ object DefaultBackupTracker {
 
   def updateState(
     event: BackupEvent,
-    state: Map[Operation.Id, BackupState]
+    state: Map[Operation.Id, BackupState],
+    maxRetention: FiniteDuration
   ): Map[Operation.Id, BackupState] = {
     import BackupEvent._
 
@@ -259,6 +264,9 @@ object DefaultBackupTracker {
       case _                                                 => existing
     }
 
-    state + (event.operation -> updated)
+    val now = Instant.now()
+    val filtered = state.filter(_._2.started.plusMillis(maxRetention.toMillis).isAfter(now))
+
+    filtered + (event.operation -> updated)
   }
 }

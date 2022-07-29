@@ -197,6 +197,7 @@ object Formats {
       Json.obj(
         "operation" -> Json.toJson(backup.operation),
         "type" -> Json.toJson("backup"),
+        "started" -> Json.toJson(backup.started),
         "entities" -> Json.obj(
           "discovered" -> Json.toJson(backup.entities.discovered),
           "unmatched" -> Json.toJson(backup.entities.unmatched),
@@ -218,6 +219,7 @@ object Formats {
       Json.obj(
         "operation" -> Json.toJson(recovery.operation),
         "type" -> Json.toJson("recovery"),
+        "started" -> Json.toJson(recovery.started),
         "entities" -> Json.obj(
           "examined" -> Json.toJson(recovery.entities.examined),
           "collected" -> Json.toJson(recovery.entities.collected.keySet),

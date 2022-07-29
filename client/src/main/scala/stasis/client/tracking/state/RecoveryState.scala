@@ -1,13 +1,16 @@
 package stasis.client.tracking.state
 
-import stasis.client.model.TargetEntity
+import stasis.client.model.TargetEntity.Destination
+import stasis.client.model.{proto, EntityMetadata, TargetEntity}
 import stasis.shared.ops.Operation
 
-import java.nio.file.Path
+import java.nio.file.{Path, Paths}
 import java.time.Instant
+import scala.util.{Failure, Success, Try}
 
 final case class RecoveryState(
   operation: Operation.Id,
+  started: Instant,
   entities: RecoveryState.Entities,
   failures: Seq[String],
   completed: Option[Instant]
@@ -82,6 +85,7 @@ object RecoveryState {
   def start(operation: Operation.Id): RecoveryState =
     RecoveryState(
       operation = operation,
+      started = Instant.now(),
       entities = Entities.empty,
       failures = Seq.empty,
       completed = None
@@ -119,4 +123,118 @@ object RecoveryState {
     expectedParts: Int,
     processedParts: Int
   )
+
+  def toProto(state: RecoveryState): proto.state.RecoveryState =
+    proto.state.RecoveryState(
+      started = state.started.toEpochMilli,
+      entities = Some(
+        proto.state.RecoveryEntities(
+          examined = state.entities.examined.map(_.toAbsolutePath.toString).toSeq,
+          collected = state.entities.collected.map { case (k, v) =>
+            k.toAbsolutePath.toString -> toProtoTargetEntity(v)
+          },
+          pending = state.entities.pending.map { case (k, v) =>
+            k.toAbsolutePath.toString -> toProtoPendingTargetEntity(v)
+          },
+          processed = state.entities.processed.map { case (k, v) =>
+            k.toAbsolutePath.toString -> toProtoProcessedTargetEntity(v)
+          },
+          metadataApplied = state.entities.metadataApplied.map(_.toAbsolutePath.toString).toSeq,
+          failed = state.entities.failed.map { case (k, v) => k.toAbsolutePath.toString -> v }
+        )
+      ),
+      failures = state.failures,
+      completed = state.completed.map(_.toEpochMilli)
+    )
+
+  def fromProto(operation: Operation.Id, state: proto.state.RecoveryState): Try[RecoveryState] =
+    state.entities match {
+      case Some(entities) =>
+        Try {
+          RecoveryState(
+            operation = operation,
+            started = Instant.ofEpochMilli(state.started),
+            entities = RecoveryState.Entities(
+              examined = entities.examined.map(Paths.get(_)).toSet,
+              collected = entities.collected.map { case (k, v) => Paths.get(k) -> fromProtoTargetEntity(v) },
+              pending = entities.pending.map { case (k, v) => Paths.get(k) -> fromProtoPendingTargetEntity(v) },
+              processed = entities.processed.map { case (k, v) => Paths.get(k) -> fromProtoProcessedTargetEntity(v) },
+              metadataApplied = entities.metadataApplied.map(Paths.get(_)).toSet,
+              failed = entities.failed.map { case (k, v) => Paths.get(k) -> v }
+            ),
+            failures = state.failures,
+            completed = state.completed.map(Instant.ofEpochMilli)
+          )
+        }
+
+      case None =>
+        Failure(new IllegalArgumentException("Expected entities in recovery state but none were found"))
+    }
+
+  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
+  private def fromProtoTargetEntity(entity: proto.state.TargetEntity): TargetEntity =
+    TargetEntity(
+      path = Paths.get(entity.path),
+      destination = entity.destination match {
+        case directory: proto.state.TargetEntityDestinationDirectory =>
+          TargetEntity.Destination.Directory(
+            path = Paths.get(directory.path),
+            keepDefaultStructure = directory.keepDefaultStructure
+          )
+
+        case _ =>
+          TargetEntity.Destination.Default
+      },
+      existingMetadata = entity.existingMetadata.flatMap(metadata => EntityMetadata.fromProto(metadata).toOption) match {
+        case Some(metadata) => metadata
+        case None => throw new IllegalArgumentException("Expected existing metadata in recovery state but none was found")
+      },
+      currentMetadata = entity.currentMetadata.map { metadata =>
+        EntityMetadata.fromProto(metadata) match {
+          case Success(metadata) => metadata
+          case Failure(e)        => throw e
+        }
+      }
+    )
+
+  private def toProtoTargetEntity(entity: TargetEntity): proto.state.TargetEntity =
+    proto.state.TargetEntity(
+      path = entity.path.toAbsolutePath.toString,
+      destination = entity.destination match {
+        case directory: Destination.Directory =>
+          proto.state.TargetEntityDestinationDirectory(
+            path = directory.path.toAbsolutePath.toString,
+            keepDefaultStructure = directory.keepDefaultStructure
+          )
+
+        case Destination.Default =>
+          proto.state.TargetEntityDestinationDefault()
+      },
+      existingMetadata = Some(EntityMetadata.toProto(entity.existingMetadata)),
+      currentMetadata = entity.currentMetadata.map(EntityMetadata.toProto)
+    )
+
+  private def fromProtoPendingTargetEntity(entity: proto.state.PendingTargetEntity): PendingTargetEntity =
+    PendingTargetEntity(
+      expectedParts = entity.expectedParts,
+      processedParts = entity.processedParts
+    )
+
+  private def toProtoPendingTargetEntity(entity: PendingTargetEntity): proto.state.PendingTargetEntity =
+    proto.state.PendingTargetEntity(
+      expectedParts = entity.expectedParts,
+      processedParts = entity.processedParts
+    )
+
+  private def fromProtoProcessedTargetEntity(entity: proto.state.ProcessedTargetEntity): ProcessedTargetEntity =
+    ProcessedTargetEntity(
+      expectedParts = entity.expectedParts,
+      processedParts = entity.processedParts
+    )
+
+  private def toProtoProcessedTargetEntity(entity: ProcessedTargetEntity): proto.state.ProcessedTargetEntity =
+    proto.state.ProcessedTargetEntity(
+      expectedParts = entity.expectedParts,
+      processedParts = entity.processedParts
+    )
 }
