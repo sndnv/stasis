@@ -200,9 +200,9 @@ trait StateStoreBehaviour { _: AsyncUnitSpec with FileSystemHelpers =>
         _ <- store.persist(state = initialState)
         _ <- store.persist(state = updatedState)
         _ <- store.persist(state = latestState)
-        _ = target.files().lastOption.map(_.write("invalid"))
+        _ = target.files().lastOption.foreach(_.write("invalid").await)
         restoredState <- store.restore()
-        _ = target.files().map(_.write("invalid"))
+        _ = target.files().foreach(_.write("invalid").await)
         emptyState <- store.restore()
       } yield {
         restoredState should be(Some(updatedState))
