@@ -52,8 +52,6 @@ lazy val server = (project in file("./server"))
   .settings(dockerSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.typesafe.akka"  %% "akka-slf4j"                        % versions.akka,
-      "ch.qos.logback"      % "logback-classic"                   % versions.logback,
       "com.typesafe.slick" %% "slick"                             % versions.slick,
       "com.h2database"      % "h2"                                % versions.h2,
       "org.postgresql"      % "postgresql"                        % versions.postgres,
@@ -76,20 +74,17 @@ lazy val client = (project in file("./client"))
     libraryDependencies ++= Seq(
       "at.favre.lib"       % "hkdf"                              % versions.hkdf,
       "net.harawata"       % "appdirs"                           % versions.appdirs,
-      "com.typesafe.akka" %% "akka-slf4j"                        % versions.akka,
       "com.typesafe.akka" %% "akka-http-caching"                 % versions.akkaHttp,
-      "ch.qos.logback"     % "logback-classic"                   % versions.logback,
       "com.github.scopt"  %% "scopt"                             % versions.scopt,
       "io.opentelemetry"   % "opentelemetry-sdk"                 % versions.openTelemetry,
       "io.opentelemetry"   % "opentelemetry-exporter-prometheus" % versions.openTelemetryPrometheus,
-      "io.prometheus"      % "simpleclient_hotspot"              % versions.prometheus,
-      "com.google.jimfs"   % "jimfs"                             % versions.jimfs % Test
+      "io.prometheus"      % "simpleclient_hotspot"              % versions.prometheus
     ),
     dockerBaseImage          := jdkDockerImage,
     Compile / PB.targets     := Seq(
       scalapb.gen(singleLineToProtoString = true) -> (Compile / sourceManaged).value
     ),
-    coverageExcludedPackages := "stasis.client.model.proto.metadata.*"
+    coverageExcludedPackages := "stasis.client.model.proto.*"
   )
   .enablePlugins(JavaAppPackaging)
   .dependsOn(shared % "compile->compile;test->test")
@@ -99,8 +94,6 @@ lazy val identity = (project in file("./identity"))
   .settings(dockerSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.typesafe.akka"  %% "akka-slf4j"                        % versions.akka,
-      "ch.qos.logback"      % "logback-classic"                   % versions.logback,
       "com.typesafe.slick" %% "slick"                             % versions.slick,
       "com.h2database"      % "h2"                                % versions.h2,
       "org.postgresql"      % "postgresql"                        % versions.postgres,
@@ -128,6 +121,7 @@ lazy val core = (project in file("./core"))
       "com.typesafe.akka"     %% "akka-actor-typed"                  % versions.akka,
       "com.typesafe.akka"     %% "akka-stream"                       % versions.akka,
       "com.typesafe.akka"     %% "akka-discovery"                    % versions.akka,
+      "com.typesafe.akka"     %% "akka-slf4j"                        % versions.akka,
       "com.typesafe.akka"     %% "akka-http"                         % versions.akkaHttp,
       "com.typesafe.akka"     %% "akka-http-core"                    % versions.akkaHttp,
       "com.typesafe.akka"     %% "akka-http2-support"                % versions.akkaHttp,
@@ -135,6 +129,7 @@ lazy val core = (project in file("./core"))
       "de.heikoseeberger"     %% "akka-http-play-json"               % versions.akkaJson,
       "org.bitbucket.b_c"      % "jose4j"                            % versions.jose4j,
       "io.opentelemetry"       % "opentelemetry-api"                 % versions.openTelemetry,
+      "ch.qos.logback"         % "logback-classic"                   % versions.logback,
       "io.opentelemetry"       % "opentelemetry-sdk"                 % versions.openTelemetry           % Provided,
       "io.opentelemetry"       % "opentelemetry-exporter-prometheus" % versions.openTelemetryPrometheus % Provided,
       "io.prometheus"          % "simpleclient"                      % versions.prometheus              % Provided,
@@ -149,7 +144,8 @@ lazy val core = (project in file("./core"))
       "com.github.tomakehurst" % "wiremock-jre8"                     % versions.wiremock                % Test,
       "org.mockito"           %% "mockito-scala"                     % versions.mockito                 % Test,
       "org.mockito"           %% "mockito-scala-scalatest"           % versions.mockito                 % Test,
-      "org.mockito"            % "mockito-inline"                    % versions.mockitoInline           % Test
+      "org.mockito"            % "mockito-inline"                    % versions.mockitoInline           % Test,
+      "com.google.jimfs"       % "jimfs"                             % versions.jimfs                   % Test
     )
   )
   .dependsOn(proto)
