@@ -13,8 +13,8 @@ import stasis.core.security.tls.EndpointContext
 import stasis.shared.model.devices.{Device, DeviceBootstrapParameters}
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.ResourceHelpers.FileSystemSetup
 import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
+import stasis.test.specs.unit.core.FileSystemHelpers.FileSystemSetup
 
 import java.nio.file.attribute.PosixFilePermissions
 import java.nio.file.{Files, Path}
@@ -70,7 +70,7 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
         applicationName = "test-name",
         filesystem = createMockFileSystem(FileSystemSetup.Unix)._1
       ) {
-        override val configDirectory: Option[Path] = None
+        override lazy val configDirectory: Option[Path] = None
       }
 
     val bootstrap = new Bootstrap {

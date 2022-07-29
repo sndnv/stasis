@@ -23,10 +23,11 @@ object ApiEndpoint {
   implicit val tokenFileToByteString: String => ByteString =
     (content: String) => ByteString.fromString(content)
 
-  def apply(base: Base, apiClients: ApiClients, ops: Ops): Future[ApiEndpoint] = {
+  def apply(base: Base, tracking: Tracking, apiClients: ApiClients, ops: Ops): Future[ApiEndpoint] = {
     import apiClients._
     import base._
     import ops._
+    import tracking._
 
     for {
       tokenSize <- rawConfig.getInt("api.authentication.token-size").future

@@ -13,9 +13,12 @@ import stasis.core.streaming.Operators.ExtendedSource
 import stasis.shared.ops.Operation
 
 import java.nio.file.Path
+import java.time.Instant
 import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 
 class DefaultRecoveryTracker(
+  maxRetention: FiniteDuration,
   backend: EventLogBackend[DefaultRecoveryTracker.RecoveryEvent, Map[Operation.Id, RecoveryState]]
 ) extends RecoveryTracker {
   import DefaultRecoveryTracker.RecoveryEvent
@@ -24,7 +27,7 @@ class DefaultRecoveryTracker(
 
   private val events: EventLog[RecoveryEvent, Map[Operation.Id, RecoveryState]] = EventLog(
     backend = backend,
-    updateState = { case (event, state) => DefaultRecoveryTracker.updateState(event, state) }
+    updateState = { case (event, state) => DefaultRecoveryTracker.updateState(event, state, maxRetention) }
   )
 
   override def state: Future[Map[Operation.Id, RecoveryState]] = events.state
@@ -126,9 +129,10 @@ class DefaultRecoveryTracker(
 
 object DefaultRecoveryTracker {
   def apply(
+    maxRetention: FiniteDuration,
     createBackend: Map[Operation.Id, RecoveryState] => EventLogBackend[RecoveryEvent, Map[Operation.Id, RecoveryState]]
   ): DefaultRecoveryTracker =
-    new DefaultRecoveryTracker(backend = createBackend(Map.empty))
+    new DefaultRecoveryTracker(backend = createBackend(Map.empty), maxRetention = maxRetention)
 
   sealed trait RecoveryEvent {
     def operation: Operation.Id
@@ -184,7 +188,8 @@ object DefaultRecoveryTracker {
 
   def updateState(
     event: RecoveryEvent,
-    state: Map[Operation.Id, RecoveryState]
+    state: Map[Operation.Id, RecoveryState],
+    maxRetention: FiniteDuration
   ): Map[Operation.Id, RecoveryState] = {
     import RecoveryEvent._
 
@@ -203,6 +208,9 @@ object DefaultRecoveryTracker {
       case _                                                 => existing
     }
 
-    state + (event.operation -> updated)
+    val now = Instant.now()
+    val filtered = state.filter(_._2.started.plusMillis(maxRetention.toMillis).isAfter(now))
+
+    filtered + (event.operation -> updated)
   }
 }

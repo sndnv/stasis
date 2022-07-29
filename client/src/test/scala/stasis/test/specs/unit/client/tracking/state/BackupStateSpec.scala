@@ -1,11 +1,13 @@
 package stasis.test.specs.unit.client.tracking.state
 
-import stasis.client.model.SourceEntity
+import stasis.client.model.{proto, SourceEntity}
 import stasis.client.tracking.state.BackupState
 import stasis.client.tracking.state.BackupState.{PendingSourceEntity, ProcessedSourceEntity}
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.Fixtures
+
+import scala.util.{Failure, Success}
 
 class BackupStateSpec extends UnitSpec {
   "A BackupState" should "provide its type and state" in {
@@ -117,6 +119,151 @@ class BackupStateSpec extends UnitSpec {
         completed = backup.completed
       )
     )
+  }
+
+  it should "be serializable to protobuf data" in {
+    BackupState.toProto(Fixtures.State.BackupOneState) should be(Fixtures.Proto.State.BackupOneStateProto)
+  }
+
+  it should "be deserializable from valid protobuf data" in {
+    BackupState.fromProto(
+      operation = Fixtures.State.BackupOneState.operation,
+      state = Fixtures.Proto.State.BackupOneStateProto
+    ) should be(
+      Success(Fixtures.State.BackupOneState)
+    )
+  }
+
+  it should "fail to be deserialized when no entities are provided" in {
+    BackupState.fromProto(
+      operation = Fixtures.State.BackupOneState.operation,
+      state = Fixtures.Proto.State.BackupOneStateProto.copy(entities = None)
+    ) match {
+      case Success(state) =>
+        fail(s"Unexpected successful result received: [$state]")
+
+      case Failure(e) =>
+        e shouldBe an[IllegalArgumentException]
+        e.getMessage should be("Expected entities in backup state but none were found")
+    }
+  }
+
+  it should "fail to be deserialized when source entity metadata is not provided" in {
+    BackupState.fromProto(
+      operation = Fixtures.State.BackupOneState.operation,
+      state = Fixtures.Proto.State.BackupOneStateProto.copy(
+        entities = Fixtures.Proto.State.BackupOneStateProto.entities.map { entities =>
+          entities.copy(
+            collected = entities.collected.map { case (k, v) =>
+              k -> v.copy(
+                existingMetadata = v.existingMetadata.map(_.copy(entity = proto.metadata.EntityMetadata.Entity.Empty))
+              )
+            }
+          )
+        }
+      )
+    ) match {
+      case Success(state) =>
+        fail(s"Unexpected successful result received: [$state]")
+
+      case Failure(e) =>
+        e shouldBe an[IllegalArgumentException]
+        e.getMessage should be("Expected entity in metadata but none was found")
+    }
+
+    BackupState.fromProto(
+      operation = Fixtures.State.BackupOneState.operation,
+      state = Fixtures.Proto.State.BackupOneStateProto.copy(
+        entities = Fixtures.Proto.State.BackupOneStateProto.entities.map { entities =>
+          entities.copy(
+            collected = entities.collected.map { case (k, v) =>
+              k -> v.copy(currentMetadata = None)
+            }
+          )
+        }
+      )
+    ) match {
+      case Success(state) =>
+        fail(s"Unexpected successful result received: [$state]")
+
+      case Failure(e) =>
+        e shouldBe an[IllegalArgumentException]
+        e.getMessage should be("Expected current metadata in backup state but none was found")
+    }
+  }
+
+  it should "fail to be deserialized when processed source entity metadata is not provided" in {
+    BackupState.fromProto(
+      operation = Fixtures.State.BackupOneState.operation,
+      state = Fixtures.Proto.State.BackupOneStateProto.copy(
+        entities = Fixtures.Proto.State.BackupOneStateProto.entities.map { entities =>
+          entities.copy(
+            processed = entities.processed.map { case (k, v) =>
+              k -> v.copy(metadata =
+                proto.state.ProcessedSourceEntity.Metadata.Left(
+                  Fixtures.Proto.Metadata.FileOneMetadataProto.copy(
+                    entity = proto.metadata.EntityMetadata.Entity.Empty
+                  )
+                )
+              )
+            }
+          )
+        }
+      )
+    ) match {
+      case Success(state) =>
+        fail(s"Unexpected successful result received: [$state]")
+
+      case Failure(e) =>
+        e shouldBe an[IllegalArgumentException]
+        e.getMessage should be("Expected entity in metadata but none was found")
+    }
+
+    BackupState.fromProto(
+      operation = Fixtures.State.BackupOneState.operation,
+      state = Fixtures.Proto.State.BackupOneStateProto.copy(
+        entities = Fixtures.Proto.State.BackupOneStateProto.entities.map { entities =>
+          entities.copy(
+            processed = entities.processed.map { case (k, v) =>
+              k -> v.copy(metadata =
+                proto.state.ProcessedSourceEntity.Metadata.Right(
+                  Fixtures.Proto.Metadata.FileOneMetadataProto.copy(
+                    entity = proto.metadata.EntityMetadata.Entity.Empty
+                  )
+                )
+              )
+            }
+          )
+        }
+      )
+    ) match {
+      case Success(state) =>
+        fail(s"Unexpected successful result received: [$state]")
+
+      case Failure(e) =>
+        e shouldBe an[IllegalArgumentException]
+        e.getMessage should be("Expected entity in metadata but none was found")
+    }
+
+    BackupState.fromProto(
+      operation = Fixtures.State.BackupOneState.operation,
+      state = Fixtures.Proto.State.BackupOneStateProto.copy(
+        entities = Fixtures.Proto.State.BackupOneStateProto.entities.map { entities =>
+          entities.copy(
+            processed = entities.processed.map { case (k, v) =>
+              k -> v.copy(metadata = proto.state.ProcessedSourceEntity.Metadata.Empty)
+            }
+          )
+        }
+      )
+    ) match {
+      case Success(state) =>
+        fail(s"Unexpected successful result received: [$state]")
+
+      case Failure(e) =>
+        e shouldBe an[IllegalArgumentException]
+        e.getMessage should be("Expected entity metadata in backup state but none was found")
+    }
   }
 
   "A PendingSourceEntity" should "support incrementing its number of processed parts" in {

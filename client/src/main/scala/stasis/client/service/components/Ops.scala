@@ -17,10 +17,11 @@ trait Ops {
 }
 
 object Ops {
-  def apply(base: Base, apiClients: ApiClients, secrets: Secrets): Future[Ops] = {
+  def apply(base: Base, tracking: Tracking, apiClients: ApiClients, secrets: Secrets): Future[Ops] = {
     import apiClients._
     import base._
     import secrets._
+    import tracking._
 
     for {
       rulesFile <- rawConfig.getString("ops.backup.rules-file").future

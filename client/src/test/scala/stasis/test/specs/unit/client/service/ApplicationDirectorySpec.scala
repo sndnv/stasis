@@ -1,11 +1,12 @@
 package stasis.test.specs.unit.client.service
 
-import java.io.FileNotFoundException
-import java.nio.file.Files
-
 import akka.util.ByteString
+import stasis.client.service.ApplicationDirectory
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
+
+import java.io.FileNotFoundException
+import java.nio.file.{Files, Paths}
 
 class ApplicationDirectorySpec extends AsyncUnitSpec with ResourceHelpers {
   "An ApplicationDirectory" should "find files in any configuration location (config)" in {
@@ -154,6 +155,36 @@ class ApplicationDirectorySpec extends AsyncUnitSpec with ResourceHelpers {
   it should "provide a configuration directory" in {
     val directory = createApplicationDirectory(init = _ => ())
     directory.configDirectory.map(_.toString) should not be empty
+  }
+
+  it should "provide an app directory (user)" in {
+    val directory = ApplicationDirectory.Default.provideAppDirectory(
+      applicationName = "test-app",
+      userDirectory = Some(Paths.get("/tmp/test/user")),
+      configDirectory = Some(Paths.get("/tmp/test/config"))
+    )
+
+    directory.toString should be("/tmp/test/user/test-app")
+  }
+
+  it should "provide an app directory (config)" in {
+    val directory = ApplicationDirectory.Default.provideAppDirectory(
+      applicationName = "test-app",
+      userDirectory = None,
+      configDirectory = Some(Paths.get("/tmp/test/config"))
+    )
+
+    directory.toString should be("/tmp/test/config/test-app")
+  }
+
+  it should "fail if no suitable app directory is available" in {
+    an[IllegalStateException] should be thrownBy {
+      ApplicationDirectory.Default.provideAppDirectory(
+        applicationName = "test-app",
+        userDirectory = None,
+        configDirectory = None
+      )
+    }
   }
 
   private val targetFile = "test-file"

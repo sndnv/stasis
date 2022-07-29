@@ -36,8 +36,11 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
       }
     )
 
+    val base = Base(applicationDirectory = directory, terminate = () => ()).await
+
     ApiEndpoint(
-      base = Base(applicationDirectory = directory, terminate = () => ()).await,
+      base = base,
+      tracking = Tracking(base).await,
       apiClients = new ApiClients {
         override def clients: Clients =
           Clients(
@@ -77,11 +80,14 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
       }
     )
 
+    val base = Base(
+      applicationDirectory = directory,
+      terminate = () => { val _ = terminationCounter.incrementAndGet() }
+    ).await
+
     val endpoint = ApiEndpoint(
-      base = Base(
-        applicationDirectory = directory,
-        terminate = () => { val _ = terminationCounter.incrementAndGet() }
-      ).await,
+      base = base,
+      tracking = Tracking(base).await,
       apiClients = new ApiClients {
         override def clients: Clients =
           Clients(
@@ -122,8 +128,11 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
   it should "handle token file write failures" in {
     val directory = createApplicationDirectory(init = _ => ())
 
+    val base = Base(applicationDirectory = directory, terminate = () => ()).await
+
     ApiEndpoint(
-      base = Base(applicationDirectory = directory, terminate = () => ()).await,
+      base = base,
+      tracking = Tracking(base).await,
       apiClients = new ApiClients {
         override def clients: Clients =
           Clients(
@@ -159,8 +168,11 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
       }
     )
 
+    val base = Base(applicationDirectory = directory, terminate = () => ()).await
+
     val endpoint = ApiEndpoint(
-      base = Base(applicationDirectory = directory, terminate = () => ()).await,
+      base = base,
+      tracking = Tracking(base).await,
       apiClients = new ApiClients {
         override def clients: Clients =
           Clients(

@@ -12,20 +12,13 @@ import stasis.client.ops
 import stasis.client.service.ApplicationDirectory
 import stasis.client.service.components.internal.{ConfigOverride, FutureOps}
 import stasis.client.staging.{DefaultFileStaging, FileStaging}
-import stasis.client.tracking.Trackers
-import stasis.client.tracking.ServerTracker.ServerState
-import stasis.client.tracking.state.{BackupState, RecoveryState}
-import stasis.client.tracking.trackers._
-import stasis.core.persistence.backends.memory.EventLogMemoryBackend
 import stasis.core.telemetry.metrics.{MetricsExporter, MetricsProvider}
 import stasis.core.telemetry.{DefaultTelemetryContext, TelemetryContext}
 import stasis.core.{api, persistence, security}
-import stasis.shared.ops.Operation
 
 import java.nio.file.Paths
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.reflect.ClassTag
 import scala.util.Try
 
 trait Base extends FutureOps {
@@ -46,7 +39,6 @@ trait Base extends FutureOps {
   def compression: Compression
   def encryption: EncryptionEncoder with EncryptionDecoder
   def staging: FileStaging
-  def trackers: Trackers
 
   def terminateService: () => Unit
 }
@@ -105,30 +97,6 @@ object Base {
               prefix = rawConfig.getString("staging.files.prefix"),
               suffix = rawConfig.getString("staging.files.suffix")
             )
-
-          override val trackers: Trackers = Trackers(
-            backup = DefaultBackupTracker(
-              createBackend = state =>
-                EventLogMemoryBackend(
-                  name = s"backup-tracker-${java.util.UUID.randomUUID().toString}",
-                  initialState = state
-                )(implicitly[ClassTag[Map[Operation.Id, BackupState]]], typedSystem, telemetry, timeout)
-            ),
-            recovery = DefaultRecoveryTracker(
-              createBackend = state =>
-                EventLogMemoryBackend(
-                  name = s"recovery-tracker-${java.util.UUID.randomUUID().toString}",
-                  initialState = state
-                )(implicitly[ClassTag[Map[Operation.Id, RecoveryState]]], typedSystem, telemetry, timeout)
-            ),
-            server = DefaultServerTracker(
-              createBackend = state =>
-                EventLogMemoryBackend(
-                  name = s"server-tracker-${java.util.UUID.randomUUID().toString}",
-                  initialState = state
-                )(implicitly[ClassTag[Map[String, ServerState]]], typedSystem, telemetry, timeout)
-            )
-          )
 
           override val terminateService: () => Unit = terminate
         }

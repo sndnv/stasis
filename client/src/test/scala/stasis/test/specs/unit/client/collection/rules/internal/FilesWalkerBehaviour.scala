@@ -4,13 +4,12 @@ import stasis.client.collection.rules.Rule
 import stasis.client.collection.rules.internal.{FilesWalker, IndexedRule}
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
+import stasis.test.specs.unit.core.FileSystemHelpers.FileSystemSetup
 
 import java.nio.file.Path
 import scala.collection.mutable
 
 trait FilesWalkerBehaviour { _: UnitSpec with ResourceHelpers =>
-  import ResourceHelpers._
-
   def walker(setup: FileSystemSetup): Unit = {
     it should "support filtering files and directories based on provided matchers" in {
       val (filesystem, _) = createMockFileSystem(setup)

@@ -5,6 +5,7 @@ import stasis.client.collection.rules.internal.IndexedRule
 import stasis.client.collection.rules.{Rule, Specification}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
+import stasis.test.specs.unit.core.FileSystemHelpers.FileSystemSetup
 
 import java.nio.file.NoSuchFileException
 import java.util.concurrent.atomic.AtomicInteger

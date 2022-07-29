@@ -59,11 +59,12 @@ trait Service { _: Service.Arguments =>
 
       for {
         base <- components.Base(applicationDirectory = applicationDirectory, terminate = stop)
+        tracking <- components.Tracking(base)
         init <- components.Init(base, startup = startupPromise.future, console = console)
         secrets <- components.Secrets(base, init)
         clients <- components.ApiClients(base, secrets)
-        ops <- components.Ops(base, clients, secrets)
-        endpoint <- components.ApiEndpoint(base, clients, ops)
+        ops <- components.Ops(base, tracking, clients, secrets)
+        endpoint <- components.ApiEndpoint(base, tracking, clients, ops)
         _ <- endpoint.api.start()
       } yield {
         ApplicationArguments.Mode.Service
