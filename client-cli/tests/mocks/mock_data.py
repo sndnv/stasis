@@ -338,6 +338,8 @@ OPERATIONS = [
 
 EMPTY_OPERATION_PROGRESS = {
     'operation': str(uuid4()),
+    'definition': DEFINITIONS[0]['id'],
+    'started': '2020-12-21T01:02:00',
     'type': 'backup',
     'entities': {
         'discovered': [],
@@ -357,6 +359,8 @@ EMPTY_OPERATION_PROGRESS = {
 BACKUP_PROGRESS = [
     {
         'operation': str(uuid4()),
+        'definition': DEFINITIONS[0]['id'],
+        'started': '2020-12-21T01:02:00',
         'type': 'backup',
         'entities': {
             'discovered': ['/some/path/01'],
@@ -374,6 +378,8 @@ BACKUP_PROGRESS = [
     },
     {
         'operation': str(uuid4()),
+        'definition': DEFINITIONS[0]['id'],
+        'started': '2020-12-21T01:02:00',
         'type': 'backup',
         'entities': {
             'discovered': ['/some/path/01', '/some/path/02', '/some/path/03'],
@@ -391,6 +397,8 @@ BACKUP_PROGRESS = [
     },
     {
         'operation': str(uuid4()),
+        'definition': DEFINITIONS[0]['id'],
+        'started': '2020-12-21T01:02:00',
         'type': 'backup',
         'entities': {
             'discovered': ['/some/path/01', '/some/path/02', '/some/path/03', '/some/path'],
@@ -417,6 +425,7 @@ BACKUP_PROGRESS = [
 RECOVERY_PROGRESS = [
     {
         'operation': str(uuid4()),
+        'started': '2020-12-21T01:02:00',
         'type': 'recovery',
         'entities': {
             'examined': ['/some/path/01'],
@@ -431,6 +440,7 @@ RECOVERY_PROGRESS = [
     },
     {
         'operation': str(uuid4()),
+        'started': '2020-12-21T01:02:00',
         'type': 'recovery',
         'entities': {
             'examined': ['/some/path/01', '/some/path/02', '/some/path/03', '/some/path'],

@@ -61,3 +61,18 @@ class OperationsSpec(unittest.TestCase):
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertTrue(json.loads(result.output))
         self.assertEqual(context.api.stats['operation_stop'], 1)
+
+    @patch('click.confirm')
+    def test_should_resume_operations(self, mock_confirm):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        mock_confirm.return_value = None
+
+        runner = Runner(cli)
+        result = runner.invoke(args=['resume', str(uuid4())], obj=context)
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertTrue(json.loads(result.output))
+        self.assertEqual(context.api.stats['operation_resume'], 1)

@@ -56,6 +56,9 @@ class InactiveClientApi(ClientApi):
     def operation_stop(self, operation):
         InactiveClientApi._abort()
 
+    def operation_resume(self, operation):
+        InactiveClientApi._abort()
+
     def backup_rules(self):
         InactiveClientApi._abort()
 

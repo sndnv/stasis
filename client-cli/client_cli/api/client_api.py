@@ -127,6 +127,15 @@ class ClientApi(ABC):
         """
 
     @abstractmethod
+    def operation_resume(self, operation):
+        """
+        Resumes an inactive(stopped/failed) operation.
+
+        :param operation: operation to resume
+        :return: dict with result of action
+        """
+
+    @abstractmethod
     def backup_rules(self):
         """
         Retrieves the current backup specification/rules.

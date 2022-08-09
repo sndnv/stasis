@@ -68,11 +68,27 @@ def stop_operation(ctx, operation):
     click.echo(ctx.obj.rendering.render_operation_response(response))
 
 
+@click.command(name='resume', short_help='Resume inactive operations.')
+@click.argument('operation', type=click.UUID)
+@click.pass_context
+def resume_operation(ctx, operation):
+    """Resume an inactive OPERATION."""
+    click.confirm(
+        'Operation [{}] will be resumed. Do you want to continue?'.format(operation),
+        abort=True
+    )
+
+    response = ctx.obj.api.operation_resume(operation)
+
+    click.echo(ctx.obj.rendering.render_operation_response(response))
+
+
 @click.group(name='operations')
 def cli():
-    """Showing and stopping active operations."""
+    """Showing, stopping and resuming operations."""
 
 
 cli.add_command(show)
 cli.add_command(follow_operation)
 cli.add_command(stop_operation)
+cli.add_command(resume_operation)
