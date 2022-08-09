@@ -27,6 +27,10 @@ trait OperationExecutor {
     entities: Seq[Path]
   ): Future[Operation.Id]
 
+  def resumeBackup(
+    operation: Operation.Id
+  ): Future[Operation.Id]
+
   def startRecoveryWithDefinition(
     definition: DatasetDefinition.Id,
     until: Option[Instant],

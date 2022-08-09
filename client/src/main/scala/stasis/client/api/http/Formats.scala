@@ -197,6 +197,7 @@ object Formats {
       Json.obj(
         "operation" -> Json.toJson(backup.operation),
         "type" -> Json.toJson("backup"),
+        "definition" -> Json.toJson(backup.definition),
         "started" -> Json.toJson(backup.started),
         "entities" -> Json.obj(
           "discovered" -> Json.toJson(backup.entities.discovered),

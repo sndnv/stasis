@@ -160,6 +160,7 @@ object Fixtures {
   object State {
     final lazy val BackupOneState: BackupState = BackupState(
       operation = Operation.generateId(),
+      definition = DatasetDefinition.generateId(),
       started = Instant.now().truncatedTo(ChronoUnit.MILLIS),
       entities = BackupState.Entities(
         discovered = Set(Metadata.FileOneMetadata.path),
@@ -195,6 +196,7 @@ object Fixtures {
 
     final lazy val BackupTwoState: BackupState = BackupState(
       operation = Operation.generateId(),
+      definition = DatasetDefinition.generateId(),
       started = Instant.now().truncatedTo(ChronoUnit.MILLIS),
       entities = BackupState.Entities.empty,
       metadataCollected = None,
@@ -348,6 +350,7 @@ object Fixtures {
 
     object State {
       final lazy val BackupOneStateProto: proto.state.BackupState = proto.state.BackupState(
+        definition = Fixtures.State.BackupOneState.definition.toString,
         started = Fixtures.State.BackupOneState.started.toEpochMilli,
         entities = Some(
           proto.state.BackupEntities(
@@ -387,6 +390,7 @@ object Fixtures {
       )
 
       final lazy val BackupTwoStateProto: proto.state.BackupState = proto.state.BackupState(
+        definition = Fixtures.State.BackupTwoState.definition.toString,
         started = Fixtures.State.BackupTwoState.started.toEpochMilli,
         entities = Some(proto.state.BackupEntities()),
         metadataCollected = Fixtures.State.BackupTwoState.metadataCollected.map(_.toEpochMilli),

@@ -200,16 +200,17 @@ object Recovery {
   implicit class TrackedOperation(operation: Future[Done]) {
     def trackWith(track: RecoveryTracker)(implicit id: Operation.Id, ec: ExecutionContext): Future[Done] = {
       operation.onComplete {
-        case Success(_) | Failure(_: OperationStopped) =>
+        case Success(_) =>
           track.completed()
+
+        case Failure(_: OperationStopped) =>
+          () // do nothing
 
         case Failure(e: EntityProcessingFailure) =>
           track.failureEncountered(entity = e.entity, failure = e.cause)
-          track.completed()
 
         case Failure(e) =>
           track.failureEncountered(failure = e)
-          track.completed()
       }
 
       operation

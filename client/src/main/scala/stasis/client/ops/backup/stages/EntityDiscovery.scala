@@ -8,10 +8,11 @@ import stasis.client.collection.{BackupCollector, BackupMetadataCollector}
 import stasis.client.model.DatasetMetadata
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.backup.Providers
+import stasis.client.tracking.state.BackupState
 import stasis.shared.ops.Operation
 
 import java.nio.file.{Files, Path}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 trait EntityDiscovery {
   protected def collector: EntityDiscovery.Collector
@@ -23,30 +24,31 @@ trait EntityDiscovery {
   protected implicit def ec: ExecutionContext
 
   def entityDiscovery(implicit operation: Operation.Id): Source[BackupCollector, NotUsed] = {
-    val discovered = collector match {
-      case EntityDiscovery.Collector.WithRules(rules) =>
-        Source
-          .future(Specification.tracked(rules, providers.track))
-          .map { spec =>
-            spec.includedParents.foreach(providers.track.entityDiscovered)
-            providers.track.specificationProcessed(unmatched = spec.unmatched)
-            spec.included.toList
-          }
+    val discovered = Source.lazyFuture(() =>
+      collector match {
+        case EntityDiscovery.Collector.WithRules(rules) =>
+          Specification
+            .tracked(rules, providers.track)
+            .map { spec =>
+              spec.includedParents.foreach(providers.track.entityDiscovered)
+              providers.track.specificationProcessed(unmatched = spec.unmatched)
+              spec.included
+            }
 
-      case EntityDiscovery.Collector.WithEntities(entities) =>
-        Source
-          .single(entities.toList)
-          .map { entities =>
-            val existing = entities.filter(entity => Files.exists(entity))
-            existing.foreach(providers.track.entityDiscovered)
-            existing
-          }
-    }
+        case EntityDiscovery.Collector.WithEntities(entities) =>
+          val existing = entities.filter(entity => Files.exists(entity))
+          existing.foreach(providers.track.entityDiscovered)
+          Future.successful(existing)
+
+        case EntityDiscovery.Collector.WithState(state) =>
+          Future.successful(state.remainingEntities())
+      }
+    )
 
     discovered
       .map { entities =>
         new BackupCollector.Default(
-          entities = entities,
+          entities = entities.toList,
           latestMetadata = latestMetadata,
           metadataCollector = BackupMetadataCollector.Default(
             checksum = providers.checksum,
@@ -63,5 +65,6 @@ object EntityDiscovery {
   object Collector {
     final case class WithRules(rules: Seq[Rule]) extends Collector
     final case class WithEntities(entities: Seq[Path]) extends Collector
+    final case class WithState(state: BackupState) extends Collector
   }
 }

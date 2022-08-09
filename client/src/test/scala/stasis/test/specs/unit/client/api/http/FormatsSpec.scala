@@ -191,6 +191,7 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
     val backup = BackupState(
       operation = Operation.generateId(),
       started = now,
+      definition = Operation.generateId(),
       entities = BackupState.Entities(
         discovered = Set(entity1),
         unmatched = Seq("a", "b", "c"),
@@ -222,6 +223,7 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
          |{
          |"operation":"${backup.operation.toString}",
          |"type":"backup",
+         |"definition":"${backup.definition.toString}",
          |"started":"${now.toString}",
          |"entities":{
          |"discovered":["/tmp/file/one"],

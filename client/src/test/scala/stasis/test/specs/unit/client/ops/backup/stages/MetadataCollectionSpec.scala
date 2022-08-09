@@ -8,6 +8,7 @@ import stasis.client.model.{DatasetMetadata, FilesystemMetadata}
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.backup.stages.MetadataCollection
 import stasis.client.tracking.BackupTracker
+import stasis.client.tracking.state.BackupState
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -46,7 +47,7 @@ class MetadataCollectionSpec extends AsyncUnitSpec {
     implicit val operationId: Operation.Id = Operation.generateId()
 
     Source(stageInput)
-      .via(stage.metadataCollection)
+      .via(stage.metadataCollection(existingState = None))
       .runFold(Seq.empty[DatasetMetadata])(_ :+ _)
       .map {
         case metadata :: Nil =>
@@ -69,6 +70,7 @@ class MetadataCollectionSpec extends AsyncUnitSpec {
             )
           )
 
+          mockTracker.statistics(MockBackupTracker.Statistic.Started) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
@@ -105,7 +107,78 @@ class MetadataCollectionSpec extends AsyncUnitSpec {
     implicit val operationId: Operation.Id = Operation.generateId()
 
     Source(stageInput)
-      .via(stage.metadataCollection)
+      .via(stage.metadataCollection(existingState = None))
+      .runFold(Seq.empty[DatasetMetadata])(_ :+ _)
+      .map {
+        case metadata :: Nil =>
+          metadata should be(
+            DatasetMetadata(
+              contentChanged = Map(
+                Fixtures.Metadata.FileTwoMetadata.path -> Fixtures.Metadata.FileTwoMetadata
+              ),
+              metadataChanged = Map(
+                Fixtures.Metadata.FileOneMetadata.path -> Fixtures.Metadata.FileOneMetadata,
+                Fixtures.Metadata.FileThreeMetadata.path -> Fixtures.Metadata.FileThreeMetadata
+              ),
+              filesystem = FilesystemMetadata(
+                changes = Seq(
+                  Fixtures.Metadata.FileOneMetadata.path,
+                  Fixtures.Metadata.FileTwoMetadata.path,
+                  Fixtures.Metadata.FileThreeMetadata.path
+                )
+              )
+            )
+          )
+
+          mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(1)
+          mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
+
+        case metadata =>
+          fail(s"Unexpected number of entries received: [${metadata.size}]")
+      }
+  }
+
+  it should "collect dataset metadata (with existing state)" in {
+    val mockTracker = new MockBackupTracker
+
+    val stage = new MetadataCollection {
+      override protected def targetDataset: DatasetDefinition = Fixtures.Datasets.Default
+
+      override protected def latestEntry: Option[DatasetEntry] = None
+
+      override protected def latestMetadata: Option[DatasetMetadata] = None
+
+      override protected def providers: Providers = createProviders(mockTracker)
+    }
+
+    val stageInput = List(
+      Right(Fixtures.Metadata.FileOneMetadata), // metadata changed
+      Left(Fixtures.Metadata.FileTwoMetadata) // content changed
+    )
+
+    implicit val operationId: Operation.Id = Operation.generateId()
+
+    val existingState = Fixtures.State.BackupOneState
+      .copy(
+        entities = Fixtures.State.BackupOneState.entities.copy(
+          processed = Map(
+            Fixtures.Metadata.FileThreeMetadata.path -> BackupState.ProcessedSourceEntity(
+              expectedParts = 1,
+              processedParts = 1,
+              metadata = Right(Fixtures.Metadata.FileThreeMetadata) // metadata changed
+            )
+          )
+        )
+      )
+
+    Source(stageInput)
+      .via(stage.metadataCollection(existingState = Some(existingState)))
       .runFold(Seq.empty[DatasetMetadata])(_ :+ _)
       .map {
         case metadata :: Nil =>

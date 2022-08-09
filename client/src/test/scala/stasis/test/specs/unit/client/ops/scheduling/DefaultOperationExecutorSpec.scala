@@ -13,6 +13,7 @@ import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceMetadataSecret}
 import stasis.client.ops.exceptions.OperationExecutionFailure
 import stasis.client.ops.scheduling.DefaultOperationExecutor
 import stasis.client.ops.{backup, recovery, ParallelismConfig}
+import stasis.client.tracking.state.BackupState
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -37,6 +38,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       .await
 
     eventually[Assertion] {
+      mockTracker.statistics(MockBackupTracker.Statistic.Started) should be(1)
       mockTracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(1)
       mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
@@ -63,6 +65,42 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       .await
 
     eventually[Assertion] {
+      mockTracker.statistics(MockBackupTracker.Statistic.Started) should be(1)
+      mockTracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
+      mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
+      mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+      mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+      mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(0)
+      mockTracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(0)
+      mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
+      mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(1)
+      mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(1)
+      mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
+      mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
+    }
+  }
+
+  it should "resume backups from state" in {
+    val operation = Operation.generateId()
+
+    val mockTracker = new MockBackupTracker() {
+      override def state: Future[Map[Operation.Id, BackupState]] =
+        Future.successful(
+          Map(
+            operation -> BackupState
+              .start(operation = operation, definition = DatasetDefinition.generateId())
+          )
+        )
+    }
+
+    val executor = createExecutor(backupTracker = mockTracker)
+
+    val _ = executor
+      .resumeBackup(operation = operation)
+      .await
+
+    eventually[Assertion] {
+      mockTracker.statistics(MockBackupTracker.Statistic.Started) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
       mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
@@ -173,7 +211,8 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     val _ = executor.stop(operation).await
 
     eventually[Assertion] {
-      mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
+      mockTracker.statistics(MockBackupTracker.Statistic.Started) should be(1)
+      mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
     }
   }
 
@@ -283,6 +322,49 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
           e.getMessage should include("already active")
         }
     }
+  }
+
+  it should "fail to resume a backup that is already completed" in {
+    val operation = Operation.generateId()
+
+    val mockTracker = new MockBackupTracker() {
+      override def state: Future[Map[Operation.Id, BackupState]] =
+        Future.successful(
+          Map(
+            operation -> BackupState
+              .start(operation = operation, definition = DatasetDefinition.generateId())
+              .backupCompleted()
+          )
+        )
+    }
+
+    val executor = createExecutor(backupTracker = mockTracker)
+
+    executor
+      .resumeBackup(operation = operation)
+      .map { result =>
+        fail(s"Unexpected result received: [$result]")
+      }
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(s"Cannot resume operation with ID [$operation]; operation already completed")
+      }
+  }
+
+  it should "fail to resume a backup no state for it can be found" in {
+    val operation = Operation.generateId()
+
+    val mockTracker = new MockBackupTracker()
+
+    val executor = createExecutor(backupTracker = mockTracker)
+
+    executor
+      .resumeBackup(operation = operation)
+      .map { result =>
+        fail(s"Unexpected result received: [$result]")
+      }
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(s"Cannot resume operation with ID [$operation]; no existing state was found")
+      }
   }
 
   private def createExecutor(

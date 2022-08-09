@@ -12,6 +12,7 @@ import stasis.client.tracking.trackers.DefaultBackupTracker.updateState
 import stasis.core.persistence.backends.EventLogBackend
 import stasis.core.persistence.events.EventLog
 import stasis.core.streaming.Operators.ExtendedSource
+import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation
 
@@ -37,6 +38,14 @@ class DefaultBackupTracker(
 
   override def updates(operation: Operation.Id): Source[BackupState, NotUsed] =
     events.stateStream.dropLatestDuplicates(_.get(operation))
+
+  override def started(
+    definition: DatasetDefinition.Id
+  )(implicit operation: Operation.Id): Unit = {
+    log.debugN("[{}] (backup) - Operation started", operation)
+
+    val _ = events.store(event = BackupEvent.Started(operation, definition))
+  }
 
   override def entityDiscovered(
     entity: Path
@@ -178,6 +187,11 @@ object DefaultBackupTracker {
   }
 
   object BackupEvent {
+    final case class Started(
+      override val operation: Operation.Id,
+      definition: DatasetDefinition.Id
+    ) extends BackupEvent
+
     final case class EntityDiscovered(
       override val operation: Operation.Id,
       entity: Path
@@ -246,22 +260,33 @@ object DefaultBackupTracker {
   ): Map[Operation.Id, BackupState] = {
     import BackupEvent._
 
-    val existing = state.getOrElse(event.operation, BackupState.start(event.operation))
-
     val updated = event match {
-      case EntityDiscovered(_, entity)                       => existing.entityDiscovered(entity)
-      case SpecificationProcessed(_, unmatched)              => existing.specificationProcessed(unmatched)
-      case EntityExamined(_, entity)                         => existing.entityExamined(entity)
-      case EntityCollected(_, entity)                        => existing.entityCollected(entity)
-      case EntityProcessingStarted(_, entity, expectedParts) => existing.entityProcessingStarted(entity, expectedParts)
-      case EntityPartProcessed(_, entity)                    => existing.entityPartProcessed(entity)
-      case EntityProcessed(_, entity, metadata)              => existing.entityProcessed(entity, metadata)
-      case EntityFailed(_, entity, reason)                   => existing.entityFailed(entity, reason)
-      case FailureEncountered(_, e)                          => existing.failureEncountered(e)
-      case _: MetadataCollected                              => existing.backupMetadataCollected()
-      case _: MetadataPushed                                 => existing.backupMetadataPushed()
-      case _: Completed                                      => existing.backupCompleted()
-      case _                                                 => existing
+      case Started(_, definition) =>
+        BackupState.start(event.operation, definition)
+
+      case _ =>
+        require(
+          state.contains(event.operation),
+          s"Expected existing state for operation [${event.operation.toString}] but none was found"
+        )
+
+        val existing = state(event.operation)
+
+        event match {
+          case EntityDiscovered(_, entity)                       => existing.entityDiscovered(entity)
+          case SpecificationProcessed(_, unmatched)              => existing.specificationProcessed(unmatched)
+          case EntityExamined(_, entity)                         => existing.entityExamined(entity)
+          case EntityCollected(_, entity)                        => existing.entityCollected(entity)
+          case EntityProcessingStarted(_, entity, expectedParts) => existing.entityProcessingStarted(entity, expectedParts)
+          case EntityPartProcessed(_, entity)                    => existing.entityPartProcessed(entity)
+          case EntityProcessed(_, entity, metadata)              => existing.entityProcessed(entity, metadata)
+          case EntityFailed(_, entity, reason)                   => existing.entityFailed(entity, reason)
+          case FailureEncountered(_, e)                          => existing.failureEncountered(e)
+          case _: MetadataCollected                              => existing.backupMetadataCollected()
+          case _: MetadataPushed                                 => existing.backupMetadataPushed()
+          case _: Completed                                      => existing.backupCompleted()
+          case _                                                 => existing
+        }
     }
 
     val now = Instant.now()

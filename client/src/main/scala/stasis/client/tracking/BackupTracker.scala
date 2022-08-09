@@ -5,13 +5,14 @@ import akka.stream.scaladsl.Source
 import stasis.client.collection.rules.Rule
 import stasis.client.model.{EntityMetadata, SourceEntity}
 import stasis.client.tracking.state.BackupState
-import stasis.shared.model.datasets.DatasetEntry
+import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.ops.Operation
 
 import java.nio.file.Path
 import scala.concurrent.Future
 
 trait BackupTracker extends BackupTracker.View {
+  def started(definition: DatasetDefinition.Id)(implicit operation: Operation.Id): Unit
   def entityDiscovered(entity: Path)(implicit operation: Operation.Id): Unit
   def specificationProcessed(unmatched: Seq[(Rule, Throwable)])(implicit operation: Operation.Id): Unit
   def entityExamined(entity: Path, metadataChanged: Boolean, contentChanged: Boolean)(implicit operation: Operation.Id): Unit
