@@ -66,6 +66,7 @@ class EntityCollectionSpec : WordSpec({
 
             collectedFiles shouldBe (listOf(sourceFile1, sourceFile3))
 
+            mockTracker.statistics[MockBackupTracker.Statistic.Started] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityDiscovered] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (3)

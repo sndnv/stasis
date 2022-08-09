@@ -47,6 +47,16 @@
         </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/operation_resume_button"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end|center"
+            android:layout_marginEnd="8dp"
+            android:contentDescription="@string/operation_resume_button_hint"
+            android:text="@string/operation_resume_button_title" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/operation_stop_button"
             style="?attr/materialButtonOutlinedStyle"
             android:layout_width="wrap_content"

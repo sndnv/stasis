@@ -52,14 +52,14 @@ class Recovery(
                     .let { flow -> stages.entityProcessing(id, flow) }
                     .let { flow -> stages.metadataApplication(id, flow) }
                     .collect()
+
+                providers.track.completed(id)
             } catch (e: EntityProcessingFailure) {
                 providers.track.failureEncountered(id, e.entity, e.cause)
                 throw e
             } catch (e: Throwable) {
                 providers.track.failureEncountered(id, e)
                 throw e
-            } finally {
-                providers.track.completed(id)
             }
         }
 

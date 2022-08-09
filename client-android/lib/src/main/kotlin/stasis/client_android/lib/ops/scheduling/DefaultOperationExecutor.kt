@@ -13,6 +13,7 @@ import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.OperationId
+import stasis.client_android.lib.tracking.state.OperationState
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
 import java.nio.file.Path
@@ -118,6 +119,46 @@ class DefaultOperationExecutor(
         }
 
         operationId
+    }
+
+    override suspend fun resumeBackup(
+        operation: OperationId,
+        f: (Throwable?) -> Unit
+    ): OperationId = asUniqueOperation(ofType = Operation.Type.Backup, callback = f) {
+        asValidOperationState(
+            operation = operation,
+            state = backupProviders.track.stateOf(operation),
+            callback = f
+        ) { state ->
+            val descriptor = BackupOp.Descriptor(
+                definition = state.definition,
+                collector = BackupOp.Descriptor.Collector.WithState(state = state),
+                deviceSecret = deviceSecret(),
+                limits = config.backup.limits,
+                providers = backupProviders
+            )
+
+            when (descriptor) {
+                is Success -> {
+                    val actualOperation = BackupOp(descriptor.value, backupProviders)
+
+                    activeOperations[actualOperation.id] = actualOperation
+
+                    actualOperation.start(withScope = operationScope) {
+                        activeOperations.remove(actualOperation.id)
+                        completeOperations[actualOperation.id] = actualOperation.type()
+                        f(it)
+                    }
+
+                }
+
+                is Failure -> {
+                    f(descriptor.exception)
+                }
+            }
+
+            operation
+        }
     }
 
     override suspend fun startRecoveryWithDefinition(
@@ -233,6 +274,25 @@ class DefaultOperationExecutor(
                 operation
             }
         }
+    }
+
+    private suspend fun <T : OperationState> asValidOperationState(
+        operation: OperationId,
+        state: T?,
+        callback: (Throwable?) -> Unit,
+        f: suspend (T) -> OperationId
+    ): OperationId = withContext(operationScope.coroutineContext) {
+        when {
+            state != null && state.completed == null -> f(state)
+            state != null -> callback(
+                IllegalArgumentException("Cannot resume operation with ID [$operation]; operation already completed")
+            )
+            else -> callback(
+                IllegalArgumentException("Cannot resume operation with ID [$operation]; no existing state was found")
+            )
+        }
+
+        operation
     }
 
     data class Config(

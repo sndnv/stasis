@@ -1,5 +1,6 @@
 package stasis.client_android.tracking
 
+import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
@@ -7,21 +8,31 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
+import kotlinx.coroutines.runBlocking
 import stasis.client_android.lib.collection.rules.Rule
 import stasis.client_android.lib.model.EntityMetadata
 import stasis.client_android.lib.model.SourceEntity
+import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.ops.OperationId
+import stasis.client_android.lib.persistence.state.StateStore
 import stasis.client_android.lib.tracking.BackupTracker
 import stasis.client_android.lib.tracking.state.BackupState
+import stasis.client_android.lib.tracking.state.serdes.BackupStateSerdes
 import stasis.client_android.lib.utils.Either
+import java.io.File
 import java.nio.file.Path
+import java.time.Duration
+import java.time.Instant
 
-class DefaultBackupTracker(looper: Looper) : BackupTracker, BackupTrackerView {
+class DefaultBackupTracker(
+    context: Context,
+    looper: Looper
+) : BackupTracker, BackupTrackerView {
     private val trackedState: MutableLiveData<Map<OperationId, BackupState>> =
         MutableLiveData(emptyMap())
 
-    private val handler: TrackingHandler = TrackingHandler(looper)
+    private val handler: TrackingHandler = TrackingHandler(context, looper)
 
     override val state: LiveData<Map<OperationId, BackupState>> = trackedState
 
@@ -33,6 +44,17 @@ class DefaultBackupTracker(looper: Looper) : BackupTracker, BackupTrackerView {
                 }
             }
         }
+
+    override suspend fun stateOf(operation: OperationId): BackupState? {
+        return trackedState.value?.get(operation)
+    }
+
+    override fun started(operation: OperationId, definition: DatasetDefinitionId) = send(
+        event = BackupEvent.Started(
+            operation = operation,
+            definition = definition
+        )
+    )
 
     override fun entityDiscovered(operation: OperationId, entity: Path) = send(
         event = BackupEvent.EntityDiscovered(
@@ -140,15 +162,39 @@ class DefaultBackupTracker(looper: Looper) : BackupTracker, BackupTrackerView {
         }
     }
 
-    private inner class TrackingHandler(looper: Looper) : Handler(looper) {
+    private inner class TrackingHandler(context: Context, looper: Looper) : Handler(looper) {
         private var _state: Map<OperationId, BackupState> = emptyMap()
+        private var updates: Int = 0
+        private var persistScheduled: Boolean = false
+
+        private val store: StateStore<Map<OperationId, BackupState>> = StateStore(
+            target = File(context.filesDir, "state/backups").toPath(),
+            serdes = BackupStateSerdes
+        )
+
+        init {
+            obtainMessage().let { msg ->
+                msg.obj = TrackerEvent.RestoreState
+                sendMessage(msg)
+            }
+        }
 
         override fun handleMessage(msg: Message) {
             Log.v(TAG, "Received backup tracking event [${msg.obj}]")
 
             when (val event = msg.obj) {
                 is BackupEvent -> {
-                    val existing = _state.getOrElse(event.operation) { BackupState.start(event.operation) }
+                    val existing = if (event is BackupEvent.Started) {
+                        BackupState.start(event.operation, definition = event.definition)
+                    } else {
+                        val existing = _state[event.operation]
+
+                        require(existing != null) {
+                            "Expected existing state for operation [${event.operation}] but none was found"
+                        }
+
+                        existing
+                    }
 
                     val updated = when (event) {
                         is BackupEvent.EntityDiscovered -> existing.entityDiscovered(event.entity)
@@ -165,21 +211,77 @@ class DefaultBackupTracker(looper: Looper) : BackupTracker, BackupTrackerView {
                         is BackupEvent.FailureEncountered -> existing.failureEncountered(event.reason)
                         is BackupEvent.MetadataCollected -> existing.backupMetadataCollected()
                         is BackupEvent.MetadataPushed -> existing.backupMetadataPushed()
-                        is BackupEvent.Completed -> existing.backupCompleted()
+                        is BackupEvent.Completed -> {
+                            obtainMessage().let { message ->
+                                message.obj = TrackerEvent.PersistState
+                                sendMessage(message)
+                            }
+                            existing.backupCompleted()
+                        }
+                        else -> existing
                     }
 
-                    _state = _state + (event.operation to updated)
+                    updates += 1
+
+                    if (updates >= PersistAfterEvents) {
+                        obtainMessage().let { message ->
+                            message.obj = TrackerEvent.PersistState
+                            sendMessageAtFrontOfQueue(message)
+                        }
+                    }
+
+                    if (!persistScheduled) {
+                        persistScheduled = true
+                        obtainMessage().let { message ->
+                            message.obj = TrackerEvent.PersistState
+                            sendMessageDelayed(message, PersistAfterPeriod.toMillis())
+                        }
+                    }
+
+                    val now = Instant.now()
+                    val filtered = _state.filterValues { it.started.plusMillis(MaxRetention.toMillis()).isAfter(now) }
+
+                    _state = filtered + (event.operation to updated)
+                    trackedState.postValue(_state)
+                }
+
+                is TrackerEvent -> {
+                    when (event) {
+                        is TrackerEvent.RestoreState -> runBlocking {
+                            when (val state = store.restore()) {
+                                null -> Unit // do nothing
+                                else -> {
+                                    _state = state
+                                    trackedState.postValue(_state)
+                                }
+                            }
+                        }
+
+                        is TrackerEvent.PersistState -> runBlocking {
+                            updates = 0
+                            persistScheduled = false
+                            store.persist(state = _state)
+                        }
+                    }
                 }
 
                 else -> throw IllegalArgumentException("Unexpected message encountered: [$event]")
             }
-
-            trackedState.postValue(_state)
         }
+    }
+
+    private sealed class TrackerEvent {
+        object RestoreState : TrackerEvent()
+        object PersistState : TrackerEvent()
     }
 
     private sealed class BackupEvent {
         abstract val operation: OperationId
+
+        data class Started(
+            override val operation: OperationId,
+            val definition: DatasetDefinitionId
+        ) : BackupEvent()
 
         data class EntityDiscovered(
             override val operation: OperationId,
@@ -244,5 +346,8 @@ class DefaultBackupTracker(looper: Looper) : BackupTracker, BackupTrackerView {
 
     companion object {
         private const val TAG: String = "DefaultBackupTracker"
+        private val MaxRetention: Duration = Duration.ofDays(30)
+        private val PersistAfterEvents: Int = 1000
+        private val PersistAfterPeriod: Duration = Duration.ofSeconds(30)
     }
 }

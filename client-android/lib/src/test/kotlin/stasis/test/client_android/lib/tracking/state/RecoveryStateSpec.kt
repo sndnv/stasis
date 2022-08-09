@@ -1,5 +1,6 @@
 package stasis.test.client_android.lib.tracking.state
 
+import io.kotest.assertions.fail
 import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -7,6 +8,7 @@ import stasis.client_android.lib.model.TargetEntity
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.tracking.state.RecoveryState
 import stasis.client_android.lib.tracking.state.RecoveryState.PendingTargetEntity
+import stasis.client_android.lib.utils.Try
 import stasis.test.client_android.lib.Fixtures
 
 class RecoveryStateSpec : WordSpec({
@@ -112,6 +114,77 @@ class RecoveryStateSpec : WordSpec({
                         completed = recovery.completed
                     )
                     )
+        }
+
+        "be serializable to protobuf data"{
+            RecoveryState.toProto(Fixtures.State.RecoveryOneState) shouldBe (Fixtures.Proto.State.RecoveryOneStateProto)
+            RecoveryState.toProto(Fixtures.State.RecoveryTwoState) shouldBe (Fixtures.Proto.State.RecoveryTwoStateProto)
+        }
+
+        "be deserializable from valid protobuf data" {
+            RecoveryState.fromProto(
+                operation = Fixtures.State.RecoveryOneState.operation,
+                state = Fixtures.Proto.State.RecoveryOneStateProto
+            ) shouldBe (Try.Success(Fixtures.State.RecoveryOneState))
+
+            RecoveryState.fromProto(
+                operation = Fixtures.State.RecoveryTwoState.operation,
+                state = Fixtures.Proto.State.RecoveryTwoStateProto
+            ) shouldBe (Try.Success(Fixtures.State.RecoveryTwoState))
+        }
+
+        "fail to be deserialized when no entities are provided" {
+            val result = RecoveryState.fromProto(
+                operation = Fixtures.State.RecoveryOneState.operation,
+                state = Fixtures.Proto.State.RecoveryOneStateProto.copy(entities = null)
+            )
+
+            when (result) {
+                is Try.Success -> fail("Unexpected successful result received: [${result.value}]")
+                is Try.Failure -> result.exception.message shouldBe ("Expected entities in recovery state but none were found")
+            }
+        }
+
+        "fail to be deserialized when target entity metadata is not provided" {
+            val result1 = RecoveryState.fromProto(
+                operation = Fixtures.State.RecoveryOneState.operation,
+                state = Fixtures.Proto.State.RecoveryOneStateProto.copy(
+                    entities = Fixtures.Proto.State.RecoveryOneStateProto.entities?.let { entities ->
+                        entities.copy(
+                            collected = entities.collected.map { (k, v) ->
+                                k to v.copy(existingMetadata = null)
+                            }.toMap()
+                        )
+                    }
+                )
+            )
+
+            when (result1) {
+                is Try.Success -> fail("Unexpected successful result received: [${result1.value}]")
+                is Try.Failure -> result1.exception.message shouldBe (
+                        "Expected existing metadata in recovery state but none was found"
+                        )
+            }
+
+            val result2 = RecoveryState.fromProto(
+                operation = Fixtures.State.RecoveryOneState.operation,
+                state = Fixtures.Proto.State.RecoveryOneStateProto.copy(
+                    entities = Fixtures.Proto.State.RecoveryOneStateProto.entities?.let { entities ->
+                        entities.copy(
+                            collected = entities.collected.map { (k, v) ->
+                                k to v.copy(
+                                    currentMetadata = v.currentMetadata?.copy(file_ = null, directory = null)
+                                )
+                            }.toMap()
+                        )
+                    }
+                )
+            )
+
+            when (result2) {
+                is Try.Success -> fail("Unexpected successful result received: [${result2.value}]")
+                is Try.Failure -> result2.exception.message shouldBe ("Expected entity in metadata but none was found")
+            }
         }
     }
 

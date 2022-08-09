@@ -5,5 +5,5 @@ import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
 class StasisClientApplication : Application() {
-    val component: ServiceComponent = DaggerServiceComponent.create()
+    val component: ServiceComponent = DaggerServiceComponent.builder().application(this).build()
 }

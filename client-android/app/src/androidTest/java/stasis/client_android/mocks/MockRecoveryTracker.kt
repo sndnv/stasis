@@ -28,6 +28,9 @@ class MockRecoveryTracker : RecoveryTracker, RecoveryTrackerView {
     override fun updates(operation: OperationId): LiveData<RecoveryState> =
         MutableLiveData(RecoveryState.start(operation))
 
+    override suspend fun stateOf(operation: OperationId): RecoveryState? =
+        null
+
     override fun entityExamined(
         operation: OperationId,
         entity: Path,

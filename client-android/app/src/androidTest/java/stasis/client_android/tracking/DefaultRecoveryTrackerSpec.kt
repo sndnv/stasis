@@ -1,8 +1,10 @@
 package stasis.client_android.tracking
 
+import android.content.Context
 import android.os.HandlerThread
 import android.os.Process
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
 import org.hamcrest.CoreMatchers.equalTo
@@ -25,12 +27,14 @@ import java.util.UUID
 class DefaultRecoveryTrackerSpec {
     @Test
     fun trackRecoveryEvents() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
         val trackerHandler = HandlerThread(
-            "DefaultBackupTrackerSpec",
+            "DefaultRecoveryTrackerSpec",
             Process.THREAD_PRIORITY_BACKGROUND
         ).apply { start() }
 
-        val tracker = DefaultRecoveryTracker(trackerHandler.looper)
+        val tracker = DefaultRecoveryTracker(context, trackerHandler.looper)
 
         val operation: OperationId = UUID.randomUUID()
         val file1 = Paths.get("/tmp/test-1").toAbsolutePath()
@@ -79,12 +83,14 @@ class DefaultRecoveryTrackerSpec {
 
     @Test
     fun provideOperationUpdates() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
         val trackerHandler = HandlerThread(
-            "DefaultBackupTrackerSpec",
+            "DefaultRecoveryTrackerSpec",
             Process.THREAD_PRIORITY_BACKGROUND
         ).apply { start() }
 
-        val tracker = DefaultRecoveryTracker(trackerHandler.looper)
+        val tracker = DefaultRecoveryTracker(context, trackerHandler.looper)
 
         val operation: OperationId = UUID.randomUUID()
         val file = Paths.get("test").toAbsolutePath()
@@ -109,6 +115,36 @@ class DefaultRecoveryTrackerSpec {
                 val operationStateCompleted = tracker.updates(operation).await()
                 assertThat(operationStateCompleted.entities.examined.size, equalTo(1))
                 assertThat(operationStateCompleted.completed, not(equalTo(null)))
+            }
+        }
+    }
+
+    @Test
+    fun provideRecoveryState() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
+        val trackerHandler = HandlerThread(
+            "DefaultRecoveryTrackerSpec",
+            Process.THREAD_PRIORITY_BACKGROUND
+        ).apply { start() }
+
+        val tracker = DefaultRecoveryTracker(context, trackerHandler.looper)
+
+        val operation: OperationId = UUID.randomUUID()
+        val file = Paths.get("test").toAbsolutePath()
+
+        val initialState = tracker.state.value
+
+        assertThat(initialState, equalTo(emptyMap()))
+
+
+        runBlocking {
+            tracker.entityExamined(operation, entity = file, metadataChanged = true, contentChanged = false)
+
+            eventually {
+                val state = tracker.stateOf(operation)
+                assertThat(state?.entities?.examined?.size, equalTo(1))
+                assertThat(state?.completed, equalTo(null))
             }
         }
     }

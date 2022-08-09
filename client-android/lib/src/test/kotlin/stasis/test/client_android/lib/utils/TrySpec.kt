@@ -73,6 +73,11 @@ class TrySpec : WordSpec({
             Failure<String>(RuntimeException("Failure")).getOrElse { "other" } shouldBe ("other")
         }
 
+        "support 'toOption'" {
+            Success("test").toOption() shouldBe ("test")
+            Failure<String>(RuntimeException("Failure")).toOption() shouldBe (null)
+        }
+
         "support 'failed'" {
             shouldThrow<UnsupportedOperationException> { Success("test").failed().get() }
             Failure<String>(RuntimeException("Failure")).failed().get().message shouldBe ("Failure")

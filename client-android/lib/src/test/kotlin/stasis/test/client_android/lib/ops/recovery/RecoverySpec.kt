@@ -382,7 +382,7 @@ class RecoverySpec : WordSpec({
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessed] shouldBe (2)
             mockTracker.statistics[MockRecoveryTracker.Statistic.MetadataApplied] shouldBe (2)
             mockTracker.statistics[MockRecoveryTracker.Statistic.FailureEncountered] shouldBe (1)
-            mockTracker.statistics[MockRecoveryTracker.Statistic.Completed] shouldBe (1)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.Completed] shouldBe (0)
         }
 
         "handle general recovery failures" {
@@ -436,7 +436,7 @@ class RecoverySpec : WordSpec({
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessed] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.MetadataApplied] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.FailureEncountered] shouldBe (1)
-            mockTracker.statistics[MockRecoveryTracker.Statistic.Completed] shouldBe (1)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.Completed] shouldBe (0)
         }
 
         "allow stopping a running recovery" {
