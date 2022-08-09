@@ -13,6 +13,7 @@ import stasis.client_android.lib.model.server.datasets.DatasetEntry
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.backup.Providers
 import stasis.client_android.lib.ops.backup.stages.MetadataCollection
+import stasis.client_android.lib.tracking.state.BackupState
 import stasis.client_android.lib.utils.Either
 import stasis.client_android.lib.utils.Either.Left
 import stasis.client_android.lib.utils.Either.Right
@@ -64,7 +65,11 @@ class MetadataCollectionSpec : WordSpec({
                 Right(Fixtures.Metadata.FileThreeMetadata) // metadata changed
             )
 
-            val stageOutput = stage.metadataCollection(operation = Operation.generateId(), flow = stageInput.asFlow()).toList()
+            val stageOutput = stage.metadataCollection(
+                operation = Operation.generateId(),
+                flow = stageInput.asFlow(),
+                existingState = null
+            ).toList()
 
             stageOutput.size shouldBe (1)
 
@@ -87,6 +92,7 @@ class MetadataCollectionSpec : WordSpec({
                     )
                     )
 
+            mockTracker.statistics[MockBackupTracker.Statistic.Started] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityDiscovered] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
@@ -128,7 +134,11 @@ class MetadataCollectionSpec : WordSpec({
                 Right(Fixtures.Metadata.FileThreeMetadata) // metadata changed
             )
 
-            val stageOutput = stage.metadataCollection(operation = Operation.generateId(), flow = stageInput.asFlow()).toList()
+            val stageOutput = stage.metadataCollection(
+                operation = Operation.generateId(),
+                flow = stageInput.asFlow(),
+                existingState = null
+            ).toList()
 
             stageOutput.size shouldBe (1)
 
@@ -151,6 +161,88 @@ class MetadataCollectionSpec : WordSpec({
                     )
                     )
 
+            mockTracker.statistics[MockBackupTracker.Statistic.Started] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityDiscovered] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessingStarted] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityPartProcessed] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.MetadataCollected] shouldBe (1)
+            mockTracker.statistics[MockBackupTracker.Statistic.MetadataPushed] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.FailureEncountered] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.Completed] shouldBe (0)
+        }
+
+        "collect dataset metadata (with existing state)" {
+            val mockTracker = MockBackupTracker()
+
+            val stage = object : MetadataCollection {
+                override val latestEntry: DatasetEntry? = null
+
+                override val latestMetadata: DatasetMetadata? = null
+
+                override val providers: Providers = Providers(
+                    checksum = Checksum.Companion.MD5,
+                    staging = MockFileStaging(),
+                    compression = MockCompression(),
+                    encryptor = MockEncryption(),
+                    decryptor = MockEncryption(),
+                    clients = Clients(
+                        api = MockServerApiEndpointClient(),
+                        core = MockServerCoreEndpointClient()
+                    ),
+                    track = mockTracker
+                )
+            }
+
+            val stageInput = listOf<Either<EntityMetadata, EntityMetadata>>(
+                Right(Fixtures.Metadata.FileOneMetadata), // metadata changed
+                Left(Fixtures.Metadata.FileTwoMetadata) // content changed
+            )
+
+            val existingState = Fixtures.State.BackupOneState
+                .copy(
+                    entities = Fixtures.State.BackupOneState.entities.copy(
+                        processed = mapOf(
+                            Fixtures.Metadata.FileThreeMetadata.path to BackupState.ProcessedSourceEntity(
+                                expectedParts = 1,
+                                processedParts = 1,
+                                metadata = Right(Fixtures.Metadata.FileThreeMetadata) // metadata changed
+                            )
+                        )
+                    )
+                )
+
+            val stageOutput = stage.metadataCollection(
+                operation = Operation.generateId(),
+                flow = stageInput.asFlow(),
+                existingState = existingState
+            ).toList()
+
+            stageOutput.size shouldBe (1)
+
+            stageOutput[0] shouldBe (
+                    DatasetMetadata(
+                        contentChanged = mapOf(
+                            Fixtures.Metadata.FileTwoMetadata.path to Fixtures.Metadata.FileTwoMetadata
+                        ),
+                        metadataChanged = mapOf(
+                            Fixtures.Metadata.FileOneMetadata.path to Fixtures.Metadata.FileOneMetadata,
+                            Fixtures.Metadata.FileThreeMetadata.path to Fixtures.Metadata.FileThreeMetadata
+                        ),
+                        filesystem = FilesystemMetadata(
+                            changes = listOf(
+                                Fixtures.Metadata.FileOneMetadata.path,
+                                Fixtures.Metadata.FileTwoMetadata.path,
+                                Fixtures.Metadata.FileThreeMetadata.path
+                            )
+                        )
+                    )
+                    )
+
+            mockTracker.statistics[MockBackupTracker.Statistic.Started] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityDiscovered] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)

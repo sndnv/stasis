@@ -1,5 +1,6 @@
 package stasis.client_android.tracking
 
+import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
@@ -7,19 +8,26 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
+import kotlinx.coroutines.runBlocking
 import stasis.client_android.lib.model.TargetEntity
 import stasis.client_android.lib.ops.OperationId
+import stasis.client_android.lib.persistence.state.StateStore
 import stasis.client_android.lib.tracking.RecoveryTracker
 import stasis.client_android.lib.tracking.state.RecoveryState
+import stasis.client_android.lib.tracking.state.serdes.RecoveryStateSerdes
+import java.io.File
 import java.nio.file.Path
+import java.time.Duration
+import java.time.Instant
 
 class DefaultRecoveryTracker(
+    context: Context,
     looper: Looper
 ) : RecoveryTracker, RecoveryTrackerView {
     private val trackedState: MutableLiveData<Map<OperationId, RecoveryState>> =
         MutableLiveData(emptyMap())
 
-    private var handler: TrackingHandler = TrackingHandler(looper)
+    private var handler: TrackingHandler = TrackingHandler(context, looper)
 
     override val state: LiveData<Map<OperationId, RecoveryState>> = trackedState
 
@@ -31,6 +39,9 @@ class DefaultRecoveryTracker(
                 }
             }
         }
+
+    override suspend fun stateOf(operation: OperationId): RecoveryState? =
+        trackedState.value?.get(operation)
 
     override fun entityExamined(
         operation: OperationId,
@@ -109,8 +120,22 @@ class DefaultRecoveryTracker(
         }
     }
 
-    private inner class TrackingHandler(looper: Looper) : Handler(looper) {
+    private inner class TrackingHandler(context: Context, looper: Looper) : Handler(looper) {
         private var _state: Map<OperationId, RecoveryState> = emptyMap()
+        private var updates: Int = 0
+        private var persistScheduled: Boolean = false
+
+        private val store: StateStore<Map<OperationId, RecoveryState>> = StateStore(
+            target = File(context.filesDir, "state/recoveries").toPath(),
+            serdes = RecoveryStateSerdes
+        )
+
+        init {
+            obtainMessage().let { msg ->
+                msg.obj = TrackerEvent.RestoreState
+                sendMessage(msg)
+            }
+        }
 
         override fun handleMessage(msg: Message) {
             Log.v(TAG, "Received recovery tracking event [${msg.obj}]")
@@ -131,17 +156,67 @@ class DefaultRecoveryTracker(
                         is RecoveryEvent.EntityMetadataApplied -> existing.entityMetadataApplied(event.entity)
                         is RecoveryEvent.EntityFailed -> existing.entityFailed(event.entity, event.reason)
                         is RecoveryEvent.FailureEncountered -> existing.failureEncountered(event.reason)
-                        is RecoveryEvent.Completed -> existing.recoveryCompleted()
+                        is RecoveryEvent.Completed -> {
+                            obtainMessage().let { message ->
+                                message.obj = TrackerEvent.PersistState
+                                sendMessage(message)
+                            }
+                            existing.recoveryCompleted()
+                        }
                     }
 
-                    _state = _state + (event.operation to updated)
+                    updates += 1
+
+                    if (updates >= PersistAfterEvents) {
+                        obtainMessage().let { message ->
+                            message.obj = TrackerEvent.PersistState
+                            sendMessageAtFrontOfQueue(message)
+                        }
+                    }
+
+                    if (!persistScheduled) {
+                        persistScheduled = true
+                        obtainMessage().let { message ->
+                            message.obj = TrackerEvent.PersistState
+                            sendMessageDelayed(message, PersistAfterPeriod.toMillis())
+                        }
+                    }
+
+                    val now = Instant.now()
+                    val filtered = _state.filterValues { it.started.plusMillis(MaxRetention.toMillis()).isAfter(now) }
+
+                    _state = filtered + (event.operation to updated)
+                    trackedState.postValue(_state)
+                }
+
+                is TrackerEvent -> {
+                    when (event) {
+                        is TrackerEvent.RestoreState -> runBlocking {
+                            when (val state = store.restore()) {
+                                null -> Unit // do nothing
+                                else -> {
+                                    _state = state
+                                    trackedState.postValue(_state)
+                                }
+                            }
+                        }
+
+                        is TrackerEvent.PersistState -> runBlocking {
+                            updates = 0
+                            persistScheduled = false
+                            store.persist(state = _state)
+                        }
+                    }
                 }
 
                 else -> throw IllegalArgumentException("Unexpected message encountered: [$event]")
             }
-
-            trackedState.postValue(_state)
         }
+    }
+
+    private sealed class TrackerEvent {
+        object RestoreState : TrackerEvent()
+        object PersistState : TrackerEvent()
     }
 
     private sealed class RecoveryEvent {
@@ -196,5 +271,8 @@ class DefaultRecoveryTracker(
 
     companion object {
         private const val TAG: String = "DefaultRecoveryTracker"
+        private val MaxRetention: Duration = Duration.ofDays(30)
+        private val PersistAfterEvents: Int = 1000
+        private val PersistAfterPeriod: Duration = Duration.ofSeconds(30)
     }
 }

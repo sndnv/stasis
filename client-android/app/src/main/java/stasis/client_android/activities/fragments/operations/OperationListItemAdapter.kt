@@ -24,31 +24,39 @@ import stasis.client_android.lib.tracking.state.OperationState
 
 class OperationListItemAdapter(
     private val onOperationDetailsRequested: (View, OperationId, Operation.Type) -> Unit,
-    private val onOperationStopRequested: (OperationId) -> Unit
+    private val onOperationStopRequested: (OperationId) -> Unit,
+    private val onOperationResumeRequested: (OperationId) -> Unit
 ) : RecyclerView.Adapter<OperationListItemAdapter.ItemViewHolder>() {
-    private var operations = emptyList<Pair<OperationId, OperationState>>()
+    private var operations = emptyList<Pair<OperationId, Pair<OperationState, Boolean>>>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         val binding = ListItemOperationBinding.inflate(inflater, parent, false)
 
-        return ItemViewHolder(parent.context, binding, onOperationDetailsRequested, onOperationStopRequested)
+        return ItemViewHolder(
+            context = parent.context,
+            binding = binding,
+            onOperationDetailsRequested = onOperationDetailsRequested,
+            onOperationStopRequested = onOperationStopRequested,
+            onOperationResumeRequested = onOperationResumeRequested
+        )
     }
 
     override fun getItemCount(): Int = operations.size
 
     override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
         val (operation, state) = operations[position]
-        holder.bind(operation, state)
+        holder.bind(operation = operation, state = state.first, isActive = state.second)
     }
 
     class ItemViewHolder(
         private val context: Context,
         private val binding: ListItemOperationBinding,
         private val onOperationDetailsRequested: (View, OperationId, Operation.Type) -> Unit,
-        private val onOperationStopRequested: (OperationId) -> Unit
+        private val onOperationStopRequested: (OperationId) -> Unit,
+        private val onOperationResumeRequested: (OperationId) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(operation: OperationId, state: OperationState) {
+        fun bind(operation: OperationId, state: OperationState, isActive: Boolean) {
             val progress = state.asProgress()
 
             binding.operationInfo.text = context.getString(R.string.operation_field_content_info)
@@ -112,7 +120,35 @@ class OperationListItemAdapter(
                 }
             }
 
-            binding.operationStopButton.isVisible = progress.completed == null
+            binding.operationResumeButton.isVisible =
+                state.type == Operation.Type.Backup && progress.completed == null && !isActive
+            binding.operationResumeButton.setOnClickListener {
+                MaterialAlertDialogBuilder(context)
+                    .setTitle(
+                        context.getString(R.string.operation_resume_confirm_title, operation.toMinimizedString())
+                    )
+                    .setNeutralButton(
+                        context.getString(R.string.operation_resume_confirm_cancel_button_title)
+                    ) { dialog, _ ->
+                        dialog.dismiss()
+                    }
+                    .setPositiveButton(
+                        context.getString(R.string.operation_resume_confirm_ok_button_title)
+                    ) { dialog, _ ->
+                        onOperationResumeRequested(operation)
+
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.toast_operation_resumed),
+                            Toast.LENGTH_SHORT
+                        ).show()
+
+                        dialog.dismiss()
+                    }
+                    .show()
+            }
+
+            binding.operationStopButton.isVisible = progress.completed == null && isActive
             binding.operationStopButton.setOnClickListener {
                 MaterialAlertDialogBuilder(context)
                     .setTitle(
@@ -148,15 +184,15 @@ class OperationListItemAdapter(
     }
 
     internal fun setOperations(
-        operations: Map<OperationId, OperationState>
+        operations: Map<OperationId, Pair<OperationState, Boolean>>
     ) {
         val (pending, completed) = operations.toList()
             .map { (operation, state) ->
                 operation to state
             }
-            .partition { it.second.completed == null }
+            .partition { it.second.first.completed == null }
 
-        this.operations = pending + completed.sortedByDescending { it.second.completed }
+        this.operations = pending + completed.sortedByDescending { it.second.first.completed }
 
         notifyDataSetChanged()
     }

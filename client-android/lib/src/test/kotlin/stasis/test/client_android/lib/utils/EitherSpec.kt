@@ -29,24 +29,30 @@ class EitherSpec : WordSpec({
             Left<String, String>(value = "test").isLeft shouldBe(true)
             Left<String, String>(value = "test").isRight shouldBe(false)
             Left<String, String>(value = "test").left shouldBe ("test")
+            Left<String, String>(value = "test").leftOpt shouldBe ("test")
         }
 
         "fail when retrieving 'right' on a 'Left'" {
             shouldThrow<NoSuchElementException> {
                 Left<String, String>(value = "test").right
             }
+
+            Left<String, String>(value = "test").rightOpt shouldBe (null)
         }
 
         "support retrieving 'right' on a 'Right'" {
             Right<String, String>(value = "test").isLeft shouldBe(false)
             Right<String, String>(value = "test").isRight shouldBe(true)
             Right<String, String>(value = "test").right shouldBe ("test")
+            Right<String, String>(value = "test").rightOpt shouldBe ("test")
         }
 
         "fail when retrieving 'left' on a 'Right'" {
             shouldThrow<NoSuchElementException> {
                 Right<String, String>(value = "test").left
             }
+
+            Right<String, String>(value = "test").leftOpt shouldBe (null)
         }
     }
 })

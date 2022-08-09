@@ -11,6 +11,9 @@ import stasis.client_android.lib.model.FilesystemMetadata
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.backup.Providers
 import stasis.client_android.lib.ops.backup.stages.EntityDiscovery
+import stasis.client_android.lib.tracking.state.BackupState
+import stasis.client_android.lib.utils.Either
+import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
 import stasis.test.client_android.lib.ResourceHelpers.extractDirectoryMetadata
 import stasis.test.client_android.lib.ResourceHelpers.extractFileMetadata
@@ -109,6 +112,7 @@ class EntityDiscoverySpec : WordSpec({
 
             entities.size shouldBe (7) // 2 directories + 5 files
 
+            mockTracker.statistics[MockBackupTracker.Statistic.Started] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityDiscovered] shouldBe (7) // 2 directories + 5 files
             mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (1)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
@@ -162,7 +166,74 @@ class EntityDiscoverySpec : WordSpec({
 
             entities.size shouldBe (2) // 2 valid files
 
+            mockTracker.statistics[MockBackupTracker.Statistic.Started] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityDiscovered] shouldBe (2) // 2 valid files
+            mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessingStarted] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityPartProcessed] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.MetadataCollected] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.MetadataPushed] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.FailureEncountered] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.Completed] shouldBe (0)
+        }
+
+        "discover files (based on backup state)" {
+            val sourceFile1 = "/ops/source-file-1".asTestResource()
+
+            val sourceFile2 = "/ops/source-file-2".asTestResource()
+
+            val mockTracker = MockBackupTracker()
+
+            val stage = object : EntityDiscovery {
+                override val collector: EntityDiscovery.Collector = EntityDiscovery.Collector.WithState(
+                    state = Fixtures.State.BackupOneState.copy(
+                        entities = Fixtures.State.BackupOneState.entities.copy(
+                            discovered = setOf(
+                                sourceFile1,
+                                sourceFile2,
+                                Fixtures.Metadata.FileThreeMetadata.path
+                            ),
+                            processed = mapOf(
+                                Fixtures.Metadata.FileThreeMetadata.path to BackupState.ProcessedSourceEntity(
+                                    expectedParts = 1,
+                                    processedParts = 1,
+                                    metadata = Either.Left(Fixtures.Metadata.FileThreeMetadata)
+                                )
+                            )
+                        ),
+                        completed = null
+                    )
+                )
+
+                override val latestMetadata: DatasetMetadata = DatasetMetadata.empty()
+
+                override val providers: Providers = Providers(
+                    checksum = Checksum.Companion.SHA256,
+                    staging = MockFileStaging(),
+                    compression = MockCompression(),
+                    encryptor = MockEncryption(),
+                    decryptor = MockEncryption(),
+                    clients = Clients(
+                        api = MockServerApiEndpointClient(),
+                        core = MockServerCoreEndpointClient()
+                    ),
+                    track = mockTracker
+                )
+            }
+
+            val collector = stage.entityDiscovery(
+                operation = Operation.generateId()
+            ).toList().first()
+
+            val entities = collector.collect().toList()
+
+            entities.size shouldBe (2) // 2 remaining entities
+
+            mockTracker.statistics[MockBackupTracker.Statistic.Started] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityDiscovered] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (0)

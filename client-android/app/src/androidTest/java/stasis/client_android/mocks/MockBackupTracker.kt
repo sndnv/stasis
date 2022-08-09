@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import stasis.client_android.lib.collection.rules.Rule
 import stasis.client_android.lib.model.EntityMetadata
 import stasis.client_android.lib.model.SourceEntity
+import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.tracking.BackupTracker
@@ -13,9 +14,11 @@ import stasis.client_android.lib.utils.Either
 import stasis.client_android.tracking.BackupTrackerView
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.UUID
 
 class MockBackupTracker : BackupTracker, BackupTrackerView {
     private val stats: Map<Statistic, AtomicInteger> = mapOf(
+        Statistic.Started to AtomicInteger(0),
         Statistic.EntityDiscovered to AtomicInteger(0),
         Statistic.SpecificationProcessed to AtomicInteger(0),
         Statistic.EntityExamined to AtomicInteger(0),
@@ -33,7 +36,14 @@ class MockBackupTracker : BackupTracker, BackupTrackerView {
         get() = MutableLiveData(emptyMap())
 
     override fun updates(operation: OperationId): LiveData<BackupState> =
-        MutableLiveData(BackupState.start(operation))
+        MutableLiveData(BackupState.start(operation, UUID.randomUUID()))
+
+    override suspend fun stateOf(operation: OperationId): BackupState? =
+        null
+
+    override fun started(operation: OperationId, definition: DatasetDefinitionId) {
+        stats[Statistic.Started]?.getAndIncrement()
+    }
 
     override fun entityDiscovered(
         operation: OperationId,
@@ -97,6 +107,7 @@ class MockBackupTracker : BackupTracker, BackupTrackerView {
         get() = stats.mapValues { it.value.get() }
 
     sealed class Statistic {
+        object Started : Statistic()
         object EntityDiscovered : Statistic()
         object SpecificationProcessed : Statistic()
         object EntityExamined : Statistic()

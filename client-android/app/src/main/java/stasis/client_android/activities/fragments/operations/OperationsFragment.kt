@@ -1,5 +1,7 @@
 package stasis.client_android.activities.fragments.operations
 
+import android.app.NotificationManager
+import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -20,6 +22,8 @@ import stasis.client_android.databinding.FragmentOperationsBinding
 import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.providers.ProviderContext
 import stasis.client_android.utils.LiveDataExtensions.and
+import stasis.client_android.utils.LiveDataExtensions.liveData
+import stasis.client_android.utils.NotificationManagerExtensions.putOperationCompletedNotification
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -50,8 +54,13 @@ class OperationsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         postponeEnterTransition()
 
-        val preferences: SharedPreferences = ConfigRepository.getPreferences(requireContext())
+        val context = requireContext()
+
+        val preferences: SharedPreferences = ConfigRepository.getPreferences(context)
         val providerContext = providerContextFactory.getOrCreate(preferences).required()
+
+        val notificationManager =
+            activity?.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         val adapter = OperationListItemAdapter(
             onOperationDetailsRequested = { itemView, operation, operationType ->
@@ -69,15 +78,34 @@ class OperationsFragment : Fragment() {
                 lifecycleScope.launch {
                     providerContext.executor.stop(operation)
                 }
+            },
+            onOperationResumeRequested = { operation ->
+                lifecycleScope.launch {
+                    providerContext.executor.resumeBackup(operation) { e ->
+                        val backupId = -2
+
+                        notificationManager.putOperationCompletedNotification(
+                            context = context,
+                            id = backupId,
+                            operation = getString(R.string.backup_operation),
+                            failure = e
+                        )
+                    }
+                }
             }
         )
 
         binding.operationsList.adapter = adapter
 
         lifecycleScope.launch {
-            (providerContext.trackers.backup.state and providerContext.trackers.recovery.state)
-                .observe(viewLifecycleOwner) { (backups, recoveries) ->
-                    val operations = backups + recoveries
+            (providerContext.trackers.backup.state
+                    and providerContext.trackers.recovery.state
+                    and liveData { providerContext.executor.active() })
+                .observe(viewLifecycleOwner) { (state, active) ->
+                    val (backups, recoveries) = state
+                    val operations = (backups + recoveries).map { (k, v) ->
+                        k to (v to (active[k] != null))
+                    }.toMap()
 
                     adapter.setOperations(operations)
 

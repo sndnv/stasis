@@ -2,6 +2,7 @@ package stasis.client_android
 
 import stasis.client_android.lib.ops.backup.Providers as BackupProviders
 import stasis.client_android.lib.ops.recovery.Providers as RecoveryProviders
+import android.app.Application
 import android.content.SharedPreferences
 import android.os.HandlerThread
 import android.os.Process
@@ -79,15 +80,15 @@ object StasisClientDependencies {
 
     @Singleton
     @Provides
-    fun provideDefaultTrackers(): DefaultTrackers {
+    fun provideDefaultTrackers(application: Application): DefaultTrackers {
         val trackerHandler = HandlerThread(
             "DefaultTracker",
             Process.THREAD_PRIORITY_BACKGROUND
         ).apply { start() }
 
         return DefaultTrackers(
-            backup = DefaultBackupTracker(trackerHandler.looper),
-            recovery = DefaultRecoveryTracker(trackerHandler.looper),
+            backup = DefaultBackupTracker(application.applicationContext, trackerHandler.looper),
+            recovery = DefaultRecoveryTracker(application.applicationContext, trackerHandler.looper),
             server = DefaultServerTracker(trackerHandler.looper)
         )
     }

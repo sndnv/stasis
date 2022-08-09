@@ -2,6 +2,7 @@ package stasis.client_android.lib.tracking
 
 import stasis.client_android.lib.model.TargetEntity
 import stasis.client_android.lib.ops.OperationId
+import stasis.client_android.lib.tracking.state.RecoveryState
 import java.nio.file.Path
 
 interface RecoveryTracker {
@@ -14,4 +15,6 @@ interface RecoveryTracker {
     fun failureEncountered(operation: OperationId, failure: Throwable)
     fun failureEncountered(operation: OperationId, entity: Path, failure: Throwable)
     fun completed(operation: OperationId)
+
+    suspend fun stateOf(operation: OperationId): RecoveryState?
 }

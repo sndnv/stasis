@@ -1,13 +1,17 @@
 package stasis.test.client_android.lib.tracking.state
 
+import io.kotest.assertions.fail
 import io.kotest.core.spec.style.WordSpec
+import io.kotest.matchers.maps.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import stasis.client_android.lib.model.SourceEntity
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.tracking.state.BackupState
 import stasis.client_android.lib.utils.Either
+import stasis.client_android.lib.utils.Try
 import stasis.test.client_android.lib.Fixtures
+import java.util.UUID
 
 class BackupStateSpec : WordSpec({
     val entity1 = Fixtures.Metadata.FileOneMetadata.path
@@ -29,7 +33,7 @@ class BackupStateSpec : WordSpec({
     "A BackupState" should {
         "provide its type and state" {
 
-            val backup = BackupState.start(operation = Operation.generateId())
+            val backup = BackupState.start(operation = Operation.generateId(), definition = UUID.randomUUID())
 
             backup.type shouldBe (Operation.Type.Backup)
             backup.completed shouldBe (null)
@@ -38,7 +42,7 @@ class BackupStateSpec : WordSpec({
         }
 
         "support collecting operation progress information" {
-            val backup = BackupState.start(operation = Operation.generateId())
+            val backup = BackupState.start(operation = Operation.generateId(), definition = UUID.randomUUID())
 
             backup.entities shouldBe (BackupState.Entities.empty())
             backup.metadataCollected shouldBe (null)
@@ -103,19 +107,47 @@ class BackupStateSpec : WordSpec({
 
         "support providing entities that have not been processed" {
             val backup = BackupState
-                .start(operation = Operation.generateId())
-                .entityCollected(entity = sourceEntity1)
-                .entityCollected(entity = sourceEntity3)
+                .start(operation = Operation.generateId(), definition = UUID.randomUUID())
+                .entityDiscovered(entity = sourceEntity1.path)
+                .entityDiscovered(entity = sourceEntity3.path)
                 .entityProcessed(entity = entity1, metadata = Either.Left(Fixtures.Metadata.FileOneMetadata))
 
-            backup.remainingEntities() shouldBe (listOf(sourceEntity3))
+            backup.remainingEntities() shouldBe (listOf(sourceEntity3.path))
 
             backup.backupCompleted().remainingEntities() shouldBe (emptyList())
         }
 
+        "support providing entities as metadata changes" {
+            val backup = BackupState
+                .start(operation = Operation.generateId(), definition = UUID.randomUUID())
+                .entityProcessed(
+                    entity = Fixtures.Metadata.FileOneMetadata.path,
+                    metadata = Either.Right(Fixtures.Metadata.FileOneMetadata) // metadata changed
+                )
+                .entityProcessed(
+                    entity = Fixtures.Metadata.FileTwoMetadata.path,
+                    metadata = Either.Left(Fixtures.Metadata.FileTwoMetadata) // content changed
+                )
+                .entityProcessed(
+                    entity = Fixtures.Metadata.FileThreeMetadata.path,
+                    metadata = Either.Right(Fixtures.Metadata.FileThreeMetadata) // metadata changed
+                )
+
+            val (contentChanged, metadataChanged) = backup.asMetadataChanges()
+
+            contentChanged shouldContainExactly (mapOf(
+                Fixtures.Metadata.FileTwoMetadata.path to Fixtures.Metadata.FileTwoMetadata
+            ))
+
+            metadataChanged shouldContainExactly (mapOf(
+                Fixtures.Metadata.FileOneMetadata.path to Fixtures.Metadata.FileOneMetadata,
+                Fixtures.Metadata.FileThreeMetadata.path to Fixtures.Metadata.FileThreeMetadata
+            ))
+        }
+
         "support extracting a pending backup's progress" {
             val backup = BackupState
-                .start(operation = Operation.generateId())
+                .start(operation = Operation.generateId(), definition = UUID.randomUUID())
                 .entityDiscovered(entity = entity1)
                 .entityExamined(entity = entity2)
                 .entityCollected(entity = sourceEntity1)
@@ -137,6 +169,138 @@ class BackupStateSpec : WordSpec({
                         completed = backup.completed
                     )
                     )
+        }
+
+        "be serializable to protobuf data" {
+            BackupState.fromProto(
+                operation = Fixtures.State.BackupOneState.operation,
+                state = Fixtures.Proto.State.BackupOneStateProto
+            ) shouldBe (Try.Success(Fixtures.State.BackupOneState))
+        }
+
+        "fail to be deserialized when no entities are provided" {
+            val result = BackupState.fromProto(
+                operation = Fixtures.State.BackupOneState.operation,
+                state = Fixtures.Proto.State.BackupOneStateProto.copy(entities = null)
+            )
+
+            when (result) {
+                is Try.Success -> fail("Unexpected successful result received: [${result.value}]")
+                is Try.Failure -> result.exception.message shouldBe (
+                        "Expected entities in backup state but none were found"
+                        )
+            }
+        }
+
+        "fail to be deserialized when source entity metadata is not provided" {
+            val result1 = BackupState.fromProto(
+                operation = Fixtures.State.BackupOneState.operation,
+                state = Fixtures.Proto.State.BackupOneStateProto.copy(
+                    entities = Fixtures.Proto.State.BackupOneStateProto.entities?.let { entities ->
+                        entities.copy(
+                            collected = entities.collected.map { (k, v) ->
+                                k to v.copy(
+                                    existingMetadata = v.existingMetadata?.copy(file_ = null, directory = null)
+                                )
+                            }.toMap()
+                        )
+                    }
+                )
+            )
+
+            when (result1) {
+                is Try.Success -> fail("Unexpected successful result received: [${result1.value}]")
+                is Try.Failure -> result1.exception.message shouldBe ("Expected entity in metadata but none was found")
+            }
+
+            val result2 = BackupState.fromProto(
+                operation = Fixtures.State.BackupOneState.operation,
+                state = Fixtures.Proto.State.BackupOneStateProto.copy(
+                    entities = Fixtures.Proto.State.BackupOneStateProto.entities?.let { entities ->
+                        entities.copy(
+                            collected = entities.collected.map { (k, v) ->
+                                k to v.copy(currentMetadata = null)
+                            }.toMap()
+                        )
+                    }
+                )
+            )
+
+            when (result2) {
+                is Try.Success -> fail("Unexpected successful result received: [${result2.value}]")
+                is Try.Failure -> result2.exception.message shouldBe (
+                        "Expected current metadata in backup state but none was found"
+                        )
+            }
+        }
+
+        "fail to be deserialized when processed source entity metadata is not provided" {
+            val result1 = BackupState.fromProto(
+                operation = Fixtures.State.BackupOneState.operation,
+                state = Fixtures.Proto.State.BackupOneStateProto.copy(
+                    entities = Fixtures.Proto.State.BackupOneStateProto.entities?.let { entities ->
+                        entities.copy(
+                            processed = entities.processed.map { (k, v) ->
+                                k to v.copy(
+                                    left = Fixtures.Proto.Metadata.FileOneMetadataProto.copy(
+                                        file_ = null,
+                                        directory = null
+                                    ),
+                                    right = null
+                                )
+                            }.toMap()
+                        )
+                    }
+                )
+            )
+
+            when (result1) {
+                is Try.Success -> fail("Unexpected successful result received: [${result1.value}]")
+                is Try.Failure -> result1.exception.message shouldBe ("Expected entity in metadata but none was found")
+            }
+
+            val result2 = BackupState.fromProto(
+                operation = Fixtures.State.BackupOneState.operation,
+                state = Fixtures.Proto.State.BackupOneStateProto.copy(
+                    entities = Fixtures.Proto.State.BackupOneStateProto.entities?.let { entities ->
+                        entities.copy(
+                            processed = entities.processed.map { (k, v) ->
+                                k to v.copy(
+                                    right = Fixtures.Proto.Metadata.FileOneMetadataProto.copy(
+                                        file_ = null, directory = null
+                                    ),
+                                    left = null
+                                )
+                            }.toMap()
+                        )
+                    }
+                )
+            )
+
+            when (result2) {
+                is Try.Success -> fail("Unexpected successful result received: [${result2.value}]")
+                is Try.Failure -> result2.exception.message shouldBe ("Expected entity in metadata but none was found")
+            }
+
+            val result3 = BackupState.fromProto(
+                operation = Fixtures.State.BackupOneState.operation,
+                state = Fixtures.Proto.State.BackupOneStateProto.copy(
+                    entities = Fixtures.Proto.State.BackupOneStateProto.entities?.let { entities ->
+                        entities.copy(
+                            processed = entities.processed.map { (k, v) ->
+                                k to v.copy(left = null, right = null)
+                            }.toMap()
+                        )
+                    }
+                )
+            )
+
+            when (result3) {
+                is Try.Success -> fail("Unexpected successful result received: [${result3.value}]")
+                is Try.Failure -> result3.exception.message shouldBe (
+                        "Expected entity metadata in backup state but none was found"
+                        )
+            }
         }
     }
 

@@ -71,6 +71,12 @@ object ResourceHelpers {
             }
     }
 
+    fun Path.files(): List<Path> {
+        require(Files.isDirectory(this)) { "Expected [$this] to be a directory" }
+
+        return Files.walk(this).filter { Files.isRegularFile(it) }.toList()
+    }
+
     suspend fun Path.extractFileMetadata(
         withChecksum: BigInteger,
         withCrate: CrateId

@@ -21,6 +21,7 @@ import stasis.client_android.lib.ops.backup.stages.EntityProcessing
 import stasis.client_android.lib.ops.backup.stages.MetadataCollection
 import stasis.client_android.lib.ops.backup.stages.MetadataPush
 import stasis.client_android.lib.ops.exceptions.EntityProcessingFailure
+import stasis.client_android.lib.tracking.state.BackupState
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Companion.flatMap
 import stasis.client_android.lib.utils.Try.Companion.map
@@ -32,7 +33,7 @@ class Backup(
     private val descriptor: Descriptor,
     private val providers: Providers
 ) : Operation {
-    override val id: OperationId = Operation.generateId()
+    override val id: OperationId = descriptor.collector.existingState()?.operation ?: Operation.generateId()
 
     override fun type(): Operation.Type = Operation.Type.Backup
 
@@ -43,20 +44,25 @@ class Backup(
 
         val job = (withScope + supervisor).async {
             try {
+                when (descriptor.collector) {
+                    is Descriptor.Collector.WithState -> Unit // do nothing
+                    else -> providers.track.started(operation = id, definition = descriptor.targetDataset.id)
+                }
+
                 stages.entityDiscovery(id)
                     .let { flow -> stages.entityCollection(id, flow) }
                     .let { flow -> stages.entityProcessing(id, flow) }
-                    .let { flow -> stages.metadataCollection(id, flow) }
+                    .let { flow -> stages.metadataCollection(id, flow, descriptor.collector.existingState()) }
                     .let { flow -> stages.metadataPush(id, flow) }
                     .collect()
+
+                providers.track.completed(id)
             } catch (e: EntityProcessingFailure) {
                 providers.track.failureEncountered(id, e.entity, e.cause)
                 throw e
             } catch (e: Throwable) {
                 providers.track.failureEncountered(id, e)
                 throw e
-            } finally {
-                providers.track.completed(id)
             }
         }
 
@@ -128,15 +134,27 @@ class Backup(
 
         sealed class Collector {
             abstract fun asDiscoveryCollector(): EntityDiscovery.Collector
+            abstract fun existingState(): BackupState?
 
             data class WithRules(val rules: List<Rule>) : Collector() {
                 override fun asDiscoveryCollector(): EntityDiscovery.Collector =
                     EntityDiscovery.Collector.WithRules(rules)
+
+                override fun existingState(): BackupState? = null
             }
 
             data class WithEntities(val entities: List<Path>) : Collector() {
                 override fun asDiscoveryCollector(): EntityDiscovery.Collector =
                     EntityDiscovery.Collector.WithEntities(entities)
+
+                override fun existingState(): BackupState? = null
+            }
+
+            data class WithState(val state: BackupState) : Collector() {
+                override fun asDiscoveryCollector(): EntityDiscovery.Collector =
+                    EntityDiscovery.Collector.WithState(state)
+
+                override fun existingState(): BackupState = state
             }
         }
 

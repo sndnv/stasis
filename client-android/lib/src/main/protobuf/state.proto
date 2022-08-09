@@ -1,0 +1,104 @@
+syntax = "proto3";
+
+import "metadata.proto";
+
+option java_multiple_files = true;
+option java_package = "stasis.client_android.lib.model.proto";
+
+package stasis.client;
+
+message BackupStateCollection {
+  map<string, BackupState> collection = 1;
+}
+
+message RecoveryStateCollection {
+  map<string, RecoveryState> collection = 1;
+}
+
+message BackupState {
+  string definition = 1;
+  uint64 started = 2;
+  BackupEntities entities = 3;
+  optional uint64 metadataCollected = 4;
+  optional uint64 metadataPushed = 5;
+  repeated string failures = 6;
+  optional uint64 completed = 7;
+}
+
+message RecoveryState {
+  uint64 started = 1;
+  RecoveryEntities entities = 2;
+  repeated string failures = 3;
+  optional uint64 completed = 4;
+}
+
+message BackupEntities {
+  repeated string discovered = 1;
+  repeated string unmatched = 2;
+  repeated string examined = 3;
+  map<string, SourceEntity> collected = 4;
+  map<string, PendingSourceEntity> pending = 5;
+  map<string, ProcessedSourceEntity> processed = 6;
+  map<string, string> failed = 7;
+}
+
+
+message RecoveryEntities {
+  repeated string examined = 1;
+  map<string, TargetEntity> collected = 2;
+  map<string, PendingTargetEntity> pending = 3;
+  map<string, ProcessedTargetEntity> processed = 4;
+  repeated string metadataApplied = 5;
+  map<string, string> failed = 6;
+}
+
+message SourceEntity {
+  string path = 1;
+  optional EntityMetadata existingMetadata = 2;
+  EntityMetadata currentMetadata = 3;
+}
+
+message TargetEntity {
+  string path = 1;
+  TargetEntityDestination destination = 2;
+  EntityMetadata  existingMetadata = 3;
+  optional EntityMetadata currentMetadata = 4;
+}
+
+message PendingSourceEntity {
+  uint32 expectedParts = 1;
+  uint32 processedParts = 2;
+}
+
+message ProcessedSourceEntity {
+  uint32 expectedParts = 1;
+  uint32 processedParts = 2;
+  oneof metadata {
+    EntityMetadata left = 3;
+    EntityMetadata right = 4;
+  }
+}
+
+message PendingTargetEntity {
+  uint32 expectedParts = 1;
+  uint32 processedParts = 2;
+}
+
+message ProcessedTargetEntity {
+  uint32 expectedParts = 1;
+  uint32 processedParts = 2;
+}
+
+message TargetEntityDestination {
+  oneof sealed_value {
+    TargetEntityDestinationDefault default = 1;
+    TargetEntityDestinationDirectory directory = 2;
+  }
+}
+
+message TargetEntityDestinationDefault {}
+
+message TargetEntityDestinationDirectory {
+  string path = 1;
+  bool keepDefaultStructure = 2;
+}

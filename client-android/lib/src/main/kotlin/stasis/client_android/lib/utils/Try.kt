@@ -5,6 +5,7 @@ import stasis.client_android.lib.utils.NonFatal.nonFatal
 sealed class Try<T> {
     abstract fun get(): T
     abstract fun getOrElse(default: () -> T): T
+    abstract fun toOption(): T?
     abstract fun failed(): Try<Throwable>
 
     abstract val isSuccess: Boolean
@@ -13,8 +14,8 @@ sealed class Try<T> {
     data class Success<T>(val value: T) : Try<T>() {
         override fun get(): T = value
         override fun getOrElse(default: () -> T): T = value
-        override fun failed(): Try<Throwable> =
-            Failure(UnsupportedOperationException("Success.failed"))
+        override fun toOption(): T? = value
+        override fun failed(): Try<Throwable> = Failure(UnsupportedOperationException("Success.failed"))
 
         override val isSuccess: Boolean = true
         override val isFailure: Boolean = false
@@ -23,6 +24,7 @@ sealed class Try<T> {
     data class Failure<T>(val exception: Throwable) : Try<T>() {
         override fun get(): T = throw exception
         override fun getOrElse(default: () -> T): T = default()
+        override fun toOption(): T? = null
         override fun failed(): Try<Throwable> = Success(exception)
 
         override val isSuccess: Boolean = false

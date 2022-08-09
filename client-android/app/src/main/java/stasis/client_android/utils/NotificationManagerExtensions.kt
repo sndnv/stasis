@@ -175,8 +175,7 @@ object NotificationManagerExtensions {
     ) {
         val (icon, title, text) = if (failure == null) {
             val icon = R.drawable.ic_check
-            val title =
-                context.getString(R.string.notification_operation_completed_title, operation)
+            val title = context.getString(R.string.notification_operation_completed_title, operation)
             val text = context.getString(R.string.notification_operation_completed_text, operation)
 
             Triple(icon, title, text)
@@ -189,6 +188,7 @@ object NotificationManagerExtensions {
         }
 
         val notification = NotificationCompat.Builder(context, config.schedulingChannel.id)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setSmallIcon(icon)
             .setContentTitle(title)
             .setContentText(text)

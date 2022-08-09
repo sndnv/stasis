@@ -21,8 +21,10 @@ import stasis.client_android.lib.model.server.datasets.DatasetEntry
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.model.server.devices.DeviceId
 import stasis.client_android.lib.ops.Operation
+import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.ops.backup.Backup
 import stasis.client_android.lib.ops.scheduling.DefaultOperationExecutor
+import stasis.client_android.lib.tracking.state.BackupState
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.test.client_android.lib.Fixtures
@@ -167,6 +169,7 @@ class DefaultOperationExecutorSpec : WordSpec({
             }
 
             eventually {
+                mockTracker.statistics[MockBackupTracker.Statistic.Started] shouldBe (1)
                 mockTracker.statistics[MockBackupTracker.Statistic.EntityDiscovered] shouldBe (0)
                 mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (1)
                 mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
@@ -223,6 +226,7 @@ class DefaultOperationExecutorSpec : WordSpec({
             }
 
             eventually {
+                mockTracker.statistics[MockBackupTracker.Statistic.Started] shouldBe (1)
                 mockTracker.statistics[MockBackupTracker.Statistic.EntityDiscovered] shouldBe (0)
                 mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
                 mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
@@ -262,6 +266,42 @@ class DefaultOperationExecutorSpec : WordSpec({
 
             eventually {
                 operationResult.get().message shouldBe ("Test failure")
+            }
+        }
+
+        "resume backups (with state)" {
+            val operation = Operation.generateId()
+
+            val operationCompleted = AtomicBoolean(false)
+
+            val mockTracker = object : MockBackupTracker() {
+                override suspend fun stateOf(operation: OperationId): BackupState =
+                    BackupState.start(operation = operation, definition = UUID.randomUUID())
+            }
+
+            val executor = createExecutor(backupTracker = mockTracker)
+
+            executor.resumeBackup(
+                operation = operation
+            ) {
+                operationCompleted.set(it == null)
+            }
+
+            eventually {
+                mockTracker.statistics[MockBackupTracker.Statistic.Started] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.EntityDiscovered] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessingStarted] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.EntityPartProcessed] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.MetadataCollected] shouldBe (1)
+                mockTracker.statistics[MockBackupTracker.Statistic.MetadataPushed] shouldBe (1)
+                mockTracker.statistics[MockBackupTracker.Statistic.FailureEncountered] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.Completed] shouldBe (1)
+
+                operationCompleted.get() shouldBe (true)
             }
         }
 
@@ -523,6 +563,81 @@ class DefaultOperationExecutorSpec : WordSpec({
                 val e = failure.get()
                 e.message shouldStartWith ("Cannot start [Backup] operation")
                 e.message shouldInclude ("already active")
+            }
+        }
+
+        "fail to resume a backup that is already completed" {
+            val operation = Operation.generateId()
+
+            val operationCompleted = AtomicReference<Throwable?>(null)
+
+            val mockTracker = object : MockBackupTracker() {
+                override suspend fun stateOf(operation: OperationId): BackupState =
+                    BackupState
+                        .start(operation = operation, definition = UUID.randomUUID())
+                        .backupCompleted()
+            }
+
+            val executor = createExecutor(backupTracker = mockTracker)
+
+            executor.resumeBackup(
+                operation = operation
+            ) {
+                operationCompleted.set(it)
+            }
+
+            eventually {
+                mockTracker.statistics[MockBackupTracker.Statistic.Started] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.EntityDiscovered] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessingStarted] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.EntityPartProcessed] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.MetadataCollected] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.MetadataPushed] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.FailureEncountered] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.Completed] shouldBe (0)
+
+                operationCompleted.get()?.message shouldBe (
+                        "Cannot resume operation with ID [$operation]; operation already completed"
+                        )
+            }
+        }
+
+        "fail to resume a backup no state for it can be found" {
+            val operation = Operation.generateId()
+
+            val operationCompleted = AtomicReference<Throwable?>(null)
+
+            val mockTracker = MockBackupTracker()
+
+            val executor = createExecutor(backupTracker = mockTracker)
+
+            executor.resumeBackup(
+                operation = operation
+            ) {
+                operationCompleted.set(it)
+            }
+
+            eventually {
+                mockTracker.statistics[MockBackupTracker.Statistic.Started] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.EntityDiscovered] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessingStarted] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.EntityPartProcessed] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.MetadataCollected] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.MetadataPushed] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.FailureEncountered] shouldBe (0)
+                mockTracker.statistics[MockBackupTracker.Statistic.Completed] shouldBe (0)
+
+                operationCompleted.get()?.message shouldBe (
+                        "Cannot resume operation with ID [$operation]; no existing state was found"
+                        )
             }
         }
     }

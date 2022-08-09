@@ -3,6 +3,8 @@ package stasis.client_android.lib.utils
 sealed class Either<L, R> {
     abstract val left: L
     abstract val right: R
+    abstract val leftOpt: L?
+    abstract val rightOpt: R?
     abstract val isLeft: Boolean
     abstract val isRight: Boolean
 
@@ -29,6 +31,8 @@ sealed class Either<L, R> {
         override val right: R get() = throw NoSuchElementException("Cannot get 'right' on Either.left")
         override val isLeft: Boolean = true
         override val isRight: Boolean = false
+        override val leftOpt: L? = value
+        override val rightOpt: R? = null
     }
 
     data class Right<L, R>(val value: R) : Either<L, R>() {
@@ -36,5 +40,7 @@ sealed class Either<L, R> {
         override val right: R = value
         override val isLeft: Boolean = false
         override val isRight: Boolean = true
+        override val leftOpt: L? = null
+        override val rightOpt: R? = value
     }
 }

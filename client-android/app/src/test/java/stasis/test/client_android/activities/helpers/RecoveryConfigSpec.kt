@@ -250,6 +250,11 @@ class RecoveryConfigSpec {
             f: (Throwable?) -> Unit
         ): OperationId = UUID.randomUUID()
 
+        override suspend fun resumeBackup(
+            operation: OperationId,
+            f: (Throwable?) -> Unit
+        ): OperationId = UUID.randomUUID()
+
         override suspend fun startExpiration(f: (Throwable?) -> Unit): OperationId = UUID.randomUUID()
         override suspend fun startValidation(f: (Throwable?) -> Unit): OperationId = UUID.randomUUID()
         override suspend fun startKeyRotation(f: (Throwable?) -> Unit): OperationId = UUID.randomUUID()

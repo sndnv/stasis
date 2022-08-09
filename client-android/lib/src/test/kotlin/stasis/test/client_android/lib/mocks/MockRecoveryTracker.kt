@@ -3,6 +3,7 @@ package stasis.test.client_android.lib.mocks
 import stasis.client_android.lib.model.TargetEntity
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.tracking.RecoveryTracker
+import stasis.client_android.lib.tracking.state.RecoveryState
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -18,7 +19,15 @@ class MockRecoveryTracker : RecoveryTracker {
         Statistic.Completed to AtomicInteger(0)
     )
 
-    override fun entityExamined(operation: OperationId, entity: Path, metadataChanged: Boolean, contentChanged: Boolean) {
+    override suspend fun stateOf(operation: OperationId): RecoveryState? =
+        null
+
+    override fun entityExamined(
+        operation: OperationId,
+        entity: Path,
+        metadataChanged: Boolean,
+        contentChanged: Boolean
+    ) {
         stats[Statistic.EntityExamined]?.getAndIncrement()
     }
 

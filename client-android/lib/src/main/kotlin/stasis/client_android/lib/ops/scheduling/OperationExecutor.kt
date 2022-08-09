@@ -26,6 +26,11 @@ interface OperationExecutor {
         f: (Throwable?) -> Unit
     ): OperationId
 
+    suspend fun resumeBackup(
+        operation: OperationId,
+        f: (Throwable?) -> Unit
+    ): OperationId
+
     suspend fun startRecoveryWithDefinition(
         definition: DatasetDefinitionId,
         until: Instant?,

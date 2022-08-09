@@ -28,6 +28,11 @@ class MockOperationExecutor : OperationExecutor {
         f: (Throwable?) -> Unit
     ): OperationId = UUID.randomUUID()
 
+    override suspend fun resumeBackup(
+        operation: OperationId,
+        f: (Throwable?) -> Unit
+    ): OperationId = UUID.randomUUID()
+
     override suspend fun startRecoveryWithDefinition(
         definition: DatasetDefinitionId,
         until: Instant?,

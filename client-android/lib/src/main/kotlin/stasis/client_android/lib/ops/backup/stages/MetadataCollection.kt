@@ -1,7 +1,6 @@
 package stasis.client_android.lib.ops.backup.stages
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.EntityMetadata
@@ -9,10 +8,10 @@ import stasis.client_android.lib.model.FilesystemMetadata
 import stasis.client_android.lib.model.server.datasets.DatasetEntry
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.ops.backup.Providers
+import stasis.client_android.lib.tracking.state.BackupState
 import stasis.client_android.lib.utils.Either
 import stasis.client_android.lib.utils.Either.Left
 import stasis.client_android.lib.utils.Either.Right
-import java.nio.file.Path
 
 interface MetadataCollection {
     val latestEntry: DatasetEntry?
@@ -21,11 +20,14 @@ interface MetadataCollection {
 
     fun metadataCollection(
         operation: OperationId,
-        flow: Flow<Either<EntityMetadata, EntityMetadata>>
+        flow: Flow<Either<EntityMetadata, EntityMetadata>>,
+        existingState: BackupState?
     ): Flow<DatasetMetadata> =
         flow {
-            val contentChanged = mutableMapOf<Path, EntityMetadata>()
-            val metadataChanged = mutableMapOf<Path, EntityMetadata>()
+            val existing = existingState?.asMetadataChanges()
+
+            val contentChanged = existing?.first?.toMutableMap() ?: mutableMapOf()
+            val metadataChanged = existing?.second?.toMutableMap() ?: mutableMapOf()
 
             try {
                 flow.collect { currentMetadata ->

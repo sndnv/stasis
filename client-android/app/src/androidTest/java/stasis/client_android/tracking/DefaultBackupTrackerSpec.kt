@@ -1,8 +1,10 @@
 package stasis.client_android.tracking
 
+import android.content.Context
 import android.os.HandlerThread
 import android.os.Process
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
 import org.hamcrest.CoreMatchers.equalTo
@@ -26,12 +28,14 @@ import java.util.UUID
 class DefaultBackupTrackerSpec {
     @Test
     fun trackBackupEvents() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
         val trackerHandler = HandlerThread(
             "DefaultBackupTrackerSpec",
             Process.THREAD_PRIORITY_BACKGROUND
         ).apply { start() }
 
-        val tracker = DefaultBackupTracker(trackerHandler.looper)
+        val tracker = DefaultBackupTracker(context, trackerHandler.looper)
 
         val operation: OperationId = UUID.randomUUID()
         val file1 = Paths.get("/tmp/test-1").toAbsolutePath()
@@ -47,6 +51,7 @@ class DefaultBackupTrackerSpec {
             currentMetadata = Fixtures.Metadata.FileOneMetadata
         )
 
+        tracker.started(operation, UUID.randomUUID())
         tracker.entityDiscovered(operation, entity = file1)
         tracker.entityDiscovered(operation, entity = file2)
         tracker.specificationProcessed(operation, unmatched = emptyList())
@@ -85,12 +90,14 @@ class DefaultBackupTrackerSpec {
 
     @Test
     fun trackBackupEventsWithUnmatchedRules() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
         val trackerHandler = HandlerThread(
             "DefaultBackupTrackerSpec",
             Process.THREAD_PRIORITY_BACKGROUND
         ).apply { start() }
 
-        val tracker = DefaultBackupTracker(trackerHandler.looper)
+        val tracker = DefaultBackupTracker(context, trackerHandler.looper)
 
         val operation: OperationId = UUID.randomUUID()
 
@@ -109,6 +116,7 @@ class DefaultBackupTrackerSpec {
 
         val rule3 = rule1.copy(directory = "/tmp/3")
 
+        tracker.started(operation, definition = UUID.randomUUID())
         tracker.specificationProcessed(
             operation = operation,
             unmatched = listOf(
@@ -138,12 +146,14 @@ class DefaultBackupTrackerSpec {
 
     @Test
     fun provideBackupUpdates() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
         val trackerHandler = HandlerThread(
             "DefaultBackupTrackerSpec",
             Process.THREAD_PRIORITY_BACKGROUND
         ).apply { start() }
 
-        val tracker = DefaultBackupTracker(trackerHandler.looper)
+        val tracker = DefaultBackupTracker(context, trackerHandler.looper)
 
         val operation: OperationId = UUID.randomUUID()
         val file = Paths.get("test").toAbsolutePath()
@@ -153,6 +163,7 @@ class DefaultBackupTrackerSpec {
         assertThat(initialState, equalTo(emptyMap()))
 
         runBlocking {
+            tracker.started(operation, definition = UUID.randomUUID())
             tracker.entityExamined(operation, entity = file)
 
             eventually {
@@ -161,13 +172,45 @@ class DefaultBackupTrackerSpec {
                 assertThat(operationStateExamined.completed, equalTo(null))
             }
 
-            tracker.entityDiscovered(operation = Operation.generateId(), entity = file) // other operation
+            val otherOperation = Operation.generateId()
+            tracker.started(otherOperation, definition = UUID.randomUUID())
+            tracker.entityDiscovered(operation = otherOperation, entity = file) // other operation
             tracker.completed(operation)
 
             eventually {
                 val operationStateCompleted = tracker.updates(operation).await()
                 assertThat(operationStateCompleted.entities.examined.size, equalTo(1))
                 assertThat(operationStateCompleted.completed, not(equalTo(null)))
+            }
+        }
+    }
+
+    @Test
+    fun provideBackupState() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
+        val trackerHandler = HandlerThread(
+            "DefaultBackupTrackerSpec",
+            Process.THREAD_PRIORITY_BACKGROUND
+        ).apply { start() }
+
+        val tracker = DefaultBackupTracker(context, trackerHandler.looper)
+
+        val operation: OperationId = UUID.randomUUID()
+        val file = Paths.get("test").toAbsolutePath()
+
+        val initialState = tracker.state.value
+
+        assertThat(initialState, equalTo(emptyMap()))
+
+        runBlocking {
+            tracker.started(operation, definition = UUID.randomUUID())
+            tracker.entityExamined(operation, entity = file)
+
+            eventually {
+                val state = tracker.stateOf(operation)
+                assertThat(state?.entities?.examined?.size, equalTo(1))
+                assertThat(state?.completed, equalTo(null))
             }
         }
     }
