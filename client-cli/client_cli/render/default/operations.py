@@ -66,7 +66,7 @@ def render_operation_progress_summary(progress):
     return '\n'.join(
         [
             'state:    {}'.format(
-                'Done ({})'.format(progress['completed']) if progress.get('completed') else 'Running ({})'.format(
+                'Done ({})'.format(progress['completed']) if progress.get('completed') else 'Pending ({})'.format(
                     _calculate_progress_summary_pct(progress)
                 )
             ),

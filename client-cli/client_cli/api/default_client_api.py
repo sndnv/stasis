@@ -78,6 +78,9 @@ class DefaultClientApi(ClientApi):
     def operation_stop(self, operation):
         return self.put(url='/operations/{}/stop'.format(operation))
 
+    def operation_resume(self, operation):
+        return self.put(url='/operations/{}/resume'.format(operation))
+
     def backup_rules(self):
         return self.get(url='/operations/backup/rules')
 
