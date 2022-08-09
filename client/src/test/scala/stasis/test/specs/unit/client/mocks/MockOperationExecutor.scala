@@ -21,6 +21,7 @@ class MockOperationExecutor()(implicit ec: ExecutionContext) extends OperationEx
     Statistic.GetRules -> new AtomicInteger(0),
     Statistic.StartBackupWithRules -> new AtomicInteger(0),
     Statistic.StartBackupWithFiles -> new AtomicInteger(0),
+    Statistic.ResumeBackupWithState -> new AtomicInteger(0),
     Statistic.StartRecoveryWithDefinition -> new AtomicInteger(0),
     Statistic.StartRecoveryWithEntry -> new AtomicInteger(0),
     Statistic.StartExpiration -> new AtomicInteger(0),
@@ -110,6 +111,11 @@ class MockOperationExecutor()(implicit ec: ExecutionContext) extends OperationEx
     Future.successful(Operation.generateId())
   }
 
+  override def resumeBackup(operation: Operation.Id): Future[Operation.Id] = {
+    stats(Statistic.ResumeBackupWithState).incrementAndGet()
+    Future.successful(Operation.generateId())
+  }
+
   override def startRecoveryWithDefinition(
     definition: DatasetDefinition.Id,
     until: Option[Instant],
@@ -162,6 +168,7 @@ object MockOperationExecutor {
     case object GetRules extends Statistic
     case object StartBackupWithRules extends Statistic
     case object StartBackupWithFiles extends Statistic
+    case object ResumeBackupWithState extends Statistic
     case object StartRecoveryWithDefinition extends Statistic
     case object StartRecoveryWithEntry extends Statistic
     case object StartExpiration extends Statistic

@@ -9,6 +9,7 @@ import stasis.client.collection.rules.Specification
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.ops.exceptions.{OperationExecutionFailure, OperationStopped}
 import stasis.client.ops.{backup, recovery, ParallelismConfig}
+import stasis.client.tracking.state.OperationState
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.telemetry.TelemetryContext
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
@@ -94,6 +95,26 @@ class DefaultOperationExecutor(
       operation.id
     }
 
+  override def resumeBackup(
+    operation: Operation.Id
+  ): Future[Operation.Id] =
+    for {
+      _ <- requireUniqueOperation(ofType = Operation.Type.Backup)
+      state <- backupProviders.track.state.map(_.get(operation))
+      state <- requireValidOperationState(operation = operation, state = state)
+      descriptor <- backup.Backup.Descriptor(
+        definition = state.definition,
+        collector = backup.Backup.Descriptor.Collector.WithState(state = state),
+        deviceSecret = secret,
+        limits = config.backup.limits
+      )
+      operation = backup.Backup(descriptor = descriptor)
+      _ <- activeOperations.put(operation.id, operation)
+    } yield {
+      operation.run()
+      operation.id
+    }
+
   override def startRecoveryWithDefinition(
     definition: DatasetDefinition.Id,
     until: Option[Instant],
@@ -168,6 +189,25 @@ class DefaultOperationExecutor(
         case None =>
           Future.successful(Done)
       }
+    }
+
+  private def requireValidOperationState[S <: OperationState](
+    operation: Operation.Id,
+    state: Option[S]
+  ): Future[S] =
+    state match {
+      case Some(state) if !state.isCompleted =>
+        Future.successful(state)
+
+      case Some(_) =>
+        val message = s"Cannot resume operation with ID [${operation.toString}]; operation already completed"
+        log.errorN(message)
+        Future.failed(new OperationExecutionFailure(message))
+
+      case None =>
+        val message = s"Cannot resume operation with ID [${operation.toString}]; no existing state was found"
+        log.errorN(message)
+        Future.failed(new OperationExecutionFailure(message))
     }
 
   implicit class RunnableOperation(operation: Operation) {

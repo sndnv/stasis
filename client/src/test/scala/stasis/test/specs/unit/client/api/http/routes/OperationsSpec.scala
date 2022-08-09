@@ -40,7 +40,9 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       override val backup: BackupTracker.View = new MockBackupTracker {
         override def state: Future[Map[Operation.Id, BackupState]] =
           super.state.map { _ =>
-            operations.collect { case (k, Operation.Type.Backup) => k -> BackupState.start(k).backupCompleted() }
+            operations.collect { case (k, Operation.Type.Backup) =>
+              k -> BackupState.start(k, DatasetDefinition.generateId()).backupCompleted()
+            }
           }
       }
       override val recovery: RecoveryTracker.View = new MockRecoveryTracker {
@@ -67,6 +69,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.ResumeBackupWithState) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithEntry) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartExpiration) should be(0)
@@ -90,7 +93,9 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       override val backup: BackupTracker.View = new MockBackupTracker {
         override def state: Future[Map[Operation.Id, BackupState]] =
           super.state.map { _ =>
-            operations.collect { case (k, Operation.Type.Backup) => k -> BackupState.start(k).backupCompleted() }
+            operations.collect { case (k, Operation.Type.Backup) =>
+              k -> BackupState.start(k, DatasetDefinition.generateId()).backupCompleted()
+            }
           }
       }
       override val recovery: RecoveryTracker.View = new MockRecoveryTracker {
@@ -114,6 +119,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.ResumeBackupWithState) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithEntry) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartExpiration) should be(0)
@@ -137,7 +143,9 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       override val backup: BackupTracker.View = new MockBackupTracker {
         override def state: Future[Map[Operation.Id, BackupState]] =
           super.state.map { _ =>
-            operations.collect { case (k, Operation.Type.Backup) => k -> BackupState.start(k).backupCompleted() }
+            operations.collect { case (k, Operation.Type.Backup) =>
+              k -> BackupState.start(k, DatasetDefinition.generateId()).backupCompleted()
+            }
           }
       }
       override val recovery: RecoveryTracker.View = new MockRecoveryTracker {
@@ -161,6 +169,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.ResumeBackupWithState) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithEntry) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartExpiration) should be(0)
@@ -190,6 +199,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(1)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.ResumeBackupWithState) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithEntry) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartExpiration) should be(0)
@@ -213,6 +223,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(1)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.ResumeBackupWithState) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithEntry) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartExpiration) should be(0)
@@ -236,6 +247,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.ResumeBackupWithState) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(1)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithEntry) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartExpiration) should be(0)
@@ -259,6 +271,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.ResumeBackupWithState) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(1)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithEntry) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartExpiration) should be(0)
@@ -283,6 +296,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.ResumeBackupWithState) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithEntry) should be(1)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartExpiration) should be(0)
@@ -303,18 +317,13 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
         override def state: Future[Map[Operation.Id, BackupState]] =
           Future.successful(
             Map(
-              operation -> BackupState.start(operation = operation)
+              operation -> BackupState.start(operation = operation, definition = DatasetDefinition.generateId())
             )
           )
       }
     }
 
-    val mockExecutor = new MockOperationExecutor() {
-      override def active: Future[Map[Operation.Id, Operation.Type]] =
-        Future.successful(Map(operation -> Operation.Type.Backup))
-    }
-
-    val routes = createRoutes(executor = mockExecutor, trackers = mockTrackers)
+    val routes = createRoutes(executor = MockOperationExecutor(), trackers = mockTrackers)
 
     Get(s"/$operation/progress") ~> routes ~> check {
       status should be(StatusCodes.OK)
@@ -356,12 +365,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
     }
 
-    val mockExecutor = new MockOperationExecutor() {
-      override def active: Future[Map[Operation.Id, Operation.Type]] =
-        Future.successful(Map(operation -> Operation.Type.Recovery))
-    }
-
-    val routes = createRoutes(executor = mockExecutor, trackers = mockTrackers)
+    val routes = createRoutes(executor = MockOperationExecutor(), trackers = mockTrackers)
 
     Get(s"/$operation/progress") ~> routes ~> check {
       status should be(StatusCodes.OK)
@@ -400,7 +404,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     val operation = Operation.generateId()
 
-    val backup = BackupState.start(operation = operation)
+    val backup = BackupState.start(operation = operation, definition = DatasetDefinition.generateId())
 
     val entity1 = Paths.get("/tmp/a")
 
@@ -542,12 +546,37 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.ResumeBackupWithState) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithEntry) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartExpiration) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartValidation) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartKeyRotation) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.Stop) should be(1)
+    }
+  }
+
+  they should "support resuming backup operations" in {
+    val mockExecutor = MockOperationExecutor()
+    val routes = createRoutes(executor = mockExecutor)
+
+    val operation = Operation.generateId()
+
+    Put(s"/$operation/resume") ~> routes ~> check {
+      status should be(StatusCodes.Accepted)
+
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.ResumeBackupWithState) should be(1)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithEntry) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartExpiration) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartValidation) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartKeyRotation) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.Stop) should be(0)
     }
   }
 

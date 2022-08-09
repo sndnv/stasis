@@ -17,6 +17,7 @@ import stasis.client.model.{DatasetMetadata, FilesystemMetadata}
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.backup.stages.EntityDiscovery
 import stasis.client.ops.backup.{Backup, Providers}
+import stasis.client.ops.exceptions.OperationStopped
 import stasis.client.staging.DefaultFileStaging
 import stasis.core.packaging
 import stasis.core.routing.Node
@@ -106,6 +107,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(4)
 
+        tracker.statistics(MockBackupTracker.Statistic.Started) should be(1)
         tracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(7) // 2 directories + 5 files
         tracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(1)
         tracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(7) // 2 directories + 5 files
@@ -182,7 +184,89 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(2)
 
+        tracker.statistics(MockBackupTracker.Statistic.Started) should be(1)
         tracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(3)
+        tracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
+        tracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(3)
+        tracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(2)
+        tracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(2)
+        tracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(1)
+        tracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(2)
+        tracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(1)
+        tracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(1)
+        tracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
+        tracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
+      }
+    }
+  }
+
+  it should "process backups resumed with existing state" in {
+    val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(checksum)
+    val sourceFile2Metadata = "/ops/source-file-2".asTestResource.extractFileMetadata(checksum)
+    val sourceFile3Metadata = "/ops/source-file-3".asTestResource.extractFileMetadata(checksum)
+
+    val mockApiClient = MockServerApiEndpointClient()
+    val mockCoreClient = MockServerCoreEndpointClient()
+    val tracker = new MockBackupTracker
+
+    val backup = createBackup(
+      collector = Backup.Descriptor.Collector.WithState(
+        state = Fixtures.State.BackupTwoState.copy(
+          entities = Fixtures.State.BackupTwoState.entities.copy(
+            discovered = Set(
+              sourceFile1Metadata.path,
+              sourceFile2Metadata.path,
+              sourceFile3Metadata.path
+            )
+          )
+        )
+      ),
+      latestMetadata = DatasetMetadata(
+        contentChanged = Map(
+          sourceFile1Metadata.path -> sourceFile1Metadata.copy(isHidden = true),
+          sourceFile2Metadata.path -> sourceFile2Metadata,
+          sourceFile3Metadata.path -> sourceFile3Metadata.copy(checksum = BigInt(0))
+        ),
+        metadataChanged = Map.empty,
+        filesystem = FilesystemMetadata(
+          entities = Map(
+            sourceFile1Metadata.path -> FilesystemMetadata.EntityState.New,
+            sourceFile2Metadata.path -> FilesystemMetadata.EntityState.New,
+            sourceFile3Metadata.path -> FilesystemMetadata.EntityState.New
+          )
+        )
+      ),
+      clients = Clients(
+        api = mockApiClient,
+        core = mockCoreClient
+      ),
+      tracker = tracker
+    )
+
+    backup.start().map { _ =>
+      eventually[Assertion] {
+        // dataset entry for backup created; metadata crate pushed
+        // source-file-1 has metadata changes only; source-file-2 is unchanged; crate for source-file-3 pushed;
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryCreated) should be(1)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntriesRetrieved) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetDefinitionCreated) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetDefinitionRetrieved) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetDefinitionsRetrieved) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.PublicSchedulesRetrieved) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.PublicScheduleRetrieved) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.UserRetrieved) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceRetrieved) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+
+        mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
+        mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(2)
+
+        tracker.statistics(MockBackupTracker.Statistic.Started) should be(0)
+        tracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
         tracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
         tracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(3)
         tracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(2)
@@ -274,6 +358,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(2)
 
+        tracker.statistics(MockBackupTracker.Statistic.Started) should be(1)
         tracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(3)
         tracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
         tracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(3)
@@ -331,6 +416,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
       mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
       mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(1)
 
+      tracker.statistics(MockBackupTracker.Statistic.Started) should be(1)
       tracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(1)
       tracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
       tracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
@@ -343,6 +429,49 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
       tracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(1)
       tracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
     }
+  }
+
+  it should "support reusing existing backup operation IDs, if provided" in {
+    val existingId = Operation.generateId()
+
+    val backupWithRules = createBackup(
+      collector = Backup.Descriptor.Collector.WithRules(rules = Seq.empty),
+      latestMetadata = DatasetMetadata.empty,
+      clients = Clients(
+        api = MockServerApiEndpointClient(),
+        core = MockServerCoreEndpointClient()
+      ),
+      tracker = MockBackupTracker(),
+      checksum = checksum
+    )
+
+    backupWithRules.id should not be existingId
+
+    val backupWithEntities = createBackup(
+      collector = Backup.Descriptor.Collector.WithEntities(entities = Seq.empty),
+      latestMetadata = DatasetMetadata.empty,
+      clients = Clients(
+        api = MockServerApiEndpointClient(),
+        core = MockServerCoreEndpointClient()
+      ),
+      tracker = MockBackupTracker(),
+      checksum = checksum
+    )
+
+    backupWithEntities.id should not be existingId
+
+    val backupWithState = createBackup(
+      collector = Backup.Descriptor.Collector.WithState(Fixtures.State.BackupOneState.copy(operation = existingId)),
+      latestMetadata = DatasetMetadata.empty,
+      clients = Clients(
+        api = MockServerApiEndpointClient(),
+        core = MockServerCoreEndpointClient()
+      ),
+      tracker = MockBackupTracker(),
+      checksum = checksum
+    )
+
+    backupWithState.id should be(existingId)
   }
 
   it should "track successful backup operations" in {
@@ -359,6 +488,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         result should be(Done)
 
         eventually[Assertion] {
+          tracker.statistics(MockBackupTracker.Statistic.Started) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
@@ -391,6 +521,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         e shouldBe a[RuntimeException]
 
         eventually[Assertion] {
+          tracker.statistics(MockBackupTracker.Statistic.Started) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
@@ -401,7 +532,40 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
           tracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(1)
-          tracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
+          tracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
+        }
+      }
+  }
+
+  it should "track stopped backup operations" in {
+    import Backup._
+
+    val tracker = new MockBackupTracker
+    implicit val id: Operation.Id = Operation.generateId()
+
+    val operation: Future[Done] = Future.failed(OperationStopped(message = "Stopped"))
+    val trackedOperation: Future[Done] = operation.trackWith(tracker)
+
+    trackedOperation
+      .map { result =>
+        fail(s"Unexpected result received: [$result]")
+      }
+      .recover { case NonFatal(e) =>
+        e shouldBe an[OperationStopped]
+
+        eventually[Assertion] {
+          tracker.statistics(MockBackupTracker.Statistic.Started) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
         }
       }
   }
@@ -427,8 +591,9 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     backup.stop()
 
     eventually[Assertion] {
+      tracker.statistics(MockBackupTracker.Statistic.Started) should be(1)
       tracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
-      tracker.statistics(MockBackupTracker.Statistic.Completed) should be(1)
+      tracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
     }
   }
 
@@ -526,6 +691,24 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
 
     Backup.Descriptor.Collector.WithEntities(entities = Seq.empty).asDiscoveryCollector should be(
       EntityDiscovery.Collector.WithEntities(entities = Seq.empty)
+    )
+
+    Backup.Descriptor.Collector.WithState(state = Fixtures.State.BackupOneState).asDiscoveryCollector should be(
+      EntityDiscovery.Collector.WithState(state = Fixtures.State.BackupOneState)
+    )
+  }
+
+  it should "provide an existing state, if available" in {
+    Backup.Descriptor.Collector.WithRules(rules = Seq.empty).existingState should be(
+      None
+    )
+
+    Backup.Descriptor.Collector.WithEntities(entities = Seq.empty).existingState should be(
+      None
+    )
+
+    Backup.Descriptor.Collector.WithState(state = Fixtures.State.BackupOneState).existingState should be(
+      Some(Fixtures.State.BackupOneState)
     )
   }
 

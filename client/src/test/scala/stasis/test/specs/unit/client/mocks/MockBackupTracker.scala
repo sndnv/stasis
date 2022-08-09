@@ -6,6 +6,7 @@ import stasis.client.collection.rules.Rule
 import stasis.client.model.{EntityMetadata, SourceEntity}
 import stasis.client.tracking.BackupTracker
 import stasis.client.tracking.state.BackupState
+import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.client.mocks.MockBackupTracker.Statistic
@@ -16,6 +17,7 @@ import scala.concurrent.Future
 
 class MockBackupTracker extends BackupTracker {
   private val stats: Map[Statistic, AtomicInteger] = Map(
+    Statistic.Started -> new AtomicInteger(0),
     Statistic.EntityDiscovered -> new AtomicInteger(0),
     Statistic.SpecificationProcessed -> new AtomicInteger(0),
     Statistic.EntityExamined -> new AtomicInteger(0),
@@ -34,6 +36,9 @@ class MockBackupTracker extends BackupTracker {
 
   override def updates(operation: Operation.Id): Source[BackupState, NotUsed] =
     Source.empty
+
+  override def started(definition: DatasetDefinition.Id)(implicit operation: Operation.Id): Unit =
+    stats(Statistic.Started).incrementAndGet()
 
   override def entityDiscovered(entity: Path)(implicit operation: Operation.Id): Unit =
     stats(Statistic.EntityDiscovered).incrementAndGet()
@@ -83,8 +88,11 @@ class MockBackupTracker extends BackupTracker {
 }
 
 object MockBackupTracker {
+  def apply(): MockBackupTracker = new MockBackupTracker()
+
   sealed trait Statistic
   object Statistic {
+    case object Started extends Statistic
     case object EntityDiscovered extends Statistic
     case object SpecificationProcessed extends Statistic
     case object EntityExamined extends Statistic

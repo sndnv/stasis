@@ -13,6 +13,7 @@ import stasis.client.collection.RecoveryCollector
 import stasis.client.encryption.secrets.{DeviceMetadataSecret, DeviceSecret}
 import stasis.client.model.{DatasetMetadata, FilesystemMetadata}
 import stasis.client.ops.ParallelismConfig
+import stasis.client.ops.exceptions.OperationStopped
 import stasis.client.ops.recovery.Recovery.PathQuery
 import stasis.client.ops.recovery.{Providers, Recovery}
 import stasis.client.staging.DefaultFileStaging
@@ -339,7 +340,36 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
           mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(1)
-          mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(1)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(0)
+        }
+      }
+  }
+
+  it should "track stopped recovery operations" in {
+    import Recovery._
+
+    val mockTracker = new MockRecoveryTracker
+    implicit val id: Operation.Id = Operation.generateId()
+
+    val operation: Future[Done] = Future.failed(OperationStopped(message = "Stopped"))
+    val trackedOperation: Future[Done] = operation.trackWith(mockTracker)
+
+    trackedOperation
+      .map { result =>
+        fail(s"Unexpected result received: [$result]")
+      }
+      .recover { case NonFatal(e) =>
+        e shouldBe an[OperationStopped]
+
+        eventually[Assertion] {
+          mockTracker.statistics(MockRecoveryTracker.Statistic.EntityExamined) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.EntityCollected) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessingStarted) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.EntityPartProcessed) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.EntityProcessed) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.MetadataApplied) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
+          mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(0)
         }
       }
   }
@@ -375,7 +405,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
 
     eventually[Assertion] {
       mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
-      mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(1)
+      mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(0)
     }
   }
 

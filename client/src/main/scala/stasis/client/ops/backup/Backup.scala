@@ -8,9 +8,11 @@ import stasis.client.collection.rules.Rule
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.DatasetMetadata
 import stasis.client.ops.ParallelismConfig
+import stasis.client.ops.backup.Backup.Descriptor.Collector
 import stasis.client.ops.backup.stages._
 import stasis.client.ops.exceptions.{EntityProcessingFailure, OperationStopped}
 import stasis.client.tracking.BackupTracker
+import stasis.client.tracking.state.BackupState
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.ops.Operation
 
@@ -45,7 +47,9 @@ class Backup(
 
   private implicit val ec: ExecutionContext = system.executionContext
 
-  override implicit val id: Operation.Id = Operation.generateId()
+  override implicit val id: Operation.Id = descriptor.collector.existingState
+    .map(_.operation)
+    .getOrElse(Operation.generateId())
 
   override val `type`: Operation.Type = Operation.Type.Backup
 
@@ -55,15 +59,21 @@ class Backup(
     stages.entityDiscovery
       .via(stages.entityCollection)
       .via(stages.entityProcessing)
-      .via(stages.metadataCollection)
+      .via(stages.metadataCollection(descriptor.collector.existingState))
       .via(stages.metadataPush)
       .via(killSwitch.flow)
       .withAttributes(ActorAttributes.supervisionStrategy(supervision))
 
-  override def start(): Future[Done] =
+  override def start(): Future[Done] = {
+    descriptor.collector match {
+      case Collector.WithState(_) => () // do nothing, state already exists
+      case _                      => providers.track.started(definition = descriptor.targetDataset.id)
+    }
+
     stream
       .runWith(Sink.ignore)
       .trackWith(providers.track)
+  }
 
   override def stop(): Unit =
     killSwitch.abort(OperationStopped(s"Operation [${id.toString}] stopped by user"))
@@ -106,16 +116,29 @@ object Backup {
   object Descriptor {
     sealed trait Collector {
       def asDiscoveryCollector: EntityDiscovery.Collector
+      def existingState: Option[BackupState]
     }
+
     object Collector {
       final case class WithRules(rules: Seq[Rule]) extends Collector {
         override def asDiscoveryCollector: EntityDiscovery.Collector =
           EntityDiscovery.Collector.WithRules(rules)
+
+        override def existingState: Option[BackupState] = None
       }
 
       final case class WithEntities(entities: Seq[Path]) extends Collector {
         override def asDiscoveryCollector: EntityDiscovery.Collector =
           EntityDiscovery.Collector.WithEntities(entities)
+
+        override def existingState: Option[BackupState] = None
+      }
+
+      final case class WithState(state: BackupState) extends Collector {
+        override def asDiscoveryCollector: EntityDiscovery.Collector =
+          EntityDiscovery.Collector.WithState(state)
+
+        override def existingState: Option[BackupState] = Some(state)
       }
     }
 
@@ -152,16 +175,17 @@ object Backup {
   implicit class TrackedOperation(operation: Future[Done]) {
     def trackWith(track: BackupTracker)(implicit id: Operation.Id, ec: ExecutionContext): Future[Done] = {
       operation.onComplete {
-        case Success(_) | Failure(_: OperationStopped) =>
+        case Success(_) =>
           track.completed()
+
+        case Failure(_: OperationStopped) =>
+          () // do nothing
 
         case Failure(e: EntityProcessingFailure) =>
           track.failureEncountered(entity = e.entity, failure = e.cause)
-          track.completed()
 
         case Failure(e) =>
           track.failureEncountered(failure = e)
-          track.completed()
       }
 
       operation

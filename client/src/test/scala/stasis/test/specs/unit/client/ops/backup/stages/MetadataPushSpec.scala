@@ -90,6 +90,7 @@ class MetadataPushSpec extends AsyncUnitSpec { spec =>
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(1)
 
+        mockTracker.statistics(MockBackupTracker.Statistic.Started) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)

@@ -19,6 +19,7 @@ import stasis.shared.api.Formats._
 import stasis.shared.ops.Operation
 
 import java.nio.file.Path
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class Operations()(implicit context: Context) extends ApiRoutes {
@@ -151,24 +152,24 @@ class Operations()(implicit context: Context) extends ApiRoutes {
           path("progress") {
             get {
               extractExecutionContext { implicit ec =>
-                onSuccess(context.executor.find(operation)) {
-                  case Some(Operation.Type.Backup) =>
-                    onSuccess(context.trackers.backup.state.map(_(operation))) { backup =>
-                      log.debugN("API successfully retrieved progress of backup operation [{}]", operation)
-                      consumeEntity & complete(backup)
-                    }
+                val result: Future[Option[OperationState]] = context.trackers.backup.state.flatMap { backups =>
+                  backups.get(operation) match {
+                    case Some(state) => Future.successful(Some(state))
+                    case None        => context.trackers.recovery.state.map(_.get(operation))
+                  }
+                }
 
-                  case Some(Operation.Type.Recovery) =>
-                    onSuccess(context.trackers.recovery.state.map(_(operation))) { recovery =>
-                      log.debugN("API successfully retrieved progress of recovery operation [{}]", operation)
-                      consumeEntity & complete(recovery)
-                    }
+                onSuccess(result) {
+                  case Some(backup: BackupState) =>
+                    log.debugN("API successfully retrieved progress of backup operation [{}]", operation)
+                    consumeEntity & complete(backup)
+
+                  case Some(recovery: RecoveryState) =>
+                    log.debugN("API successfully retrieved progress of recovery operation [{}]", operation)
+                    consumeEntity & complete(recovery)
 
                   case _ =>
-                    log.debugN(
-                      "API could not retrieve progress of operation [{}]; operation not found",
-                      operation
-                    )
+                    log.debugN("API could not retrieve progress of operation [{}]; unexpected or missing operation", operation)
                     consumeEntity & complete(StatusCodes.NotFound)
                 }
               }
@@ -215,6 +216,14 @@ class Operations()(implicit context: Context) extends ApiRoutes {
                 consumeEntity & complete(StatusCodes.NoContent)
               }
             }
+          },
+          path("resume") {
+            put {
+              onSuccess(context.executor.resumeBackup(operation)) { _ =>
+                log.debugN("API resumed backup operation [{}]", operation)
+                consumeEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
+              }
+            }
           }
         )
       }
@@ -250,13 +259,6 @@ object Operations {
   final case class OperationStarted(operation: Operation.Id)
 
   final case class OperationProgress(operation: Operation.Id, `type`: Operation.Type, progress: Operation.Progress)
-
-  sealed trait OperationResult
-  object OperationResult {
-    final case class Backup(backup: BackupState) extends OperationResult
-    final case class Recovery(recovery: RecoveryState) extends OperationResult
-    case object Empty extends OperationResult
-  }
 
   final case class SpecificationRules(
     included: Seq[Path],

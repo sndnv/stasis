@@ -11,10 +11,11 @@ import stasis.client.model.{DatasetMetadata, FilesystemMetadata}
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.backup.stages.EntityDiscovery
+import stasis.client.tracking.state.BackupState.ProcessedSourceEntity
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.client.mocks._
+import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 
 import java.nio.file.Paths
 import scala.concurrent.ExecutionContext
@@ -90,6 +91,7 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
 
     entities.length should be(7) // 2 directories + 5 files
 
+    mockTracker.statistics(MockBackupTracker.Statistic.Started) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(7) // 2 directories + 5 files
     mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(1)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
@@ -149,7 +151,81 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
 
     entities.length should be(2) // 2 valid files
 
+    mockTracker.statistics(MockBackupTracker.Statistic.Started) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(2) // 2 valid files
+    mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
+    mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+    mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
+    mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(0)
+    mockTracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(0)
+    mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
+    mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
+    mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
+    mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
+    mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
+  }
+
+  it should "discover files (based on backup state)" in {
+    val sourceFile1 = "/ops/source-file-1".asTestResource
+    val sourceFile2 = "/ops/source-file-2".asTestResource
+
+    val mockTracker = new MockBackupTracker
+
+    val stage = new EntityDiscovery {
+      override protected def collector: EntityDiscovery.Collector = EntityDiscovery.Collector.WithState(
+        state = Fixtures.State.BackupOneState.copy(
+          entities = Fixtures.State.BackupOneState.entities.copy(
+            discovered = Set(
+              sourceFile1,
+              sourceFile2,
+              Fixtures.Metadata.FileThreeMetadata.path
+            ),
+            processed = Map(
+              Fixtures.Metadata.FileThreeMetadata.path -> ProcessedSourceEntity(
+                expectedParts = 1,
+                processedParts = 1,
+                metadata = Left(Fixtures.Metadata.FileThreeMetadata)
+              )
+            )
+          ),
+          completed = None
+        )
+      )
+
+      override protected def latestMetadata: Option[DatasetMetadata] = Some(DatasetMetadata.empty)
+      override protected def providers: Providers =
+        Providers(
+          checksum = Checksum.SHA256,
+          staging = new MockFileStaging(),
+          compression = MockCompression(),
+          encryptor = new MockEncryption(),
+          decryptor = new MockEncryption(),
+          clients = Clients(
+            api = MockServerApiEndpointClient(),
+            core = MockServerCoreEndpointClient()
+          ),
+          track = mockTracker,
+          telemetry = MockClientTelemetryContext()
+        )
+      override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
+      override protected implicit def mat: Materializer = SystemMaterializer(system).materializer
+      override protected implicit def ec: ExecutionContext = system.dispatcher
+    }
+
+    implicit val operationId: Operation.Id = Operation.generateId()
+
+    val collector = stage.entityDiscovery
+      .runWith(Sink.head)
+      .await
+
+    collector should be(a[BackupCollector.Default])
+
+    val entities = collector.collect().runWith(Sink.seq).await
+
+    entities.length should be(2) // 2 remaining entities
+
+    mockTracker.statistics(MockBackupTracker.Statistic.Started) should be(0)
+    mockTracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)

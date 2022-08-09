@@ -16,12 +16,13 @@ message RecoveryStateCollection {
 }
 
 message BackupState {
-  uint64 started = 1;
-  BackupEntities entities = 2;
-  optional uint64 metadataCollected = 3;
-  optional uint64 metadataPushed = 4;
-  repeated string failures = 5;
-  optional uint64 completed = 6;
+  string definition = 1;
+  uint64 started = 2;
+  BackupEntities entities = 3;
+  optional uint64 metadataCollected = 4;
+  optional uint64 metadataPushed = 5;
+  repeated string failures = 6;
+  optional uint64 completed = 7;
 }
 
 message RecoveryState {

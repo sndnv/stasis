@@ -12,6 +12,7 @@ import stasis.client.tracking.state.BackupState
 import stasis.client.tracking.state.BackupState.ProcessedSourceEntity
 import stasis.client.tracking.trackers.DefaultBackupTracker
 import stasis.core.persistence.backends.memory.EventLogMemoryBackend
+import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
@@ -39,6 +40,7 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
       original = Rule.Original(line = "", lineNumber = 0)
     )
 
+    tracker.started(definition = DatasetDefinition.generateId())
     tracker.entityDiscovered(entity = entity)
     tracker.specificationProcessed(unmatched = Seq.empty)
     tracker.specificationProcessed(unmatched = Seq(rule -> new RuntimeException("Test failure #1")))
@@ -87,50 +89,72 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
   it should "provide state updates" in {
     val tracker = createTracker()
 
-    implicit val operation: Operation.Id = Operation.generateId()
-
     val entity = Fixtures.Metadata.FileOneMetadata.path
 
     val initialState = tracker.state.await
     initialState should be(empty)
 
-    val expectedUpdates = 3
-    val updates = tracker.updates(operation).take(expectedUpdates.toLong).runWith(Sink.seq)
-    await(50.millis, withSystem = system)
+    eventually {
+      implicit val operation: Operation.Id = Operation.generateId()
 
-    tracker.entityDiscovered(entity)
-    await(50.millis, withSystem = system)
-    tracker.entityExamined(entity, metadataChanged = false, contentChanged = false)
-    await(50.millis, withSystem = system)
+      val expectedUpdates = 3
+      val updates = tracker.updates(operation).take(expectedUpdates.toLong).runWith(Sink.seq)
+      await(50.millis, withSystem = system)
+
+      tracker.started(definition = DatasetDefinition.generateId())
+
+      tracker.entityDiscovered(entity)
+      await(50.millis, withSystem = system)
+      tracker.entityExamined(entity, metadataChanged = false, contentChanged = false)
+      await(50.millis, withSystem = system)
+
+      updates.await.toList match {
+        case first :: second :: third :: Nil =>
+          first.entities.discovered should be(empty)
+          first.entities.examined should be(empty)
+          first.completed should be(empty)
+
+          second.entities.discovered should be(Set(entity))
+          second.entities.examined should be(empty)
+          second.completed should be(empty)
+
+          third.entities.discovered should be(Set(entity))
+          third.entities.examined should be(Set(entity))
+          third.completed should be(empty)
+
+        case other =>
+          fail(s"Unexpected result received: [$other]")
+      }
+    }
+  }
+
+  it should "fail to update state if a backup has not been started" in {
+    val tracker = createTracker()
+
+    implicit val operation: Operation.Id = Operation.generateId()
+
+    val initialState = tracker.state.await
+    initialState should be(empty)
+
+    val updates = tracker.updates(operation).takeWithin(500.millis).runWith(Sink.seq)
+
     tracker.completed()
 
-    updates.await.toList match {
-      case first :: second :: third :: Nil =>
-        first.entities.discovered should be(Set(entity))
-        first.entities.examined should be(empty)
-        first.completed should be(empty)
+    updates.await should be(empty)
 
-        second.entities.discovered should be(Set(entity))
-        second.entities.examined should be(Set(entity))
-        second.completed should be(empty)
-
-        third.entities.discovered should be(Set(entity))
-        third.entities.examined should be(Set(entity))
-        third.completed should not be empty
-
-      case other =>
-        fail(s"Unexpected result received: [$other]")
-    }
+    an[IllegalArgumentException] should be thrownBy DefaultBackupTracker.updateState(
+      event = DefaultBackupTracker.BackupEvent.Completed(operation),
+      state = Map.empty,
+      maxRetention = 1.second
+    )
   }
 
   it should "support dropping old state" in {
     val tracker = createTracker(maxRetention = 250.millis)
 
-    val entity = Fixtures.Metadata.FileOneMetadata.path
-
     val operation1 = Operation.generateId()
 
-    tracker.entityDiscovered(entity)(operation1)
+    tracker.started(definition = DatasetDefinition.generateId())(operation1)
     tracker.completed()(operation1)
 
     eventually[Assertion] {
@@ -138,7 +162,7 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
     }
 
     val operation2 = Operation.generateId()
-    tracker.entityDiscovered(entity)(operation2)
+    tracker.started(definition = DatasetDefinition.generateId())(operation2)
 
     eventually[Assertion] {
       tracker.state.await.keys.toSeq.sorted should be(Seq(operation1, operation2).sorted)
@@ -147,7 +171,7 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
     await(250.millis, withSystem = system)
 
     val operation3 = Operation.generateId()
-    tracker.entityDiscovered(entity)(operation3)
+    tracker.started(definition = DatasetDefinition.generateId())(operation3)
 
     eventually[Assertion] {
       tracker.state.await.keys.toSeq should be(Seq(operation3))
@@ -163,7 +187,7 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
       )
   )
 
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(7.seconds, 300.milliseconds)
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(10.seconds, 300.milliseconds)
 
   override implicit val timeout: Timeout = 7.seconds
 

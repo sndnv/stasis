@@ -1,14 +1,17 @@
 package stasis.client.tracking.state
 
 import stasis.client.model.{proto, EntityMetadata, SourceEntity}
+import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.ops.Operation
 
 import java.nio.file.{Path, Paths}
 import java.time.Instant
+import java.util.UUID
 import scala.util.{Failure, Success, Try}
 
 final case class BackupState(
   operation: Operation.Id,
+  definition: DatasetDefinition.Id,
   started: Instant,
   entities: BackupState.Entities,
   metadataCollected: Option[Instant],
@@ -86,11 +89,26 @@ final case class BackupState(
   def backupCompleted(): BackupState =
     copy(completed = Some(Instant.now()))
 
-  def remainingEntities(): Seq[SourceEntity] =
+  def remainingEntities(): Seq[Path] =
     completed match {
-      case Some(_) => Seq.empty
-      case None    => entities.collected.view.filterKeys(entity => !entities.processed.contains(entity)).values.toSeq
+      case Some(_) =>
+        Seq.empty
+
+      case None =>
+        entities.discovered
+          .filterNot(entity => entities.processed.contains(entity))
+          .toSeq
     }
+
+  def asMetadataChanges: (Map[Path, EntityMetadata], Map[Path, EntityMetadata]) =
+    entities.processed
+      .foldLeft((Map.empty[Path, EntityMetadata], Map.empty[Path, EntityMetadata])) {
+        case ((contentChanged, metadataChanged), (_, processed)) =>
+          processed.metadata match {
+            case Left(metadata)  => (contentChanged + (metadata.path -> metadata), metadataChanged)
+            case Right(metadata) => (contentChanged, metadataChanged + (metadata.path -> metadata))
+          }
+      }
 
   override def asProgress: Operation.Progress = Operation.Progress(
     total = entities.discovered.size,
@@ -101,8 +119,9 @@ final case class BackupState(
 }
 
 object BackupState {
-  def start(operation: Operation.Id): BackupState = BackupState(
+  def start(operation: Operation.Id, definition: DatasetDefinition.Id): BackupState = BackupState(
     operation = operation,
+    definition = definition,
     started = Instant.now,
     entities = Entities.empty,
     metadataCollected = None,
@@ -157,6 +176,7 @@ object BackupState {
   def toProto(state: BackupState): proto.state.BackupState =
     proto.state.BackupState(
       started = state.started.toEpochMilli,
+      definition = state.definition.toString,
       entities = Some(
         proto.state.BackupEntities(
           discovered = state.entities.discovered.map(_.toAbsolutePath.toString).toSeq,
@@ -186,6 +206,7 @@ object BackupState {
         Try {
           BackupState(
             operation = operation,
+            definition = UUID.fromString(state.definition),
             started = Instant.ofEpochMilli(state.started),
             entities = BackupState.Entities(
               discovered = entities.discovered.map(Paths.get(_)).toSet,

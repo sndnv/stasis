@@ -3,6 +3,7 @@ package stasis.test.specs.unit.client.tracking.state
 import stasis.client.model.{proto, SourceEntity}
 import stasis.client.tracking.state.BackupState
 import stasis.client.tracking.state.BackupState.{PendingSourceEntity, ProcessedSourceEntity}
+import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.Fixtures
@@ -11,7 +12,10 @@ import scala.util.{Failure, Success}
 
 class BackupStateSpec extends UnitSpec {
   "A BackupState" should "provide its type and state" in {
-    val backup = BackupState.start(operation = Operation.generateId())
+    val backup = BackupState.start(
+      operation = Operation.generateId(),
+      definition = DatasetDefinition.generateId()
+    )
 
     backup.`type` should be(Operation.Type.Backup)
     backup.isCompleted should be(false)
@@ -20,7 +24,10 @@ class BackupStateSpec extends UnitSpec {
   }
 
   it should "support collecting operation progress information" in {
-    val backup = BackupState.start(operation = Operation.generateId())
+    val backup = BackupState.start(
+      operation = Operation.generateId(),
+      definition = DatasetDefinition.generateId()
+    )
 
     backup.entities should be(BackupState.Entities.empty)
     backup.metadataCollected should be(empty)
@@ -85,19 +92,51 @@ class BackupStateSpec extends UnitSpec {
 
   it should "support providing entities that have not been processed" in {
     val backup = BackupState
-      .start(operation = Operation.generateId())
-      .entityCollected(entity = sourceEntity1)
-      .entityCollected(entity = sourceEntity3)
+      .start(operation = Operation.generateId(), definition = DatasetDefinition.generateId())
+      .entityDiscovered(entity = sourceEntity1.path)
+      .entityDiscovered(entity = sourceEntity3.path)
       .entityProcessed(entity = entity1, metadata = Left(Fixtures.Metadata.FileOneMetadata))
 
-    backup.remainingEntities() should be(Seq(sourceEntity3))
+    backup.remainingEntities() should be(Seq(sourceEntity3.path))
 
     backup.backupCompleted().remainingEntities() should be(Seq.empty)
   }
 
+  it should "support providing entities as metadata changes" in {
+    val backup = BackupState
+      .start(operation = Operation.generateId(), definition = DatasetDefinition.generateId())
+      .entityProcessed(
+        entity = Fixtures.Metadata.FileOneMetadata.path,
+        metadata = Right(Fixtures.Metadata.FileOneMetadata) // metadata changed
+      )
+      .entityProcessed(
+        entity = Fixtures.Metadata.FileTwoMetadata.path,
+        metadata = Left(Fixtures.Metadata.FileTwoMetadata) // content changed
+      )
+      .entityProcessed(
+        entity = Fixtures.Metadata.FileThreeMetadata.path,
+        metadata = Right(Fixtures.Metadata.FileThreeMetadata) // metadata changed
+      )
+
+    val (contentChanged, metadataChanged) = backup.asMetadataChanges
+
+    contentChanged should be(
+      Map(
+        Fixtures.Metadata.FileTwoMetadata.path -> Fixtures.Metadata.FileTwoMetadata
+      )
+    )
+
+    metadataChanged should be(
+      Map(
+        Fixtures.Metadata.FileOneMetadata.path -> Fixtures.Metadata.FileOneMetadata,
+        Fixtures.Metadata.FileThreeMetadata.path -> Fixtures.Metadata.FileThreeMetadata
+      )
+    )
+  }
+
   it should "support extracting a pending backup's progress" in {
     val backup = BackupState
-      .start(operation = Operation.generateId())
+      .start(operation = Operation.generateId(), definition = DatasetDefinition.generateId())
       .entityDiscovered(entity = entity1)
       .entityExamined(entity = entity2)
       .entityCollected(entity = sourceEntity1)
