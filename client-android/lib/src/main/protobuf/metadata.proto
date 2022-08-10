@@ -60,6 +60,15 @@ message EntityState {
     }
 }
 
+message DatasetEntry {
+    Uuid id = 1;
+    Uuid definition = 2;
+    Uuid device = 3;
+    repeated Uuid data = 4;
+    Uuid metadata = 5;
+    int64 created = 6;
+}
+
 message Uuid {
     int64 mostSignificantBits = 1;
     int64 leastSignificantBits = 2;

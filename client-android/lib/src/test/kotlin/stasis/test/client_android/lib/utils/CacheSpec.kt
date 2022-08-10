@@ -1,5 +1,6 @@
 package stasis.test.client_android.lib.utils
 
+import io.kotest.assertions.fail
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
@@ -8,6 +9,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import stasis.client_android.lib.utils.Cache
+import stasis.client_android.lib.utils.Try
+import stasis.test.client_android.lib.ResourceHelpers.FileSystemSetup
+import stasis.test.client_android.lib.ResourceHelpers.content
+import stasis.test.client_android.lib.ResourceHelpers.createMockFileSystem
+import stasis.test.client_android.lib.ResourceHelpers.files
 import stasis.test.client_android.lib.awaitAndThen
 import stasis.test.client_android.lib.collectPeriodically
 import stasis.test.client_android.lib.eventually
@@ -80,6 +86,125 @@ class CacheSpec : WordSpec({
             }
 
             val cache = Cache.Map<String, String>()
+
+            loadedValues.get() shouldBe (0)
+            cache.get(key) shouldBe (null)
+
+            val e = shouldThrow<RuntimeException> {
+                cache.getOrLoad(key, load)
+            }
+
+            e.message shouldBe ("Test failure")
+
+            loadedValues.get() shouldBe (1)
+            cache.get(key) shouldBe (null)
+        }
+    }
+
+    "A File Cache" should {
+        val setup = FileSystemSetup.Unix
+
+        val serdes = object : Cache.File.Serdes<String, String> {
+            override fun serializeKey(key: String): String = key
+            override fun serializeValue(value: String): ByteArray = value.toByteArray()
+            override fun deserializeValue(value: ByteArray): Try<String> = Try.Success(String(value))
+        }
+
+        "support caching data"  {
+            val (filesystem, _) = createMockFileSystem(setup)
+
+            val target = filesystem.getPath("/cache")
+
+            val loadedValues = AtomicInteger(0)
+
+            val load: suspend (String) -> String = {
+                loadedValues.incrementAndGet()
+                value
+            }
+
+            val cache = Cache.File(target, serdes)
+
+            loadedValues.get() shouldBe (0)
+            cache.get(key) shouldBe (null)
+
+            cache.getOrLoad(key, load) shouldBe (value)
+            cache.getOrLoad(key, load) shouldBe (value)
+            cache.getOrLoad(key, load) shouldBe (value)
+
+            loadedValues.get() shouldBe (1)
+
+            val cachedPath = when (val file = target.files().firstOrNull()) {
+                null -> fail("Expected at least one file but none were found")
+                else -> file
+            }
+
+            val content = cachedPath.content()
+            val deserialized = serdes.deserializeValue(content.toByteArray())
+            deserialized shouldBe (Try.Success(value))
+        }
+
+        "support explicitly adding data" {
+            val (filesystem, _) = createMockFileSystem(setup)
+
+            val target = filesystem.getPath("/cache")
+
+            val cache = Cache.File(target, serdes)
+
+            cache.get(key) shouldBe (null)
+            cache.put(key, value)
+            cache.get(key) shouldBe (value)
+
+            val cachedPath = when (val file = target.files().firstOrNull()) {
+                null -> fail("Expected at least one file but none were found")
+                else -> file
+            }
+
+            val content = cachedPath.content()
+            val deserialized = serdes.deserializeValue(content.toByteArray())
+            deserialized shouldBe (Try.Success(value))
+        }
+
+        "support removing data" {
+            val (filesystem, _) = createMockFileSystem(setup)
+
+            val target = filesystem.getPath("/cache")
+
+            val loadedValues = AtomicInteger(0)
+
+            val load: suspend (String) -> String = {
+                loadedValues.incrementAndGet()
+                value
+            }
+
+            val cache = Cache.File(target, serdes)
+
+            loadedValues.get() shouldBe (0)
+            cache.get(key) shouldBe (null)
+
+            cache.getOrLoad(key, load) shouldBe (value)
+
+            cache.remove(key)
+            cache.get(key) shouldBe (null)
+
+            cache.getOrLoad(key, load) shouldBe (value)
+            cache.getOrLoad(key, load) shouldBe (value)
+
+            loadedValues.get() shouldBe (2)
+        }
+
+        "not update the cache if the load operation fails" {
+            val (filesystem, _) = createMockFileSystem(setup)
+
+            val target = filesystem.getPath("/cache")
+
+            val loadedValues = AtomicInteger(0)
+
+            val load: suspend (String) -> String = {
+                loadedValues.incrementAndGet()
+                throw RuntimeException("Test failure")
+            }
+
+            val cache = Cache.File(target, serdes)
 
             loadedValues.get() shouldBe (0)
             cache.get(key) shouldBe (null)

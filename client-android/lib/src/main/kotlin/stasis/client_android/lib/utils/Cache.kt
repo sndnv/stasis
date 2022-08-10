@@ -6,9 +6,15 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import stasis.client_android.lib.utils.NonFatal.nonFatal
+import stasis.client_android.lib.utils.Try.Companion.flatMap
+import java.nio.file.Files
+import java.nio.file.Path
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.io.path.deleteIfExists
+import kotlin.io.path.readBytes
+import kotlin.io.path.writeBytes
 import kotlin.math.min
 
 interface Cache<K : Any, V> {
@@ -62,6 +68,43 @@ interface Cache<K : Any, V> {
 
         override suspend fun remove(key: K) {
             map.remove(key)
+        }
+    }
+
+    /**
+     * File-based cache.
+     *
+     * @param target directory for storing state files
+     * @param serdes key and value de/serializers
+     */
+    class File<K : Any, V>(
+        private val target: Path,
+        private val serdes: Serdes<K, V>
+    ) : Cache<K, V> {
+        override suspend fun get(key: K): V? = Try {
+            key.asStateFile().readBytes()
+        }.flatMap { serdes.deserializeValue(it) }.toOption()
+
+        override suspend fun put(key: K, value: V) {
+            key.asStateFile().writeBytes(serdes.serializeValue(value))
+        }
+
+        override suspend fun getOrLoad(key: K, load: suspend (K) -> V?): V? =
+            get(key) ?: load(key)?.also { put(key, it) }
+
+        override suspend fun remove(key: K) {
+            key.asStateFile().deleteIfExists()
+        }
+
+        private fun K.asStateFile(): Path {
+            Files.createDirectories(target)
+            return target.resolve(serdes.serializeKey(this))
+        }
+
+        interface Serdes<K : Any, V> {
+            fun serializeKey(key: K): String
+            fun serializeValue(value: V): ByteArray
+            fun deserializeValue(value: ByteArray): Try<V>
         }
     }
 
