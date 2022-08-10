@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import stasis.client_android.lib.api.clients.ServerApiEndpointClient
 import stasis.client_android.lib.tracking.ServerTracker
+import java.lang.Long.max
 import java.time.Duration
 
 class DefaultServerMonitor(
@@ -36,7 +37,7 @@ class DefaultServerMonitor(
             // do nothing
         } catch (e: Throwable) {
             tracker.unreachable(api.server)
-            delay(timeMillis = interval.toMillis() / 2)
+            delay(timeMillis = max(interval.toMillis() / 10, initialDelay.toMillis()))
         } finally {
             scheduleNextPing()
         }
