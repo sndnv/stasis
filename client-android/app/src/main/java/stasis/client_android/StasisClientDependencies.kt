@@ -42,6 +42,8 @@ import stasis.client_android.lib.security.HttpCredentials
 import stasis.client_android.lib.staging.DefaultFileStaging
 import stasis.client_android.lib.utils.Cache
 import stasis.client_android.lib.utils.Reference
+import stasis.client_android.persistence.cache.DatasetEntryCacheFileSerdes
+import stasis.client_android.persistence.cache.DatasetMetadataCacheFileSerdes
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getAuthenticationConfig
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getServerApiConfig
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getServerCoreConfig
@@ -281,16 +283,16 @@ object StasisClientDependencies {
     @Singleton
     @Provides
     fun provideDatasetEntriesCache(
-        dispatcher: CoroutineDispatcher
+        application: Application
     ): Cache<DatasetEntryId, DatasetEntry> =
-        expiringCache(dispatcher, expiration = Defaults.DatasetEntriesExpiration)
+        persistedCache(name = "dataset_entries", application = application, serdes = DatasetEntryCacheFileSerdes)
 
     @Singleton
     @Provides
     fun provideDatasetMetadataCache(
-        dispatcher: CoroutineDispatcher
+        application: Application
     ): Cache<DatasetEntryId, DatasetMetadata> =
-        expiringCache(dispatcher, expiration = Defaults.DatasetMetadataExpiration)
+        persistedCache(name = "dataset_metadata", application = application, serdes = DatasetMetadataCacheFileSerdes)
 
     @Singleton
     @Provides
@@ -333,12 +335,20 @@ object StasisClientDependencies {
             scope = CoroutineScope(dispatcher)
         )
 
+    private fun <K : Any, V> persistedCache(
+        name: String,
+        application: Application,
+        serdes: Cache.File.Serdes<K, V>
+    ): Cache<K, V> =
+        Cache.File(
+            target = application.applicationContext.cacheDir.toPath().resolve(name),
+            serdes = serdes
+        )
+
     object Defaults {
         const val MaxBackupPartSize: Long = 32L * 1024L * 1024L // 128MB
 
         val DatasetDefinitionsExpiration: Duration = Duration.ofSeconds(90)
-        val DatasetEntriesExpiration: Duration = Duration.ofSeconds(90)
-        val DatasetMetadataExpiration: Duration = Duration.ofSeconds(90)
 
         val UserRefreshInterval: Duration = Duration.ofMinutes(5)
         val DeviceRefreshInterval: Duration = Duration.ofMinutes(5)
