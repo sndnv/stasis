@@ -15,7 +15,7 @@ class SelfSignedCertificateGeneratorSpec extends UnitSpec {
     val commonName = "localhost"
     val location = "test-location"
     val country = "test-country"
-    val distinguishedName = s"CN=$commonName, L=$location, C=$country"
+    val distinguishedName = s"CN=$commonName,L=$location,C=$country"
 
     val algorithm = "RSA"
     val size = 512
@@ -33,8 +33,8 @@ class SelfSignedCertificateGeneratorSpec extends UnitSpec {
       case Success((privateKey, certificate)) =>
         privateKey.getAlgorithm should be(algorithm)
 
-        certificate.getSubjectDN.getName should be(distinguishedName)
-        certificate.getIssuerDN.getName should be(distinguishedName)
+        certificate.getSubjectX500Principal.getName should be(distinguishedName)
+        certificate.getIssuerX500Principal.getName should be(distinguishedName)
         certificate.getSigAlgName should be("SHA256withRSA")
 
         noException should be thrownBy {

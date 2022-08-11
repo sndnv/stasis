@@ -1,6 +1,7 @@
 package stasis.test.client_android.lib.compression
 
 import io.kotest.core.spec.style.WordSpec
+import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
 import okio.Buffer
 import okio.ByteString.Companion.decodeBase64
@@ -10,7 +11,8 @@ import stasis.client_android.lib.compression.Gzip
 class GzipSpec : WordSpec({
     "A Gzip encoder/decoder implementation" should {
         val decompressedData = "some-decompressed-data"
-        val compressedData = "H4sIAAAAAAAAACrOz03VTUlNzs8tKEotLk5N0U1JLEkEAAAA//8DAG894xUWAAAA"
+        val compressedData11 = "H4sIAAAAAAAAACrOz03VTUlNzs8tKEotLk5N0U1JLEkEAAAA//8DAG894xUWAAAA" // jdk11
+        val compressedData17 = "H4sIAAAAAAAA/yrOz03VTUlNzs8tKEotLk5N0U1JLEkEAAAA//8DAG894xUWAAAA" // jdk17
 
         "provide its name" {
             Gzip.name() shouldBe ("gzip")
@@ -23,14 +25,18 @@ class GzipSpec : WordSpec({
                 it.readByteString()
             }
 
-            actualCompressedData.base64() shouldBe (compressedData)
+            actualCompressedData.base64() shouldBeIn (listOf(compressedData11, compressedData17))
         }
 
         "decompress data" {
-            val source = Buffer().write(compressedData.decodeBase64()!!)
+            val source11 = Buffer().write(compressedData11.decodeBase64()!!)
+            val source17 = Buffer().write(compressedData17.decodeBase64()!!)
 
-            val actualDecompressedData = Gzip.decompress(source).buffer().readUtf8()
-            actualDecompressedData shouldBe (decompressedData)
+            val actualDecompressedData11 = Gzip.decompress(source11).buffer().readUtf8()
+            actualDecompressedData11 shouldBe (decompressedData)
+
+            val actualDecompressedData17 = Gzip.decompress(source17).buffer().readUtf8()
+            actualDecompressedData17 shouldBe (decompressedData)
         }
     }
 })

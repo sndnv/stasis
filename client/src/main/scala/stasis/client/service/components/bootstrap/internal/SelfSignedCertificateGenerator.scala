@@ -1,7 +1,6 @@
 package stasis.client.service.components.bootstrap.internal
 
 import java.security.cert.X509Certificate
-import java.security.spec.AlgorithmParameterSpec
 import java.security.{KeyPairGenerator, PrivateKey}
 import java.time.Instant
 import java.util.Date
@@ -40,8 +39,7 @@ object SelfSignedCertificateGenerator {
 
       val version = CertificateVersion.V3
 
-      val algorithm = AlgorithmId.getDefaultSigAlgForKey(privateKey)
-      val algorithmParams: AlgorithmParameterSpec = AlgorithmId.getDefaultAlgorithmParameterSpec(algorithm, privateKey)
+      val algorithm = "SHA256WithRSA"
 
       val info = new X509CertInfo()
       info.set(X509CertInfo.VALIDITY, new CertificateValidity(Date.from(validFrom), Date.from(validTo)))
@@ -49,11 +47,11 @@ object SelfSignedCertificateGenerator {
       info.set(s"${X509CertInfo.SUBJECT}.${X509CertInfo.DN_NAME}", owner)
       info.set(s"${X509CertInfo.ISSUER}.${X509CertInfo.DN_NAME}", owner)
       info.set(X509CertInfo.KEY, new CertificateX509Key(publicKey))
-      info.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(new AlgorithmId(AlgorithmId.sha256WithRSAEncryption_oid)))
+      info.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(AlgorithmId.get(algorithm)))
 
       {
         val certificate = new X509CertImpl(info)
-        certificate.sign(privateKey, algorithmParams, algorithm, None.orNull)
+        certificate.sign(privateKey, algorithm, None.orNull)
 
         val algorithmId = certificate.get(X509CertImpl.SIG_ALG)
         info.set(s"${CertificateAlgorithmId.NAME}.${CertificateAlgorithmId.ALGORITHM}", algorithmId)
@@ -61,7 +59,7 @@ object SelfSignedCertificateGenerator {
       }
 
       val certificate = new X509CertImpl(info)
-      certificate.sign(privateKey, algorithmParams, algorithm, None.orNull)
+      certificate.sign(privateKey, algorithm, None.orNull)
 
       (privateKey, certificate)
     }

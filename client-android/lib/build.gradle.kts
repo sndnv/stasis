@@ -30,9 +30,8 @@ dependencies {
 }
 
 tasks.withType<Test> {
-    minHeapSize = "128m"
-    maxHeapSize = "512m"
-    jvmArgs = listOf("-XX:MaxPermSize=256m")
+    minHeapSize = "512m"
+    maxHeapSize = "2048m"
     useJUnitPlatform()
 }
 
