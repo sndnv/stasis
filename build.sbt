@@ -16,23 +16,23 @@ lazy val versions = new {
   val akkaJson     = "1.39.2"
 
   // persistence
-  val geode    = "1.14.4"
+  val geode    = "1.15.0"
   val slick    = "3.3.3"
-  val postgres = "42.4.0"
-  val mariadb  = "3.0.5"
-  val sqlite   = "3.36.0.3"
-  val h2       = "2.1.212"
+  val postgres = "42.4.1"
+  val mariadb  = "3.0.7"
+  val sqlite   = "3.39.2.0"
+  val h2       = "2.1.214"
 
   // telemetry
-  val openTelemetry           = "1.15.0"
-  val openTelemetryPrometheus = "1.15.0-alpha"
-  val prometheus              = "0.15.0"
+  val openTelemetry           = "1.16.0"
+  val openTelemetryPrometheus = "1.16.0-alpha"
+  val prometheus              = "0.16.0"
 
   // testing
   val scalaCheck    = "1.16.0"
-  val scalaTest     = "3.2.12"
+  val scalaTest     = "3.2.13"
   val wiremock      = "2.33.2"
-  val mockito       = "1.17.7"
+  val mockito       = "1.17.12"
   val mockitoInline = "4.6.1"
   val jimfs         = "1.2"
 
@@ -41,7 +41,7 @@ lazy val versions = new {
   val jose4j   = "0.7.12"
   val hkdf     = "1.1.0"
   val appdirs  = "1.2.1"
-  val scopt    = "4.0.1"
+  val scopt    = "4.1.0"
   val logback  = "1.2.11"
 }
 
