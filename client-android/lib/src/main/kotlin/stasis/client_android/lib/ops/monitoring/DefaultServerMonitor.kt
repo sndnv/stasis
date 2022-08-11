@@ -37,7 +37,7 @@ class DefaultServerMonitor(
             // do nothing
         } catch (e: Throwable) {
             tracker.unreachable(api.server)
-            delay(timeMillis = max(interval.toMillis() / 10, initialDelay.toMillis()))
+            delay(timeMillis = max(interval.toMillis() / UnreachableIntervalReduction, initialDelay.toMillis()))
         } finally {
             scheduleNextPing()
         }
@@ -45,5 +45,9 @@ class DefaultServerMonitor(
 
     override suspend fun stop() {
         job.cancel()
+    }
+
+    companion object {
+        const val UnreachableIntervalReduction: Int = 10
     }
 }

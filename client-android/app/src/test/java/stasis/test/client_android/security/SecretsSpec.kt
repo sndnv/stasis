@@ -6,6 +6,8 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import okio.ByteString.Companion.toByteString
+import org.hamcrest.CoreMatchers.anyOf
+import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
@@ -14,8 +16,8 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.security.Secrets
-import java.util.*
-import javax.crypto.AEADBadTagException
+import java.util.Base64
+import java.util.UUID
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Config.OLDEST_SDK])
@@ -82,8 +84,10 @@ class SecretsSpec {
             // device secret decryption should fail because there's no valid
             // encrypted secret in the mock preferences
             val e = result.failed().get()
-            assertThat(e is AEADBadTagException, equalTo(true))
-            assertThat(e.message, equalTo("Input too short - need tag"))
+            assertThat(
+                e.message,
+                anyOf(containsString("Output buffer invalid"), equalTo("Input too short - need tag"))
+            )
         }
     }
 

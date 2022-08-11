@@ -45,7 +45,7 @@ lazy val versions = new {
   val logback  = "1.2.11"
 }
 
-lazy val jdkDockerImage = "openjdk:11"
+lazy val jdkDockerImage = "openjdk:17-slim-bullseye"
 
 lazy val server = (project in file("./server"))
   .settings(commonSettings)
@@ -81,6 +81,7 @@ lazy val client = (project in file("./client"))
       "io.prometheus"      % "simpleclient_hotspot"              % versions.prometheus
     ),
     dockerBaseImage          := jdkDockerImage,
+    Universal / javaOptions ++= Seq("-J--add-opens=java.base/sun.security.x509=ALL-UNNAMED"),
     Compile / PB.targets     := Seq(
       scalapb.gen(singleLineToProtoString = true) -> (Compile / sourceManaged).value
     ),

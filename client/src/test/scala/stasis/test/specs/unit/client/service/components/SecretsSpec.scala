@@ -102,7 +102,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       endpoint.stop()
 
       e.cause should be("credentials")
-      e.message should include("BadTagException")
+      e.message should include("Output buffer invalid")
     }
   }
 

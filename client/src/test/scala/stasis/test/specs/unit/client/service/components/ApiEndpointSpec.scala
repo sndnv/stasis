@@ -195,7 +195,8 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
       }
       .recover { case NonFatal(e: ServiceStartupFailure) =>
         e.cause should be("api")
-        e.message should include("SocketException: Permission denied")
+        e.message should include("BindException")
+        e.message should include("Permission denied")
       }
   }
 
