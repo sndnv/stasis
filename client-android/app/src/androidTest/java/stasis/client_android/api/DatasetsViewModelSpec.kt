@@ -20,7 +20,6 @@ import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefiniti
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.ops.search.Search
 import stasis.client_android.lib.security.CredentialsProvider
-import stasis.client_android.lib.utils.Cache
 import stasis.client_android.lib.utils.Reference
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Success
@@ -289,10 +288,7 @@ class DatasetsViewModelSpec {
 
         return DatasetsViewModel(
             application = ApplicationProvider.getApplicationContext(),
-            providerContextFactory = contextFactory,
-            datasetDefinitionsCache = Cache.Map(),
-            datasetEntriesCache = Cache.Map(),
-            datasetMetadataCache = Cache.Map()
+            providerContextFactory = contextFactory
         )
     }
 }

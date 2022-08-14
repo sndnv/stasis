@@ -7,9 +7,13 @@ import stasis.client_android.lib.model.server.datasets.DatasetEntry.Companion.to
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.utils.Cache
 import stasis.client_android.lib.utils.Try
+import java.util.UUID
 
 object DatasetEntryCacheFileSerdes : Cache.File.Serdes<DatasetEntryId, DatasetEntry> {
     override fun serializeKey(key: DatasetEntryId): String = key.toString()
+
+    override fun deserializeKey(key: String): DatasetEntryId? =
+        Try { UUID.fromString(key) }.toOption()
 
     override fun serializeValue(value: DatasetEntry): ByteArray =
         value.toByteString().toByteArray()

@@ -99,6 +99,40 @@ class CacheSpec : WordSpec({
             loadedValues.get() shouldBe (1)
             cache.get(key) shouldBe (null)
         }
+
+        "support retrieving all cached data" {
+            val cache = Cache.Map<String, String>()
+
+            cache.put("k1", "v1")
+            cache.put("k2", "v2")
+            cache.put("k3", "v3")
+            cache.put("k4", "v4")
+            cache.put("k5", "v5")
+
+            val expected = mapOf(
+                "k1" to "v1",
+                "k2" to "v2",
+                "k3" to "v3",
+                "k4" to "v4",
+                "k5" to "v5"
+            )
+
+            cache.all() shouldBe (expected)
+        }
+
+        "support clearing all cached data" {
+            val cache = Cache.Map<String, String>()
+
+            cache.put("k1", "v1")
+            cache.put("k2", "v2")
+            cache.put("k3", "v3")
+
+            cache.all().size shouldBe (3)
+
+            cache.clear()
+
+            cache.all() shouldBe (emptyMap())
+        }
     }
 
     "A File Cache" should {
@@ -106,6 +140,7 @@ class CacheSpec : WordSpec({
 
         val serdes = object : Cache.File.Serdes<String, String> {
             override fun serializeKey(key: String): String = key
+            override fun deserializeKey(key: String): String = key
             override fun serializeValue(value: String): ByteArray = value.toByteArray()
             override fun deserializeValue(value: ByteArray): Try<String> = Try.Success(String(value))
         }
@@ -217,6 +252,48 @@ class CacheSpec : WordSpec({
 
             loadedValues.get() shouldBe (1)
             cache.get(key) shouldBe (null)
+        }
+
+        "support retrieving all cached data" {
+            val (filesystem, _) = createMockFileSystem(setup)
+
+            val target = filesystem.getPath("/cache")
+
+            val cache = Cache.File(target, serdes)
+
+            cache.put("k1", "v1")
+            cache.put("k2", "v2")
+            cache.put("k3", "v3")
+            cache.put("k4", "v4")
+            cache.put("k5", "v5")
+
+            val expected = mapOf(
+                "k1" to "v1",
+                "k2" to "v2",
+                "k3" to "v3",
+                "k4" to "v4",
+                "k5" to "v5"
+            )
+
+            cache.all() shouldBe (expected)
+        }
+
+        "support clearing all cached data" {
+            val (filesystem, _) = createMockFileSystem(setup)
+
+            val target = filesystem.getPath("/cache")
+
+            val cache = Cache.File(target, serdes)
+
+            cache.put("k1", "v1")
+            cache.put("k2", "v2")
+            cache.put("k3", "v3")
+
+            cache.all().size shouldBe (3)
+
+            cache.clear()
+
+            cache.all() shouldBe (emptyMap())
         }
     }
 
@@ -345,6 +422,52 @@ class CacheSpec : WordSpec({
                 cache.get(key) shouldBe (null)
                 listenerCalls.get() shouldBe (2)
             }
+        }
+
+        "support retrieving all cached data" {
+            val expiration = Duration.ofMillis(250)
+
+            val cache = Cache.Expiring<String, String>(
+                underlying = Cache.Map(),
+                expiration = expiration,
+                scope = CoroutineScope(Dispatchers.IO)
+            )
+
+            cache.put("k1", "v1")
+            cache.put("k2", "v2")
+            cache.put("k3", "v3")
+            cache.put("k4", "v4")
+            cache.put("k5", "v5")
+
+            val expected = mapOf(
+                "k1" to "v1",
+                "k2" to "v2",
+                "k3" to "v3",
+                "k4" to "v4",
+                "k5" to "v5"
+            )
+
+            cache.all() shouldBe (expected)
+        }
+
+        "support clearing all cached data" {
+            val expiration = Duration.ofMillis(250)
+
+            val cache = Cache.Expiring<String, String>(
+                underlying = Cache.Map(),
+                expiration = expiration,
+                scope = CoroutineScope(Dispatchers.IO)
+            )
+
+            cache.put("k1", "v1")
+            cache.put("k2", "v2")
+            cache.put("k3", "v3")
+
+            cache.all().size shouldBe (3)
+
+            cache.clear()
+
+            cache.all() shouldBe (emptyMap())
         }
     }
 
@@ -521,6 +644,52 @@ class CacheSpec : WordSpec({
             delay(interval.toMillis() * 3)
 
             listenerCalls.get() shouldBe (actualCalls)
+        }
+
+        "support retrieving all cached data" {
+            val interval = Duration.ofMillis(100)
+
+            val cache = Cache.Refreshing<String, String>(
+                underlying = Cache.Map(),
+                interval = interval,
+                scope = CoroutineScope(Dispatchers.IO)
+            )
+
+            cache.put("k1", "v1")
+            cache.put("k2", "v2")
+            cache.put("k3", "v3")
+            cache.put("k4", "v4")
+            cache.put("k5", "v5")
+
+            val expected = mapOf(
+                "k1" to "v1",
+                "k2" to "v2",
+                "k3" to "v3",
+                "k4" to "v4",
+                "k5" to "v5"
+            )
+
+            cache.all() shouldBe (expected)
+        }
+
+        "support clearing all cached data" {
+            val interval = Duration.ofMillis(100)
+
+            val cache = Cache.Refreshing<String, String>(
+                underlying = Cache.Map(),
+                interval = interval,
+                scope = CoroutineScope(Dispatchers.IO)
+            )
+
+            cache.put("k1", "v1")
+            cache.put("k2", "v2")
+            cache.put("k3", "v3")
+
+            cache.all().size shouldBe (3)
+
+            cache.clear()
+
+            cache.all() shouldBe (emptyMap())
         }
     }
 })

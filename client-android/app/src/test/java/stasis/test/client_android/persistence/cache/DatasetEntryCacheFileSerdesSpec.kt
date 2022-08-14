@@ -44,6 +44,12 @@ class DatasetEntryCacheFileSerdesSpec {
     }
 
     @Test
+    fun deserializeKeys() {
+        val key = UUID.fromString("256daa1a-59ec-408c-8b0b-42909e01250e")
+        assertThat(DatasetEntryCacheFileSerdes.deserializeKey(key.toString()), equalTo(key))
+    }
+
+    @Test
     fun serializeValues() {
         assertThat(
             DatasetEntryCacheFileSerdes.serializeValue(datasetEntry),
