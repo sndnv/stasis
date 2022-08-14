@@ -215,6 +215,86 @@ class DefaultBackupTrackerSpec {
         }
     }
 
+    @Test
+    fun supportRemovingOperations() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
+        val trackerHandler = HandlerThread(
+            "DefaultBackupTrackerSpec",
+            Process.THREAD_PRIORITY_BACKGROUND
+        ).apply { start() }
+
+        val tracker = DefaultBackupTracker(context, trackerHandler.looper)
+
+        val operation1: OperationId = UUID.randomUUID()
+        val operation2: OperationId = UUID.randomUUID()
+        val file = Paths.get("test").toAbsolutePath()
+
+        val initialState = tracker.state.value
+
+        assertThat(initialState, equalTo(emptyMap()))
+
+        runBlocking {
+            tracker.started(operation1, definition = UUID.randomUUID())
+            tracker.entityExamined(operation1, entity = file)
+
+            tracker.started(operation2, definition = UUID.randomUUID())
+
+            eventually {
+                val state = tracker.state.value ?: emptyMap()
+                assertThat(state.containsKey(operation1), equalTo(true))
+                assertThat(state.containsKey(operation2), equalTo(true))
+            }
+
+            tracker.remove(operation1)
+
+            eventually {
+                val state = tracker.state.value ?: emptyMap()
+                assertThat(state.containsKey(operation1), equalTo(false))
+                assertThat(state.containsKey(operation2), equalTo(true))
+            }
+        }
+    }
+
+    @Test
+    fun supportClearingOperations() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
+        val trackerHandler = HandlerThread(
+            "DefaultBackupTrackerSpec",
+            Process.THREAD_PRIORITY_BACKGROUND
+        ).apply { start() }
+
+        val tracker = DefaultBackupTracker(context, trackerHandler.looper)
+
+        val operation1: OperationId = UUID.randomUUID()
+        val operation2: OperationId = UUID.randomUUID()
+        val file = Paths.get("test").toAbsolutePath()
+
+        val initialState = tracker.state.value
+
+        assertThat(initialState, equalTo(emptyMap()))
+
+        runBlocking {
+            tracker.started(operation1, definition = UUID.randomUUID())
+            tracker.entityExamined(operation1, entity = file)
+
+            tracker.started(operation2, definition = UUID.randomUUID())
+
+            eventually {
+                val state = tracker.state.value ?: emptyMap()
+                assertThat(state.containsKey(operation1), equalTo(true))
+                assertThat(state.containsKey(operation2), equalTo(true))
+            }
+
+            tracker.clear()
+
+            eventually {
+                assertThat(tracker.state.value, equalTo(emptyMap()))
+            }
+        }
+    }
+
     @get:Rule
     val instantTaskExecutorRule = InstantTaskExecutorRule()
 }

@@ -22,5 +22,17 @@
             android:text="@string/operations_list_empty"
             android:visibility="gone" />
 
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/operations_clear_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="16dp"
+            android:backgroundTint="@color/primary"
+            android:contentDescription="@string/operation_clear_button_hint"
+            app:borderWidth="0dp"
+            app:fabSize="mini"
+            app:srcCompat="@drawable/ic_close" />
+
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </layout>

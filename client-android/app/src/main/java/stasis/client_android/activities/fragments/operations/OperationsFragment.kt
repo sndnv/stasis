@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.view.doOnPreDraw
 import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
@@ -14,11 +15,13 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.Transitions.configureSourceTransition
 import stasis.client_android.databinding.FragmentOperationsBinding
+import stasis.client_android.lib.ops.Operation
 import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.providers.ProviderContext
 import stasis.client_android.utils.LiveDataExtensions.and
@@ -92,10 +95,44 @@ class OperationsFragment : Fragment() {
                         )
                     }
                 }
+            },
+            onOperationRemoveRequested = { type, operation ->
+                when (type) {
+                    is Operation.Type.Backup -> providerContext.trackers.backup.remove(operation)
+                    is Operation.Type.Recovery -> providerContext.trackers.recovery.remove(operation)
+                    else -> Unit // do nothing
+                }
             }
         )
 
         binding.operationsList.adapter = adapter
+
+        binding.operationsClearButton.setOnClickListener {
+            MaterialAlertDialogBuilder(context)
+                .setTitle(
+                    context.getString(R.string.operations_clear_confirm_title)
+                )
+                .setNeutralButton(
+                    context.getString(R.string.operations_clear_confirm_cancel_button_title)
+                ) { dialog, _ ->
+                    dialog.dismiss()
+                }
+                .setPositiveButton(
+                    context.getString(R.string.operations_clear_confirm_ok_button_title)
+                ) { dialog, _ ->
+                    providerContext.trackers.backup.clear()
+                    providerContext.trackers.recovery.clear()
+
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.toast_operation_removed),
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    dialog.dismiss()
+                }
+                .show()
+        }
 
         lifecycleScope.launch {
             (providerContext.trackers.backup.state

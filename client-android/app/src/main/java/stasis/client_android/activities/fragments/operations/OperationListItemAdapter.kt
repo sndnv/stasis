@@ -25,7 +25,8 @@ import stasis.client_android.lib.tracking.state.OperationState
 class OperationListItemAdapter(
     private val onOperationDetailsRequested: (View, OperationId, Operation.Type) -> Unit,
     private val onOperationStopRequested: (OperationId) -> Unit,
-    private val onOperationResumeRequested: (OperationId) -> Unit
+    private val onOperationResumeRequested: (OperationId) -> Unit,
+    private val onOperationRemoveRequested: (Operation.Type, OperationId) -> Unit
 ) : RecyclerView.Adapter<OperationListItemAdapter.ItemViewHolder>() {
     private var operations = emptyList<Pair<OperationId, Pair<OperationState, Boolean>>>()
 
@@ -38,7 +39,8 @@ class OperationListItemAdapter(
             binding = binding,
             onOperationDetailsRequested = onOperationDetailsRequested,
             onOperationStopRequested = onOperationStopRequested,
-            onOperationResumeRequested = onOperationResumeRequested
+            onOperationResumeRequested = onOperationResumeRequested,
+            onOperationRemoveRequested = onOperationRemoveRequested
         )
     }
 
@@ -54,7 +56,8 @@ class OperationListItemAdapter(
         private val binding: ListItemOperationBinding,
         private val onOperationDetailsRequested: (View, OperationId, Operation.Type) -> Unit,
         private val onOperationStopRequested: (OperationId) -> Unit,
-        private val onOperationResumeRequested: (OperationId) -> Unit
+        private val onOperationResumeRequested: (OperationId) -> Unit,
+        private val onOperationRemoveRequested: (Operation.Type, OperationId) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(operation: OperationId, state: OperationState, isActive: Boolean) {
             val progress = state.asProgress()
@@ -167,6 +170,33 @@ class OperationListItemAdapter(
                         Toast.makeText(
                             context,
                             context.getString(R.string.toast_operation_stopped),
+                            Toast.LENGTH_SHORT
+                        ).show()
+
+                        dialog.dismiss()
+                    }
+                    .show()
+            }
+
+            binding.operationRemoveButton.isVisible = !isActive
+            binding.operationRemoveButton.setOnClickListener {
+                MaterialAlertDialogBuilder(context)
+                    .setTitle(
+                        context.getString(R.string.operation_remove_confirm_title, operation.toMinimizedString())
+                    )
+                    .setNeutralButton(
+                        context.getString(R.string.operation_remove_confirm_cancel_button_title)
+                    ) { dialog, _ ->
+                        dialog.dismiss()
+                    }
+                    .setPositiveButton(
+                        context.getString(R.string.operation_remove_confirm_ok_button_title)
+                    ) { dialog, _ ->
+                        onOperationRemoveRequested(state.type, operation)
+
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.toast_operation_removed),
                             Toast.LENGTH_SHORT
                         ).show()
 

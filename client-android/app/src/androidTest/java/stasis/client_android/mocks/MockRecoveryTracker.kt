@@ -6,11 +6,12 @@ import stasis.client_android.lib.model.TargetEntity
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.tracking.RecoveryTracker
 import stasis.client_android.lib.tracking.state.RecoveryState
+import stasis.client_android.tracking.RecoveryTrackerManage
 import stasis.client_android.tracking.RecoveryTrackerView
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 
-class MockRecoveryTracker : RecoveryTracker, RecoveryTrackerView {
+class MockRecoveryTracker : RecoveryTracker, RecoveryTrackerView, RecoveryTrackerManage {
     private val stats: Map<Statistic, AtomicInteger> = mapOf(
         Statistic.EntityExamined to AtomicInteger(0),
         Statistic.EntityCollected to AtomicInteger(0),
@@ -30,6 +31,10 @@ class MockRecoveryTracker : RecoveryTracker, RecoveryTrackerView {
 
     override suspend fun stateOf(operation: OperationId): RecoveryState? =
         null
+
+    override fun remove(operation: OperationId) {}
+
+    override fun clear() {}
 
     override fun entityExamined(
         operation: OperationId,
