@@ -23,7 +23,7 @@ import java.time.Instant
 class DefaultRecoveryTracker(
     context: Context,
     looper: Looper
-) : RecoveryTracker, RecoveryTrackerView {
+) : RecoveryTracker, RecoveryTrackerView, RecoveryTrackerManage {
     private val trackedState: MutableLiveData<Map<OperationId, RecoveryState>> =
         MutableLiveData(emptyMap())
 
@@ -42,6 +42,20 @@ class DefaultRecoveryTracker(
 
     override suspend fun stateOf(operation: OperationId): RecoveryState? =
         trackedState.value?.get(operation)
+
+    override fun remove(operation: OperationId) {
+        handler.obtainMessage().let { msg ->
+            msg.obj = TrackerEvent.RemoveOperation(operation)
+            handler.sendMessage(msg)
+        }
+    }
+
+    override fun clear() {
+        handler.obtainMessage().let { msg ->
+            msg.obj = TrackerEvent.ClearOperations
+            handler.sendMessage(msg)
+        }
+    }
 
     override fun entityExamined(
         operation: OperationId,
@@ -206,6 +220,26 @@ class DefaultRecoveryTracker(
                             persistScheduled = false
                             store.persist(state = _state)
                         }
+
+                        is TrackerEvent.RemoveOperation -> {
+                            _state = _state - event.operation
+                            trackedState.postValue(_state)
+
+                            obtainMessage().let { message ->
+                                message.obj = TrackerEvent.PersistState
+                                sendMessage(message)
+                            }
+                        }
+
+                        is TrackerEvent.ClearOperations -> {
+                            _state = emptyMap()
+                            trackedState.postValue(_state)
+
+                            obtainMessage().let { message ->
+                                message.obj = TrackerEvent.PersistState
+                                sendMessage(message)
+                            }
+                        }
                     }
                 }
 
@@ -217,6 +251,8 @@ class DefaultRecoveryTracker(
     private sealed class TrackerEvent {
         object RestoreState : TrackerEvent()
         object PersistState : TrackerEvent()
+        data class RemoveOperation(val operation: OperationId) : TrackerEvent()
+        object ClearOperations : TrackerEvent()
     }
 
     private sealed class RecoveryEvent {
@@ -272,7 +308,7 @@ class DefaultRecoveryTracker(
     companion object {
         private const val TAG: String = "DefaultRecoveryTracker"
         private val MaxRetention: Duration = Duration.ofDays(30)
-        private val PersistAfterEvents: Int = 1000
+        private const val PersistAfterEvents: Int = 1000
         private val PersistAfterPeriod: Duration = Duration.ofSeconds(30)
     }
 }

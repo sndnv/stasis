@@ -328,6 +328,8 @@
     <string name="operation_stop_button_hint">Stop operation</string>
     <string name="operation_resume_button_title">Resume</string>
     <string name="operation_resume_button_hint">Resume operation</string>
+    <string name="operation_remove_button_hint">Remove operation</string>
+    <string name="operation_clear_button_hint">Clear all operations</string>
     <string name="operation_type_backup">Backup</string>
     <string name="operation_type_recovery">Recovery</string>
     <string name="operation_type_expiration">Expiration</string>
@@ -348,6 +350,12 @@
     <string name="operation_resume_confirm_title">Resume operation [%1$s]?</string>
     <string name="operation_resume_confirm_cancel_button_title">Cancel</string>
     <string name="operation_resume_confirm_ok_button_title">OK</string>
+    <string name="operation_remove_confirm_title">Remove operation [%1$s]?</string>
+    <string name="operation_remove_confirm_cancel_button_title">Cancel</string>
+    <string name="operation_remove_confirm_ok_button_title">OK</string>
+    <string name="operations_clear_confirm_title">Clear all operations?</string>
+    <string name="operations_clear_confirm_cancel_button_title">Cancel</string>
+    <string name="operations_clear_confirm_ok_button_title">OK</string>
     <string name="operation_field_title_metadata">Metadata</string>
     <string name="operation_field_title_errors">Errors</string>
     <string name="operation_field_title_stages">Stages</string>
@@ -440,6 +448,8 @@
     <string name="toast_schedule_assignment_removed">Schedule assignment removed</string>
     <string name="toast_operation_stopped">Operation stopped</string>
     <string name="toast_operation_resumed">Operation resumed</string>
+    <string name="toast_operation_removed">Operation removed</string>
+    <string name="toast_operations_cleared">Operations cleared</string>
     <string name="toast_restart_required_for_setting">The application needs to be restarted for this change to take effect</string>
 
     <!-- Retention -->

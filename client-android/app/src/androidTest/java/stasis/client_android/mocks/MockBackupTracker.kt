@@ -11,12 +11,13 @@ import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.tracking.BackupTracker
 import stasis.client_android.lib.tracking.state.BackupState
 import stasis.client_android.lib.utils.Either
+import stasis.client_android.tracking.BackupTrackerManage
 import stasis.client_android.tracking.BackupTrackerView
 import java.nio.file.Path
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicInteger
 
-class MockBackupTracker : BackupTracker, BackupTrackerView {
+class MockBackupTracker : BackupTracker, BackupTrackerView, BackupTrackerManage {
     private val stats: Map<Statistic, AtomicInteger> = mapOf(
         Statistic.Started to AtomicInteger(0),
         Statistic.EntityDiscovered to AtomicInteger(0),
@@ -37,6 +38,10 @@ class MockBackupTracker : BackupTracker, BackupTrackerView {
 
     override fun updates(operation: OperationId): LiveData<BackupState> =
         MutableLiveData(BackupState.start(operation, UUID.randomUUID()))
+
+    override fun remove(operation: OperationId) {}
+
+    override fun clear() {}
 
     override suspend fun stateOf(operation: OperationId): BackupState? =
         null
