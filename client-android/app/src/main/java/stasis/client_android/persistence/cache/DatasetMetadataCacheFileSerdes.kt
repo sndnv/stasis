@@ -10,11 +10,15 @@ import stasis.client_android.lib.model.DatasetMetadata.Companion.toDatasetMetada
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.utils.Cache
 import stasis.client_android.lib.utils.Try
+import java.util.UUID
 
 object DatasetMetadataCacheFileSerdes : Cache.File.Serdes<DatasetEntryId, DatasetMetadata> {
     private val compressor = Gzip
 
     override fun serializeKey(key: DatasetEntryId): String = key.toString()
+
+    override fun deserializeKey(key: String): DatasetEntryId? =
+        Try { UUID.fromString(key) }.toOption()
 
     override fun serializeValue(value: DatasetMetadata): ByteArray =
         compressor

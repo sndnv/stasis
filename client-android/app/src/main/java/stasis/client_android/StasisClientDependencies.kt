@@ -14,6 +14,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import stasis.client_android.lib.analysis.Checksum
+import stasis.client_android.lib.api.clients.CachedServerApiEndpointClient
 import stasis.client_android.lib.api.clients.Clients
 import stasis.client_android.lib.api.clients.DefaultServerApiEndpointClient
 import stasis.client_android.lib.api.clients.DefaultServerBootstrapEndpointClient
@@ -109,7 +110,10 @@ object StasisClientDependencies {
     fun provideProviderContextFactory(
         dispatcher: CoroutineDispatcher,
         trackers: DefaultTrackers,
-        trackerViews: TrackerViews
+        trackerViews: TrackerViews,
+        datasetDefinitionsCache: Cache<DatasetDefinitionId, DatasetDefinition>,
+        datasetEntriesCache: Cache<DatasetEntryId, DatasetEntry>,
+        datasetMetadataCache:  Cache<DatasetEntryId, DatasetMetadata>
     ): ProviderContext.Factory =
         object : ProviderContext.Factory {
             override fun getOrCreate(preferences: SharedPreferences): Reference<ProviderContext> =
@@ -186,15 +190,20 @@ object StasisClientDependencies {
                                 self = UUID.fromString(coreConfig.nodeId)
                             )
 
-                            val apiClient = DefaultServerApiEndpointClient(
-                                serverApiUrl = apiConfig.url,
-                                credentials = { HttpCredentials.OAuth2BearerToken(token = credentials.api.get().access_token) },
-                                decryption = DefaultServerApiEndpointClient.DecryptionContext(
-                                    core = coreClient,
-                                    deviceSecret = { credentials.deviceSecret.get() },
-                                    decoder = Aes
+                            val apiClient = CachedServerApiEndpointClient(
+                                underlying = DefaultServerApiEndpointClient(
+                                    serverApiUrl = apiConfig.url,
+                                    credentials = { HttpCredentials.OAuth2BearerToken(token = credentials.api.get().access_token) },
+                                    decryption = DefaultServerApiEndpointClient.DecryptionContext(
+                                        core = coreClient,
+                                        deviceSecret = { credentials.deviceSecret.get() },
+                                        decoder = Aes
+                                    ),
+                                    self = device
                                 ),
-                                self = device
+                                datasetDefinitionsCache = datasetDefinitionsCache,
+                                datasetEntriesCache = datasetEntriesCache,
+                                datasetMetadataCache = datasetMetadataCache
                             )
 
                             val search = DefaultSearch(
@@ -275,10 +284,8 @@ object StasisClientDependencies {
 
     @Singleton
     @Provides
-    fun provideDatasetDefinitionsCache(
-        dispatcher: CoroutineDispatcher
-    ): Cache<DatasetDefinitionId, DatasetDefinition> =
-        expiringCache(dispatcher, expiration = Defaults.DatasetDefinitionsExpiration)
+    fun provideDatasetDefinitionsCache(): Cache<DatasetDefinitionId, DatasetDefinition> =
+        inMemoryCache()
 
     @Singleton
     @Provides
@@ -315,15 +322,8 @@ object StasisClientDependencies {
     ): Cache.Refreshing<Int, List<Schedule>> =
         refreshingCache(dispatcher, interval = Defaults.SchedulesRefreshInterval)
 
-    private fun <K : Any, V> expiringCache(
-        dispatcher: CoroutineDispatcher,
-        expiration: Duration
-    ): Cache<K, V> =
-        Cache.Expiring(
-            underlying = Cache.Map(),
-            expiration = expiration,
-            scope = CoroutineScope(dispatcher)
-        )
+    private fun <K : Any, V> inMemoryCache(): Cache<K, V> =
+        Cache.Map()
 
     private fun <K : Any, V> refreshingCache(
         dispatcher: CoroutineDispatcher,
@@ -347,8 +347,6 @@ object StasisClientDependencies {
 
     object Defaults {
         const val MaxBackupPartSize: Long = 32L * 1024L * 1024L // 128MB
-
-        val DatasetDefinitionsExpiration: Duration = Duration.ofSeconds(90)
 
         val UserRefreshInterval: Duration = Duration.ofMinutes(5)
         val DeviceRefreshInterval: Duration = Duration.ofMinutes(5)

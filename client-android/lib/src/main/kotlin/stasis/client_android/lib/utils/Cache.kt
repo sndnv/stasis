@@ -16,6 +16,7 @@ import kotlin.io.path.deleteIfExists
 import kotlin.io.path.readBytes
 import kotlin.io.path.writeBytes
 import kotlin.math.min
+import kotlin.streams.toList
 
 interface Cache<K : Any, V> {
 
@@ -52,6 +53,16 @@ interface Cache<K : Any, V> {
     suspend fun remove(key: K)
 
     /**
+     * Retrieves all cached values.
+     */
+    suspend fun all(): kotlin.collections.Map<K, V>
+
+    /**
+     * Removes all cached values.
+     */
+    suspend fun clear()
+
+    /**
      * Simple in-memory cache backed by [ConcurrentHashMap].
      */
     class Map<K : Any, V> : Cache<K, V> {
@@ -69,6 +80,12 @@ interface Cache<K : Any, V> {
         override suspend fun remove(key: K) {
             map.remove(key)
         }
+
+        override suspend fun all(): kotlin.collections.Map<K, V> =
+            map
+
+        override suspend fun clear() =
+            map.clear()
     }
 
     /**
@@ -81,11 +98,14 @@ interface Cache<K : Any, V> {
         private val target: Path,
         private val serdes: Serdes<K, V>
     ) : Cache<K, V> {
-        override suspend fun get(key: K): V? = Try {
+        private val inMemory = Map<K, V>()
+
+        override suspend fun get(key: K): V? = inMemory.get(key) ?: Try {
             key.asStateFile().readBytes()
-        }.flatMap { serdes.deserializeValue(it) }.toOption()
+        }.flatMap { serdes.deserializeValue(it) }.toOption()?.also { inMemory.put(key, it) }
 
         override suspend fun put(key: K, value: V) {
+            inMemory.put(key, value)
             key.asStateFile().writeBytes(serdes.serializeValue(value))
         }
 
@@ -93,16 +113,31 @@ interface Cache<K : Any, V> {
             get(key) ?: load(key)?.also { put(key, it) }
 
         override suspend fun remove(key: K) {
+            inMemory.remove(key)
             key.asStateFile().deleteIfExists()
         }
+
+        override suspend fun all(): kotlin.collections.Map<K, V> =
+            keys()
+                .mapNotNull { key -> get(key)?.let { value: V -> key to value } }
+                .toMap()
+
+        override suspend fun clear() =
+            keys().forEach { remove(it) }
 
         private fun K.asStateFile(): Path {
             Files.createDirectories(target)
             return target.resolve(serdes.serializeKey(this))
         }
 
+        private fun keys(): List<K> =
+            Files.list(target)
+                .toList()
+                .mapNotNull { serdes.deserializeKey(it.fileName.toString()) }
+
         interface Serdes<K : Any, V> {
             fun serializeKey(key: K): String
+            fun deserializeKey(key: String): K?
             fun serializeValue(value: V): ByteArray
             fun deserializeValue(value: ByteArray): Try<V>
         }
@@ -124,6 +159,8 @@ interface Cache<K : Any, V> {
     ) : Cache<K, V> {
         private val listeners: ConcurrentLinkedQueue<(K) -> Unit> = ConcurrentLinkedQueue()
 
+        private val jobs: ConcurrentHashMap<K, Job> = ConcurrentHashMap()
+
         override suspend fun get(key: K): V? =
             underlying.get(key)
 
@@ -135,8 +172,19 @@ interface Cache<K : Any, V> {
         override suspend fun getOrLoad(key: K, load: suspend (K) -> V?): V? =
             underlying.getOrLoad(key, load = { k -> load(k)?.also { expire(k) } })
 
-        override suspend fun remove(key: K) =
+        override suspend fun remove(key: K) {
+            jobs.remove(key)?.cancel()
             underlying.remove(key)
+        }
+
+        override suspend fun all(): kotlin.collections.Map<K, V> =
+            underlying.all()
+
+        override suspend fun clear() {
+            jobs.forEach { it.value.cancel() }
+            jobs.clear()
+            underlying.clear()
+        }
 
         fun registerOnEntryExpiredListener(listener: (K) -> Unit) {
             listeners.add(listener)
@@ -148,11 +196,13 @@ interface Cache<K : Any, V> {
 
         private fun expire(key: K) {
             try {
-                scope.launch {
+                val job = scope.launch {
                     delay(timeMillis = expiration.toMillis())
                     remove(key)
                     listeners.forEach { it(key) }
                 }
+
+                jobs[key] = job
             } catch (_: CancellationException) {
                 // do nothing
             }
@@ -200,6 +250,15 @@ interface Cache<K : Any, V> {
         override suspend fun remove(key: K) {
             jobs.remove(key)?.cancel()
             underlying.remove(key)
+        }
+
+        override suspend fun all(): kotlin.collections.Map<K, V> =
+            underlying.all()
+
+        override suspend fun clear() {
+            jobs.forEach { it.value.cancel() }
+            jobs.clear()
+            underlying.clear()
         }
 
         fun registerOnEntryRefreshedListener(listener: (K, V?) -> Unit) {

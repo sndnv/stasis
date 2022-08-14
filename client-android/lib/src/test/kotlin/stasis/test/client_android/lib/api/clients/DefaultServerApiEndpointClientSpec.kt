@@ -33,7 +33,7 @@ import java.time.Instant
 import java.util.UUID
 
 class DefaultServerApiEndpointClientSpec : WordSpec({
-    "DefaultServerApiEndpointClient" should {
+    "A DefaultServerApiEndpointClient" should {
         val apiCredentials =
             HttpCredentials.BasicHttpCredentials(username = "some-user", password = "some-password")
 

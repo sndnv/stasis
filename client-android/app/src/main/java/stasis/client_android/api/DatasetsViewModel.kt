@@ -16,7 +16,6 @@ import stasis.client_android.lib.model.server.datasets.DatasetEntry
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.model.server.devices.DeviceId
 import stasis.client_android.lib.ops.search.Search
-import stasis.client_android.lib.utils.Cache
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Companion.map
 import stasis.client_android.persistence.config.ConfigRepository
@@ -29,9 +28,6 @@ import javax.inject.Inject
 class DatasetsViewModel @Inject constructor(
     application: Application,
     providerContextFactory: ProviderContext.Factory,
-    private val datasetDefinitionsCache: Cache<DatasetDefinitionId, DatasetDefinition>,
-    private val datasetEntriesCache: Cache<DatasetEntryId, DatasetEntry>,
-    private val datasetMetadataCache: Cache<DatasetEntryId, DatasetMetadata>
 ) : AndroidViewModel(application) {
     private val preferences: SharedPreferences =
         ConfigRepository.getPreferences(application.applicationContext)
@@ -68,13 +64,8 @@ class DatasetsViewModel @Inject constructor(
     }
 
     fun definition(definition: DatasetDefinitionId): LiveData<DatasetDefinition> = liveData {
-        datasetDefinitionsCache.getOrLoad(
-            key = definition,
-            load = {
-                providerContext.api.datasetDefinition(definition)
-                    .getOrRenderFailure(withContext = getApplication())
-            }
-        )
+        providerContext.api.datasetDefinition(definition)
+            .getOrRenderFailure(withContext = getApplication())
     }
 
     fun entries(forDefinition: DatasetDefinitionId): LiveData<List<DatasetEntry>> = liveData {
@@ -84,13 +75,8 @@ class DatasetsViewModel @Inject constructor(
     }
 
     fun entry(entry: DatasetEntryId): LiveData<DatasetEntry> = liveData {
-        datasetEntriesCache.getOrLoad(
-            key = entry,
-            load = {
-                providerContext.api.datasetEntry(entry)
-                    .getOrRenderFailure(withContext = getApplication())
-            }
-        )
+        providerContext.api.datasetEntry(entry)
+            .getOrRenderFailure(withContext = getApplication())
     }
 
     fun latestEntry(): LiveData<DatasetEntry?> = optionalLiveData {
@@ -104,13 +90,8 @@ class DatasetsViewModel @Inject constructor(
     }
 
     fun metadata(forEntry: DatasetEntry): LiveData<DatasetMetadata> = liveData {
-        datasetMetadataCache.getOrLoad(
-            key = forEntry.id,
-            load = {
-                providerContext.api.datasetMetadata(entry = forEntry)
-                    .getOrRenderFailure(withContext = getApplication())
-            }
-        )
+        providerContext.api.datasetMetadata(entry = forEntry)
+            .getOrRenderFailure(withContext = getApplication())
     }
 
     fun metadata(forDefinition: DatasetDefinitionId): LiveData<List<Pair<DatasetEntry, DatasetMetadata>>> =
@@ -118,17 +99,13 @@ class DatasetsViewModel @Inject constructor(
             val entries = providerContext.api.datasetEntries(definition = forDefinition)
                 .getOrRenderFailure(withContext = getApplication()) ?: emptyList()
 
-            entries.sortedByDescending { it.created }.map { entry ->
-                val metadata = datasetMetadataCache.getOrLoad(
-                    key = entry.id,
-                    load = {
-                        providerContext.api.datasetMetadata(entry = entry)
-                            .getOrRenderFailure(withContext = getApplication())
-                    }
-                )
-
-                metadata?.let { entry to it }
-            }.filterNotNull()
+            entries
+                .sortedByDescending { it.created }
+                .mapNotNull { entry ->
+                    val metadata = providerContext.api.datasetMetadata(entry = entry)
+                        .getOrRenderFailure(withContext = getApplication())
+                    metadata?.let { entry to it }
+                }
         }
 
     fun search(query: Regex, until: Instant?): LiveData<Search.Result> = liveData {
