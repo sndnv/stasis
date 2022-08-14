@@ -1,6 +1,7 @@
 package stasis.test.client_android.lib.encryption
 
 import io.kotest.core.spec.style.WordSpec
+import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
 import okio.Buffer
 import okio.ByteString.Companion.decodeBase64
@@ -51,26 +52,29 @@ class AesSpec : WordSpec({
             )
         )
 
-        val encryptedDatasetMetadata =
-            "C2/oy6GGTHp0fNQitirONsySgkCbV7diShOwLU7Trm0/" +
-                    "ExBqb2nGQH4+zMhpfNCBVptVM2V9koanOe8kvP1Scc" +
-                    "FbOLY9SwNrXO0W2j7qNUzx4oZ2SQMN2EQJrQ2Rus7+" +
-                    "CbNST4Tcqu1x18BucsSRPm6YfDjhUpT7NsCy2vQM/2" +
-                    "ufwsevNM3U//1kqURSpNVcpjRJ5RJW+iZy4CMfI2lc" +
-                    "xuWUbSSsPbDL2NSgV1g+x5FuUwDbEvtc9ww0BJWcW5" +
-                    "yXzWCAXOEWJqaPSXwBnF34dlqrGzfOTv5Cc2jg+a3u" +
-                    "EcUM6mYpM3PxfkJwEaPSqEyP9zFRZKt6W8UuTaxOqp" +
-                    "a1PPmcMESCYJobf4UWafUFe9GGJ3Jwr4cEYYqrYglm" +
-                    "kNlhThajy604ewvBfKUUgy0vC+d2U3gX5nrBhTGmn8" +
-                    "rCSABj1HXKQm+gNOMxHDW65KAThmX2rnGj3agK7WQv" +
-                    "6fccnmveVCjxh+U89lHXs9serf05hFC1bf/IzkrpgQ" +
-                    "OzBjVwIZHJglXif1WfK7A6RVK/Ii4S+RDEY4z1qyli" +
-                    "wjmNMrawBCwX+0Y9agTEHtLkwqq+u9J8xue49/eJdQ" +
-                    "A3Jx9/0GbesabxLTZHD7Ry3isyVMgmG1gLHgmBdvub" +
-                    "O1VRMj9mb+XKf+7PueHC5ghUzIiwXnt+UIgtdSIJCf" +
-                    "WAfWYqpe6PMSkysCEv4XOEy0WGmscYtHYMQinmVQe3" +
-                    "ClVORJ9/mbolmc01OJj4M7176G+IlbUHOlnAAZ6O+U" +
-                    "g0ehuc1TSXT0LKKtz4nzNsDkvUCXI5VZI="
+        val encryptedDatasetMetadata11 =
+            "HmbhwaypOBcEU1AhuKsDjI0+veHe83EmsKgSFnSfI8sd" +
+                    "L21k3hGfWZ/nv8j3Wdd1s2aatGFivHDQqIEy/XbEO/" +
+                    "t57k/hjMsj1x15u++p9cbXllxAWEvACpr8AtoCehZk" +
+                    "I9TankVFir2Yfr/N7tpMdNNw/UmA3Cord1AOZ02eRK" +
+                    "mbP7xT4Ppbu17AnAD4zNomR4txkDe7Xdr0eyHqtXsW" +
+                    "okosNgSd+QZXe/G374c1MGOMbBLfPICjxfxCUOkgG/" +
+                    "1pogMMHNTQM8HrwNqweP1h4n9eEjoK4fQpcSwwwspG" +
+                    "beplgBGjNJTZDGN5N83TMunCcgk5P5KQTKXh77Mpyv" +
+                    "pALCOEHukCm0dWCyqGSGAUKsl0oP3zCoBxY+gTsnHo" +
+                    "ock2RLli8jS2KLGt93LeQDuu3sM="
+
+        val encryptedDatasetMetadata17 =
+            "HmbhwaypOBcErFAhuKsDjI0+veHe83EmsKgSFnSfI8sd" +
+                    "L21k3hGfWZ/nv8j3Wdd1s2aatGFivHDQqIEy/XbEO/" +
+                    "t57k/hjMsj1x15u++p9cbXllxAWEvACpr8AtoCehZk" +
+                    "I9TankVFir2Yfr/N7tpMdNNw/UmA3Cord1AOZ02eRK" +
+                    "mbP7xT4Ppbu17AnAD4zNomR4txkDe7Xdr0eyHqtXsW" +
+                    "okosNgSd+QZXe/G374c1MGOMbBLfPICjxfxCUOkgG/" +
+                    "1pogMMHNTQM8HrwNqweP1h4n9eEjoK4fQpcSwwwspG" +
+                    "beplgBGjNJTZDGN5N83TMunCcgk5P5KQTKXh77Mpyv" +
+                    "pALCOEHukCm0dWCyqGSGAUKsl0oP3zCoBxY+gTsnHo" +
+                    "ock2RGiIPfENMtteYpnaF228tkE="
 
         val metadataSecret = DeviceMetadataSecret(
             iv = encryptionIv.decodeBase64()!!,
@@ -118,18 +122,29 @@ class AesSpec : WordSpec({
                 .buffer()
                 .readUtf8()
 
-            actualEncryptedDatasetMetadata shouldBe (encryptedDatasetMetadata.decodeBase64()!!.utf8())
+            actualEncryptedDatasetMetadata shouldBeIn (listOf(
+                encryptedDatasetMetadata11.decodeBase64()!!.utf8(),
+                encryptedDatasetMetadata17.decodeBase64()!!.utf8()
+            ))
         }
 
         "decrypt dataset metadata" {
-            val expectedDatasetMetadata = Aes
-                .decrypt(Buffer().write(encryptedDatasetMetadata.decodeBase64()!!), metadataSecret = metadataSecret)
+            val expectedDatasetMetadata11 = Aes
+                .decrypt(Buffer().write(encryptedDatasetMetadata11.decodeBase64()!!), metadataSecret = metadataSecret)
                 .buffer()
                 .readByteString()
                 .toDatasetMetadata()
                 .get()
 
-            expectedDatasetMetadata shouldBe (datasetMetadata)
+            val expectedDatasetMetadata17 = Aes
+                .decrypt(Buffer().write(encryptedDatasetMetadata11.decodeBase64()!!), metadataSecret = metadataSecret)
+                .buffer()
+                .readByteString()
+                .toDatasetMetadata()
+                .get()
+
+            expectedDatasetMetadata11 shouldBe (datasetMetadata)
+            expectedDatasetMetadata17 shouldBe (datasetMetadata)
         }
     }
 })

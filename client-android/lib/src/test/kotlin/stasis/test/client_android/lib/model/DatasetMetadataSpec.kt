@@ -2,6 +2,7 @@ package stasis.test.client_android.lib.model
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.WordSpec
+import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
 import okio.Buffer
 import okio.ByteString.Companion.decodeBase64
@@ -18,7 +19,7 @@ import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Success
 import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
-import java.io.EOFException
+import java.io.IOException
 import java.util.UUID
 
 class DatasetMetadataSpec : WordSpec({
@@ -26,7 +27,11 @@ class DatasetMetadataSpec : WordSpec({
         val secretsConfig: Secret.Config = Secret.Config(
             derivation = Secret.Config.DerivationConfig(
                 encryption = Secret.KeyDerivationConfig(secretSize = 64, iterations = 100000, saltPrefix = "unit-test"),
-                authentication = Secret.KeyDerivationConfig(secretSize = 64, iterations = 100000, saltPrefix = "unit-test")
+                authentication = Secret.KeyDerivationConfig(
+                    secretSize = 64,
+                    iterations = 100000,
+                    saltPrefix = "unit-test"
+                )
             ),
             encryption = Secret.Config.EncryptionConfig(
                 file = Secret.EncryptionSecretConfig(keySize = 16, ivSize = 16),
@@ -65,47 +70,53 @@ class DatasetMetadataSpec : WordSpec({
             )
         )
 
-        val serializedDatasetMetadata =
-            "CoIBCg0vdG1wL2ZpbGUvb25lEnEKbwoNL3RtcC9maWxl" +
-                    "L29uZRABKICokKOB4vjH/wEw//HV1K+ahzg6BHJvb3" +
-                    "RCBHJvb3RKCXJ3eHJ3eHJ3eFIBAVooCg8vdG1wL2Zp" +
-                    "bGUvb25lXzASFQi4hY2FuP2+zzIQyvep/8C3nu6xAW" +
-                    "IEbm9uZRKWAQoNL3RtcC9maWxlL3R3bxKEAQqBAQoN" +
-                    "L3RtcC9maWxlL3R3bxACGg8vdG1wL2ZpbGUvdGhyZW" +
-                    "Uo//HV1K+ahzgwgKiQo4Hi+Mf/AToEcm9vdEIEcm9v" +
-                    "dEoJcnd4cnd4cnd4UgEqWikKDy90bXAvZmlsZS90d2" +
-                    "9fMBIWCISG1dThqqq55gEQuvmQh4+DpfiKAWIEZ3pp" +
-                    "cBJXChIvdG1wL2RpcmVjdG9yeS9vbmUSQRI/ChIvdG" +
-                    "1wL2RpcmVjdG9yeS9vbmUggKiQo4Hi+Mf/ASj/8dXU" +
-                    "r5qHODIEcm9vdDoEcm9vdEIJcnd4cnd4cnd4EmgKEi" +
-                    "90bXAvZGlyZWN0b3J5L3R3bxJSElAKEi90bXAvZGly" +
-                    "ZWN0b3J5L3R3bxIPL3RtcC9maWxlL3RocmVlIP/x1d" +
-                    "Svmoc4KICokKOB4vjH/wEyBHJvb3Q6BHJvb3RCCXJ3" +
-                    "eHJ3eHJ3eBpeChMKDS90bXAvZmlsZS9vbmUSAgoACh" +
-                    "MKDS90bXAvZmlsZS90d28SAhoAChgKEi90bXAvZGly" +
-                    "ZWN0b3J5L29uZRICCgAKGAoSL3RtcC9kaXJlY3Rvcn" +
-                    "kvdHdvEgIKAA=="
+        val serializedDatasetMetadata11 =
+            "H4sIAAAAAAAAAOJqYuTi1S/JLdBPy8xJ1c/PSxUq5MpH" +
+                    "ExJg1GhYMWFx46Mfx/8zGvz/ePXK+lntFlYsRfn5JU" +
+                    "5g0ouzqLwCgoIYGaM0uPhRDIg3EBLl2NHa27rj777z" +
+                    "RgKnvq/8f2D7vHcbGZNY8kBWTkNxREl5vlALI1cjuq" +
+                    "AAkxSSsSUZRampGjDHGCAciNNdWlGayO4Cmgh0lxhH" +
+                    "S9vVKw9Xrdr5jFFg188J7f3NS390AR2WXpVZIBTOJQ" +
+                    "TWkJJZlJpckl9UCQ4hRyF7bOIKCDfA3WUEdgbUSQjH" +
+                    "CGVgGADydZBQAFZxdG8rwIxHihccNknFcQmjxzATFw" +
+                    "OqIMgOJikGLgms3gUpx5QB6+FiAAAAAP//AwC8twLn" +
+                    "QQIAAA=="
 
-        val encryptedDatasetMetadata =
-            "qu7AdPwACWArwpK16YuCXDHYU5Pt01++jHjDWVAtpMqU" +
-                    "Vz1X9+HTlPnsnosFiFhItNFAS9qkEgYTWeGKq2cTUV" +
-                    "CtCAuQVfl0okzr/nhL2GZhSVHRbGOs8oJ9+JoIXfzn" +
-                    "9iDfrHANLHgMfFn0oG9vxjfNSz7j3t9hC6pO3Ie+t1" +
-                    "s01Rg7PoLKsosCmWGtJnwtSE+RR+0A6OU0J2fg9IVX" +
-                    "lPuxpBS/waUCVkN1zoRLQr+FVXNdYHRb6hsLxGzRpt" +
-                    "QCb/x0TDjl2Lt2suaYX+FSdgjTdkvFJRqUm7gwFuCM" +
-                    "HJHskoIx6PPhQA3noi+Cr6ZRX+SYqlQ7AfQACogHip" +
-                    "M7Y4Kx/tzRJI/Ydq3My4ioQHJwfLrfYZaNny4SI39l" +
-                    "5sCa/5kqst0YL3QGLuY3ayVuWYTOx4Sr2ZqYqOvCZi" +
-                    "qmPIBWg/QnN6KDEaTdqv37/0gCtVy8BwMT4lYdVJ0S" +
-                    "+fes9tM6PQITvAkGojkWLXLEXaBpuYa2YioayX5XAJ" +
-                    "sLdBT5M6S8P1tZ55pNn8YTyirl54/j1sSi9s7FttKr" +
-                    "wUw7De2dSTiMzTdzom30rPiEKgvVwALJlHTS7YZyvH" +
-                    "fBRrBiS8hKu5za0b1mZOHmqqN0Oi3htnbgmTnoNAsi" +
-                    "a5YV2igGI6ZsXVHLzSf5X1fqMO8XJ+W+nWJiph6Fiv" +
-                    "V7XhaMF0YxmJK6hQM/mtQmiVgBhQiey7yIpjMzdB5U" +
-                    "8tIisOvaHdoE4lh0lxzqR5woeo5pIo4+oedlYpW81a" +
-                    "R/RPpfGBs6vDGidQBeiZ+fnZHN4JeWwwQ="
+        val serializedDatasetMetadata17 =
+            "H4sIAAAAAAAA/+JqYuTi1S/JLdBPy8xJ1c/PSxUq5MpH" +
+                    "ExJg1GhYMWFx46Mfx/8zGvz/ePXK+lntFlYsRfn5JU" +
+                    "5g0ouzqLwCgoIYGaM0uPhRDIg3EBLl2NHa27rj777z" +
+                    "RgKnvq/8f2D7vHcbGZNY8kBWTkNxREl5vlALI1cjuq" +
+                    "AAkxSSsSUZRampGjDHGCAciNNdWlGayO4Cmgh0lxhH" +
+                    "S9vVKw9Xrdr5jFFg188J7f3NS390AR2WXpVZIBTOJQ" +
+                    "TWkJJZlJpckl9UCQ4hRyF7bOIKCDfA3WUEdgbUSQjH" +
+                    "CGVgGADydZBQAFZxdG8rwIxHihccNknFcQmjxzATFw" +
+                    "OqIMgOJikGLgms3gUpx5QB6+FiAAAAAP//AwC8twLn" +
+                    "QQIAAA=="
+
+        val encryptedDatasetMetadata11 =
+            "v+fJfvEvfQ1b7Ra25wpP5nB0bDKod5n6dsNhYmphKWy2" +
+                    "a0BZRpmKjRg17YubrV+8USyPzN67PPBkyI+c6uyFG2" +
+                    "qP3vJMkjE8KbyEn6kIGOxHPYvnfSthIFyIV02bnSR9" +
+                    "3EdXfbGUDCjl1SZXPHGyjIolyk+CUGGxSjryYT4sDJ" +
+                    "kwKGPH6rVF9iimrCUHTnNXqfCpMsjtTxmyvGUVYpcd" +
+                    "8FQJ/zSOBROe9WZidltAtU1namFZTg+k2Ot9kBBt5r" +
+                    "X8AJ/4DA0jzdwSO0Apu0HL4i0mf0YBihD/mfzgLYck" +
+                    "YL6F+PW77xTJMizuhEGDNQMc2tzw8W3RFpTPqJdg6v" +
+                    "/Oc1ip0HFR31KVAgJc6h25EWqC+zVcxJH4nUyq8wfr" +
+                    "19DN9VH027ux7U/SoD7qRQue8ao="
+
+        val encryptedDatasetMetadata17 =
+            "v+fJfvEvfQ1bEha25wpP5nB0bDKod5n6dsNhYmphKWy2" +
+                    "a0BZRpmKjRg17YubrV+8USyPzN67PPBkyI+c6uyFG2" +
+                    "qP3vJMkjE8KbyEn6kIGOxHPYvnfSthIFyIV02bnSR9" +
+                    "3EdXfbGUDCjl1SZXPHGyjIolyk+CUGGxSjryYT4sDJ" +
+                    "kwKGPH6rVF9iimrCUHTnNXqfCpMsjtTxmyvGUVYpcd" +
+                    "8FQJ/zSOBROe9WZidltAtU1namFZTg+k2Ot9kBBt5r" +
+                    "X8AJ/4DA0jzdwSO0Apu0HL4i0mf0YBihD/mfzgLYck" +
+                    "YL6F+PW77xTJMizuhEGDNQMc2tzw8W3RFpTPqJdg6v" +
+                    "/Oc1ip0HFR31KVAgJc6h25EWqC+zVcxJH4nUyq8wfr" +
+                    "19DN9T9PHaP5Qd8rXYpCEjtNE8c="
 
         "retrieve metadata for individual files (new and updated)" {
             val mockApiClient = MockServerApiEndpointClient()
@@ -131,7 +142,7 @@ class DatasetMetadataSpec : WordSpec({
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved] shouldBe (0)
 
-            metadata.contentChangedBytes shouldBe(Fixtures.Metadata.FileOneMetadata.size)
+            metadata.contentChangedBytes shouldBe (Fixtures.Metadata.FileOneMetadata.size)
 
             fileOneMetadata shouldBe (Fixtures.Metadata.FileOneMetadata)
             fileTwoMetadata shouldBe (Fixtures.Metadata.FileTwoMetadata)
@@ -209,8 +220,10 @@ class DatasetMetadataSpec : WordSpec({
                 }
             }
 
-            val fileOneMetadata = currentMetadata.collect(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
-            val fileTwoMetadata = currentMetadata.collect(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+            val fileOneMetadata =
+                currentMetadata.collect(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
+            val fileTwoMetadata =
+                currentMetadata.collect(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
 
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved] shouldBe (2)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved] shouldBe (0)
@@ -311,16 +324,24 @@ class DatasetMetadataSpec : WordSpec({
         }
 
         "be serializable to byte string" {
-            datasetMetadata.toByteString() shouldBe (serializedDatasetMetadata.decodeBase64())
+            datasetMetadata.toByteString() shouldBeIn (listOf(
+                serializedDatasetMetadata11.decodeBase64(),
+                serializedDatasetMetadata17.decodeBase64()
+            ))
         }
 
         "be deserializable from a valid byte string" {
-            serializedDatasetMetadata.decodeBase64()?.toDatasetMetadata() shouldBe (Success(datasetMetadata))
+            serializedDatasetMetadata11.decodeBase64()?.toDatasetMetadata() shouldBe (Success(datasetMetadata))
+            serializedDatasetMetadata17.decodeBase64()?.toDatasetMetadata() shouldBe (Success(datasetMetadata))
         }
 
         "fail to be deserialized from an invalid byte string" {
-            shouldThrow<EOFException> {
-                serializedDatasetMetadata.decodeBase64()?.toAsciiLowercase()?.toDatasetMetadata()?.get()
+            shouldThrow<IOException> {
+                serializedDatasetMetadata11.decodeBase64()?.toAsciiLowercase()?.toDatasetMetadata()?.get()
+            }
+
+            shouldThrow<IOException> {
+                serializedDatasetMetadata17.decodeBase64()?.toAsciiLowercase()?.toDatasetMetadata()?.get()
             }
         }
 
@@ -332,19 +353,28 @@ class DatasetMetadataSpec : WordSpec({
                     encoder = Aes
                 )
 
-            encrypted shouldBe (encryptedDatasetMetadata.decodeBase64())
+            encrypted shouldBeIn (listOf(encryptedDatasetMetadata11.decodeBase64(), encryptedDatasetMetadata17.decodeBase64()))
         }
 
         "be decryptable" {
-            val decrypted = DatasetMetadata
+            val decrypted11 = DatasetMetadata
                 .decrypt(
                     metadataCrate = metadataCrate,
                     metadataSecret = deviceSecret.toMetadataSecret(metadataCrate),
-                    metadata = encryptedDatasetMetadata.decodeBase64()?.let { Buffer().write(it) },
+                    metadata = encryptedDatasetMetadata11.decodeBase64()?.let { Buffer().write(it) },
                     decoder = Aes
                 )
 
-            decrypted shouldBe (datasetMetadata)
+            val decrypted17 = DatasetMetadata
+                .decrypt(
+                    metadataCrate = metadataCrate,
+                    metadataSecret = deviceSecret.toMetadataSecret(metadataCrate),
+                    metadata = encryptedDatasetMetadata17.decodeBase64()?.let { Buffer().write(it) },
+                    decoder = Aes
+                )
+
+            decrypted11 shouldBe (datasetMetadata)
+            decrypted17 shouldBe (datasetMetadata)
         }
 
         "fail decryption if no encrypted data is provided" {

@@ -7,6 +7,8 @@ import okio.ByteString
 import okio.Source
 import okio.buffer
 import stasis.client_android.lib.api.clients.ServerApiEndpointClient
+import stasis.client_android.lib.compression.Compressor
+import stasis.client_android.lib.compression.Gzip
 import stasis.client_android.lib.encryption.Decoder
 import stasis.client_android.lib.encryption.Encoder
 import stasis.client_android.lib.encryption.secrets.DeviceMetadataSecret
@@ -74,6 +76,8 @@ data class DatasetMetadata(
         }
 
     companion object {
+        private val DefaultCompressor: Compressor = Gzip
+
         fun empty(): DatasetMetadata = DatasetMetadata(
             contentChanged = emptyMap(),
             metadataChanged = emptyMap(),
@@ -91,12 +95,20 @@ data class DatasetMetadata(
                 filesystem = filesystem.toProto()
             )
 
-            return data.encodeByteString()
+            return DefaultCompressor
+                .compress(Buffer().write(data.encodeByteString()))
+                .buffer()
+                .use { it.readByteString() }
         }
 
         fun ByteString.toDatasetMetadata(): Try<DatasetMetadata> =
             Try {
-                stasis.client_android.lib.model.proto.DatasetMetadata.ADAPTER.decode(this)
+                stasis.client_android.lib.model.proto.DatasetMetadata.ADAPTER.decode(
+                    DefaultCompressor
+                        .decompress(Buffer().write(this))
+                        .buffer()
+                        .use { it.readByteString() }
+                )
             }.flatMap { data ->
                 foldTryMap(
                     data.contentChanged.map { entity ->
