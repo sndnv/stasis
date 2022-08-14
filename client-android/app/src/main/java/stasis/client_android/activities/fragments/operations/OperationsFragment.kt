@@ -107,33 +107,6 @@ class OperationsFragment : Fragment() {
 
         binding.operationsList.adapter = adapter
 
-        binding.operationsClearButton.setOnClickListener {
-            MaterialAlertDialogBuilder(context)
-                .setTitle(
-                    context.getString(R.string.operations_clear_confirm_title)
-                )
-                .setNeutralButton(
-                    context.getString(R.string.operations_clear_confirm_cancel_button_title)
-                ) { dialog, _ ->
-                    dialog.dismiss()
-                }
-                .setPositiveButton(
-                    context.getString(R.string.operations_clear_confirm_ok_button_title)
-                ) { dialog, _ ->
-                    providerContext.trackers.backup.clear()
-                    providerContext.trackers.recovery.clear()
-
-                    Toast.makeText(
-                        context,
-                        context.getString(R.string.toast_operation_removed),
-                        Toast.LENGTH_SHORT
-                    ).show()
-
-                    dialog.dismiss()
-                }
-                .show()
-        }
-
         lifecycleScope.launch {
             (providerContext.trackers.backup.state
                     and providerContext.trackers.recovery.state

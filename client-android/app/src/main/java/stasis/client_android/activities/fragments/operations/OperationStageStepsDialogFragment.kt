@@ -34,7 +34,7 @@ class OperationStageStepsDialogFragment(
             operationsListEmpty.isVisible = true
             operationsList.isVisible = false
         } else {
-            val adapter = StepsListItemAdapter(steps = steps)
+            val adapter = StepsListItemAdapter(steps = steps.reversed())
 
             operationsList.adapter = adapter
 
