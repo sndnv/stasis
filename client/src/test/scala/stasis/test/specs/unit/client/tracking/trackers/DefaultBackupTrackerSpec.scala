@@ -178,6 +178,34 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
     }
   }
 
+  it should "support removing operations" in {
+    val tracker = createTracker(maxRetention = 250.millis)
+
+    val operation1 = Operation.generateId()
+    val operation2 = Operation.generateId()
+
+    tracker.started(definition = DatasetDefinition.generateId())(operation1)
+    tracker.completed()(operation1)
+
+    tracker.started(definition = DatasetDefinition.generateId())(operation2)
+
+    eventually[Assertion] {
+      tracker.state.await.keys.toSeq.sorted should be(Seq(operation1, operation2).sorted)
+    }
+
+    tracker.remove(operation1)
+
+    eventually[Assertion] {
+      tracker.state.await.keys.toSeq should be(Seq(operation2))
+    }
+
+    tracker.remove(operation2)
+
+    eventually[Assertion] {
+      tracker.state.await.keys.toSeq should be(empty)
+    }
+  }
+
   private def createTracker(maxRetention: FiniteDuration = 1.minute): DefaultBackupTracker = DefaultBackupTracker(
     maxRetention = maxRetention,
     createBackend = state =>

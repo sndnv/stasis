@@ -149,6 +149,21 @@ class Operations()(implicit context: Context) extends ApiRoutes {
       },
       pathPrefix(JavaUUID) { operation =>
         concat(
+          pathEndOrSingleSlash {
+            delete {
+              onSuccess(context.executor.active) { active =>
+                if (active.contains(operation)) {
+                  log.debugN("API could not remove operation [{}]; operation is active", operation)
+                  consumeEntity & complete(StatusCodes.Conflict)
+                } else {
+                  log.debugN("API removed operation [{}]", operation)
+                  context.trackers.backup.remove(operation)
+                  context.trackers.recovery.remove(operation)
+                  consumeEntity & complete(StatusCodes.Accepted)
+                }
+              }
+            }
+          },
           path("progress") {
             get {
               extractExecutionContext { implicit ec =>

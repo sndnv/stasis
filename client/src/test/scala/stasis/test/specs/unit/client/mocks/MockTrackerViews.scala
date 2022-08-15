@@ -16,7 +16,7 @@ class MockTrackerViews extends TrackerViews {
     Statistic.GetOperationUpdates -> new AtomicInteger(0)
   )
 
-  override val backup: BackupTracker.View = new MockBackupTracker() {
+  override val backup: BackupTracker.View with BackupTracker.Manage = new MockBackupTracker() {
     override def state: Future[Map[Operation.Id, BackupState]] = {
       stats(Statistic.GetState).incrementAndGet()
       super.state
@@ -28,7 +28,7 @@ class MockTrackerViews extends TrackerViews {
     }
   }
 
-  override val recovery: RecoveryTracker.View = new MockRecoveryTracker() {
+  override val recovery: RecoveryTracker.View with RecoveryTracker.Manage = new MockRecoveryTracker() {
     override def state: Future[Map[Operation.Id, RecoveryState]] = {
       stats(Statistic.GetState).incrementAndGet()
       super.state

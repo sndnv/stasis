@@ -144,6 +144,36 @@ class DefaultRecoveryTrackerSpec extends AsyncUnitSpec with Eventually with Befo
     }
   }
 
+  it should "support removing operations" in {
+    val tracker = createTracker(maxRetention = 250.millis)
+
+    val entity = Fixtures.Metadata.FileOneMetadata.path
+
+    val operation1 = Operation.generateId()
+    val operation2 = Operation.generateId()
+
+    tracker.entityProcessed(entity)(operation1)
+    tracker.completed()(operation1)
+
+    tracker.entityProcessed(entity)(operation2)
+
+    eventually[Assertion] {
+      tracker.state.await.keys.toSeq.sorted should be(Seq(operation1, operation2).sorted)
+    }
+
+    tracker.remove(operation1)
+
+    eventually[Assertion] {
+      tracker.state.await.keys.toSeq should be(Seq(operation2))
+    }
+
+    tracker.remove(operation2)
+
+    eventually[Assertion] {
+      tracker.state.await.keys.toSeq should be(empty)
+    }
+  }
+
   private def createTracker(maxRetention: FiniteDuration = 1.minute): DefaultRecoveryTracker = DefaultRecoveryTracker(
     maxRetention = maxRetention,
     createBackend = state =>
