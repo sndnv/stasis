@@ -81,6 +81,9 @@ class DefaultClientApi(ClientApi):
     def operation_resume(self, operation):
         return self.put(url='/operations/{}/resume'.format(operation))
 
+    def operation_remove(self, operation):
+        return self.delete(url='/operations/{}'.format(operation))
+
     def backup_rules(self):
         return self.get(url='/operations/backup/rules')
 
@@ -152,6 +155,17 @@ class DefaultClientApi(ClientApi):
         :return: endpoint response
         """
         return self.request(method='post', url=url, params=params, data=data)
+
+    def delete(self, url, params=None, data=None):
+        """
+        Executes a `DELETE` request for the specified URL with the provided query parameters and request data.
+
+        :param url: URL to use for request (ex: /schedules)
+        :param params: query parameters (if any)
+        :param data: request data (if any)
+        :return: endpoint response
+        """
+        return self.request(method='delete', url=url, params=params, data=data)
 
     def request(self, method, url, params=None, data=None):
         """
