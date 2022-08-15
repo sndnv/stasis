@@ -22,6 +22,8 @@ import stasis.test.specs.unit.client.mocks._
 
 import java.nio.file.Paths
 import java.time.Instant
+import java.util.concurrent.atomic.AtomicBoolean
+
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -37,7 +39,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     )
 
     val mockTrackers = new MockTrackerViews() {
-      override val backup: BackupTracker.View = new MockBackupTracker {
+      override val backup: BackupTracker.View with BackupTracker.Manage = new MockBackupTracker {
         override def state: Future[Map[Operation.Id, BackupState]] =
           super.state.map { _ =>
             operations.collect { case (k, Operation.Type.Backup) =>
@@ -45,7 +47,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
             }
           }
       }
-      override val recovery: RecoveryTracker.View = new MockRecoveryTracker {
+      override val recovery: RecoveryTracker.View with RecoveryTracker.Manage = new MockRecoveryTracker {
         override def state: Future[Map[Operation.Id, RecoveryState]] =
           super.state.map { _ =>
             operations.collect { case (k, Operation.Type.Recovery) => k -> RecoveryState.start(k) }
@@ -90,7 +92,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     )
 
     val mockTrackers = new MockTrackerViews() {
-      override val backup: BackupTracker.View = new MockBackupTracker {
+      override val backup: BackupTracker.View with BackupTracker.Manage = new MockBackupTracker {
         override def state: Future[Map[Operation.Id, BackupState]] =
           super.state.map { _ =>
             operations.collect { case (k, Operation.Type.Backup) =>
@@ -98,7 +100,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
             }
           }
       }
-      override val recovery: RecoveryTracker.View = new MockRecoveryTracker {
+      override val recovery: RecoveryTracker.View with RecoveryTracker.Manage = new MockRecoveryTracker {
         override def state: Future[Map[Operation.Id, RecoveryState]] =
           super.state.map { _ =>
             operations.collect { case (k, Operation.Type.Recovery) => k -> RecoveryState.start(k) }
@@ -140,7 +142,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     )
 
     val mockTrackers = new MockTrackerViews() {
-      override val backup: BackupTracker.View = new MockBackupTracker {
+      override val backup: BackupTracker.View with BackupTracker.Manage = new MockBackupTracker {
         override def state: Future[Map[Operation.Id, BackupState]] =
           super.state.map { _ =>
             operations.collect { case (k, Operation.Type.Backup) =>
@@ -148,7 +150,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
             }
           }
       }
-      override val recovery: RecoveryTracker.View = new MockRecoveryTracker {
+      override val recovery: RecoveryTracker.View with RecoveryTracker.Manage = new MockRecoveryTracker {
         override def state: Future[Map[Operation.Id, RecoveryState]] =
           super.state.map { _ =>
             operations.collect { case (k, Operation.Type.Recovery) => k -> RecoveryState.start(k) }
@@ -313,7 +315,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val operation = Operation.generateId()
 
     val mockTrackers = new MockTrackerViews() {
-      override val backup: BackupTracker.View = new MockBackupTracker() {
+      override val backup: BackupTracker.View with BackupTracker.Manage = new MockBackupTracker() {
         override def state: Future[Map[Operation.Id, BackupState]] =
           Future.successful(
             Map(
@@ -355,7 +357,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     val operation = Operation.generateId()
     val mockTrackers = new MockTrackerViews() {
-      override val recovery: RecoveryTracker.View = new MockRecoveryTracker() {
+      override val recovery: RecoveryTracker.View with RecoveryTracker.Manage = new MockRecoveryTracker() {
         override def state: Future[Map[Operation.Id, RecoveryState]] =
           Future.successful(
             Map(
@@ -417,7 +419,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val heartbeatInterval = 50.millis
 
     val mockTrackers = new MockTrackerViews() {
-      override val backup: BackupTracker.View = new MockBackupTracker() {
+      override val backup: BackupTracker.View with BackupTracker.Manage = new MockBackupTracker() {
         override def updates(operation: Operation.Id): Source[BackupState, NotUsed] =
           Source(events).throttle(elements = 1, per = heartbeatInterval * 4)
       }
@@ -479,7 +481,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val heartbeatInterval = 50.millis
 
     val mockTrackers = new MockTrackerViews() {
-      override val recovery: RecoveryTracker.View = new MockRecoveryTracker() {
+      override val recovery: RecoveryTracker.View with RecoveryTracker.Manage = new MockRecoveryTracker() {
         override def updates(operation: Operation.Id): Source[RecoveryState, NotUsed] =
           Source(events).throttle(elements = 1, per = heartbeatInterval * 4)
       }
@@ -577,6 +579,66 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartValidation) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartKeyRotation) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.Stop) should be(0)
+    }
+  }
+
+  they should "support removing operations" in {
+    val backupRemoved = new AtomicBoolean(false)
+    val recoveryRemoved = new AtomicBoolean(false)
+
+    val trackers = new MockTrackerViews() {
+      override val backup: BackupTracker.View with BackupTracker.Manage = new MockBackupTracker() {
+        override def remove(operation: Operation.Id): Unit = backupRemoved.set(true)
+      }
+
+      override val recovery: RecoveryTracker.View with RecoveryTracker.Manage = new MockRecoveryTracker() {
+        override def remove(operation: Operation.Id): Unit = recoveryRemoved.set(true)
+      }
+    }
+
+    val routes = createRoutes(trackers = trackers)
+
+    val operation = Operation.generateId()
+
+    Delete(s"/$operation") ~> routes ~> check {
+      status should be(StatusCodes.Accepted)
+
+      backupRemoved.get() should be(true)
+      recoveryRemoved.get() should be(true)
+    }
+  }
+
+  they should "fail to remove active operations" in {
+    val operation = Operation.generateId()
+
+    val mockExecutor = new MockOperationExecutor() {
+      override def active: Future[Map[Operation.Id, Operation.Type]] = Future.successful(
+        Map(
+          operation -> Operation.Type.Backup
+        )
+      )
+    }
+
+    val backupRemoved = new AtomicBoolean(false)
+    val recoveryRemoved = new AtomicBoolean(false)
+
+    val trackers = new MockTrackerViews() {
+      override val backup: BackupTracker.View with BackupTracker.Manage = new MockBackupTracker() {
+        override def remove(operation: Operation.Id): Unit = backupRemoved.set(true)
+      }
+
+      override val recovery: RecoveryTracker.View with RecoveryTracker.Manage = new MockRecoveryTracker() {
+        override def remove(operation: Operation.Id): Unit = recoveryRemoved.set(true)
+      }
+    }
+
+    val routes = createRoutes(executor = mockExecutor, trackers = trackers)
+
+    Delete(s"/$operation") ~> routes ~> check {
+      status should be(StatusCodes.Conflict)
+
+      backupRemoved.get() should be(false)
+      recoveryRemoved.get() should be(false)
     }
   }
 

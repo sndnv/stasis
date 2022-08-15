@@ -11,7 +11,7 @@ import stasis.shared.ops.Operation
 import java.nio.file.Path
 import scala.concurrent.Future
 
-trait BackupTracker extends BackupTracker.View {
+trait BackupTracker extends BackupTracker.View with BackupTracker.Manage {
   def started(definition: DatasetDefinition.Id)(implicit operation: Operation.Id): Unit
   def entityDiscovered(entity: Path)(implicit operation: Operation.Id): Unit
   def specificationProcessed(unmatched: Seq[(Rule, Throwable)])(implicit operation: Operation.Id): Unit
@@ -31,5 +31,9 @@ object BackupTracker {
   trait View {
     def state: Future[Map[Operation.Id, BackupState]]
     def updates(operation: Operation.Id): Source[BackupState, NotUsed]
+  }
+
+  trait Manage {
+    def remove(operation: Operation.Id): Unit
   }
 }

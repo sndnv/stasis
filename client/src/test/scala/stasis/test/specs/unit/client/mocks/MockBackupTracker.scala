@@ -13,6 +13,7 @@ import stasis.test.specs.unit.client.mocks.MockBackupTracker.Statistic
 
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
+
 import scala.concurrent.Future
 
 class MockBackupTracker extends BackupTracker {
@@ -36,6 +37,8 @@ class MockBackupTracker extends BackupTracker {
 
   override def updates(operation: Operation.Id): Source[BackupState, NotUsed] =
     Source.empty
+
+  override def remove(operation: Operation.Id): Unit = ()
 
   override def started(definition: DatasetDefinition.Id)(implicit operation: Operation.Id): Unit =
     stats(Statistic.Started).incrementAndGet()

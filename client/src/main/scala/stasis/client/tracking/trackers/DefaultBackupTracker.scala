@@ -39,6 +39,12 @@ class DefaultBackupTracker(
   override def updates(operation: Operation.Id): Source[BackupState, NotUsed] =
     events.stateStream.dropLatestDuplicates(_.get(operation))
 
+  override def remove(operation: Operation.Id): Unit = {
+    log.debugN("[{}] (backup) - Operation removed", operation)
+
+    val _ = events.store(event = BackupEvent.Removed(operation))
+  }
+
   override def started(
     definition: DatasetDefinition.Id
   )(implicit operation: Operation.Id): Unit = {
@@ -251,6 +257,10 @@ object DefaultBackupTracker {
     final case class Completed(
       override val operation: Operation.Id
     ) extends BackupEvent
+
+    final case class Removed(
+      override val operation: Operation.Id
+    ) extends BackupEvent
   }
 
   def updateState(
@@ -292,6 +302,9 @@ object DefaultBackupTracker {
     val now = Instant.now()
     val filtered = state.filter(_._2.started.plusMillis(maxRetention.toMillis).isAfter(now))
 
-    filtered + (event.operation -> updated)
+    event match {
+      case Removed(operation) => filtered - operation
+      case _                  => filtered + (event.operation -> updated)
+    }
   }
 }

@@ -6,8 +6,8 @@ final case class Trackers(
   server: ServerTracker
 ) { parent =>
   def views: TrackerViews = new TrackerViews {
-    override val backup: BackupTracker.View = parent.backup
-    override val recovery: RecoveryTracker.View = parent.recovery
+    override val backup: BackupTracker.View with BackupTracker.Manage = parent.backup
+    override val recovery: RecoveryTracker.View with RecoveryTracker.Manage = parent.recovery
     override val server: ServerTracker.View = parent.server
   }
 }

@@ -9,7 +9,7 @@ import stasis.shared.ops.Operation
 import java.nio.file.Path
 import scala.concurrent.Future
 
-trait RecoveryTracker extends RecoveryTracker.View {
+trait RecoveryTracker extends RecoveryTracker.View with RecoveryTracker.Manage {
   def entityExamined(entity: Path, metadataChanged: Boolean, contentChanged: Boolean)(implicit operation: Operation.Id): Unit
   def entityCollected(entity: TargetEntity)(implicit operation: Operation.Id): Unit
   def entityProcessingStarted(entity: Path, expectedParts: Int)(implicit operation: Operation.Id): Unit
@@ -25,5 +25,9 @@ object RecoveryTracker {
   trait View {
     def state: Future[Map[Operation.Id, RecoveryState]]
     def updates(operation: Operation.Id): Source[RecoveryState, NotUsed]
+  }
+
+  trait Manage {
+    def remove(operation: Operation.Id): Unit
   }
 }

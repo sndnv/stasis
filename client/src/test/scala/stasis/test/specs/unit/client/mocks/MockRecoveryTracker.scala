@@ -10,6 +10,7 @@ import stasis.test.specs.unit.client.mocks.MockRecoveryTracker.Statistic
 
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
+
 import scala.concurrent.Future
 
 class MockRecoveryTracker extends RecoveryTracker {
@@ -29,6 +30,8 @@ class MockRecoveryTracker extends RecoveryTracker {
 
   override def updates(operation: Operation.Id): Source[RecoveryState, NotUsed] =
     Source.empty
+
+  override def remove(operation: Operation.Id): Unit = ()
 
   override def entityExamined(
     entity: Path,
