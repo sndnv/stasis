@@ -19,18 +19,30 @@ CLIENT_USER=${USER}
 CLIENT_USER_HOME=${HOME}
 
 CLIENT_PATH="${CLIENT_USER_HOME}/stasis-client"
-CLIENT_CONFIG_PATH="${CLIENT_USER_HOME}/.config/stasis-client"
+
+if [[ "${OSTYPE}" == "linux"* ]]; then
+  CLIENT_CONFIG_PATH="${CLIENT_USER_HOME}/.config/stasis-client"
+  TARGET_BIN_PATH="${CLIENT_USER_HOME}/.local/bin"
+elif [[ "${OSTYPE}" == "darwin"* ]]; then
+  CLIENT_CONFIG_PATH="${CLIENT_USER_HOME}/Library/Preferences/stasis-client"
+  TARGET_BIN_PATH="/usr/local/bin"
+else
+  echo "[$(now)] ... operating system [${OSTYPE}] is not supported."
+  exit 1
+fi
 
 echo "[$(now)] Uninstalling [stasis-client]..."
-unlink "${CLIENT_USER_HOME}/.local/bin/stasis-client"
+unlink "${TARGET_BIN_PATH}/stasis-client"
 rm "${CLIENT_PATH}/bin/stasis-client"
 rm "${CLIENT_PATH}/bin/stasis-client.bat"
 rm -d "${CLIENT_PATH}/bin"
 rm ${CLIENT_PATH}/lib/*.jar
 rm -d "${CLIENT_PATH}/lib"
+rm ${CLIENT_PATH}/conf/*.ini
+rm -d "${CLIENT_PATH}/conf"
 
 echo "[$(now)] Uninstalling [stasis-client-cli]..."
 pip3 uninstall -y stasis-client-cli
-unlink "${CLIENT_USER_HOME}/.local/bin/stasis"
+unlink "${TARGET_BIN_PATH}/stasis"
 
 echo "[$(now)] ... done."
