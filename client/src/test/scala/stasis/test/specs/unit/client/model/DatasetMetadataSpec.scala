@@ -3,7 +3,6 @@ package stasis.test.specs.unit.client.model
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import com.google.protobuf.InvalidProtocolBufferException
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.{DatasetMetadata, FilesystemMetadata}
@@ -15,9 +14,9 @@ import stasis.test.specs.unit.client.mocks.MockServerApiEndpointClient
 import stasis.test.specs.unit.client.{EncodingHelpers, Fixtures}
 
 import java.util.UUID
+import java.util.zip.ZipException
 import scala.concurrent.Future
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success}
 
 class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
   "A DatasetMetadata" should "retrieve metadata for individual files (new and updated)" in {
@@ -247,22 +246,23 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
   }
 
   it should "be serializable to byte string" in {
-    DatasetMetadata.toByteString(metadata = datasetMetadata) should be(
-      serializedDatasetMetadata.decodeFromBase64
-    )
+    DatasetMetadata.toByteString(metadata = datasetMetadata).map { serialized =>
+      serialized should be(serializedDatasetMetadata.decodeFromBase64)
+    }
   }
 
   it should "be deserializable from a valid byte string" in {
-    DatasetMetadata.fromByteString(bytes = serializedDatasetMetadata.decodeFromBase64) should be(
-      Success(datasetMetadata)
-    )
+    DatasetMetadata.fromByteString(bytes = serializedDatasetMetadata.decodeFromBase64).map { deserialized =>
+      deserialized should be(datasetMetadata)
+    }
   }
 
   it should "fail to be deserialized from an invalid byte string" in {
-    DatasetMetadata.fromByteString(bytes = serializedDatasetMetadata.decodeFromBase64.take(42)) match {
-      case Success(metadata) => fail(s"Unexpected successful result received: [$metadata]")
-      case Failure(e)        => e shouldBe a[InvalidProtocolBufferException]
-    }
+    DatasetMetadata
+      .fromByteString(bytes = serializedDatasetMetadata.decodeFromBase64.take(42))
+      .map(metadata => fail(s"Unexpected successful result received: [$metadata]"))
+      .failed
+      .map { e => e shouldBe a[ZipException] }
   }
 
   it should "be encryptable" in {
@@ -350,44 +350,26 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
   )
 
   private val serializedDatasetMetadata =
-    "CoIBCg0vdG1wL2ZpbGUvb25lEnEKbwoNL3RtcC9maWxl" +
-      "L29uZRABKICokKOB4vjH/wEw//HV1K+ahzg6BHJvb3" +
-      "RCBHJvb3RKCXJ3eHJ3eHJ3eFIBAVooCg8vdG1wL2Zp" +
-      "bGUvb25lXzASFQi4hY2FuP2+zzIQyvep/8C3nu6xAW" +
-      "IEbm9uZRKWAQoNL3RtcC9maWxlL3R3bxKEAQqBAQoN" +
-      "L3RtcC9maWxlL3R3bxACGg8vdG1wL2ZpbGUvdGhyZW" +
-      "Uo//HV1K+ahzgwgKiQo4Hi+Mf/AToEcm9vdEIEcm9v" +
-      "dEoJcnd4cnd4cnd4UgEqWikKDy90bXAvZmlsZS90d2" +
-      "9fMBIWCISG1dThqqq55gEQuvmQh4+DpfiKAWIEZ3pp" +
-      "cBJXChIvdG1wL2RpcmVjdG9yeS9vbmUSQRI/ChIvdG" +
-      "1wL2RpcmVjdG9yeS9vbmUggKiQo4Hi+Mf/ASj/8dXU" +
-      "r5qHODIEcm9vdDoEcm9vdEIJcnd4cnd4cnd4EmgKEi" +
-      "90bXAvZGlyZWN0b3J5L3R3bxJSElAKEi90bXAvZGly" +
-      "ZWN0b3J5L3R3bxIPL3RtcC9maWxlL3RocmVlIP/x1d" +
-      "Svmoc4KICokKOB4vjH/wEyBHJvb3Q6BHJvb3RCCXJ3" +
-      "eHJ3eHJ3eBpeChMKDS90bXAvZmlsZS9vbmUSAgoACh" +
-      "MKDS90bXAvZmlsZS90d28SAhoAChgKEi90bXAvZGly" +
-      "ZWN0b3J5L29uZRICCgAKGAoSL3RtcC9kaXJlY3Rvcn" +
-      "kvdHdvEgIKAA=="
+    "H4sIAAAAAAAAAOJqYuTi1S/JLdBPy8xJ1c/PSxUq5MpH" +
+      "ExJg1GhYMWFx46Mfx/8zGvz/ePXK+lntFlYsRfn5JU" +
+      "5g0ouzqLwCgoIYGaM0uPhRDIg3EBLl2NHa27rj777z" +
+      "RgKnvq/8f2D7vHcbGZNY8kBWTkNxREl5vlALI1cjuq" +
+      "AAkxSSsSUZRampGjDHGCAciNNdWlGayO4Cmgh0lxhH" +
+      "S9vVKw9Xrdr5jFFg188J7f3NS390AR2WXpVZIBTOJQ" +
+      "TWkJJZlJpckl9UCQ4hRyF7bOIKCDfA3WUEdgbUSQjH" +
+      "CGVgGADydZBQAFZxdG8rwIxHihccNknFcQmjxzATFw" +
+      "OqIMgOJikGLgms3gUpl8DqLqAMAAAA//8DALy3AudB" +
+      "AgAA"
 
   private val encryptedDatasetMetadata =
-    "qu7AdPwACWArwpK16YuCXDHYU5Pt01++jHjDWVAtpMqU" +
-      "Vz1X9+HTlPnsnosFiFhItNFAS9qkEgYTWeGKq2cTUV" +
-      "CtCAuQVfl0okzr/nhL2GZhSVHRbGOs8oJ9+JoIXfzn" +
-      "9iDfrHANLHgMfFn0oG9vxjfNSz7j3t9hC6pO3Ie+t1" +
-      "s01Rg7PoLKsosCmWGtJnwtSE+RR+0A6OU0J2fg9IVX" +
-      "lPuxpBS/waUCVkN1zoRLQr+FVXNdYHRb6hsLxGzRpt" +
-      "QCb/x0TDjl2Lt2suaYX+FSdgjTdkvFJRqUm7gwFuCM" +
-      "HJHskoIx6PPhQA3noi+Cr6ZRX+SYqlQ7AfQACogHip" +
-      "M7Y4Kx/tzRJI/Ydq3My4ioQHJwfLrfYZaNny4SI39l" +
-      "5sCa/5kqst0YL3QGLuY3ayVuWYTOx4Sr2ZqYqOvCZi" +
-      "qmPIBWg/QnN6KDEaTdqv37/0gCtVy8BwMT4lYdVJ0S" +
-      "+fes9tM6PQITvAkGojkWLXLEXaBpuYa2YioayX5XAJ" +
-      "sLdBT5M6S8P1tZ55pNn8YTyirl54/j1sSi9s7FttKr" +
-      "wUw7De2dSTiMzTdzom30rPiEKgvVwALJlHTS7YZyvH" +
-      "fBRrBiS8hKu5za0b1mZOHmqqN0Oi3htnbgmTnoNAsi" +
-      "a5YV2igGI6ZsXVHLzSf5X1fqMO8XJ+W+nWJiph6Fiv" +
-      "V7XhaMF0YxmJK6hQM/mtQmiVgBhQiey7yIpjMzdB5U" +
-      "8tIisOvaHdoE4lh0lxzqR5woeo5pIo4+oedlYpW81a" +
-      "R/RPpfGBs6vDGidQBeiZ+fnZHN4JeWwwQ="
+    "v+fJfvEvfQ1b7Ra25wpP5nB0bDKod5n6dsNhYmphKWy2" +
+      "a0BZRpmKjRg17YubrV+8USyPzN67PPBkyI+c6uyFG2" +
+      "qP3vJMkjE8KbyEn6kIGOxHPYvnfSthIFyIV02bnSR9" +
+      "3EdXfbGUDCjl1SZXPHGyjIolyk+CUGGxSjryYT4sDJ" +
+      "kwKGPH6rVF9iimrCUHTnNXqfCpMsjtTxmyvGUVYpcd" +
+      "8FQJ/zSOBROe9WZidltAtU1namFZTg+k2Ot9kBBt5r" +
+      "X8AJ/4DA0jzdwSO0Apu0HL4i0mf0YBihD/mfzgLYck" +
+      "YL6F+PW77xTJMizuhEGDNQMc2tzw8W3RFpTPqJdg6v" +
+      "/Oc1ip0HFR31KVAgJcuklS1Cvs+zVcO5EEnvChRuJN" +
+      "lNLNb4720g9gwdJpZ7U3dU1mZw=="
 }

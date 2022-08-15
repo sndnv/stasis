@@ -424,7 +424,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
       compression = MockCompression(),
       decryptor = new MockEncryption {
         override def decrypt(metadataSecret: DeviceMetadataSecret): Flow[ByteString, ByteString, NotUsed] =
-          Flow[ByteString].map(_ => DatasetMetadata.toByteString(metadata))
+          Flow[ByteString].mapAsync(parallelism = 1)(_ => DatasetMetadata.toByteString(metadata))
       },
       clients = Clients(
         api = new MockServerApiEndpointClient(self = Device.generateId()) {

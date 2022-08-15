@@ -1,6 +1,5 @@
 package stasis.test.specs.unit.client.api.clients
 
-import java.time.Instant
 import akka.NotUsed
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
@@ -29,6 +28,7 @@ import stasis.test.specs.unit.client.mocks.{MockEncryption, MockServerApiEndpoin
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.shared.model.Generators
 
+import java.time.Instant
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -488,7 +488,7 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
         deviceSecret = Fixtures.Secrets.Default,
         decoder = new MockEncryption() {
           override def decrypt(metadataSecret: DeviceMetadataSecret): Flow[ByteString, ByteString, NotUsed] =
-            Flow[ByteString].map(_ => DatasetMetadata.toByteString(DatasetMetadata.empty))
+            Flow[ByteString].mapAsync(parallelism = 1)(_ => DatasetMetadata.toByteString(DatasetMetadata.empty))
         }
       ),
       context = context,

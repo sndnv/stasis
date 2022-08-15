@@ -9,8 +9,6 @@ import stasis.client.model.{DatasetMetadata, FilesystemMetadata}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.{EncodingHelpers, Fixtures, ResourceHelpers}
 
-import scala.concurrent.Future
-
 class AesSpec extends AsyncUnitSpec with EncodingHelpers with ResourceHelpers {
   "An AES encoder/decoder implementation" should "encrypt files" in {
     for {
@@ -47,6 +45,7 @@ class AesSpec extends AsyncUnitSpec with EncodingHelpers with ResourceHelpers {
   it should "encrypt dataset metadata" in {
     Source
       .single(DatasetMetadata.toByteString(datasetMetadata))
+      .mapAsync(parallelism = 1)(identity)
       .via(Aes.encrypt(metadataSecret = metadataSecret))
       .runFold(ByteString.empty)(_ concat _)
       .map { actualEncryptedDatasetMetadata =>
@@ -59,7 +58,7 @@ class AesSpec extends AsyncUnitSpec with EncodingHelpers with ResourceHelpers {
       .single(encryptedDatasetMetadata.decodeFromBase64)
       .via(Aes.decrypt(metadataSecret = metadataSecret))
       .runFold(ByteString.empty)(_ concat _)
-      .flatMap(rawMetadata => Future.fromTry(DatasetMetadata.fromByteString(rawMetadata)))
+      .flatMap(rawMetadata => DatasetMetadata.fromByteString(rawMetadata))
       .map { expectedDatasetMetadata =>
         expectedDatasetMetadata should be(datasetMetadata)
       }
@@ -99,25 +98,16 @@ class AesSpec extends AsyncUnitSpec with EncodingHelpers with ResourceHelpers {
   )
 
   private val encryptedDatasetMetadata =
-    "C2/oy6GGTHp0fNQitirONsySgkCbV7diShOwLU7Trm0/E" +
-      "xBqb2nGQH4+zMhpfNCBVptVM2V9koanOe8kvP1SccFb" +
-      "OLY9SwNrXO0W2j7qNUzx4oZ2SQMN2EQJrQ2Rus7+CbN" +
-      "ST4Tcqu1x18BucsSRPm6YfDjhUpT7NsCy2vQM/2ufws" +
-      "evNM3U//1kqURSpNVcpjRJ5RJW+iZy4CMfI2lcxuWUb" +
-      "SSsPbDL2NSgV1g+x5FuUwDbEvtc9ww0BJWcW5yXzWCA" +
-      "XOEWJqaPSXwBnF34dlqrGzfOTv5Cc2jg+a3uEcUM6mY" +
-      "pM3PxfkJwEaPSqEyP9zFRZKt6W8UuTaxOqpa1PPmcME" +
-      "SCYJobf4UWafUFe9GGJ3Jwr4cEYYqrYglmkNlhThajy" +
-      "604ewvBfKUUgy0vC+d2U3gX5nrBhTGmn8rCSABj1HXK" +
-      "Qm+gNOMxHDW65KAThmX2rnGj3agK7WQv6fccnmveVCj" +
-      "xh+U89lHXs9serf05hFC1bf/IzkrpgQOzBjVwIZHJgl" +
-      "Xif1WfK7A6RVK/Ii4S+RDEY4z1qyliwjmNMrawBCwX+" +
-      "0Y9agTEHtLkwqq+u9J8xue49/eJdQA3Jx9/0Gbesabx" +
-      "LTZHD7Ry3isyVMgmG1gLHgmBdvubO1VRMj9mb+XKf+7" +
-      "PueHC5ghUzIiwXnt+UIgtdSIJCfWAfWYqpe6PMSkysC" +
-      "Ev4XOEy0WGmscYtHYMQinmVQe3ClVORJ9/mbolmc01O" +
-      "Jj4M7176G+IlbUHOlnAAZ6O+Ug0ehuc1TSXT0LKKtz4" +
-      "nzNsDkvUCXI5VZI="
+    "HmbhwaypOBcEU1AhuKsDjI0+veHe83EmsKgSFnSfI8sdL" +
+      "21k3hGfWZ/nv8j3Wdd1s2aatGFivHDQqIEy/XbEO/t5" +
+      "7k/hjMsj1x15u++p9cbXllxAWEvACpr8AtoCehZkI9T" +
+      "ankVFir2Yfr/N7tpMdNNw/UmA3Cord1AOZ02eRKmbP7" +
+      "xT4Ppbu17AnAD4zNomR4txkDe7Xdr0eyHqtXsWokosN" +
+      "gSd+QZXe/G374c1MGOMbBLfPICjxfxCUOkgG/1pogMM" +
+      "HNTQM8HrwNqweP1h4n9eEjoK4fQpcSwwwspGbeplgBG" +
+      "jNJTZDGN5N83TMunCcgk5P5KQTKXh77MpyvpALCOEHu" +
+      "kCm0dWCyqGGDT/74gaoP3z9YCNYFQYB5RO4ss2gQAsq" +
+      "fuE9Wnqy2x6mn+gqQ=="
 
   private val metadataSecret = DeviceMetadataSecret(
     iv = encryptionIv.decodeFromBase64,
