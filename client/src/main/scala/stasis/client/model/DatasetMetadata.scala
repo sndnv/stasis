@@ -1,17 +1,18 @@
 package stasis.client.model
 
-import java.nio.file.{Path, Paths}
 import akka.NotUsed
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import stasis.client.api.clients.ServerApiEndpointClient
+import stasis.client.compression.{Decoder => CompressionDecoder, Encoder => CompressionEncoder, Gzip}
 import stasis.client.encryption.secrets.DeviceMetadataSecret
-import stasis.client.encryption.{Decoder, Encoder}
+import stasis.client.encryption.{Decoder => EncryptionDecoder, Encoder => EncryptionEncoder}
 import stasis.core.packaging.Crate
 
+import java.nio.file.{Path, Paths}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 final case class DatasetMetadata(
   contentChanged: Map[Path, EntityMetadata],
@@ -83,6 +84,8 @@ final case class DatasetMetadata(
 }
 
 object DatasetMetadata {
+  private final val DefaultCompression: CompressionEncoder with CompressionDecoder = Gzip
+
   def empty: DatasetMetadata =
     DatasetMetadata(
       contentChanged = Map.empty,
@@ -90,7 +93,7 @@ object DatasetMetadata {
       filesystem = FilesystemMetadata.empty
     )
 
-  def toByteString(metadata: DatasetMetadata): ByteString = {
+  def toByteString(metadata: DatasetMetadata)(implicit mat: Materializer): Future[ByteString] = {
     val data = proto.metadata.DatasetMetadata(
       contentChanged = metadata.contentChanged.map { case (entity, metadata) =>
         entity.toAbsolutePath.toString -> EntityMetadata.toProto(metadata)
@@ -101,42 +104,53 @@ object DatasetMetadata {
       filesystem = Some(FilesystemMetadata.toProto(metadata.filesystem))
     )
 
-    ByteString(data.toByteArray)
+    Source
+      .single(ByteString.fromArrayUnsafe(data.toByteArray))
+      .via(DefaultCompression.compress)
+      .runFold(ByteString.empty)(_ concat _)
   }
 
-  def fromByteString(bytes: ByteString): Try[DatasetMetadata] =
-    Try {
-      proto.metadata.DatasetMetadata.parseFrom(bytes.toArrayUnsafe())
-    }.flatMap { data =>
-      for {
-        contentChanged <- foldTryMap(
-          source = data.contentChanged.map { case (entity, metadata) =>
-            Paths.get(entity) -> EntityMetadata.fromProto(metadata)
-          }
-        )
-        metadataChanged <- foldTryMap(
-          source = data.metadataChanged.map { case (entity, metadata) =>
-            Paths.get(entity) -> EntityMetadata.fromProto(metadata)
-          }
-        )
-        filesystem <- FilesystemMetadata.fromProto(data.filesystem)
-      } yield {
-        DatasetMetadata(
-          contentChanged = contentChanged,
-          metadataChanged = metadataChanged,
-          filesystem = filesystem
-        )
+  def fromByteString(bytes: ByteString)(implicit mat: Materializer): Future[DatasetMetadata] = {
+    import mat.executionContext
+
+    Source
+      .single(bytes)
+      .via(DefaultCompression.decompress)
+      .runFold(ByteString.empty)(_ concat _)
+      .map(data => proto.metadata.DatasetMetadata.parseFrom(data.toArrayUnsafe()))
+      .flatMap { data =>
+        val result = for {
+          contentChanged <- foldTryMap(
+            source = data.contentChanged.map { case (entity, metadata) =>
+              Paths.get(entity) -> EntityMetadata.fromProto(metadata)
+            }
+          )
+          metadataChanged <- foldTryMap(
+            source = data.metadataChanged.map { case (entity, metadata) =>
+              Paths.get(entity) -> EntityMetadata.fromProto(metadata)
+            }
+          )
+          filesystem <- FilesystemMetadata.fromProto(data.filesystem)
+        } yield {
+          DatasetMetadata(
+            contentChanged = contentChanged,
+            metadataChanged = metadataChanged,
+            filesystem = filesystem
+          )
+        }
+
+        Future.fromTry(result)
       }
-    }
+  }
 
   def encrypt(
     metadataSecret: DeviceMetadataSecret,
     metadata: DatasetMetadata,
-    encoder: Encoder
+    encoder: EncryptionEncoder
   )(implicit mat: Materializer): Future[ByteString] =
     Source
       .single(metadata)
-      .map(DatasetMetadata.toByteString)
+      .mapAsync(parallelism = 1)(DatasetMetadata.toByteString)
       .via(encoder.encrypt(metadataSecret))
       .runFold(ByteString.empty)(_ concat _)
 
@@ -144,19 +158,14 @@ object DatasetMetadata {
     metadataCrate: Crate.Id,
     metadataSecret: DeviceMetadataSecret,
     metadata: Option[Source[ByteString, NotUsed]],
-    decoder: Decoder
+    decoder: EncryptionDecoder
   )(implicit ec: ExecutionContext, mat: Materializer): Future[DatasetMetadata] =
     metadata match {
       case Some(metadata) =>
         metadata
           .via(decoder.decrypt(metadataSecret))
           .runFold(ByteString.empty)(_ concat _)
-          .flatMap { metadata =>
-            DatasetMetadata.fromByteString(metadata) match {
-              case Success(metadata) => Future.successful(metadata)
-              case Failure(e)        => Future.failed(e)
-            }
-          }
+          .flatMap(DatasetMetadata.fromByteString)
 
       case None =>
         Future.failed(
