@@ -25,14 +25,23 @@ function file_name_from_path() {
   echo "${FILE%.*}"
 }
 
+function run_grep() {
+  if command -v ggrep &> /dev/null
+  then
+    ggrep "$@"
+  else
+    grep "$@"
+  fi
+}
+
 SCRIPTS_DIR=$(unset CDPATH && cd "$(dirname "$0")" && echo "${PWD}")
 PRODUCTION_DEPLOYMENT_DIR=$(dirname "${SCRIPTS_DIR}")
 DEPLOYMENT_DIR=$(dirname "${PRODUCTION_DEPLOYMENT_DIR}")
 REPO_DIR=$(dirname "${DEPLOYMENT_DIR}")
 CLIENT_CLI_DIR="${REPO_DIR}/client-cli"
 
-CLIENT_VERSION=$(cat "${REPO_DIR}/version.sbt" | grep -oP "\K\".+\"" | tr -d \")
-CLIENT_CLI_VERSION=$(cat "${CLIENT_CLI_DIR}/setup.py" | grep -oP "\Kversion='.+'" | grep -oP "\K'.+'" | tr -d \')
+CLIENT_VERSION=$(cat "${REPO_DIR}/version.sbt" | run_grep -oP "\K\".+\"" | tr -d \")
+CLIENT_CLI_VERSION=$(cat "${CLIENT_CLI_DIR}/setup.py" | run_grep -oP "\Kversion='.+'" | run_grep -oP "\K'.+'" | tr -d \')
 
 echo "[$(now)] Building [stasis-client]..."
 (cd "${REPO_DIR}" && sbt "project client" universal:packageBin) || failed
@@ -50,7 +59,18 @@ CLIENT_CLI_ARCHIVE="${REPO_DIR}/client-cli/dist/stasis-client-cli-${CLIENT_CLI_V
 CLIENT_CLI_ARCHIVE_NAME=$(file_name_from_path ${CLIENT_CLI_ARCHIVE})
 
 CLIENT_PATH="${CLIENT_USER_HOME}/stasis-client"
-CLIENT_CONFIG_PATH="${CLIENT_USER_HOME}/.config/stasis-client"
+
+if [[ "${OSTYPE}" == "linux"* ]]; then
+  CLIENT_CONFIG_PATH="${CLIENT_USER_HOME}/.config/stasis-client"
+  TARGET_BIN_PATH="${CLIENT_USER_HOME}/.local/bin"
+elif [[ "${OSTYPE}" == "darwin"* ]]; then
+  CLIENT_CONFIG_PATH="${CLIENT_USER_HOME}/Library/Preferences/stasis-client"
+  TARGET_BIN_PATH="/usr/local/bin"
+else
+  echo "[$(now)] ... operating system [${OSTYPE}] is not supported."
+  exit 1
+fi
+
 CLIENT_CERTS_PATH="${CLIENT_CONFIG_PATH}/certs"
 CLIENT_LOGS_PATH="${CLIENT_PATH}/logs"
 CLIENT_STATE_PATH="${CLIENT_PATH}/state"
@@ -83,13 +103,13 @@ chown -R ${CLIENT_USER} ${CLIENT_STATE_PATH} || failed
 chmod +w ${CLIENT_STATE_PATH} || failed
 
 echo "[$(now)] Extracting client from [${CLIENT_ARCHIVE}] to [${CLIENT_PATH}]..."
-unzip -q -d "${CLIENT_PATH}/" ${CLIENT_ARCHIVE} || failed
-mv ${CLIENT_PATH}/${CLIENT_ARCHIVE_NAME}/* ${CLIENT_PATH} || failed
+unzip -o -q -d "${CLIENT_PATH}/" ${CLIENT_ARCHIVE} || failed
+mv -f ${CLIENT_PATH}/${CLIENT_ARCHIVE_NAME}/* ${CLIENT_PATH} || failed
 rm -r "${CLIENT_PATH}/${CLIENT_ARCHIVE_NAME}" || failed
-ln -s "${CLIENT_PATH}/bin/stasis-client" "${CLIENT_USER_HOME}/.local/bin/stasis-client" || failed
+ln -s "${CLIENT_PATH}/bin/stasis-client" "${TARGET_BIN_PATH}/stasis-client" || failed
 
 echo "[$(now)] Installing [stasis-client-cli]..."
 pip3 install ${CLIENT_CLI_ARCHIVE} || failed
-ln -s "${CLIENT_USER_HOME}/.local/bin/stasis-client-cli" "${CLIENT_USER_HOME}/.local/bin/stasis"
+ln -s "$(which stasis-client-cli)" "${TARGET_BIN_PATH}/stasis"
 
 echo "[$(now)] ... done."
