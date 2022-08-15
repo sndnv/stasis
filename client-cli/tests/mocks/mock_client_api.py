@@ -22,6 +22,7 @@ class MockClientApi(ClientApi):
             'operation_progress': 0,
             'operation_stop': 0,
             'operation_resume': 0,
+            'operation_remove': 0,
             'backup_rules': 0,
             'backup_start': 0,
             'backup_define': 0,
@@ -92,6 +93,10 @@ class MockClientApi(ClientApi):
 
     def operation_resume(self, operation):
         self.stats['operation_resume'] += 1
+        return {'successful': True}
+
+    def operation_remove(self, operation):
+        self.stats['operation_remove'] += 1
         return {'successful': True}
 
     def backup_rules(self):

@@ -136,6 +136,15 @@ class ClientApi(ABC):
         """
 
     @abstractmethod
+    def operation_remove(self, operation):
+        """
+        Removes an inactive(stopped/failed) operation.
+
+        :param operation: operation to remove
+        :return: dict with result of action
+        """
+
+    @abstractmethod
     def backup_rules(self):
         """
         Retrieves the current backup specification/rules.
