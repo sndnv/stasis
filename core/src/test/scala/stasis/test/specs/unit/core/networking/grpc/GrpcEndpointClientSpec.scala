@@ -24,7 +24,7 @@ import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
 class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
-  "An GRPC Endpoint Client" should "successfully push crates" in {
+  "An GRPC Endpoint Client" should "successfully push crates" in withRetry {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
@@ -43,7 +43,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     }
   }
 
-  it should "fail to push crates if no credentials are available" in {
+  it should "fail to push crates if no credentials are available" in withRetry {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
@@ -67,7 +67,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
-  it should "successfully push crates via a stream sink" in {
+  it should "successfully push crates via a stream sink" in withRetry {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
@@ -91,7 +91,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     }
   }
 
-  it should "handle reservation rejections when pushing via a stream sink" in {
+  it should "handle reservation rejections when pushing via a stream sink" in withRetry {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
@@ -118,7 +118,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
-  it should "handle push failures via a stream sink" in {
+  it should "handle push failures via a stream sink" in withRetry {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
@@ -154,7 +154,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
-  it should "successfully pull crates" in {
+  it should "successfully pull crates" in withRetry {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
@@ -190,7 +190,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
-  it should "handle trying to pull missing crates" in {
+  it should "handle trying to pull missing crates" in withRetry {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
@@ -206,7 +206,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     }
   }
 
-  it should "handle pull failures" in {
+  it should "handle pull failures" in withRetry {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
@@ -229,7 +229,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
-  it should "be able to authenticate against multiple endpoints" in {
+  it should "be able to authenticate against multiple endpoints" in withRetry {
     val primaryEndpointPort = ports.dequeue()
     val primaryEndpointAddress = GrpcEndpointAddress("localhost", primaryEndpointPort, tlsEnabled = false)
     val secondaryEndpointPort = ports.dequeue()
@@ -270,7 +270,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     }
   }
 
-  it should "fail to push crates via sink if no credentials are available" in {
+  it should "fail to push crates via sink if no credentials are available" in withRetry {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
@@ -294,7 +294,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
-  it should "fail to pull crates if no credentials are available" in {
+  it should "fail to pull crates if no credentials are available" in withRetry {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
@@ -320,7 +320,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
-  it should "successfully discard existing crates" in {
+  it should "successfully discard existing crates" in withRetry {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
@@ -345,7 +345,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
-  it should "fail to discard crates if no credentials are available" in {
+  it should "fail to discard crates if no credentials are available" in withRetry {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
@@ -371,7 +371,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
-  it should "fail to discard missing crates" in {
+  it should "fail to discard missing crates" in withRetry {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
@@ -387,7 +387,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     }
   }
 
-  it should "handle discard failures" in {
+  it should "handle discard failures" in withRetry {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = false)
 
@@ -403,7 +403,7 @@ class GrpcEndpointClientSpec extends AsyncUnitSpec with Eventually {
     }
   }
 
-  it should "support custom connection contexts" in {
+  it should "support custom connection contexts" in withRetry {
     val endpointPort = ports.dequeue()
     val endpointAddress = GrpcEndpointAddress("localhost", endpointPort, tlsEnabled = true)
 

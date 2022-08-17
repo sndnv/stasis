@@ -13,7 +13,7 @@ trait StateStoreBehaviour { _: AsyncUnitSpec with FileSystemHelpers =>
   import StateStoreBehaviour._
 
   def stateStore(setup: FileSystemSetup)(implicit system: ActorSystem[SpawnProtocol.Command]): Unit = {
-    it should "support persisting state to file" in {
+    it should "support persisting state to file" in withRetry {
       val (filesystem, _) = createMockFileSystem(setup)
 
       val target = filesystem.getPath("/store")
@@ -45,7 +45,7 @@ trait StateStoreBehaviour { _: AsyncUnitSpec with FileSystemHelpers =>
         }
     }
 
-    it should "support pruning old state files" in {
+    it should "support pruning old state files" in withRetry {
       val (filesystem, _) = createMockFileSystem(setup)
 
       val target = filesystem.getPath("/store")
@@ -101,7 +101,7 @@ trait StateStoreBehaviour { _: AsyncUnitSpec with FileSystemHelpers =>
       }
     }
 
-    it should "support discarding state files" in {
+    it should "support discarding state files" in withRetry {
       val (filesystem, _) = createMockFileSystem(setup)
 
       val target = filesystem.getPath("/store")
@@ -148,7 +148,7 @@ trait StateStoreBehaviour { _: AsyncUnitSpec with FileSystemHelpers =>
       }
     }
 
-    it should "support restoring existing state from file" in {
+    it should "support restoring existing state from file" in withRetry {
       val (filesystem, _) = createMockFileSystem(setup)
 
       val target = filesystem.getPath("/store")
@@ -173,7 +173,7 @@ trait StateStoreBehaviour { _: AsyncUnitSpec with FileSystemHelpers =>
       }
     }
 
-    it should "handle deserialization failures" in {
+    it should "handle deserialization failures" in withRetry {
       val (filesystem, _) = createMockFileSystem(setup)
 
       val target = filesystem.getPath("/store")

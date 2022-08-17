@@ -58,7 +58,7 @@ class EventLogFileBackendSpec extends AsyncUnitSpec with EventLogBackendBehaviou
       }
     )
 
-  it should "support restoring existing state on start" in {
+  it should "support restoring existing state on start" in withRetry {
     val (filesystem, _) = createMockFileSystem(FileSystemSetup.Unix.withEmptyDirs)
 
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
@@ -87,7 +87,7 @@ class EventLogFileBackendSpec extends AsyncUnitSpec with EventLogBackendBehaviou
     }
   }
 
-  it should "support persisting state if too many events have been cached" in {
+  it should "support persisting state if too many events have been cached" in withRetry {
     val (filesystem, _) = createMockFileSystem(FileSystemSetup.Unix.withEmptyDirs)
 
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
@@ -126,7 +126,7 @@ class EventLogFileBackendSpec extends AsyncUnitSpec with EventLogBackendBehaviou
     }
   }
 
-  it should "support persisting state if too much time has passed" in {
+  it should "support persisting state if too much time has passed" in withRetry {
     val (filesystem, _) = createMockFileSystem(FileSystemSetup.Unix.withEmptyDirs)
 
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
@@ -172,7 +172,7 @@ class EventLogFileBackendSpec extends AsyncUnitSpec with EventLogBackendBehaviou
     }
   }
 
-  it should "support restoring state after it has been persisted" in {
+  it should "support restoring state after it has been persisted" in withRetry {
     val (filesystem, _) = createMockFileSystem(FileSystemSetup.Unix.withEmptyDirs)
 
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
@@ -217,7 +217,7 @@ class EventLogFileBackendSpec extends AsyncUnitSpec with EventLogBackendBehaviou
     }
   }
 
-  it should "handle state restore failures" in {
+  it should "handle state restore failures" in withRetry {
     val (filesystem, _) = createMockFileSystem(FileSystemSetup.Unix.withEmptyDirs)
 
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
@@ -250,7 +250,7 @@ class EventLogFileBackendSpec extends AsyncUnitSpec with EventLogBackendBehaviou
     }
   }
 
-  it should "handle state restore providing no data" in {
+  it should "handle state restore providing no data" in withRetry {
     val (filesystem, _) = createMockFileSystem(FileSystemSetup.Unix.withEmptyDirs)
 
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
@@ -280,7 +280,7 @@ class EventLogFileBackendSpec extends AsyncUnitSpec with EventLogBackendBehaviou
     }
   }
 
-  it should "handle state persistence failures" in {
+  it should "handle state persistence failures" in withRetry {
     val (filesystem, _) = createMockFileSystem(FileSystemSetup.Unix.withEmptyDirs)
 
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()

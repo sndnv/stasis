@@ -25,7 +25,7 @@ import scala.util.control.NonFatal
 class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import Implicits._
 
-  "An GRPC Endpoint" should "successfully authenticate a client" in {
+  "An GRPC Endpoint" should "successfully authenticate a client" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val endpoint = createTestGrpcEndpoint()
@@ -39,7 +39,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  it should "fail to authenticate a client with no credentials" in {
+  it should "fail to authenticate a client with no credentials" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val endpoint = createTestGrpcEndpoint()
@@ -53,7 +53,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  it should "fail to authenticate a client with invalid credentials" in {
+  it should "fail to authenticate a client with invalid credentials" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val endpoint = createTestGrpcEndpoint()
@@ -67,7 +67,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  it should "successfully respond to valid URLs" in {
+  it should "successfully respond to valid URLs" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val endpoint = createTestGrpcEndpoint()
@@ -87,7 +87,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  it should "respond with failure to invalid methods" in {
+  it should "respond with failure to invalid methods" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val endpoint = createTestGrpcEndpoint()
@@ -107,7 +107,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  it should "respond with failure to unsupported gRPC protocols" in {
+  it should "respond with failure to unsupported gRPC protocols" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val endpoint = createTestGrpcEndpoint()
@@ -127,7 +127,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  it should "respond with failure to invalid URIs" in {
+  it should "respond with failure to invalid URIs" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val endpoint = createTestGrpcEndpoint()
@@ -145,7 +145,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  it should "successfully process reservation requests" in {
+  it should "successfully process reservation requests" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val endpoint = createTestGrpcEndpoint()
@@ -186,7 +186,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "reject reservation requests that cannot be fulfilled" in {
+  it should "reject reservation requests that cannot be fulfilled" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val endpoint = createTestGrpcEndpoint(
@@ -212,7 +212,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  it should "reject invalid reservation requests" in {
+  it should "reject invalid reservation requests" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val endpoint = createTestGrpcEndpoint()
@@ -234,7 +234,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  it should "handle reservation failures" in {
+  it should "handle reservation failures" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val endpoint = createTestGrpcEndpoint(
@@ -267,7 +267,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  it should "successfully store crates" in {
+  it should "successfully store crates" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val endpoint = createTestGrpcEndpoint()
@@ -289,7 +289,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  it should "fail to store crates when a reservation ID is not provided" in {
+  it should "fail to store crates when a reservation ID is not provided" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val endpoint = createTestGrpcEndpoint()
@@ -311,7 +311,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  it should "fail to store crates when no data is sent" in {
+  it should "fail to store crates when no data is sent" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val endpoint = createTestGrpcEndpoint()
@@ -329,7 +329,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  it should "handle push failures" in {
+  it should "handle push failures" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val reservationStore = new MockReservationStore()
@@ -356,7 +356,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  it should "fail to store crates when reservation is missing" in {
+  it should "fail to store crates when reservation is missing" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val endpoint = createTestGrpcEndpoint()
@@ -381,7 +381,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  it should "successfully retrieve crates" in {
+  it should "successfully retrieve crates" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val endpoint = createTestGrpcEndpoint()
@@ -412,7 +412,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "fail to retrieve missing crates" in {
+  it should "fail to retrieve missing crates" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val endpoint = createTestGrpcEndpoint()
@@ -424,7 +424,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  it should "fail to retrieve crates when no crate ID is provided" in {
+  it should "fail to retrieve crates when no crate ID is provided" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val endpoint = createTestGrpcEndpoint()
@@ -441,7 +441,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  it should "successfully delete existing crates" in {
+  it should "successfully delete existing crates" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val endpoint = createTestGrpcEndpoint()
@@ -468,7 +468,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "fail to delete missing crates" in {
+  it should "fail to delete missing crates" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val endpoint = createTestGrpcEndpoint()
@@ -485,7 +485,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  it should "fail to delete crates when no crate ID is provided" in {
+  it should "fail to delete crates when no crate ID is provided" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val endpoint = createTestGrpcEndpoint()

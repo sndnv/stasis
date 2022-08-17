@@ -14,7 +14,7 @@ import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import scala.concurrent.duration._
 
 class DefaultServerTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAfterAll {
-  "A DefaultServerTracker" should "track server events" in {
+  "A DefaultServerTracker" should "track server events" in withRetry {
     val tracker = createTracker()
 
     val server1 = "test-server-01"
@@ -38,7 +38,7 @@ class DefaultServerTrackerSpec extends AsyncUnitSpec with Eventually with Before
     }
   }
 
-  it should "provide state updates" in {
+  it should "provide state updates" in withRetry {
     val tracker = createTracker()
 
     val server = "test-server-01"

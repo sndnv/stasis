@@ -21,7 +21,7 @@ import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import scala.concurrent.duration._
 
 class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAfterAll {
-  "A DefaultBackupTracker" should "track backup events" in {
+  "A DefaultBackupTracker" should "track backup events" in withRetry {
     val tracker = createTracker()
 
     implicit val operation: Operation.Id = Operation.generateId()
@@ -86,7 +86,7 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
     }
   }
 
-  it should "provide state updates" in {
+  it should "provide state updates" in withRetry {
     val tracker = createTracker()
 
     val entity = Fixtures.Metadata.FileOneMetadata.path
@@ -128,7 +128,7 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
     }
   }
 
-  it should "fail to update state if a backup has not been started" in {
+  it should "fail to update state if a backup has not been started" in withRetry {
     val tracker = createTracker()
 
     implicit val operation: Operation.Id = Operation.generateId()
@@ -149,7 +149,7 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
     )
   }
 
-  it should "support dropping old state" in {
+  it should "support dropping old state" in withRetry {
     val tracker = createTracker(maxRetention = 250.millis)
 
     val operation1 = Operation.generateId()
@@ -178,7 +178,7 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
     }
   }
 
-  it should "support removing operations" in {
+  it should "support removing operations" in withRetry {
     val tracker = createTracker(maxRetention = 250.millis)
 
     val operation1 = Operation.generateId()
