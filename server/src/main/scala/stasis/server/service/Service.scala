@@ -19,6 +19,7 @@ import stasis.core.security.{JwtNodeAuthenticator, JwtNodeCredentialsProvider, N
 import stasis.core.telemetry.metrics.MetricsExporter
 import stasis.core.telemetry.{DefaultTelemetryContext, TelemetryContext}
 import stasis.core.{api, persistence, routing, security}
+import stasis.server.BuildInfo
 import stasis.server.api.routes.DeviceBootstrap
 import stasis.server.api.{ApiEndpoint, BootstrapEndpoint}
 import stasis.server.security._
@@ -29,6 +30,7 @@ import stasis.server.service.Service.Config.BootstrapApiConfig
 import stasis.shared.model.devices.DeviceBootstrapParameters
 import stasis.shared.secrets.SecretsConfig
 
+import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.ExecutionContext
@@ -264,6 +266,15 @@ trait Service {
 
     log.info(
       s"""
+         |Build(
+         |  name:    ${BuildInfo.name}
+         |  version: ${BuildInfo.version}
+         |  time:    ${Instant.ofEpochMilli(BuildInfo.time).toString}
+         |)""".stripMargin
+    )
+
+    log.info(
+      s"""
          |Config(
          |  service:
          |    iqt:  ${timeout.duration.toMillis.toString} ms
@@ -405,8 +416,7 @@ trait Service {
          |              key-size:       ${deviceBootstrapParams.secrets.encryption.deviceSecret.keySize.toString} bytes
          |              iv-size:        ${deviceBootstrapParams.secrets.encryption.deviceSecret.ivSize.toString} bytes
          |        additional-config:    ${deviceBootstrapParams.additionalConfig.fields.nonEmpty.toString}
-         |)
-       """.stripMargin
+         |)""".stripMargin
     )
 
     (apiServices, coreServices)
