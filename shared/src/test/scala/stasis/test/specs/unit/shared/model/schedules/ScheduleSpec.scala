@@ -9,7 +9,7 @@ import stasis.test.specs.unit.UnitSpec
 import scala.concurrent.duration._
 
 class ScheduleSpec extends UnitSpec {
-  "A Schedule" should "calculate the next invocation date/time" in {
+  "A Schedule" should "calculate the next invocation date/time" in withRetry {
     val now = LocalDateTime.now()
 
     val interval = 10.seconds
@@ -40,7 +40,7 @@ class ScheduleSpec extends UnitSpec {
     )
   }
 
-  it should "enforce a minimum interval of one millisecond when calculating next invocation" in {
+  it should "enforce a minimum interval of one millisecond when calculating next invocation" in withRetry {
     val schedule = Schedule(
       id = Schedule.generateId(),
       info = "test-schedule",

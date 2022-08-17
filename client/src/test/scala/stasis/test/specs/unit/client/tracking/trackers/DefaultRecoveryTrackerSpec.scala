@@ -19,7 +19,7 @@ import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import scala.concurrent.duration._
 
 class DefaultRecoveryTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAfterAll {
-  "A DefaultRecoveryTracker" should "track recovery events" in {
+  "A DefaultRecoveryTracker" should "track recovery events" in withRetry {
     val tracker = createTracker()
 
     implicit val operation: Operation.Id = Operation.generateId()
@@ -74,7 +74,7 @@ class DefaultRecoveryTrackerSpec extends AsyncUnitSpec with Eventually with Befo
     }
   }
 
-  it should "provide state updates" in {
+  it should "provide state updates" in withRetry {
     val tracker = createTracker()
 
     implicit val operation: Operation.Id = Operation.generateId()
@@ -113,7 +113,7 @@ class DefaultRecoveryTrackerSpec extends AsyncUnitSpec with Eventually with Befo
     }
   }
 
-  it should "support dropping old state" in {
+  it should "support dropping old state" in withRetry {
     val tracker = createTracker(maxRetention = 250.millis)
 
     val entity = Fixtures.Metadata.FileOneMetadata.path
@@ -144,7 +144,7 @@ class DefaultRecoveryTrackerSpec extends AsyncUnitSpec with Eventually with Befo
     }
   }
 
-  it should "support removing operations" in {
+  it should "support removing operations" in withRetry {
     val tracker = createTracker(maxRetention = 250.millis)
 
     val entity = Fixtures.Metadata.FileOneMetadata.path

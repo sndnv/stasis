@@ -213,7 +213,13 @@ lazy val buildInfoSettings = Seq(
   buildInfoPackage := s"stasis.${name.value}"
 )
 
-Global / concurrentRestrictions += Tags.limit(Tags.Test, 2)
+Global / concurrentRestrictions += Tags.limit(
+  Tags.Test,
+  sys.env.getOrElse("CI", "").trim.toLowerCase match {
+    case "true" => 1
+    case _      => 2
+  }
+)
 
 addCommandAlias(
   name = "prepare",

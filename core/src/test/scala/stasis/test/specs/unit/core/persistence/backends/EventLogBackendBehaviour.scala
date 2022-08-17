@@ -20,7 +20,7 @@ trait EventLogBackendBehaviour { _: AsyncUnitSpec with Eventually =>
 
     val testEvent = "test-event"
 
-    it should "store events and update state" in {
+    it should "store events and update state" in withRetry {
       val telemetry: MockTelemetryContext = MockTelemetryContext()
 
       val store = createBackend(telemetry)
@@ -38,7 +38,7 @@ trait EventLogBackendBehaviour { _: AsyncUnitSpec with Eventually =>
       }
     }
 
-    it should "handle state update failures" in {
+    it should "handle state update failures" in withRetry {
       val telemetry: MockTelemetryContext = MockTelemetryContext()
 
       val store = createBackend(telemetry)
@@ -73,7 +73,7 @@ trait EventLogBackendBehaviour { _: AsyncUnitSpec with Eventually =>
       }
     }
 
-    it should "provide a state update stream" in {
+    it should "provide a state update stream" in withRetry {
       val telemetry: MockTelemetryContext = MockTelemetryContext()
 
       eventually[Assertion] {
