@@ -24,8 +24,8 @@ lazy val versions = new {
   val h2       = "2.1.214"
 
   // telemetry
-  val openTelemetry           = "1.16.0"
-  val openTelemetryPrometheus = "1.16.0-alpha"
+  val openTelemetry           = "1.17.0"
+  val openTelemetryPrometheus = "1.17.0-alpha"
   val prometheus              = "0.16.0"
 
   // testing
@@ -33,7 +33,7 @@ lazy val versions = new {
   val scalaTest     = "3.2.13"
   val wiremock      = "2.33.2"
   val mockito       = "1.17.12"
-  val mockitoInline = "4.6.1"
+  val mockitoInline = "4.7.0"
   val jimfs         = "1.2"
 
   // misc
@@ -50,6 +50,7 @@ lazy val jdkDockerImage = "openjdk:17-slim-bullseye"
 lazy val server = (project in file("./server"))
   .settings(commonSettings)
   .settings(dockerSettings)
+  .settings(buildInfoSettings)
   .settings(
     libraryDependencies ++= Seq(
       "com.typesafe.slick" %% "slick"                             % versions.slick,
@@ -64,7 +65,7 @@ lazy val server = (project in file("./server"))
     ),
     dockerBaseImage := jdkDockerImage
   )
-  .enablePlugins(JavaAppPackaging)
+  .enablePlugins(JavaAppPackaging, BuildInfoPlugin)
   .dependsOn(shared % "compile->compile;test->test")
 
 lazy val client = (project in file("./client"))
@@ -93,6 +94,7 @@ lazy val client = (project in file("./client"))
 lazy val identity = (project in file("./identity"))
   .settings(commonSettings)
   .settings(dockerSettings)
+  .settings(buildInfoSettings)
   .settings(
     libraryDependencies ++= Seq(
       "com.typesafe.slick" %% "slick"                             % versions.slick,
@@ -108,7 +110,7 @@ lazy val identity = (project in file("./identity"))
     dockerBaseImage := jdkDockerImage
   )
   .dependsOn(core % "compile->compile;test->test")
-  .enablePlugins(JavaAppPackaging)
+  .enablePlugins(JavaAppPackaging, BuildInfoPlugin)
 
 lazy val shared = (project in file("./shared"))
   .settings(commonSettings)
@@ -201,6 +203,17 @@ lazy val dockerSettings = Seq(
   packageName          := s"$projectName-${name.value}",
   executableScriptName := s"$projectName-${name.value}"
 )
+
+lazy val buildInfoSettings = Seq(
+  buildInfoKeys    := Seq[BuildInfoKey](
+    name,
+    version,
+    BuildInfoKey.action("time") { System.currentTimeMillis }
+  ),
+  buildInfoPackage := s"stasis.${name.value}"
+)
+
+Global / concurrentRestrictions += Tags.limit(Tags.Test, 2)
 
 addCommandAlias(
   name = "prepare",

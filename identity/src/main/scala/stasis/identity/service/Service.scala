@@ -13,6 +13,7 @@ import stasis.core.security.keys.LocalKeyProvider
 import stasis.core.security.tls.EndpointContext
 import stasis.core.telemetry.metrics.MetricsExporter
 import stasis.core.telemetry.{DefaultTelemetryContext, TelemetryContext}
+import stasis.identity.BuildInfo
 import stasis.identity.api.{manage => manageApi, oauth => oauthApi, IdentityEndpoint}
 import stasis.identity.authentication.{manage, oauth}
 import stasis.identity.model.apis.Api
@@ -20,6 +21,7 @@ import stasis.identity.model.codes.generators.DefaultAuthorizationCodeGenerator
 import stasis.identity.model.secrets.Secret
 import stasis.identity.model.tokens.generators.{JwtBearerAccessTokenGenerator, RandomRefreshTokenGenerator}
 
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -145,6 +147,15 @@ trait Service {
 
     log.info(
       s"""
+         |Build(
+         |  name:    ${BuildInfo.name}
+         |  version: ${BuildInfo.version}
+         |  time:    ${Instant.ofEpochMilli(BuildInfo.time).toString}
+         |)""".stripMargin
+    )
+
+    log.info(
+      s"""
          |Config(
          |  realm: $realm
          |
@@ -204,8 +215,7 @@ trait Service {
          |    url:        ${persistence.databaseUrl}
          |    driver:     ${persistence.databaseDriver}
          |    keep-alive: ${persistence.databaseKeepAlive.toString}
-         |)
-       """.stripMargin
+         |)""".stripMargin
     )
 
     (persistence, endpoint, context)
