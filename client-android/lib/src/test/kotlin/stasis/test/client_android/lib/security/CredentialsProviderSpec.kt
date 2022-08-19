@@ -285,7 +285,6 @@ class CredentialsProviderSpec : WordSpec({
                 .setOnApiTokenUpdatedHandler(this) { apiUpdates.add(it) }
 
             provider.init(
-                coreRefreshToken = "core-token",
                 apiRefreshToken = "api-token",
                 plaintextDeviceSecret = secret.secret
             )
