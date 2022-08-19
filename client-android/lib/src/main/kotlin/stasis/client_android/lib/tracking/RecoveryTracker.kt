@@ -6,6 +6,7 @@ import stasis.client_android.lib.tracking.state.RecoveryState
 import java.nio.file.Path
 
 interface RecoveryTracker {
+    fun started(operation: OperationId)
     fun entityExamined(operation: OperationId, entity: Path, metadataChanged: Boolean, contentChanged: Boolean)
     fun entityCollected(operation: OperationId, entity: TargetEntity)
     fun entityProcessingStarted(operation: OperationId, entity: Path, expectedParts: Int)

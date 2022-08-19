@@ -87,6 +87,7 @@ class MetadataApplicationSpec : WordSpec({
             metadataAfterApplication.permissions shouldBe (metadata.permissions)
             metadataAfterApplication.updated shouldBe (metadata.updated)
 
+            mockTracker.statistics[MockRecoveryTracker.Statistic.Started] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityExamined] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityCollected] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessingStarted] shouldBe (0)

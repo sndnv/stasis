@@ -188,6 +188,7 @@ class EntityProcessingSpec : WordSpec({
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (contentCrates)
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (0)
 
+            mockTracker.statistics[MockRecoveryTracker.Statistic.Started] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityExamined] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityCollected] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessingStarted] shouldBe (totalChanged)
@@ -255,6 +256,7 @@ class EntityProcessingSpec : WordSpec({
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (0)
 
+            mockTracker.statistics[MockRecoveryTracker.Statistic.Started] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityExamined] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityCollected] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessingStarted] shouldBe (1)

@@ -51,6 +51,7 @@ class DefaultRecoveryTrackerSpec {
 
         assertThat(initialState, equalTo(emptyMap()))
 
+        tracker.started(operation)
         tracker.entityExamined(operation, entity = file1, metadataChanged = true, contentChanged = false)
         tracker.entityExamined(operation, entity = file2, metadataChanged = true, contentChanged = true)
         tracker.entityCollected(operation, entity = targetEntity)
@@ -100,6 +101,7 @@ class DefaultRecoveryTrackerSpec {
         assertThat(initialState, equalTo(emptyMap()))
 
         runBlocking {
+            tracker.started(operation)
             tracker.entityExamined(operation, entity = file, metadataChanged = true, contentChanged = false)
 
             eventually {
@@ -108,7 +110,7 @@ class DefaultRecoveryTrackerSpec {
                 assertThat(operationStateExamined.completed, equalTo(null))
             }
 
-            tracker.metadataApplied(operation = Operation.generateId(), entity = file) // other operation
+            tracker.started(operation = Operation.generateId()) // other operation
             tracker.completed(operation)
 
             eventually {
@@ -138,6 +140,7 @@ class DefaultRecoveryTrackerSpec {
         assertThat(initialState, equalTo(emptyMap()))
 
         runBlocking {
+            tracker.started(operation)
             tracker.entityExamined(operation, entity = file, metadataChanged = true, contentChanged = false)
 
             eventually {
@@ -161,15 +164,14 @@ class DefaultRecoveryTrackerSpec {
 
         val operation1: OperationId = UUID.randomUUID()
         val operation2: OperationId = UUID.randomUUID()
-        val file = Paths.get("test").toAbsolutePath()
 
         val initialState = tracker.state.value
 
         assertThat(initialState, equalTo(emptyMap()))
 
         runBlocking {
-            tracker.entityExamined(operation1, entity = file, metadataChanged = true, contentChanged = false)
-            tracker.entityExamined(operation2, entity = file, metadataChanged = true, contentChanged = false)
+            tracker.started(operation1)
+            tracker.started(operation2)
 
             eventually {
                 val state = tracker.state.value ?: emptyMap()
@@ -200,15 +202,14 @@ class DefaultRecoveryTrackerSpec {
 
         val operation1: OperationId = UUID.randomUUID()
         val operation2: OperationId = UUID.randomUUID()
-        val file = Paths.get("test").toAbsolutePath()
 
         val initialState = tracker.state.value
 
         assertThat(initialState, equalTo(emptyMap()))
 
         runBlocking {
-            tracker.entityExamined(operation1, entity = file, metadataChanged = true, contentChanged = false)
-            tracker.entityExamined(operation2, entity = file, metadataChanged = true, contentChanged = false)
+            tracker.started(operation1)
+            tracker.started(operation2)
 
             eventually {
                 val state = tracker.state.value ?: emptyMap()
