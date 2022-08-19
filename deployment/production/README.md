@@ -14,6 +14,25 @@ The provided `docker-compose.yml` defines all `stasis` services and their config
    * the correct values for `AKKA_HTTP_CORS_ALLOWED_ORIGINS` are set for both `identity` and `server`
 6) Start services with `docker-compose up`
 
+## After Bootstrap
+
+1) **Replace management user** - for extra security, a new management user with a new password should be created and
+the existing, default, management user should be removed. This can be done using the `server_create_user.sh` and
+`server_delete_user.sh` scripts. This user needs to have the following permissions:
+`view-self,view-privileged, view-public,view-service,manage-self,manage-privileged,manage-service` to be able to
+manage the server.
+2) **Create standard user** - for extra security, the management users and the users that own data/backups should be
+separate. As with the management user, the `server_create_user.sh` script can be used; the difference between the
+two types is only in the permissions that they are granted - `view-self,view-public,manage-self` for a standard user.
+3) **Create devices** - after the standard user has been created, its devices can then be setup; this is done via the
+`server_create_device.sh` script.
+4) **Bootstrap devices** - for each new device, a bootstrap process needs to be performed and that is done on the
+device itself. Using the `server_get_bootstrap_code.sh` script, a new bootstrap code can be generated for a specific device.
+5) **Run a backup** - after the bootstrap process has been completed for a device, a dataset definition can then be
+created and the first backup can be started. It might be a good idea to revise the backup rules and include/exclude
+additional files or directories.
+6) **Setup scheduling** - as a final setup step, backups can be configured to run periodically.
+
 ## Deployment Components
 
 ### [`bootstrap`](./bootstrap)
@@ -41,6 +60,10 @@ Contains basic scripts that help with the initial management of `server`.
 #### `server_create_user.sh`
 
 > Create new users via the server API
+
+#### `server_delete_user.sh`
+
+> Remove existing users via the server API
 
 #### `server_create_device.sh`
 
