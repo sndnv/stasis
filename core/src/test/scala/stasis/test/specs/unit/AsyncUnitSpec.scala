@@ -8,7 +8,6 @@ import org.scalatest.matchers.should.Matchers
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
-import scala.util.control.NonFatal
 
 trait AsyncUnitSpec extends AsyncFlatSpec with Matchers {
   implicit val timeout: Timeout = 500.milliseconds
@@ -44,9 +43,13 @@ trait AsyncUnitSpec extends AsyncFlatSpec with Matchers {
 
   def withRetry(times: Int)(f: => Future[Assertion]): Future[Assertion] =
     try {
-      f
+      f.recoverWith {
+        case e if times > 0 =>
+          alert(s"Test failed with [${e.getMessage}]; retrying...")
+          withRetry(times = times - 1)(f = f)
+      }
     } catch {
-      case NonFatal(e) if times > 0 =>
+      case e if times > 0 =>
         alert(s"Test failed with [${e.getMessage}]; retrying...")
         withRetry(times = times - 1)(f = f)
     }
