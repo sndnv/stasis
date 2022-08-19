@@ -2,7 +2,7 @@
 
 from terminaltables import AsciiTable
 
-from client_cli.render import memory_size_to_str, duration_to_str
+from client_cli.render import memory_size_to_str, duration_to_str, timestamp_to_iso
 
 
 def render(device):
@@ -42,7 +42,7 @@ def render_connections_as_table(connections):
                     lambda entry: [
                         entry[0],
                         'yes' if entry[1]['reachable'] else 'no',
-                        entry[1]['timestamp']
+                        timestamp_to_iso(entry[1]['timestamp'])
                     ],
                     connections.items()
                 )
