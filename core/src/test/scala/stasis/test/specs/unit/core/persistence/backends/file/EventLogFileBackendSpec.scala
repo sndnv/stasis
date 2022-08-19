@@ -184,7 +184,7 @@ class EventLogFileBackendSpec extends AsyncUnitSpec with EventLogBackendBehaviou
         config = EventLogFileBackend.Config(
           name = "log-store",
           persistAfterEvents = 2,
-          persistAfterPeriod = 1.second
+          persistAfterPeriod = 250.millis
         ),
         initialState = Queue.empty[String],
         stateStore = StateStore(
