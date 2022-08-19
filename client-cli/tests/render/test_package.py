@@ -13,9 +13,15 @@ from client_cli.render import (
 class RenderPackageSpec(unittest.TestCase):
 
     def test_should_convert_timestamps_to_datetime(self):
-        timestamp = '2020-01-02T03:04:05'
+        timestamp_1 = '2020-01-02T03:04:05.01234Z'
+        timestamp_2 = '2020-01-02T03:04:05Z'
+        timestamp_3 = '2020-01-02T03:04:05Z'
+        timestamp_4 = '2020-01-02T03:04:05'
         expected_datetime = datetime.datetime(year=2020, month=1, day=2, hour=3, minute=4, second=5)
-        self.assertEqual(timestamp_to_iso(timestamp), expected_datetime)
+        self.assertEqual(timestamp_to_iso(timestamp_1), expected_datetime.astimezone())
+        self.assertEqual(timestamp_to_iso(timestamp_2), expected_datetime.astimezone())
+        self.assertEqual(timestamp_to_iso(timestamp_3), expected_datetime.astimezone())
+        self.assertEqual(timestamp_to_iso(timestamp_4), expected_datetime)
 
     def test_should_convert_durations_to_string(self):
         duration = 5 * 24 * 60 * 60 + 7 * 60 * 60 + 15 * 60 + 42

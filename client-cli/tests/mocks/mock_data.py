@@ -1,4 +1,3 @@
-import time
 from uuid import uuid4
 
 PING = {
@@ -12,8 +11,8 @@ METADATA = {
             'size': 1024,
             'link': '/a/b/c',
             'is_hidden': False,
-            'created': int(round(time.time() * 1000)) + 1,
-            'updated': int(round(time.time() * 1000)) + 2,
+            'created': '2020-10-01T01:02:03',
+            'updated': '2020-10-01T01:02:04',
             'owner': 'test-user',
             'group': 'test-group',
             'permissions': '446',
@@ -28,8 +27,8 @@ METADATA = {
             'path': '/some/path/02',
             'size': 1024 * 32,
             'is_hidden': True,
-            'created': int(round(time.time() * 1000)) + 3,
-            'updated': int(round(time.time() * 1000)) + 4,
+            'created': '2020-10-01T01:02:05',
+            'updated': '2020-10-01T01:02:06',
             'owner': 'test-user',
             'group': 'test-group',
             'permissions': '456',
@@ -45,8 +44,8 @@ METADATA = {
             'path': '/some/path/03',
             'size': 1024 ** 3,
             'is_hidden': False,
-            'created': int(round(time.time() * 1000)) + 5,
-            'updated': int(round(time.time() * 1000)) + 6,
+            'created': '2020-10-01T01:02:07',
+            'updated': '2020-10-01T01:02:08',
             'owner': 'test-user',
             'group': 'test-group',
             'permissions': '004',
@@ -68,8 +67,8 @@ METADATA = {
             'size': 1,
             'link': '/a/b/c/d',
             'is_hidden': True,
-            'created': int(round(time.time() * 1000)) - 60 * 1000,
-            'updated': int(round(time.time() * 1000)) + 120 * 1000,
+            'created': '2020-10-01T01:02:09',
+            'updated': '2020-10-01T01:02:10',
             'owner': 'test-user',
             'group': 'test-group',
             'permissions': '444',
@@ -82,8 +81,8 @@ METADATA = {
             'path': '/some/path',
             'link': '/e/f/g',
             'is_hidden': False,
-            'created': int(round(time.time() * 1000)) - 60 * 1000,
-            'updated': int(round(time.time() * 1000)) + 120 * 1000,
+            'created': '2020-10-01T01:02:11',
+            'updated': '2020-10-01T01:02:12',
             'owner': 'test-user',
             'group': 'test-group',
             'permissions': '760',
@@ -92,8 +91,8 @@ METADATA = {
         '/some': {
             'path': '/some',
             'is_hidden': False,
-            'created': int(round(time.time() * 1000)) - 60 * 1000,
-            'updated': int(round(time.time() * 1000)) + 120 * 1000,
+            'created': '2020-10-01T01:02:13',
+            'updated': '2020-10-01T01:02:14',
             'owner': 'test-user',
             'group': 'test-group',
             'permissions': '740',
@@ -193,7 +192,7 @@ ENTRIES = [
             str(uuid4())
         ],
         'metadata': str(uuid4()),
-        'created': int(round(time.time() * 1000)),
+        'created': '2020-10-01T01:03:01',
     },
     {
         'id': str(uuid4()),
@@ -201,7 +200,7 @@ ENTRIES = [
         'device': DEVICE['id'],
         'data': [str(uuid4())],
         'metadata': str(uuid4()),
-        'created': int(round(time.time() * 1000)),
+        'created': '2020-10-01T01:03:02',
     },
     {
         'id': str(uuid4()),
@@ -209,7 +208,7 @@ ENTRIES = [
         'device': DEVICE['id'],
         'data': [str(uuid4()), str(uuid4())],
         'metadata': str(uuid4()),
-        'created': int(round(time.time() * 1000)),
+        'created': '2020-10-01T01:03:03',
     },
     {
         'id': str(uuid4()),
@@ -217,7 +216,7 @@ ENTRIES = [
         'device': DEVICE['id'],
         'data': [str(uuid4())],
         'metadata': str(uuid4()),
-        'created': int(round(time.time() * 1000)),
+        'created': '2020-10-01T01:03:04',
     },
 ]
 
@@ -331,7 +330,7 @@ OPERATIONS = [
             'total': 0,
             'processed': 0,
             'failures': 0,
-            'completed': int(round(time.time() * 1000)),
+            'completed': '2020-10-01T01:04:01',
         }
     },
 ]
@@ -462,8 +461,8 @@ RECOVERY_PROGRESS = [
 ]
 
 ACTIVE_CONNECTIONS = {
-    'localhost:9090': {'reachable': True, 'timestamp': int(round(time.time() * 1000))},
-    'localhost:9091': {'reachable': False, 'timestamp': int(round(time.time() * 1000))},
+    'localhost:9090': {'reachable': True, 'timestamp': '2020-10-01T01:04:01'},
+    'localhost:9091': {'reachable': False, 'timestamp': '2020-10-01T01:05:01'},
 }
 
 BACKUP_RULES = {

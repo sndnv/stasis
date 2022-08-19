@@ -2,6 +2,8 @@
 
 from terminaltables import AsciiTable
 
+from client_cli.render import timestamp_to_iso
+
 
 def render_changes_as_table(metadata):
     """
@@ -41,8 +43,8 @@ def render_changes_as_table(metadata):
                         entity_metadata['size'],
                         entity_metadata['link'],
                         entity_metadata['hidden'],
-                        entity_metadata['created'],
-                        entity_metadata['updated'],
+                        timestamp_to_iso(entity_metadata['created']),
+                        timestamp_to_iso(entity_metadata['updated']),
                         entity_metadata['owner'],
                         entity_metadata['group'],
                         entity_metadata['permissions'],

@@ -19,7 +19,8 @@ def timestamp_to_iso(timestamp):
     :param timestamp: timestamp to convert
     :return: datetime representation of the timestamp
     """
-    return datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S')
+    return datetime.strptime(re.sub('\\.\\d*Z$|Z$', '', timestamp), '%Y-%m-%dT%H:%M:%S').astimezone() if (
+        timestamp.endswith('Z')) else datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S')
 
 
 def duration_to_str(duration):

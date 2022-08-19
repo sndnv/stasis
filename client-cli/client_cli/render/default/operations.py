@@ -6,6 +6,8 @@ from functools import lru_cache
 from click import style
 from terminaltables import AsciiTable
 
+from client_cli.render import timestamp_to_iso
+
 
 def render_as_table(operations):
     """
@@ -66,7 +68,8 @@ def render_operation_progress_summary(progress):
     return '\n'.join(
         [
             'state:    {}'.format(
-                'Done ({})'.format(progress['completed']) if progress.get('completed') else 'Pending ({})'.format(
+                'Done ({})'.format(timestamp_to_iso(progress['completed'])) if progress.get(
+                    'completed') else 'Pending ({})'.format(
                     _calculate_progress_summary_pct(progress)
                 )
             ),
@@ -275,7 +278,10 @@ def _render_progress_completed(progress):
     if progress.get('completed'):
         return [
             'Completed:',
-            '{}{}'.format(RENDERING_ELEMENTS['child_last'], style(progress['completed'], fg='green'))
+            '{}{}'.format(
+                RENDERING_ELEMENTS['child_last'],
+                style(str(timestamp_to_iso(progress['completed'])), fg='green')
+            )
         ]
     elif any(v for v in progress['entities'].values()) or progress['failures']:
         return [

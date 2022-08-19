@@ -2,6 +2,8 @@
 
 from terminaltables import AsciiTable
 
+from client_cli.render import timestamp_to_iso
+
 
 def render_as_table(entries):
     """
@@ -22,7 +24,7 @@ def render_as_table(entries):
                         entry['device'],
                         entry['crates'],
                         entry['metadata'],
-                        entry['created'],
+                        timestamp_to_iso(entry['created']),
                     ],
                     entries
                 )
