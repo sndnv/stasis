@@ -94,13 +94,7 @@ class CredentialsProvider(
 
             latestDeviceSecret.set(Success(initDeviceSecret(plaintextDeviceSecret)))
         } catch (_: InvalidJwtException) {
-            val refreshTokens = coreToken.refresh_token?.let { coreRefreshToken ->
-                apiToken.refresh_token?.let { apiRefreshToken ->
-                    coreRefreshToken to apiRefreshToken
-                }
-            }
-
-            when (refreshTokens) {
+            when (val apiRefreshToken = apiToken.refresh_token) {
                 null -> {
                     coreTokenManager.scheduleWithClientCredentials(Failure(TokenExpired()))
                     apiTokenManager.scheduleWithRefreshToken(Failure(TokenExpired()))
@@ -108,8 +102,7 @@ class CredentialsProvider(
                 }
 
                 else -> init(
-                    coreRefreshToken = refreshTokens.first,
-                    apiRefreshToken = refreshTokens.second,
+                    apiRefreshToken = apiRefreshToken,
                     plaintextDeviceSecret = plaintextDeviceSecret
                 )
             }
@@ -117,14 +110,13 @@ class CredentialsProvider(
     }
 
     fun init(
-        coreRefreshToken: String,
         apiRefreshToken: String,
         plaintextDeviceSecret: ByteString
     ) {
         coroutineScope.launch {
             val coreTokenResponse = oAuthClient.token(
                 scope = config.coreScope,
-                parameters = OAuthClient.GrantParameters.RefreshToken(coreRefreshToken)
+                parameters = OAuthClient.GrantParameters.ClientCredentials
             )
 
             val apiTokenResponse = oAuthClient.token(
