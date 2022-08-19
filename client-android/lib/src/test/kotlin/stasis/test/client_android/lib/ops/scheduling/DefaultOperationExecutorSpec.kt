@@ -322,6 +322,7 @@ class DefaultOperationExecutorSpec : WordSpec({
                 }
 
             eventually {
+                mockTracker.statistics[MockRecoveryTracker.Statistic.Started] shouldBe (1)
                 mockTracker.statistics[MockRecoveryTracker.Statistic.EntityExamined] shouldBe (0)
                 mockTracker.statistics[MockRecoveryTracker.Statistic.EntityCollected] shouldBe (0)
                 mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessingStarted] shouldBe (0)
@@ -381,6 +382,7 @@ class DefaultOperationExecutorSpec : WordSpec({
                 }
 
             eventually {
+                mockTracker.statistics[MockRecoveryTracker.Statistic.Started] shouldBe (1)
                 mockTracker.statistics[MockRecoveryTracker.Statistic.EntityExamined] shouldBe (0)
                 mockTracker.statistics[MockRecoveryTracker.Statistic.EntityCollected] shouldBe (0)
                 mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessingStarted] shouldBe (0)

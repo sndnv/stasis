@@ -48,6 +48,8 @@ class Recovery(
 
         val job = (withScope + supervisor).async {
             try {
+                providers.track.started(operation = id)
+
                 stages.entityCollection(id)
                     .let { flow -> stages.entityProcessing(id, flow) }
                     .let { flow -> stages.metadataApplication(id, flow) }

@@ -57,6 +57,12 @@ class DefaultRecoveryTracker(
         }
     }
 
+    override fun started(operation: OperationId) = send(
+        event = RecoveryEvent.Started(
+            operation = operation
+        )
+    )
+
     override fun entityExamined(
         operation: OperationId,
         entity: Path,
@@ -156,7 +162,17 @@ class DefaultRecoveryTracker(
 
             when (val event = msg.obj) {
                 is RecoveryEvent -> {
-                    val existing = _state.getOrElse(event.operation) { RecoveryState.start(event.operation) }
+                    val existing = if (event is RecoveryEvent.Started) {
+                        RecoveryState.start(event.operation)
+                    } else {
+                        val existing = _state[event.operation]
+
+                        require(existing != null) {
+                            "Expected existing state for operation [${event.operation}] but none was found"
+                        }
+
+                        existing
+                    }
 
                     val updated = when (event) {
                         is RecoveryEvent.EntityExamined -> existing.entityExamined(event.entity)
@@ -177,6 +193,7 @@ class DefaultRecoveryTracker(
                             }
                             existing.recoveryCompleted()
                         }
+                        else -> existing
                     }
 
                     updates += 1
@@ -257,6 +274,10 @@ class DefaultRecoveryTracker(
 
     private sealed class RecoveryEvent {
         abstract val operation: OperationId
+
+        data class Started(
+            override val operation: OperationId
+        ) : RecoveryEvent()
 
         data class EntityExamined(
             override val operation: OperationId,

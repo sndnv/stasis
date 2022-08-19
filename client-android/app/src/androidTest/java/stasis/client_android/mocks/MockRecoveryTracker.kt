@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class MockRecoveryTracker : RecoveryTracker, RecoveryTrackerView, RecoveryTrackerManage {
     private val stats: Map<Statistic, AtomicInteger> = mapOf(
+        Statistic.Started to AtomicInteger(0),
         Statistic.EntityExamined to AtomicInteger(0),
         Statistic.EntityCollected to AtomicInteger(0),
         Statistic.EntityProcessingStarted to AtomicInteger(0),
@@ -35,6 +36,10 @@ class MockRecoveryTracker : RecoveryTracker, RecoveryTrackerView, RecoveryTracke
     override fun remove(operation: OperationId) {}
 
     override fun clear() {}
+
+    override fun started(operation: OperationId) {
+        stats[Statistic.Started]?.getAndIncrement()
+    }
 
     override fun entityExamined(
         operation: OperationId,
@@ -81,6 +86,7 @@ class MockRecoveryTracker : RecoveryTracker, RecoveryTrackerView, RecoveryTracke
         get() = stats.mapValues { it.value.get() }
 
     sealed class Statistic {
+        object Started : Statistic()
         object EntityExamined : Statistic()
         object EntityCollected : Statistic()
         object EntityProcessingStarted : Statistic()

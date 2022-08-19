@@ -200,6 +200,7 @@ class RecoverySpec : WordSpec({
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (1)
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (0)
 
+            mockTracker.statistics[MockRecoveryTracker.Statistic.Started] shouldBe (1)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityExamined] shouldBe (3)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityCollected] shouldBe (2)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessingStarted] shouldBe (2)
@@ -303,6 +304,7 @@ class RecoverySpec : WordSpec({
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (5)
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (0)
 
+            mockTracker.statistics[MockRecoveryTracker.Statistic.Started] shouldBe (1)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityExamined] shouldBe (7)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityCollected] shouldBe (7)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessingStarted] shouldBe (7)
@@ -375,6 +377,7 @@ class RecoverySpec : WordSpec({
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (2)
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (0)
 
+            mockTracker.statistics[MockRecoveryTracker.Statistic.Started] shouldBe (1)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityExamined] shouldBe (3)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityCollected] shouldBe (3)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessingStarted] shouldBe (3)
@@ -429,6 +432,7 @@ class RecoverySpec : WordSpec({
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (0)
 
+            mockTracker.statistics[MockRecoveryTracker.Statistic.Started] shouldBe (1)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityExamined] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityCollected] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessingStarted] shouldBe (0)
