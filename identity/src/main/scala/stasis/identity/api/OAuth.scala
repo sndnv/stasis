@@ -47,9 +47,13 @@ class OAuth(
       path("token") {
         parameter("grant_type".as[String]).or(formField("grant_type".as[String])) {
           case "authorization_code" =>
-            parameter("code_verifier".as[String].?) {
-              case Some(_) => pkceAuthorizationCodeGrant.token()
-              case None    => authorizationCodeGrant.token()
+            parameter("code_verifier".as[String].?) { verifierParam =>
+              formField("code_verifier".as[String].?) { verifierField =>
+                verifierParam.orElse(verifierField) match {
+                  case Some(_) => pkceAuthorizationCodeGrant.token()
+                  case None    => authorizationCodeGrant.token()
+                }
+              }
             }
 
           case "client_credentials" =>
