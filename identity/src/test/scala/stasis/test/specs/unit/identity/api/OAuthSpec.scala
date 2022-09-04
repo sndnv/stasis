@@ -2,7 +2,7 @@ package stasis.test.specs.unit.identity.api
 
 import akka.http.scaladsl.model
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, CacheDirectives}
-import akka.http.scaladsl.model.{StatusCodes, Uri}
+import akka.http.scaladsl.model.{FormData, StatusCodes, Uri}
 import stasis.identity.api.OAuth
 import stasis.identity.api.oauth.directives.AudienceExtraction
 import stasis.identity.model.codes.StoredAuthorizationCode
@@ -184,7 +184,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "handle authorization code token grants" in {
+  they should "handle authorization code token grants (with URL parameters)" in {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 
@@ -232,7 +232,57 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "handle PKCE authorization code token grants" in {
+  they should "handle authorization code token grants (with form fields)" in {
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val oauth = new OAuth(config, providers)
+
+    val owner = Generators.generateResourceOwner
+    val code = Generators.generateAuthorizationCode
+    val api = Generators.generateApi
+
+    val rawPassword = "some-password"
+    val salt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
+    val client = Generators.generateClient.copy(
+      secret = Secret.derive(rawPassword, salt)(secrets.client),
+      salt = salt
+    )
+    val credentials = BasicHttpCredentials(client.id.toString, rawPassword)
+
+    val storedCode = StoredAuthorizationCode(
+      code = code,
+      client = client.id,
+      owner = owner,
+      scope = Some(s"${AudienceExtraction.UrnPrefix}:${api.id}")
+    )
+
+    stores.clients.put(client).await
+    stores.owners.put(owner).await
+    stores.apis.put(api).await
+    stores.codes.put(storedCode).await
+
+    Post(
+      "/token",
+      FormData(
+        "grant_type" -> "authorization_code",
+        "code" -> code.value,
+        "client_id" -> client.id.toString
+      )
+    ).addCredentials(credentials) ~> oauth.routes ~> check {
+      status should be(StatusCodes.OK)
+      headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
+
+      val actualResponse = responseAs[String]
+      actualResponse.contains("access_token") should be(true)
+      actualResponse.contains("token_type") should be(true)
+      actualResponse.contains("expires_in") should be(true)
+      actualResponse.contains("refresh_token") should be(true)
+
+      val refreshTokenGenerated = stores.tokens.tokens.await.headOption.nonEmpty
+      refreshTokenGenerated should be(true)
+    }
+  }
+
+  they should "handle PKCE authorization code token grants (with URL parameters)" in {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 
@@ -287,7 +337,64 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "handle client credentials token grants" in {
+  they should "handle PKCE authorization code token grants (with form fields)" in {
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val oauth = new OAuth(config, providers)
+
+    val owner = Generators.generateResourceOwner
+    val code = Generators.generateAuthorizationCode
+    val api = Generators.generateApi
+
+    val rawPassword = "some-password"
+    val salt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
+    val client = Generators.generateClient.copy(
+      secret = Secret.derive(rawPassword, salt)(secrets.client),
+      salt = salt
+    )
+    val credentials = BasicHttpCredentials(client.id.toString, rawPassword)
+
+    val storedChallenge = StoredAuthorizationCode.Challenge(
+      value = stasis.test.Generators.generateString(withSize = 128),
+      method = None
+    )
+
+    val storedCode = StoredAuthorizationCode(
+      code = code,
+      client = client.id,
+      owner = owner,
+      scope = Some(s"${AudienceExtraction.UrnPrefix}:${api.id}"),
+      challenge = Some(storedChallenge)
+    )
+
+    stores.clients.put(client).await
+    stores.owners.put(owner).await
+    stores.apis.put(api).await
+    stores.codes.put(storedCode).await
+
+    Post(
+      "/token",
+      FormData(
+        "grant_type" -> "authorization_code",
+        "code" -> code.value,
+        "client_id" -> client.id.toString,
+        "code_verifier" -> storedChallenge.value
+      )
+    ).addCredentials(credentials) ~> oauth.routes ~> check {
+      status should be(StatusCodes.OK)
+      headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
+
+      val actualResponse = responseAs[String]
+      actualResponse.contains("access_token") should be(true)
+      actualResponse.contains("token_type") should be(true)
+      actualResponse.contains("expires_in") should be(true)
+      actualResponse.contains("refresh_token") should be(true)
+
+      val refreshTokenGenerated = stores.tokens.tokens.await.headOption.nonEmpty
+      refreshTokenGenerated should be(true)
+    }
+  }
+
+  they should "handle client credentials token grants (with URL parameters)" in {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 
@@ -320,7 +427,41 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "handle refresh token grants" in {
+  they should "handle client credentials token grants (with form fields)" in {
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val oauth = new OAuth(config, providers)
+
+    val rawPassword = "some-password"
+    val salt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
+    val client = Generators.generateClient.copy(
+      secret = Secret.derive(rawPassword, salt)(secrets.client),
+      salt = salt
+    )
+    val credentials = BasicHttpCredentials(client.id.toString, rawPassword)
+
+    val scope = s"${AudienceExtraction.UrnPrefix}:${client.id}"
+
+    stores.clients.put(client).await
+    Post(
+      "/token",
+      FormData(
+        "grant_type" -> "client_credentials",
+        "scope" -> scope
+      )
+    ).addCredentials(credentials) ~> oauth.routes ~> check {
+      status should be(StatusCodes.OK)
+
+      headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
+
+      val actualResponse = responseAs[String]
+      actualResponse.contains("access_token") should be(true)
+      actualResponse.contains("token_type") should be(true)
+      actualResponse.contains("expires_in") should be(true)
+      actualResponse.contains("scope") should be(true)
+    }
+  }
+
+  they should "handle refresh token grants (with URL parameters)" in {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 
@@ -365,7 +506,53 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "handle password token grants" in {
+  they should "handle refresh token grants (with form fields)" in {
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val oauth = new OAuth(config, providers)
+
+    val owner = Generators.generateResourceOwner
+    val api = Generators.generateApi
+
+    val rawPassword = "some-password"
+    val salt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
+    val client = Generators.generateClient.copy(
+      secret = Secret.derive(rawPassword, salt)(secrets.client),
+      salt = salt
+    )
+    val credentials = BasicHttpCredentials(client.id.toString, rawPassword)
+
+    val token = Generators.generateRefreshToken
+    val scope = s"${AudienceExtraction.UrnPrefix}:${api.id}"
+
+    stores.owners.put(owner).await
+    stores.apis.put(api).await
+    stores.clients.put(client).await
+    stores.tokens.put(client.id, token, owner, Some(scope)).await
+    Post(
+      "/token",
+      FormData(
+        "grant_type" -> "refresh_token",
+        "refresh_token" -> token.value,
+        "scope" -> scope
+      )
+    ).addCredentials(credentials) ~> oauth.routes ~> check {
+      status should be(StatusCodes.OK)
+
+      headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
+
+      val actualResponse = responseAs[String]
+      actualResponse.contains("access_token") should be(true)
+      actualResponse.contains("token_type") should be(true)
+      actualResponse.contains("expires_in") should be(true)
+      actualResponse.contains("refresh_token") should be(true)
+      actualResponse.contains("scope") should be(true)
+
+      val newTokenGenerated = stores.tokens.tokens.await.headOption.exists(_._2.token != token)
+      newTokenGenerated should be(true)
+    }
+  }
+
+  they should "handle password token grants (with URL parameters)" in {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 
@@ -398,6 +585,56 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     stores.clients.put(client).await
     stores.owners.put(owner).await
     Post(uri).addCredentials(credentials) ~> oauth.routes ~> check {
+      status should be(StatusCodes.OK)
+
+      headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
+
+      val actualResponse = responseAs[String]
+      actualResponse.contains("access_token") should be(true)
+      actualResponse.contains("token_type") should be(true)
+      actualResponse.contains("expires_in") should be(true)
+      actualResponse.contains("refresh_token") should be(true)
+      actualResponse.contains("scope") should be(true)
+
+      val refreshTokenGenerated = stores.tokens.tokens.await.headOption.nonEmpty
+      refreshTokenGenerated should be(true)
+    }
+  }
+
+  they should "handle password token grants (with form fields)" in {
+    val (stores, secrets, config, providers) = createOAuthFixtures()
+    val oauth = new OAuth(config, providers)
+
+    val api = Generators.generateApi
+
+    val clientRawPassword = "some-password"
+    val clientSalt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
+    val client = Generators.generateClient.copy(
+      secret = Secret.derive(clientRawPassword, clientSalt)(secrets.client),
+      salt = clientSalt
+    )
+    val credentials = BasicHttpCredentials(client.id.toString, clientRawPassword)
+
+    val ownerRawPassword = "some-password"
+    val ownerSalt = stasis.test.Generators.generateString(withSize = secrets.owner.saltSize)
+    val owner = Generators.generateResourceOwner.copy(
+      password = Secret.derive(ownerRawPassword, ownerSalt)(secrets.owner),
+      salt = ownerSalt
+    )
+    val scope = s"${AudienceExtraction.UrnPrefix}:${api.id}"
+
+    stores.apis.put(api).await
+    stores.clients.put(client).await
+    stores.owners.put(owner).await
+    Post(
+      "/token",
+      FormData(
+        "grant_type" -> "password",
+        "username" -> owner.username,
+        "password" -> ownerRawPassword,
+        "scope" -> scope
+      )
+    ).addCredentials(credentials) ~> oauth.routes ~> check {
       status should be(StatusCodes.OK)
 
       headers should contain(model.headers.`Cache-Control`(CacheDirectives.`no-store`))
