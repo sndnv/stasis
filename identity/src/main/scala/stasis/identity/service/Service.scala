@@ -143,8 +143,6 @@ trait Service {
       manageProviders = manageProviders
     )
 
-    val context = EndpointContext.apply(apiConfig.context)
-
     log.info(
       s"""
          |Build(
@@ -169,8 +167,9 @@ trait Service {
          |      interface: ${apiConfig.interface}
          |      port:      ${apiConfig.port.toString}
          |      context:
-         |        protocol: ${apiConfig.context.protocol}
-         |        keystore: ${apiConfig.context.keyStoreConfig.map(_.storePath).getOrElse("none")}
+         |        enabled:  ${apiConfig.context.nonEmpty.toString}
+         |        protocol: ${apiConfig.context.map(_.config.protocol).getOrElse("none")}
+         |        keystore: ${apiConfig.context.flatMap(_.config.keyStoreConfig).map(_.storePath).getOrElse("none")}
          |
          |    telemetry:
          |      metrics:
@@ -218,9 +217,9 @@ trait Service {
          |)""".stripMargin
     )
 
-    (persistence, endpoint, context)
+    (persistence, endpoint, apiConfig.context)
   } match {
-    case Success((persistence: Persistence, endpoint: IdentityEndpoint, context: EndpointContext)) =>
+    case Success((persistence: Persistence, endpoint: IdentityEndpoint, context: Option[EndpointContext])) =>
       Bootstrap
         .run(rawConfig.getConfig("bootstrap"), persistence)
         .onComplete {
@@ -230,7 +229,7 @@ trait Service {
             val _ = endpoint.start(
               interface = apiConfig.interface,
               port = apiConfig.port,
-              context = Some(context)
+              context = context
             )
 
           case Failure(e) =>
@@ -270,7 +269,7 @@ object Service {
   final case class Config(
     interface: String,
     port: Int,
-    context: EndpointContext.Config
+    context: Option[EndpointContext]
   )
 
   object Config {
@@ -278,7 +277,7 @@ object Service {
       Config(
         interface = config.getString("interface"),
         port = config.getInt("port"),
-        context = EndpointContext.Config(config.getConfig("context"))
+        context = EndpointContext(config.getConfig("context"))
       )
 
     final case class AuthorizationCodes(
