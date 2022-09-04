@@ -6,14 +6,19 @@ Web-based user interface for the [`identity`](../identity) service.
 
 This submodule is divided into three main packages:
 
-* [`api`](./src/api) - interaction with `identity` API
-* [`components`](./src/components) - `Vue.js` [components](https://vuejs.org/v2/guide/components.html)
-* [`pages`](./src/pages) - `Vue.js` [pages](https://cli.vuejs.org/config/#pages)
+* [`api`](./lib/api) - interaction with `identity` API
+* [`model`](./lib/model) - data coming from and sent to `identity` API
+* [`pages`](./lib/pages) - UI components
 
 ## Development
 
-To get started with development of `identity-ui`, run the [install.py](./dev/install.py) script; it starts a Docker
-image and installs the necessary modules via `yarn`. Afterwards, using the provided `docker-compose.yml` with
-`docker-compose up` is all that is needed to get the development environment up and running.
+To get started with development of `identity-ui`, run the [build.py](./deployment/dev/build.py) script; it will pull
+all dependencies and build the project.
+
+> To start the `identity` server, use the [docker-compose.yml](./deployment/dev/docker-compose.yml) file.
+
+> To start the dev `identity-ui` server, use the [run_server.py](./deployment/dev/run_server.py) script.
+
+> To start the dev browser, use the [run_browser.py](./deployment/dev/run_browser.py) script.
 
 > To run linting and all tests, execute `./qa.py`.

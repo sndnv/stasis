@@ -78,10 +78,10 @@ def build_docker_image_with_sbt(project_name):
     )
 
 
-def build_docker_image_with_script(project_name):
+def build_docker_image_with_script(project_name, script_path):
     return build_docker_image(
         project_name=project_name,
-        with_command=['./{}/dev/build.py'.format(project_name)]
+        with_command=['./{}/{}'.format(project_name, script_path)]
     )
 
 
@@ -128,7 +128,8 @@ def main():
 
     projects = {
         'identity': lambda: build_docker_image_with_sbt(project_name='identity'),
-        'identity-ui': lambda: build_docker_image_with_script(project_name='identity-ui'),
+        'identity-ui': lambda: build_docker_image_with_script(project_name='identity-ui',
+                                                              script_path='deployment/production/build.py'),
         'server': lambda: build_docker_image_with_sbt(project_name='server'),
         'client': lambda: build_docker_image_with_sbt(project_name='client'),
         'client-cli': lambda: build_docker_image_with_dockerfile(project_name='client-cli', paths=paths),

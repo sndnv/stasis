@@ -18,7 +18,7 @@ services:
       - STASIS_IDENTITY_TOKENS_REFRESH_ALLOWED=true
       - STASIS_IDENTITY_TOKENS_ACCESS_EXPIRATION=90 minutes
       - STASIS_IDENTITY_UI_DEV_CLIENT_ID=a928359a-e2ee-4db7-9307-8071b2a1c756
-      - STASIS_IDENTITY_UI_DEV_REDIRECT_URI=https://localhost:8080/manage/login/callback
+      - STASIS_IDENTITY_UI_DEV_REDIRECT_URI=http://localhost:8080/login/callback
       - STASIS_IDENTITY_UI_DEV_CLIENT_SECRET=test-secret
       - STASIS_SMOKE_TEST_CLIENT_ID=1068208a-3cd7-4121-bad7-050dee3b4494
       - STASIS_SMOKE_TEST_CLIENT_NODE_ID=ef1e47e0-3a55-492e-bf5d-3c09c10c394d
@@ -49,13 +49,17 @@ services:
 
   identity-ui:
     image: stasis-identity-ui:dev-latest
-    command: /bin/sh -c "yarn serve"
     ports:
       - '8080:8080'
     environment:
-      - VUE_APP_STASIS_IDENTITY_UI_API_URL=https://localhost:8080
-      - VUE_APP_STASIS_IDENTITY_UI_AUTH_CLIENT_ID=a928359a-e2ee-4db7-9307-8071b2a1c756
-      - VUE_APP_STASIS_IDENTITY_UI_AUTH_REDIRECT_URI=https://localhost:8080/manage/login/callback
+      - IDENTITY_UI_IDENTITY_SERVER=https://localhost:10000
+      - IDENTITY_UI_TOKEN_ENDPOINT=/oauth/token
+      - IDENTITY_UI_CLIENT_ID=a928359a-e2ee-4db7-9307-8071b2a1c756
+      - IDENTITY_UI_REDIRECT_URI=http://localhost:8080/login/callback
+      - IDENTITY_UI_SCOPES=urn:stasis:identity:audience:manage-identity
+      - NGINX_SERVER_NAME=localhost
+      - NGINX_SERVER_PORT=8080
+      - NGINX_CORS_ALLOWED_ORIGIN=*
 
   server:
     image: stasis-server:dev-latest

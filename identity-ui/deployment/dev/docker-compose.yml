@@ -1,0 +1,22 @@
+version: '3'
+
+services:
+  identity:
+    image: stasis-identity:dev-latest
+    ports:
+      - '10000:10000'
+    environment:
+      - STASIS_IDENTITY_BOOTSTRAP_ENABLED=true
+      - STASIS_IDENTITY_BOOTSTRAP_CONFIG=/opt/docker/config/bootstrap.conf
+      - STASIS_IDENTITY_LOGLEVEL=DEBUG
+      - STASIS_IDENTITY_SERVICE_API_INTERFACE=0.0.0.0
+      - STASIS_IDENTITY_SERVICE_API_PORT=10000
+      - STASIS_IDENTITY_SERVICE_API_CONTEXT_ENABLED=false
+      - STASIS_IDENTITY_TOKENS_REFRESH_ALLOWED=true
+      - STASIS_IDENTITY_UI_DEV_CLIENT_ID=a928359a-e2ee-4db7-9307-8071b2a1c756
+      - STASIS_IDENTITY_UI_DEV_REDIRECT_URI=http://localhost:8080/login/callback
+      - STASIS_IDENTITY_UI_DEV_CLIENT_SECRET=test-secret
+      - STASIS_IDENTITY_UI_DEV_OWNER_PASSWORD=passw0rd
+      - AKKA_HTTP_CORS_ALLOWED_ORIGINS=*
+    volumes:
+      - ./bootstrap.conf:/opt/docker/config/bootstrap.conf

@@ -49,7 +49,7 @@ Official images and binaries are not yet available, but they can be created loca
 The majority of the code is [Scala](https://scala-lang.org/) so, at the very least, Java (JDK11) and SBT need to be
 available on your dev machine.
 
-Some submodules use Python (ex: [`client-cli`](client-cli)), [Vue.js](https://vuejs.org/) (ex: [`identity-ui`](identity-ui))
+Some submodules use Python (ex: [`client-cli`](client-cli)), [Flutter](https://flutter.dev/) (ex: [`identity-ui`](identity-ui))
 or Kotlin for Android (ex: [`client-android`](client-android)) so the appropriate tools for those platforms need to be
 available as well (for `identity-ui` there's support for doing development via a [Docker](https://www.docker.com/) container
 with the needed tools pre-installed).
@@ -65,7 +65,7 @@ There are also some Python and Bash [scripts](deployment/dev/scripts) to help wi
 * [sbt](https://www.scala-sbt.org/download.html)
 * [Python](https://www.python.org/downloads/)
 * [Pylint](https://www.pylint.org/#install)
-* [Vue.js](https://vuejs.org/v2/guide/installation.html)
+* [Flutter](https://docs.flutter.dev/get-started/install)
 * [Docker](https://www.docker.com/get-started)
 * [AndroidStudio](https://developer.android.com/studio)
 
@@ -115,9 +115,9 @@ OAuth2 identity management service based on [RFC 6749](https://tools.ietf.org/ht
 
 Web UI for [`identity`](identity).
 
-* **Vue.js** code
+* **Flutter** code
 * **Testing** - `cd ./identity-ui && ./qa.py`
-* **Packaging** - `cd ./identity-ui && docker build --target dev-stage -t stasis-identity-ui:dev-latest .`
+* **Packaging** - `cd ./identity-ui && ./deployment/production/build.py`
 
 #### [`server`](server)
 

@@ -5,34 +5,48 @@ import subprocess
 import sys
 
 identity_ui_path = os.path.dirname(os.path.realpath(__file__))
-identity_ui_image = 'stasis-identity-ui:test-latest'
 
-image_exists = subprocess.run(
-    ['docker', 'inspect', identity_ui_image],
-    stdout=subprocess.PIPE,
-    stderr=subprocess.PIPE
-).returncode == 0
 
-if not image_exists:
-    subprocess.run(
+def run_command(command, description):
+    result = subprocess.run(command).returncode
+    if result != 0:
+        print('>: {} failed with exit code [{}]'.format(description, result))
+        sys.exit(result)
+
+
+run_command(
+    command=['flutter', 'pub', 'get'],
+    description='Getting packages'
+)
+
+run_command(
+    command=['flutter', 'pub', 'run', 'build_runner', 'clean'],
+    description='Clean'
+)
+
+run_command(
+    command=['flutter', 'pub', 'run', 'build_runner', 'build', '--delete-conflicting-outputs'],
+    description='Build'
+)
+
+run_command(
+    command=['flutter', 'analyze'],
+    description='Code linting'
+)
+
+test_result = subprocess.run(['flutter', 'test', '--coverage']).returncode
+print('>: Testing finished with exit code [{}]'.format(test_result))
+
+if test_result == 0:
+    target = '{}/coverage/html'.format(identity_ui_path)
+    coverage_result = subprocess.run(
         [
-            'docker',
-            'build',
-            '--target', 'dev-stage',
-            '-t', identity_ui_image,
-            identity_ui_path
+            'genhtml', '{}/coverage/lcov.info'.format(identity_ui_path),
+            '-o', target
         ]
-    )
+    ).returncode
+    if coverage_result == 0:
+        print('>: Coverage written to [file://{}/{}]'.format(target, 'index.html'))
+    print('>: Code coverage finished with exit code [{}]'.format(coverage_result))
 
-result = subprocess.run(
-    [
-        'docker',
-        'run',
-        '-it',
-        '--mount', 'src={},target=/opt/stasis-identity-ui,type=bind'.format(identity_ui_path),
-        identity_ui_image,
-        '/bin/sh', '-c', 'rm -r ./coverage; yarn lint; yarn test'
-    ]
-).returncode
-
-sys.exit(result)
+sys.exit(test_result)
