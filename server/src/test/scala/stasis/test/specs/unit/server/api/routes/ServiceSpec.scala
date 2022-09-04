@@ -24,6 +24,14 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
+  it should "provide a health-check route" in {
+    val fixtures = new TestFixtures {}
+
+    Get("/health") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+    }
+  }
+
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private trait TestFixtures {
