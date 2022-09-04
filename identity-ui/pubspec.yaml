@@ -1,0 +1,37 @@
+name: identity_ui
+description: Web-based user interface for the `identity` service.
+version: 0.0.1-SNAPSHOT
+
+publish_to: 'none'
+
+environment:
+  sdk: ">=2.17.6 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.2
+  freezed_annotation: ^2.1.0
+  json_annotation: ^4.6.0
+  http: ^0.13.5
+  oauth2: ^2.0.0
+  url_launcher: ^6.1.5
+  fluro: ^2.0.3
+  url_strategy: ^0.2.0
+  shared_preferences: ^2.0.15
+  flutter_svg: ^1.1.4
+  flutter_dotenv: ^5.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^2.0.0
+  build_runner: ^2.2.0
+  freezed: ^2.1.0+1
+  json_serializable: ^6.3.1
+  mockito: 5.3.0
+
+flutter:
+  uses-material-design: true

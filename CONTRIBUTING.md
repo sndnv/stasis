@@ -34,10 +34,6 @@ working with some Akka code requires suppressing the `Any` wart).
 
 * [Pylint](https://pypi.org/project/pylint/)
 
-### Vue.js
-
-* [eslint-plugin-vue](https://eslint.vuejs.org/user-guide/)
-
 ## QA and Testing
 
 To maintain the quality of the codebase, extensive testing is essential.

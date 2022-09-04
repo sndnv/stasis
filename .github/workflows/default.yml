@@ -74,30 +74,19 @@ jobs:
         with:
           flags: python
 
-  node:
+  flutter:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v2-beta
+      - uses: subosito/flutter-action@v2
         with:
-          node-version: '12'
-
+          channel: 'stable'
       - name: Run QA
         run: |
-          curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 1.16.0
-          export PATH=$HOME/.yarn/bin:$PATH
+          sudo apt install -y lcov
           cd identity-ui
-          yarn install
-          yarn lint
-          yarn test
-
-      - name: Push Coverage Result
-        uses: codecov/codecov-action@v1
-        with:
-          flags: javascript
+          ./qa.py
 
   android:
     runs-on: ubuntu-latest
