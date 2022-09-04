@@ -103,7 +103,8 @@ class IdentityEndpoint(
     concat(
       pathPrefix("oauth") { oauth.routes },
       pathPrefix("jwks") { jwks.routes },
-      pathPrefix("manage") { manage.routes }
+      pathPrefix("manage") { manage.routes },
+      pathPrefix("service") { path("health") { complete(StatusCodes.OK) } }
     )
 
   def start(interface: String, port: Int, context: Option[EndpointContext]): Future[Http.ServerBinding] = {

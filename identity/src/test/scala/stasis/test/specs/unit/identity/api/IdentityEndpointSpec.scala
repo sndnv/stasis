@@ -233,6 +233,22 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
       }
   }
 
+  it should "provide a health-check route" in {
+    val (_, _, oauthConfig, oauthProviders) = createOAuthFixtures()
+
+    val endpoint = new IdentityEndpoint(
+      keys = Seq.empty,
+      oauthConfig = oauthConfig,
+      oauthProviders = oauthProviders,
+      manageConfig = manageConfig,
+      manageProviders = createManageProviders()
+    )
+
+    Get("/service/health") ~> endpoint.routes ~> check {
+      status should be(StatusCodes.OK)
+    }
+  }
+
   private val manageConfig = Config(
     realm = "test-realm",
     clientSecrets = Secret.ClientConfig(
