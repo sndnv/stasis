@@ -251,7 +251,7 @@ trait Service {
         secretsConfig = deviceBootstrapParams.secrets
       ),
       bootstrapEndpoint = bootstrapEndpoint,
-      context = EndpointContext(apiConfig.context)
+      context = apiConfig.context
     )
 
     val coreServices = CoreServices(
@@ -261,7 +261,7 @@ trait Service {
         reservationStore = corePersistence.reservations.view,
         authenticator = nodeAuthenticator
       ),
-      context = EndpointContext(coreConfig.context)
+      context = coreConfig.context
     )
 
     log.info(
@@ -283,15 +283,17 @@ trait Service {
          |      interface:  ${apiConfig.interface}
          |      port:       ${apiConfig.port.toString}
          |      context:
-         |        protocol: ${apiConfig.context.protocol}
-         |        keystore: ${apiConfig.context.keyStoreConfig.map(_.storePath).getOrElse("none")}
+         |        enabled:  ${apiConfig.context.nonEmpty.toString}
+         |        protocol: ${apiConfig.context.map(_.config.protocol).getOrElse("none")}
+         |        keystore: ${apiConfig.context.flatMap(_.config.keyStoreConfig).map(_.storePath).getOrElse("none")}
          |
          |    core:
          |      interface:  ${coreConfig.interface}
          |      port:       ${coreConfig.port.toString}
          |      context:
-         |        protocol: ${coreConfig.context.protocol}
-         |        keystore: ${coreConfig.context.keyStoreConfig.map(_.storePath).getOrElse("none")}
+         |        enabled:  ${coreConfig.context.nonEmpty.toString}
+         |        protocol: ${coreConfig.context.map(_.config.protocol).getOrElse("none")}
+         |        keystore: ${coreConfig.context.flatMap(_.config.keyStoreConfig).map(_.storePath).getOrElse("none")}
          |
          |    bootstrap:
          |      enabled: ${rawConfig.getBoolean("service.bootstrap.enabled").toString}
@@ -370,8 +372,9 @@ trait Service {
          |    interface: ${bootstrapApiConfig.interface}
          |    port:      ${bootstrapApiConfig.port.toString}
          |    context:
-         |      protocol: ${bootstrapApiConfig.context.protocol}
-         |      keystore: ${bootstrapApiConfig.context.keyStoreConfig.map(_.storePath).getOrElse("none")}
+         |      enabled:  ${bootstrapApiConfig.context.nonEmpty.toString}
+         |      protocol: ${bootstrapApiConfig.context.map(_.config.protocol).getOrElse("none")}
+         |      keystore: ${bootstrapApiConfig.context.flatMap(_.config.keyStoreConfig).map(_.storePath).getOrElse("none")}
          |
          |    devices:
          |      code-size:              ${deviceBootstrapConfig.codeSize.toString}
@@ -431,7 +434,7 @@ trait Service {
             val _ = apiServices.apiEndpoint.start(
               interface = apiConfig.interface,
               port = apiConfig.port,
-              context = Some(apiServices.context)
+              context = apiServices.context
             )
 
             apiServices.bootstrapEndpoint.foreach { bootstrapEndpoint =>
@@ -440,7 +443,7 @@ trait Service {
               val _ = bootstrapEndpoint.start(
                 interface = bootstrapApiConfig.interface,
                 port = bootstrapApiConfig.port,
-                context = Some(EndpointContext(bootstrapApiConfig.context))
+                context = bootstrapApiConfig.context
               )
             }
 
@@ -449,7 +452,7 @@ trait Service {
             val _ = coreServices.endpoint.start(
               interface = coreConfig.interface,
               port = coreConfig.port,
-              context = Some(coreServices.context)
+              context = coreServices.context
             )
 
             serviceState.set(State.Started(apiServices, coreServices))
@@ -484,13 +487,13 @@ object Service {
     persistence: ServerPersistence,
     apiEndpoint: ApiEndpoint,
     bootstrapEndpoint: Option[BootstrapEndpoint],
-    context: EndpointContext
+    context: Option[EndpointContext]
   )
 
   final case class CoreServices(
     persistence: CorePersistence,
     endpoint: HttpEndpoint,
-    context: EndpointContext
+    context: Option[EndpointContext]
   )
 
   sealed trait State
@@ -510,7 +513,7 @@ object Service {
   final case class Config(
     interface: String,
     port: Int,
-    context: EndpointContext.Config
+    context: Option[EndpointContext]
   )
 
   object Config {
@@ -518,7 +521,7 @@ object Service {
       Config(
         interface = config.getString("interface"),
         port = config.getInt("port"),
-        context = EndpointContext.Config(config.getConfig("context"))
+        context = EndpointContext(config.getConfig("context"))
       )
 
     final case class UserAuthenticator(
@@ -611,7 +614,7 @@ object Service {
       enabled: Boolean,
       interface: String,
       port: Int,
-      context: EndpointContext.Config
+      context: Option[EndpointContext]
     )
 
     object BootstrapApiConfig {
@@ -620,7 +623,7 @@ object Service {
           enabled = config.getBoolean("enabled"),
           interface = config.getString("interface"),
           port = config.getInt("port"),
-          context = EndpointContext.Config(config.getConfig("context"))
+          context = EndpointContext(config.getConfig("context"))
         )
     }
 

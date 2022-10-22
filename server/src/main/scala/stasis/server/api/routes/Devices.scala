@@ -88,7 +88,6 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                     discardEntity & complete(DeletedDevice(existing = deleted))
                   }
                 }
-
               }
             )
           },

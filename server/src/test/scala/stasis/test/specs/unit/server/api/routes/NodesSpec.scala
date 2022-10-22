@@ -51,7 +51,7 @@ class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       status should be(StatusCodes.OK)
 
       fixtures.nodeStore
-        .get(entityAs[CreatedNode].id)
+        .get(entityAs[CreatedNode].node)
         .map(_.isDefined should be(true))
     }
   }
