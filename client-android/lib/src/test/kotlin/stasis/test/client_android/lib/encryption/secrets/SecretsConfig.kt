@@ -10,8 +10,17 @@ object SecretsConfig {
 
     val testConfig: Secret.Config = Secret.Config(
         derivation = Secret.Config.DerivationConfig(
-            encryption = Secret.KeyDerivationConfig(secretSize = 64, iterations = 100000, saltPrefix = "unit-test"),
-            authentication = Secret.KeyDerivationConfig(secretSize = 64, iterations = 100000, saltPrefix = "unit-test")
+            encryption = Secret.EncryptionKeyDerivationConfig(
+                secretSize = 64,
+                iterations = 100000,
+                saltPrefix = "unit-test"
+            ),
+            authentication = Secret.AuthenticationKeyDerivationConfig(
+                enabled = true,
+                secretSize = 64,
+                iterations = 100000,
+                saltPrefix = "unit-test"
+            )
         ),
         encryption = Secret.Config.EncryptionConfig(
             file = Secret.EncryptionSecretConfig(keySize = 16, ivSize = 16),

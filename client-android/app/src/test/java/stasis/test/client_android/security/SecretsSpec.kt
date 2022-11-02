@@ -136,7 +136,7 @@ class SecretsSpec {
         val userSalt = "test-salt"
         val userPassword = "test-password".toCharArray()
 
-        val result = Secrets.loadUserHashedAuthenticationPassword(
+        val result = Secrets.loadUserAuthenticationPassword(
             user = user,
             userSalt = userSalt,
             userPassword = userPassword,
@@ -196,6 +196,12 @@ class SecretsSpec {
                 any()
             )
         } returns "test-encryption-prefix"
+        every {
+            preferences.getBoolean(
+                ConfigRepository.Companion.Keys.Secrets.DerivationAuthenticationEnabled,
+                any()
+            )
+        } returns true
         every {
             preferences.getInt(
                 ConfigRepository.Companion.Keys.Secrets.DerivationAuthenticationSecretSize,

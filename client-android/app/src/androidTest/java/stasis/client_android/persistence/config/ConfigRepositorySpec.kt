@@ -205,6 +205,9 @@ class ConfigRepositorySpec {
             preferences.getString(Keys.Secrets.DerivationEncryptionSaltPrefix, any())
         } returns "test-encryption-prefix"
         every {
+            preferences.getBoolean(Keys.Secrets.DerivationAuthenticationEnabled, any())
+        } returns true
+        every {
             preferences.getInt(Keys.Secrets.DerivationAuthenticationSecretSize, any())
         } returns 32
         every {
@@ -225,12 +228,13 @@ class ConfigRepositorySpec {
 
         val expectedConfig = Secret.Config(
             derivation = Secret.Config.DerivationConfig(
-                encryption = Secret.KeyDerivationConfig(
+                encryption = Secret.EncryptionKeyDerivationConfig(
                     secretSize = 16,
                     iterations = 100000,
                     saltPrefix = "test-encryption-prefix"
                 ),
-                authentication = Secret.KeyDerivationConfig(
+                authentication = Secret.AuthenticationKeyDerivationConfig(
+                    enabled = true,
                     secretSize = 32,
                     iterations = 200000,
                     saltPrefix = "test-authentication-prefix"
@@ -331,6 +335,9 @@ class ConfigRepositorySpec {
             editor.putString(Keys.Secrets.DerivationEncryptionSaltPrefix, any())
         } returns editor
         every {
+            editor.putBoolean(Keys.Secrets.DerivationAuthenticationEnabled, any())
+        } returns editor
+        every {
             editor.putInt(Keys.Secrets.DerivationAuthenticationSecretSize, any())
         } returns editor
         every {
@@ -382,6 +389,7 @@ class ConfigRepositorySpec {
                             saltPrefix = "test-prefix"
                         ),
                         authentication = DeviceBootstrapParameters.SecretsConfig.Derivation.Authentication(
+                            enabled = true,
                             secretSize = 16,
                             iterations = 100000,
                             saltPrefix = "test-prefix"
@@ -429,6 +437,7 @@ class ConfigRepositorySpec {
         every { editor.remove(Keys.Secrets.DerivationEncryptionSecretSize) } returns editor
         every { editor.remove(Keys.Secrets.DerivationEncryptionIterations) } returns editor
         every { editor.remove(Keys.Secrets.DerivationEncryptionSaltPrefix) } returns editor
+        every { editor.remove(Keys.Secrets.DerivationAuthenticationEnabled) } returns editor
         every { editor.remove(Keys.Secrets.DerivationAuthenticationSecretSize) } returns editor
         every { editor.remove(Keys.Secrets.DerivationAuthenticationIterations) } returns editor
         every { editor.remove(Keys.Secrets.DerivationAuthenticationSaltPrefix) } returns editor

@@ -256,7 +256,7 @@ class CredentialsRepositorySpec {
                                 loadDeviceSecret = { Success(Fixtures.Secrets.Default) },
                                 storeDeviceSecret = storeDeviceSecret,
                                 coroutineScope = CoroutineScope(Dispatchers.IO),
-                                getAuthenticationPassword = { Fixtures.Secrets.UserPassword.toHashedAuthenticationPassword() }
+                                getAuthenticationPassword = { Fixtures.Secrets.UserPassword.toAuthenticationPassword() }
                             ),
                             monitor = MockServerMonitor()
                         )

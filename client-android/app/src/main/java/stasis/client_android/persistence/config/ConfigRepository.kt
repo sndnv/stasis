@@ -45,6 +45,10 @@ class ConfigRepository(
                 Keys.Secrets.DerivationEncryptionSaltPrefix,
                 params.secrets.derivation.encryption.saltPrefix
             )
+            .putBoolean(
+                Keys.Secrets.DerivationAuthenticationEnabled,
+                params.secrets.derivation.authentication.enabled
+            )
             .putInt(
                 Keys.Secrets.DerivationAuthenticationSecretSize,
                 params.secrets.derivation.authentication.secretSize
@@ -89,6 +93,7 @@ class ConfigRepository(
             .remove(Keys.Secrets.DerivationEncryptionSecretSize)
             .remove(Keys.Secrets.DerivationEncryptionIterations)
             .remove(Keys.Secrets.DerivationEncryptionSaltPrefix)
+            .remove(Keys.Secrets.DerivationAuthenticationEnabled)
             .remove(Keys.Secrets.DerivationAuthenticationSecretSize)
             .remove(Keys.Secrets.DerivationAuthenticationIterations)
             .remove(Keys.Secrets.DerivationAuthenticationSaltPrefix)
@@ -153,14 +158,17 @@ class ConfigRepository(
                 const val DerivationEncryptionSaltPrefix: String =
                     "secrets_derivation_encryption_salt_prefix"
 
+                const val DerivationAuthenticationEnabled: String =
+                    "secrets_derivation_authentication_enabled"
+
                 const val DerivationAuthenticationSecretSize: String =
-                    "secrets_derivation_secrets_size"
+                    "secrets_derivation_authentication_secrets_size"
 
                 const val DerivationAuthenticationIterations: String =
-                    "secrets_derivation_iterations"
+                    "secrets_derivation_authentication_iterations"
 
                 const val DerivationAuthenticationSaltPrefix: String =
-                    "secrets_derivation_salt_prefix"
+                    "secrets_derivation_authentication_salt_prefix"
 
                 const val EncryptionFileKeySize: String =
                     "secrets_encryption_file_key_size"
@@ -191,6 +199,7 @@ class ConfigRepository(
                     }
 
                     object Authentication {
+                        const val Enabled: Boolean = true
                         const val SecretSize: Int = 16
                         const val Iterations: Int = 150000
                         const val SaltPrefix: String = "changeme"
@@ -284,7 +293,7 @@ class ConfigRepository(
 
         fun SharedPreferences.getSecretsConfig(): Secret.Config = Secret.Config(
             derivation = Secret.Config.DerivationConfig(
-                encryption = Secret.KeyDerivationConfig(
+                encryption = Secret.EncryptionKeyDerivationConfig(
                     secretSize = this.getInt(
                         Keys.Secrets.DerivationEncryptionSecretSize,
                         Defaults.Secrets.Derivation.Encryption.SecretSize
@@ -298,7 +307,11 @@ class ConfigRepository(
                         Defaults.Secrets.Derivation.Encryption.SaltPrefix
                     ) ?: Defaults.Secrets.Derivation.Encryption.SaltPrefix
                 ),
-                authentication = Secret.KeyDerivationConfig(
+                authentication = Secret.AuthenticationKeyDerivationConfig(
+                    enabled = this.getBoolean(
+                        Keys.Secrets.DerivationAuthenticationEnabled,
+                        Defaults.Secrets.Derivation.Authentication.Enabled
+                    ),
                     secretSize = this.getInt(
                         Keys.Secrets.DerivationAuthenticationSecretSize,
                         Defaults.Secrets.Derivation.Authentication.SecretSize

@@ -17,7 +17,7 @@ import stasis.client_android.lib.model.server.devices.DeviceBootstrapParameters
 import stasis.client_android.lib.security.HttpCredentials
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
-import java.util.*
+import java.util.UUID
 
 class DefaultServerBootstrapEndpointClientSpec : WordSpec({
     "DefaultServerBootstrapEndpointClient" should {
@@ -52,6 +52,7 @@ class DefaultServerBootstrapEndpointClientSpec : WordSpec({
                             saltPrefix = "test-prefix"
                         ),
                         authentication = DeviceBootstrapParameters.SecretsConfig.Derivation.Authentication(
+                            enabled = true,
                             secretSize = 16,
                             iterations = 100000,
                             saltPrefix = "test-prefix"

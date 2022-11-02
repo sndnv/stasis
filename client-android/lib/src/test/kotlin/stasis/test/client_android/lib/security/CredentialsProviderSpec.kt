@@ -9,7 +9,7 @@ import org.jose4j.jws.AlgorithmIdentifiers
 import org.jose4j.jws.JsonWebSignature
 import org.jose4j.jwt.JwtClaims
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
-import stasis.client_android.lib.encryption.secrets.UserHashedAuthenticationPassword
+import stasis.client_android.lib.encryption.secrets.UserAuthenticationPassword
 import stasis.client_android.lib.security.AccessTokenResponse
 import stasis.client_android.lib.security.CredentialsProvider
 import stasis.client_android.lib.security.OAuthClient
@@ -53,7 +53,7 @@ class CredentialsProviderSpec : WordSpec({
             target = Fixtures.Secrets.DefaultConfig
         )
 
-        val hashedPassword = UserHashedAuthenticationPassword(
+        val hashedPassword = UserAuthenticationPassword.Hashed(
             user = UUID.randomUUID(),
             hashedPassword = "test-password".toByteArray().toByteString()
         )

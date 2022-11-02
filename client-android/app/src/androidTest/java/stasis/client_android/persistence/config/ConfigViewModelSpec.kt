@@ -109,6 +109,7 @@ class ConfigViewModelSpec {
                     saltPrefix = "test-prefix"
                 ),
                 authentication = DeviceBootstrapParameters.SecretsConfig.Derivation.Authentication(
+                    enabled = true,
                     secretSize = 16,
                     iterations = 100000,
                     saltPrefix = "test-prefix"

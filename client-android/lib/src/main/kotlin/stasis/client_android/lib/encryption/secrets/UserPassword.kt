@@ -14,16 +14,23 @@ data class UserPassword(
     private val password: CharArray,
     val target: Config
 ) : Secret() {
-    fun toHashedAuthenticationPassword(): UserHashedAuthenticationPassword =
-        UserHashedAuthenticationPassword(
-            user = user,
-            hashedPassword = derivePassword(
-                password = password,
-                salt = "${target.derivation.authentication.saltPrefix}-authentication-$salt",
-                iterations = target.derivation.authentication.iterations,
-                derivedKeySize = target.derivation.authentication.secretSize
+    fun toAuthenticationPassword(): UserAuthenticationPassword =
+        if (target.derivation.authentication.enabled) {
+            UserAuthenticationPassword.Hashed(
+                user = user,
+                hashedPassword = derivePassword(
+                    password = password,
+                    salt = "${target.derivation.authentication.saltPrefix}-authentication-$salt",
+                    iterations = target.derivation.authentication.iterations,
+                    derivedKeySize = target.derivation.authentication.secretSize
+                )
             )
-        )
+        } else {
+            UserAuthenticationPassword.Unhashed(
+                user = user,
+                rawPassword = String(password).toByteArray().toByteString()
+            )
+        }
 
     fun toHashedEncryptionPassword(): UserHashedEncryptionPassword =
         UserHashedEncryptionPassword(

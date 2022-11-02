@@ -140,8 +140,17 @@ object Fixtures {
     object Secrets {
         val DefaultConfig = Secret.Config(
             derivation = Secret.Config.DerivationConfig(
-                encryption = Secret.KeyDerivationConfig(secretSize = 16, iterations = 100000, saltPrefix = ""),
-                authentication = Secret.KeyDerivationConfig(secretSize = 16, iterations = 100000, saltPrefix = "")
+                encryption = Secret.EncryptionKeyDerivationConfig(
+                    secretSize = 16,
+                    iterations = 100000,
+                    saltPrefix = ""
+                ),
+                authentication = Secret.AuthenticationKeyDerivationConfig(
+                    enabled = true,
+                    secretSize = 16,
+                    iterations = 100000,
+                    saltPrefix = ""
+                )
             ),
             encryption = Secret.Config.EncryptionConfig(
                 file = Secret.EncryptionSecretConfig(keySize = 16, ivSize = 12),

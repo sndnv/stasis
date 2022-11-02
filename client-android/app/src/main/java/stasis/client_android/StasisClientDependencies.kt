@@ -174,7 +174,7 @@ object StasisClientDependencies {
                                     )
                                 },
                                 getAuthenticationPassword = { userPassword ->
-                                    Secrets.loadUserHashedAuthenticationPassword(
+                                    Secrets.loadUserAuthenticationPassword(
                                         user = user,
                                         userSalt = userSalt,
                                         userPassword = userPassword,
