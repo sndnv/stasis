@@ -66,6 +66,7 @@ data class DeviceBootstrapParameters(
 
             @JsonClass(generateAdapter = true)
             data class Authentication(
+                val enabled: Boolean,
                 @Json(name = "secret_size")
                 val secretSize: Int,
                 val iterations: Int,

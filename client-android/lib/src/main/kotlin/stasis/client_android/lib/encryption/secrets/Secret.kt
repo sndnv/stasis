@@ -37,7 +37,24 @@ abstract class Secret {
         }
     }
 
-    data class KeyDerivationConfig(
+    data class EncryptionKeyDerivationConfig(
+        val secretSize: Int,
+        val iterations: Int,
+        val saltPrefix: String
+    ) {
+        init {
+            require(secretSize >= MinSecretSize) { "secret must not be smaller than 16 bytes" }
+            require(iterations >= MinIterations) { "iterations must not be fewer than 100k" }
+        }
+
+        companion object {
+            const val MinSecretSize: Int = 16
+            const val MinIterations: Int = 100000
+        }
+    }
+
+    data class AuthenticationKeyDerivationConfig(
+        val enabled: Boolean,
         val secretSize: Int,
         val iterations: Int,
         val saltPrefix: String
@@ -58,8 +75,8 @@ abstract class Secret {
         val encryption: EncryptionConfig
     ) {
         data class DerivationConfig(
-            val encryption: KeyDerivationConfig,
-            val authentication: KeyDerivationConfig
+            val encryption: EncryptionKeyDerivationConfig,
+            val authentication: AuthenticationKeyDerivationConfig
         )
 
         data class EncryptionConfig(

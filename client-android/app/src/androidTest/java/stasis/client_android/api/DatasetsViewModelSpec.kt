@@ -23,7 +23,15 @@ import stasis.client_android.lib.security.CredentialsProvider
 import stasis.client_android.lib.utils.Reference
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Success
-import stasis.client_android.mocks.*
+import stasis.client_android.mocks.Generators
+import stasis.client_android.mocks.MockBackupTracker
+import stasis.client_android.mocks.MockOAuthClient
+import stasis.client_android.mocks.MockOperationExecutor
+import stasis.client_android.mocks.MockRecoveryTracker
+import stasis.client_android.mocks.MockServerApiEndpointClient
+import stasis.client_android.mocks.MockServerCoreEndpointClient
+import stasis.client_android.mocks.MockServerMonitor
+import stasis.client_android.mocks.MockServerTracker
 import stasis.client_android.providers.ProviderContext
 import stasis.client_android.tracking.TrackerViews
 import java.time.Duration
@@ -277,7 +285,7 @@ class DatasetsViewModelSpec {
                                 loadDeviceSecret = { Success(Fixtures.Secrets.Default) },
                                 storeDeviceSecret = { _, _ -> Success(Fixtures.Secrets.Default) },
                                 coroutineScope = CoroutineScope(Dispatchers.IO),
-                                getAuthenticationPassword = { Fixtures.Secrets.UserPassword.toHashedAuthenticationPassword() }
+                                getAuthenticationPassword = { Fixtures.Secrets.UserPassword.toAuthenticationPassword() }
                             ),
                             monitor = MockServerMonitor()
                         )

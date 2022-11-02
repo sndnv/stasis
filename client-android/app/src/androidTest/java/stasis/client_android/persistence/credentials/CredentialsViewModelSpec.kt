@@ -147,7 +147,7 @@ class CredentialsViewModelSpec {
                                 loadDeviceSecret = { Success(Fixtures.Secrets.Default) },
                                 storeDeviceSecret = { _, _ -> Success(Fixtures.Secrets.Default) },
                                 coroutineScope = CoroutineScope(Dispatchers.IO),
-                                getAuthenticationPassword = { Fixtures.Secrets.UserPassword.toHashedAuthenticationPassword() }
+                                getAuthenticationPassword = { Fixtures.Secrets.UserPassword.toAuthenticationPassword() }
                             ),
                             monitor = MockServerMonitor()
                         )

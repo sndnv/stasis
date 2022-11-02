@@ -4,7 +4,7 @@ import android.content.SharedPreferences
 import okio.ByteString
 import okio.ByteString.Companion.toByteString
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
-import stasis.client_android.lib.encryption.secrets.UserHashedAuthenticationPassword
+import stasis.client_android.lib.encryption.secrets.UserAuthenticationPassword
 import stasis.client_android.lib.encryption.secrets.UserPassword
 import stasis.client_android.lib.model.server.devices.DeviceId
 import stasis.client_android.lib.model.server.users.UserId
@@ -99,17 +99,17 @@ object Secrets {
         decryptedDeviceSecret
     }
 
-    fun loadUserHashedAuthenticationPassword(
+    fun loadUserAuthenticationPassword(
         user: UserId,
         userSalt: String,
         userPassword: CharArray,
         preferences: SharedPreferences,
-    ): UserHashedAuthenticationPassword = UserPassword(
+    ): UserAuthenticationPassword = UserPassword(
         user = user,
         salt = userSalt,
         password = userPassword,
         target = preferences.getSecretsConfig()
-    ).toHashedAuthenticationPassword()
+    ).toAuthenticationPassword()
 
     fun initDeviceSecret(
         user: UserId,

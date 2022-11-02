@@ -54,12 +54,13 @@ class BackupSpec : WordSpec({
 
     val secretsConfig: Secret.Config = Secret.Config(
         derivation = Secret.Config.DerivationConfig(
-            encryption = Secret.KeyDerivationConfig(
+            encryption = Secret.EncryptionKeyDerivationConfig(
                 secretSize = 64,
                 iterations = 100000,
                 saltPrefix = "unit-test"
             ),
-            authentication = Secret.KeyDerivationConfig(
+            authentication = Secret.AuthenticationKeyDerivationConfig(
+                enabled = true,
                 secretSize = 64,
                 iterations = 100000,
                 saltPrefix = "unit-test"

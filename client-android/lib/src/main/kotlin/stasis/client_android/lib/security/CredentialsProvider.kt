@@ -8,7 +8,7 @@ import org.jose4j.jwt.consumer.JwtConsumer
 import org.jose4j.jwt.consumer.JwtConsumerBuilder
 import org.jose4j.jwt.consumer.JwtContext
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
-import stasis.client_android.lib.encryption.secrets.UserHashedAuthenticationPassword
+import stasis.client_android.lib.encryption.secrets.UserAuthenticationPassword
 import stasis.client_android.lib.security.exceptions.MissingDeviceSecret
 import stasis.client_android.lib.security.exceptions.TokenExpired
 import stasis.client_android.lib.utils.Try
@@ -26,7 +26,7 @@ class CredentialsProvider(
     private val initDeviceSecret: (ByteString) -> DeviceSecret,
     private val loadDeviceSecret: suspend (CharArray) -> Try<DeviceSecret>,
     private val storeDeviceSecret: suspend (ByteString, CharArray) -> Try<DeviceSecret>,
-    private val getAuthenticationPassword: (CharArray) -> UserHashedAuthenticationPassword,
+    private val getAuthenticationPassword: (CharArray) -> UserAuthenticationPassword,
     private val coroutineScope: CoroutineScope,
 ) {
     private val onCoreTokenUpdatedHandlers: ConcurrentHashMap<Any, (Try<AccessTokenResponse>) -> Unit> =
