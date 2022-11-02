@@ -182,6 +182,7 @@ object ApplicationTemplates {
       "SECRETS_DERIVATION_ENCRYPTION_SECRET_SIZE" -> bootstrapParams.secrets.derivation.encryption.secretSize.toString,
       "SECRETS_DERIVATION_ENCRYPTION_ITERATIONS" -> bootstrapParams.secrets.derivation.encryption.iterations.toString,
       "SECRETS_DERIVATION_ENCRYPTION_SALT_PREFIX" -> bootstrapParams.secrets.derivation.encryption.saltPrefix,
+      "SECRETS_DERIVATION_AUTHENTICATION_ENABLED" -> bootstrapParams.secrets.derivation.authentication.enabled.toString,
       "SECRETS_DERIVATION_AUTHENTICATION_SECRET_SIZE" -> bootstrapParams.secrets.derivation.authentication.secretSize.toString,
       "SECRETS_DERIVATION_AUTHENTICATION_ITERATIONS" -> bootstrapParams.secrets.derivation.authentication.iterations.toString,
       "SECRETS_DERIVATION_AUTHENTICATION_SALT_PREFIX" -> bootstrapParams.secrets.derivation.authentication.saltPrefix,

@@ -1,7 +1,10 @@
 package stasis.client.encryption.secrets
 
+import akka.util.ByteString
 import stasis.shared.model.users.User
 import stasis.shared.secrets.{DerivedPasswords, SecretsConfig}
+
+import java.nio.charset.StandardCharsets
 
 final case class UserPassword(
   user: User.Id,
@@ -9,17 +12,24 @@ final case class UserPassword(
   private val password: Array[Char]
 )(implicit target: SecretsConfig)
     extends Secret {
-  def toHashedAuthenticationPassword: UserHashedAuthenticationPassword =
-    UserHashedAuthenticationPassword(
-      user = user,
-      hashedPassword = DerivedPasswords.deriveHashedAuthenticationPassword(
-        password = password,
-        saltPrefix = target.derivation.authentication.saltPrefix,
-        salt = salt,
-        iterations = target.derivation.authentication.iterations,
-        derivedKeySize = target.derivation.authentication.secretSize
+  def toAuthenticationPassword: UserAuthenticationPassword =
+    if (target.derivation.authentication.enabled) {
+      UserAuthenticationPassword.Hashed(
+        user = user,
+        hashedPassword = DerivedPasswords.deriveHashedAuthenticationPassword(
+          password = password,
+          saltPrefix = target.derivation.authentication.saltPrefix,
+          salt = salt,
+          iterations = target.derivation.authentication.iterations,
+          derivedKeySize = target.derivation.authentication.secretSize
+        )
       )
-    )
+    } else {
+      UserAuthenticationPassword.Unhashed(
+        user = user,
+        rawPassword = ByteString.fromString(new String(password), StandardCharsets.UTF_8)
+      )
+    }
 
   def toHashedEncryptionPassword: UserHashedEncryptionPassword =
     UserHashedEncryptionPassword(

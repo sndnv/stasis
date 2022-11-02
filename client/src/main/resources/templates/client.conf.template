@@ -51,6 +51,7 @@ stasis {
         }
 
         authentication {
+          enabled = $${SECRETS_DERIVATION_AUTHENTICATION_ENABLED}
           secret-size = $${SECRETS_DERIVATION_AUTHENTICATION_SECRET_SIZE}
           iterations = $${SECRETS_DERIVATION_AUTHENTICATION_ITERATIONS}
           salt-prefix = "$${SECRETS_DERIVATION_AUTHENTICATION_SALT_PREFIX}"

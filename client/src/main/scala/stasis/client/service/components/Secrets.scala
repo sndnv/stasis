@@ -78,7 +78,7 @@ object Secrets {
           scope = apiScope,
           parameters = OAuthClient.GrantParameters.ResourceOwnerPasswordCredentials(
             username = username,
-            password = userPassword.toHashedAuthenticationPassword.extract()
+            password = userPassword.toAuthenticationPassword.extract()
           )
         )
         .transformFailureTo(ServiceStartupFailure.token)
