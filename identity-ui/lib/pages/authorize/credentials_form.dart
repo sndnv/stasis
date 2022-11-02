@@ -3,11 +3,25 @@ import 'dart:html';
 import 'dart:js' as js;
 
 import 'package:flutter/material.dart';
+import 'package:identity_ui/api/oauth.dart';
+import 'package:identity_ui/pages/authorize/derived_passwords.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CredentialsForm extends StatefulWidget {
-  const CredentialsForm({super.key, required this.authorizationEndpoint});
+  const CredentialsForm({
+    super.key,
+    required this.requestedScopes,
+    required this.authorizationEndpoint,
+    required this.oauthConfig,
+    required this.passwordDerivationConfig,
+    required this.prefs,
+  });
 
+  final List<String> requestedScopes;
   final Uri authorizationEndpoint;
+  final OAuthConfig oauthConfig;
+  final UserAuthenticationPasswordDerivationConfig passwordDerivationConfig;
+  final SharedPreferences prefs;
 
   @override
   State createState() {
@@ -19,8 +33,16 @@ class _CredentialsFormState extends State<CredentialsForm> {
   final _key = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _userSaltController = TextEditingController();
   bool _processingResponse = false;
   bool _accessDenied = false;
+  bool _extrasShown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _extrasShown = (widget.prefs.getString(Keys._userSalt)?.trim() ?? '').isEmpty;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +89,38 @@ class _CredentialsFormState extends State<CredentialsForm> {
       onFieldSubmitted: (_) => _authorizationHandler(),
     );
 
+    final storedUserSalt = widget.prefs.getString(Keys._userSalt)?.trim() ?? '';
+    if (storedUserSalt.isNotEmpty) {
+      _userSaltController.text = storedUserSalt;
+    }
+
+    final userSaltField = TextFormField(
+      enabled: !_processingResponse,
+      decoration: const InputDecoration(
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.lock),
+        labelText: 'User Salt',
+      ),
+      obscureText: true,
+      enableSuggestions: false,
+      autocorrect: false,
+      controller: _userSaltController,
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'User salt cannot be empty';
+        } else {
+          return null;
+        }
+      },
+      onFieldSubmitted: (_) => _authorizationHandler(),
+      onChanged: (value) => widget.prefs.setString(Keys._userSalt, value),
+    );
+
+    final userSaltFieldVisibility = Visibility(
+      visible: _extrasShown,
+      child: userSaltField,
+    );
+
     final rejectButton = TextButton(
       onPressed: _processingResponse ? null : _rejectionHandler,
       child: const Text('Reject'),
@@ -75,6 +129,14 @@ class _CredentialsFormState extends State<CredentialsForm> {
     final authorizeButton = ElevatedButton(
       onPressed: _processingResponse ? null : _authorizationHandler,
       child: const Text('Authorize'),
+    );
+
+    final extrasButton = Tooltip(
+      message: _extrasShown ? 'Hide extra fields' : 'Show extra fields',
+      child: TextButton(
+        onPressed: _toggleExtras,
+        child: Icon(_extrasShown ? Icons.arrow_drop_up_sharp : Icons.arrow_drop_down_sharp),
+      ),
     );
 
     Widget buttons;
@@ -87,11 +149,21 @@ class _CredentialsFormState extends State<CredentialsForm> {
       );
     }
 
+    Widget withPadding(Widget widget) {
+      if (widget == extrasButton || !_extrasShown && widget == userSaltFieldVisibility) {
+        return widget;
+      } else {
+        return Padding(padding: const EdgeInsets.all(8.0), child: widget);
+      }
+    }
+
     return Form(
       key: _key,
       child: Column(
-        children: [usernameField, passwordField, buttons]
-            .map((e) => Padding(padding: const EdgeInsets.all(8.0), child: e))
+        children: (_passwordDerivationRequired()
+                ? [usernameField, passwordField, userSaltFieldVisibility, extrasButton, buttons]
+                : [usernameField, passwordField, buttons])
+            .map((e) => withPadding(e))
             .toList(),
       ),
     );
@@ -101,6 +173,7 @@ class _CredentialsFormState extends State<CredentialsForm> {
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
+    _userSaltController.dispose();
     super.dispose();
   }
 
@@ -135,13 +208,36 @@ class _CredentialsFormState extends State<CredentialsForm> {
       final uri = widget.authorizationEndpoint.replace(queryParameters: params);
       final username = _usernameController.text;
       final password = _passwordController.text;
+      final userSalt = _userSaltController.text;
 
-      final authorization = 'Basic ${base64Encode(utf8.encode('$username:$password'))}';
+      final futureAuthenticationPassword = _passwordDerivationRequired()
+          ? DerivedPasswords.deriveHashedUserAuthenticationPassword(
+              password: password,
+              saltPrefix: widget.passwordDerivationConfig.saltPrefix,
+              salt: userSalt,
+              iterations: widget.passwordDerivationConfig.iterations,
+              derivedKeySize: widget.passwordDerivationConfig.secretSize,
+            )
+          : Future.value(password);
 
-      js.context.callMethod('sendAuthorization', [uri.toString(), authorization, js.allowInterop(callback)]);
+      futureAuthenticationPassword.then(
+        (authenticationPassword) {
+          final authorization = 'Basic ${base64Encode(utf8.encode('$username:$authenticationPassword'))}';
+          js.context.callMethod('sendAuthorization', [uri.toString(), authorization, js.allowInterop(callback)]);
+        },
+        onError: (e) {
+          _showSnackBar(context, message: 'Failed to generate authentication password: [$e]');
+          _processing(false);
+        },
+      );
     } else {
       _processing(false);
     }
+  }
+
+  bool _passwordDerivationRequired() {
+    return widget.passwordDerivationConfig.enabled &&
+        !widget.requestedScopes.toSet().containsAll(widget.oauthConfig.scopes);
   }
 
   void _processing(bool value, {bool denied = false}) {
@@ -150,4 +246,19 @@ class _CredentialsFormState extends State<CredentialsForm> {
       _accessDenied = denied;
     });
   }
+
+  void _toggleExtras() {
+    setState(() {
+      _extrasShown = !_extrasShown;
+    });
+  }
+
+  void _showSnackBar(BuildContext context, {required String message}) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+class Keys {
+  static const String _userSalt = 'stasis.identity_ui.credentials.user_salt';
 }

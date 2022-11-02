@@ -4,14 +4,20 @@ import 'package:identity_ui/model/requests/create_owner.dart';
 import 'package:identity_ui/model/requests/update_owner.dart';
 import 'package:identity_ui/model/requests/update_owner_credentials.dart';
 import 'package:identity_ui/model/resource_owner.dart';
+import 'package:identity_ui/pages/authorize/derived_passwords.dart';
 import 'package:identity_ui/pages/default/components.dart';
 import 'package:identity_ui/pages/manage/components/entity_form.dart';
 import 'package:identity_ui/pages/manage/components/entity_table.dart';
 
 class Owners extends StatefulWidget {
-  const Owners({super.key, required this.client});
+  const Owners({
+    super.key,
+    required this.client,
+    required this.passwordDerivationConfig,
+  });
 
   final ApiClient client;
+  final UserAuthenticationPasswordDerivationConfig passwordDerivationConfig;
 
   @override
   State createState() {
@@ -114,14 +120,19 @@ class _OwnersState extends State<Owners> {
       controller: TextEditingController(),
     );
 
+    final userSaltField = formField(
+      title: 'User Salt (optional)',
+      secret: true,
+      controller: TextEditingController(),
+    );
+
     final allowedScopesField = formField(
-      title: 'Allowed Scopes (CSV)',
-      errorMessage: 'Allowed scopes cannot be empty',
+      title: 'Allowed Scopes (comma-separated, optional)',
       controller: TextEditingController(),
     );
 
     final subjectField = formField(
-      title: 'Subject',
+      title: 'Subject (optional)',
       controller: TextEditingController(),
     );
 
@@ -133,31 +144,47 @@ class _OwnersState extends State<Owners> {
           contentPadding: const EdgeInsets.all(16),
           children: [
             EntityForm(
-              fields: [
-                usernameField,
-                rawPasswordField,
-                allowedScopesField,
-                subjectField,
-              ],
+              fields: widget.passwordDerivationConfig.enabled
+                  ? [usernameField, rawPasswordField, userSaltField, allowedScopesField, subjectField]
+                  : [usernameField, rawPasswordField, allowedScopesField, subjectField],
               submitAction: 'Create',
               onFormSubmitted: () {
                 final subject = subjectField.controller!.text.trim();
 
-                final request = CreateOwner(
-                  username: usernameField.controller!.text.trim(),
-                  rawPassword: rawPasswordField.controller!.text.trim(),
-                  allowedScopes: allowedScopesField.controller!.text.split(',').map((s) => s.trim()).toList(),
-                  subject: subject.isEmpty ? null : subject,
-                );
+                final password = rawPasswordField.controller!.text.trim();
+
+                final futureAuthenticationPassword = (userSaltField.controller?.text.trim() ?? '').isNotEmpty
+                    ? DerivedPasswords.deriveHashedUserAuthenticationPassword(
+                        password: password,
+                        saltPrefix: widget.passwordDerivationConfig.saltPrefix,
+                        salt: userSaltField.controller!.text.trim(),
+                        iterations: widget.passwordDerivationConfig.iterations,
+                        derivedKeySize: widget.passwordDerivationConfig.secretSize,
+                      )
+                    : Future.value(password);
 
                 final messenger = ScaffoldMessenger.of(context);
 
-                widget.client.postOwner(request).then((_) {
-                  messenger.showSnackBar(const SnackBar(content: Text('Resource owner created...')));
-                  setState(() {});
-                }).onError((e, stackTrace) {
-                  messenger.showSnackBar(SnackBar(content: Text('Failed to create resource owner: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                futureAuthenticationPassword.then(
+                  (authenticationPassword) {
+                    final request = CreateOwner(
+                      username: usernameField.controller!.text.trim(),
+                      rawPassword: authenticationPassword,
+                      allowedScopes: allowedScopesField.controller!.text.split(',').map((s) => s.trim()).toList(),
+                      subject: subject.isEmpty ? null : subject,
+                    );
+
+                    return widget.client.postOwner(request).then((_) {
+                      messenger.showSnackBar(const SnackBar(content: Text('Resource owner created...')));
+                      setState(() {});
+                    }).onError((e, stackTrace) {
+                      messenger.showSnackBar(SnackBar(content: Text('Failed to create resource owner: [$e]')));
+                    });
+                  },
+                  onError: (e) {
+                    messenger.showSnackBar(SnackBar(content: Text('Failed to generate authentication password: [$e]')));
+                  },
+                ).whenComplete(() => Navigator.pop(context));
               },
             )
           ],
@@ -168,8 +195,7 @@ class _OwnersState extends State<Owners> {
 
   void _editOwner(BuildContext context, ResourceOwner existing) {
     final allowedScopesField = formField(
-      title: 'Allowed Scopes (CSV)',
-      errorMessage: 'Allowed scopes cannot be empty',
+      title: 'Allowed Scopes (comma-separated, optional)',
       controller: TextEditingController(text: existing.allowedScopes.join(',')),
     );
 
@@ -223,6 +249,12 @@ class _OwnersState extends State<Owners> {
       controller: TextEditingController(),
     );
 
+    final userSaltField = formField(
+      title: 'User Salt (optional)',
+      secret: true,
+      controller: TextEditingController(),
+    );
+
     showDialog(
       context: context,
       builder: (context) {
@@ -231,21 +263,41 @@ class _OwnersState extends State<Owners> {
           contentPadding: const EdgeInsets.all(16),
           children: [
             EntityForm(
-              fields: [rawPasswordField],
+              fields: (widget.passwordDerivationConfig.enabled && widget.client.subject != existing.username)
+                  ? [rawPasswordField, userSaltField]
+                  : [rawPasswordField],
               submitAction: 'Update',
               onFormSubmitted: () {
-                final request = UpdateOwnerCredentials(
-                  rawPassword: rawPasswordField.controller!.text.trim(),
-                );
+                final password = rawPasswordField.controller!.text.trim();
+
+                final futureAuthenticationPassword = (userSaltField.controller?.text.trim() ?? '').isNotEmpty
+                    ? DerivedPasswords.deriveHashedUserAuthenticationPassword(
+                        password: password,
+                        saltPrefix: widget.passwordDerivationConfig.saltPrefix,
+                        salt: userSaltField.controller!.text.trim(),
+                        iterations: widget.passwordDerivationConfig.iterations,
+                        derivedKeySize: widget.passwordDerivationConfig.secretSize,
+                      )
+                    : Future.value(password);
 
                 final messenger = ScaffoldMessenger.of(context);
 
-                widget.client.putOwnerCredentials(existing.username, request).then((_) {
-                  messenger.showSnackBar(const SnackBar(content: Text('Resource owner credentials updated...')));
-                  setState(() {});
-                }).onError((e, stackTrace) {
-                  messenger.showSnackBar(SnackBar(content: Text('Failed to update resource owner credentials: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                futureAuthenticationPassword.then(
+                  (authenticationPassword) {
+                    final request = UpdateOwnerCredentials(rawPassword: authenticationPassword);
+
+                    return widget.client.putOwnerCredentials(existing.username, request).then((_) {
+                      messenger.showSnackBar(const SnackBar(content: Text('Resource owner credentials updated...')));
+                      setState(() {});
+                    }).onError((e, _) {
+                      messenger
+                          .showSnackBar(SnackBar(content: Text('Failed to update resource owner credentials: [$e]')));
+                    });
+                  },
+                  onError: (e) {
+                    messenger.showSnackBar(SnackBar(content: Text('Failed to generate authentication password: [$e]')));
+                  },
+                ).whenComplete(() => Navigator.pop(context));
               },
             )
           ],
