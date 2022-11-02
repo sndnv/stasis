@@ -140,8 +140,17 @@ object Fixtures {
   object Secrets {
     final lazy val DefaultConfig = SecretsConfig(
       derivation = SecretsConfig.Derivation(
-        encryption = SecretsConfig.Derivation.Encryption(secretSize = 16, iterations = 100000, saltPrefix = ""),
-        authentication = SecretsConfig.Derivation.Authentication(secretSize = 16, iterations = 100000, saltPrefix = "")
+        encryption = SecretsConfig.Derivation.Encryption(
+          secretSize = 16,
+          iterations = 100000,
+          saltPrefix = ""
+        ),
+        authentication = SecretsConfig.Derivation.Authentication(
+          enabled = true,
+          secretSize = 16,
+          iterations = 100000,
+          saltPrefix = ""
+        )
       ),
       encryption = SecretsConfig.Encryption(
         file = SecretsConfig.Encryption.File(keySize = 16, ivSize = 12),

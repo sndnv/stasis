@@ -10,8 +10,17 @@ trait SecretsConfig {
 
   protected implicit val testConfig: Secrets = Secrets(
     derivation = Secrets.Derivation(
-      encryption = Secrets.Derivation.Encryption(secretSize = 64, iterations = 100000, saltPrefix = "unit-test"),
-      authentication = Secrets.Derivation.Authentication(secretSize = 64, iterations = 100000, saltPrefix = "unit-test")
+      encryption = Secrets.Derivation.Encryption(
+        secretSize = 64,
+        iterations = 100000,
+        saltPrefix = "unit-test"
+      ),
+      authentication = Secrets.Derivation.Authentication(
+        enabled = true,
+        secretSize = 64,
+        iterations = 100000,
+        saltPrefix = "unit-test"
+      )
     ),
     encryption = Secrets.Encryption(
       file = Secrets.Encryption.File(keySize = 16, ivSize = 16),
