@@ -17,12 +17,21 @@ object SecretsConfig {
     final val MinSecretSize: Int = 16 // in bytes
     final val MinIterations: Int = 100000
 
-    final case class Encryption(secretSize: Int, iterations: Int, saltPrefix: String) {
+    final case class Encryption(
+      secretSize: Int,
+      iterations: Int,
+      saltPrefix: String
+    ) {
       require(secretSize >= MinSecretSize, "secret must not be smaller than 16 bytes")
       require(iterations >= MinIterations, "iterations must not be fewer than 100k")
     }
 
-    final case class Authentication(secretSize: Int, iterations: Int, saltPrefix: String) {
+    final case class Authentication(
+      enabled: Boolean,
+      secretSize: Int,
+      iterations: Int,
+      saltPrefix: String
+    ) {
       require(secretSize >= MinSecretSize, "secret must not be smaller than 16 bytes")
       require(iterations >= MinIterations, "iterations must not be fewer than 100k")
     }
@@ -63,6 +72,7 @@ object SecretsConfig {
           saltPrefix = config.getString("derivation.encryption.salt-prefix")
         ),
         authentication = Derivation.Authentication(
+          enabled = config.getBoolean("derivation.authentication.enabled"),
           secretSize = config.getInt("derivation.authentication.secret-size"),
           iterations = config.getInt("derivation.authentication.iterations"),
           saltPrefix = config.getString("derivation.authentication.salt-prefix")
