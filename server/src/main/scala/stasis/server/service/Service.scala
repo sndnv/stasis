@@ -405,6 +405,7 @@ trait Service {
          |              iterations:     ${deviceBootstrapParams.secrets.derivation.encryption.iterations.toString}
          |              salt-prefix:    ${deviceBootstrapParams.secrets.derivation.encryption.saltPrefix}
          |            authentication:
+         |              enabled:        ${deviceBootstrapParams.secrets.derivation.authentication.enabled.toString}
          |              secret-size:    ${deviceBootstrapParams.secrets.derivation.authentication.secretSize.toString}  bytes
          |              iterations:     ${deviceBootstrapParams.secrets.derivation.authentication.iterations.toString}
          |              salt-prefix:    ${deviceBootstrapParams.secrets.derivation.authentication.saltPrefix}
