@@ -22,6 +22,7 @@ dependencies:
   shared_preferences: ^2.0.15
   flutter_svg: ^1.1.4
   flutter_dotenv: ^5.0.2
+  cryptography: ^2.0.5
 
 dev_dependencies:
   flutter_test:

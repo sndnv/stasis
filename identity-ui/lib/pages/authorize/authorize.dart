@@ -1,10 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:identity_ui/api/oauth.dart';
+import 'package:identity_ui/pages/authorize/derived_passwords.dart';
 import 'package:identity_ui/pages/default/components.dart';
 import 'package:identity_ui/pages/authorize/credentials_form.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Authorize extends StatelessWidget {
-  Authorize({Key? key, required this.authorizationEndpoint}) : super(key: key);
+  Authorize({
+    Key? key,
+    required this.authorizationEndpoint,
+    required this.oauthConfig,
+    required this.passwordDerivationConfig,
+    required this.prefs,
+  }) : super(key: key);
   final Uri authorizationEndpoint;
+  final OAuthConfig oauthConfig;
+  final UserAuthenticationPasswordDerivationConfig passwordDerivationConfig;
+  final SharedPreferences prefs;
 
   final List<String> _requiredParameters = ['response_type', 'client_id', 'redirect_uri', 'scope', 'state'];
 
@@ -20,16 +32,23 @@ class Authorize extends StatelessWidget {
     if (areParametersValid(_requiredParameters, queryParameters)) {
       final title = Text('Login', style: theme.textTheme.headlineSmall);
 
-      final form = CredentialsForm(authorizationEndpoint: authorizationEndpoint);
-
       const divider = Divider(indent: 15.0, endIndent: 15.0);
 
-      final actualScopes =
-          (queryParameters['scope'] ?? 'none').replaceAll('urn:stasis:identity:audience:', '').split(' ');
+      final requestedScopes = (queryParameters['scope'] ?? 'none').split(' ');
+
+      final actualScopes = requestedScopes.map((scope) => scope.replaceAll('urn:stasis:identity:audience:', ''));
 
       final scopes = Text(
         'Authorization requested for [${actualScopes.join(', ')}]',
         style: theme.textTheme.caption?.copyWith(fontStyle: FontStyle.italic),
+      );
+
+      final form = CredentialsForm(
+        authorizationEndpoint: authorizationEndpoint,
+        requestedScopes: requestedScopes,
+        oauthConfig: oauthConfig,
+        passwordDerivationConfig: passwordDerivationConfig,
+        prefs: prefs,
       );
 
       card = createBasicCard(theme, [title, form, divider, scopes]);

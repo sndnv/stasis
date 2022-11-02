@@ -9,6 +9,7 @@ import 'package:identity_ui/api/default_api_client.dart';
 import 'package:identity_ui/api/oauth.dart';
 import 'package:identity_ui/pages/authorize/authorization_callback.dart';
 import 'package:identity_ui/pages/authorize/authorize.dart';
+import 'package:identity_ui/pages/authorize/derived_passwords.dart';
 import 'package:identity_ui/pages/default/home.dart';
 import 'package:identity_ui/pages/default/not_found.dart';
 import 'package:identity_ui/pages/manage/apis.dart';
@@ -16,18 +17,27 @@ import 'package:identity_ui/pages/manage/clients.dart';
 import 'package:identity_ui/pages/manage/codes.dart';
 import 'package:identity_ui/pages/manage/owners.dart';
 import 'package:identity_ui/pages/manage/tokens.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PageRouter {
   static FluroRouter underlying = FluroRouter.appRouter;
 
   static String server = dotenv.env['IDENTITY_UI_IDENTITY_SERVER'] ?? 'http://localhost:8080';
 
-  static OAuthConfig config = OAuthConfig(
+  static OAuthConfig oauthConfig = OAuthConfig(
     authorizationEndpoint: Uri.parse('${Uri.base.origin}/login/authorize'),
     tokenEndpoint: Uri.parse('$server${dotenv.env['IDENTITY_UI_TOKEN_ENDPOINT'] ?? '/oauth/token'}'),
     clientId: dotenv.env['IDENTITY_UI_CLIENT_ID'] ?? 'missing-client-id',
     redirectUri: Uri.parse(dotenv.env['IDENTITY_UI_REDIRECT_URI'] ?? 'http://localhost:8080/login/callback'),
     scopes: (dotenv.env['IDENTITY_UI_SCOPES'] ?? 'urn:stasis:identity:audience:manage-identity').split(','),
+  );
+
+  static UserAuthenticationPasswordDerivationConfig passwordDerivationConfig =
+      UserAuthenticationPasswordDerivationConfig(
+    enabled: dotenv.env['IDENTITY_UI_PASSWORD_DERIVATION_ENABLED']?.toLowerCase() == 'true',
+    secretSize: int.tryParse(dotenv.env['IDENTITY_UI_PASSWORD_DERIVATION_SECRET_SIZE'] ?? '') ?? 16,
+    iterations: int.tryParse(dotenv.env['IDENTITY_UI_PASSWORD_DERIVATION_ITERATIONS'] ?? '') ?? 100000,
+    saltPrefix: dotenv.env['IDENTITY_UI_DERIVATION_SALT_PREFIX'] ?? 'changeme',
   );
 
   static Future<ApiClient> _login() async {
@@ -38,12 +48,12 @@ class PageRouter {
       return DefaultApiClient(
         server: server,
         underlying: underlying,
-        clientId: config.clientId,
+        clientId: oauthConfig.clientId,
         subject: claims.subject,
         audience: claims.audience,
       );
     } else {
-      final uri = await OAuth.generateAuthorizationUri(config);
+      final uri = await OAuth.generateAuthorizationUri(oauthConfig);
       html.window.location.assign(uri.toString());
       return Future.error(RedirectPending.instance);
     }
@@ -123,70 +133,74 @@ class PageRouter {
 
   static Handler _pageHandler(
     PageRouterDestination destination,
-    Widget Function(BuildContext context, ApiClient client) builder,
+    Widget Function(ApiClient client) builder,
   ) {
     return Handler(
-        handlerFunc: (context, __) => Scaffold(
+        handlerFunc: (context, _) => Scaffold(
             appBar: _appBar(context!, destination),
             drawer: _drawer(context, destination),
             body: FutureBuilder<ApiClient>(
               future: _login(),
               builder: (context, snapshot) {
                 if (snapshot.data != null && snapshot.connectionState == ConnectionState.done) {
-                  return builder(context, snapshot.data!);
+                  return builder(snapshot.data!);
                 } else {
-                  if (snapshot.error == null || snapshot.error.runtimeType == RedirectPending) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else {
-                    final error = snapshot.error.toString();
-
-                    return Center(
-                      child: Container(
-                        constraints: const BoxConstraints.tightFor(width: 400, height: 150),
-                        child: Card(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(left: 8, top: 12, right: 8),
-                                child: ListTile(
-                                  leading: const Icon(Icons.error),
-                                  title: const Text('Error'),
-                                  subtitle: Text(error),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }
+                  return _pendingOrFailedSnapshot(snapshot);
                 }
               },
             )));
   }
 
-  static final Handler _homeHandler = _pageHandler(PageRouterDestination.home, (_, client) => Home(client: client));
+  static final Handler _homeHandler = _pageHandler(
+    PageRouterDestination.home,
+    (client) => Home(client: client),
+  );
 
-  static final Handler _apisHandler = _pageHandler(PageRouterDestination.apis, (_, client) => Apis(client: client));
+  static final Handler _apisHandler = _pageHandler(
+    PageRouterDestination.apis,
+    (client) => Apis(client: client),
+  );
 
-  static final Handler _clientsHandler =
-      _pageHandler(PageRouterDestination.clients, (_, client) => Clients(client: client));
+  static final Handler _clientsHandler = _pageHandler(
+    PageRouterDestination.clients,
+    (client) => Clients(client: client),
+  );
 
-  static final Handler _codesHandler = _pageHandler(PageRouterDestination.codes, (_, client) => Codes(client: client));
+  static final Handler _codesHandler = _pageHandler(
+    PageRouterDestination.codes,
+    (client) => Codes(client: client),
+  );
 
-  static final Handler _ownersHandler =
-      _pageHandler(PageRouterDestination.owners, (_, client) => Owners(client: client));
+  static final Handler _ownersHandler = _pageHandler(
+    PageRouterDestination.owners,
+    (client) => Owners(client: client, passwordDerivationConfig: passwordDerivationConfig),
+  );
 
-  static final Handler _tokensHandler =
-      _pageHandler(PageRouterDestination.tokens, (_, client) => Tokens(client: client));
+  static final Handler _tokensHandler = _pageHandler(
+    PageRouterDestination.tokens,
+    (client) => Tokens(client: client),
+  );
 
   static final Handler _authorizeHandler = Handler(
-    handlerFunc: (_, __) => Authorize(authorizationEndpoint: Uri.parse('$server/oauth/authorization')),
+    handlerFunc: (_, __) => FutureBuilder<SharedPreferences>(
+      future: SharedPreferences.getInstance(),
+      builder: (_, snapshot) {
+        if (snapshot.data != null && snapshot.connectionState == ConnectionState.done) {
+          return Authorize(
+            authorizationEndpoint: Uri.parse('$server/oauth/authorization'),
+            oauthConfig: oauthConfig,
+            passwordDerivationConfig: passwordDerivationConfig,
+            prefs: snapshot.data!,
+          );
+        } else {
+          return _pendingOrFailedSnapshot(snapshot);
+        }
+      },
+    ),
   );
 
   static final Handler _loginCallbackHandler = Handler(
-    handlerFunc: (_, __) => AuthorizationCallback(config: config),
+    handlerFunc: (_, __) => AuthorizationCallback(config: oauthConfig),
   );
 
   static final Handler _notFoundHandler = Handler(
@@ -207,6 +221,35 @@ class PageRouter {
 
   static void navigateTo(BuildContext context, {required PageRouterDestination destination, bool replace = false}) {
     underlying.navigateTo(context, destination.route);
+  }
+
+  static Widget _pendingOrFailedSnapshot<T>(AsyncSnapshot<T> snapshot) {
+    if (snapshot.error == null || snapshot.error.runtimeType == RedirectPending) {
+      return const Center(child: CircularProgressIndicator());
+    } else {
+      final error = snapshot.error.toString();
+
+      return Center(
+        child: Container(
+          constraints: const BoxConstraints.tightFor(width: 400, height: 150),
+          child: Card(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 8, top: 12, right: 8),
+                  child: ListTile(
+                    leading: const Icon(Icons.error),
+                    title: const Text('Error'),
+                    subtitle: Text(error),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
   }
 }
 
