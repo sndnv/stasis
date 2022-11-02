@@ -167,8 +167,17 @@ class DeviceBootstrapParametersSpec extends UnitSpec {
     ),
     secrets = SecretsConfig(
       derivation = SecretsConfig.Derivation(
-        encryption = SecretsConfig.Derivation.Encryption(secretSize = 32, iterations = 100000, saltPrefix = "test"),
-        authentication = SecretsConfig.Derivation.Authentication(secretSize = 64, iterations = 150000, saltPrefix = "test")
+        encryption = SecretsConfig.Derivation.Encryption(
+          secretSize = 32,
+          iterations = 100000,
+          saltPrefix = "test"
+        ),
+        authentication = SecretsConfig.Derivation.Authentication(
+          enabled = true,
+          secretSize = 64,
+          iterations = 150000,
+          saltPrefix = "test"
+        )
       ),
       encryption = SecretsConfig.Encryption(
         file = SecretsConfig.Encryption.File(keySize = 16, ivSize = 12),

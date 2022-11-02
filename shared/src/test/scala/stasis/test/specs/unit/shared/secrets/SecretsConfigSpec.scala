@@ -39,8 +39,17 @@ class SecretsConfigSpec extends UnitSpec {
 
   private val testConfig: SecretsConfig = SecretsConfig(
     derivation = SecretsConfig.Derivation(
-      encryption = SecretsConfig.Derivation.Encryption(secretSize = 32, iterations = 100000, saltPrefix = "unit-test"),
-      authentication = SecretsConfig.Derivation.Authentication(secretSize = 64, iterations = 150000, saltPrefix = "unit-test")
+      encryption = SecretsConfig.Derivation.Encryption(
+        secretSize = 32,
+        iterations = 100000,
+        saltPrefix = "unit-test"
+      ),
+      authentication = SecretsConfig.Derivation.Authentication(
+        enabled = true,
+        secretSize = 64,
+        iterations = 150000,
+        saltPrefix = "unit-test"
+      )
     ),
     encryption = SecretsConfig.Encryption(
       file = SecretsConfig.Encryption.File(keySize = 16, ivSize = testIvSize),
