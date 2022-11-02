@@ -1,13 +1,19 @@
 # deployment / dev
 
-The provided `docker-compose.yml` defines all `stasis` services and their configuration, for testing and development
+The provided `docker-compose.yml` files define all `stasis` services and their configuration, for testing and development
 purposes.
+
+The following deployments are available:
+
+* `docker-compose.yml` - default deployment of all services
+* `docker-compose-metrics.yml` - deployment of prometheus and grafana only, for collecting client metrics
+* `docker-compose-no-auth-has.yml` - default deployment of all services, with **disabled** hashing of user authentication passwords
 
 ## Getting Started
 
 1) Generate artifacts and certificates with `./scripts/prepare_deployment.sh <country> <location> <organization>`
 2) Generate device secret with `./scripts/generate_device_secret.py --user-id <user-id-on-server> --user-salt <user-salt-on-server> --output-path ../secrets/client.secret`
-3) Start services with `docker-compose up`
+3) Start services with `docker-compose up` (or `docker compose -f <compose file name> up`)
 
 ## Running Tests
 
@@ -44,7 +50,7 @@ Contains scripts that run tests and help with setting up the test environment.
 ```
 
 By default, Docker images for `identity`, `identity-ui`, `server`, `client` and `client-cli` will be generated; they are
-necessary for running the services in the provided `docker-compose.yml` file.
+necessary for running the services in the provided `docker-compose.yml` files.
 
 #### `generate_device_secret.py`
 
@@ -65,7 +71,7 @@ provided as it is used for encrypting the secret.
 ./generate_self_signed_cert.py <country> <location> <organization>
 ```
 
-The communication between all services is based on HTTPS and certificates are needed to properly setup the relevant
+The communication between all services is based on HTTPS and certificates are needed to properly set up the relevant
 endpoints.
 
 #### `generate_user_password.py`

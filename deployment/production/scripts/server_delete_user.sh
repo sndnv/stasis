@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 HELP="Removes existing users via the server API"
-USAGE="Usage: $0 [password size] [password iterations] [password salt prefix] [identity url] [server API url]"
+USAGE="Usage: $0 [<password size>|unhashed] [<password iterations>] [<password salt prefix>] [<identity url>] [<server API url>]"
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]
 then
@@ -48,6 +48,17 @@ function now() {
   echo "${timestamp}"
 }
 
+PASSWORD_SIZE=${1:-"24"}
+PASSWORD_ITERATIONS=${2:-"150000"}
+PASSWORD_SALT_PREFIX=${3-"changeme"}
+
+if [ "${PASSWORD_SIZE}" == "unhashed" ]
+then
+  SKIP_HASHING="true"
+else
+  SKIP_HASHING="false"
+fi
+
 prompt "Client ID"
 CLIENT_ID=$(get_param)
 require "${CLIENT_ID}" "<client ID> is required for authentication"
@@ -66,19 +77,23 @@ USER_PASSWORD=$(get_secret)
 render_secret "${USER_PASSWORD}"
 require "${USER_PASSWORD}" "<management user password> is required for authentication"
 
-prompt "Management User Salt"
-USER_SALT=$(get_param)
-require "${USER_SALT}" "<management user salt> is required for authentication"
+if [ "${SKIP_HASHING}" != "true" ]
+then
+  prompt "Management User Salt"
+  USER_SALT=$(get_param)
+  require "${USER_SALT}" "<management user salt> is required for authentication"
+fi
 
 prompt "Target User ID"
 TARGET_USER_ID=$(get_param)
 require "${TARGET_USER_ID}" "<target user id> is required"
 
-PASSWORD_SIZE=${1:-"24"}
-PASSWORD_ITERATIONS=${2:-"150000"}
-PASSWORD_SALT_PREFIX=${3-"changeme"}
-
-USER_PASSWORD_DERIVED=$(./generate_user_password.py -q --user-salt ${USER_SALT} --user-password ${USER_PASSWORD} --authentication-password-size ${PASSWORD_SIZE} --authentication-password-iterations ${PASSWORD_ITERATIONS} --authentication-password-salt-prefix ${PASSWORD_SALT_PREFIX})
+if [ "${SKIP_HASHING}" != "true" ]
+then
+  USER_PASSWORD_DERIVED=$(./generate_user_password.py -q --user-salt ${USER_SALT} --user-password ${USER_PASSWORD} --authentication-password-size ${PASSWORD_SIZE} --authentication-password-iterations ${PASSWORD_ITERATIONS} --authentication-password-salt-prefix ${PASSWORD_SALT_PREFIX})
+else
+  USER_PASSWORD_DERIVED=${USER_PASSWORD}
+fi
 
 IDENTITY_TOKEN_URL=${4:-"https://localhost:42100/oauth/token"}
 IDENTITY_URN="urn:stasis:identity:audience"
