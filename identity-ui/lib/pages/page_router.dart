@@ -143,7 +143,7 @@ class PageRouter {
               future: _login(),
               builder: (context, snapshot) {
                 if (snapshot.data != null && snapshot.connectionState == ConnectionState.done) {
-                  return builder(snapshot.data!);
+                  return SelectionArea(child: builder(snapshot.data!));
                 } else {
                   return _pendingOrFailedSnapshot(snapshot);
                 }
