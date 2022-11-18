@@ -89,7 +89,7 @@ class _OwnersState extends State<Owners> {
                       IconButton(
                         tooltip: widget.client.subject == owner.username
                             ? 'Cannot remove the current resource owner'
-                            : 'Remove Resource Owners',
+                            : 'Remove Resource Owner',
                         onPressed: widget.client.subject == owner.username
                             ? null
                             : () => _removeOwner(context, owner.username),
