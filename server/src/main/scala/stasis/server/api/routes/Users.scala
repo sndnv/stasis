@@ -39,21 +39,25 @@ class Users(
               resource[UserStore.Manage.Privileged] { manage =>
                 val user = createRequest.toUser(withSalt = manage.generateSalt())
 
-                val hashedAuthenticationPassword = DerivedPasswords.encode(
-                  hashedPassword = DerivedPasswords.deriveHashedAuthenticationPassword(
-                    password = createRequest.rawPassword.toCharArray,
-                    saltPrefix = secretsConfig.derivation.authentication.saltPrefix,
-                    salt = user.salt,
-                    iterations = secretsConfig.derivation.authentication.iterations,
-                    derivedKeySize = secretsConfig.derivation.authentication.secretSize
+                val authenticationPassword = if (secretsConfig.derivation.authentication.enabled) {
+                  DerivedPasswords.encode(
+                    hashedPassword = DerivedPasswords.deriveHashedAuthenticationPassword(
+                      password = createRequest.rawPassword.toCharArray,
+                      saltPrefix = secretsConfig.derivation.authentication.saltPrefix,
+                      salt = user.salt,
+                      iterations = secretsConfig.derivation.authentication.iterations,
+                      derivedKeySize = secretsConfig.derivation.authentication.secretSize
+                    )
                   )
-                )
+                } else {
+                  createRequest.rawPassword
+                }
 
                 credentialsManager
                   .createResourceOwner(
                     user = user,
                     username = createRequest.username,
-                    rawPassword = hashedAuthenticationPassword
+                    rawPassword = authenticationPassword
                   )
                   .map {
                     case UserCredentialsManager.Result.Success =>
@@ -205,20 +209,24 @@ class Users(
                 resource[UserStore.Manage.Privileged] { manage =>
                   val salt = manage.generateSalt()
 
-                  val hashedAuthenticationPassword = DerivedPasswords.encode(
-                    hashedPassword = DerivedPasswords.deriveHashedAuthenticationPassword(
-                      password = updateRequest.rawPassword.toCharArray,
-                      saltPrefix = secretsConfig.derivation.authentication.saltPrefix,
-                      salt = salt,
-                      iterations = secretsConfig.derivation.authentication.iterations,
-                      derivedKeySize = secretsConfig.derivation.authentication.secretSize
+                  val authenticationPassword = if (secretsConfig.derivation.authentication.enabled) {
+                    DerivedPasswords.encode(
+                      hashedPassword = DerivedPasswords.deriveHashedAuthenticationPassword(
+                        password = updateRequest.rawPassword.toCharArray,
+                        saltPrefix = secretsConfig.derivation.authentication.saltPrefix,
+                        salt = salt,
+                        iterations = secretsConfig.derivation.authentication.iterations,
+                        derivedKeySize = secretsConfig.derivation.authentication.secretSize
+                      )
                     )
-                  )
+                  } else {
+                    updateRequest.rawPassword
+                  }
 
                   credentialsManager
                     .setResourceOwnerPassword(
                       user = userId,
-                      rawPassword = hashedAuthenticationPassword
+                      rawPassword = authenticationPassword
                     )
                     .map {
                       case UserCredentialsManager.Result.Success =>
@@ -230,7 +238,7 @@ class Users(
                         )
                         update(
                           updateRequest = UpdateUserSalt(salt),
-                          userId = currentUser.id
+                          userId = userId
                         )
 
                       case UserCredentialsManager.Result.NotFound(message) =>
@@ -330,6 +338,7 @@ class Users(
                 resources[UserStore.Manage.Self, UserStore.View.Self] { case (_, view) =>
                   view.get(currentUser).flatMap {
                     case Some(_) =>
+                      // when users reset their own password, hashing happens on the client side
                       credentialsManager.setResourceOwnerPassword(currentUser.id, updateRequest.rawPassword).map {
                         case UserCredentialsManager.Result.Success =>
                           log.debugN("User [{}] successfully updated own password", currentUser)

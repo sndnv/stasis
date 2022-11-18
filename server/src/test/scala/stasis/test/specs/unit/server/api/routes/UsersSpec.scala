@@ -40,7 +40,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "create new users" in {
+  they should "create new users (with authentication password hashing)" in {
     val fixtures = new TestFixtures {}
     Post("/").withEntity(createRequest) ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
@@ -61,6 +61,34 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
 
           fixtures.credentialsManager.latestPassword should not be empty
           fixtures.credentialsManager.latestPassword should not be createRequest.rawPassword
+        }
+    }
+  }
+
+  they should "create new users (without authentication password hashing)" in {
+    val fixtures = new TestFixtures {
+      override lazy val hashAuthenticationPasswords: Boolean = false
+    }
+
+    Post("/").withEntity(createRequest) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+
+      fixtures.userStore
+        .view()
+        .get(entityAs[CreatedUser].user)
+        .map { user =>
+          user.isDefined should be(true)
+
+          fixtures.credentialsManager.resourceOwnersCreated should be(1)
+          fixtures.credentialsManager.resourceOwnersActivated should be(0)
+          fixtures.credentialsManager.resourceOwnersDeactivated should be(0)
+          fixtures.credentialsManager.resourceOwnerPasswordsSet should be(0)
+          fixtures.credentialsManager.notFound should be(0)
+          fixtures.credentialsManager.conflicts should be(0)
+          fixtures.credentialsManager.failures should be(0)
+
+          fixtures.credentialsManager.latestPassword should not be empty
+          fixtures.credentialsManager.latestPassword should be(createRequest.rawPassword)
         }
     }
   }
@@ -416,7 +444,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "update existing users' passwords" in {
+  they should "update existing users' passwords (with authentication password hashing)" in {
     val fixtures = new TestFixtures {}
     fixtures.userStore.manage().create(users.head).await
 
@@ -434,6 +462,30 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
 
       fixtures.credentialsManager.latestPassword should not be empty
       fixtures.credentialsManager.latestPassword should not be updateUserPasswordRequest.rawPassword
+    }
+  }
+
+  they should "update existing users' passwords (without authentication password hashing)" in {
+    val fixtures = new TestFixtures {
+      override lazy val hashAuthenticationPasswords: Boolean = false
+    }
+
+    fixtures.userStore.manage().create(users.head).await
+
+    Put(s"/${users.head.id}/password")
+      .withEntity(updateUserPasswordRequest) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+
+      fixtures.credentialsManager.resourceOwnersCreated should be(0)
+      fixtures.credentialsManager.resourceOwnersActivated should be(0)
+      fixtures.credentialsManager.resourceOwnersDeactivated should be(0)
+      fixtures.credentialsManager.resourceOwnerPasswordsSet should be(1)
+      fixtures.credentialsManager.notFound should be(0)
+      fixtures.credentialsManager.conflicts should be(0)
+      fixtures.credentialsManager.failures should be(0)
+
+      fixtures.credentialsManager.latestPassword should not be empty
+      fixtures.credentialsManager.latestPassword should be(updateUserPasswordRequest.rawPassword)
     }
   }
 
@@ -717,6 +769,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
   private trait TestFixtures {
     lazy val userStore: UserStore = MockUserStore()
     lazy val credentialsManager: MockUserCredentialsManager = MockUserCredentialsManager()
+    lazy val hashAuthenticationPasswords: Boolean = true
 
     implicit lazy val provider: ResourceProvider = new MockResourceProvider(
       resources = Set(
@@ -731,7 +784,11 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
 
     lazy val routes: Route = new Users(
       credentialsManager = credentialsManager,
-      secretsConfig = testSecretsConfig
+      secretsConfig = testSecretsConfig.copy(
+        derivation = testSecretsConfig.derivation.copy(
+          authentication = testSecretsConfig.derivation.authentication.copy(enabled = hashAuthenticationPasswords)
+        )
+      )
     ).routes
   }
 
