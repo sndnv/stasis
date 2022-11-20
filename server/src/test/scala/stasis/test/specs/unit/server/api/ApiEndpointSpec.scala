@@ -15,6 +15,7 @@ import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.CrateStorageReservation
 import stasis.core.persistence.crates.CrateStore
+import stasis.core.persistence.manifests.ManifestStore
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.persistence.staging.StagingStore
@@ -23,6 +24,7 @@ import stasis.core.telemetry.TelemetryContext
 import stasis.server.api.ApiEndpoint
 import stasis.server.model.datasets.{DatasetDefinitionStore, DatasetEntryStore}
 import stasis.server.model.devices.DeviceStore
+import stasis.server.model.manifests.ServerManifestStore
 import stasis.server.model.nodes.ServerNodeStore
 import stasis.server.model.reservations.ServerReservationStore
 import stasis.server.model.schedules.ScheduleStore
@@ -38,7 +40,7 @@ import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.{MockGrpcEndpointClient, MockHttpEndpointClient}
 import stasis.test.specs.unit.core.persistence.Generators
-import stasis.test.specs.unit.core.persistence.mocks.{MockCrateStore, MockNodeStore, MockReservationStore}
+import stasis.test.specs.unit.core.persistence.mocks.{MockCrateStore, MockManifestStore, MockNodeStore, MockReservationStore}
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.Secrets
 import stasis.test.specs.unit.server.model.mocks._
@@ -233,6 +235,21 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     }
   }
 
+  it should "provide routes for manifests" in {
+    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+
+    val fixtures = new TestFixtures {}
+
+    val manifest = Generators.generateManifest
+
+    fixtures.manifestStore.put(manifest).await
+
+    Get(s"/manifests/${manifest.crate}").addCredentials(testCredentials) ~> fixtures.endpoint.endpointRoutes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[Manifest] should be(manifest)
+    }
+  }
+
   it should "provide routes for reservations" in {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
@@ -417,10 +434,12 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     lazy val scheduleStore: ScheduleStore = MockScheduleStore()
     lazy val userStore: UserStore = MockUserStore()
     lazy val serverNodeStore: ServerNodeStore = ServerNodeStore(nodeStore)
+    lazy val serverManifestStore: ServerManifestStore = ServerManifestStore(manifestStore)
     lazy val serverReservationStore: ServerReservationStore = ServerReservationStore(reservationStore)
     lazy val serverStagingStore: ServerStagingStore = ServerStagingStore(stagingStore)
 
     lazy val nodeStore: NodeStore = new MockNodeStore()
+    lazy val manifestStore: ManifestStore = new MockManifestStore()
     lazy val reservationStore: ReservationStore = new MockReservationStore()
     lazy val stagingStore: StagingStore = new StagingStore(
       crateStore = new MockCrateStore(),
@@ -449,6 +468,8 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
         userStore.viewSelf(),
         serverNodeStore.manage(),
         serverNodeStore.view(),
+        serverManifestStore.manage(),
+        serverManifestStore.view(),
         serverReservationStore.view(),
         serverStagingStore.manage(),
         serverStagingStore.view()

@@ -22,4 +22,6 @@ class MockManifestStore(implicit system: ActorSystem[SpawnProtocol.Command], tel
   override def put(manifest: Manifest): Future[Done] = store.put(manifest.crate, manifest)
   override def delete(crate: Crate.Id): Future[Boolean] = store.delete(crate)
   override def get(crate: Crate.Id): Future[Option[Manifest]] = store.get(crate)
+
+  def manifests: Future[Map[StoreKey, StoreValue]] = store.entries
 }
