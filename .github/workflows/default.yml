@@ -10,10 +10,10 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Setup JDK 17
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v3
         with:
           java-version: 17
-          java-package: jdk
+          distribution: adopt
 
       - name: Run QA
         run: |
@@ -33,7 +33,7 @@ jobs:
           retention-days: 1
 
       - name: Push Coverage Result
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
         with:
           flags: scala
 
@@ -44,9 +44,9 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Setup Python 3
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.8'
+          python-version: '3.9'
 
       - name: Run QA
         run: |
@@ -70,7 +70,7 @@ jobs:
           retention-days: 1
 
       - name: Push Coverage Result
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
         with:
           flags: python
 
@@ -82,7 +82,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - name: Run QA
+      - name: Run identity QA
         run: |
           sudo apt install -y lcov
           cd identity-ui
@@ -95,10 +95,10 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Setup JDK 17
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v3
         with:
           java-version: 17
-          java-package: jdk
+          distribution: adopt
 
       - name: Run QA
         run: |
