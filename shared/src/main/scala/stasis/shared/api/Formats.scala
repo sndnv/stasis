@@ -227,6 +227,9 @@ object Formats {
   implicit val deletedUserFormat: Format[DeletedUser] =
     Json.format[DeletedUser]
 
+  implicit val deletedManifestFormat: Format[DeletedManifest] =
+    Json.format[DeletedManifest]
+
   implicit val createNodeFormat: Format[CreateNode] = Format(
     fjs = _.validate[JsObject].flatMap { node =>
       (node \ "node_type").validate[String].map {

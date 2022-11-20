@@ -15,6 +15,7 @@ import stasis.core.persistence.staging.StagingStore
 import stasis.core.persistence.{CrateStorageReservation, StoreInitializationResult}
 import stasis.core.routing.Node
 import stasis.core.telemetry.TelemetryContext
+import stasis.server.model.manifests.ServerManifestStore
 import stasis.server.model.nodes.ServerNodeStore
 import stasis.server.model.reservations.ServerReservationStore
 import stasis.server.model.staging.ServerStagingStore
@@ -117,6 +118,8 @@ class CorePersistence(
       serverNodes.manage(),
       serverNodes.manageSelf(),
       serverNodes.view(),
+      serverManifests.manage(),
+      serverManifests.view(),
       serverReservations.view()
     ) ++ Set(
       serverStaging.map(_.manage()),
@@ -124,6 +127,7 @@ class CorePersistence(
     ).flatten
 
   private val serverNodes: ServerNodeStore = ServerNodeStore(nodes)
+  private val serverManifests: ServerManifestStore = ServerManifestStore(manifests)
   private val serverReservations: ServerReservationStore = ServerReservationStore(reservations)
   private val serverStaging: Option[ServerStagingStore] = staging.map(ServerStagingStore.apply)
 

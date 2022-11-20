@@ -63,15 +63,16 @@ class CorePersistenceSpec extends AsyncUnitSpec {
     )
 
     val nodes = 3 // manage + manageSelf + view
+    val manifests = 2 // manage + view
     val reservations = 1 // view
     val staging = 2 // manage + view
 
     persistenceWithStagingStore.resources.size should be(
-      nodes + reservations + staging
+      nodes + manifests + reservations + staging
     )
 
     persistenceWithoutStagingStore.resources.size should be(
-      nodes + reservations
+      nodes + manifests + reservations
     )
   }
 

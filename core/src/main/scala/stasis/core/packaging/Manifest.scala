@@ -3,6 +3,16 @@ package stasis.core.packaging
 import stasis.core.persistence.CrateStorageReservation
 import stasis.core.routing.Node
 
+/**
+  * Crate manifest.
+  *
+  * @param crate crate ID
+  * @param size data size (in bytes)
+  * @param copies data copies
+  * @param origin original data owner (node from which the data originates)
+  * @param source current source (node from which the current node received the data)
+  * @param destinations destination odes (nodes to which the current node has sent the data)
+  */
 final case class Manifest(
   crate: Crate.Id,
   size: Long,

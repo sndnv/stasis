@@ -39,6 +39,7 @@ class ApiEndpoint(
   private val devices = Devices()
   private val schedules = Schedules()
   private val nodes = Nodes()
+  private val manifests = Manifests()
   private val reservations = Reservations()
   private val staging = Staging()
   private val service = Service()
@@ -63,6 +64,7 @@ class ApiEndpoint(
                 pathPrefix("devices") { devices.routes(currentUser = user) },
                 pathPrefix("schedules") { schedules.routes(currentUser = user) },
                 pathPrefix("nodes") { nodes.routes(currentUser = user) },
+                pathPrefix("manifests") { manifests.routes(currentUser = user) },
                 pathPrefix("reservations") { reservations.routes(currentUser = user) },
                 pathPrefix("staging") { staging.routes(currentUser = user) },
                 pathPrefix("service") { service.routes(currentUser = user) }
