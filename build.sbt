@@ -6,43 +6,43 @@ name     := projectName
 licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
 homepage := Some(url("https://github.com/sndnv/stasis"))
 
-ThisBuild / scalaVersion := "2.13.8"
+ThisBuild / scalaVersion := "2.13.10"
 
 lazy val versions = new {
   // akka
-  val akka         = "2.6.19"
-  val akkaHttp     = "10.2.9"
+  val akka         = "2.6.20"
+  val akkaHttp     = "10.2.10"
   val akkaHttpCors = "1.1.3"
   val akkaJson     = "1.39.2"
 
   // persistence
-  val geode    = "1.15.0"
-  val slick    = "3.3.3"
-  val postgres = "42.4.1"
-  val mariadb  = "3.0.7"
-  val sqlite   = "3.39.2.0"
+  val geode    = "1.15.1"
+  val slick    = "3.4.1"
+  val postgres = "42.5.0"
+  val mariadb  = "3.1.0"
+  val sqlite   = "3.39.4.1"
   val h2       = "2.1.214"
 
   // telemetry
-  val openTelemetry           = "1.17.0"
-  val openTelemetryPrometheus = "1.17.0-alpha"
+  val openTelemetry           = "1.20.1"
+  val openTelemetryPrometheus = "1.20.1-alpha"
   val prometheus              = "0.16.0"
 
   // testing
-  val scalaCheck    = "1.16.0"
-  val scalaTest     = "3.2.13"
-  val wiremock      = "2.33.2"
+  val scalaCheck    = "1.17.0"
+  val scalaTest     = "3.2.14"
+  val wiremock      = "2.35.0"
   val mockito       = "1.17.12"
-  val mockitoInline = "4.7.0"
+  val mockitoInline = "4.9.0"
   val jimfs         = "1.2"
 
   // misc
-  val playJson = "2.9.2"
-  val jose4j   = "0.7.12"
+  val playJson = "2.9.3"
+  val jose4j   = "0.9.2"
   val hkdf     = "1.1.0"
   val appdirs  = "1.2.1"
   val scopt    = "4.1.0"
-  val logback  = "1.2.11"
+  val logback  = "1.4.5"
 }
 
 lazy val jdkDockerImage = "openjdk:17-slim-bullseye"
@@ -162,7 +162,8 @@ lazy val proto = (project in file("./proto"))
       "com.typesafe.akka" %% "akka-http2-support" % versions.akkaHttp
     ),
     coverageEnabled := false,
-    akkaGrpcCodeGeneratorSettings += "single_line_to_proto_string"
+    akkaGrpcCodeGeneratorSettings += "single_line_to_proto_string",
+    dependencyUpdatesFilter -= moduleFilter(organization = "com.typesafe.akka")
   )
   .enablePlugins(AkkaGrpcPlugin)
 
@@ -196,7 +197,8 @@ lazy val commonSettings = Seq(
     "-Xlint:inaccessible",
     "-Xlint:infer-any",
     s"-P:wartremover:excluded:${(Compile / sourceManaged).value}"
-  )
+  ),
+  dependencyUpdatesFilter -= moduleFilter(organization = "com.typesafe.akka")
 )
 
 lazy val dockerSettings = Seq(

@@ -161,14 +161,14 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
     )
 
     for {
-      _ <- currentMetadata.collect(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient).recover {
+      _ <- currentMetadata.collect(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient).failed.map {
         case NonFatal(e: IllegalArgumentException) =>
           e.getMessage should be(
             s"Expected metadata for entity [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] " +
               s"but none was found in metadata for entry [$previousEntry]"
           )
       }
-      _ <- currentMetadata.collect(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient).recover {
+      _ <- currentMetadata.collect(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient).failed.map {
         case NonFatal(e: IllegalArgumentException) =>
           e.getMessage should be(
             s"Expected metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] " +
