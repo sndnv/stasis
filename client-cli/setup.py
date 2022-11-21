@@ -1,17 +1,17 @@
 from setuptools import setup, find_packages
 
 install_requires = [
-    'requests==2.27.1',
+    'requests==2.28.1',
     'requests-oauthlib==1.3.1',
     'terminaltables==3.1.10',
     'hurry.filesize==0.9',
     'pyhocon==0.3.59',
     'click==7.1.2',
     'pyparsing==2.4.7',
-    'psutil==5.9.0',
-    'cryptography==36.0.1',
+    'psutil==5.9.4',
+    'cryptography==38.0.3',
     'sseclient-py==1.7.2',
-    'tqdm==4.63.0',
+    'tqdm==4.64.1',
 ]
 
 tests_require = []
