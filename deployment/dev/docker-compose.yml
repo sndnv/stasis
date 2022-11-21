@@ -135,10 +135,10 @@ services:
     ports:
       - '9090:9090'
     environment:
-      - SERVER_UI_SERVER_API=http://localhost:20000
-      - SERVER_UI_BOOTSTRAP_API=http://localhost:20002
+      - SERVER_UI_SERVER_API=https://localhost:20000
+      - SERVER_UI_BOOTSTRAP_API=https://localhost:20002
       - SERVER_UI_AUTHORIZATION_ENDPOINT=http://localhost:8080/login/authorize
-      - SERVER_UI_TOKEN_ENDPOINT=http://localhost:10000/oauth/token
+      - SERVER_UI_TOKEN_ENDPOINT=https://localhost:10000/oauth/token
       - SERVER_UI_CLIENT_ID=f8033019-6a7b-46b5-9bda-f2cd240b5538
       - SERVER_UI_REDIRECT_URI=http://localhost:9090/login/callback
       - SERVER_UI_SCOPES=urn:stasis:identity:audience:server-api

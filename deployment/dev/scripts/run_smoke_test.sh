@@ -19,7 +19,7 @@ USER_PASSWORD_DERIVED="QcilMRSTjZvClf-I6Ac2RA" # `passw0rd` - derived with salt 
 
 SECONDARY_DEVICE_ID="7dee7457-da81-48bb-aae0-7cfdb1f827a8"
 
-OAUTH_TOKEN_URL="https://localhost:8080/oauth/token"
+OAUTH_TOKEN_URL="https://localhost:10000/oauth/token"
 OAUTH_URN="urn:stasis:identity:audience"
 
 SERVER_API="server-api"
