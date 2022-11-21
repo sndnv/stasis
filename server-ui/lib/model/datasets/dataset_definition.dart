@@ -1,0 +1,42 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:server_ui/model/formats.dart';
+
+part 'dataset_definition.freezed.dart';
+part 'dataset_definition.g.dart';
+
+@freezed
+class DatasetDefinition with _$DatasetDefinition {
+  @JsonSerializable(fieldRename: FieldRename.snake)
+  const factory DatasetDefinition({
+    required String id,
+    required String info,
+    required String device,
+    required int redundantCopies,
+    required Retention existingVersions,
+    required Retention removedVersions,
+  }) = _DatasetDefinition;
+
+  factory DatasetDefinition.fromJson(Map<String, Object?> json) => _$DatasetDefinitionFromJson(json);
+}
+
+@freezed
+class Retention with _$Retention {
+  @JsonSerializable(fieldRename: FieldRename.snake)
+  const factory Retention({
+    required Policy policy,
+    @JsonKey(fromJson: durationFromJson, toJson: durationToJson) required Duration duration,
+  }) = _Retention;
+
+  factory Retention.fromJson(Map<String, Object?> json) => _$RetentionFromJson(json);
+}
+
+@freezed
+class Policy with _$Policy {
+  @JsonSerializable(fieldRename: FieldRename.snake)
+  const factory Policy({
+    required String policyType,
+    required int? versions,
+  }) = _Policy;
+
+  factory Policy.fromJson(Map<String, Object?> json) => _$PolicyFromJson(json);
+}

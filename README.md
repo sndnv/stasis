@@ -51,8 +51,7 @@ available on your dev machine.
 
 Some submodules use Python (ex: [`client-cli`](client-cli)), [Flutter](https://flutter.dev/) (ex: [`identity-ui`](identity-ui))
 or Kotlin for Android (ex: [`client-android`](client-android)) so the appropriate tools for those platforms need to be
-available as well (for `identity-ui` there's support for doing development via a [Docker](https://www.docker.com/) container
-with the needed tools pre-installed).
+available as well.
 
 [Protobuf](https://developers.google.com/protocol-buffers) is also used, however, it is handled by an
 [sbt plugin](https://scalapb.github.io/) and no additional tools are needed.
@@ -127,6 +126,14 @@ Backup management and storage service.
 * **Testing** - `sbt "project server" qa`
 * **Packaging** - `sbt "project server" docker:publishLocal`
 
+#### [`server-ui`](server-ui)
+
+Web UI for [`server`](server).
+
+* **Flutter** code
+* **Testing** - `cd ./server-ui && ./qa.py`
+* **Packaging** - `cd ./server-ui && ./deployment/production/build.py`
+
 #### [`client`](client)
 
 Linux / macOS backup client, using `server` for management and storage.
@@ -164,7 +171,7 @@ Deployment, artifact and certificate generation scripts and configuration.
 **NOT** production ready but usable
 
 * `identity` / `identity-ui` - *authentication service and web UI* - **complete**
-* `server` - *backup server* - **operational**; some features are not yet available; a web UI is not available
+* `server` / `server-ui` - *backup server nad web UI* - **operational**; some features are not yet available
 * `client` / `client-cli`- *Linux / macOS client and CLI* - **operational**; some features are not yet available; a desktop UI is not available
 * `client-android` - *Android client* - **operational**; some features are not yet available;
 

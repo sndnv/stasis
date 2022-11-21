@@ -1,0 +1,36 @@
+worker_processes  1;
+
+error_log  /var/log/nginx/error.log warn;
+pid        /var/run/nginx.pid;
+
+events {
+  worker_connections  1024;
+}
+
+http {
+  include       /etc/nginx/mime.types;
+  default_type  application/octet-stream;
+
+  add_header 'Access-Control-Allow-Origin' '${NGINX_CORS_ALLOWED_ORIGIN}' always;
+
+  server {
+    server_name         ${NGINX_SERVER_NAME};
+    listen              ${NGINX_SERVER_PORT};
+    ${NGINX_SERVER_SSL_CERTIFICATE_LINE}
+    ${NGINX_SERVER_SSL_CERTIFICATE_KEY_LINE}
+    ${NGINX_SERVER_SSL_PROTOCOLS_LINE}
+    ${NGINX_SERVER_SSL_CIPHERS_LINE}
+
+    location / {
+      if ($request_method = OPTIONS ) {
+        add_header "Access-Control-Allow-Methods" "GET, PUT, POST, DELETE, OPTIONS, HEAD";
+        add_header "Access-Control-Allow-Headers" "Accept, Authorization, Content-Type, Origin, X-Requested-With";
+        return 200;
+      }
+
+      root   /usr/share/nginx/html;
+      index  index.html;
+      try_files $uri $uri/ /index.html;
+    }
+  }
+}
