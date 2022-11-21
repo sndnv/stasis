@@ -87,6 +87,11 @@ jobs:
           sudo apt install -y lcov
           cd identity-ui
           ./qa.py
+      - name: Run server QA
+        run: |
+          sudo apt install -y lcov
+          cd server-ui
+          ./qa.py
 
   android:
     runs-on: ubuntu-latest

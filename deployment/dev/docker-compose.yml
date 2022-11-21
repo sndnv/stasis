@@ -130,6 +130,26 @@ services:
       - ./secrets/identity.p12:/opt/docker/certs/identity.p12
       - ./secrets/server.p12:/opt/docker/certs/server.p12
 
+  server-ui:
+    image: stasis-server-ui:dev-latest
+    ports:
+      - '9090:9090'
+    environment:
+      - SERVER_UI_SERVER_API=http://localhost:20000
+      - SERVER_UI_BOOTSTRAP_API=http://localhost:20002
+      - SERVER_UI_AUTHORIZATION_ENDPOINT=http://localhost:8080/login/authorize
+      - SERVER_UI_TOKEN_ENDPOINT=http://localhost:10000/oauth/token
+      - SERVER_UI_CLIENT_ID=f8033019-6a7b-46b5-9bda-f2cd240b5538
+      - SERVER_UI_REDIRECT_URI=http://localhost:9090/login/callback
+      - SERVER_UI_SCOPES=urn:stasis:identity:audience:server-api
+      - SERVER_UI_PASSWORD_DERIVATION_ENABLED=true
+      - SERVER_UI_PASSWORD_DERIVATION_SECRET_SIZE=16
+      - SERVER_UI_PASSWORD_DERIVATION_ITERATIONS=150000
+      - SERVER_UI_DERIVATION_SALT_PREFIX=changeme
+      - NGINX_SERVER_NAME=localhost
+      - NGINX_SERVER_PORT=9090
+      - NGINX_CORS_ALLOWED_ORIGIN=*
+
   primary-client:
     image: stasis-client-cli:dev-latest
     command: tail -F /opt/docker/bin/logs/client.log
