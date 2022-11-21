@@ -14,8 +14,12 @@ http {
   add_header 'Access-Control-Allow-Origin' '${NGINX_CORS_ALLOWED_ORIGIN}' always;
 
   server {
-    server_name  ${NGINX_SERVER_NAME};
-    listen       ${NGINX_SERVER_PORT};
+    server_name         ${NGINX_SERVER_NAME};
+    listen              ${NGINX_SERVER_PORT};
+    ${NGINX_SERVER_SSL_CERTIFICATE_LINE}
+    ${NGINX_SERVER_SSL_CERTIFICATE_KEY_LINE}
+    ${NGINX_SERVER_SSL_PROTOCOLS_LINE}
+    ${NGINX_SERVER_SSL_CIPHERS_LINE}
 
     location / {
       if ($request_method = OPTIONS ) {

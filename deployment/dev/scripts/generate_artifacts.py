@@ -131,6 +131,8 @@ def main():
         'identity-ui': lambda: build_docker_image_with_script(project_name='identity-ui',
                                                               script_path='deployment/production/build.py'),
         'server': lambda: build_docker_image_with_sbt(project_name='server'),
+        'server-ui': lambda: build_docker_image_with_script(project_name='server-ui',
+                                                            script_path='deployment/production/build.py'),
         'client': lambda: build_docker_image_with_sbt(project_name='client'),
         'client-cli': lambda: build_docker_image_with_dockerfile(project_name='client-cli', paths=paths),
     }

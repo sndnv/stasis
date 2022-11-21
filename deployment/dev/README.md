@@ -49,8 +49,8 @@ Contains scripts that run tests and help with setting up the test environment.
 ./generate_artifacts.py -p client # generates artifact for "client" submodule
 ```
 
-By default, Docker images for `identity`, `identity-ui`, `server`, `client` and `client-cli` will be generated; they are
-necessary for running the services in the provided `docker-compose.yml` files.
+By default, Docker images for `identity`, `identity-ui`, `server`, `server-ui`, `client` and `client-cli` will be
+generated; they are necessary for running the services in the provided `docker-compose.yml` files.
 
 #### `generate_device_secret.py`
 

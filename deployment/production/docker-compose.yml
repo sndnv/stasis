@@ -101,11 +101,36 @@ services:
       STASIS_IDENTITY_BOOTSTRAP_ENABLED: "false"
       STASIS_IDENTITY_BOOTSTRAP_CONFIG: "/opt/docker/config/identity-bootstrap.conf"
       AKKA_HTTP_SERVER_HEADER: ""
-      AKKA_HTTP_CORS_ALLOWED_ORIGINS: ""  # replace with actual allowed origins
+      AKKA_HTTP_CORS_ALLOWED_ORIGINS: "" # replace with actual allowed origins
     volumes:
       - ./bootstrap/identity.conf:/opt/docker/config/identity-bootstrap.conf
       - ./secrets/identity.p12:/opt/docker/secrets/identity.p12
       - ./secrets/identity-signature-key.jwk.json:/opt/docker/secrets/identity-signature-key.jwk.json
+
+  identity-ui:
+    image: stasis-identity-ui:0.0.1-SNAPSHOT # replace with actual tag/version
+    ports:
+      - '42200:42200'
+    env_file:
+      - ./secrets/identity-ui.env
+    environment:
+      IDENTITY_UI_IDENTITY_SERVER: "https://identity.stasis.internal:42100"
+      IDENTITY_UI_TOKEN_ENDPOINT: "/oauth/token"
+      IDENTITY_UI_REDIRECT_URI: "https://identity.stasis.internal:42200/login/callback"
+      IDENTITY_UI_SCOPES: "urn:stasis:identity:audience:manage-identity"
+      IDENTITY_UI_PASSWORD_DERIVATION_ENABLED: "true"
+      IDENTITY_UI_PASSWORD_DERIVATION_SECRET_SIZE: "24"
+      IDENTITY_UI_PASSWORD_DERIVATION_ITERATIONS: "150000"
+      NGINX_SERVER_NAME: "" # replace with actual server name
+      NGINX_SERVER_PORT: "42200 ssl"
+      NGINX_SERVER_SSL_CERTIFICATE: "/opt/docker/secrets/identity.cert.pem"
+      NGINX_SERVER_SSL_CERTIFICATE_KEY: "/opt/docker/secrets/identity.key.pem"
+      NGINX_SERVER_SSL_PROTOCOLS: "TLSv1 TLSv1.1 TLSv1.2"
+      NGINX_SERVER_SSL_CIPHERS: "HIGH:!aNULL:!MD5"
+      NGINX_CORS_ALLOWED_ORIGIN: "" # replace with actual allowed origins
+    volumes:
+      - ./secrets/identity.cert.pem:/opt/docker/secrets/identity.cert.pem
+      - ./secrets/identity.key.pem:/opt/docker/secrets/identity.key.pem
 
   server:
     image: stasis-server:0.0.1-SNAPSHOT # replace with actual tag/version
@@ -210,7 +235,7 @@ services:
       STASIS_SERVER_SERVICE_BOOTSTRAP_CONFIG: "/opt/docker/config/server-bootstrap.conf"
       AKKA_HTTP_SERVER_HEADER: ""
       AKKA_HTTP_SERVER_PARSING_MAX_CONTENT_LENGTH: "4G"
-      AKKA_HTTP_CORS_ALLOWED_ORIGINS: ""  # replace with actual allowed origins
+      AKKA_HTTP_CORS_ALLOWED_ORIGINS: "" # replace with actual allowed origins
     volumes:
       - ./bootstrap/server.conf:/opt/docker/config/server-bootstrap.conf
       - ./local/server:/opt/server
