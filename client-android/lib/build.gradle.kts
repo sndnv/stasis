@@ -17,7 +17,7 @@ dependencies {
     implementation("com.squareup.moshi:moshi-kotlin:1.13.0")
     implementation("com.squareup.moshi:moshi-adapters:1.13.0")
     implementation("at.favre.lib:hkdf:1.1.0")
-    implementation("org.bitbucket.b_c:jose4j:0.7.12")
+    implementation("org.bitbucket.b_c:jose4j:0.9.2")
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.7.10")
     kapt("com.squareup.moshi:moshi-kotlin-codegen:1.13.0")
 
