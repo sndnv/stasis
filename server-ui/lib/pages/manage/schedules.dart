@@ -108,7 +108,7 @@ class _SchedulesState extends State<Schedules> {
       controller: TextEditingController(),
     );
 
-    DateTime? start;
+    DateTime start = DateTime.now();
     final startField = dateTimeField(
       title: 'Start',
       onChange: (updated) => start = updated,
@@ -143,7 +143,7 @@ class _SchedulesState extends State<Schedules> {
                 final request = CreateSchedule(
                   info: infoField.controller!.text.trim(),
                   isPublic: isPublic,
-                  start: start!,
+                  start: start,
                   interval: interval!,
                 );
 
