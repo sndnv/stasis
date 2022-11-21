@@ -86,7 +86,11 @@ class SecretsSpec {
             val e = result.failed().get()
             assertThat(
                 e.message,
-                anyOf(containsString("Output buffer invalid"), equalTo("Input too short - need tag"))
+                anyOf(
+                    containsString("Output buffer invalid"),
+                    containsString("BAD_DECRYPT"),
+                    equalTo("Input too short - need tag")
+                )
             )
         }
     }
