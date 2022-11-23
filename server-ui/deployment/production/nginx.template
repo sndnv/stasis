@@ -23,6 +23,7 @@ http {
 
     location / {
       if ($request_method = OPTIONS ) {
+        add_header 'Access-Control-Allow-Origin' '${NGINX_CORS_ALLOWED_ORIGIN}' always;
         add_header "Access-Control-Allow-Methods" "GET, PUT, POST, DELETE, OPTIONS, HEAD";
         add_header "Access-Control-Allow-Headers" "Accept, Authorization, Content-Type, Origin, X-Requested-With";
         return 200;
