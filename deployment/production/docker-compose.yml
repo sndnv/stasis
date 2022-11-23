@@ -249,12 +249,12 @@ services:
     env_file:
       - ./secrets/server-ui.env
     environment:
-      SERVER_UI_SERVER_API: "https://server.stasis.internal:20000"
-      SERVER_UI_BOOTSTRAP_API: "https://server.stasis.internal:20002"
+      SERVER_UI_SERVER_API: "https://server.stasis.internal:42300"
+      SERVER_UI_BOOTSTRAP_API: "https://server.stasis.internal:42302"
       SERVER_UI_AUTHORIZATION_ENDPOINT: "https://identity.stasis.internal:42200/login/authorize"
-      SERVER_UI_TOKEN_ENDPOINT: "https://identity.stasis.internal:10000/oauth/token"
+      SERVER_UI_TOKEN_ENDPOINT: "https://identity.stasis.internal:42100/oauth/token"
       SERVER_UI_REDIRECT_URI: "https://server.stasis.internal:42600/login/callback"
-      SERVER_UI_SCOPES: "urn:stasis:identity:audience:server-api"
+      SERVER_UI_SCOPES: "urn:stasis:identity:audience:stasis-server-api"
       SERVER_UI_PASSWORD_DERIVATION_ENABLED: "true"
       SERVER_UI_PASSWORD_DERIVATION_SECRET_SIZE: "16"
       SERVER_UI_PASSWORD_DERIVATION_ITERATIONS: "150000"
