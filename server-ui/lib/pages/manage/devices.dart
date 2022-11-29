@@ -316,15 +316,34 @@ class _DevicesState extends State<Devices> {
                     barrierDismissible: false,
                     builder: (context) {
                       return AlertDialog(
-                        title: Text('Bootstrap Code for [${code.device.toMinimizedString()}]'),
-                        content: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        title: Text('Bootstrap Information for [${code.device.toMinimizedString()}]'),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Padding(
-                              padding: const EdgeInsetsDirectional.only(start: 16.0),
-                              child: SelectionArea(
+                            ListTile(
+                              title: ConstrainedBox(
+                                constraints: const BoxConstraints(minWidth: 96.0),
+                                child: const Text('Server'),
+                              ),
+                              leading: const Icon(Icons.apps),
+                              trailing: SelectionArea(
                                 child: RichText(
-                                  text: TextSpan(text: code.value, style: Theme.of(context).textTheme.headline4),
+                                  text: TextSpan(
+                                    text: widget.bootstrapClient.server,
+                                    style: Theme.of(context).textTheme.headline6,
+                                  ),
+                                ).withCopyButton(copyText: widget.bootstrapClient.server),
+                              ),
+                            ),
+                            ListTile(
+                              title: const Text('Code'),
+                              leading: const Icon(Icons.qr_code),
+                              trailing: SelectionArea(
+                                child: RichText(
+                                  text: TextSpan(
+                                    text: code.value,
+                                    style: Theme.of(context).textTheme.headline6?.copyWith(fontWeight: FontWeight.bold),
+                                  ),
                                 ).withCopyButton(copyText: code.value),
                               ),
                             ),

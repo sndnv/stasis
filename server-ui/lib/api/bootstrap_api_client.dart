@@ -6,7 +6,7 @@ import 'package:server_ui/model/devices/device_bootstrap_code.dart';
 
 class BootstrapApiClient extends ApiClient implements DeviceBootstrapCodesApiClient {
   BootstrapApiClient({
-    required String server,
+    @override required String server,
     required http.Client underlying,
   }) : super(server: server, underlying: underlying);
 
