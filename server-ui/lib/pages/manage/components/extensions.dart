@@ -76,6 +76,7 @@ extension ExtendedString on String {
 extension ExtendedWidget on Widget {
   Widget withCopyButton({required String copyText}) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [this, _copyButton(text: copyText)],
     );
   }

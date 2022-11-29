@@ -171,6 +171,8 @@ abstract class ReservationsApiClient {
 }
 
 abstract class DeviceBootstrapCodesApiClient {
+  abstract String server;
+
   Future<List<DeviceBootstrapCode>> getBootstrapCodes({required bool privileged});
 
   Future<void> deleteBootstrapCode({required bool privileged, required String forDevice});
