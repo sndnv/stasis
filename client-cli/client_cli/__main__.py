@@ -18,7 +18,8 @@ from client_cli.render.json_writer import JsonWriter
 @click.option('-v', '--verbose', is_flag=True, help='Enable verbose logging.')
 @click.option('--insecure', is_flag=True, help='Enable insecure TLS connections to client API.')
 @click.option('--json', is_flag=True, help='Output all responses as JSON.')
-def cli(ctx, verbose, insecure, json):
+@click.option('--timeout', type=int, default=5, help='API request timeout')
+def cli(ctx, verbose, insecure, json, timeout):
     """Stasis command-line client."""
     logging.basicConfig(
         format='[%(asctime)-15s] [%(levelname)s] [%(name)-5s]: %(message)s',
@@ -40,8 +41,8 @@ def cli(ctx, verbose, insecure, json):
     api_token = load_api_token(application_name=application_name, api_token_file_name=api_token_file_name)
 
     context = ctx.ensure_object(Context)
-    context.api = create_client_api(config=config, api_token=api_token, insecure=insecure)
-    context.init = create_init_api(config=config, insecure=insecure, client_api=context.api)
+    context.api = create_client_api(config=config, timeout=timeout, api_token=api_token, insecure=insecure)
+    context.init = create_init_api(config=config, timeout=timeout, insecure=insecure, client_api=context.api)
     context.service_binary = application_name
     context.service_main_class = application_main_class
     context.rendering = JsonWriter() if json else DefaultWriter()

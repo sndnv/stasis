@@ -98,7 +98,6 @@ class CliPackageSpec(unittest.TestCase):
     @patch('logging.error')
     @patch('logging.exception')
     def test_should_capture_and_log_failures(self, mock_exception, mock_error, mock_get_logger, mock_echo):
-        # pylint: disable=no-self-use
         mock_exception.return_value = None
         mock_error.return_value = None
         mock_get_logger.return_value = MockLogger(level=logging.INFO)
@@ -125,7 +124,6 @@ class CliPackageSpec(unittest.TestCase):
             mock_get_logger,
             mock_echo
     ):
-        # pylint: disable=no-self-use
         mock_exception.return_value = None
         mock_error.return_value = None
         mock_get_logger.return_value = MockLogger(level=logging.DEBUG)

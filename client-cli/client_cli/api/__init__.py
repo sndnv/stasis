@@ -13,7 +13,7 @@ from client_cli.api.inactive_init_api import InactiveInitApi
 from client_cli.api.init_api import InitApi
 
 
-def create_client_api(config, api_token, insecure) -> ClientApi:
+def create_client_api(config, timeout, api_token, insecure) -> ClientApi:
     """
     Creates a new client API with the provided configuration.
 
@@ -21,6 +21,7 @@ def create_client_api(config, api_token, insecure) -> ClientApi:
     instance of :class:`InactiveClientApi` is returned instead.
 
     :param config: client configuration
+    :param timeout: API request timeout
     :param api_token: API token string or None if it is not available
     :param insecure: set to `True` to not verify TLS certificate when making requests to API
     :return: the client API or InactiveClientApi if it is not available
@@ -52,7 +53,8 @@ def create_client_api(config, api_token, insecure) -> ClientApi:
         default_client = DefaultClientApi(
             api_url=api_url,
             api_token=api_token,
-            context=api_context
+            context=api_context,
+            timeout=timeout
         )
 
         if default_client.is_active():
@@ -65,7 +67,7 @@ def create_client_api(config, api_token, insecure) -> ClientApi:
     return api
 
 
-def create_init_api(config, insecure, client_api) -> InitApi:
+def create_init_api(config, timeout, insecure, client_api) -> InitApi:
     """
     Creates a new initialization API with the provided configuration.
 
@@ -73,6 +75,7 @@ def create_init_api(config, insecure, client_api) -> InitApi:
     instance of :class:`InactiveInitApi` is returned instead.
 
     :param config: client configuration
+    :param timeout: API request timeout
     :param insecure: set to `True` to not verify TLS certificate when making requests to API
     :param client_api: client API to use for determining API state
     :return: the init API or InactiveInitApi if it is not available
@@ -99,7 +102,8 @@ def create_init_api(config, insecure, client_api) -> InitApi:
             api_url=api_url,
             context=api_context,
             connect_retries=10,
-            backoff_factor=0.1
+            backoff_factor=0.1,
+            timeout=timeout
         )
     else:
         api = InactiveInitApi()

@@ -15,7 +15,8 @@ from client_cli.api.init_api import InitApi
 class DefaultInitApi(InitApi):
     """Default, HTTP/JSON based :class:`InitApi` implementation."""
 
-    def __init__(self, api_url: str, connect_retries: int, backoff_factor: float, context: EndpointContext):
+    def __init__(self, api_url: str, connect_retries: int, backoff_factor: float, context: EndpointContext,
+                 timeout: int):
         session = requests.Session()
         retry = Retry(connect=connect_retries, backoff_factor=backoff_factor)
         adapter = HTTPAdapter(max_retries=retry)
@@ -24,6 +25,7 @@ class DefaultInitApi(InitApi):
         self.api_url = api_url
         self.context = context
         self.state_session = session
+        self.timeout = timeout
 
     def state(self):
         response = self.state_session.request(
@@ -55,7 +57,8 @@ class DefaultInitApi(InitApi):
             method='post',
             url='{}/init'.format(self.api_url),
             data={'username': username, 'password': password},
-            verify=self.context.verify
+            verify=self.context.verify,
+            timeout=self.timeout
         )
 
         if response.ok:

@@ -21,7 +21,8 @@ class DefaultInitApiSpec(unittest.TestCase):
             api_url=self.url,
             connect_retries=1,
             backoff_factor=2,
-            context=DefaultHttpsContext(verify=False)
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
         )
         mock_request.return_value = MockResponse.success(mock_data.INIT_STATE_PENDING)
 
@@ -38,7 +39,8 @@ class DefaultInitApiSpec(unittest.TestCase):
             api_url=self.url,
             connect_retries=1,
             backoff_factor=2,
-            context=DefaultHttpsContext(verify=False)
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
         )
         mock_request.return_value = MockResponse.failure(response='test failure')
 
@@ -51,7 +53,8 @@ class DefaultInitApiSpec(unittest.TestCase):
             api_url=self.url,
             connect_retries=1,
             backoff_factor=2,
-            context=DefaultHttpsContext(verify=False)
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
         )
         mock_request.return_value = MockResponse.empty()
 
@@ -64,7 +67,8 @@ class DefaultInitApiSpec(unittest.TestCase):
             api_url=self.url,
             connect_retries=1,
             backoff_factor=2,
-            context=DefaultHttpsContext(verify=False)
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
         )
         mock_request.return_value = MockResponse.success()
 
@@ -80,7 +84,8 @@ class DefaultInitApiSpec(unittest.TestCase):
             method='post',
             url='{}/init'.format(self.url),
             data={'username': username, 'password': password},
-            verify=False
+            verify=False,
+            timeout=10
         )
 
     @patch('requests.Session.request')
@@ -89,7 +94,8 @@ class DefaultInitApiSpec(unittest.TestCase):
             api_url=self.url,
             connect_retries=1,
             backoff_factor=2,
-            context=DefaultHttpsContext(verify=False)
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
         )
         mock_request.return_value = MockResponse.failure(response='test failure')
 
