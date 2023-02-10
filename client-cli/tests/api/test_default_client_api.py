@@ -19,7 +19,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_check_if_api_is_active(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success(mock_data.PING)
 
         self.assertTrue(client.is_active())
@@ -36,7 +41,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_send_service_termination_requests(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success()
 
         self.assertDictEqual(client.stop(), {'successful': True, 'operation': None})
@@ -53,7 +63,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_get_dataset_metadata(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success(mock_data.METADATA)
 
         entry = uuid4()
@@ -67,7 +82,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_search_dataset_metadata(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success(mock_data.METADATA_SEARCH_RESULTS)
 
         query = 'test.*'
@@ -86,7 +106,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_get_dataset_definitions(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success(mock_data.DEFINITIONS)
 
         self.assertEqual(client.dataset_definitions(), mock_data.DEFINITIONS)
@@ -99,7 +124,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_get_dataset_entries(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success(mock_data.ENTRIES)
 
         self.assertEqual(client.dataset_entries(), mock_data.ENTRIES)
@@ -112,7 +142,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_get_dataset_entries_for_definition(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success(mock_data.ENTRIES)
 
         definition = uuid4()
@@ -126,7 +161,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_get_current_user(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success(mock_data.USER)
 
         self.assertEqual(client.user(), mock_data.USER)
@@ -139,7 +179,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_get_current_device(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success(mock_data.DEVICE)
 
         self.assertEqual(client.device(), mock_data.DEVICE)
@@ -152,7 +197,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_get_device_connections(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success(mock_data.ACTIVE_CONNECTIONS)
 
         self.assertEqual(client.device_connections(), mock_data.ACTIVE_CONNECTIONS)
@@ -165,7 +215,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_get_active_operations(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success(mock_data.OPERATIONS)
 
         self.assertEqual(client.operations(state='active'), mock_data.OPERATIONS)
@@ -179,7 +234,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_get_completed_operations(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success(mock_data.OPERATIONS)
 
         self.assertEqual(client.operations(state='completed'), mock_data.OPERATIONS)
@@ -193,7 +253,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_get_all_operations(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success(mock_data.OPERATIONS)
 
         self.assertEqual(client.operations(state='all'), mock_data.OPERATIONS)
@@ -207,7 +272,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_get_operation_progress(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success(mock_data.BACKUP_PROGRESS[0])
 
         operation = uuid4()
@@ -221,7 +291,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_follow_operation_progress(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
 
         def sse_response():
             for e in mock_data.BACKUP_PROGRESS:
@@ -244,7 +319,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_stop_an_active_operation(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.empty()
 
         operation = uuid4()
@@ -258,7 +338,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_resume_an_inactive_operation(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.empty()
 
         operation = uuid4()
@@ -272,7 +357,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_remove_an_inactive_operation(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.empty()
 
         operation = uuid4()
@@ -286,7 +376,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_get_backup_rules(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success(mock_data.BACKUP_RULES)
 
         self.assertEqual(client.backup_rules(), mock_data.BACKUP_RULES)
@@ -301,7 +396,12 @@ class DefaultClientApiSpec(unittest.TestCase):
     def test_should_start_backups(self, mock_request):
         operation = uuid4()
 
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success({'operation': operation})
 
         definition = uuid4()
@@ -315,7 +415,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_define_backups(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success()
 
         definition_request = {'a': 1, 'b': 2}
@@ -332,7 +437,12 @@ class DefaultClientApiSpec(unittest.TestCase):
     def test_should_recover_until_timestamp(self, mock_request):
         operation = uuid4()
 
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success({'operation': operation})
 
         query = 'test.*'
@@ -363,7 +473,12 @@ class DefaultClientApiSpec(unittest.TestCase):
     def test_should_recover_from_entry(self, mock_request):
         operation = uuid4()
 
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success({'operation': operation})
 
         query = 'test.*'
@@ -394,7 +509,12 @@ class DefaultClientApiSpec(unittest.TestCase):
     def test_should_recover_from_latest_entry(self, mock_request):
         operation = uuid4()
 
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success({'operation': operation})
 
         query = 'test.*'
@@ -421,7 +541,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_get_public_schedules(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success(mock_data.SCHEDULES_PUBLIC)
 
         self.assertEqual(client.schedules_public(), mock_data.SCHEDULES_PUBLIC)
@@ -434,7 +559,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_get_configured_schedules(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success(mock_data.SCHEDULES_CONFIGURED)
 
         self.assertEqual(client.schedules_configured(), mock_data.SCHEDULES_CONFIGURED)
@@ -447,7 +577,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_refresh_configured_schedules(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.success()
 
         self.assertEqual(client.schedules_configured_refresh(), {'successful': True, 'operation': None})
@@ -460,7 +595,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_handle_request_failures(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.failure(response='test failure')
 
         with self.assertRaises(Abort):
@@ -468,7 +608,12 @@ class DefaultClientApiSpec(unittest.TestCase):
 
     @patch('requests.request')
     def test_should_handle_streaming_request_failures(self, mock_request):
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=DefaultHttpsContext(verify=False))
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
         mock_request.return_value = MockResponse.failure(response='test failure')
 
         operation = uuid4()
@@ -487,7 +632,7 @@ class DefaultClientApiSpec(unittest.TestCase):
             certificate_password=password
         )
 
-        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=context)
+        client = DefaultClientApi(api_url=self.url, api_token=self.token, context=context, timeout=10)
         mock_request.return_value = MockResponse.success(mock_data.PING)
 
         self.assertTrue(client.is_active())
@@ -498,7 +643,8 @@ class DefaultClientApiSpec(unittest.TestCase):
             params={},
             headers={'Authorization': 'Bearer {}'.format(self.token)},
             json={},
-            verify=context.verify
+            verify=context.verify,
+            timeout=10
         )
 
         mock_create_pem.assert_called_once_with(
@@ -528,7 +674,8 @@ class DefaultClientApiSpec(unittest.TestCase):
             params=expected_request_params,
             headers={'Authorization': 'Bearer {}'.format(self.token)},
             json=expected_request_data,
-            verify=False
+            verify=False,
+            timeout=10
         )
 
     def assert_valid_streaming_request(
@@ -553,5 +700,6 @@ class DefaultClientApiSpec(unittest.TestCase):
             headers={'Authorization': 'Bearer {}'.format(self.token)},
             json=expected_request_data,
             verify=False,
-            stream=True
+            stream=True,
+            timeout=10
         )

@@ -38,7 +38,6 @@ class EndpointContextSpec(unittest.TestCase):
             mock_file_open.assert_called_once_with(certificate_path, 'rb')
 
     def test_should_write_pem_certificate_content(self):
-        # pylint: disable=no-self-use
         expected_content = b'a-b-c'
         with patch("builtins.open", mock_open(read_data=expected_content)) as mock_file_open:
             CustomHttpsContext.write_pem_certificate_file(

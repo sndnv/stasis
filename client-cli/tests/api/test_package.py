@@ -22,6 +22,7 @@ class ApiPackageSpec(unittest.TestCase):
 
         api = create_client_api(
             config=ApiPackageSpec.create_config(with_context=True),
+            timeout=10,
             api_token='test-token',
             insecure=False
         )
@@ -39,6 +40,7 @@ class ApiPackageSpec(unittest.TestCase):
 
         api = create_client_api(
             config=ApiPackageSpec.create_config(with_context=False),
+            timeout=10,
             api_token='test-token',
             insecure=False
         )
@@ -54,6 +56,7 @@ class ApiPackageSpec(unittest.TestCase):
 
         api = create_client_api(
             config=ApiPackageSpec.create_config(with_context=False),
+            timeout=10,
             api_token='test-token',
             insecure=True
         )
@@ -66,6 +69,7 @@ class ApiPackageSpec(unittest.TestCase):
     def test_should_create_inactive_client_api_when_api_token_is_not_available(self):
         api = create_client_api(
             config=ApiPackageSpec.create_config(with_context=True),
+            timeout=10,
             api_token=None,
             insecure=False
         )
@@ -75,6 +79,7 @@ class ApiPackageSpec(unittest.TestCase):
     def test_should_create_inactive_client_api_when_api_is_not_responding(self):
         api = create_client_api(
             config=ApiPackageSpec.create_config(with_context=False),
+            timeout=10,
             api_token='test-token',
             insecure=False
         )
@@ -91,6 +96,7 @@ class ApiPackageSpec(unittest.TestCase):
                         }
                     }
                 ),
+                timeout=10,
                 api_token='test-token',
                 insecure=False
             )
@@ -99,6 +105,7 @@ class ApiPackageSpec(unittest.TestCase):
     def test_should_create_default_init_api_with_custom_https_context(self, mock_create_pem):
         api = create_init_api(
             config=ApiPackageSpec.create_config(with_context=True),
+            timeout=10,
             insecure=False,
             client_api=InactiveClientApi()
         )
@@ -113,6 +120,7 @@ class ApiPackageSpec(unittest.TestCase):
     def test_should_create_default_init_api_with_default_https_context(self):
         api = create_init_api(
             config=ApiPackageSpec.create_config(with_context=False),
+            timeout=10,
             insecure=False,
             client_api=InactiveClientApi()
         )
@@ -125,6 +133,7 @@ class ApiPackageSpec(unittest.TestCase):
     def test_should_create_default_init_api_with_allowed_insecure_https_connections(self):
         api = create_init_api(
             config=ApiPackageSpec.create_config(with_context=False),
+            timeout=10,
             insecure=True,
             client_api=InactiveClientApi()
         )
@@ -137,6 +146,7 @@ class ApiPackageSpec(unittest.TestCase):
     def test_should_create_inactive_init_api_when_api_token_is_available(self):
         api = create_init_api(
             config=ApiPackageSpec.create_config(with_context=True),
+            timeout=10,
             insecure=False,
             client_api=MockClientApi()
         )

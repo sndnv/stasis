@@ -14,10 +14,11 @@ from client_cli.api.endpoint_context import EndpointContext
 class DefaultClientApi(ClientApi):
     """Default, HTTP/JSON based :class:`ClientApi` implementation."""
 
-    def __init__(self, api_url: str, api_token: str, context: EndpointContext):
+    def __init__(self, api_url: str, api_token: str, context: EndpointContext, timeout: int):
         self.api_url = api_url
         self.api_token = api_token
         self.context = context
+        self.timeout = timeout
 
     def is_active(self):
         try:
@@ -190,7 +191,8 @@ class DefaultClientApi(ClientApi):
             params=params,
             headers={'Authorization': 'Bearer {}'.format(self.api_token)},
             json=data,
-            verify=self.context.verify
+            verify=self.context.verify,
+            timeout=self.timeout
         )
 
         if response.ok:
@@ -240,7 +242,8 @@ class DefaultClientApi(ClientApi):
             headers={'Authorization': 'Bearer {}'.format(self.api_token)},
             json=data,
             verify=self.context.verify,
-            stream=True
+            stream=True,
+            timeout=self.timeout
         )
 
         if response.ok:

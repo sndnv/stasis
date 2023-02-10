@@ -1,15 +1,15 @@
 from setuptools import setup, find_packages
 
 install_requires = [
-    'requests==2.28.1',
+    'requests==2.28.2',
     'requests-oauthlib==1.3.1',
     'terminaltables==3.1.10',
     'hurry.filesize==0.9',
     'pyhocon==0.3.59',
-    'click==7.1.2',
+    'click==8.1.3',
     'pyparsing==2.4.7',
     'psutil==5.9.4',
-    'cryptography==38.0.3',
+    'cryptography==39.0.1',
     'sseclient-py==1.7.2',
     'tqdm==4.64.1',
 ]
