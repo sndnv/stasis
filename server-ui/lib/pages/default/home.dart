@@ -325,7 +325,7 @@ class Home extends StatelessWidget {
                 padding: const EdgeInsetsDirectional.only(start: 16.0),
                 child: SelectionArea(
                   child: RichText(
-                    text: TextSpan(text: salt, style: Theme.of(context).textTheme.headline4),
+                    text: TextSpan(text: salt, style: Theme.of(context).textTheme.headlineMedium),
                   ).withCopyButton(copyText: salt),
                 ),
               ),

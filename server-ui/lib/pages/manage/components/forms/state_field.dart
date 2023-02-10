@@ -53,7 +53,7 @@ class _StateFieldState extends State<StateField> {
           children: [
             Text(
               widget.title,
-              style: Theme.of(context).textTheme.caption,
+              style: Theme.of(context).textTheme.bodySmall,
             ),
             SizedBox(height: 36, child: buttons)
           ],

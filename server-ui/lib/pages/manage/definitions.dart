@@ -113,78 +113,78 @@ class _DatasetDefinitionsState extends State<DatasetDefinitions> {
     );
   }
 
-  void _createDatasetDefinition(BuildContext context) async {
-    final infoField = formField(
-      title: 'Info',
-      errorMessage: 'Info cannot be empty',
-      controller: TextEditingController(),
-    );
+  void _createDatasetDefinition(BuildContext context) {
+    widget.devicesClient.getDevices(privileged: widget.privileged).then((devices) {
+      final infoField = formField(
+        title: 'Info',
+        errorMessage: 'Info cannot be empty',
+        controller: TextEditingController(),
+      );
 
-    final redundantCopiesField = formField(
-      title: 'Redundant Copies',
-      errorMessage: 'Redundant copies must be provided',
-      controller: TextEditingController(),
-      type: TextInputType.number,
-    );
+      final redundantCopiesField = formField(
+        title: 'Redundant Copies',
+        errorMessage: 'Redundant copies must be provided',
+        controller: TextEditingController(),
+        type: TextInputType.number,
+      );
 
-    String? device;
-    final devicesField = dropdownField(
-      title: 'Device',
-      items: (await widget.devicesClient.getDevices(privileged: widget.privileged))
-          .map((device) => Pair(device.id, device.name))
-          .toList(),
-      errorMessage: 'A device must be selected',
-      onFieldUpdated: (updated) => device = updated,
-    );
+      String? device;
+      final devicesField = dropdownField(
+        title: 'Device',
+        items: devices.map((device) => Pair(device.id, device.name)).toList(),
+        errorMessage: 'A device must be selected',
+        onFieldUpdated: (updated) => device = updated,
+      );
 
-    Retention? existingVersions;
-    final existingVersionsField = retentionField(
-      title: 'Existing Versions',
-      onChange: (updated) => existingVersions = updated,
-    );
+      Retention? existingVersions;
+      final existingVersionsField = retentionField(
+        title: 'Existing Versions',
+        onChange: (updated) => existingVersions = updated,
+      );
 
-    Retention? removedVersions;
-    final removedVersionsField = retentionField(
-      title: 'Removed Versions',
-      onChange: (updated) => removedVersions = updated,
-    );
+      Retention? removedVersions;
+      final removedVersionsField = retentionField(
+        title: 'Removed Versions',
+        onChange: (updated) => removedVersions = updated,
+      );
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) {
-        return SimpleDialog(
-          title: const Text('Create New Dataset Definition'),
-          contentPadding: const EdgeInsets.all(16),
-          children: [
-            EntityForm(
-              fields: [infoField, redundantCopiesField, devicesField, existingVersionsField, removedVersionsField],
-              submitAction: 'Create',
-              onFormSubmitted: () {
-                final request = CreateDatasetDefinition(
-                  info: infoField.controller!.text.trim(),
-                  device: device!,
-                  redundantCopies: int.parse(redundantCopiesField.controller!.text.trim()),
-                  existingVersions: existingVersions!,
-                  removedVersions: removedVersions!,
-                );
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) {
+          return SimpleDialog(
+            title: const Text('Create New Dataset Definition'),
+            contentPadding: const EdgeInsets.all(16),
+            children: [
+              EntityForm(
+                fields: [infoField, redundantCopiesField, devicesField, existingVersionsField, removedVersionsField],
+                submitAction: 'Create',
+                onFormSubmitted: () {
+                  final request = CreateDatasetDefinition(
+                    info: infoField.controller!.text.trim(),
+                    device: device!,
+                    redundantCopies: int.parse(redundantCopiesField.controller!.text.trim()),
+                    existingVersions: existingVersions!,
+                    removedVersions: removedVersions!,
+                  );
 
-                final messenger = ScaffoldMessenger.of(context);
+                  final messenger = ScaffoldMessenger.of(context);
 
-                widget.definitionsClient
-                    .createDatasetDefinition(privileged: widget.privileged, request: request)
-                    .then((_) {
-                  messenger.showSnackBar(const SnackBar(content: Text('Dataset definition created...')));
-                  setState(() {});
-                }).onError((e, stackTrace) {
-                  messenger.showSnackBar(SnackBar(content: Text('Failed to create dataset definition: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
-              },
-            )
-          ],
-        );
-      },
-    );
+                  widget.definitionsClient
+                      .createDatasetDefinition(privileged: widget.privileged, request: request)
+                      .then((_) {
+                    messenger.showSnackBar(const SnackBar(content: Text('Dataset definition created...')));
+                    setState(() {});
+                  }).onError((e, stackTrace) {
+                    messenger.showSnackBar(SnackBar(content: Text('Failed to create dataset definition: [$e]')));
+                  }).whenComplete(() => Navigator.pop(context));
+                },
+              )
+            ],
+          );
+        },
+      );
+    });
   }
 
   void _showDatasetEntries(BuildContext context, String definition) {
