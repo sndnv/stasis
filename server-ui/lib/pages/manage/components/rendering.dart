@@ -77,45 +77,53 @@ extension ExtendedRetention on Retention {
 
 extension ExtendedNum on num {
   Pair<int, FileSizeUnit> toFields() {
-    const base = 1000;
+    if (this == 0) {
+      return Pair(0, FileSizeUnit.bytes);
+    } else {
+      const base = 1000;
 
-    const units = [
-      FileSizeUnit.bytes,
-      FileSizeUnit.kilobytes,
-      FileSizeUnit.megabytes,
-      FileSizeUnit.gigabytes,
-      FileSizeUnit.terabytes,
-      FileSizeUnit.petabytes,
-    ];
+      const units = [
+        FileSizeUnit.bytes,
+        FileSizeUnit.kilobytes,
+        FileSizeUnit.megabytes,
+        FileSizeUnit.gigabytes,
+        FileSizeUnit.terabytes,
+        FileSizeUnit.petabytes,
+      ];
 
-    Pair<int, int> nextAmount(int current, int count) {
-      if (current % base == 0) {
-        final next = current ~/ base;
-        return nextAmount(next, count + 1);
-      } else {
-        return Pair(current, count);
+      Pair<int, int> nextAmount(int current, int count) {
+        if (current % base == 0) {
+          final next = current ~/ base;
+          return nextAmount(next, count + 1);
+        } else {
+          return Pair(current, count);
+        }
       }
-    }
 
-    final fields = nextAmount(toInt(), 0);
-    return Pair(fields.a, units[fields.b]);
+      final fields = nextAmount(toInt(), 0);
+      return Pair(fields.a, units[fields.b]);
+    }
   }
 
   String renderFileSize() {
-    const base = 1000;
-    const units = [
-      FileSizeUnit.bytes,
-      FileSizeUnit.kilobytes,
-      FileSizeUnit.megabytes,
-      FileSizeUnit.gigabytes,
-      FileSizeUnit.terabytes,
-      FileSizeUnit.petabytes,
-    ];
-    final digitGroups = (log(this) / log(base)).round();
-    final amount = NumberFormat('#,##0.#').format(this / pow(base, digitGroups));
-    final unit = units[digitGroups].symbol;
+    if (this == 0) {
+      return '0 ${FileSizeUnit.bytes.symbol}';
+    } else {
+      const base = 1000;
+      const units = [
+        FileSizeUnit.bytes,
+        FileSizeUnit.kilobytes,
+        FileSizeUnit.megabytes,
+        FileSizeUnit.gigabytes,
+        FileSizeUnit.terabytes,
+        FileSizeUnit.petabytes,
+      ];
+      final digitGroups = (log(this) / log(base)).round();
+      final amount = NumberFormat('#,##0.#').format(this / pow(base, digitGroups));
+      final unit = units[digitGroups].symbol;
 
-    return '$amount $unit';
+      return '$amount $unit';
+    }
   }
 
   String renderNumber() {

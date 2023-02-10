@@ -228,68 +228,73 @@ class _DevicesState extends State<Devices> {
     );
   }
 
-  void _createDevicePrivileged(BuildContext context) async {
-    final nameField = formField(
-      title: 'Name',
-      errorMessage: 'Name cannot be empty',
-      controller: TextEditingController(),
-    );
+  void _createDevicePrivileged(BuildContext context) {
+    widget.nodesClient
+        .getNodes()
+        .then((nodes) => widget.usersClient.getUsers().then((users) => Pair(nodes, users)))
+        .then((nodesAndUsers) {
+      final nameField = formField(
+        title: 'Name',
+        errorMessage: 'Name cannot be empty',
+        controller: TextEditingController(),
+      );
 
-    String? node;
-    final nodesField = dropdownField(
-      title: 'Node',
-      items: (await widget.nodesClient.getNodes()).map((node) => Pair(node.id(), node.address())).toList(),
-      errorMessage: 'A node must be selected',
-      onFieldUpdated: (updated) => node = updated,
-    );
+      String? node;
+      final nodesField = dropdownField(
+        title: 'Node',
+        items: nodesAndUsers.a.map((node) => Pair(node.id(), node.address())).toList(),
+        errorMessage: 'A node must be selected',
+        onFieldUpdated: (updated) => node = updated,
+      );
 
-    String? owner;
-    final ownersField = dropdownField(
-      title: 'Owner',
-      items: (await widget.usersClient.getUsers()).map((user) => Pair(user.id, user.id.toMinimizedString())).toList(),
-      errorMessage: 'An owner must be selected',
-      onFieldUpdated: (updated) => owner = updated,
-    );
+      String? owner;
+      final ownersField = dropdownField(
+        title: 'Owner',
+        items: nodesAndUsers.b.map((user) => Pair(user.id, user.id.toMinimizedString())).toList(),
+        errorMessage: 'An owner must be selected',
+        onFieldUpdated: (updated) => owner = updated,
+      );
 
-    DeviceLimits? limits;
-    final limitsField = deviceLimitsField(
-      title: 'Device Limits',
-      onChange: (updated) => limits = updated,
-    );
+      DeviceLimits? limits;
+      final limitsField = deviceLimitsField(
+        title: 'Device Limits',
+        onChange: (updated) => limits = updated,
+      );
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) {
-        return SimpleDialog(
-          title: const Text('Create New Device'),
-          contentPadding: const EdgeInsets.all(16),
-          children: [
-            EntityForm(
-              fields: [nameField, nodesField, ownersField, limitsField],
-              submitAction: 'Create',
-              onFormSubmitted: () {
-                final request = CreateDevicePrivileged(
-                  name: nameField.controller!.text.trim(),
-                  node: node!,
-                  owner: owner!,
-                  limits: limits,
-                );
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) {
+          return SimpleDialog(
+            title: const Text('Create New Device'),
+            contentPadding: const EdgeInsets.all(16),
+            children: [
+              EntityForm(
+                fields: [nameField, nodesField, ownersField, limitsField],
+                submitAction: 'Create',
+                onFormSubmitted: () {
+                  final request = CreateDevicePrivileged(
+                    name: nameField.controller!.text.trim(),
+                    node: node!,
+                    owner: owner!,
+                    limits: limits,
+                  );
 
-                final messenger = ScaffoldMessenger.of(context);
+                  final messenger = ScaffoldMessenger.of(context);
 
-                widget.devicesClient.createDevice(request: request).then((_) {
-                  messenger.showSnackBar(const SnackBar(content: Text('Device created...')));
-                  setState(() {});
-                }).onError((e, stackTrace) {
-                  messenger.showSnackBar(SnackBar(content: Text('Failed to create device: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
-              },
-            )
-          ],
-        );
-      },
-    );
+                  widget.devicesClient.createDevice(request: request).then((_) {
+                    messenger.showSnackBar(const SnackBar(content: Text('Device created...')));
+                    setState(() {});
+                  }).onError((e, stackTrace) {
+                    messenger.showSnackBar(SnackBar(content: Text('Failed to create device: [$e]')));
+                  }).whenComplete(() => Navigator.pop(context));
+                },
+              )
+            ],
+          );
+        },
+      );
+    });
   }
 
   void _generateDeviceBootstrapCode(BuildContext context, String id) {
@@ -330,7 +335,7 @@ class _DevicesState extends State<Devices> {
                                 child: RichText(
                                   text: TextSpan(
                                     text: widget.bootstrapClient.server,
-                                    style: Theme.of(context).textTheme.headline6,
+                                    style: Theme.of(context).textTheme.titleLarge,
                                   ),
                                 ).withCopyButton(copyText: widget.bootstrapClient.server),
                               ),
@@ -342,7 +347,8 @@ class _DevicesState extends State<Devices> {
                                 child: RichText(
                                   text: TextSpan(
                                     text: code.value,
-                                    style: Theme.of(context).textTheme.headline6?.copyWith(fontWeight: FontWeight.bold),
+                                    style:
+                                        Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                                   ),
                                 ).withCopyButton(copyText: code.value),
                               ),

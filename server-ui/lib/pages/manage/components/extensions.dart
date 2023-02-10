@@ -22,7 +22,7 @@ extension ExtendedString on String {
       child: RichText(
         text: TextSpan(
           text: this,
-          style: link.theme.textTheme.bodyText1?.copyWith(color: link.theme.primaryColor),
+          style: link.theme.textTheme.bodyLarge?.copyWith(color: link.theme.primaryColor),
           recognizer: TapGestureRecognizer()..onTap = link.navigate,
         ),
       ),

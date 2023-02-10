@@ -79,6 +79,7 @@ void main() {
     });
 
     test('convert numbers to file size fields', () {
+      expect(0.toFields(), Pair(0, FileSizeUnit.bytes));
       expect(1.toFields(), Pair(1, FileSizeUnit.bytes));
       expect(1000.toFields(), Pair(1, FileSizeUnit.kilobytes));
       expect((10 * 1000).toFields(), Pair(10, FileSizeUnit.kilobytes));
@@ -89,6 +90,7 @@ void main() {
     });
 
     test('convert numbers to file size strings', () {
+      expect(0.renderFileSize(), '0 B');
       expect(1.renderFileSize(), '1 B');
       expect(1000.renderFileSize(), '1 kB');
       expect(1024.renderFileSize(), '1 kB');

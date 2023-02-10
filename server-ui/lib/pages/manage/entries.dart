@@ -122,95 +122,93 @@ class _DatasetEntriesState extends State<DatasetEntries> {
     );
   }
 
-  void _showCrateManifest(BuildContext context, String crate) async {
-    final manifest = await widget.manifestsClient.getManifest(crate: crate);
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) => SimpleDialog(
-        title: Text('Manifest for Crate [${crate.toMinimizedString()}]'),
-        children: [
-          ListTile(
-            title: const Text('Crate'),
-            leading: const Icon(Icons.data_usage),
-            trailing: FittedBox(child: manifest.crate.asShortId()),
-          ),
-          ListTile(
-            title: const Text('Size'),
-            leading: const Icon(Icons.sd_storage),
-            trailing: Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: Text(
-                manifest.size.renderFileSize(),
+  void _showCrateManifest(BuildContext context, String crate) {
+    widget.manifestsClient.getManifest(crate: crate).then((manifest) => showDialog(
+          context: context,
+          builder: (BuildContext context) => SimpleDialog(
+            title: Text('Manifest for Crate [${crate.toMinimizedString()}]'),
+            children: [
+              ListTile(
+                title: const Text('Crate'),
+                leading: const Icon(Icons.data_usage),
+                trailing: FittedBox(child: manifest.crate.asShortId()),
               ),
-            ),
-          ),
-          ListTile(
-            title: const Text('Copies'),
-            leading: const Icon(Icons.copy_all),
-            trailing: Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: Text(manifest.copies.toString()),
-            ),
-          ),
-          ListTile(
-            title: const Text('Origin'),
-            leading: const Icon(Icons.device_hub),
-            trailing: FittedBox(
-              child: manifest.origin.asShortId(
-                link: Link(
-                  buildContext: context,
-                  destination: PageRouterDestination.nodes,
-                  withFilter: manifest.origin,
+              ListTile(
+                title: const Text('Size'),
+                leading: const Icon(Icons.sd_storage),
+                trailing: Padding(
+                  padding: const EdgeInsets.only(right: 16.0),
+                  child: Text(
+                    manifest.size.renderFileSize(),
+                  ),
                 ),
               ),
-            ),
-          ),
-          ListTile(
-            title: const Text('Source'),
-            leading: const Icon(Icons.device_hub),
-            trailing: FittedBox(
-              child: manifest.source.asShortId(
-                link: Link(
-                  buildContext: context,
-                  destination: PageRouterDestination.nodes,
-                  withFilter: manifest.source,
+              ListTile(
+                title: const Text('Copies'),
+                leading: const Icon(Icons.copy_all),
+                trailing: Padding(
+                  padding: const EdgeInsets.only(right: 16.0),
+                  child: Text(manifest.copies.toString()),
                 ),
               ),
-            ),
-          ),
-          ListTile(
-            title: const Text('Destinations'),
-            leading: const Icon(Icons.hub),
-            trailing: Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: Text(
-                manifest.destinations.length.toString(),
+              ListTile(
+                title: const Text('Origin'),
+                leading: const Icon(Icons.device_hub),
+                trailing: FittedBox(
+                  child: manifest.origin.asShortId(
+                    link: Link(
+                      buildContext: context,
+                      destination: PageRouterDestination.nodes,
+                      withFilter: manifest.origin,
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 8.0),
-            child: SizedBox(
-              width: 448.0,
-              child: Wrap(
-                alignment: WrapAlignment.center,
-                children: manifest.destinations
-                    .map(
-                      (e) => e.asShortId(
-                        link: Link(
-                          buildContext: context,
-                          destination: PageRouterDestination.nodes,
-                          withFilter: e,
-                        ),
-                      ),
-                    )
-                    .toList(),
+              ListTile(
+                title: const Text('Source'),
+                leading: const Icon(Icons.device_hub),
+                trailing: FittedBox(
+                  child: manifest.source.asShortId(
+                    link: Link(
+                      buildContext: context,
+                      destination: PageRouterDestination.nodes,
+                      withFilter: manifest.source,
+                    ),
+                  ),
+                ),
               ),
-            ),
+              ListTile(
+                title: const Text('Destinations'),
+                leading: const Icon(Icons.hub),
+                trailing: Padding(
+                  padding: const EdgeInsets.only(right: 16.0),
+                  child: Text(
+                    manifest.destinations.length.toString(),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0),
+                child: SizedBox(
+                  width: 448.0,
+                  child: Wrap(
+                    alignment: WrapAlignment.center,
+                    children: manifest.destinations
+                        .map(
+                          (e) => e.asShortId(
+                            link: Link(
+                              buildContext: context,
+                              destination: PageRouterDestination.nodes,
+                              withFilter: e,
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        ));
   }
 }
