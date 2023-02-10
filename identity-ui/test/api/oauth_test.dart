@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:identity_ui/api/oauth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   final config = OAuthConfig(
@@ -12,6 +13,8 @@ void main() {
 
   group('OAuth should', () {
     test('generate authorization URLs', () async {
+      SharedPreferences.setMockInitialValues({});
+
       final generated = await OAuth.generateAuthorizationUri(config).then((value) => value.toString());
 
       expect(generated, contains(config.authorizationEndpoint.toString()));

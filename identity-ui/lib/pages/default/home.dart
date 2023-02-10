@@ -39,13 +39,13 @@ class Home extends StatelessWidget {
                 text: TextSpan(
                   children: [
                     TextSpan(
-                      style: theme.textTheme.caption?.copyWith(fontStyle: FontStyle.italic),
+                      style: theme.textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
                       text: 'For mode details, check the OAuth 2.0 RFC - ',
                     ),
                     TextSpan(
                         text: rfcUri.toString(),
                         style:
-                            theme.textTheme.caption?.copyWith(color: theme.primaryColor, fontStyle: FontStyle.italic),
+                            theme.textTheme.bodySmall?.copyWith(color: theme.primaryColor, fontStyle: FontStyle.italic),
                         recognizer: TapGestureRecognizer()..onTap = () => launchUrl(rfcUri)),
                   ],
                 ),

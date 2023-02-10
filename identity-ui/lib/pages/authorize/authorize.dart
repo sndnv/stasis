@@ -40,7 +40,7 @@ class Authorize extends StatelessWidget {
 
       final scopes = Text(
         'Authorization requested for [${actualScopes.join(', ')}]',
-        style: theme.textTheme.caption?.copyWith(fontStyle: FontStyle.italic),
+        style: theme.textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
       );
 
       final form = CredentialsForm(
