@@ -18,27 +18,27 @@ lazy val versions = new {
   // persistence
   val geode    = "1.15.1"
   val slick    = "3.4.1"
-  val postgres = "42.5.0"
-  val mariadb  = "3.1.0"
-  val sqlite   = "3.39.4.1"
+  val postgres = "42.5.3"
+  val mariadb  = "3.1.2"
+  val sqlite   = "3.40.1.0"
   val h2       = "2.1.214"
 
   // telemetry
-  val openTelemetry           = "1.20.1"
-  val openTelemetryPrometheus = "1.20.1-alpha"
+  val openTelemetry           = "1.22.0"
+  val openTelemetryPrometheus = "1.22.0-alpha"
   val prometheus              = "0.16.0"
 
   // testing
   val scalaCheck    = "1.17.0"
-  val scalaTest     = "3.2.14"
+  val scalaTest     = "3.2.15"
   val wiremock      = "2.35.0"
   val mockito       = "1.17.12"
-  val mockitoInline = "4.9.0"
+  val mockitoInline = "5.1.1"
   val jimfs         = "1.2"
 
   // misc
-  val playJson = "2.9.3"
-  val jose4j   = "0.9.2"
+  val playJson = "2.9.4"
+  val jose4j   = "0.9.3"
   val hkdf     = "1.1.0"
   val appdirs  = "1.2.1"
   val scopt    = "4.1.0"
