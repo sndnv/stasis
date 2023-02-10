@@ -44,7 +44,7 @@ class NotificationManagerExtensionsSpec {
             notification.group,
             equalTo("stasis.client_android.scheduling.foreground_service_notification")
         )
-        assertThat(notification.extras.get(Notification.EXTRA_TITLE) as String, equalTo("test"))
+        assertThat(notification.extras.getString(Notification.EXTRA_TITLE), equalTo("test"))
     }
 
     @Test
@@ -74,12 +74,12 @@ class NotificationManagerExtensionsSpec {
         manager.putPublicScheduleNotFoundNotification(context, schedule)
 
         assertThat(
-            notification.captured.extras.get(Notification.EXTRA_TITLE) as String,
+            notification.captured.extras.getString(Notification.EXTRA_TITLE),
             containsString("Missing schedule")
         )
 
         assertThat(
-            notification.captured.extras.get(Notification.EXTRA_TEXT) as String,
+            notification.captured.extras.getString(Notification.EXTRA_TEXT),
             containsString("Expiration operation is not associated with a valid schedule")
         )
     }
@@ -96,12 +96,12 @@ class NotificationManagerExtensionsSpec {
         manager.putActiveScheduleNotFoundNotification(context, schedule.id)
 
         assertThat(
-            notification.captured.extras.get(Notification.EXTRA_TITLE) as String,
+            notification.captured.extras.getString(Notification.EXTRA_TITLE),
             containsString("Invalid scheduled operation")
         )
 
         assertThat(
-            notification.captured.extras.get(Notification.EXTRA_TEXT) as String,
+            notification.captured.extras.getString(Notification.EXTRA_TEXT),
             containsString("Attempted to execute a schedule with ID [0] but it was not available")
         )
     }
@@ -118,12 +118,12 @@ class NotificationManagerExtensionsSpec {
         manager.putOperationStartedNotification(context, schedule)
 
         assertThat(
-            notification.captured.extras.get(Notification.EXTRA_TITLE) as String,
+            notification.captured.extras.getString(Notification.EXTRA_TITLE),
             containsString("Expiration started")
         )
 
         assertThat(
-            notification.captured.extras.get(Notification.EXTRA_TEXT) as String,
+            notification.captured.extras.getString(Notification.EXTRA_TEXT),
             containsString("Running a new expiration operation")
         )
     }
@@ -144,12 +144,12 @@ class NotificationManagerExtensionsSpec {
         )
 
         assertThat(
-            notification.captured.extras.get(Notification.EXTRA_TITLE) as String,
+            notification.captured.extras.getString(Notification.EXTRA_TITLE),
             containsString("Expiration completed")
         )
 
         assertThat(
-            notification.captured.extras.get(Notification.EXTRA_TEXT) as String,
+            notification.captured.extras.getString(Notification.EXTRA_TEXT),
             containsString("Expiration operation completed successfully")
         )
     }
@@ -170,12 +170,12 @@ class NotificationManagerExtensionsSpec {
         )
 
         assertThat(
-            notification.captured.extras.get(Notification.EXTRA_TITLE) as String,
+            notification.captured.extras.getString(Notification.EXTRA_TITLE),
             containsString("Expiration operation failed")
         )
 
         assertThat(
-            notification.captured.extras.get(Notification.EXTRA_TEXT) as String,
+            notification.captured.extras.getString(Notification.EXTRA_TEXT),
             containsString("Test failure")
         )
     }
