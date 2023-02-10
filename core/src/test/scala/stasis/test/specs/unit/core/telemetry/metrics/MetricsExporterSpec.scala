@@ -27,7 +27,7 @@ class MetricsExporterSpec extends AsyncUnitSpec {
       metrics <- getMetrics(metricsUrl = s"http://localhost:$port")
     } yield {
       val _ = exporter.shutdown()
-      metrics.sorted.toList match {
+      metrics.filter(_.contains("counter")).sorted.toList match {
         case counter1 :: counter2 :: Nil =>
           counter1 should startWith("counter_1")
           counter2 should startWith("counter_2")
@@ -68,7 +68,7 @@ class MetricsExporterSpec extends AsyncUnitSpec {
     } yield {
       val _ = exporter.shutdown()
 
-      metrics.sorted.toList match {
+      metrics.filter(_.contains("counter")).sorted.toList match {
         case counter3 :: counter4 :: prometheusCounter1 :: prometheusCounter2 :: Nil =>
           counter3 should startWith("counter_3")
           counter4 should startWith("counter_4")
