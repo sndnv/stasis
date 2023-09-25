@@ -1,15 +1,22 @@
-+ /home/$${USER}           **                  # include all files for the current user
-- /home/$${USER}           .local/bin          # exclude local binaries
-- /home/$${USER}           .local/lib          # exclude local libraries
-- /home/$${USER}           .cache              # exclude user cache
+# include user files
++ /home/$${USER}/Desktop        **
++ /home/$${USER}/Documents      **
++ /home/$${USER}/Downloads      **
++ /home/$${USER}/Games          **
++ /home/$${USER}/Music          **
++ /home/$${USER}/Pictures       **
++ /home/$${USER}/Templates      **
++ /home/$${USER}/Videos         **
++ /home/$${USER}/.config        stasis-client/**
++ /home/$${USER}/stasis-client  logs/*.log
 
 # exclude git files, logs, temporary and cache files
-- /home/$${USER}           **/*.{class,obj}
-- /home/$${USER}           **/lost+found
-- /home/$${USER}           **/*.{tmp,temp,part,bak,~}
-- /home/$${USER}           **/.git
+- /home/$${USER}                **/*.{class,obj}
+- /home/$${USER}                **/lost+found
+- /home/$${USER}                **/*.{tmp,temp,part,bak,~}
+- /home/$${USER}                **/.git
 
 # generated stasis-client files
-- /home/$${USER}          .config/stasis-client/certs
-- /home/$${USER}          .config/stasis-client/*.{p12,pem}
-- /home/$${USER}          .config/stasis-client/{device-secret,api-token}
+- /home/$${USER}                .config/stasis-client/certs
+- /home/$${USER}                .config/stasis-client/*.{p12,pem}
+- /home/$${USER}                .config/stasis-client/{device-secret,api-token}
