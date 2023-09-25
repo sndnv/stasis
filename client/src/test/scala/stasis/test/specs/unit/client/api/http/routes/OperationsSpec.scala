@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.client.api.http.routes
 
-import akka.NotUsed
+import akka.{Done, NotUsed}
 import akka.http.scaladsl.model.sse.ServerSentEvent
 import akka.http.scaladsl.model.{MediaTypes, StatusCodes, Uri}
 import akka.http.scaladsl.server.Directives._
@@ -19,7 +19,6 @@ import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.api.http.routes.OperationsSpec.{PartialBackupState, PartialRecoveryState}
 import stasis.test.specs.unit.client.mocks._
-
 import java.nio.file.Paths
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
@@ -420,6 +419,9 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     val mockTrackers = new MockTrackerViews() {
       override val backup: BackupTracker.View with BackupTracker.Manage = new MockBackupTracker() {
+        override def exists(operation: Operation.Id): Future[Boolean] =
+          Future.successful(true)
+
         override def updates(operation: Operation.Id): Source[BackupState, NotUsed] =
           Source(events).throttle(elements = 1, per = heartbeatInterval * 4)
       }
@@ -482,6 +484,9 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     val mockTrackers = new MockTrackerViews() {
       override val recovery: RecoveryTracker.View with RecoveryTracker.Manage = new MockRecoveryTracker() {
+        override def exists(operation: Operation.Id): Future[Boolean] =
+          Future.successful(true)
+
         override def updates(operation: Operation.Id): Source[RecoveryState, NotUsed] =
           Source(events).throttle(elements = 1, per = heartbeatInterval * 4)
       }
@@ -555,6 +560,32 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartValidation) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartKeyRotation) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.Stop) should be(1)
+    }
+  }
+
+  they should "fail to stop missing operations" in {
+    val mockExecutor = new MockOperationExecutor() {
+      override def stop(operation: Operation.Id): Future[Option[Done]] = Future.successful(None)
+    }
+    val routes = createRoutes(executor = mockExecutor)
+
+    val operation = Operation.generateId()
+
+    Put(s"/$operation/stop") ~> routes ~> check {
+      status should be(StatusCodes.NotFound)
+
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.ResumeBackupWithState) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithEntry) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartExpiration) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartValidation) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartKeyRotation) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.Stop) should be(0)
     }
   }
 

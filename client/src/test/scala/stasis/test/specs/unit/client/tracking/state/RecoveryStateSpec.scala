@@ -82,6 +82,7 @@ class RecoveryStateSpec extends UnitSpec {
 
     recovery.asProgress should be(
       Operation.Progress(
+        started = recovery.started,
         total = 1,
         processed = 1,
         failures = 2,

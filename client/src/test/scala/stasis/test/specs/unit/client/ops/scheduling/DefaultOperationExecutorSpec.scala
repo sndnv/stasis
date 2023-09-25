@@ -10,7 +10,6 @@ import org.scalatest.{Assertion, BeforeAndAfterAll}
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceMetadataSecret}
-import stasis.client.ops.exceptions.OperationExecutionFailure
 import stasis.client.ops.scheduling.DefaultOperationExecutor
 import stasis.client.ops.{backup, recovery, ParallelismConfig}
 import stasis.client.tracking.state.BackupState
@@ -223,12 +222,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
 
     executor
       .stop(operation)
-      .map { result =>
-        fail(s"Unexpected result received: [$result]")
-      }
-      .recover { case NonFatal(e: OperationExecutionFailure) =>
-        e.getMessage should be(s"Failed to stop [$operation]; operation not found")
-      }
+      .map { result => result should be(empty) }
   }
 
   it should "handle operation failures" in {
@@ -268,25 +262,6 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     eventually[Assertion] {
       executor.active.await should be(empty)
       executor.completed.await.values.toSeq.distinct should be(Seq(Operation.Type.Backup))
-    }
-  }
-
-  it should "support searching for operations" in {
-    val executor = createExecutor()
-
-    executor.active.await should be(empty)
-    executor.completed.await should be(empty)
-
-    executor.find(operation = Operation.generateId()).await should be(None)
-
-    eventually[Assertion] {
-      val backup = executor.startBackupWithRules(definition = DatasetDefinition.generateId()).await
-      executor.find(backup).await should be(Some(Operation.Type.Backup))
-    }
-
-    eventually[Assertion] {
-      val recovery = executor.startRecoveryWithEntry(entry = DatasetEntry.generateId(), query = None, destination = None).await
-      executor.find(recovery).await should be(Some(Operation.Type.Recovery))
     }
   }
 

@@ -25,6 +25,7 @@ object RecoveryTracker {
   trait View {
     def state: Future[Map[Operation.Id, RecoveryState]]
     def updates(operation: Operation.Id): Source[RecoveryState, NotUsed]
+    def exists(operation: Operation.Id): Future[Boolean]
   }
 
   trait Manage {

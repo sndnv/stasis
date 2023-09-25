@@ -10,7 +10,6 @@ import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.client.mocks.MockBackupTracker.Statistic
-
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -37,6 +36,8 @@ class MockBackupTracker extends BackupTracker {
 
   override def updates(operation: Operation.Id): Source[BackupState, NotUsed] =
     Source.empty
+
+  override def exists(operation: Operation.Id): Future[Boolean] = Future.successful(false)
 
   override def remove(operation: Operation.Id): Unit = ()
 

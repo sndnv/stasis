@@ -31,6 +31,7 @@ object BackupTracker {
   trait View {
     def state: Future[Map[Operation.Id, BackupState]]
     def updates(operation: Operation.Id): Source[BackupState, NotUsed]
+    def exists(operation: Operation.Id): Future[Boolean]
   }
 
   trait Manage {

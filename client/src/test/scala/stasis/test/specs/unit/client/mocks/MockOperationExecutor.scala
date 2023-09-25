@@ -12,9 +12,9 @@ import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.client.mocks.MockOperationExecutor.Statistic
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-class MockOperationExecutor()(implicit ec: ExecutionContext) extends OperationExecutor {
+class MockOperationExecutor() extends OperationExecutor {
   private val stats: Map[Statistic, AtomicInteger] = Map(
     Statistic.GetActiveOperations -> new AtomicInteger(0),
     Statistic.GetCompletedOperations -> new AtomicInteger(0),
@@ -40,14 +40,6 @@ class MockOperationExecutor()(implicit ec: ExecutionContext) extends OperationEx
       )
     )
   }
-
-  override def find(operation: Operation.Id): Future[Option[Operation.Type]] =
-    for {
-      active <- active
-      completed <- completed
-    } yield {
-      (active ++ completed).get(operation)
-    }
 
   override def completed: Future[Map[Operation.Id, Operation.Type]] = {
     stats(Statistic.GetCompletedOperations).incrementAndGet()
@@ -150,16 +142,16 @@ class MockOperationExecutor()(implicit ec: ExecutionContext) extends OperationEx
     Future.successful(Operation.generateId())
   }
 
-  override def stop(operation: Operation.Id): Future[Done] = {
+  override def stop(operation: Operation.Id): Future[Option[Done]] = {
     stats(Statistic.Stop).incrementAndGet()
-    Future.successful(Done)
+    Future.successful(Some(Done))
   }
 
   def statistics: Map[Statistic, Int] = stats.view.mapValues(_.get()).toMap
 }
 
 object MockOperationExecutor {
-  def apply()(implicit ec: ExecutionContext): MockOperationExecutor = new MockOperationExecutor()
+  def apply(): MockOperationExecutor = new MockOperationExecutor()
 
   sealed trait Statistic
   object Statistic {

@@ -31,6 +31,8 @@ class MockRecoveryTracker extends RecoveryTracker {
   override def updates(operation: Operation.Id): Source[RecoveryState, NotUsed] =
     Source.empty
 
+  override def exists(operation: Operation.Id): Future[Boolean] = Future.successful(false)
+
   override def remove(operation: Operation.Id): Unit = ()
 
   override def entityExamined(

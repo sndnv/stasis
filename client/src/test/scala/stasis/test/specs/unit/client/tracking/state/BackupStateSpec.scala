@@ -152,6 +152,7 @@ class BackupStateSpec extends UnitSpec {
 
     backup.asProgress should be(
       Operation.Progress(
+        started = backup.started,
         total = 1,
         processed = 1,
         failures = 2,

@@ -305,8 +305,10 @@ SCHEDULES_CONFIGURED = [
 OPERATIONS = [
     {
         'operation': str(uuid4()),
+        'is_active': False,
         'type': 'backup',
         'progress': {
+            'started': '2020-10-01T01:01:01',
             'total': 5,
             'processed': 2,
             'failures': 2,
@@ -315,8 +317,10 @@ OPERATIONS = [
     },
     {
         'operation': str(uuid4()),
+        'is_active': True,
         'type': 'expiration',
         'progress': {
+            'started': '2020-10-01T01:01:01',
             'total': 3,
             'processed': 0,
             'failures': 0,
@@ -325,8 +329,10 @@ OPERATIONS = [
     },
     {
         'operation': str(uuid4()),
+        'is_active': False,
         'type': 'validation',
         'progress': {
+            'started': '2020-10-01T01:01:01',
             'total': 0,
             'processed': 0,
             'failures': 0,

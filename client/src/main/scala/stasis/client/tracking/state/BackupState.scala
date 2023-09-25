@@ -111,6 +111,7 @@ final case class BackupState(
       }
 
   override def asProgress: Operation.Progress = Operation.Progress(
+    started = started,
     total = entities.discovered.size,
     processed = entities.processed.size,
     failures = entities.failed.size + failures.size,

@@ -32,6 +32,7 @@ object Operation {
   }
 
   final case class Progress(
+    started: Instant,
     total: Int,
     processed: Int,
     failures: Int,
