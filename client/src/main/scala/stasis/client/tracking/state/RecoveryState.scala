@@ -74,6 +74,7 @@ final case class RecoveryState(
     copy(completed = Some(Instant.now()))
 
   override def asProgress: Operation.Progress = Operation.Progress(
+    started = started,
     total = entities.examined.size,
     processed = entities.processed.size,
     failures = entities.failed.size + failures.size,

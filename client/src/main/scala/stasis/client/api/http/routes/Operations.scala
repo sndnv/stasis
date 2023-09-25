@@ -49,6 +49,7 @@ class Operations()(implicit context: Context) extends ApiRoutes {
                 collected.map { case (operation, operationState) =>
                   OperationProgress(
                     operation = operation,
+                    isActive = active.contains(operation),
                     `type` = operationState.`type`,
                     progress = operationState.asProgress
                   )
@@ -197,38 +198,57 @@ class Operations()(implicit context: Context) extends ApiRoutes {
               "throttle_interval".as[FiniteDuration].?(default = DefaultSseThrottleInterval)
             ) { case (heartbeatInterval, eventsPerInterval, eventsInterval) =>
               get {
-                def sseSource[T](source: Source[T, NotUsed])(implicit format: Writes[T]): Source[ServerSentEvent, NotUsed] =
-                  source
-                    .buffer(size = 1, overflowStrategy = OverflowStrategy.dropHead)
-                    .throttle(elements = math.max(eventsPerInterval, DefaultSseThrottleEventsPerInterval), per = eventsInterval)
-                    .map(update => Json.toJson(update).toString)
-                    .map(update => ServerSentEvent.apply(update))
-                    .keepAlive(maxIdle = heartbeatInterval, injectedElem = () => ServerSentEvent.heartbeat)
+                extractExecutionContext { implicit ec =>
+                  def sseSource[T](source: Source[T, NotUsed])(implicit format: Writes[T]): Source[ServerSentEvent, NotUsed] =
+                    source
+                      .buffer(size = 1, overflowStrategy = OverflowStrategy.dropHead)
+                      .throttle(elements = math.max(eventsPerInterval, DefaultSseThrottleEventsPerInterval), per = eventsInterval)
+                      .map(update => Json.toJson(update).toString)
+                      .map(update => ServerSentEvent.apply(update))
+                      .keepAlive(maxIdle = heartbeatInterval, injectedElem = () => ServerSentEvent.heartbeat)
 
-                onSuccess(context.executor.find(operation)) {
-                  case Some(Operation.Type.Backup) =>
+                  def backupUpdates: Future[Source[ServerSentEvent, NotUsed]] = for {
+                    isBackup <- context.trackers.backup.exists(operation) if isBackup
+                  } yield {
                     log.debugN("API successfully retrieved progress stream for backup operation [{}]", operation)
-                    consumeEntity & complete(sseSource(context.trackers.backup.updates(operation)))
+                    sseSource(context.trackers.backup.updates(operation))
+                  }
 
-                  case Some(Operation.Type.Recovery) =>
+                  def recoveryUpdates: Future[Source[ServerSentEvent, NotUsed]] = for {
+                    isRecovery <- context.trackers.recovery.exists(operation) if isRecovery
+                  } yield {
                     log.debugN("API successfully retrieved progress stream for recovery operation [{}]", operation)
-                    consumeEntity & complete(sseSource(context.trackers.recovery.updates(operation)))
+                    sseSource(context.trackers.recovery.updates(operation))
+                  }
 
-                  case _ =>
-                    log.debugN(
-                      "API could not retrieve progress stream of operation [{}]; operation not found",
-                      operation
-                    )
-                    consumeEntity & complete(StatusCodes.NotFound)
+                  val updates = backupUpdates.map(Option.apply).recoverWith { case _: NoSuchElementException =>
+                    recoveryUpdates.map(Option.apply).recover { case _: NoSuchElementException =>
+                      log.debugN(
+                        "API could not retrieve progress stream of operation [{}]; operation not found",
+                        operation
+                      )
+                      None
+                    }
+                  }
+
+                  onSuccess(updates) {
+                    case Some(source) => consumeEntity & complete(source)
+                    case None         => consumeEntity & complete(StatusCodes.NotFound)
+                  }
                 }
               }
             }
           },
           path("stop") {
             put {
-              onSuccess(context.executor.stop(operation)) { _ =>
-                log.debugN("API stopped backup operation [{}]", operation)
-                consumeEntity & complete(StatusCodes.NoContent)
+              onSuccess(context.executor.stop(operation)) {
+                case Some(_) =>
+                  log.debugN("API stopped operation [{}]", operation)
+                  consumeEntity & complete(StatusCodes.NoContent)
+
+                case None =>
+                  log.debugN("API failed to stop operation [{}]; operation not found", operation)
+                  consumeEntity & complete(StatusCodes.NotFound)
               }
             }
           },
@@ -273,7 +293,12 @@ object Operations {
 
   final case class OperationStarted(operation: Operation.Id)
 
-  final case class OperationProgress(operation: Operation.Id, `type`: Operation.Type, progress: Operation.Progress)
+  final case class OperationProgress(
+    operation: Operation.Id,
+    isActive: Boolean,
+    `type`: Operation.Type,
+    progress: Operation.Progress
+  )
 
   final case class SpecificationRules(
     included: Seq[Path],

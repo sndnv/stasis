@@ -48,12 +48,6 @@ class DefaultOperationExecutor(
   override def completed: Future[Map[Operation.Id, Operation.Type]] =
     completedOperations.entries
 
-  override def find(operation: Operation.Id): Future[Option[Operation.Type]] =
-    activeOperations.get(operation).flatMap {
-      case Some(active) => Future.successful(Some(active.`type`))
-      case None         => completedOperations.get(operation)
-    }
-
   override def rules: Future[Specification] =
     SchedulingConfig.rules(file = config.backup.rulesFile).flatMap(Specification.untracked)
 
@@ -165,17 +159,13 @@ class DefaultOperationExecutor(
   override def startKeyRotation(): Future[Operation.Id] =
     Future.failed(new NotImplementedError("Key rotation is not supported")) // TODO - implement
 
-  override def stop(operation: Operation.Id): Future[Done] =
-    activeOperations.get(operation).flatMap {
-      case Some(operation) =>
+  override def stop(operation: Operation.Id): Future[Option[Done]] =
+    activeOperations
+      .get(operation)
+      .map(_.map { operation =>
         operation.stop()
-        Future.successful(Done)
-
-      case None =>
-        val message = s"Failed to stop [${operation.toString}]; operation not found"
-        log.errorN(message)
-        Future.failed(new OperationExecutionFailure(message))
-    }
+        Done
+      })
 
   private def requireUniqueOperation(ofType: Operation.Type): Future[Done] =
     active.flatMap { active =>

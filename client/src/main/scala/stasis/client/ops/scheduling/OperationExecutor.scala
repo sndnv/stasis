@@ -15,7 +15,6 @@ trait OperationExecutor {
 
   def active: Future[Map[Operation.Id, Operation.Type]]
   def completed: Future[Map[Operation.Id, Operation.Type]]
-  def find(operation: Operation.Id): Future[Option[Operation.Type]]
   def rules: Future[Specification]
 
   def startBackupWithRules(
@@ -50,5 +49,5 @@ trait OperationExecutor {
 
   def startKeyRotation(): Future[Operation.Id]
 
-  def stop(operation: Operation.Id): Future[Done]
+  def stop(operation: Operation.Id): Future[Option[Done]]
 }
