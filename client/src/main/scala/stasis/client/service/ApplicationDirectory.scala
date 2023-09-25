@@ -45,7 +45,7 @@ object ApplicationDirectory {
       Some(filesystem.getPath("."))
 
     val user: Option[Path] =
-      Option(System.getProperty("user.dir")).map(filesystem.getPath(_))
+      Option(System.getProperty("user.home")).map(filesystem.getPath(_))
 
     private val configLocations: Seq[Path] = Seq(config, current, user).flatten.map(_.toAbsolutePath)
 
