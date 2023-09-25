@@ -5,12 +5,15 @@ import java.time.Instant
 import akka.actor.typed.scaladsl.LoggerOps
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.unmarshalling.Unmarshaller
 import stasis.client.api.http.Context
+import stasis.client.ops.search.Search
 
 class DatasetMetadata()(implicit context: Context) extends ApiRoutes {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.client.api.http.Formats._
   import stasis.core.api.Matchers._
+  import DatasetMetadata._
 
   def routes(): Route =
     concat(
@@ -25,15 +28,16 @@ class DatasetMetadata()(implicit context: Context) extends ApiRoutes {
       path("search") {
         get {
           parameters(
-            "query".as[String],
+            "query".as[Search.Query],
             "until".as[Instant].?
           ) { case (query, until) =>
-            onSuccess(context.search.search(query.r, until)) { result =>
+            onSuccess(context.search.search(query, until)) { result =>
               log.debugN(
-                "API found [{}] matches for [{}] definitions with query [{}]",
+                "API found [{}] matches for [{}] definitions with query [{} (original={})]",
                 result.definitions.count(_._2.nonEmpty),
                 result.definitions.size,
-                query
+                query.pattern,
+                query.original
               )
 
               consumeEntity & complete(result)
@@ -47,4 +51,7 @@ class DatasetMetadata()(implicit context: Context) extends ApiRoutes {
 object DatasetMetadata {
   def apply()(implicit context: Context): DatasetMetadata =
     new DatasetMetadata()
+
+  implicit val stringToSearchQuery: Unmarshaller[String, Search.Query] =
+    Unmarshaller.strict(Search.Query.apply)
 }

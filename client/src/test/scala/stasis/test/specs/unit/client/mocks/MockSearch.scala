@@ -10,14 +10,13 @@ import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import stasis.test.specs.unit.client.mocks.MockSearch.Statistic
 
 import scala.concurrent.Future
-import scala.util.matching.Regex
 
 class MockSearch() extends Search {
   private val stats: Map[Statistic, AtomicInteger] = Map(
     Statistic.SearchExecuted -> new AtomicInteger(0)
   )
 
-  override def search(query: Regex, until: Option[Instant]): Future[Search.Result] = {
+  override def search(query: Search.Query, until: Option[Instant]): Future[Search.Result] = {
     stats(Statistic.SearchExecuted).incrementAndGet()
     Future.successful(
       Search.Result(

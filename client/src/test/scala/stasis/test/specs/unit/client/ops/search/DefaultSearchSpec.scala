@@ -66,7 +66,7 @@ class DefaultSearchSpec extends AsyncUnitSpec {
 
     search
       .search(
-        query = s".*$searchTerm.*".r,
+        query = Search.Query(searchTerm),
         until = None
       )
       .map { result =>
