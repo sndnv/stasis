@@ -143,7 +143,7 @@ def _get_processes(main_class):
     processes = psutil.process_iter(attrs=['pid', 'name', 'cmdline'])
     processes = list(
         filter(
-            lambda proc: any(main_class in cmd for cmd in proc.info['cmdline']),
+            lambda proc: any(main_class in cmd for cmd in (proc.info['cmdline'] or [])),
             processes
         )
     )
