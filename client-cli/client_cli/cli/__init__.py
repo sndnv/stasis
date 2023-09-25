@@ -5,6 +5,7 @@ import itertools
 import logging
 import os
 import re
+import sys
 from typing import Optional
 
 import click
@@ -20,7 +21,7 @@ def load_client_config(application_name, config_file_name):
     :return: loaded config or raises an exception if it does not exist
     """
     return load_config_from_file(
-        config_file_path=os.path.join(click.get_app_dir(application_name), config_file_name)
+        config_file_path=os.path.join(get_app_dir(application_name), config_file_name)
     )
 
 
@@ -46,7 +47,7 @@ def load_api_token(application_name, api_token_file_name) -> Optional[str]:
     :param api_token_file_name: token file name
     :return: loaded token or None if it does not exist
     """
-    api_token_file_path = os.path.join(click.get_app_dir(application_name), api_token_file_name)
+    api_token_file_path = os.path.join(get_app_dir(application_name), api_token_file_name)
     if os.path.isfile(api_token_file_path):
         with open(api_token_file_path, mode='rb') as file:
             api_token = file.read().decode('utf-8')
@@ -111,3 +112,20 @@ def capture_failures(f):
         else:
             logging.error('{}: {}'.format(e.__class__.__name__, e))
         click.echo('Aborted!')
+
+
+def get_app_dir(application_name):
+    """Returns the config folder of the application based on the operating system."""
+    xdg_config_home = os.environ.get('XDG_CONFIG_HOME')
+
+    if xdg_config_home is not None:
+        return '{}{}{}'.format(xdg_config_home, os.sep, application_name)
+    else:
+        user_home = os.environ.get('HOME', '~').rstrip(os.sep)
+        if sys.platform.startswith('linux'):
+            return '{}/.config/{}'.format(user_home, application_name)
+        elif sys.platform == "darwin":
+            return '{}/Library/Preferences/{}'.format(user_home, application_name)
+        else:
+            logging.error('Unsupported operating system: [{}]'.format(sys.platform))
+            raise click.Abort()
