@@ -24,11 +24,11 @@ class DefaultServerTrackerSpec extends AsyncUnitSpec with Eventually with Before
     initialState should be(empty)
 
     tracker.reachable(server1)
-    await(50.millis, withSystem = system)
+    await(100.millis, withSystem = system)
     tracker.reachable(server2)
-    await(50.millis, withSystem = system)
+    await(100.millis, withSystem = system)
     tracker.unreachable(server1)
-    await(50.millis, withSystem = system)
+    await(100.millis, withSystem = system)
 
     eventually[Assertion] {
       val state = tracker.state.await
@@ -48,12 +48,12 @@ class DefaultServerTrackerSpec extends AsyncUnitSpec with Eventually with Before
 
     val expectedUpdates = 3
     val updates = tracker.updates(server).take(expectedUpdates.toLong).runWith(Sink.seq)
-    await(50.millis, withSystem = system)
+    await(100.millis, withSystem = system)
 
     tracker.reachable(server)
-    await(50.millis, withSystem = system)
+    await(100.millis, withSystem = system)
     tracker.reachable(server)
-    await(50.millis, withSystem = system)
+    await(100.millis, withSystem = system)
     tracker.unreachable(server)
 
     updates.await.toList match {
@@ -61,6 +61,33 @@ class DefaultServerTrackerSpec extends AsyncUnitSpec with Eventually with Before
         first.reachable should be(true)
         second.reachable should be(true)
         third.reachable should be(false)
+
+      case other =>
+        fail(s"Unexpected result received: [$other]")
+    }
+  }
+
+  it should "support providing at least one state update" in withRetry {
+    val tracker = createTracker()
+
+    val server = "test-server-01"
+
+    val initialState = tracker.state.await
+    initialState should be(empty)
+
+    val expectedUpdates = 1
+
+    tracker.reachable(server)
+    tracker.reachable(server)
+    tracker.unreachable(server)
+    await(100.millis, withSystem = system)
+
+    val updates = tracker.updates(server).take(expectedUpdates.toLong).runWith(Sink.seq)
+    await(100.millis, withSystem = system)
+
+    updates.await.toList match {
+      case update :: Nil =>
+        update.reachable should be(false)
 
       case other =>
         fail(s"Unexpected result received: [$other]")

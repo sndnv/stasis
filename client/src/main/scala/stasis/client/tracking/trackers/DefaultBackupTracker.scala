@@ -15,16 +15,17 @@ import stasis.core.streaming.Operators.ExtendedSource
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation
-
 import java.nio.file.Path
 import java.time.Instant
-import scala.concurrent.Future
+
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
 
 class DefaultBackupTracker(
   maxRetention: FiniteDuration,
   backend: EventLogBackend[DefaultBackupTracker.BackupEvent, Map[Operation.Id, BackupState]]
-) extends BackupTracker {
+)(implicit ec: ExecutionContext)
+    extends BackupTracker {
   import DefaultBackupTracker.BackupEvent
 
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
@@ -36,8 +37,13 @@ class DefaultBackupTracker(
 
   override def state: Future[Map[Operation.Id, BackupState]] = events.state
 
-  override def updates(operation: Operation.Id): Source[BackupState, NotUsed] =
-    events.stateStream.dropLatestDuplicates(_.get(operation))
+  override def updates(operation: Operation.Id): Source[BackupState, NotUsed] = {
+    val latest = Source.future(events.state).map(_.get(operation)).collect { case Some(state) => state }
+    latest.concat(events.stateStream.dropLatestDuplicates(_.get(operation)))
+  }
+
+  override def exists(operation: Operation.Id): Future[Boolean] =
+    events.state.map(_.contains(operation))
 
   override def remove(operation: Operation.Id): Unit = {
     log.debugN("[{}] (backup) - Operation removed", operation)
@@ -185,7 +191,7 @@ object DefaultBackupTracker {
   def apply(
     maxRetention: FiniteDuration,
     createBackend: Map[Operation.Id, BackupState] => EventLogBackend[BackupEvent, Map[Operation.Id, BackupState]]
-  ): DefaultBackupTracker =
+  )(implicit ec: ExecutionContext): DefaultBackupTracker =
     new DefaultBackupTracker(backend = createBackend(Map.empty), maxRetention = maxRetention)
 
   sealed trait BackupEvent {

@@ -11,16 +11,17 @@ import stasis.core.persistence.backends.EventLogBackend
 import stasis.core.persistence.events.EventLog
 import stasis.core.streaming.Operators.ExtendedSource
 import stasis.shared.ops.Operation
-
 import java.nio.file.Path
 import java.time.Instant
-import scala.concurrent.Future
+
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
 
 class DefaultRecoveryTracker(
   maxRetention: FiniteDuration,
   backend: EventLogBackend[DefaultRecoveryTracker.RecoveryEvent, Map[Operation.Id, RecoveryState]]
-) extends RecoveryTracker {
+)(implicit ec: ExecutionContext)
+    extends RecoveryTracker {
   import DefaultRecoveryTracker.RecoveryEvent
 
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
@@ -32,8 +33,12 @@ class DefaultRecoveryTracker(
 
   override def state: Future[Map[Operation.Id, RecoveryState]] = events.state
 
-  override def updates(operation: Operation.Id): Source[RecoveryState, NotUsed] =
-    events.stateStream.dropLatestDuplicates(_.get(operation))
+  override def updates(operation: Operation.Id): Source[RecoveryState, NotUsed] = {
+    val latest = Source.future(events.state).map(_.get(operation)).collect { case Some(state) => state }
+    latest.concat(events.stateStream.dropLatestDuplicates(_.get(operation)))
+  }
+
+  override def exists(operation: Operation.Id): Future[Boolean] = events.state.map(_.contains(operation))
 
   override def remove(operation: Operation.Id): Unit = {
     log.debugN("[{}] (recovery) - Operation removed", operation)
@@ -137,7 +142,7 @@ object DefaultRecoveryTracker {
   def apply(
     maxRetention: FiniteDuration,
     createBackend: Map[Operation.Id, RecoveryState] => EventLogBackend[RecoveryEvent, Map[Operation.Id, RecoveryState]]
-  ): DefaultRecoveryTracker =
+  )(implicit ec: ExecutionContext): DefaultRecoveryTracker =
     new DefaultRecoveryTracker(backend = createBackend(Map.empty), maxRetention = maxRetention)
 
   sealed trait RecoveryEvent {
