@@ -35,8 +35,10 @@ class DefaultServerTracker(
 
   override def state: Future[Map[String, ServerState]] = events.state
 
-  override def updates(server: String): Source[ServerState, NotUsed] =
-    events.stateStream.dropLatestDuplicates(_.get(server))
+  override def updates(server: String): Source[ServerState, NotUsed] = {
+    val latest = Source.future(events.state).map(_.get(server)).collect { case Some(state) => state }
+    latest.concat(events.stateStream.dropLatestDuplicates(_.get(server)))
+  }
 
   override def reachable(server: String): Unit = {
     log.debugN("[{}] - Server reachable", server)

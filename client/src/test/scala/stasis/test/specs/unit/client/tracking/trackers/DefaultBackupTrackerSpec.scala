@@ -99,14 +99,14 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
 
       val expectedUpdates = 3
       val updates = tracker.updates(operation).take(expectedUpdates.toLong).runWith(Sink.seq)
-      await(50.millis, withSystem = system)
+      await(100.millis, withSystem = system)
 
       tracker.started(definition = DatasetDefinition.generateId())
 
       tracker.entityDiscovered(entity)
-      await(50.millis, withSystem = system)
+      await(100.millis, withSystem = system)
       tracker.entityExamined(entity, metadataChanged = false, contentChanged = false)
-      await(50.millis, withSystem = system)
+      await(100.millis, withSystem = system)
 
       updates.await.toList match {
         case first :: second :: third :: Nil =>
@@ -178,6 +178,53 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
     }
   }
 
+  it should "support providing at least one state update" in withRetry {
+    val tracker = createTracker()
+
+    val entity = Fixtures.Metadata.FileOneMetadata.path
+
+    val initialState = tracker.state.await
+    initialState should be(empty)
+
+    eventually {
+      implicit val operation: Operation.Id = Operation.generateId()
+
+      val expectedUpdates = 1
+
+      tracker.started(definition = DatasetDefinition.generateId())
+      tracker.entityDiscovered(entity)
+      tracker.entityExamined(entity, metadataChanged = false, contentChanged = false)
+      await(100.millis, withSystem = system)
+
+      val updates = tracker.updates(operation).take(expectedUpdates.toLong).runWith(Sink.seq)
+      await(100.millis, withSystem = system)
+
+      updates.await.toList match {
+        case update :: Nil =>
+          update.entities.discovered should be(Set(entity))
+          update.entities.examined should be(Set(entity))
+          update.completed should be(empty)
+
+        case other =>
+          fail(s"Unexpected result received: [$other]")
+      }
+    }
+  }
+
+  it should "support checking if operations exist" in {
+    val tracker = createTracker()
+
+    implicit val operation: Operation.Id = Operation.generateId()
+
+    tracker.exists(operation).await should be(false)
+
+    tracker.started(definition = DatasetDefinition.generateId())
+
+    eventually {
+      tracker.exists(operation).await should be(true)
+    }
+  }
+
   it should "support removing operations" in withRetry {
     val tracker = createTracker(maxRetention = 250.millis)
 
@@ -213,7 +260,7 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
         name = s"test-backup-tracker-${java.util.UUID.randomUUID()}",
         initialState = state
       )
-  )
+  )(system.executionContext)
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(10.seconds, 300.milliseconds)
 
