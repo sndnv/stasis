@@ -33,7 +33,7 @@
         <appender-ref ref="SYNC_CONSOLE"/>
     </appender>
 
-    <variable name="AKKA_LOGLEVEL" value="${STASIS_CLIENT_AKKA_LOGLEVEL:-INFO}"/>
+    <variable name="AKKA_LOGLEVEL" value="${STASIS_CLIENT_AKKA_LOGLEVEL:-WARN}"/>
     <variable name="CLIENT_LOGLEVEL" value="${STASIS_CLIENT_LOGLEVEL:-INFO}"/>
     <variable name="CLIENT_LOG_TARGET" value="${STASIS_CLIENT_LOG_TARGET:-FILE}"/>
 

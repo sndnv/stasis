@@ -1,14 +1,26 @@
-+ /Users/$${USER}          **                  # include all files for the current user
+# include user files
++ /Users/$${USER}/Desktop               **
++ /Users/$${USER}/Documents             **
++ /Users/$${USER}/Downloads             **
++ /Users/$${USER}/Movies                **
++ /Users/$${USER}/Music                 **
++ /Users/$${USER}/Pictures              **
++ /Users/$${USER}/Videos                **
++ /Users/$${USER}/Library/Preferences   stasis-client/**
++ /Users/$${USER}/stasis-client         logs/*.log
 
-# exclude logs, temporary and cache files
-- /Users/$${USER}          **/*.{class,obj}
-- /Users/$${USER}          **/lost+found/**
-- /Users/$${USER}          **/*cache*/**
-- /Users/$${USER}          **/*log*/**
-- /Users/$${USER}          **/*.{tmp,temp,part,bak,~}
-- /home/$${USER}           **/.git/**
+# exclude git files, logs, temporary and cache files
+- /Users/$${USER}                       **/*.{class,obj}
+- /Users/$${USER}                       **/lost+found/**
+- /Users/$${USER}                       **/*cache*/**
+- /Users/$${USER}                       **/*log*/**
+- /Users/$${USER}                       **/*.{tmp,temp,part,bak,~}
+- /Users/$${USER}                       **/.git
+- /Users/$${USER}                       Library/Caches
+- /Users/$${USER}                       Library/Logs
+- /Users/$${USER}                       **/{.localized,*.localized}
 
 # generated stasis-client files
-- /home/$${USER}          .config/stasis-client/certs/**
-- /home/$${USER}          .config/stasis-client/*.{p12,pem}
-- /home/$${USER}          .config/stasis-client/{device-secret,api-token}
+- /Users/$${USER}/Library/Preferences   stasis-client/certs
+- /Users/$${USER}/Library/Preferences   stasis-client/*.{p12,pem}
+- /Users/$${USER}/Library/Preferences   stasis-client/{device-secret,api-token}
