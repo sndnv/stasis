@@ -5,15 +5,12 @@ import java.time.Instant
 import stasis.client.api.clients.ServerApiEndpointClient
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.matching.Regex
 
 class DefaultSearch(
   api: ServerApiEndpointClient
 )(implicit ec: ExecutionContext)
     extends Search {
-  override def search(query: Regex, until: Option[Instant]): Future[Search.Result] = {
-    val regex = query.pattern
-
+  override def search(query: Search.Query, until: Option[Instant]): Future[Search.Result] = {
     val metadataResult = for {
       definitions <- api.datasetDefinitions()
       entries <-
@@ -42,7 +39,7 @@ class DefaultSearch(
       val definitions = metadata.map {
         case (definition, Some((entry, metadata))) =>
           val matches = metadata.filesystem.entities.filter { case (path, _) =>
-            regex.matcher(path.toAbsolutePath.toString).matches
+            query.pattern.matcher(path.toAbsolutePath.toString).matches
           }
 
           val result = Search.DatasetDefinitionResult(
