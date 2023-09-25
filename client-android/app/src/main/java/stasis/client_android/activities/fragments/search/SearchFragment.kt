@@ -165,6 +165,6 @@ class SearchFragment : Fragment() {
     }
 
     companion object {
-        private val PlainChars: Pattern = Pattern.compile("[\\w ]*", Pattern.CASE_INSENSITIVE)
+        private val PlainChars: Pattern = Pattern.compile("[\\w _-]*", Pattern.CASE_INSENSITIVE)
     }
 }
