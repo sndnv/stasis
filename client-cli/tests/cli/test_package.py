@@ -1,4 +1,5 @@
 import logging
+import os
 import unittest
 from unittest.mock import patch, mock_open
 from uuid import uuid4
@@ -10,7 +11,8 @@ from client_cli.cli import (
     load_config_from_file,
     load_client_config,
     validate_duration,
-    capture_failures
+    capture_failures,
+    get_app_dir
 )
 
 
@@ -138,6 +140,37 @@ class CliPackageSpec(unittest.TestCase):
         mock_error.assert_not_called()
         mock_get_logger.assert_called_once_with(name='root')
         mock_echo.assert_called_once_with('Aborted!')
+
+    @patch('sys.platform', 'linux')
+    @patch.dict(os.environ, {'XDG_CONFIG_HOME': '/a/b/c'}, clear=True)
+    def test_should_retrieve_app_dir_when_xdg_env_var_is_set(self):
+        self.assertEqual(get_app_dir(application_name='test'), '/a/b/c/test')
+
+    @patch('sys.platform', 'linux')
+    @patch.dict(os.environ, {'HOME': '/x/y/z'}, clear=True)
+    def test_should_retrieve_app_dir_when_home_env_var_is_set(self):
+        self.assertEqual(get_app_dir(application_name='test'), '/x/y/z/.config/test')
+
+    @patch('sys.platform', 'linux')
+    @patch.dict(os.environ, {}, clear=True)
+    def test_should_retrieve_app_dir_when_no_env_var_is_set(self):
+        self.assertEqual(get_app_dir(application_name='test'), '~/.config/test')
+
+    @patch('sys.platform', 'linux')
+    @patch.dict(os.environ, {}, clear=True)
+    def test_should_retrieve_linux_app_dir(self):
+        self.assertEqual(get_app_dir(application_name='test'), '~/.config/test')
+
+    @patch('sys.platform', 'darwin')
+    @patch.dict(os.environ, {}, clear=True)
+    def test_should_retrieve_macos_app_dir(self, ):
+        self.assertEqual(get_app_dir(application_name='test'), '~/Library/Preferences/test')
+
+    @patch('sys.platform', 'other')
+    @patch.dict(os.environ, {}, clear=True)
+    def test_should_fail_to_retrieve_app_dir_for_invalid_platforms(self):
+        with self.assertRaises(Abort):
+            get_app_dir(application_name='test')
 
 
 class MockLogger:
