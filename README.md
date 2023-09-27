@@ -150,6 +150,13 @@ Command-line interface for [`client`](client).
 * **Testing** - `cd ./client-cli && source venv/bin/activate && ./qa.py`
 * **Packaging** - `cd ./client-cli && source venv/bin/activate && pip install .`
 
+#### [`client-ui`](client-ui)
+
+Desktop interface for [`client`](client).
+
+* **Flutter** code
+* **Testing** - `cd ./client-ui && ./qa.py`
+
 #### [`client-android`](client-android)
 
 Android backup client, using `server` for management and storage.
@@ -171,8 +178,8 @@ Deployment, artifact and certificate generation scripts and configuration.
 **NOT** production ready but usable
 
 * `identity` / `identity-ui` - *authentication service and web UI* - **complete**
-* `server` / `server-ui` - *backup server nad web UI* - **operational**; some features are not yet available
-* `client` / `client-cli`- *Linux / macOS client and CLI* - **operational**; some features are not yet available; a desktop UI is not available
+* `server` / `server-ui` - *backup server and web UI* - **operational**; some features are not yet available
+* `client` / `client-cli` / `client-ui`- *Linux / macOS client, CLI and UI* - **operational**; some features are not yet available
 * `client-android` - *Android client* - **operational**; some features are not yet available;
 
 ## Contributing

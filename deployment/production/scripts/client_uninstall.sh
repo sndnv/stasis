@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-HELP="Uninstalls stasis-client and stasis-client-cli for the current user"
+HELP="Uninstalls stasis-client, stasis-client-cli and stasis-client-ui for the current user"
 USAGE="Usage: $0"
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]
@@ -19,6 +19,7 @@ CLIENT_USER=${USER}
 CLIENT_USER_HOME=${HOME}
 
 CLIENT_PATH="${CLIENT_USER_HOME}/stasis-client"
+CLIENT_UI_PATH="${CLIENT_USER_HOME}/stasis-client-ui"
 
 if [[ "${OSTYPE}" == "linux"* ]]; then
   CLIENT_CONFIG_PATH="${CLIENT_USER_HOME}/.config/stasis-client"
@@ -44,5 +45,12 @@ rm -d "${CLIENT_PATH}/conf"
 echo "[$(now)] Uninstalling [stasis-client-cli]..."
 pip3 uninstall -y stasis-client-cli
 unlink "${TARGET_BIN_PATH}/stasis"
+
+echo "[$(now)] Uninstalling [stasis-client-ui]..."
+unlink "${TARGET_BIN_PATH}/stasis-ui"
+rm -r ${CLIENT_UI_PATH}/data
+rm -r ${CLIENT_UI_PATH}/lib
+rm ${CLIENT_UI_PATH}/stasis_client_ui
+rm -d ${CLIENT_UI_PATH}
 
 echo "[$(now)] ... done."
