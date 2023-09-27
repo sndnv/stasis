@@ -97,7 +97,7 @@ services:
       STASIS_IDENTITY_PERSISTENCE_DATABASE_PROFILE: "PostgresProfile"
       STASIS_IDENTITY_PERSISTENCE_DATABASE_URL: "jdbc:postgresql://db-identity:42000/stasis_identity"
       STASIS_IDENTITY_PERSISTENCE_DATABASE_DRIVER: "org.postgresql.Driver"
-      STASIS_IDENTITY_PERSISTENCE_KEEP_ALIVE_CONNECTION: "true"
+      STASIS_IDENTITY_PERSISTENCE_DATABASE_KEEP_ALIVE_CONNECTION: "true"
       STASIS_IDENTITY_BOOTSTRAP_ENABLED: "false"
       STASIS_IDENTITY_BOOTSTRAP_CONFIG: "/opt/docker/config/identity-bootstrap.conf"
       AKKA_HTTP_SERVER_HEADER: ""
@@ -109,6 +109,7 @@ services:
 
   identity-ui:
     image: stasis-identity-ui:0.0.1-SNAPSHOT # replace with actual tag/version
+    restart: always
     ports:
       - '42200:42200'
     env_file:
@@ -134,6 +135,7 @@ services:
 
   server:
     image: stasis-server:0.0.1-SNAPSHOT # replace with actual tag/version
+    restart: always
     depends_on:
       - db-server
       - db-identity
@@ -202,7 +204,7 @@ services:
       STASIS_SERVER_PERSISTENCE_DATABASE_PROFILE: "PostgresProfile"
       STASIS_SERVER_PERSISTENCE_DATABASE_URL: "jdbc:postgresql://db-server:42001/stasis_server"
       STASIS_SERVER_PERSISTENCE_DATABASE_DRIVER: "org.postgresql.Driver"
-      STASIS_SERVER_PERSISTENCE_KEEP_ALIVE_CONNECTION: "true"
+      STASIS_SERVER_PERSISTENCE_DATABASE_KEEP_ALIVE_CONNECTION: "true"
       STASIS_SERVER_PERSISTENCE_USERS_SALT_SIZE: "16"
       STASIS_SERVER_PERSISTENCE_RESERVATIONS_EXPIRATION: "1 minute"
       STASIS_SERVER_PERSISTENCE_NODES_CACHING_ENABLED: "true"
@@ -244,6 +246,7 @@ services:
 
   server-ui:
     image: stasis-server-ui:0.0.1-SNAPSHOT # replace with actual tag/version
+    restart: always
     ports:
       - '42600:42600'
     env_file:
@@ -271,6 +274,7 @@ services:
 
   prometheus:
     image: prom/prometheus
+    restart: always
     ports:
       - "42400:9090"
     volumes:
@@ -279,6 +283,7 @@ services:
 
   grafana:
     image: grafana/grafana
+    restart: always
     ports:
       - "42500:3000"
     volumes:

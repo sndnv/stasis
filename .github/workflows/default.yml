@@ -92,6 +92,11 @@ jobs:
           sudo apt install -y lcov
           cd server-ui
           ./qa.py
+      - name: Run client QA
+        run: |
+          sudo apt install -y lcov
+          cd client-ui
+          ./qa.py
 
   android:
     runs-on: ubuntu-latest
