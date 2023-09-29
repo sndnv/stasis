@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:identity_ui/color_schemes.dart';
 import 'package:identity_ui/pages/page_router.dart';
 import 'package:url_strategy/url_strategy.dart';
 
@@ -16,22 +17,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final defaultTheme = ThemeData.light();
-
-    const primaryColor = Color(0xFF48a999);
-    const secondaryColor = Color(0xFF00796b);
-
-    final actualTheme = defaultTheme.copyWith(
-      primaryColor: primaryColor,
-      colorScheme: defaultTheme.colorScheme.copyWith(
-        primary: primaryColor,
-        secondary: secondaryColor,
-      ),
-    );
+    final defaultTheme = ThemeData.from(colorScheme: lightColorScheme, useMaterial3: true);
+    final darkTheme = ThemeData.from(colorScheme: darkColorScheme, useMaterial3: true);
 
     return MaterialApp(
       title: 'identity',
-      theme: actualTheme,
+      theme: defaultTheme,
+      darkTheme: darkTheme,
       initialRoute: PageRouterDestination.home.route,
       onGenerateRoute: PageRouter.underlying.generator,
     );
