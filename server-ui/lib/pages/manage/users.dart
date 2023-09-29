@@ -64,6 +64,7 @@ class _UsersState extends State<Users> {
           ],
           entityToRow: (entity) {
             final user = entity as User;
+            final userPermissions = (user.permissions.toList()..sort()).join(', ');
 
             return [
               DataCell(
@@ -104,7 +105,9 @@ class _UsersState extends State<Users> {
                 ),
               )),
               DataCell(Text(user.active ? 'Yes' : 'No')),
-              DataCell(Text((user.permissions.toList()..sort()).join(', '))),
+              DataCell(
+                Tooltip(message: userPermissions, child: Text(userPermissions, overflow: TextOverflow.ellipsis)),
+              ),
               DataCell(user.limits?.maxStorage.renderFileSize().withInfo(() {
                     final limits = user.limits!;
                     showDialog(
