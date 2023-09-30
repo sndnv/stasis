@@ -3,7 +3,7 @@
 import logging
 
 import click
-from pyparsing import Word, oneOf, alphas8bit, alphanums, infixNotation, opAssoc, ParseResults
+from pyparsing import Word, one_of, alphas8bit, alphanums, infix_notation, opAssoc, ParseResults
 
 from client_cli.cli.common import coerce, normalize
 from client_cli.cli.context import Context
@@ -230,17 +230,17 @@ class FilterParser:
 
     def __init__(self):
         field = Word(alphanums + alphas8bit + '_')
-        operator = oneOf(FilterBinaryOperator.supported_operators())
+        operator = one_of(FilterBinaryOperator.supported_operators())
         value = Word(alphanums + alphas8bit + '.' + '_' + "-" + "/")
 
         comparison = field + operator + value
         comparison.setParseAction(Filter)
 
-        self.query = infixNotation(
+        self.query = infix_notation(
             comparison,
             [
-                (oneOf(FilterGroup.AND_OPERATORS), 2, opAssoc.LEFT),
-                (oneOf(FilterGroup.OR_OPERATORS), 2, opAssoc.LEFT),
+                (one_of(FilterGroup.AND_OPERATORS), 2, opAssoc.LEFT),
+                (one_of(FilterGroup.OR_OPERATORS), 2, opAssoc.LEFT),
             ]
         )
 
