@@ -1,6 +1,6 @@
 package stasis.client_android.lib.encryption.secrets
 
-import at.favre.lib.crypto.HKDF
+import at.favre.lib.hkdf.HKDF
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okio.Buffer

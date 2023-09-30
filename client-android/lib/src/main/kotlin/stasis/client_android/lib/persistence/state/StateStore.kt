@@ -9,6 +9,7 @@ import stasis.client_android.lib.utils.Try
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
+import java.util.stream.Collectors
 import kotlin.io.path.readBytes
 import kotlin.io.path.writeBytes
 import kotlin.streams.toList
@@ -60,7 +61,7 @@ class StateStore<S>(
             .filter { path ->
                 !Files.isDirectory(path) && path.fileName.toString().startsWith("state_")
             }
-            .toList()
+            .collect(Collectors.toList())
             .sorted()
     }
 

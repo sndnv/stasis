@@ -1,6 +1,6 @@
 package stasis.client_android.lib.encryption.secrets
 
-import at.favre.lib.crypto.HKDF
+import at.favre.lib.hkdf.HKDF
 import okio.ByteString
 import okio.ByteString.Companion.encodeUtf8
 import okio.ByteString.Companion.toByteString
