@@ -1,6 +1,6 @@
 <resources>
 
-    <style name="Theme.StasisClient" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.StasisClient" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryVariant">@color/primary_variant</item>
         <item name="colorOnPrimary">@color/black</item>
