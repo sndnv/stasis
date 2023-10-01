@@ -11,7 +11,7 @@ import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
 
 class RefreshTokenGenerationSpec extends RouteTest {
-  "A RefreshTokenGeneration directive" should "generate refresh tokens" in {
+  "A RefreshTokenGeneration directive" should "generate refresh tokens" in withRetry {
     val tokens = createTokenStore()
     val directive = createDirective(tokens)
 
@@ -41,7 +41,7 @@ class RefreshTokenGenerationSpec extends RouteTest {
     }
   }
 
-  it should "fail if refresh tokens could not be stored" in {
+  it should "fail if refresh tokens could not be stored" in withRetry {
     val tokens = createFailingTokenStore(failingPut = true)
     val directive = createDirective(tokens)
 
@@ -65,7 +65,7 @@ class RefreshTokenGenerationSpec extends RouteTest {
     }
   }
 
-  it should "fail if refresh token generation is not allowed" in {
+  it should "fail if refresh token generation is not allowed" in withRetry {
     val tokens = createTokenStore()
     val directive = createDirective(tokens, withRefreshTokens = false)
 

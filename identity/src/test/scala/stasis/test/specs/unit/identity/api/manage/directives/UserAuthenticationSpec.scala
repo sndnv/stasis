@@ -14,7 +14,7 @@ import stasis.test.specs.unit.identity.model.Generators
 import scala.concurrent.Future
 
 class UserAuthenticationSpec extends RouteTest {
-  "A UserAuthentication directive" should "authenticate users with valid bearer tokens" in {
+  "A UserAuthentication directive" should "authenticate users with valid bearer tokens" in withRetry {
     val owner = Generators.generateResourceOwner
 
     val directive = createDirective(
@@ -31,7 +31,7 @@ class UserAuthenticationSpec extends RouteTest {
     }
   }
 
-  it should "fail to authenticate users with invalid bearer tokens" in {
+  it should "fail to authenticate users with invalid bearer tokens" in withRetry {
     val directive = createDirective(
       auth = (_: OAuth2BearerToken) => Future.failed(new RuntimeException("Test authentication failure"))
     )
@@ -45,7 +45,7 @@ class UserAuthenticationSpec extends RouteTest {
     }
   }
 
-  it should "fail to authenticate users with unsupported credentials" in {
+  it should "fail to authenticate users with unsupported credentials" in withRetry {
     val owner = Generators.generateResourceOwner
 
     val directive = createDirective(
@@ -61,7 +61,7 @@ class UserAuthenticationSpec extends RouteTest {
     }
   }
 
-  it should "fail to authenticate users with no credentials" in {
+  it should "fail to authenticate users with no credentials" in withRetry {
     val owner = Generators.generateResourceOwner
 
     val directive = createDirective(

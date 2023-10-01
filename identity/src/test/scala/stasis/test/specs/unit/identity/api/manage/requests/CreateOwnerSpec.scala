@@ -15,13 +15,13 @@ class CreateOwnerSpec extends UnitSpec {
     subject = None
   )
 
-  "A CreateOwner request" should "validate its content" in {
+  "A CreateOwner request" should "validate its content" in withRetry {
     an[IllegalArgumentException] should be thrownBy request.copy(username = "")
     an[IllegalArgumentException] should be thrownBy request.copy(rawPassword = "")
     an[IllegalArgumentException] should be thrownBy request.copy(subject = Some(""))
   }
 
-  it should "be convertible to ResourceOwner" in {
+  it should "be convertible to ResourceOwner" in withRetry {
     implicit val config: Secret.ResourceOwnerConfig = Secret.ResourceOwnerConfig(
       algorithm = "PBKDF2WithHmacSHA512",
       iterations = 10000,

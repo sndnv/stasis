@@ -56,7 +56,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
   import stasis.core.api.Formats._
   import stasis.shared.api.Formats._
 
-  "An ApiEndpoint" should "successfully authenticate users" in {
+  "An ApiEndpoint" should "successfully authenticate users" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
@@ -77,7 +77,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     }
   }
 
-  it should "fail to authenticate users with no credentials" in {
+  it should "fail to authenticate users with no credentials" in withRetry {
     val fixtures = new TestFixtures {}
 
     Get("/users") ~> fixtures.endpoint.endpointRoutes ~> check {
@@ -85,7 +85,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     }
   }
 
-  it should "fail to authenticate users with invalid credentials" in {
+  it should "fail to authenticate users with invalid credentials" in withRetry {
     val fixtures = new TestFixtures {}
 
     Get("/users")
@@ -94,7 +94,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     }
   }
 
-  it should "fail to authenticate a user with invalid password" in {
+  it should "fail to authenticate a user with invalid password" in withRetry {
     val fixtures = new TestFixtures {}
 
     Get("/users")
@@ -103,7 +103,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     }
   }
 
-  it should "provide routes for dataset definitions" in {
+  it should "provide routes for dataset definitions" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
@@ -131,7 +131,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     }
   }
 
-  it should "provide routes for dataset entries" in {
+  it should "provide routes for dataset entries" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
@@ -156,7 +156,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     }
   }
 
-  it should "provide routes for users" in {
+  it should "provide routes for users" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
@@ -177,7 +177,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     }
   }
 
-  it should "provide routes for devices" in {
+  it should "provide routes for devices" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
@@ -199,7 +199,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     }
   }
 
-  it should "provide routes for schedules" in {
+  it should "provide routes for schedules" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
@@ -220,7 +220,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     }
   }
 
-  it should "provide routes for nodes" in {
+  it should "provide routes for nodes" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
@@ -235,7 +235,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     }
   }
 
-  it should "provide routes for manifests" in {
+  it should "provide routes for manifests" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
@@ -250,7 +250,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     }
   }
 
-  it should "provide routes for reservations" in {
+  it should "provide routes for reservations" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
@@ -265,7 +265,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     }
   }
 
-  it should "provide routes for staging operations" in {
+  it should "provide routes for staging operations" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
@@ -311,7 +311,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     }
   }
 
-  it should "provide service routes" in {
+  it should "provide service routes" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
@@ -322,7 +322,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     }
   }
 
-  it should "handle authorization failures reported by routes" in {
+  it should "handle authorization failures reported by routes" in withRetry {
     val endpoint = new ApiEndpoint(
       resourceProvider = new MockResourceProvider(Set.empty),
       authenticator = new MockUserAuthenticator(testUser.toString, testPassword),
@@ -349,7 +349,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
       }
   }
 
-  it should "handle generic failures reported by routes" in {
+  it should "handle generic failures reported by routes" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 
@@ -384,7 +384,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
       }
   }
 
-  it should "reject requests with invalid entities" in {
+  it should "reject requests with invalid entities" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 

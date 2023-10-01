@@ -9,7 +9,7 @@ import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
 
 class ClientRetrievalSpec extends RouteTest {
-  "A ClientRetrieval directive" should "retrieve active clients" in {
+  "A ClientRetrieval directive" should "retrieve active clients" in withRetry {
     val clients = createClientStore()
     val directive = createDirective(clients)
 
@@ -26,7 +26,7 @@ class ClientRetrievalSpec extends RouteTest {
     }
   }
 
-  it should "fail if a client is not active" in {
+  it should "fail if a client is not active" in withRetry {
     val clients = createClientStore()
     val directive = createDirective(clients)
 
@@ -43,7 +43,7 @@ class ClientRetrievalSpec extends RouteTest {
     }
   }
 
-  it should "fail if a client is not found" in {
+  it should "fail if a client is not found" in withRetry {
     val clients = createClientStore()
     val directive = createDirective(clients)
 
@@ -61,7 +61,7 @@ class ClientRetrievalSpec extends RouteTest {
     }
   }
 
-  it should "fail if clients could not be queried" in {
+  it should "fail if clients could not be queried" in withRetry {
     val clients = createFailingClientStore(failingGet = true)
     val directive = createDirective(clients)
 

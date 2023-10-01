@@ -14,7 +14,7 @@ import scala.concurrent.Future
 class CodesSpec extends RouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  "Codes routes" should "respond with all codes" in {
+  "Codes routes" should "respond with all codes" in withRetry {
     val store = createCodeStore()
     val codes = new Codes(store)
 
@@ -36,7 +36,7 @@ class CodesSpec extends RouteTest {
     }
   }
 
-  they should "respond with existing authorization codes for clients" in {
+  they should "respond with existing authorization codes for clients" in withRetry {
     val store = createCodeStore()
     val codes = new Codes(store)
 
@@ -53,7 +53,7 @@ class CodesSpec extends RouteTest {
     }
   }
 
-  they should "fail if no authorization codes are available for a client" in {
+  they should "fail if no authorization codes are available for a client" in withRetry {
     val store = createCodeStore()
     val codes = new Codes(store)
 
@@ -66,7 +66,7 @@ class CodesSpec extends RouteTest {
     }
   }
 
-  they should "delete existing authorization codes" in {
+  they should "delete existing authorization codes" in withRetry {
     val store = createCodeStore()
     val codes = new Codes(store)
 
@@ -81,7 +81,7 @@ class CodesSpec extends RouteTest {
     }
   }
 
-  they should "not delete missing authorization codes" in {
+  they should "not delete missing authorization codes" in withRetry {
     val store = createCodeStore()
     val codes = new Codes(store)
 

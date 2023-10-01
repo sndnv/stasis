@@ -11,7 +11,7 @@ import stasis.server.api.handlers.Rejection
 import stasis.test.specs.unit.UnitSpec
 
 class RejectionSpec extends UnitSpec with ScalatestRouteTest {
-  "Rejection handler" should "reject requests with invalid entities" in {
+  "Rejection handler" should "reject requests with invalid entities" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 

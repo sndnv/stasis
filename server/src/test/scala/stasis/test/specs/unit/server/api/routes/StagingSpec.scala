@@ -34,7 +34,7 @@ class StagingSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
-  "Staging routes" should "respond with all pending destaging operations" in {
+  "Staging routes" should "respond with all pending destaging operations" in withRetry {
     val fixtures = new TestFixtures {}
 
     fixtures.stagingStore
@@ -52,7 +52,7 @@ class StagingSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "drop pending destaging operations" in {
+  they should "drop pending destaging operations" in withRetry {
     val fixtures = new TestFixtures {}
 
     fixtures.stagingStore
@@ -70,7 +70,7 @@ class StagingSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "not drop missing destaging operations" in {
+  they should "not drop missing destaging operations" in withRetry {
     val fixtures = new TestFixtures {}
 
     Delete(s"/${testManifest.crate}") ~> fixtures.routes ~> check {

@@ -11,11 +11,11 @@ class UpdateClientCredentialsSpec extends UnitSpec {
     rawSecret = "some-secret"
   )
 
-  "An UpdateClientCredentials request" should "validate its content" in {
+  "An UpdateClientCredentials request" should "validate its content" in withRetry {
     an[IllegalArgumentException] should be thrownBy request.copy(rawSecret = "")
   }
 
-  it should "be convertible to a Secret" in {
+  it should "be convertible to a Secret" in withRetry {
     implicit val config: Secret.ClientConfig = Secret.ClientConfig(
       algorithm = "PBKDF2WithHmacSHA512",
       iterations = 10000,

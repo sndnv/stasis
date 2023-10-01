@@ -20,7 +20,7 @@ import scala.collection.mutable
 import scala.concurrent.duration._
 
 class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtures {
-  "An IdentityEndpoint" should "provide OAuth routes" in {
+  "An IdentityEndpoint" should "provide OAuth routes" in withRetry {
     val (_, _, oauthConfig, oauthProviders) = createOAuthFixtures()
     val manageProviders = createManageProviders()
 
@@ -44,7 +44,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
     }
   }
 
-  it should "provide JWKs routes" in {
+  it should "provide JWKs routes" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
     val (_, _, oauthConfig, oauthProviders) = createOAuthFixtures()
@@ -72,7 +72,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
     }
   }
 
-  it should "provide management routes" in {
+  it should "provide management routes" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import stasis.identity.api.Formats._
 
@@ -102,7 +102,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
     }
   }
 
-  it should "handle parameter rejections reported by routes" in {
+  it should "handle parameter rejections reported by routes" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 
@@ -144,7 +144,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
       }
   }
 
-  it should "handle generic failures reported by routes" in {
+  it should "handle generic failures reported by routes" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 
@@ -188,7 +188,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
       }
   }
 
-  it should "reject requests with invalid entities" in {
+  it should "reject requests with invalid entities" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 
@@ -233,7 +233,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
       }
   }
 
-  it should "provide a health-check route" in {
+  it should "provide a health-check route" in withRetry {
     val (_, _, oauthConfig, oauthProviders) = createOAuthFixtures()
 
     val endpoint = new IdentityEndpoint(

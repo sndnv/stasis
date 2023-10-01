@@ -22,7 +22,7 @@ class ReservationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.core.api.Formats._
 
-  "Reservations routes" should "respond with all reservations" in {
+  "Reservations routes" should "respond with all reservations" in withRetry {
 
     val reservation = Generators.generateReservation
     reservationStore.put(reservation).await

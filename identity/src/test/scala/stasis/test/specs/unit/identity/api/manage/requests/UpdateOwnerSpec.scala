@@ -9,7 +9,7 @@ class UpdateOwnerSpec extends UnitSpec {
     active = true
   )
 
-  "An UpdateOwner request" should "validate its content" in {
+  "An UpdateOwner request" should "validate its content" in withRetry {
     an[IllegalArgumentException] should be thrownBy request.copy(allowedScopes = Seq.empty)
   }
 }

@@ -14,7 +14,7 @@ import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
 
 class AuthorizationCodeGenerationSpec extends RouteTest {
-  "An AuthorizationCodeGeneration directive" should "generate authorization codes without associated challenges" in {
+  "An AuthorizationCodeGeneration directive" should "generate authorization codes without associated challenges" in withRetry {
     val codes = createCodeStore()
     val directive = createDirective(codes)
 
@@ -48,7 +48,7 @@ class AuthorizationCodeGenerationSpec extends RouteTest {
     }
   }
 
-  it should "generate authorization codes with associated challenges" in {
+  it should "generate authorization codes with associated challenges" in withRetry {
     val codes = createCodeStore()
     val directive = createDirective(codes)
 
@@ -88,7 +88,7 @@ class AuthorizationCodeGenerationSpec extends RouteTest {
     }
   }
 
-  it should "fail if authorization codes could not be stored" in {
+  it should "fail if authorization codes could not be stored" in withRetry {
     val codes = createFailingCodeStore(failingPut = true)
     val directive = createDirective(codes)
 

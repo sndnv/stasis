@@ -30,7 +30,7 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
-  "DatasetDefinitions routes (full permissions)" should "respond with all definitions" in {
+  "DatasetDefinitions routes (full permissions)" should "respond with all definitions" in withRetry {
     val fixtures = new TestFixtures {}
     Future.sequence(definitions.map(fixtures.definitionStore.manage().create)).await
 
@@ -40,7 +40,7 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "create new definitions" in {
+  they should "create new definitions" in withRetry {
     val fixtures = new TestFixtures {}
     Post("/").withEntity(createRequest) ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
@@ -52,7 +52,7 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "respond with existing definitions" in {
+  they should "respond with existing definitions" in withRetry {
     val fixtures = new TestFixtures {}
 
     fixtures.definitionStore.manage().create(definitions.head).await
@@ -63,14 +63,14 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail if a definition is missing" in {
+  they should "fail if a definition is missing" in withRetry {
     val fixtures = new TestFixtures {}
     Get(s"/${DatasetDefinition.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
     }
   }
 
-  they should "update existing definitions" in {
+  they should "update existing definitions" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.definitionStore.manage().create(definitions.head).await
     val updatedCopies = 42
@@ -84,7 +84,7 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail to update if a definition is missing" in {
+  they should "fail to update if a definition is missing" in withRetry {
     val fixtures = new TestFixtures {}
     Put(s"/${DatasetDefinition.generateId()}")
       .withEntity(updateRequest) ~> fixtures.routes ~> check {
@@ -92,7 +92,7 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "delete existing definitions" in {
+  they should "delete existing definitions" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.definitionStore.manage().create(definitions.head).await
 
@@ -107,7 +107,7 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "not delete missing definitions" in {
+  they should "not delete missing definitions" in withRetry {
     val fixtures = new TestFixtures {}
 
     Delete(s"/${definitions.head.id}") ~> fixtures.routes ~> check {
@@ -116,7 +116,7 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  "DatasetDefinitions routes (self permissions)" should "respond with all definitions" in {
+  "DatasetDefinitions routes (self permissions)" should "respond with all definitions" in withRetry {
     val fixtures = new TestFixtures {}
     Future.sequence(definitions.map(fixtures.definitionStore.manage().create)).await
     fixtures.deviceStore.manage().create(userDevice).await
@@ -127,7 +127,7 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "create new definitions" in {
+  they should "create new definitions" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.deviceStore.manage().create(userDevice).await
 
@@ -142,7 +142,7 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "respond with existing definitions" in {
+  they should "respond with existing definitions" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.deviceStore.manage().create(userDevice).await
 
@@ -154,14 +154,14 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail if a definition is missing" in {
+  they should "fail if a definition is missing" in withRetry {
     val fixtures = new TestFixtures {}
     Get(s"/own/${DatasetDefinition.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
     }
   }
 
-  they should "update existing definitions" in {
+  they should "update existing definitions" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.deviceStore.manage().create(userDevice).await
     fixtures.definitionStore.manage().create(definitions.head.copy(device = userDevice.id)).await
@@ -176,7 +176,7 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail to update if a definition is missing" in {
+  they should "fail to update if a definition is missing" in withRetry {
     val fixtures = new TestFixtures {}
     Put(s"/own/${DatasetDefinition.generateId()}")
       .withEntity(updateRequest) ~> fixtures.routes ~> check {
@@ -184,7 +184,7 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "delete existing definitions" in {
+  they should "delete existing definitions" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.deviceStore.manage().create(userDevice).await
     fixtures.definitionStore.manage().create(definitions.head.copy(device = userDevice.id)).await
@@ -200,7 +200,7 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "not delete missing definitions" in {
+  they should "not delete missing definitions" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.deviceStore.manage().create(userDevice).await
 

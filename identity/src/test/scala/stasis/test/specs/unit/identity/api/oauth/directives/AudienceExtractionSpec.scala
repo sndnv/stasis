@@ -15,7 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class AudienceExtractionSpec extends RouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  "An AudienceExtraction directive" should "convert client audience to scopes" in {
+  "An AudienceExtraction directive" should "convert client audience to scopes" in withRetry {
     val directive = createDirective(clients = createClientStore(), apis = createApiStore())
 
     val clients = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateClient)
@@ -34,7 +34,7 @@ class AudienceExtractionSpec extends RouteTest {
     clientIds should be(clients.map(_.id))
   }
 
-  it should "convert API audience to scopes" in {
+  it should "convert API audience to scopes" in withRetry {
     val directive = createDirective(clients = createClientStore(), apis = createApiStore())
 
     val apis = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateApi)
@@ -52,7 +52,7 @@ class AudienceExtractionSpec extends RouteTest {
     apiIds should be(apis.map(_.id))
   }
 
-  it should "extract audience from valid client identifiers" in {
+  it should "extract audience from valid client identifiers" in withRetry {
     val clientStore = createClientStore()
     val apiStore = createApiStore()
     val directive = createDirective(clients = clientStore, apis = apiStore)
@@ -71,7 +71,7 @@ class AudienceExtractionSpec extends RouteTest {
     }
   }
 
-  it should "fail to extract audience from invalid client identifiers" in {
+  it should "fail to extract audience from invalid client identifiers" in withRetry {
     val clientStore = createClientStore()
     val apiStore = createApiStore()
     val directive = createDirective(clients = clientStore, apis = apiStore)
@@ -88,7 +88,7 @@ class AudienceExtractionSpec extends RouteTest {
     }
   }
 
-  it should "extract audience from API identifiers" in {
+  it should "extract audience from API identifiers" in withRetry {
     val clientStore = createClientStore()
     val apiStore = createApiStore()
     val directive = createDirective(clients = clientStore, apis = apiStore)
@@ -108,7 +108,7 @@ class AudienceExtractionSpec extends RouteTest {
 
   }
 
-  it should "fail to extract audience from missing scopes" in {
+  it should "fail to extract audience from missing scopes" in withRetry {
     val clientStore = createClientStore()
     val apiStore = createApiStore()
     val directive = createDirective(clients = clientStore, apis = apiStore)
@@ -123,7 +123,7 @@ class AudienceExtractionSpec extends RouteTest {
     }
   }
 
-  it should "fail to extract audience from invalid scopes" in {
+  it should "fail to extract audience from invalid scopes" in withRetry {
     val clientStore = createClientStore()
     val apiStore = createApiStore()
     val directive = createDirective(clients = clientStore, apis = apiStore)
@@ -141,7 +141,7 @@ class AudienceExtractionSpec extends RouteTest {
     }
   }
 
-  it should "fail to extract audience when target entity is missing" in {
+  it should "fail to extract audience when target entity is missing" in withRetry {
     val clientStore = createFailingClientStore(failingGet = true)
     val apiStore = createApiStore()
     val directive = createDirective(clients = clientStore, apis = apiStore)

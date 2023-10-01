@@ -30,7 +30,7 @@ class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import stasis.core.api.Formats._
   import stasis.shared.api.Formats._
 
-  "Nodes routes" should "respond with all nodes" in {
+  "Nodes routes" should "respond with all nodes" in withRetry {
     val fixtures = new TestFixtures {}
     val node = Generators.generateLocalNode
     fixtures.nodeStore.put(node).await
@@ -41,7 +41,7 @@ class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "create new nodes" in {
+  they should "create new nodes" in withRetry {
     val fixtures = new TestFixtures {}
 
     val node = Generators.generateLocalNode
@@ -56,7 +56,7 @@ class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "respond with existing nodes" in {
+  they should "respond with existing nodes" in withRetry {
     val fixtures = new TestFixtures {}
     val node = Generators.generateLocalNode
     fixtures.nodeStore.put(node).await
@@ -67,7 +67,7 @@ class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail if a node is missing" in {
+  they should "fail if a node is missing" in withRetry {
     val fixtures = new TestFixtures {}
 
     Get(s"/${Node.generateId()}") ~> fixtures.routes ~> check {
@@ -75,7 +75,7 @@ class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "update existing nodes" in {
+  they should "update existing nodes" in withRetry {
     val fixtures = new TestFixtures {}
     val node = Generators.generateLocalNode
     fixtures.nodeStore.put(node).await
@@ -91,7 +91,7 @@ class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail to update if a node is missing" in {
+  they should "fail to update if a node is missing" in withRetry {
     val fixtures = new TestFixtures {}
 
     val request = UpdateLocalNode(storeDescriptor = CrateStore.Descriptor.ForFileBackend(parentDirectory = "/tmp"))
@@ -101,7 +101,7 @@ class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "delete existing nodes" in {
+  they should "delete existing nodes" in withRetry {
     val fixtures = new TestFixtures {}
     val node = Generators.generateLocalNode
     fixtures.nodeStore.put(node).await
@@ -112,7 +112,7 @@ class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "not delete missing nodes" in {
+  they should "not delete missing nodes" in withRetry {
     val fixtures = new TestFixtures {}
 
     Delete(s"/${Node.generateId()}") ~> fixtures.routes ~> check {

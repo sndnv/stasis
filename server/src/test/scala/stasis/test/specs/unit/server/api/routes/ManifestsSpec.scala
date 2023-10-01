@@ -25,7 +25,7 @@ class ManifestsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import stasis.core.api.Formats._
   import stasis.shared.api.Formats._
 
-  "Manifests routes" should "respond with existing manifests" in {
+  "Manifests routes" should "respond with existing manifests" in withRetry {
     val fixtures = new TestFixtures {}
     val manifest = Generators.generateManifest
     fixtures.manifestStore.put(manifest).await
@@ -36,7 +36,7 @@ class ManifestsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail if a manifest is missing" in {
+  they should "fail if a manifest is missing" in withRetry {
     val fixtures = new TestFixtures {}
 
     Get(s"/${Crate.generateId()}") ~> fixtures.routes ~> check {
@@ -44,7 +44,7 @@ class ManifestsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "delete existing manifests" in {
+  they should "delete existing manifests" in withRetry {
     val fixtures = new TestFixtures {}
     val manifest = Generators.generateManifest
     fixtures.manifestStore.put(manifest).await
@@ -55,7 +55,7 @@ class ManifestsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "not delete missing manifest" in {
+  they should "not delete missing manifest" in withRetry {
     val fixtures = new TestFixtures {}
 
     Delete(s"/${Crate.generateId()}") ~> fixtures.routes ~> check {

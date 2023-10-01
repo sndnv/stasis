@@ -13,7 +13,7 @@ import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
 
 class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
-  "ImplicitGrant routes" should "validate authorization requests content" in {
+  "ImplicitGrant routes" should "validate authorization requests content" in withRetry {
     val request = AuthorizationRequest(
       response_type = ResponseType.Token,
       client_id = Client.generateId(),
@@ -28,7 +28,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
     an[IllegalArgumentException] should be thrownBy request.copy(state = "")
   }
 
-  they should "represent access token responses as URI query values" in {
+  they should "represent access token responses as URI query values" in withRetry {
     val response = AccessTokenResponse(
       access_token = AccessToken("some-token"),
       token_type = TokenType.Bearer,
@@ -52,7 +52,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
     actualQuery should be(expectedQuery)
   }
 
-  they should "convert authorization responses to authorization responses with redirect URIs" in {
+  they should "convert authorization responses to authorization responses with redirect URIs" in withRetry {
     val baseResponse = AccessTokenResponse(
       access_token = AccessToken("some-token"),
       token_type = TokenType.Bearer,
@@ -75,7 +75,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
     actualResponse should be(expectedResponse)
   }
 
-  they should "generate access tokens for valid requests (redirected)" in {
+  they should "generate access tokens for valid requests (redirected)" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val grant = new ImplicitGrant(config, providers)
 
@@ -126,7 +126,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "generate access tokens for valid requests (completed)" in {
+  they should "generate access tokens for valid requests (completed)" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
     val (stores, secrets, config, providers) = createOAuthFixtures()
@@ -182,7 +182,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "not generate access tokens when invalid redirect URIs are provided" in {
+  they should "not generate access tokens when invalid redirect URIs are provided" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
     val (stores, secrets, config, providers) = createOAuthFixtures()

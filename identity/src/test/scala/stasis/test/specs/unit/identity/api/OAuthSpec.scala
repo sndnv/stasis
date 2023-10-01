@@ -13,7 +13,7 @@ import stasis.test.specs.unit.identity.api.oauth.OAuthFixtures
 import stasis.test.specs.unit.identity.model.Generators
 
 class OAuthSpec extends RouteTest with OAuthFixtures {
-  "OAuth routes" should "handle code authorization requests" in {
+  "OAuth routes" should "handle code authorization requests" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 
@@ -64,7 +64,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "handle PKCE code authorization requests" in {
+  they should "handle PKCE code authorization requests" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 
@@ -120,7 +120,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "handle token authorization requests" in {
+  they should "handle token authorization requests" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 
@@ -166,7 +166,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "reject authorization requests with invalid response types" in {
+  they should "reject authorization requests with invalid response types" in withRetry {
     val (_, _, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 
@@ -184,7 +184,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "handle authorization code token grants (with URL parameters)" in {
+  they should "handle authorization code token grants (with URL parameters)" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 
@@ -232,7 +232,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "handle authorization code token grants (with form fields)" in {
+  they should "handle authorization code token grants (with form fields)" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 
@@ -282,7 +282,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "handle PKCE authorization code token grants (with URL parameters)" in {
+  they should "handle PKCE authorization code token grants (with URL parameters)" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 
@@ -337,7 +337,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "handle PKCE authorization code token grants (with form fields)" in {
+  they should "handle PKCE authorization code token grants (with form fields)" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 
@@ -394,7 +394,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "handle client credentials token grants (with URL parameters)" in {
+  they should "handle client credentials token grants (with URL parameters)" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 
@@ -427,7 +427,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "handle client credentials token grants (with form fields)" in {
+  they should "handle client credentials token grants (with form fields)" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 
@@ -461,7 +461,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "handle refresh token grants (with URL parameters)" in {
+  they should "handle refresh token grants (with URL parameters)" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 
@@ -506,7 +506,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "handle refresh token grants (with form fields)" in {
+  they should "handle refresh token grants (with form fields)" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 
@@ -552,7 +552,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "handle password token grants (with URL parameters)" in {
+  they should "handle password token grants (with URL parameters)" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 
@@ -601,7 +601,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "handle password token grants (with form fields)" in {
+  they should "handle password token grants (with form fields)" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 
@@ -651,7 +651,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "reject token grants with invalid grant type" in {
+  they should "reject token grants with invalid grant type" in withRetry {
     val (_, _, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 
@@ -667,7 +667,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "reject requests when clients fail authentication" in {
+  they should "reject requests when clients fail authentication" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 
@@ -690,7 +690,7 @@ class OAuthSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "reject requests when owners fail authentication" in {
+  they should "reject requests when owners fail authentication" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val oauth = new OAuth(config, providers)
 

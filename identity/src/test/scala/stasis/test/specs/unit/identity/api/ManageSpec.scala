@@ -19,7 +19,7 @@ import scala.concurrent.duration._
 class ManageSpec extends RouteTest with ManageFixtures {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  "Manage routes" should "handle authorization code management requests" in {
+  "Manage routes" should "handle authorization code management requests" in withRetry {
     val providers = createManageProviders(withOwnerScopes = Seq(Manage.Scopes.ManageCodes))
     val manage = new Manage(providers, config)
 
@@ -34,7 +34,7 @@ class ManageSpec extends RouteTest with ManageFixtures {
     }
   }
 
-  they should "handle refresh token management requests" in {
+  they should "handle refresh token management requests" in withRetry {
     val providers = createManageProviders(withOwnerScopes = Seq(Manage.Scopes.ManageTokens))
     val manage = new Manage(providers, config)
 
@@ -49,7 +49,7 @@ class ManageSpec extends RouteTest with ManageFixtures {
     }
   }
 
-  they should "handle API management requests" in {
+  they should "handle API management requests" in withRetry {
     val providers = createManageProviders(withOwnerScopes = Seq(Manage.Scopes.ManageApis))
     val manage = new Manage(providers, config)
 
@@ -62,7 +62,7 @@ class ManageSpec extends RouteTest with ManageFixtures {
     }
   }
 
-  they should "handle client management requests" in {
+  they should "handle client management requests" in withRetry {
     val providers = createManageProviders(withOwnerScopes = Seq(Manage.Scopes.ManageClients))
     val manage = new Manage(providers, config)
 
@@ -75,7 +75,7 @@ class ManageSpec extends RouteTest with ManageFixtures {
     }
   }
 
-  they should "handle resource owner management requests" in {
+  they should "handle resource owner management requests" in withRetry {
     val providers = createManageProviders(withOwnerScopes = Seq(Manage.Scopes.ManageOwners))
     val manage = new Manage(providers, config)
 
@@ -88,7 +88,7 @@ class ManageSpec extends RouteTest with ManageFixtures {
     }
   }
 
-  they should "reject requests when users fail authentication" in {
+  they should "reject requests when users fail authentication" in withRetry {
     val providers = createManageProviders(withOwnerScopes = Seq(Manage.Scopes.ManageApis))
     val manage = new Manage(providers, config)
 
@@ -100,7 +100,7 @@ class ManageSpec extends RouteTest with ManageFixtures {
     }
   }
 
-  they should "reject requests when users fail authorization" in {
+  they should "reject requests when users fail authorization" in withRetry {
     val providers = createManageProviders(withOwnerScopes = Seq(Manage.Scopes.ManageClients))
     val manage = new Manage(providers, config)
 

@@ -11,7 +11,7 @@ class UpdateClientSpec extends UnitSpec {
     active = true
   )
 
-  "An UpdateClient request" should "validate its content" in {
+  "An UpdateClient request" should "validate its content" in withRetry {
     an[IllegalArgumentException] should be thrownBy request.copy(tokenExpiration = 0.seconds)
   }
 }

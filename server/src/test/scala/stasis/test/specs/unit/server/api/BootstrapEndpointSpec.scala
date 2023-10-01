@@ -29,7 +29,7 @@ import java.time.Instant
 import scala.collection.mutable
 
 class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
-  "A BootstrapEndpoint" should "successfully authenticate requests with user credentials" in {
+  "A BootstrapEndpoint" should "successfully authenticate requests with user credentials" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import stasis.shared.api.Formats._
 
@@ -43,7 +43,7 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
     }
   }
 
-  it should "successfully authenticate requests with bootstrap codes" in {
+  it should "successfully authenticate requests with bootstrap codes" in withRetry {
     val fixtures = new TestFixtures {}
 
     fixtures.deviceStore.manage().create(device).await
@@ -54,7 +54,7 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
     }
   }
 
-  it should "fail to authenticate requests with no credentials" in {
+  it should "fail to authenticate requests with no credentials" in withRetry {
     val fixtures = new TestFixtures {}
 
     Get("/devices/codes") ~> fixtures.endpoint.endpointRoutes ~> check {
@@ -62,7 +62,7 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
     }
   }
 
-  it should "fail to authenticate requests with invalid credentials" in {
+  it should "fail to authenticate requests with invalid credentials" in withRetry {
     val fixtures = new TestFixtures {}
 
     Get("/devices/codes")
@@ -71,7 +71,7 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
     }
   }
 
-  it should "provide bootstrap code management routes" in {
+  it should "provide bootstrap code management routes" in withRetry {
     val fixtures = new TestFixtures {}
 
     fixtures.bootstrapCodeStore.manageSelf().put(Seq(device.id), bootstrapCode).await
@@ -84,7 +84,7 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
     }
   }
 
-  it should "provide device bootstrap execution routes" in {
+  it should "provide device bootstrap execution routes" in withRetry {
     val fixtures = new TestFixtures {}
 
     fixtures.deviceStore.manage().create(device).await
@@ -95,7 +95,7 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
     }
   }
 
-  it should "handle authorization failures reported by routes" in {
+  it should "handle authorization failures reported by routes" in withRetry {
     val fixtures = new TestFixtures {
       override lazy val provider: ResourceProvider = new MockResourceProvider(resources = Set.empty)
     }
@@ -119,7 +119,7 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
       }
   }
 
-  it should "handle generic failures reported by routes" in {
+  it should "handle generic failures reported by routes" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 

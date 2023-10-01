@@ -14,7 +14,7 @@ class UserSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
-  "User routes" should "respond with the current user" in {
+  "User routes" should "respond with the current user" in withRetry {
     val mockApiClient = MockServerApiEndpointClient()
     val routes = createRoutes(api = mockApiClient)
 

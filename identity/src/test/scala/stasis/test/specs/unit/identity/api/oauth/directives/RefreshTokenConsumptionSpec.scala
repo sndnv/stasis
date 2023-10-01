@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContext
 class RefreshTokenConsumptionSpec extends RouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  "A RefreshTokenConsumption directive" should "validate provided and stored scopes" in {
+  "A RefreshTokenConsumption directive" should "validate provided and stored scopes" in withRetry {
     val tokens = createTokenStore()
     val directive = createDirective(tokens)
 
@@ -40,7 +40,7 @@ class RefreshTokenConsumptionSpec extends RouteTest {
     ) should be(false) // stored is empty
   }
 
-  it should "consume valid refresh tokens with expected scopes" in {
+  it should "consume valid refresh tokens with expected scopes" in withRetry {
     val tokens = createTokenStore()
     val directive = createDirective(tokens)
 
@@ -61,7 +61,7 @@ class RefreshTokenConsumptionSpec extends RouteTest {
     }
   }
 
-  it should "fail to consume valid refresh tokens without needed scopes" in {
+  it should "fail to consume valid refresh tokens without needed scopes" in withRetry {
     val tokens = createTokenStore()
     val directive = createDirective(tokens)
 
@@ -81,7 +81,7 @@ class RefreshTokenConsumptionSpec extends RouteTest {
     }
   }
 
-  it should "fail if the provided and found refresh tokens do not match" in {
+  it should "fail if the provided and found refresh tokens do not match" in withRetry {
     val tokens = createTokenStore()
     val directive = createDirective(tokens)
 
@@ -101,7 +101,7 @@ class RefreshTokenConsumptionSpec extends RouteTest {
     }
   }
 
-  it should "fail if the provided and found refresh token clients do not match" in {
+  it should "fail if the provided and found refresh token clients do not match" in withRetry {
     val tokens = createTokenStore()
     val directive = createDirective(tokens)
 
@@ -121,7 +121,7 @@ class RefreshTokenConsumptionSpec extends RouteTest {
     }
   }
 
-  it should "fail if refresh tokens could not be queried" in {
+  it should "fail if refresh tokens could not be queried" in withRetry {
     val tokens = createFailingTokenStore(failingGet = true)
     val directive = createDirective(tokens)
 

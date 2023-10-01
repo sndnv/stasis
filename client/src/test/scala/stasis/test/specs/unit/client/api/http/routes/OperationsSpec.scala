@@ -27,7 +27,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
-  "Operations routes" should "provide current operations state (default / active)" in {
+  "Operations routes" should "provide current operations state (default / active)" in withRetry {
     import Operations._
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
@@ -80,7 +80,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "provide current operations state (completed)" in {
+  they should "provide current operations state (completed)" in withRetry {
     import Operations._
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
@@ -130,7 +130,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "provide current operations state (all)" in {
+  they should "provide current operations state (all)" in withRetry {
     import Operations._
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
@@ -180,7 +180,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "provide current backup rules" in {
+  they should "provide current backup rules" in withRetry {
     import Operations._
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
@@ -210,7 +210,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "support starting backups" in {
+  they should "support starting backups" in withRetry {
     val mockExecutor = MockOperationExecutor()
     val routes = createRoutes(executor = mockExecutor)
 
@@ -234,7 +234,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "support starting recoveries with the latest entry for a definition" in {
+  they should "support starting recoveries with the latest entry for a definition" in withRetry {
     val mockExecutor = MockOperationExecutor()
     val routes = createRoutes(executor = mockExecutor)
 
@@ -258,7 +258,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "support starting recoveries with the latest entry until a timestamp" in {
+  they should "support starting recoveries with the latest entry until a timestamp" in withRetry {
     val mockExecutor = MockOperationExecutor()
     val routes = createRoutes(executor = mockExecutor)
 
@@ -282,7 +282,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "support starting recoveries with a specific entry" in {
+  they should "support starting recoveries with a specific entry" in withRetry {
     val mockExecutor = MockOperationExecutor()
     val routes = createRoutes(executor = mockExecutor)
 
@@ -307,7 +307,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "support retrieving progress of specific operations (backup)" in {
+  they should "support retrieving progress of specific operations (backup)" in withRetry {
     import OperationsSpec._
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
@@ -350,7 +350,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "support retrieving progress of specific operations (recovery)" in {
+  they should "support retrieving progress of specific operations (recovery)" in withRetry {
     import OperationsSpec._
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
@@ -389,7 +389,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail to retrieve progress of a specific operation if it does not exist" in {
+  they should "fail to retrieve progress of a specific operation if it does not exist" in withRetry {
     val operation = Operation.generateId()
 
     val routes = createRoutes()
@@ -399,7 +399,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "support retrieving progress stream for specific operations (backup)" in {
+  they should "support retrieving progress stream for specific operations (backup)" in withRetry {
     import akka.http.scaladsl.unmarshalling.sse.EventStreamUnmarshalling._
     import play.api.libs.json.Json
 
@@ -464,7 +464,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "support retrieving progress stream for specific operations (recovery)" in {
+  they should "support retrieving progress stream for specific operations (recovery)" in withRetry {
     import akka.http.scaladsl.unmarshalling.sse.EventStreamUnmarshalling._
     import play.api.libs.json.Json
 
@@ -529,7 +529,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail to retrieve a progress stream for a specific operation if it does not exist" in {
+  they should "fail to retrieve a progress stream for a specific operation if it does not exist" in withRetry {
     val operation = Operation.generateId()
 
     val routes = createRoutes()
@@ -539,7 +539,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "support stopping running operations" in {
+  they should "support stopping running operations" in withRetry {
     val mockExecutor = MockOperationExecutor()
     val routes = createRoutes(executor = mockExecutor)
 
@@ -563,7 +563,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail to stop missing operations" in {
+  they should "fail to stop missing operations" in withRetry {
     val mockExecutor = new MockOperationExecutor() {
       override def stop(operation: Operation.Id): Future[Option[Done]] = Future.successful(None)
     }
@@ -589,7 +589,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "support resuming backup operations" in {
+  they should "support resuming backup operations" in withRetry {
     val mockExecutor = MockOperationExecutor()
     val routes = createRoutes(executor = mockExecutor)
 
@@ -613,7 +613,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "support removing operations" in {
+  they should "support removing operations" in withRetry {
     val backupRemoved = new AtomicBoolean(false)
     val recoveryRemoved = new AtomicBoolean(false)
 
@@ -639,7 +639,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail to remove active operations" in {
+  they should "fail to remove active operations" in withRetry {
     val operation = Operation.generateId()
 
     val mockExecutor = new MockOperationExecutor() {
@@ -673,7 +673,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "provide support for path query parameters" in {
+  they should "provide support for path query parameters" in withRetry {
     import stasis.client.api.http.routes.Operations._
 
     val route = Route.seal(
@@ -695,7 +695,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     succeed
   }
 
-  they should "provide support for operation state parameters" in {
+  they should "provide support for operation state parameters" in withRetry {
     import stasis.client.api.http.routes.Operations._
 
     val route = Route.seal(
@@ -719,7 +719,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     succeed
   }
 
-  they should "extract recovery destination parameters" in {
+  they should "extract recovery destination parameters" in withRetry {
     import stasis.client.api.http.routes.Operations._
 
     val expectedPath = "/tmp/some/path"
@@ -747,7 +747,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "extract operation state from string" in {
+  they should "extract operation state from string" in withRetry {
     import stasis.client.api.http.routes.Operations.State
 
     State(state = "active") should be(State.Active)

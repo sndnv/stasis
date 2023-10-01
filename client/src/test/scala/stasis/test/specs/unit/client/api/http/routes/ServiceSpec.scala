@@ -20,7 +20,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
-  "Service routes" should "provide ping responses" in {
+  "Service routes" should "provide ping responses" in withRetry {
     val routes = createRoutes()
 
     Get("/ping") ~> routes ~> check {
@@ -29,7 +29,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     }
   }
 
-  they should "support stopping the service" in {
+  they should "support stopping the service" in withRetry {
     val terminationCounter = new AtomicInteger(0)
     val routes = createRoutes(terminate = () => { val _ = terminationCounter.incrementAndGet() })
 

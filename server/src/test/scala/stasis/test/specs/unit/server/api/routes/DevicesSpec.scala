@@ -32,7 +32,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
-  "Devices routes (full permissions)" should "respond with all devices" in {
+  "Devices routes (full permissions)" should "respond with all devices" in withRetry {
     val fixtures = new TestFixtures {}
     Future.sequence(devices.map(fixtures.deviceStore.manage().create)).await
 
@@ -42,7 +42,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "create new devices" in {
+  they should "create new devices" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.userStore.manage().create(user).await
 
@@ -56,7 +56,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail to create new devices for missing users" in {
+  they should "fail to create new devices for missing users" in withRetry {
     val fixtures = new TestFixtures {}
 
     Post("/").withEntity(createRequestPrivileged) ~> fixtures.routes ~> check {
@@ -64,7 +64,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "respond with existing devices" in {
+  they should "respond with existing devices" in withRetry {
     val fixtures = new TestFixtures {}
 
     fixtures.deviceStore.manage().create(devices.head).await
@@ -75,14 +75,14 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail if a device is missing" in {
+  they should "fail if a device is missing" in withRetry {
     val fixtures = new TestFixtures {}
     Get(s"/${Device.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
     }
   }
 
-  they should "update existing devices' state" in {
+  they should "update existing devices' state" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.userStore.manage().create(user.copy(id = devices.head.owner))
     fixtures.deviceStore.manage().create(devices.head).await
@@ -96,7 +96,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "update existing devices' limits" in {
+  they should "update existing devices' limits" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.userStore.manage().create(user.copy(id = devices.head.owner))
     fixtures.deviceStore.manage().create(devices.head).await
@@ -110,7 +110,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail to update state if a device is missing" in {
+  they should "fail to update state if a device is missing" in withRetry {
     val fixtures = new TestFixtures {}
     Put(s"/${Device.generateId()}/state")
       .withEntity(updateRequestState) ~> fixtures.routes ~> check {
@@ -118,7 +118,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail to update limits if a device is missing" in {
+  they should "fail to update limits if a device is missing" in withRetry {
     val fixtures = new TestFixtures {}
     Put(s"/${Device.generateId()}/limits")
       .withEntity(updateRequestLimits) ~> fixtures.routes ~> check {
@@ -126,7 +126,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail to update state if the device owner is missing" in {
+  they should "fail to update state if the device owner is missing" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.deviceStore.manage().create(devices.head).await
 
@@ -136,7 +136,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail to update limits if the device owner is missing" in {
+  they should "fail to update limits if the device owner is missing" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.deviceStore.manage().create(devices.head).await
 
@@ -146,7 +146,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "delete existing devices" in {
+  they should "delete existing devices" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.deviceStore.manage().create(devices.head).await
 
@@ -161,7 +161,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "not delete missing devices" in {
+  they should "not delete missing devices" in withRetry {
     val fixtures = new TestFixtures {}
 
     Delete(s"/${devices.head.id}") ~> fixtures.routes ~> check {
@@ -170,7 +170,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  "Devices routes (self permissions)" should "respond with all devices" in {
+  "Devices routes (self permissions)" should "respond with all devices" in withRetry {
     val fixtures = new TestFixtures {}
     Future.sequence(devices.map(fixtures.deviceStore.manage().create)).await
 
@@ -180,7 +180,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "create new devices" in {
+  they should "create new devices" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.userStore.manage().create(user).await
 
@@ -195,7 +195,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail to create new devices for missing users" in {
+  they should "fail to create new devices for missing users" in withRetry {
     val fixtures = new TestFixtures {}
 
     Post("/own")
@@ -204,7 +204,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "respond with existing devices" in {
+  they should "respond with existing devices" in withRetry {
     val fixtures = new TestFixtures {}
 
     fixtures.deviceStore.manage().create(devices.head).await
@@ -215,14 +215,14 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail if a device is missing" in {
+  they should "fail if a device is missing" in withRetry {
     val fixtures = new TestFixtures {}
     Get(s"/own/${Device.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
     }
   }
 
-  they should "update existing devices' state" in {
+  they should "update existing devices' state" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.userStore.manage().create(user).await
     fixtures.deviceStore.manage().create(devices.head).await
@@ -236,7 +236,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "update existing devices' limits" in {
+  they should "update existing devices' limits" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.userStore.manage().create(user).await
     fixtures.deviceStore.manage().create(devices.head).await
@@ -250,7 +250,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail to update state if a device is missing" in {
+  they should "fail to update state if a device is missing" in withRetry {
     val fixtures = new TestFixtures {}
     Put(s"/own/${Device.generateId()}/state")
       .withEntity(updateRequestState) ~> fixtures.routes ~> check {
@@ -258,7 +258,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail to update limits if a device is missing" in {
+  they should "fail to update limits if a device is missing" in withRetry {
     val fixtures = new TestFixtures {}
     Put(s"/own/${Device.generateId()}/limits")
       .withEntity(updateRequestLimits) ~> fixtures.routes ~> check {
@@ -266,7 +266,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail to update state if the device owner is missing" in {
+  they should "fail to update state if the device owner is missing" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.deviceStore.manage().create(devices.head).await
 
@@ -276,7 +276,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail to update limits if the device owner is missing" in {
+  they should "fail to update limits if the device owner is missing" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.deviceStore.manage().create(devices.head).await
 
@@ -286,7 +286,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "delete existing devices" in {
+  they should "delete existing devices" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.deviceStore.manage().create(devices.head).await
 
@@ -301,7 +301,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "not delete missing devices" in {
+  they should "not delete missing devices" in withRetry {
     val fixtures = new TestFixtures {}
 
     Delete(s"/own/${devices.head.id}") ~> fixtures.routes ~> check {

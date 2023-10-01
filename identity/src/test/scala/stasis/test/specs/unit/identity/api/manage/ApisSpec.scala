@@ -13,7 +13,7 @@ import scala.concurrent.Future
 class ApisSpec extends RouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  "Apis routes" should "respond with all APIs" in {
+  "Apis routes" should "respond with all APIs" in withRetry {
     val store = createApiStore()
     val apis = new Apis(store)
 
@@ -27,7 +27,7 @@ class ApisSpec extends RouteTest {
     }
   }
 
-  they should "create new APIs" in {
+  they should "create new APIs" in withRetry {
     val store = createApiStore()
     val apis = new Apis(store)
 
@@ -39,7 +39,7 @@ class ApisSpec extends RouteTest {
     }
   }
 
-  they should "reject creation requests for existing APIs" in {
+  they should "reject creation requests for existing APIs" in withRetry {
     val store = createApiStore()
     val apis = new Apis(store)
 
@@ -56,7 +56,7 @@ class ApisSpec extends RouteTest {
     }
   }
 
-  they should "respond with existing APIs" in {
+  they should "respond with existing APIs" in withRetry {
     val store = createApiStore()
     val apis = new Apis(store)
 
@@ -69,7 +69,7 @@ class ApisSpec extends RouteTest {
     }
   }
 
-  they should "delete existing APIs" in {
+  they should "delete existing APIs" in withRetry {
     val store = createApiStore()
     val apis = new Apis(store)
 
@@ -82,7 +82,7 @@ class ApisSpec extends RouteTest {
     }
   }
 
-  they should "not delete missing APIs" in {
+  they should "not delete missing APIs" in withRetry {
     val store = createApiStore()
     val apis = new Apis(store)
 

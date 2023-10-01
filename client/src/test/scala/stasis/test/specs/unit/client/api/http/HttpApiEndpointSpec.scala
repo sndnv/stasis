@@ -31,7 +31,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import stasis.client.api.http.Formats._
   import stasis.shared.api.Formats._
 
-  "An HttpApiEndpoint" should "successfully authenticate users" in {
+  "An HttpApiEndpoint" should "successfully authenticate users" in withRetry {
     val endpoint = createEndpoint()
 
     Get(s"/user")
@@ -41,7 +41,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "fail to authenticate users with no credentials" in {
+  it should "fail to authenticate users with no credentials" in withRetry {
     val endpoint = createEndpoint()
 
     Get(s"/user") ~> endpoint.endpointRoutes ~> check {
@@ -49,7 +49,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "fail to authenticate users with invalid credentials" in {
+  it should "fail to authenticate users with invalid credentials" in withRetry {
     val endpoint = createEndpoint()
 
     Get(s"/user")
@@ -58,7 +58,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "provide routes for service management" in {
+  it should "provide routes for service management" in withRetry {
     val endpoint = createEndpoint()
 
     Get("/service/ping")
@@ -68,7 +68,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "provide routes for dataset definitions" in {
+  it should "provide routes for dataset definitions" in withRetry {
     val endpoint = createEndpoint()
 
     Get("/datasets/definitions")
@@ -78,7 +78,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "provide routes for dataset entries" in {
+  it should "provide routes for dataset entries" in withRetry {
     val endpoint = createEndpoint()
 
     Get(s"/datasets/entries/${DatasetDefinition.generateId()}")
@@ -88,7 +88,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "provide routes for dataset metadata" in {
+  it should "provide routes for dataset metadata" in withRetry {
     val endpoint = createEndpoint()
 
     Get(s"/datasets/metadata/${DatasetEntry.generateId()}")
@@ -98,7 +98,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "provide routes for users" in {
+  it should "provide routes for users" in withRetry {
     val endpoint = createEndpoint()
 
     Get(s"/user")
@@ -108,7 +108,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "provide routes for devices" in {
+  it should "provide routes for devices" in withRetry {
     val endpoint = createEndpoint()
 
     Get(s"/device")
@@ -118,7 +118,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "provide routes for schedules" in {
+  it should "provide routes for schedules" in withRetry {
     val endpoint = createEndpoint()
 
     Get("/schedules/public")
@@ -128,7 +128,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "provide routes for operations" in {
+  it should "provide routes for operations" in withRetry {
     val endpoint = createEndpoint()
 
     Put(s"/operations/${Operation.generateId()}/stop")
@@ -137,7 +137,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "handle server API failures reported by routes" in {
+  it should "handle server API failures reported by routes" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 
@@ -173,7 +173,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  it should "handle generic failures reported by routes" in {
+  it should "handle generic failures reported by routes" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 

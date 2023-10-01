@@ -28,7 +28,7 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
-  "Schedules routes" should "respond with all schedules" in {
+  "Schedules routes" should "respond with all schedules" in withRetry {
     val fixtures = new TestFixtures {}
     Future.sequence(schedules.map(fixtures.scheduleStore.manage().create)).await
 
@@ -38,7 +38,7 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "create new schedules" in {
+  they should "create new schedules" in withRetry {
     val fixtures = new TestFixtures {}
     Post("/").withEntity(createRequest) ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
@@ -50,7 +50,7 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "respond with all public schedules" in {
+  they should "respond with all public schedules" in withRetry {
     val fixtures = new TestFixtures {}
     Future.sequence(schedules.map(fixtures.scheduleStore.manage().create)).await
 
@@ -63,7 +63,7 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "respond with existing public schedules" in {
+  they should "respond with existing public schedules" in withRetry {
     val fixtures = new TestFixtures {}
 
     fixtures.scheduleStore.manage().create(schedules.head).await
@@ -74,14 +74,14 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail if a public schedule is missing" in {
+  they should "fail if a public schedule is missing" in withRetry {
     val fixtures = new TestFixtures {}
     Get(s"/public/${Schedule.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
     }
   }
 
-  they should "respond with existing schedules" in {
+  they should "respond with existing schedules" in withRetry {
     val fixtures = new TestFixtures {}
 
     fixtures.scheduleStore.manage().create(schedules.head).await
@@ -92,14 +92,14 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail if a schedule is missing" in {
+  they should "fail if a schedule is missing" in withRetry {
     val fixtures = new TestFixtures {}
     Get(s"/${Schedule.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
     }
   }
 
-  they should "update existing schedule" in {
+  they should "update existing schedule" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.scheduleStore.manage().create(schedules.head).await
 
@@ -114,7 +114,7 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail to update if a schedule is missing" in {
+  they should "fail to update if a schedule is missing" in withRetry {
     val fixtures = new TestFixtures {}
     Put(s"/${Schedule.generateId()}")
       .withEntity(updateRequest) ~> fixtures.routes ~> check {
@@ -122,7 +122,7 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "delete existing schedules" in {
+  they should "delete existing schedules" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.scheduleStore.manage().create(schedules.head).await
 
@@ -137,7 +137,7 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "not delete missing schedules" in {
+  they should "not delete missing schedules" in withRetry {
     val fixtures = new TestFixtures {}
 
     Delete(s"/${schedules.head.id}") ~> fixtures.routes ~> check {

@@ -20,7 +20,7 @@ import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 import stasis.test.specs.unit.shared.model.Generators
 
 class FormatsSpec extends UnitSpec with ResourceHelpers {
-  "Formats" should "convert paths to/from JSON" in {
+  "Formats" should "convert paths to/from JSON" in withRetry {
     val path = "/ops/scheduling/test.file".asTestResource
     val json = s""""${path.toAbsolutePath.toString}""""
 
@@ -28,7 +28,7 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
     pathFormat.reads(Json.parse(json)).asOpt should be(Some(path))
   }
 
-  they should "convert entity state to/from JSON" in {
+  they should "convert entity state to/from JSON" in withRetry {
     val entry = DatasetEntry.generateId()
 
     val entityStates = Map(
@@ -41,9 +41,11 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
       entityStateFormat.writes(state).toString should be(json)
       entityStateFormat.reads(Json.parse(json)).asOpt should be(Some(state))
     }
+
+    succeed
   }
 
-  they should "convert path maps to/from JSON" in {
+  they should "convert path maps to/from JSON" in withRetry {
     val path1 = Paths.get("test-path-01").toAbsolutePath
     val path2 = Paths.get("test-path-02").toAbsolutePath
     val path3 = Paths.get("test-path-03").toAbsolutePath
@@ -60,7 +62,7 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
     pathMapFormat[Int].reads(Json.parse(json)).asOpt should be(Some(paths))
   }
 
-  they should "convert schedule assignments to/from JSON" in {
+  they should "convert schedule assignments to/from JSON" in withRetry {
     val schedule = Schedule.generateId()
     val backupDefinition = DatasetDefinition.generateId()
 
@@ -85,9 +87,11 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
       scheduleAssignmentFormat.writes(assignment).toString should be(json)
       scheduleAssignmentFormat.reads(Json.parse(json)).asOpt should be(Some(assignment))
     }
+
+    succeed
   }
 
-  they should "convert active schedule retrieval results to/from JSON" in {
+  they should "convert active schedule retrieval results to/from JSON" in withRetry {
     import stasis.shared.api.Formats.scheduleFormat
 
     val schedule = Generators.generateSchedule
@@ -101,9 +105,11 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
       activeScheduleRetrievalResultFormat.writes(result).toString should be(json)
       activeScheduleRetrievalResultFormat.reads(Json.parse(json)).asOpt should be(Some(result))
     }
+
+    succeed
   }
 
-  they should "convert entity metadata to/from JSON" in {
+  they should "convert entity metadata to/from JSON" in withRetry {
     val fileMetadata = EntityMetadata.File(
       path = Paths.get("/tmp/file/one"),
       size = 1,
@@ -149,9 +155,11 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
       entityMetadataFormat.writes(entity).toString should be(json)
       entityMetadataFormat.reads(Json.parse(json)).asOpt should be(Some(entity))
     }
+
+    succeed
   }
 
-  they should "convert rule operations to/from JSON" in {
+  they should "convert rule operations to/from JSON" in withRetry {
     val operations = Map(
       Rule.Operation.Include -> """"include"""",
       Rule.Operation.Exclude -> """"exclude""""
@@ -161,9 +169,11 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
       ruleOperationFormat.writes(operation).toString should be(json)
       ruleOperationFormat.reads(Json.parse(json)).asOpt should be(Some(operation))
     }
+
+    succeed
   }
 
-  they should "convert processed source entities to/from JSON" in {
+  they should "convert processed source entities to/from JSON" in withRetry {
     val entity = ProcessedSourceEntity(
       expectedParts = 1,
       processedParts = 2,
@@ -175,7 +185,7 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
     processedSourceEntityFormat.writes(entity).toString should be(json)
   }
 
-  they should "convert backup state to JSON" in {
+  they should "convert backup state to JSON" in withRetry {
     val entity1 = Fixtures.Metadata.FileOneMetadata.path
     val entity2 = Fixtures.Metadata.FileTwoMetadata.path
     val entity3 = Fixtures.Metadata.FileThreeMetadata.path
@@ -243,7 +253,7 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
     backupStateFormat.writes(backup).toString should be(json)
   }
 
-  they should "convert recovery state to JSON" in {
+  they should "convert recovery state to JSON" in withRetry {
     val entity1 = Fixtures.Metadata.FileOneMetadata.path
     val entity2 = Fixtures.Metadata.FileTwoMetadata.path
     val entity3 = Fixtures.Metadata.FileThreeMetadata.path
