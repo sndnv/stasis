@@ -17,7 +17,7 @@ import scala.concurrent.duration._
 class OwnersSpec extends RouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  "Owners routes" should "respond with all resource owners" in {
+  "Owners routes" should "respond with all resource owners" in withRetry {
     val store = createOwnerStore()
     val owners = new Owners(store, secretConfig)
 
@@ -37,7 +37,7 @@ class OwnersSpec extends RouteTest {
     }
   }
 
-  they should "create new resource owners" in {
+  they should "create new resource owners" in withRetry {
     val store = createOwnerStore()
     val owners = new Owners(store, secretConfig)
 
@@ -59,7 +59,7 @@ class OwnersSpec extends RouteTest {
     }
   }
 
-  they should "reject creation requests for existing users" in {
+  they should "reject creation requests for existing users" in withRetry {
     val store = createOwnerStore()
     val owners = new Owners(store, secretConfig)
 
@@ -81,7 +81,7 @@ class OwnersSpec extends RouteTest {
     }
   }
 
-  they should "respond with resource owner when queried by subject" in {
+  they should "respond with resource owner when queried by subject" in withRetry {
     val store = createOwnerStore()
     val owners = new Owners(store, secretConfig)
 
@@ -104,7 +104,7 @@ class OwnersSpec extends RouteTest {
     }
   }
 
-  they should "update existing resource owner credentials when queried by subject" in {
+  they should "update existing resource owner credentials when queried by subject" in withRetry {
     val store = createOwnerStore()
     val owners = new Owners(store, secretConfig)
 
@@ -126,7 +126,7 @@ class OwnersSpec extends RouteTest {
     }
   }
 
-  they should "activate existing resource owner when queried by subject" in {
+  they should "activate existing resource owner when queried by subject" in withRetry {
     val store = createOwnerStore()
     val owners = new Owners(store, secretConfig)
 
@@ -148,7 +148,7 @@ class OwnersSpec extends RouteTest {
     }
   }
 
-  they should "deactivate existing resource owner when queried by subject" in {
+  they should "deactivate existing resource owner when queried by subject" in withRetry {
     val store = createOwnerStore()
     val owners = new Owners(store, secretConfig)
 
@@ -170,7 +170,7 @@ class OwnersSpec extends RouteTest {
     }
   }
 
-  they should "reject resource owner requests by subject when no owner is found" in {
+  they should "reject resource owner requests by subject when no owner is found" in withRetry {
     val store = createOwnerStore()
     val owners = new Owners(store, secretConfig)
 
@@ -179,7 +179,7 @@ class OwnersSpec extends RouteTest {
     }
   }
 
-  they should "reject resource owner requests by subject when more than one owner is found" in {
+  they should "reject resource owner requests by subject when more than one owner is found" in withRetry {
     val store = createOwnerStore()
     val owners = new Owners(store, secretConfig)
 
@@ -199,7 +199,7 @@ class OwnersSpec extends RouteTest {
     }
   }
 
-  they should "update existing resource owner credentials" in {
+  they should "update existing resource owner credentials" in withRetry {
     val store = createOwnerStore()
     val owners = new Owners(store, secretConfig)
 
@@ -219,7 +219,7 @@ class OwnersSpec extends RouteTest {
     }
   }
 
-  they should "respond with existing resource owners" in {
+  they should "respond with existing resource owners" in withRetry {
     val store = createOwnerStore()
     val owners = new Owners(store, secretConfig)
 
@@ -234,7 +234,7 @@ class OwnersSpec extends RouteTest {
     }
   }
 
-  they should "update existing resource owners" in {
+  they should "update existing resource owners" in withRetry {
     val store = createOwnerStore()
     val owners = new Owners(store, secretConfig)
 
@@ -258,7 +258,7 @@ class OwnersSpec extends RouteTest {
     }
   }
 
-  they should "delete existing resource owners" in {
+  they should "delete existing resource owners" in withRetry {
     val store = createOwnerStore()
     val owners = new Owners(store, secretConfig)
 
@@ -271,7 +271,7 @@ class OwnersSpec extends RouteTest {
     }
   }
 
-  they should "not delete missing resource owners" in {
+  they should "not delete missing resource owners" in withRetry {
     val store = createOwnerStore()
     val owners = new Owners(store, secretConfig)
 

@@ -13,7 +13,7 @@ import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.identity.model.Generators
 
 class FormatsSpec extends UnitSpec {
-  "Formats" should "convert authorization errors to JSON" in {
+  "Formats" should "convert authorization errors to JSON" in withRetry {
     val error = AuthorizationError.InvalidScope(withState = stasis.test.Generators.generateString(withSize = 16))
     val json = authorizationErrorWrites.writes(error).toString
     val parsedFields = Json.parse(json).as[JsObject].fields
@@ -23,7 +23,7 @@ class FormatsSpec extends UnitSpec {
     parsedFields should contain("state" -> Json.toJson(error.state))
   }
 
-  they should "convert token errors to JSON" in {
+  they should "convert token errors to JSON" in withRetry {
     val error = TokenError.InvalidScope
     val json = tokenErrorWrites.writes(error).toString
     val parsedFields = Json.parse(json).as[JsObject].fields
@@ -32,13 +32,13 @@ class FormatsSpec extends UnitSpec {
     parsedFields should contain("error_description" -> Json.toJson(error.error_description))
   }
 
-  they should "convert token types to/from JSON" in {
+  they should "convert token types to/from JSON" in withRetry {
     val json = "\"bearer\""
     tokenTypeFormat.writes(TokenType.Bearer).toString should be(json)
     tokenTypeFormat.reads(Json.parse(json)).asOpt should be(Some(TokenType.Bearer))
   }
 
-  they should "convert grant types to/from JSON" in {
+  they should "convert grant types to/from JSON" in withRetry {
     val grants = Map(
       GrantType.AuthorizationCode -> "\"authorization_code\"",
       GrantType.ClientCredentials -> "\"client_credentials\"",
@@ -51,9 +51,11 @@ class FormatsSpec extends UnitSpec {
       grantTypeFormat.writes(grant).toString should be(json)
       grantTypeFormat.reads(Json.parse(json)).asOpt should be(Some(grant))
     }
+
+    succeed
   }
 
-  they should "convert challenge methods t/from JSON" in {
+  they should "convert challenge methods t/from JSON" in withRetry {
     val challenges = Map(
       ChallengeMethod.Plain -> "\"plain\"",
       ChallengeMethod.S256 -> "\"s256\""
@@ -63,9 +65,11 @@ class FormatsSpec extends UnitSpec {
       challengeMethodFormat.writes(challenge).toString should be(json)
       challengeMethodFormat.reads(Json.parse(json)).asOpt should be(Some(challenge))
     }
+
+    succeed
   }
 
-  they should "convert response types to/from JSON" in {
+  they should "convert response types to/from JSON" in withRetry {
     val responses = Map(
       ResponseType.Code -> "\"code\"",
       ResponseType.Token -> "\"token\""
@@ -75,9 +79,11 @@ class FormatsSpec extends UnitSpec {
       responseTypeFormat.writes(response).toString should be(json)
       responseTypeFormat.reads(Json.parse(json)).asOpt should be(Some(response))
     }
+
+    succeed
   }
 
-  they should "convert access tokens to/from JSON" in {
+  they should "convert access tokens to/from JSON" in withRetry {
     val token = AccessToken(value = stasis.test.Generators.generateString(withSize = 16))
     val json = s"""\"${token.value}\""""
 
@@ -85,7 +91,7 @@ class FormatsSpec extends UnitSpec {
     accessTokenFormat.reads(Json.parse(json)).asOpt should be(Some(token))
   }
 
-  they should "convert refresh tokens to/from JSON" in {
+  they should "convert refresh tokens to/from JSON" in withRetry {
     val token = RefreshToken(value = stasis.test.Generators.generateString(withSize = 16))
     val json = s"""\"${token.value}\""""
 
@@ -93,7 +99,7 @@ class FormatsSpec extends UnitSpec {
     refreshTokenFormat.reads(Json.parse(json)).asOpt should be(Some(token))
   }
 
-  they should "convert authorization codes to/from JSON" in {
+  they should "convert authorization codes to/from JSON" in withRetry {
     val code = Generators.generateAuthorizationCode
     val json = s"""\"${code.value}\""""
 
@@ -101,7 +107,7 @@ class FormatsSpec extends UnitSpec {
     authorizationCodeFormat.reads(Json.parse(json)).asOpt should be(Some(code))
   }
 
-  they should "convert seconds to/from JSON" in {
+  they should "convert seconds to/from JSON" in withRetry {
     val seconds = Seconds(42)
     val json = seconds.value.toString
 
@@ -109,7 +115,7 @@ class FormatsSpec extends UnitSpec {
     secondsFormat.reads(Json.parse(json).as[JsNumber]).asOpt should be(Some(seconds))
   }
 
-  they should "convert code challenges to/from JSON" in {
+  they should "convert code challenges to/from JSON" in withRetry {
     val codeChallenge = StoredAuthorizationCode.Challenge(
       value = stasis.test.Generators.generateString(withSize = 16),
       method = Some(ChallengeMethod.S256)
@@ -121,7 +127,7 @@ class FormatsSpec extends UnitSpec {
     parsedFields should contain("method" -> Json.toJson("s256"))
   }
 
-  they should "convert APIs to/from JSON" in {
+  they should "convert APIs to/from JSON" in withRetry {
     val api = Generators.generateApi
     val json = apiFormat.writes(api).toString
     val parsedFields = Json.parse(json).as[JsObject].fields
@@ -131,7 +137,7 @@ class FormatsSpec extends UnitSpec {
     apiFormat.reads(Json.parse(json).as[JsObject]).asOpt should be(Some(api))
   }
 
-  they should "convert clients to JSON" in {
+  they should "convert clients to JSON" in withRetry {
     val client = Generators.generateClient
     val json = clientWrites.writes(client).toString
     val parsedFields = Json.parse(json).as[JsObject].fields
@@ -145,7 +151,7 @@ class FormatsSpec extends UnitSpec {
     parsedKeys should not contain "salt"
   }
 
-  they should "convert stored authorization codes to JSON" in {
+  they should "convert stored authorization codes to JSON" in withRetry {
     val code = StoredAuthorizationCode(
       code = Generators.generateAuthorizationCode,
       client = Client.generateId(),
@@ -169,7 +175,7 @@ class FormatsSpec extends UnitSpec {
     parsedKeys should contain("challenge")
   }
 
-  they should "convert resource owners to JSON" in {
+  they should "convert resource owners to JSON" in withRetry {
     val owner = Generators.generateResourceOwner
     val json = resourceOwnerWrites.writes(owner).toString
     val parsedFields = Json.parse(json).as[JsObject].fields
@@ -182,7 +188,7 @@ class FormatsSpec extends UnitSpec {
     parsedKeys should not contain "salt"
   }
 
-  they should "convert stored refresh tokens to JSON" in {
+  they should "convert stored refresh tokens to JSON" in withRetry {
     val token = StoredRefreshToken(
       token = Generators.generateRefreshToken,
       client = Client.generateId(),

@@ -18,7 +18,7 @@ import scala.concurrent.duration._
 class ClientAuthenticationSpec extends RouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  "A ClientAuthentication directive" should "successfully authenticate clients" in {
+  "A ClientAuthentication directive" should "successfully authenticate clients" in withRetry {
     val clients = createClientStore()
     val directive = createDirective(clients)
 
@@ -39,7 +39,7 @@ class ClientAuthenticationSpec extends RouteTest {
     }
   }
 
-  it should "fail if a client could not be authenticated" in {
+  it should "fail if a client could not be authenticated" in withRetry {
     val clients = createClientStore()
     val directive = createDirective(clients)
 
@@ -60,7 +60,7 @@ class ClientAuthenticationSpec extends RouteTest {
     }
   }
 
-  it should "fail if a client provided unsupported credentials" in {
+  it should "fail if a client provided unsupported credentials" in withRetry {
     val clients = createClientStore()
     val directive = createDirective(clients)
 
@@ -81,7 +81,7 @@ class ClientAuthenticationSpec extends RouteTest {
     }
   }
 
-  it should "fail if a client provided no credentials" in {
+  it should "fail if a client provided no credentials" in withRetry {
     val clients = createClientStore()
     val directive = createDirective(clients)
 

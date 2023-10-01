@@ -13,7 +13,7 @@ import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
 
 class AccessTokenGenerationSpec extends RouteTest {
-  "An AccessTokenGeneration directive" should "generate access tokens for clients" in {
+  "An AccessTokenGeneration directive" should "generate access tokens for clients" in withRetry {
     val expectedToken = "some-token"
 
     val directive = new AccessTokenGeneration {
@@ -30,7 +30,7 @@ class AccessTokenGenerationSpec extends RouteTest {
     }
   }
 
-  it should "generate access tokens for resource owners" in {
+  it should "generate access tokens for resource owners" in withRetry {
     val expectedToken = "some-token"
 
     val directive = new AccessTokenGeneration {

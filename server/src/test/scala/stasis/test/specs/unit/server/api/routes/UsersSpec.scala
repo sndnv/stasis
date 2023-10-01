@@ -30,7 +30,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
-  "Users routes (full permissions)" should "respond with all users" in {
+  "Users routes (full permissions)" should "respond with all users" in withRetry {
     val fixtures = new TestFixtures {}
     Future.sequence(users.map(fixtures.userStore.manage().create)).await
 
@@ -40,7 +40,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "create new users (with authentication password hashing)" in {
+  they should "create new users (with authentication password hashing)" in withRetry {
     val fixtures = new TestFixtures {}
     Post("/").withEntity(createRequest) ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
@@ -65,7 +65,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "create new users (without authentication password hashing)" in {
+  they should "create new users (without authentication password hashing)" in withRetry {
     val fixtures = new TestFixtures {
       override lazy val hashAuthenticationPasswords: Boolean = false
     }
@@ -93,7 +93,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "handle resource owner creation failures (not found)" in {
+  they should "handle resource owner creation failures (not found)" in withRetry {
     val fixtures = new TestFixtures {
       override lazy val credentialsManager: MockUserCredentialsManager =
         MockUserCredentialsManager(
@@ -120,7 +120,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "handle resource owner creation failures (conflict)" in {
+  they should "handle resource owner creation failures (conflict)" in withRetry {
     val fixtures = new TestFixtures {
       override lazy val credentialsManager: MockUserCredentialsManager =
         MockUserCredentialsManager(
@@ -147,7 +147,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "respond with existing users" in {
+  they should "respond with existing users" in withRetry {
     val fixtures = new TestFixtures {}
 
     fixtures.userStore.manage().create(users.head).await
@@ -158,14 +158,14 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "fail if a user is missing" in {
+  they should "fail if a user is missing" in withRetry {
     val fixtures = new TestFixtures {}
     Get(s"/${User.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
     }
   }
 
-  they should "update existing users' limits" in {
+  they should "update existing users' limits" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.userStore.manage().create(users.head).await
 
@@ -180,7 +180,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "update existing users' permissions" in {
+  they should "update existing users' permissions" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.userStore.manage().create(users.head).await
 
@@ -195,7 +195,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "update existing users' state (to active)" in {
+  they should "update existing users' state (to active)" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.userStore.manage().create(users.head).await
 
@@ -224,7 +224,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "update existing users' state (to inactive)" in {
+  they should "update existing users' state (to inactive)" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.userStore.manage().create(users.head).await
 
@@ -253,7 +253,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "handle resource owner activation/deactivation failures when updating user state (not found)" in {
+  they should "handle resource owner activation/deactivation failures when updating user state (not found)" in withRetry {
     val fixtures = new TestFixtures {
       override lazy val credentialsManager: MockUserCredentialsManager =
         MockUserCredentialsManager(
@@ -288,7 +288,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "handle resource owner activation/deactivation failures when updating user state (conflict)" in {
+  they should "handle resource owner activation/deactivation failures when updating user state (conflict)" in withRetry {
     val fixtures = new TestFixtures {
       override lazy val credentialsManager: MockUserCredentialsManager =
         MockUserCredentialsManager(
@@ -323,7 +323,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "fail to update limits if a user is missing" in {
+  they should "fail to update limits if a user is missing" in withRetry {
     val fixtures = new TestFixtures {}
     Put(s"/${User.generateId()}/limits")
       .withEntity(updateLimitsRequest) ~> fixtures.routes ~> check {
@@ -331,7 +331,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "fail to update permissions if a user is missing" in {
+  they should "fail to update permissions if a user is missing" in withRetry {
     val fixtures = new TestFixtures {}
     Put(s"/${User.generateId()}/permissions")
       .withEntity(updatePermissionsRequest) ~> fixtures.routes ~> check {
@@ -339,7 +339,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "fail to update state if a user is missing" in {
+  they should "fail to update state if a user is missing" in withRetry {
     val fixtures = new TestFixtures {}
 
     val updateStateRequest = UpdateUserState(
@@ -352,7 +352,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "delete existing users" in {
+  they should "delete existing users" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.userStore.manage().create(users.head).await
 
@@ -377,7 +377,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "not delete missing users" in {
+  they should "not delete missing users" in withRetry {
     val fixtures = new TestFixtures {}
 
     Delete(s"/${users.head.id}") ~> fixtures.routes ~> check {
@@ -386,7 +386,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "handle resource owner deactivation failures when deleting users (not found)" in {
+  they should "handle resource owner deactivation failures when deleting users (not found)" in withRetry {
     val fixtures = new TestFixtures {
       override lazy val credentialsManager: MockUserCredentialsManager =
         MockUserCredentialsManager(
@@ -415,7 +415,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "handle resource owner deactivation failures when deleting users (conflict)" in {
+  they should "handle resource owner deactivation failures when deleting users (conflict)" in withRetry {
     val fixtures = new TestFixtures {
       override lazy val credentialsManager: MockUserCredentialsManager =
         MockUserCredentialsManager(
@@ -444,7 +444,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "update existing users' passwords (with authentication password hashing)" in {
+  they should "update existing users' passwords (with authentication password hashing)" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.userStore.manage().create(users.head).await
 
@@ -465,7 +465,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "update existing users' passwords (without authentication password hashing)" in {
+  they should "update existing users' passwords (without authentication password hashing)" in withRetry {
     val fixtures = new TestFixtures {
       override lazy val hashAuthenticationPasswords: Boolean = false
     }
@@ -489,7 +489,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "handle user password update failures (not found)" in {
+  they should "handle user password update failures (not found)" in withRetry {
     val fixtures = new TestFixtures {
       override lazy val credentialsManager: MockUserCredentialsManager =
         MockUserCredentialsManager(
@@ -513,7 +513,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "handle user password update failures (conflict)" in {
+  they should "handle user password update failures (conflict)" in withRetry {
     val fixtures = new TestFixtures {
       override lazy val credentialsManager: MockUserCredentialsManager =
         MockUserCredentialsManager(
@@ -537,7 +537,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  "Users routes (self permissions)" should "respond with the current user" in {
+  "Users routes (self permissions)" should "respond with the current user" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.userStore.manage().create(users.head).await
 
@@ -547,14 +547,14 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "fail if the current user is missing" in {
+  they should "fail if the current user is missing" in withRetry {
     val fixtures = new TestFixtures {}
     Get("/self") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
     }
   }
 
-  they should "deactivate the current user" in {
+  they should "deactivate the current user" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.userStore.manage().create(users.head).await
 
@@ -578,7 +578,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "handle resource owner deactivation failures (not found)" in {
+  they should "handle resource owner deactivation failures (not found)" in withRetry {
     val fixtures = new TestFixtures {
       override lazy val credentialsManager: MockUserCredentialsManager =
         MockUserCredentialsManager(
@@ -607,7 +607,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "handle resource owner deactivation failures (conflict)" in {
+  they should "handle resource owner deactivation failures (conflict)" in withRetry {
     val fixtures = new TestFixtures {
       override lazy val credentialsManager: MockUserCredentialsManager =
         MockUserCredentialsManager(
@@ -636,7 +636,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "reset the current user's password salt" in {
+  they should "reset the current user's password salt" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.userStore.manage().create(users.head).await
 
@@ -664,14 +664,14 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "fail to reset the current user's password salt if the current user is missing" in {
+  they should "fail to reset the current user's password salt if the current user is missing" in withRetry {
     val fixtures = new TestFixtures {}
     Put("/self/salt") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
     }
   }
 
-  they should "update the current user's password" in {
+  they should "update the current user's password" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.userStore.manage().create(users.head).await
 
@@ -693,7 +693,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "handle current user password update failures (not found)" in {
+  they should "handle current user password update failures (not found)" in withRetry {
     val fixtures = new TestFixtures {
       override lazy val credentialsManager: MockUserCredentialsManager =
         MockUserCredentialsManager(
@@ -716,7 +716,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "handle current user password update failures (conflict)" in {
+  they should "handle current user password update failures (conflict)" in withRetry {
     val fixtures = new TestFixtures {
       override lazy val credentialsManager: MockUserCredentialsManager =
         MockUserCredentialsManager(
@@ -739,7 +739,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  they should "fail to update the current user's password if the user is missing" in {
+  they should "fail to update the current user's password if the user is missing" in withRetry {
     val fixtures = new TestFixtures {}
 
     Put("/self/password").withEntity(updateUserPasswordRequest) ~> fixtures.routes ~> check {

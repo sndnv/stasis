@@ -11,7 +11,7 @@ import stasis.server.security.exceptions.AuthorizationFailure
 import stasis.test.specs.unit.UnitSpec
 
 class SanitizingSpec extends UnitSpec with ScalatestRouteTest {
-  "Sanitizing handlers" should "handle authorization failures reported by routes" in {
+  "Sanitizing handlers" should "handle authorization failures reported by routes" in withRetry {
     implicit val handler: ExceptionHandler = Sanitizing.create(log)
 
     val route = Route.seal(
@@ -25,7 +25,7 @@ class SanitizingSpec extends UnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "handle generic failures reported by routes" in {
+  it should "handle generic failures reported by routes" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 

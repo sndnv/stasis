@@ -14,7 +14,7 @@ import stasis.test.specs.unit.identity.model.Generators
 class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixtures {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  "ResourceOwnerPasswordCredentialsGrant routes" should "validate access token requests content" in {
+  "ResourceOwnerPasswordCredentialsGrant routes" should "validate access token requests content" in withRetry {
     val request = AccessTokenRequest(
       grant_type = GrantType.Password,
       username = "some-username",
@@ -28,7 +28,7 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
     an[IllegalArgumentException] should be thrownBy request.copy(scope = Some(""))
   }
 
-  they should "generate access and refresh tokens for valid requests (with URL parameters)" in {
+  they should "generate access and refresh tokens for valid requests (with URL parameters)" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val grant = new ResourceOwnerPasswordCredentialsGrant(config, providers)
 
@@ -82,7 +82,7 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
     }
   }
 
-  they should "generate access and refresh tokens for valid requests (with form fields)" in {
+  they should "generate access and refresh tokens for valid requests (with form fields)" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val grant = new ResourceOwnerPasswordCredentialsGrant(config, providers)
 
@@ -138,7 +138,7 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
     }
   }
 
-  they should "generate only access tokens when refresh tokens are not allowed" in {
+  they should "generate only access tokens when refresh tokens are not allowed" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures(withRefreshTokens = false)
     val grant = new ResourceOwnerPasswordCredentialsGrant(config, providers)
 

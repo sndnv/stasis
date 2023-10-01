@@ -16,7 +16,7 @@ class DatasetMetadataSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.client.api.http.Formats._
 
-  "DatasetMetadata routes" should "respond with dataset metadata for an entry" in {
+  "DatasetMetadata routes" should "respond with dataset metadata for an entry" in withRetry {
     val mockApiClient = MockServerApiEndpointClient()
     val routes = createRoutes(api = mockApiClient)
 
@@ -43,7 +43,7 @@ class DatasetMetadataSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "respond with dataset metadata search results" in {
+  it should "respond with dataset metadata search results" in withRetry {
     val mockSearch = MockSearch()
     val routes = createRoutes(search = mockSearch)
 

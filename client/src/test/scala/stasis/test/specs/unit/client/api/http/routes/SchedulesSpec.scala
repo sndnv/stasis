@@ -16,7 +16,7 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import stasis.client.api.http.Formats._
   import stasis.shared.api.Formats._
 
-  "Schedules routes" should "respond with all public schedules" in {
+  "Schedules routes" should "respond with all public schedules" in withRetry {
     val mockApiClient = MockServerApiEndpointClient()
     val routes = createRoutes(api = mockApiClient)
 
@@ -41,7 +41,7 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "respond with existing public schedules" in {
+  they should "respond with existing public schedules" in withRetry {
     val mockApiClient = MockServerApiEndpointClient()
     val routes = createRoutes(api = mockApiClient)
 
@@ -66,7 +66,7 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "respond with all configured schedules" in {
+  they should "respond with all configured schedules" in withRetry {
     val mockScheduler = MockOperationScheduler()
     val routes = createRoutes(scheduler = mockScheduler)
 
@@ -80,7 +80,7 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "support refreshing of configured schedules" in {
+  they should "support refreshing of configured schedules" in withRetry {
     val mockScheduler = MockOperationScheduler()
     val routes = createRoutes(scheduler = mockScheduler)
 

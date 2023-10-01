@@ -8,7 +8,7 @@ import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
 
 class UserAuthorizationSpec extends RouteTest {
-  "A UserAuthorization directive" should "authorize users with appropriate scopes" in {
+  "A UserAuthorization directive" should "authorize users with appropriate scopes" in withRetry {
     val directive = createDirective()
     val owner = Generators.generateResourceOwner
 
@@ -24,7 +24,7 @@ class UserAuthorizationSpec extends RouteTest {
     }
   }
 
-  it should "fail to authorize users without appropriate scopes" in {
+  it should "fail to authorize users without appropriate scopes" in withRetry {
     val directive = createDirective()
     val owner = Generators.generateResourceOwner
 

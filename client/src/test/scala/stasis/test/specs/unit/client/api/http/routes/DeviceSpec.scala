@@ -19,7 +19,7 @@ class DeviceSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import stasis.client.api.http.Formats._
   import stasis.shared.api.Formats._
 
-  "Device routes" should "respond with the current device" in {
+  "Device routes" should "respond with the current device" in withRetry {
     val mockApiClient = MockServerApiEndpointClient()
     val routes = createRoutes(api = mockApiClient)
 
@@ -44,7 +44,7 @@ class DeviceSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "respond with the current state of the device connections" in {
+  they should "respond with the current state of the device connections" in withRetry {
     val expectedServers = Map(
       "server-01" -> ServerTracker.ServerState(reachable = true, timestamp = Instant.now()),
       "server-02" -> ServerTracker.ServerState(reachable = false, timestamp = Instant.now())

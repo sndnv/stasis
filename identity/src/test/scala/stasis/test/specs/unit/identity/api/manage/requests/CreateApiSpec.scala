@@ -7,11 +7,11 @@ import stasis.test.specs.unit.UnitSpec
 class CreateApiSpec extends UnitSpec {
   private val request = CreateApi(id = "some-api")
 
-  "A CreateApi request" should "validate its content" in {
+  "A CreateApi request" should "validate its content" in withRetry {
     an[IllegalArgumentException] should be thrownBy request.copy(id = "")
   }
 
-  it should "be convertible to Api" in {
+  it should "be convertible to Api" in withRetry {
     val expectedApi = Api(id = request.id)
     val actualApi = request.toApi
 

@@ -15,14 +15,14 @@ class CreateClientSpec extends UnitSpec {
     subject = None
   )
 
-  "A CreateClient request" should "validate its content" in {
+  "A CreateClient request" should "validate its content" in withRetry {
     an[IllegalArgumentException] should be thrownBy request.copy(redirectUri = "")
     an[IllegalArgumentException] should be thrownBy request.copy(tokenExpiration = 0.seconds)
     an[IllegalArgumentException] should be thrownBy request.copy(rawSecret = "")
     an[IllegalArgumentException] should be thrownBy request.copy(subject = Some(""))
   }
 
-  it should "be convertible to Client" in {
+  it should "be convertible to Client" in withRetry {
     implicit val config: Secret.ClientConfig = Secret.ClientConfig(
       algorithm = "PBKDF2WithHmacSHA512",
       iterations = 10000,

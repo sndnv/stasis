@@ -17,7 +17,7 @@ import stasis.test.specs.unit.identity.model.Generators
 class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  "AuthorizationCodeGrant routes" should "validate authorization requests content" in {
+  "AuthorizationCodeGrant routes" should "validate authorization requests content" in withRetry {
     val request = AuthorizationRequest(
       response_type = ResponseType.Code,
       client_id = Client.generateId(),
@@ -32,7 +32,7 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     an[IllegalArgumentException] should be thrownBy request.copy(state = "")
   }
 
-  they should "validate access token requests content" in {
+  they should "validate access token requests content" in withRetry {
     val request = AccessTokenRequest(
       grant_type = GrantType.AuthorizationCode,
       code = AuthorizationCode("some-code"),
@@ -45,7 +45,7 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     an[IllegalArgumentException] should be thrownBy request.copy(redirect_uri = Some(""))
   }
 
-  they should "represent authorization responses as URI query values" in {
+  they should "represent authorization responses as URI query values" in withRetry {
     val response = AuthorizationResponse(
       code = AuthorizationCode("some-code"),
       state = "some-state",
@@ -65,7 +65,7 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     actualQuery should be(expectedQuery)
   }
 
-  they should "convert authorization responses to authorization responses with redirect URIs" in {
+  they should "convert authorization responses to authorization responses with redirect URIs" in withRetry {
     val baseResponse = AuthorizationResponse(
       code = AuthorizationCode("some-code"),
       state = "some-state",
@@ -84,7 +84,7 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     actualResponse should be(expectedResponse)
   }
 
-  they should "generate authorization codes for valid requests (redirected; with URL parameters)" in {
+  they should "generate authorization codes for valid requests (redirected; with URL parameters)" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val grant = new AuthorizationCodeGrant(config, providers)
 
@@ -140,7 +140,7 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "generate authorization codes for valid requests (completed)" in {
+  they should "generate authorization codes for valid requests (completed)" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val grant = new AuthorizationCodeGrant(config, providers)
 
@@ -201,7 +201,7 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "support multiple concurrent authorization requests" in {
+  they should "support multiple concurrent authorization requests" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val grant = new AuthorizationCodeGrant(config, providers)
 
@@ -256,7 +256,7 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     codes.values.map(_.owner.username).toSeq.sorted should be(requests.map(_._1.username).sorted)
   }
 
-  they should "not generate authorization codes when invalid redirect URIs are provided" in {
+  they should "not generate authorization codes when invalid redirect URIs are provided" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val grant = new AuthorizationCodeGrant(config, providers)
 
@@ -296,7 +296,7 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "generate access and refresh tokens for valid authorization codes (with URL parameters)" in {
+  they should "generate access and refresh tokens for valid authorization codes (with URL parameters)" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val grant = new AuthorizationCodeGrant(config, providers)
 
@@ -344,7 +344,7 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "generate access and refresh tokens for valid authorization codes (with form fields)" in {
+  they should "generate access and refresh tokens for valid authorization codes (with form fields)" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val grant = new AuthorizationCodeGrant(config, providers)
 
@@ -394,7 +394,7 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "generate only access tokens when refresh tokens are not allowed" in {
+  they should "generate only access tokens when refresh tokens are not allowed" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures(withRefreshTokens = false)
     val grant = new AuthorizationCodeGrant(config, providers)
 
@@ -442,7 +442,7 @@ class AuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "not generate access or refresh tokens when invalid redirect URIs are provided" in {
+  they should "not generate access or refresh tokens when invalid redirect URIs are provided" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val grant = new AuthorizationCodeGrant(config, providers)
 

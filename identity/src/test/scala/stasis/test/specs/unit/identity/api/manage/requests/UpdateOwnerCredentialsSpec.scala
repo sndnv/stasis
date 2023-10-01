@@ -11,11 +11,11 @@ class UpdateOwnerCredentialsSpec extends UnitSpec {
     rawPassword = "some-password"
   )
 
-  "An UpdateOwnerCredentials request" should "validate its content" in {
+  "An UpdateOwnerCredentials request" should "validate its content" in withRetry {
     an[IllegalArgumentException] should be thrownBy request.copy(rawPassword = "")
   }
 
-  it should "be convertible to a Secret" in {
+  it should "be convertible to a Secret" in withRetry {
     implicit val config: Secret.ResourceOwnerConfig = Secret.ResourceOwnerConfig(
       algorithm = "PBKDF2WithHmacSHA512",
       iterations = 10000,

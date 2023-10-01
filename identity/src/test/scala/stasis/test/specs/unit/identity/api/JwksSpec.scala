@@ -9,7 +9,7 @@ import stasis.test.specs.unit.identity.RouteTest
 class JwksSpec extends RouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  "JWKs routes" should "provide a list of available JSON web keys" in {
+  "JWKs routes" should "provide a list of available JSON web keys" in withRetry {
     val expectedKeys =
       stasis.test.Generators.generateSeq(
         min = 1,

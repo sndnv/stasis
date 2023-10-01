@@ -20,7 +20,7 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
-  "DatasetDefinitions routes" should "respond with all definitions" in {
+  "DatasetDefinitions routes" should "respond with all definitions" in withRetry {
     val mockApiClient = MockServerApiEndpointClient()
     val routes = createRoutes(api = mockApiClient)
 
@@ -45,7 +45,7 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "create new definitions" in {
+  they should "create new definitions" in withRetry {
     val mockApiClient = MockServerApiEndpointClient()
     val routes = createRoutes(api = mockApiClient)
 

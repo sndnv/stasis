@@ -19,7 +19,7 @@ import scala.concurrent.ExecutionContext
 class AuthorizationCodeConsumptionSpec extends RouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  "An AuthorizationCodeConsumption directive" should "consume valid authorization codes without challenges" in {
+  "An AuthorizationCodeConsumption directive" should "consume valid authorization codes without challenges" in withRetry {
     val codes = createCodeStore()
     val directive = createDirective(codes)
 
@@ -48,7 +48,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     }
   }
 
-  it should "fail if the provided authorization code has an unexpected associated challenge" in {
+  it should "fail if the provided authorization code has an unexpected associated challenge" in withRetry {
     val codes = createCodeStore()
     val directive = createDirective(codes)
 
@@ -78,7 +78,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     }
   }
 
-  it should "consume valid authorization codes with challenges (plain)" in {
+  it should "consume valid authorization codes with challenges (plain)" in withRetry {
     val codes = createCodeStore()
     val directive = createDirective(codes)
 
@@ -109,7 +109,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     }
   }
 
-  it should "consume valid authorization codes with challenges (S256)" in {
+  it should "consume valid authorization codes with challenges (S256)" in withRetry {
     val codes = createCodeStore()
     val directive = createDirective(codes)
 
@@ -150,7 +150,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     }
   }
 
-  it should "fail if the provided verifier did not match the challenge of the authorization code" in {
+  it should "fail if the provided verifier did not match the challenge of the authorization code" in withRetry {
     val codes = createCodeStore()
     val directive = createDirective(codes)
 
@@ -184,7 +184,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     }
   }
 
-  it should "fail if the provided authorization code expected a challenge but none was provided" in {
+  it should "fail if the provided authorization code expected a challenge but none was provided" in withRetry {
     val codes = createCodeStore()
     val directive = createDirective(codes)
 
@@ -211,7 +211,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     }
   }
 
-  it should "fail if the provided and found authorization codes do not match" in {
+  it should "fail if the provided and found authorization codes do not match" in withRetry {
     val codes = createCodeStore()
     val directive = createDirective(codes)
 
@@ -231,7 +231,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     }
   }
 
-  it should "fail if the provided and found authorization code clients do not match" in {
+  it should "fail if the provided and found authorization code clients do not match" in withRetry {
     val codes = createCodeStore()
     val directive = createDirective(codes)
 
@@ -251,7 +251,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     }
   }
 
-  it should "fail if authorization codes could not be queried" in {
+  it should "fail if authorization codes could not be queried" in withRetry {
     val codes = createFailingCodeStore(failingGet = true)
     val directive = createDirective(codes)
 

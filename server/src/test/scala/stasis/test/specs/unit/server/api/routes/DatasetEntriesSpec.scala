@@ -32,7 +32,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
-  "DatasetEntries routes (full permissions)" should "respond with all entries for a definition" in {
+  "DatasetEntries routes (full permissions)" should "respond with all entries for a definition" in withRetry {
     val fixtures = new TestFixtures {}
     Future.sequence(entries.map(fixtures.entryStore.manage().create)).await
 
@@ -42,7 +42,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "respond with existing entries" in {
+  they should "respond with existing entries" in withRetry {
     val fixtures = new TestFixtures {}
 
     fixtures.entryStore.manage().create(entries.head).await
@@ -53,14 +53,14 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail if an entry is missing" in {
+  they should "fail if an entry is missing" in withRetry {
     val fixtures = new TestFixtures {}
     Get(s"/${DatasetEntry.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
     }
   }
 
-  they should "delete existing entries" in {
+  they should "delete existing entries" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.entryStore.manage().create(entries.head).await
 
@@ -75,7 +75,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "not delete missing entries" in {
+  they should "not delete missing entries" in withRetry {
     val fixtures = new TestFixtures {}
 
     Delete(s"/${entries.head.id}") ~> fixtures.routes ~> check {
@@ -84,7 +84,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  "DatasetEntries routes (self permissions)" should "respond with all entries for a definition" in {
+  "DatasetEntries routes (self permissions)" should "respond with all entries for a definition" in withRetry {
     val fixtures = new TestFixtures {}
     Future.sequence(entries.map(fixtures.entryStore.manage().create)).await
     fixtures.deviceStore.manage().create(userDevice).await
@@ -95,7 +95,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "respond with the latest entry for a definition" in {
+  they should "respond with the latest entry for a definition" in withRetry {
     val fixtures = new TestFixtures {}
 
     val ownEntries = entries.map(_.copy(device = userDevice.id))
@@ -109,14 +109,14 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail to retrieve latest entry if none could be found" in {
+  they should "fail to retrieve latest entry if none could be found" in withRetry {
     val fixtures = new TestFixtures {}
     Get(s"/own/for-definition/$definition/latest") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
     }
   }
 
-  they should "respond with the latest entry for a definition up to a timestamp" in {
+  they should "respond with the latest entry for a definition up to a timestamp" in withRetry {
     val fixtures = new TestFixtures {}
 
     val ownEntries = entries.map(_.copy(device = userDevice.id))
@@ -132,7 +132,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "create new entries for a definition" in {
+  they should "create new entries for a definition" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.deviceStore.manage().create(userDevice).await
 
@@ -147,7 +147,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail to create new entries for an unexpected definition" in {
+  they should "fail to create new entries for an unexpected definition" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.deviceStore.manage().create(userDevice).await
 
@@ -157,7 +157,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "respond with existing entries" in {
+  they should "respond with existing entries" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.deviceStore.manage().create(userDevice).await
 
@@ -169,14 +169,14 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail if an entry is missing" in {
+  they should "fail if an entry is missing" in withRetry {
     val fixtures = new TestFixtures {}
     Get(s"/own/${DatasetEntry.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
     }
   }
 
-  they should "delete existing entries" in {
+  they should "delete existing entries" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.deviceStore.manage().create(userDevice).await
     fixtures.entryStore.manage().create(entries.head.copy(device = userDevice.id)).await
@@ -192,7 +192,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "not delete missing entries" in {
+  they should "not delete missing entries" in withRetry {
     val fixtures = new TestFixtures {}
     fixtures.deviceStore.manage().create(userDevice).await
 

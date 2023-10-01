@@ -5,7 +5,7 @@ import java.nio.file.Path
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import at.favre.lib.crypto.HKDF
+import at.favre.lib.hkdf.HKDF
 import stasis.client.encryption.stream.CipherStage
 import stasis.core.packaging.Crate
 import stasis.shared.model.devices.Device

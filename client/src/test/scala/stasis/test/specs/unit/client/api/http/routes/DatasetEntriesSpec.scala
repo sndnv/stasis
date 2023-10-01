@@ -19,7 +19,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
-  "DatasetEntries routes" should "respond with all entries" in {
+  "DatasetEntries routes" should "respond with all entries" in withRetry {
     val mockApiClient = MockServerApiEndpointClient()
     val routes = createRoutes(api = mockApiClient)
 
@@ -44,7 +44,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "respond with all entries for a definition" in {
+  they should "respond with all entries for a definition" in withRetry {
     val mockApiClient = MockServerApiEndpointClient()
     val routes = createRoutes(api = mockApiClient)
 
@@ -71,7 +71,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "respond with the latest entry for a definition" in {
+  they should "respond with the latest entry for a definition" in withRetry {
     val mockApiClient = MockServerApiEndpointClient()
     val routes = createRoutes(api = mockApiClient)
 
@@ -98,7 +98,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "fail to retrieve latest entry if none could be found" in {
+  they should "fail to retrieve latest entry if none could be found" in withRetry {
     val mockApiClient = new MockServerApiEndpointClient(self = Device.generateId()) {
       override def latestEntry(definition: DatasetDefinition.Id, until: Option[Instant]): Future[Option[DatasetEntry]] =
         Future.successful(None)

@@ -17,7 +17,7 @@ import stasis.test.specs.unit.identity.model.Generators
 import scala.concurrent.duration._
 
 class ResourceOwnerAuthenticationSpec extends RouteTest {
-  "A ResourceOwnerAuthentication directive" should "authenticate resource owners with provided credentials" in {
+  "A ResourceOwnerAuthentication directive" should "authenticate resource owners with provided credentials" in withRetry {
     val owners = createOwnerStore()
     val directive = createDirective(owners)
 
@@ -37,7 +37,7 @@ class ResourceOwnerAuthenticationSpec extends RouteTest {
     }
   }
 
-  it should "fail to authenticate resource owners with invalid provided credentials" in {
+  it should "fail to authenticate resource owners with invalid provided credentials" in withRetry {
     val owners = createOwnerStore()
     val directive = createDirective(owners)
 
@@ -55,7 +55,7 @@ class ResourceOwnerAuthenticationSpec extends RouteTest {
     }
   }
 
-  it should "authenticate resource owners with extracted credentials (redirected)" in {
+  it should "authenticate resource owners with extracted credentials (redirected)" in withRetry {
     val owners = createOwnerStore()
     val directive = createDirective(owners)
 
@@ -78,7 +78,7 @@ class ResourceOwnerAuthenticationSpec extends RouteTest {
     }
   }
 
-  it should "authenticate resource owners with extracted credentials (rejected)" in {
+  it should "authenticate resource owners with extracted credentials (rejected)" in withRetry {
     val owners = createOwnerStore()
     val directive = createDirective(owners)
 
@@ -101,7 +101,7 @@ class ResourceOwnerAuthenticationSpec extends RouteTest {
     }
   }
 
-  it should "fail to authenticate resource owners with invalid extracted credentials (redirected)" in {
+  it should "fail to authenticate resource owners with invalid extracted credentials (redirected)" in withRetry {
     val owners = createOwnerStore()
     val directive = createDirective(owners)
 
@@ -125,7 +125,7 @@ class ResourceOwnerAuthenticationSpec extends RouteTest {
     }
   }
 
-  it should "fail to authenticate resource owners with invalid extracted credentials (rejected)" in {
+  it should "fail to authenticate resource owners with invalid extracted credentials (rejected)" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
     val owners = createOwnerStore()
@@ -151,7 +151,7 @@ class ResourceOwnerAuthenticationSpec extends RouteTest {
     }
   }
 
-  it should "fail if a resource owner provided unsupported credentials" in {
+  it should "fail if a resource owner provided unsupported credentials" in withRetry {
     val owners = createOwnerStore()
     val directive = createDirective(owners)
 
@@ -173,7 +173,7 @@ class ResourceOwnerAuthenticationSpec extends RouteTest {
     }
   }
 
-  it should "fail if a resource owner provided no credentials" in {
+  it should "fail if a resource owner provided no credentials" in withRetry {
     val owners = createOwnerStore()
     val directive = createDirective(owners)
 

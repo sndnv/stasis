@@ -14,7 +14,7 @@ import stasis.test.specs.unit.identity.model.Generators
 class ClientCredentialsGrantSpec extends RouteTest with OAuthFixtures {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  "ClientCredentialsGrant routes" should "validate access token requests content" in {
+  "ClientCredentialsGrant routes" should "validate access token requests content" in withRetry {
     val request = AccessTokenRequest(
       grant_type = GrantType.ClientCredentials,
       scope = Some("some-scope")
@@ -24,7 +24,7 @@ class ClientCredentialsGrantSpec extends RouteTest with OAuthFixtures {
     an[IllegalArgumentException] should be thrownBy request.copy(scope = Some(""))
   }
 
-  they should "generate access tokens for valid requests (with URL parameters)" in {
+  they should "generate access tokens for valid requests (with URL parameters)" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val grant = new ClientCredentialsGrant(config, providers)
 
@@ -58,7 +58,7 @@ class ClientCredentialsGrantSpec extends RouteTest with OAuthFixtures {
     }
   }
 
-  they should "generate access tokens for valid requests (with form fields)" in {
+  they should "generate access tokens for valid requests (with form fields)" in withRetry {
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val grant = new ClientCredentialsGrant(config, providers)
 

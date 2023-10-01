@@ -27,7 +27,7 @@ import java.time.Instant
 import scala.concurrent.Future
 
 class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
-  "DeviceBootstrap routes (full permissions)" should "respond with all device bootstrap codes" in {
+  "DeviceBootstrap routes (full permissions)" should "respond with all device bootstrap codes" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import stasis.shared.api.Formats._
 
@@ -47,7 +47,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     }
   }
 
-  they should "delete existing device bootstrap codes" in {
+  they should "delete existing device bootstrap codes" in withRetry {
     val fixtures = new TestFixtures {}
 
     fixtures.bootstrapCodeStore.manage().put(bootstrapCode).await
@@ -59,7 +59,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     }
   }
 
-  they should "not delete missing device bootstrap codes" in {
+  they should "not delete missing device bootstrap codes" in withRetry {
     val fixtures = new TestFixtures {}
 
     fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(None)
@@ -70,7 +70,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     }
   }
 
-  "DeviceBootstrap routes (self permissions)" should "respond with all device bootstrap codes" in {
+  "DeviceBootstrap routes (self permissions)" should "respond with all device bootstrap codes" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import stasis.shared.api.Formats._
 
@@ -91,7 +91,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     }
   }
 
-  they should "crate new device bootstrap codes" in {
+  they should "crate new device bootstrap codes" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import stasis.shared.api.Formats._
 
@@ -109,7 +109,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     }
   }
 
-  they should "delete existing device bootstrap codes" in {
+  they should "delete existing device bootstrap codes" in withRetry {
     val fixtures = new TestFixtures {}
 
     Future.sequence(devices.map(fixtures.deviceStore.manage().create)).await
@@ -123,7 +123,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     }
   }
 
-  they should "not delete missing device bootstrap codes" in {
+  they should "not delete missing device bootstrap codes" in withRetry {
     val fixtures = new TestFixtures {}
 
     Future.sequence(devices.map(fixtures.deviceStore.manage().create)).await
@@ -136,7 +136,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     }
   }
 
-  they should "successfully execute device bootstrap" in {
+  they should "successfully execute device bootstrap" in withRetry {
     import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
     import stasis.shared.api.Formats._
 
@@ -164,7 +164,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     }
   }
 
-  they should "fail to execute device bootstrap if the target device is missing" in {
+  they should "fail to execute device bootstrap if the target device is missing" in withRetry {
     val fixtures = new TestFixtures {}
 
     fixtures.userStore.manage().create(user).await
@@ -178,7 +178,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     }
   }
 
-  they should "fail to execute device bootstrap if the target owner is missing" in {
+  they should "fail to execute device bootstrap if the target owner is missing" in withRetry {
     val fixtures = new TestFixtures {}
 
     Future.sequence(devices.map(fixtures.deviceStore.manage().create)).await

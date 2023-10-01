@@ -6,43 +6,43 @@ name     := projectName
 licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
 homepage := Some(url("https://github.com/sndnv/stasis"))
 
-ThisBuild / scalaVersion := "2.13.10"
+ThisBuild / scalaVersion := "2.13.12"
 
 lazy val versions = new {
   // akka
   val akka         = "2.6.20"
   val akkaHttp     = "10.2.10"
-  val akkaHttpCors = "1.1.3"
+  val akkaHttpCors = "1.2.0"
   val akkaJson     = "1.39.2"
 
   // persistence
   val geode    = "1.15.1"
   val slick    = "3.4.1"
-  val postgres = "42.5.3"
-  val mariadb  = "3.1.2"
-  val sqlite   = "3.40.1.0"
-  val h2       = "2.1.214"
+  val postgres = "42.6.0"
+  val mariadb  = "3.2.0"
+  val sqlite   = "3.43.0.0"
+  val h2       = "2.2.224"
 
   // telemetry
-  val openTelemetry           = "1.22.0"
-  val openTelemetryPrometheus = "1.22.0-alpha"
+  val openTelemetry           = "1.30.1"
+  val openTelemetryPrometheus = "1.30.1-alpha"
   val prometheus              = "0.16.0"
 
   // testing
   val scalaCheck    = "1.17.0"
-  val scalaTest     = "3.2.15"
-  val wiremock      = "2.35.0"
-  val mockito       = "1.17.12"
-  val mockitoInline = "5.1.1"
-  val jimfs         = "1.2"
+  val scalaTest     = "3.2.17"
+  val wiremock      = "3.0.1"
+  val mockito       = "1.17.27"
+  val mockitoInline = "5.2.0"
+  val jimfs         = "1.3.0"
 
   // misc
-  val playJson = "2.9.4"
+  val playJson = "2.10.1"
   val jose4j   = "0.9.3"
-  val hkdf     = "1.1.0"
-  val appdirs  = "1.2.1"
+  val hkdf     = "2.0.0"
+  val appdirs  = "1.2.2"
   val scopt    = "4.1.0"
-  val logback  = "1.4.5"
+  val logback  = "1.4.11"
 }
 
 lazy val jdkDockerImage = "openjdk:17-slim-bullseye"

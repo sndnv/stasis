@@ -1,7 +1,7 @@
 package stasis.client.encryption.secrets
 
 import akka.util.ByteString
-import at.favre.lib.crypto.HKDF
+import at.favre.lib.hkdf.HKDF
 import stasis.shared.model.users.User
 import stasis.shared.secrets.SecretsConfig
 

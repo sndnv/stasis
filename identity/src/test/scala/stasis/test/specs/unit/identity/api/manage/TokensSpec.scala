@@ -12,7 +12,7 @@ import stasis.test.specs.unit.identity.model.Generators
 class TokensSpec extends RouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  "Tokens routes" should "respond with all refresh tokens" in {
+  "Tokens routes" should "respond with all refresh tokens" in withRetry {
     val store = createTokenStore()
     val tokens = new Tokens(store)
 
@@ -28,7 +28,7 @@ class TokensSpec extends RouteTest {
     }
   }
 
-  they should "respond with existing refresh tokens for clients" in {
+  they should "respond with existing refresh tokens for clients" in withRetry {
     val store = createTokenStore()
     val tokens = new Tokens(store)
 
@@ -45,7 +45,7 @@ class TokensSpec extends RouteTest {
     }
   }
 
-  they should "fail if no refresh tokens are available for a client" in {
+  they should "fail if no refresh tokens are available for a client" in withRetry {
     val store = createTokenStore()
     val tokens = new Tokens(store)
 
@@ -58,7 +58,7 @@ class TokensSpec extends RouteTest {
     }
   }
 
-  they should "delete existing refresh tokens" in {
+  they should "delete existing refresh tokens" in withRetry {
     val store = createTokenStore()
     val tokens = new Tokens(store)
 
@@ -73,7 +73,7 @@ class TokensSpec extends RouteTest {
     }
   }
 
-  they should "not delete missing refresh tokens" in {
+  they should "not delete missing refresh tokens" in withRetry {
     val store = createTokenStore()
     val tokens = new Tokens(store)
 

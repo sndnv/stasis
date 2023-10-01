@@ -19,7 +19,7 @@ import scala.concurrent.duration._
 class ClientsSpec extends RouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-  "Clients routes" should "respond with all clients" in {
+  "Clients routes" should "respond with all clients" in withRetry {
     val store = createClientStore()
     val clients = new Clients(store, secretConfig)
 
@@ -37,7 +37,7 @@ class ClientsSpec extends RouteTest {
     }
   }
 
-  they should "create new clients" in {
+  they should "create new clients" in withRetry {
     val store = createClientStore()
     val clients = new Clients(store, secretConfig)
 
@@ -59,7 +59,7 @@ class ClientsSpec extends RouteTest {
     }
   }
 
-  they should "search clients by subject" in {
+  they should "search clients by subject" in withRetry {
     val store = createClientStore()
     val clients = new Clients(store, secretConfig)
 
@@ -98,7 +98,7 @@ class ClientsSpec extends RouteTest {
 
   }
 
-  they should "update existing client credentials" in {
+  they should "update existing client credentials" in withRetry {
     val store = createClientStore()
     val clients = new Clients(store, secretConfig)
 
@@ -118,7 +118,7 @@ class ClientsSpec extends RouteTest {
     }
   }
 
-  they should "respond with existing clients" in {
+  they should "respond with existing clients" in withRetry {
     val store = createClientStore()
     val clients = new Clients(store, secretConfig)
 
@@ -134,7 +134,7 @@ class ClientsSpec extends RouteTest {
     }
   }
 
-  they should "update existing clients" in {
+  they should "update existing clients" in withRetry {
     val store = createClientStore()
     val clients = new Clients(store, secretConfig)
 
@@ -158,7 +158,7 @@ class ClientsSpec extends RouteTest {
     }
   }
 
-  they should "delete existing clients" in {
+  they should "delete existing clients" in withRetry {
     val store = createClientStore()
     val clients = new Clients(store, secretConfig)
 
@@ -174,7 +174,7 @@ class ClientsSpec extends RouteTest {
     }
   }
 
-  they should "not delete missing clients" in {
+  they should "not delete missing clients" in withRetry {
     val store = createClientStore()
     val clients = new Clients(store, secretConfig)
 

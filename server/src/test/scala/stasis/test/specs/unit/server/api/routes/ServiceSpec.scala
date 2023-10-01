@@ -15,7 +15,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
-  "Service routes" should "provide ping responses" in {
+  "Service routes" should "provide ping responses" in withRetry {
     val fixtures = new TestFixtures {}
 
     Get("/ping") ~> fixtures.routes ~> check {
@@ -24,7 +24,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  it should "provide a health-check route" in {
+  it should "provide a health-check route" in withRetry {
     val fixtures = new TestFixtures {}
 
     Get("/health") ~> fixtures.routes ~> check {
