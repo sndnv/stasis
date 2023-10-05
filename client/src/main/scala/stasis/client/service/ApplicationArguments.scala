@@ -43,6 +43,22 @@ object ApplicationArguments {
           userPasswordConfirm = Array.emptyCharArray
         )
     }
+
+    final case class Maintenance(
+      regenerateApiCertificate: Boolean
+    ) extends Mode {
+      def validate(): Unit =
+        require(
+          Seq(regenerateApiCertificate).exists(identity),
+          "At least one maintenance flag must be set"
+        )
+    }
+
+    object Maintenance {
+      def empty: Maintenance = Maintenance(
+        regenerateApiCertificate = false
+      )
+    }
   }
 
   def apply(
@@ -109,6 +125,20 @@ object ApplicationArguments {
             }
             .optional()
             .text("User password (for encrypting new device secret).")
+        )
+
+      cmd("maintenance")
+        .action((_, args) => args.copy(mode = Mode.Maintenance.empty))
+        .text("\tStarting the client in maintenance mode.\n")
+        .children(
+          opt[Unit]("regenerate-api-certificate")
+            .action { case (_, args) =>
+              (args.mode: @unchecked) match {
+                case mode: Mode.Maintenance => args.copy(mode = mode.copy(regenerateApiCertificate = true))
+              }
+            }
+            .optional()
+            .text("Regenerate the TLS certificate for the client's own API.")
         )
     }
 }

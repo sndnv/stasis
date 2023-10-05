@@ -290,6 +290,46 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     }
   }
 
+  it should "support performing maintenance" in {
+    val directory = createApplicationDirectory(init = dir => java.nio.file.Files.createDirectories(dir.config.get))
+
+    val modeArguments = ApplicationArguments.Mode.Maintenance(
+      regenerateApiCertificate = true
+    )
+
+    val originalConfig = "stasis.client.api.http.context.keystore.password = \"test-password\""
+    val originalKeyStore = ByteString("test-keystore")
+
+    val keyStoreName = s"${Files.KeyStores.ClientApi}.p12"
+
+    implicit val stringToByteString: String => ByteString = ByteString.apply
+    implicit val ByteStringToString: ByteString => String = _.utf8String
+
+    directory.pushFile(Files.ConfigOverride, originalConfig)(typedSystem.executionContext, implicitly).await
+    directory.pushFile(keyStoreName, originalKeyStore)(typedSystem.executionContext, implicitly).await
+
+    val service = new Service with TestServiceArguments {
+      override protected def applicationDirectory: ApplicationDirectory = directory
+
+      override protected def applicationArguments: Future[ApplicationArguments] =
+        Future.successful(ApplicationArguments(modeArguments))
+
+      override protected def console: Option[Console] = None
+    }
+
+    eventually[Assertion] {
+      service.state should be(Service.State.Completed)
+    }
+
+    for {
+      updatedConfig <- directory.pullFile[String](Files.ConfigOverride)
+      updatedKeyStore <- directory.pullFile[ByteString](keyStoreName)
+    } yield {
+      updatedConfig should not be originalConfig
+      updatedKeyStore should not be originalKeyStore
+    }
+  }
+
   it should "fail if invalid arguments are provided" in {
     val directory = createApplicationDirectory(init = _ => ())
 

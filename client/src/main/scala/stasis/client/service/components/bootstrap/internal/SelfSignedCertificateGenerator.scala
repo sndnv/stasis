@@ -12,12 +12,12 @@ import scala.concurrent.duration._
 import scala.util.Try
 
 object SelfSignedCertificateGenerator {
-  def generate(distinguishedName: String): Try[(PrivateKey, X509Certificate)] =
-    generate(distinguishedName, Config.default)
+  def generate(name: String): Try[(PrivateKey, X509Certificate)] =
+    generate(name, Config.default)
 
   @SuppressWarnings(Array("org.wartremover.warts.Null"))
   def generate(
-    distinguishedName: String,
+    name: String,
     config: Config
   ): Try[(PrivateKey, X509Certificate)] =
     Try {
@@ -29,7 +29,7 @@ object SelfSignedCertificateGenerator {
       val privateKey = keyPair.getPrivate
       val publicKey = keyPair.getPublic
 
-      val owner = new X500Name(distinguishedName)
+      val owner = new X500Name(s"CN=$name")
 
       val validFrom = Instant.now()
       val validTo = validFrom.plusMillis(config.validity.toMillis)
@@ -41,11 +41,18 @@ object SelfSignedCertificateGenerator {
 
       val algorithm = "SHA256WithRSA"
 
+      val names = new GeneralNames().add(new GeneralName(new DNSName(name)))
+
+      val extensions = new CertificateExtensions()
+      extensions.set(SubjectAlternativeNameExtension.NAME, new SubjectAlternativeNameExtension(names))
+
       val info = new X509CertInfo()
+      info.set(X509CertInfo.VERSION, new CertificateVersion(version))
       info.set(X509CertInfo.VALIDITY, new CertificateValidity(Date.from(validFrom), Date.from(validTo)))
       info.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(serialNumber.bigInteger))
       info.set(s"${X509CertInfo.SUBJECT}.${X509CertInfo.DN_NAME}", owner)
       info.set(s"${X509CertInfo.ISSUER}.${X509CertInfo.DN_NAME}", owner)
+      info.set(X509CertInfo.EXTENSIONS, extensions)
       info.set(X509CertInfo.KEY, new CertificateX509Key(publicKey))
       info.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(AlgorithmId.get(algorithm)))
 
@@ -55,7 +62,6 @@ object SelfSignedCertificateGenerator {
 
         val algorithmId = certificate.get(X509CertImpl.SIG_ALG)
         info.set(s"${CertificateAlgorithmId.NAME}.${CertificateAlgorithmId.ALGORITHM}", algorithmId)
-        info.set(X509CertInfo.VERSION, new CertificateVersion(version))
       }
 
       val certificate = new X509CertImpl(info)

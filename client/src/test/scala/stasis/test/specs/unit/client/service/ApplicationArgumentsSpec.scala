@@ -43,17 +43,36 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
         "--user-password",
         expectedMode.userPassword.mkString
       )
-    )
-      .map {
-        case ApplicationArguments(mode: ApplicationArguments.Mode.Bootstrap) =>
-          mode.serverBootstrapUrl should be(expectedMode.serverBootstrapUrl)
-          mode.bootstrapCode should be(expectedMode.bootstrapCode)
-          mode.acceptSelfSignedCertificates should be(expectedMode.acceptSelfSignedCertificates)
-          mode.userPassword.mkString should be(expectedMode.userPassword.mkString)
+    ).map {
+      case ApplicationArguments(mode: ApplicationArguments.Mode.Bootstrap) =>
+        mode.serverBootstrapUrl should be(expectedMode.serverBootstrapUrl)
+        mode.bootstrapCode should be(expectedMode.bootstrapCode)
+        mode.acceptSelfSignedCertificates should be(expectedMode.acceptSelfSignedCertificates)
+        mode.userPassword.mkString should be(expectedMode.userPassword.mkString)
 
-        case other =>
-          fail(s"Unexpected result received: [$other]")
-      }
+      case other =>
+        fail(s"Unexpected result received: [$other]")
+    }
+  }
+
+  they should "support parsing arguments (maintenance)" in {
+    val expectedMode = ApplicationArguments.Mode.Maintenance(
+      regenerateApiCertificate = true
+    )
+
+    ApplicationArguments(
+      applicationName = "test-application",
+      args = Array(
+        "maintenance",
+        "--regenerate-api-certificate"
+      )
+    ).map {
+      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance) =>
+        mode.regenerateApiCertificate should be(expectedMode.regenerateApiCertificate)
+
+      case other =>
+        fail(s"Unexpected result received: [$other]")
+    }
   }
 
   they should "fail if invalid arguments are provided" in {
@@ -105,6 +124,26 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
 
     an[IllegalArgumentException] should be thrownBy {
       mode.validate()
+    }
+  }
+
+  they should "validate maintenance mode arguments" in {
+    val mode = ApplicationArguments.Mode.Maintenance(
+      regenerateApiCertificate = true
+    )
+
+    noException should be thrownBy {
+      mode.validate()
+    }
+  }
+
+  they should "fail if invalid maintenance mode arguments are provided" in {
+    val mode = ApplicationArguments.Mode.Maintenance(
+      regenerateApiCertificate = true
+    )
+
+    an[IllegalArgumentException] should be thrownBy {
+      mode.copy(regenerateApiCertificate = false).validate()
     }
   }
 }

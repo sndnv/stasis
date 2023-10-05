@@ -69,6 +69,17 @@ trait Service { _: Service.Arguments =>
       } yield {
         ApplicationArguments.Mode.Service
       }
+
+    case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance) =>
+      implicit val log: Logger = LoggerFactory.getLogger("stasis.client.maintenance")
+
+      for {
+        base <- components.maintenance.Base(modeArguments = mode, applicationDirectory = applicationDirectory)
+        certificates <- components.maintenance.Certificates(base)
+        _ <- certificates.apply()
+      } yield {
+        mode
+      }
   }
 
   startup.onComplete {
@@ -77,8 +88,8 @@ trait Service { _: Service.Arguments =>
       clientState.set(State.Started)
       val _ = startupPromise.success(Done)
 
-    case Success(_) =>
-      log.info("Client bootstrap completed")
+    case Success(mode) =>
+      log.info("Client {} completed", mode.getClass.getSimpleName.toLowerCase)
       clientState.set(State.Completed)
       val _ = startupPromise.success(Done)
       stop()

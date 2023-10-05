@@ -3,7 +3,6 @@
 import logging
 
 import click
-import urllib3
 
 from client_cli.api import create_client_api, create_init_api
 from client_cli.cli import load_api_token, load_client_config, capture_failures
@@ -27,8 +26,6 @@ def cli(ctx, verbose, insecure, json, timeout):
     )
 
     if not verbose:
-        # suppress warning as self-signed certs are unlikely to have a SAN
-        urllib3.disable_warnings(urllib3.exceptions.SubjectAltNameWarning)
         # suppress logging warnings
         logging.getLogger("urllib3").setLevel(logging.ERROR)
 
