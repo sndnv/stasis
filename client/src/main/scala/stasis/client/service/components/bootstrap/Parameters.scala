@@ -25,7 +25,7 @@ object Parameters {
   object KeyStore {
     final val PasswordSize: Int = 32
     final val Type: String = "PKCS12"
-    final val CertificateCommonName: String = "localhost"
+    final val CertificateName: String = "localhost"
   }
 
   def apply(base: Base, bootstrap: Bootstrap): Future[Parameters] = {
@@ -74,7 +74,7 @@ object Parameters {
         file = components.Files.TrustStores.ServerCore
       )
       (clientApiFile, clientApiPassword) <- createKeyStore(
-        commonName = KeyStore.CertificateCommonName,
+        name = KeyStore.CertificateName,
         storeType = KeyStore.Type,
         passwordSize = KeyStore.PasswordSize,
         parent = parent,
@@ -158,14 +158,14 @@ object Parameters {
 
   @SuppressWarnings(Array("org.wartremover.warts.Null"))
   def createKeyStore(
-    commonName: String,
+    name: String,
     storeType: String,
     passwordSize: Int,
     parent: Path,
     file: String
   )(implicit log: Logger): Try[(String, String)] =
     SelfSignedCertificateGenerator
-      .generate(distinguishedName = s"CN=$commonName")
+      .generate(name)
       .map { case (privateKey, certificate) =>
         val extension = storeTypeAsExtension(storeType)
 
@@ -180,8 +180,8 @@ object Parameters {
         store.load(None.orNull, None.orNull)
         store.setKeyEntry(file, privateKey, password.toCharArray, Array(certificate))
 
+        val _ = Files.deleteIfExists(path)
         val permissions = PosixFilePermissions.fromString(ApplicationDirectory.Default.CreatedFilePermissions)
-
         val _ = Files.createFile(path, PosixFilePermissions.asFileAttribute(permissions))
 
         val out = Files.newOutputStream(path)

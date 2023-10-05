@@ -11,7 +11,9 @@ from subprocess import PIPE, Popen, STDOUT
 
 DESCRIPTION = 'Generate docker images or executables for all runnable components.'
 
-DOCKER_IMAGE_REGEX = r'Successfully tagged (.+):(.+)'
+DOCKER_IMAGE_REGEX_A = r'Successfully tagged (.+):(.+)'
+DOCKER_IMAGE_REGEX_B = r'Built image (.+) with tags \[(.+)\]'
+DOCKER_IMAGE_REGEX_C = r'naming to .+/(.+):(.+) .*done'
 DOCKER_IMAGE_TARGET_TAG = 'dev-latest'
 
 
@@ -35,11 +37,13 @@ def build_docker_image(project_name, with_command):
 
     process.wait()
 
-    match = re.search(DOCKER_IMAGE_REGEX, '\n'.join(output))
+    match_a = re.search(DOCKER_IMAGE_REGEX_A, '\n'.join(output))
+    match_b = re.search(DOCKER_IMAGE_REGEX_B, '\n'.join(output))
+    match_c = re.search(DOCKER_IMAGE_REGEX_C, '\n'.join(output))
 
-    if process.returncode == 0 and match:
-        image = match.group(1)
-        tag = match.group(2)
+    if process.returncode == 0 and (match_a or match_b or match_c):
+        image = (match_a or match_b or match_c).group(1)
+        tag = (match_a or match_b or match_c).group(2)
 
         logging.info('Re-tagging [{}:{}] as [{}:{}]...'.format(image, tag, image, DOCKER_IMAGE_TARGET_TAG))
 

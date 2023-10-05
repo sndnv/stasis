@@ -222,7 +222,7 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
     val file = "test-file"
 
     Parameters.createKeyStore(
-      commonName = "test",
+      name = "test",
       storeType = "PKCS12",
       passwordSize = Parameters.TrustStore.PasswordSize,
       parent = parent,
@@ -254,7 +254,7 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
     val file = "test-file"
 
     Parameters.createKeyStore(
-      commonName = "test",
+      name = "test",
       storeType = "JKS",
       passwordSize = Parameters.TrustStore.PasswordSize,
       parent = parent,
