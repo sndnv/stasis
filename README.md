@@ -27,18 +27,18 @@ device and recover the original system in an automated and repeatable way.*
 ## Features
 
 * ***[Client-only Encryption](https://github.com/sndnv/stasis/wiki/Architecture-%3A%3A-Encryption)*** -
- encryption and decryption is done by client applications; the server never deals with unencrypted data or metadata
+  encryption and decryption is done by client applications; the server never deals with unencrypted data or metadata
 * ***[Device-only Secrets](https://github.com/sndnv/stasis/wiki/Architecture-%3A%3A-Secrets)*** -
- user credentials and device secrets do not leave the device on which they were entered/generated
+  user credentials and device secrets do not leave the device on which they were entered/generated
 * ***[Default Redundancy](https://github.com/sndnv/stasis/wiki/Architecture-%3A%3A-Core-Persistence)*** -
- copies of a device's encrypted data are sent to multiple nodes by default (local and remote)
+  copies of a device's encrypted data are sent to multiple nodes by default (local and remote)
 * ***[Hybrid Data Storage](https://github.com/sndnv/stasis/wiki/Architecture-%3A%3A-Data-Stores)*** -
- various storage backends (**[Apache Geode](https://geode.apache.org/)**, **[Slick](https://scala-slick.org/)**,
- **in-memory**, **file-based**) are supported and used
+  various storage backends (**[Apache Geode](https://geode.apache.org/)**, **[Slick](https://scala-slick.org/)**,
+  **in-memory**, **file-based**) are supported and used
 * ***Secrets Escrow*** -
- (*TODO*) enables storing encrypted device secrets on the server to simplify recovering of a lost or replaced device
+  (*TODO*) enables storing encrypted device secrets on the server to simplify recovering of a lost or replaced device
 * ***Serverless Mode*** -
- (*TODO*) enables creating backups and recovering from them without the presence of a server
+  (*TODO*) enables creating backups and recovering from them without the presence of a server
 
 ## Installation
 
@@ -59,6 +59,7 @@ available as well.
 There are also some Python and Bash [scripts](deployment/dev/scripts) to help with deployment and testing.
 
 ###### Downloads / Installation:
+
 * [Adoptium JDK](https://adoptium.net/)
 * [Scala](https://scala-lang.org/download/)
 * [sbt](https://www.scala-sbt.org/download.html)
@@ -77,6 +78,14 @@ There are also some Python and Bash [scripts](deployment/dev/scripts) to help wi
 
 > To execute all tests and QA steps for the Scala submodules, simply run `sbt qa` from the root of the repo.
 
+#### [`assets`](assets)
+
+Image assets used by other submodules.
+
+* Image files and **Python** script(s)
+* **Testing** - `n/a`
+* **Packaging** - `n/a`
+
 #### [`proto`](proto)
 
 Protocol Buffers file(s) defining gRPC services and messages used by the `core` networking and routing.
@@ -92,7 +101,6 @@ Core routing, networking and persistence code. Represents the subsystem that han
 * **Scala** code
 * **Testing** - `sbt "project core" qa`
 * **Packaging** - `n/a`
-
 
 #### [`shared`](shared)
 
@@ -189,9 +197,11 @@ Contributions are always welcome!
 Refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for more details.
 
 ## Versioning
+
 We use [SemVer](http://semver.org/) for versioning.
 
 ## License
+
 This project is licensed under the Apache License, Version 2.0 - see the [LICENSE](LICENSE) file for details
 
 > Copyright 2018 https://github.com/sndnv
