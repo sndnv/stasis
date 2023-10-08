@@ -9,7 +9,7 @@ import stasis.client.analysis.Checksum
 import stasis.client.compression.Compression
 import stasis.client.encryption.{Aes, Decoder => EncryptionDecoder, Encoder => EncryptionEncoder}
 import stasis.client.ops
-import stasis.client.service.ApplicationDirectory
+import stasis.client.service.{ApplicationDirectory, ApplicationTray}
 import stasis.client.service.components.internal.{ConfigOverride, FutureOps}
 import stasis.client.staging.{DefaultFileStaging, FileStaging}
 import stasis.core.telemetry.metrics.{MetricsExporter, MetricsProvider}
@@ -28,6 +28,7 @@ trait Base extends FutureOps {
   implicit def telemetry: TelemetryContext
 
   def directory: ApplicationDirectory
+  def tray: ApplicationTray
 
   def configOverride: typesafe.Config
   def rawConfig: typesafe.Config
@@ -46,6 +47,7 @@ trait Base extends FutureOps {
 object Base {
   def apply(
     applicationDirectory: ApplicationDirectory,
+    applicationTray: ApplicationTray,
     terminate: () => Unit
   )(implicit
     typedSystem: ActorSystem[SpawnProtocol.Command],
@@ -60,6 +62,9 @@ object Base {
 
           override val directory: ApplicationDirectory =
             applicationDirectory
+
+          override val tray: ApplicationTray =
+            applicationTray
 
           override val configOverride: typesafe.Config =
             ConfigOverride.load(directory)

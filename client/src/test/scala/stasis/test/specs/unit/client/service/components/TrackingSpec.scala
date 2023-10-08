@@ -3,6 +3,7 @@ package stasis.test.specs.unit.client.service.components
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.actor.typed.scaladsl.Behaviors
 import org.slf4j.{Logger, LoggerFactory}
+import stasis.client.service.ApplicationTray
 import stasis.client.service.components.{Base, Tracking}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
@@ -11,7 +12,7 @@ class TrackingSpec extends AsyncUnitSpec with ResourceHelpers {
   "A Tracking component" should "create itself from config" in {
     val directory = createApplicationDirectory(init = _ => ())
 
-    val base = Base(applicationDirectory = directory, terminate = () => ()).await
+    val base = Base(applicationDirectory = directory, applicationTray = ApplicationTray.NoOp(), terminate = () => ()).await
 
     for {
       tracking <- Tracking(base = base)

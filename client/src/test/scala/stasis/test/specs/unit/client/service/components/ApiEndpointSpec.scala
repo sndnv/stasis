@@ -10,6 +10,7 @@ import stasis.client.api.clients.Clients
 import stasis.client.ops.monitoring.ServerMonitor
 import stasis.client.ops.scheduling.{OperationExecutor, OperationScheduler}
 import stasis.client.ops.search.Search
+import stasis.client.service.ApplicationTray
 import stasis.client.service.components._
 import stasis.client.service.components.exceptions.ServiceStartupFailure
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -36,7 +37,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
       }
     )
 
-    val base = Base(applicationDirectory = directory, terminate = () => ()).await
+    val base = Base(applicationDirectory = directory, applicationTray = ApplicationTray.NoOp(), terminate = () => ()).await
 
     ApiEndpoint(
       base = base,
@@ -82,6 +83,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
 
     val base = Base(
       applicationDirectory = directory,
+      applicationTray = ApplicationTray.NoOp(),
       terminate = () => { val _ = terminationCounter.incrementAndGet() }
     ).await
 
@@ -128,7 +130,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
   it should "handle token file write failures" in {
     val directory = createApplicationDirectory(init = _ => ())
 
-    val base = Base(applicationDirectory = directory, terminate = () => ()).await
+    val base = Base(applicationDirectory = directory, applicationTray = ApplicationTray.NoOp(), terminate = () => ()).await
 
     ApiEndpoint(
       base = base,
@@ -168,7 +170,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
       }
     )
 
-    val base = Base(applicationDirectory = directory, terminate = () => ()).await
+    val base = Base(applicationDirectory = directory, applicationTray = ApplicationTray.NoOp(), terminate = () => ()).await
 
     val endpoint = ApiEndpoint(
       base = base,

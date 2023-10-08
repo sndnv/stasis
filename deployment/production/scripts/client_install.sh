@@ -78,9 +78,11 @@ CLIENT_UI_PATH="${CLIENT_USER_HOME}/stasis-client-ui"
 if [[ "${OSTYPE}" == "linux"* ]]; then
   CLIENT_CONFIG_PATH="${CLIENT_USER_HOME}/.config/stasis-client"
   TARGET_BIN_PATH="${CLIENT_USER_HOME}/.local/bin"
+  CLIENT_UI_PATH="${CLIENT_USER_HOME}/stasis-client-ui"
 elif [[ "${OSTYPE}" == "darwin"* ]]; then
   CLIENT_CONFIG_PATH="${CLIENT_USER_HOME}/Library/Preferences/stasis-client"
   TARGET_BIN_PATH="/usr/local/bin"
+  CLIENT_UI_PATH="${CLIENT_USER_HOME}/Applications/stasis.app"
 else
   echo "[$(now)] ... operating system [${OSTYPE}] is not supported."
   exit 1
@@ -95,15 +97,16 @@ echo "[$(now)] Installing [stasis-client]..."
 echo "[$(now)] Setting up client directory [${CLIENT_PATH}]..."
 mkdir -p ${CLIENT_PATH} || failed
 
-echo "[$(now)] Setting up client directory [${CLIENT_UI_PATH}]..."
-mkdir -p ${CLIENT_UI_PATH} || failed
+if [[ "${OSTYPE}" == "linux"* ]]; then
+  mkdir -p ${CLIENT_UI_PATH} || failed
+  chown -R ${CLIENT_USER} ${CLIENT_UI_PATH} || failed
+  chmod +w ${CLIENT_UI_PATH} || failed
+fi
 
 echo "[$(now)] Setting up client config directory [${CLIENT_CONFIG_PATH}]..."
 mkdir -p ${CLIENT_CONFIG_PATH} || failed
 chown -R ${CLIENT_USER} ${CLIENT_PATH} || failed
 chmod +w ${CLIENT_PATH} || failed
-chown -R ${CLIENT_USER} ${CLIENT_UI_PATH} || failed
-chmod +w ${CLIENT_UI_PATH} || failed
 
 echo "[$(now)] Setting up client certificates directory [${CLIENT_CERTS_PATH}]..."
 mkdir -p ${CLIENT_CERTS_PATH} || failed
@@ -133,7 +136,15 @@ pip3 install ${CLIENT_CLI_ARCHIVE} || failed
 ln -s "$(which stasis-client-cli)" "${TARGET_BIN_PATH}/stasis"
 
 echo "[$(now)] Installing [stasis-client-ui]..."
-cp -R ${CLIENT_UI_DIR}/build/${CLIENT_UI_TARGET}/x64/release/bundle/* ${CLIENT_UI_PATH}/ || failed
-ln -s ${CLIENT_UI_PATH}/stasis_client_ui "${TARGET_BIN_PATH}/stasis-ui"
+
+if [[ "${OSTYPE}" == "linux"* ]]; then
+  cp -R ${CLIENT_UI_DIR}/build/${CLIENT_UI_TARGET}/x64/release/bundle/* ${CLIENT_UI_PATH}/ || failed
+  ln -s ${CLIENT_UI_PATH}/stasis_client_ui "${TARGET_BIN_PATH}/stasis-ui"
+elif [[ "${OSTYPE}" == "darwin"* ]]; then
+  cp -R ${CLIENT_UI_DIR}/build/${CLIENT_UI_TARGET}/Build/Products/Release/stasis.app ${CLIENT_UI_PATH} || failed
+else
+  echo "[$(now)] ... operating system [${OSTYPE}] is not supported."
+  exit 1
+fi
 
 echo "[$(now)] ... done."

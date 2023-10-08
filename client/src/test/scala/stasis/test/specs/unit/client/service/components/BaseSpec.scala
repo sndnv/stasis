@@ -11,6 +11,7 @@ import stasis.client.compression.Gzip
 import stasis.client.encryption.Aes
 import stasis.client.ops
 import stasis.client.ops.Metrics
+import stasis.client.service.ApplicationTray
 import stasis.client.service.components.Base
 import stasis.core.{api, persistence, security}
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -25,7 +26,11 @@ class BaseSpec extends AsyncUnitSpec with ResourceHelpers {
       s"BaseSpec_${java.util.UUID.randomUUID().toString}"
     )
 
-    Base(applicationDirectory = createApplicationDirectory(init = _ => ()), terminate = () => ()).map { base =>
+    Base(
+      applicationDirectory = createApplicationDirectory(init = _ => ()),
+      applicationTray = ApplicationTray.NoOp(),
+      terminate = () => ()
+    ).map { base =>
       base.checksum should be(Checksum.CRC32)
       base.compression.defaultCompression should be(Gzip)
       base.encryption should be(Aes)

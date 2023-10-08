@@ -9,6 +9,7 @@ import stasis.client.api.clients.Clients
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.security.CredentialsProvider
+import stasis.client.service.ApplicationTray
 import stasis.client.service.components.{ApiClients, Base, Ops, Secrets, Tracking}
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
@@ -35,7 +36,7 @@ class OpsSpec extends AsyncUnitSpec with ResourceHelpers {
       }
     )
 
-    val base = Base(applicationDirectory = directory, terminate = () => ()).await
+    val base = Base(applicationDirectory = directory, applicationTray = ApplicationTray.NoOp(), terminate = () => ()).await
 
     Ops(
       base = base,

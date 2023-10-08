@@ -8,6 +8,7 @@ import akka.http.scaladsl.model.{FormData, HttpMethods, HttpRequest, StatusCodes
 import org.mockito.scalatest.AsyncMockitoSugar
 import org.scalatest.concurrent.Eventually
 import org.slf4j.{Logger, LoggerFactory}
+import stasis.client.service.ApplicationTray
 import stasis.client.service.components.{Base, Init}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
@@ -26,7 +27,11 @@ class InitSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockitoSugar
 
     for {
       init <- Init(
-        base = Base(applicationDirectory = createApplicationDirectory(_ => ()), terminate = () => ()).await,
+        base = Base(
+          applicationDirectory = createApplicationDirectory(_ => ()),
+          applicationTray = ApplicationTray.NoOp(),
+          terminate = () => ()
+        ).await,
         startup = Future.successful(Done),
         console = Some(console)
       )
@@ -48,7 +53,11 @@ class InitSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockitoSugar
 
     for {
       init <- Init(
-        base = Base(applicationDirectory = createApplicationDirectory(_ => ()), terminate = () => ()).await,
+        base = Base(
+          applicationDirectory = createApplicationDirectory(_ => ()),
+          applicationTray = ApplicationTray.NoOp(),
+          terminate = () => ()
+        ).await,
         startup = startup.future,
         console = None
       )

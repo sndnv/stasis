@@ -19,14 +19,15 @@ CLIENT_USER=${USER}
 CLIENT_USER_HOME=${HOME}
 
 CLIENT_PATH="${CLIENT_USER_HOME}/stasis-client"
-CLIENT_UI_PATH="${CLIENT_USER_HOME}/stasis-client-ui"
 
 if [[ "${OSTYPE}" == "linux"* ]]; then
   CLIENT_CONFIG_PATH="${CLIENT_USER_HOME}/.config/stasis-client"
   TARGET_BIN_PATH="${CLIENT_USER_HOME}/.local/bin"
+  CLIENT_UI_PATH="${CLIENT_USER_HOME}/stasis-client-ui"
 elif [[ "${OSTYPE}" == "darwin"* ]]; then
   CLIENT_CONFIG_PATH="${CLIENT_USER_HOME}/Library/Preferences/stasis-client"
   TARGET_BIN_PATH="/usr/local/bin"
+  CLIENT_UI_PATH="${CLIENT_USER_HOME}/Applications/stasis.app"
 else
   echo "[$(now)] ... operating system [${OSTYPE}] is not supported."
   exit 1
@@ -47,10 +48,18 @@ pip3 uninstall -y stasis-client-cli
 unlink "${TARGET_BIN_PATH}/stasis"
 
 echo "[$(now)] Uninstalling [stasis-client-ui]..."
-unlink "${TARGET_BIN_PATH}/stasis-ui"
-rm -r ${CLIENT_UI_PATH}/data
-rm -r ${CLIENT_UI_PATH}/lib
-rm ${CLIENT_UI_PATH}/stasis_client_ui
-rm -d ${CLIENT_UI_PATH}
+if [[ "${OSTYPE}" == "linux"* ]]; then
+  unlink "${TARGET_BIN_PATH}/stasis-ui"
+  rm -r ${CLIENT_UI_PATH}/data
+  rm -r ${CLIENT_UI_PATH}/lib
+  rm ${CLIENT_UI_PATH}/stasis_client_ui
+  rm -d ${CLIENT_UI_PATH}
+elif [[ "${OSTYPE}" == "darwin"* ]]; then
+  unlink "${TARGET_BIN_PATH}/stasis-ui"
+  rm -r ${CLIENT_UI_PATH}
+else
+  echo "[$(now)] ... operating system [${OSTYPE}] is not supported."
+  exit 1
+fi
 
 echo "[$(now)] ... done."

@@ -24,8 +24,8 @@ lazy val versions = new {
   val h2       = "2.2.224"
 
   // telemetry
-  val openTelemetry           = "1.30.1"
-  val openTelemetryPrometheus = "1.30.1-alpha"
+  val openTelemetry           = "1.31.0"
+  val openTelemetryPrometheus = "1.31.0-alpha"
   val prometheus              = "0.16.0"
 
   // testing
@@ -37,12 +37,13 @@ lazy val versions = new {
   val jimfs         = "1.3.0"
 
   // misc
-  val playJson = "2.10.1"
-  val jose4j   = "0.9.3"
-  val hkdf     = "2.0.0"
-  val appdirs  = "1.2.2"
-  val scopt    = "4.1.0"
-  val logback  = "1.4.11"
+  val playJson   = "2.10.1"
+  val jose4j     = "0.9.3"
+  val hkdf       = "2.0.0"
+  val appdirs    = "1.2.2"
+  val scopt      = "4.1.0"
+  val logback    = "1.4.11"
+  val systemTray = "4.4"
 }
 
 lazy val jdkDockerImage = "openjdk:17-slim-bullseye"
@@ -79,7 +80,8 @@ lazy val client = (project in file("./client"))
       "com.github.scopt"  %% "scopt"                             % versions.scopt,
       "io.opentelemetry"   % "opentelemetry-sdk"                 % versions.openTelemetry,
       "io.opentelemetry"   % "opentelemetry-exporter-prometheus" % versions.openTelemetryPrometheus,
-      "io.prometheus"      % "simpleclient_hotspot"              % versions.prometheus
+      "io.prometheus"      % "simpleclient_hotspot"              % versions.prometheus,
+      "com.dorkbox"        % "SystemTray"                        % versions.systemTray
     ),
     dockerBaseImage          := jdkDockerImage,
     Universal / javaOptions ++= Seq("-J--add-opens=java.base/sun.security.x509=ALL-UNNAMED"),

@@ -4,7 +4,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import akka.util.ByteString
 import org.slf4j.{Logger, LoggerFactory}
-import stasis.client.service.ApplicationDirectory
+import stasis.client.service.{ApplicationDirectory, ApplicationTray}
 import stasis.client.service.components.exceptions.ServiceStartupFailure
 import stasis.client.service.components.{Base, Files, Init, Secrets}
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -25,6 +25,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     Secrets(
       base = Base(
         applicationDirectory = createCustomApplicationDirectory(tokenEndpointPort),
+        applicationTray = ApplicationTray.NoOp(),
         terminate = () => ()
       ).await,
       init = new Init {
@@ -45,6 +46,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     Secrets(
       base = Base(
         applicationDirectory = createCustomApplicationDirectory(tokenEndpointPort),
+        applicationTray = ApplicationTray.NoOp(),
         terminate = () => ()
       ).await,
       init = new Init {
@@ -68,6 +70,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     Secrets(
       base = Base(
         applicationDirectory = createApplicationDirectory(init = _ => ()),
+        applicationTray = ApplicationTray.NoOp(),
         terminate = () => ()
       ).await,
       init = new Init {
@@ -91,6 +94,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     Secrets(
       base = Base(
         applicationDirectory = createCustomApplicationDirectory(tokenEndpointPort, deviceSecret = ByteString("invalid")),
+        applicationTray = ApplicationTray.NoOp(),
         terminate = () => ()
       ).await,
       init = new Init {
@@ -115,6 +119,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     Secrets(
       base = Base(
         applicationDirectory = createCustomApplicationDirectory(tokenEndpointPort),
+        applicationTray = ApplicationTray.NoOp(),
         terminate = () => ()
       ).await,
       init = new Init {
@@ -139,6 +144,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     Secrets(
       base = Base(
         applicationDirectory = createCustomApplicationDirectory(tokenEndpointPort),
+        applicationTray = ApplicationTray.NoOp(),
         terminate = () => ()
       ).await,
       init = new Init {
