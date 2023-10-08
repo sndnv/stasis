@@ -34,6 +34,9 @@ trait Service { _: Service.Arguments =>
   protected def applicationArguments: Future[ApplicationArguments] =
     arguments(applicationName)
 
+  protected def applicationTray: ApplicationTray =
+    ApplicationTray(callbacks = createCallbacks(forService = this))
+
   protected def console: Option[Console] = Option(System.console())
 
   private val startupPromise: Promise[Done] = Promise()
@@ -58,7 +61,7 @@ trait Service { _: Service.Arguments =>
       implicit val log: Logger = LoggerFactory.getLogger("stasis.client.service")
 
       for {
-        base <- components.Base(applicationDirectory = applicationDirectory, terminate = stop)
+        base <- components.Base(applicationDirectory = applicationDirectory, applicationTray = applicationTray, terminate = stop)
         tracking <- components.Tracking(base)
         init <- components.Init(base, startup = startupPromise.future, console = console)
         secrets <- components.Secrets(base, init)
@@ -67,6 +70,7 @@ trait Service { _: Service.Arguments =>
         endpoint <- components.ApiEndpoint(base, tracking, clients, ops)
         _ <- endpoint.api.start()
       } yield {
+        base.tray.init()
         ApplicationArguments.Mode.Service
       }
 
@@ -172,4 +176,26 @@ object Service {
     final val RetryAttempts: Int = 10
     final val RetryDelay: FiniteDuration = 25.millis
   }
+
+  def createCallbacks(forService: Service): ApplicationTray.Callbacks =
+    createCallbacks(forService = forService, withRuntime = Runtime.getRuntime)
+
+  def createCallbacks(forService: Service, withRuntime: Runtime): ApplicationTray.Callbacks =
+    ApplicationTray.Callbacks(
+      terminateService = forService.stop,
+      startUiService = () => { val _ = withRuntime.exec(startUiCommand()) }
+    )
+
+  def startUiCommand(): String = startUiCommand(
+    osName = System.getProperty("os.name"),
+    userHome = System.getProperty("user.home")
+  )
+
+  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
+  def startUiCommand(osName: String, userHome: String): String =
+    osName.toLowerCase.split(" ").headOption match {
+      case Some("mac")   => s"open $userHome/Applications/stasis.app"
+      case Some("linux") => "stasis-ui"
+      case _             => throw new IllegalArgumentException(s"Operating system [$osName}] is not supported")
+    }
 }

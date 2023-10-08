@@ -16,7 +16,7 @@ import org.scalatest.concurrent.Eventually
 import play.api.libs.json.Json
 import stasis.client.service.components.Files
 import stasis.client.service.components.exceptions.ServiceStartupFailure
-import stasis.client.service.{ApplicationArguments, ApplicationDirectory, Service}
+import stasis.client.service.{ApplicationArguments, ApplicationDirectory, ApplicationTray, Service}
 import stasis.core.routing.Node
 import stasis.core.security.tls.EndpointContext
 import stasis.shared.model.devices.{Device, DeviceBootstrapParameters}
@@ -124,6 +124,7 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val initEndpointPort = typedSystem.settings.config.getInt("stasis.client.api.init.port")
 
     class ExtendedService extends Service with TestServiceArguments {
+      override protected def applicationTray: ApplicationTray = ApplicationTray.NoOp()
       def isConsoleAvailable: Boolean = console.isDefined
     }
 
@@ -168,6 +169,7 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val service = new Service with TestServiceArguments {
       override protected def applicationDirectory: ApplicationDirectory = directory
       override protected def console: Option[Console] = Some(mockConsole(username, password = "invalid-password"))
+      override protected def applicationTray: ApplicationTray = ApplicationTray.NoOp()
     }
 
     eventually[Assertion] {
@@ -197,6 +199,7 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val service = new Service with TestServiceArguments {
       override protected def applicationDirectory: ApplicationDirectory = directory
       override protected def console: Option[Console] = Some(mockConsole(username, password))
+      override protected def applicationTray: ApplicationTray = ApplicationTray.NoOp()
     }
 
     eventually[Assertion] {
@@ -226,6 +229,7 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val service = new Service with TestServiceArguments {
       override protected def applicationDirectory: ApplicationDirectory = directory
       override protected def console: Option[Console] = Some(mockConsole(username, password))
+      override protected def applicationTray: ApplicationTray = ApplicationTray.NoOp()
     }
 
     eventually[Assertion] {
@@ -266,6 +270,7 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       override protected def applicationDirectory: ApplicationDirectory = directory
       override protected def applicationArguments: Future[ApplicationArguments] =
         Future.successful(ApplicationArguments(modeArguments))
+      override protected def applicationTray: ApplicationTray = ApplicationTray.NoOp()
       override protected def console: Option[Console] = None
     }
 
@@ -314,6 +319,8 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       override protected def applicationArguments: Future[ApplicationArguments] =
         Future.successful(ApplicationArguments(modeArguments))
 
+      override protected def applicationTray: ApplicationTray = ApplicationTray.NoOp()
+
       override protected def console: Option[Console] = None
     }
 
@@ -336,6 +343,7 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val service = new Service with TestServiceArguments {
       override protected def applicationDirectory: ApplicationDirectory = directory
       override protected def console: Option[Console] = None
+      override protected def applicationTray: ApplicationTray = ApplicationTray.NoOp()
 
       override def raw: Array[String] = Array("invalid")
     }
@@ -350,6 +358,31 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
           fail(s"Unexpected result received: [$other]")
       }
     }
+  }
+
+  it should "support generating UI start commands" in {
+    Service.startUiCommand(osName = "Linux", userHome = "/a/b/c") should be("stasis-ui")
+
+    Service.startUiCommand(osName = "Mac OS X", userHome = "/a/b/c") should be("open /a/b/c/Applications/stasis.app")
+
+    an[IllegalArgumentException] should be thrownBy Service.startUiCommand(osName = "Windows", userHome = "/a/b/c")
+  }
+
+  it should "support creating service callbacks" in {
+    val service = mock[Service]
+    val runtime = mock[Runtime]
+
+    val callbacks = Service.createCallbacks(forService = service, withRuntime = runtime)
+
+    callbacks.terminateService()
+    verify(service).stop()
+
+    val expectedUiCommand = Service.startUiCommand()
+
+    callbacks.startUiService()
+    verify(runtime).exec(expectedUiCommand)
+
+    succeed
   }
 
   "Service Arguments" should "retry retrieving raw arguments until they are available" in {

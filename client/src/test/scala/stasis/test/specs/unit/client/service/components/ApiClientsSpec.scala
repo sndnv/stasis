@@ -9,6 +9,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.security.CredentialsProvider
+import stasis.client.service.ApplicationTray
 import stasis.client.service.components.{ApiClients, Base, Secrets}
 import stasis.core.packaging.Crate
 import stasis.shared.model.users.User
@@ -36,7 +37,7 @@ class ApiClientsSpec extends AsyncUnitSpec with ResourceHelpers {
 
     for {
       apiClients <- ApiClients(
-        base = Base(applicationDirectory = directory, terminate = () => ()).await,
+        base = Base(applicationDirectory = directory, applicationTray = ApplicationTray.NoOp(), terminate = () => ()).await,
         secrets = new Secrets {
           override def deviceSecret: DeviceSecret =
             DeviceSecret(
