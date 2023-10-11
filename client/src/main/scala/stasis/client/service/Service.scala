@@ -114,6 +114,7 @@ trait Service { _: Service.Arguments =>
 
   def stop(): Unit = {
     log.info("Client stopping...")
+    applicationTray.shutdown()
     system.terminate()
   }
 
