@@ -6,6 +6,7 @@ import java.awt.event.ActionEvent
 
 trait ApplicationTray {
   def init(): Unit
+  def shutdown(): Unit
 }
 
 object ApplicationTray {
@@ -30,6 +31,8 @@ object ApplicationTray {
       tray.getMenu.add(new MenuItem("Start UI", (_: ActionEvent) => callbacks.startUiService()))
       tray.getMenu.add(new MenuItem("Exit", (_: ActionEvent) => callbacks.terminateService()))
     }
+
+    override def shutdown(): Unit = tray.shutdown()
   }
 
   object Default {
@@ -38,6 +41,7 @@ object ApplicationTray {
 
   class NoOp extends ApplicationTray {
     override def init(): Unit = ()
+    override def shutdown(): Unit = ()
   }
 
   object NoOp {
