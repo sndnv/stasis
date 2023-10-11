@@ -67,11 +67,15 @@ class ApplicationTraySpec extends UnitSpec with MockitoSugar {
         item2.getCallback.actionPerformed(new ActionEvent(this, 0, "test"))
         terminateCalled.get() should be(true)
 
+        tray.shutdown()
+        verify(underlying).shutdown()
+
       case other => fail(s"Unexpected result received: [$other]")
     }
   }
 
   "A NoOp ApplicationTray" should "do nothing" in {
     noException should be thrownBy ApplicationTray.NoOp().init()
+    noException should be thrownBy ApplicationTray.NoOp().shutdown()
   }
 }
