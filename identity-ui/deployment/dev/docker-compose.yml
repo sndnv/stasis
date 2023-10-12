@@ -2,7 +2,7 @@ version: '3'
 
 services:
   identity:
-    image: stasis-identity:dev-latest
+    image: ghcr.io/sndnv/stasis/stasis-identity:dev-latest
     ports:
       - '10000:10000'
     environment:

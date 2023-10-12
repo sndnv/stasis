@@ -20,18 +20,6 @@ jobs:
           mkdir ${{ github.workspace }}/target
           sbt qa
 
-      - name: Publish Artifacts
-        run: |
-          sbt "project client" universal:packageBin
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: stasis-client-${{ github.sha }}
-          path: client/target/universal/stasis-client-*.zip
-          if-no-files-found: error
-          retention-days: 1
-
       - name: Push Coverage Result
         uses: codecov/codecov-action@v3
         with:
@@ -46,7 +34,7 @@ jobs:
       - name: Setup Python 3
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.10'
 
       - name: Run QA
         run: |
@@ -56,25 +44,12 @@ jobs:
           ./qa.py
           python -m coverage xml
 
-      - name: Publish Artifacts
-        run: |
-          cd client-cli
-          python setup.py bdist --format=zip
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: stasis-client-cli-${{ github.sha }}
-          path: client-cli/dist/stasis-client-cli-*.zip
-          if-no-files-found: error
-          retention-days: 1
-
       - name: Push Coverage Result
         uses: codecov/codecov-action@v3
         with:
           flags: python
 
-  flutter:
+  flutter-linux:
     runs-on: ubuntu-latest
 
     steps:
@@ -82,20 +57,37 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - name: Run identity QA
+      - name: Run identity-ui QA
         run: |
+          sudo apt update -y
           sudo apt install -y lcov
           cd identity-ui
           ./qa.py
-      - name: Run server QA
+      - name: Run server-ui QA
         run: |
+          sudo apt update -y
           sudo apt install -y lcov
           cd server-ui
           ./qa.py
-      - name: Run client QA
+      - name: Run client-ui QA
         run: |
-          sudo apt install -y lcov
+          sudo apt update -y
+          sudo apt install -y lcov ninja-build libgtk-3-dev
           cd client-ui
+          ./qa.py
+
+  flutter-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          architecture: x64
+      - name: Run client-ui QA
+        run: |
+          cd client-ui
+          brew install lcov
           ./qa.py
 
   android:

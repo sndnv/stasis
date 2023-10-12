@@ -131,3 +131,9 @@ web/assets/.env
 *.g.dart
 *.freezed.dart
 *.mocks.dart
+
+# AppImage
+AppDir/
+appimage-build/
+*.AppImage
+*.AppImage.zsync

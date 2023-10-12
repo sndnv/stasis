@@ -53,98 +53,90 @@ class _OperationDetailsState extends State<OperationDetails> {
           Widget? failures;
           Widget? stages;
 
-          switch (snapshot.data.runtimeType.toString().replaceAll('_\$_', '')) {
-            case 'BackupState':
-              final state = snapshot.data as BackupState;
+          if (snapshot.data is BackupState) {
+            final state = snapshot.data as BackupState;
 
-              summary = OperationSummary.build(context,
-                  operation: OperationProgress(
-                    operation: widget.operation.operation,
-                    isActive: widget.operation.isActive,
-                    type: operation.Type.backup,
-                    progress: state.asProgress(),
-                  ),
-                  client: widget.client,
-                  onChange: onOperationStateChange);
-
-              metadata = ListTile(
-                title: Text('Metadata', style: mediumBold),
-                subtitle: RichText(
-                  text: TextSpan(
-                    children: [
-                      TextSpan(text: ' Collected: ', style: theme.textTheme.bodySmall),
-                      TextSpan(text: state.metadataCollected?.render() ?? '-', style: smallBold),
-                      TextSpan(text: '\n Pushed: ', style: theme.textTheme.bodySmall),
-                      TextSpan(text: state.metadataPushed?.render() ?? '-', style: smallBold),
-                    ],
-                  ),
-                ),
-              );
-
-              final errorMessages = state.entities.unmatched +
-                  state.failures +
-                  state.entities.failed.entries.map((e) => '[${e.key}] - ${e.value}').toList();
-
-              final stageValues = {
-                'discovered': state.entities.discovered.map((e) => Triple(e, 1, 1)).toList(),
-                'examined': state.entities.examined.map((e) => Triple(e, 1, 1)).toList(),
-                'collected': state.entities.collected.map((e) => Triple(e, 1, 1)).toList(),
-                'pending': state.entities.pending.entries.map((e) {
-                  return Triple(e.key, e.value.processedParts, e.value.expectedParts);
-                }).toList(),
-                'processed': state.entities.processed.entries.map((e) {
-                  return Triple(e.key, e.value.processedParts, e.value.expectedParts);
-                }).toList()
-              };
-
-              failures = _renderFailures(mediumBold, smallError, errorMessages);
-              stages = _renderStages(mediumBold, theme.textTheme.bodySmall, smallBold, stageValues);
-
-              break;
-
-            case 'RecoveryState':
-              final state = snapshot.data as RecoveryState;
-
-              summary = OperationSummary.build(
-                context,
+            summary = OperationSummary.build(context,
                 operation: OperationProgress(
                   operation: widget.operation.operation,
                   isActive: widget.operation.isActive,
-                  type: operation.Type.recovery,
+                  type: operation.Type.backup,
                   progress: state.asProgress(),
                 ),
                 client: widget.client,
-                onChange: onOperationStateChange,
-              );
+                onChange: onOperationStateChange);
 
-              final errorMessages =
-                  state.failures + state.entities.failed.entries.map((e) => '[${e.key}] - ${e.value}').toList();
+            metadata = ListTile(
+              title: Text('Metadata', style: mediumBold),
+              subtitle: RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(text: ' Collected: ', style: theme.textTheme.bodySmall),
+                    TextSpan(text: state.metadataCollected?.render() ?? '-', style: smallBold),
+                    TextSpan(text: '\n Pushed: ', style: theme.textTheme.bodySmall),
+                    TextSpan(text: state.metadataPushed?.render() ?? '-', style: smallBold),
+                  ],
+                ),
+              ),
+            );
 
-              final stageValues = {
-                'examined': state.entities.examined.map((e) => Triple(e, 1, 1)).toList(),
-                'collected': state.entities.collected.map((e) => Triple(e, 1, 1)).toList(),
-                'pending': state.entities.pending.entries.map((e) {
-                  return Triple(e.key, e.value.processedParts, e.value.expectedParts);
-                }).toList(),
-                'processed': state.entities.processed.entries.map((e) {
-                  return Triple(e.key, e.value.processedParts, e.value.expectedParts);
-                }).toList(),
-                'metadata-applied': state.entities.metadataApplied.map((e) => Triple(e, 1, 1)).toList()
-              };
+            final errorMessages = state.entities.unmatched +
+                state.failures +
+                state.entities.failed.entries.map((e) => '[${e.key}] - ${e.value}').toList();
 
-              failures = _renderFailures(mediumBold, smallError, errorMessages);
-              stages = _renderStages(mediumBold, theme.textTheme.bodySmall, smallBold, stageValues);
+            final stageValues = {
+              'discovered': state.entities.discovered.map((e) => Triple(e, 1, 1)).toList(),
+              'examined': state.entities.examined.map((e) => Triple(e, 1, 1)).toList(),
+              'collected': state.entities.collected.map((e) => Triple(e, 1, 1)).toList(),
+              'pending': state.entities.pending.entries.map((e) {
+                return Triple(e.key, e.value.processedParts, e.value.expectedParts);
+              }).toList(),
+              'processed': state.entities.processed.entries.map((e) {
+                return Triple(e.key, e.value.processedParts, e.value.expectedParts);
+              }).toList()
+            };
 
-              break;
+            failures = _renderFailures(mediumBold, smallError, errorMessages);
+            stages = _renderStages(mediumBold, theme.textTheme.bodySmall, smallBold, stageValues);
+          } else if (snapshot.data is RecoveryState) {
+            final state = snapshot.data as RecoveryState;
 
-            default:
-              summary = OperationSummary.build(
-                context,
-                operation: widget.operation,
-                client: widget.client,
-                onChange: onOperationStateChange,
-              );
-              break;
+            summary = OperationSummary.build(
+              context,
+              operation: OperationProgress(
+                operation: widget.operation.operation,
+                isActive: widget.operation.isActive,
+                type: operation.Type.recovery,
+                progress: state.asProgress(),
+              ),
+              client: widget.client,
+              onChange: onOperationStateChange,
+            );
+
+            final errorMessages =
+                state.failures + state.entities.failed.entries.map((e) => '[${e.key}] - ${e.value}').toList();
+
+            final stageValues = {
+              'examined': state.entities.examined.map((e) => Triple(e, 1, 1)).toList(),
+              'collected': state.entities.collected.map((e) => Triple(e, 1, 1)).toList(),
+              'pending': state.entities.pending.entries.map((e) {
+                return Triple(e.key, e.value.processedParts, e.value.expectedParts);
+              }).toList(),
+              'processed': state.entities.processed.entries.map((e) {
+                return Triple(e.key, e.value.processedParts, e.value.expectedParts);
+              }).toList(),
+              'metadata-applied': state.entities.metadataApplied.map((e) => Triple(e, 1, 1)).toList()
+            };
+
+            failures = _renderFailures(mediumBold, smallError, errorMessages);
+            stages = _renderStages(mediumBold, theme.textTheme.bodySmall, smallBold, stageValues);
+          } else {
+            summary = OperationSummary.build(
+              context,
+              operation: widget.operation,
+              client: widget.client,
+              onChange: onOperationStateChange,
+            );
           }
 
           details = (metadata != null ? [metadata] : <Widget>[]) +

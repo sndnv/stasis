@@ -107,27 +107,26 @@ extension ExtendedEntityStateString on String {
 
 extension ExtendedOperationState on OperationState {
   Progress asProgress() {
-    switch (runtimeType.toString().replaceAll('_\$_', '')) {
-      case 'BackupState':
-        final state = this as BackupState;
-        return Progress(
-          started: state.started,
-          total: state.entities.discovered.length,
-          processed: state.entities.processed.length,
-          failures: state.entities.failed.length + state.failures.length,
-          completed: state.completed,
-        );
-      case 'RecoveryState':
-        final state = this as RecoveryState;
-        return Progress(
-          started: state.started,
-          total: state.entities.examined.length,
-          processed: state.entities.processed.length,
-          failures: state.entities.failed.length + state.failures.length,
-          completed: state.completed,
-        );
-      default:
-        throw ArgumentError('Unexpected operation state encountered: [$runtimeType]');
+    if (this is BackupState) {
+      final state = this as BackupState;
+      return Progress(
+        started: state.started,
+        total: state.entities.discovered.length,
+        processed: state.entities.processed.length,
+        failures: state.entities.failed.length + state.failures.length,
+        completed: state.completed,
+      );
+    } else if (this is RecoveryState) {
+      final state = this as RecoveryState;
+      return Progress(
+        started: state.started,
+        total: state.entities.examined.length,
+        processed: state.entities.processed.length,
+        failures: state.entities.failed.length + state.failures.length,
+        completed: state.completed,
+      );
+    } else {
+      throw ArgumentError('Unexpected operation state encountered: [$runtimeType]');
     }
   }
 }
