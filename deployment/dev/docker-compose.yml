@@ -2,7 +2,7 @@ version: '3'
 
 services:
   identity:
-    image: stasis-identity:dev-latest
+    image: ghcr.io/sndnv/stasis/stasis-identity:dev-latest
     ports:
       - '10000:10000'
       - '10001:10001'
@@ -51,7 +51,7 @@ services:
       - ./secrets/identity.p12:/opt/docker/certs/identity.p12
 
   identity-ui:
-    image: stasis-identity-ui:dev-latest
+    image: ghcr.io/sndnv/stasis/stasis-identity-ui:dev-latest
     ports:
       - '8080:8080'
     environment:
@@ -69,7 +69,7 @@ services:
       - NGINX_CORS_ALLOWED_ORIGIN=*
 
   server:
-    image: stasis-server:dev-latest
+    image: ghcr.io/sndnv/stasis/stasis-server:dev-latest
     ports:
       - '20000:20000' # API
       - '20001:20001' # Core
@@ -131,7 +131,7 @@ services:
       - ./secrets/server.p12:/opt/docker/certs/server.p12
 
   server-ui:
-    image: stasis-server-ui:dev-latest
+    image: ghcr.io/sndnv/stasis/stasis-server-ui:dev-latest
     ports:
       - '9090:9090'
     environment:

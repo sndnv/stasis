@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'crate_store_descriptor.freezed.dart';
+
 part 'crate_store_descriptor.g.dart';
 
 abstract class CrateStoreDescriptor {
@@ -84,12 +85,12 @@ class FileBackendDescriptor extends CrateStoreDescriptor with _$FileBackendDescr
 
 extension ExtendedCrateStoreDescriptor on CrateStoreDescriptor {
   String backendType() {
-    switch (runtimeType) {
-      case _$_StreamingMemoryBackendDescriptor:
+    switch (actualType()) {
+      case StreamingMemoryBackendDescriptor:
         return (this as StreamingMemoryBackendDescriptor).backendType;
-      case _$_ContainerBackendDescriptor:
+      case ContainerBackendDescriptor:
         return (this as ContainerBackendDescriptor).backendType;
-      case _$_FileBackendDescriptor:
+      case FileBackendDescriptor:
         return (this as FileBackendDescriptor).backendType;
       default:
         throw ArgumentError('Unexpected descriptor type encountered: [$runtimeType]');
@@ -97,12 +98,12 @@ extension ExtendedCrateStoreDescriptor on CrateStoreDescriptor {
   }
 
   String location() {
-    switch (runtimeType) {
-      case _$_StreamingMemoryBackendDescriptor:
+    switch (actualType()) {
+      case StreamingMemoryBackendDescriptor:
         return 'memory';
-      case _$_ContainerBackendDescriptor:
+      case ContainerBackendDescriptor:
         return (this as ContainerBackendDescriptor).path;
-      case _$_FileBackendDescriptor:
+      case FileBackendDescriptor:
         return (this as FileBackendDescriptor).parentDirectory;
       default:
         throw ArgumentError('Unexpected backend type encountered: [$runtimeType]');
@@ -110,12 +111,12 @@ extension ExtendedCrateStoreDescriptor on CrateStoreDescriptor {
   }
 
   StreamingMemoryBackendDescriptor? asMemory() {
-    switch (runtimeType) {
-      case _$_StreamingMemoryBackendDescriptor:
+    switch (actualType()) {
+      case StreamingMemoryBackendDescriptor:
         return (this as StreamingMemoryBackendDescriptor);
-      case _$_ContainerBackendDescriptor:
+      case ContainerBackendDescriptor:
         return null;
-      case _$_FileBackendDescriptor:
+      case FileBackendDescriptor:
         return null;
       default:
         throw ArgumentError('Unexpected descriptor type encountered: [$runtimeType]');
@@ -123,12 +124,12 @@ extension ExtendedCrateStoreDescriptor on CrateStoreDescriptor {
   }
 
   ContainerBackendDescriptor? asContainer() {
-    switch (runtimeType) {
-      case _$_StreamingMemoryBackendDescriptor:
+    switch (actualType()) {
+      case StreamingMemoryBackendDescriptor:
         return null;
-      case _$_ContainerBackendDescriptor:
+      case ContainerBackendDescriptor:
         return (this as ContainerBackendDescriptor);
-      case _$_FileBackendDescriptor:
+      case FileBackendDescriptor:
         return null;
       default:
         throw ArgumentError('Unexpected descriptor type encountered: [$runtimeType]');
@@ -136,12 +137,12 @@ extension ExtendedCrateStoreDescriptor on CrateStoreDescriptor {
   }
 
   FileBackendDescriptor? asFile() {
-    switch (runtimeType) {
-      case _$_StreamingMemoryBackendDescriptor:
+    switch (actualType()) {
+      case StreamingMemoryBackendDescriptor:
         return null;
-      case _$_ContainerBackendDescriptor:
+      case ContainerBackendDescriptor:
         return null;
-      case _$_FileBackendDescriptor:
+      case FileBackendDescriptor:
         return (this as FileBackendDescriptor);
       default:
         throw ArgumentError('Unexpected descriptor type encountered: [$runtimeType]');
@@ -149,15 +150,14 @@ extension ExtendedCrateStoreDescriptor on CrateStoreDescriptor {
   }
 
   Type actualType() {
-    switch (runtimeType) {
-      case _$_StreamingMemoryBackendDescriptor:
-        return StreamingMemoryBackendDescriptor;
-      case _$_ContainerBackendDescriptor:
-        return ContainerBackendDescriptor;
-      case _$_FileBackendDescriptor:
-        return FileBackendDescriptor;
-      default:
-        throw ArgumentError('Unexpected descriptor type encountered: [$runtimeType]');
+    if (this is StreamingMemoryBackendDescriptor) {
+      return StreamingMemoryBackendDescriptor;
+    } else if (this is ContainerBackendDescriptor) {
+      return ContainerBackendDescriptor;
+    } else if (this is FileBackendDescriptor) {
+      return FileBackendDescriptor;
+    } else {
+      throw ArgumentError('Unexpected descriptor type encountered: [$runtimeType]');
     }
   }
 }

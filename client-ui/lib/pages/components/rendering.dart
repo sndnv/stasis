@@ -1,13 +1,13 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:intl/intl.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_definition.dart';
 import 'package:stasis_client_ui/model/operations/operation.dart' as operation;
 import 'package:stasis_client_ui/model/schedules/active_schedule.dart';
 import 'package:stasis_client_ui/utils/chrono_unit.dart';
 import 'package:stasis_client_ui/utils/file_size_unit.dart';
 import 'package:stasis_client_ui/utils/pair.dart';
-import 'package:intl/intl.dart';
 
 extension ExtendedDuration on Duration {
   Pair<int, ChronoUnit> toFields() {
@@ -209,32 +209,30 @@ extension ExtendedString on String {
 
 extension ExtendedAssignment on Assignment {
   String toAssignmentTypeString() {
-    switch (runtimeType.toString().replaceAll('_\$_', '')) {
-      case 'BackupAssignment':
-        return 'Backup';
-      case 'ExpirationAssignment':
-        return 'Expiration';
-      case 'ValidationAssignment':
-        return 'Validation';
-      case 'KeyRotationAssignment':
-        return 'Key Rotation';
-      default:
-        throw ArgumentError('Unexpected assignment type encountered: [$runtimeType]');
+    if (this is BackupAssignment) {
+      return 'Backup';
+    } else if (this is ExpirationAssignment) {
+      return 'Expiration';
+    } else if (this is ValidationAssignment) {
+      return 'Validation';
+    } else if (this is KeyRotationAssignment) {
+      return 'Key Rotation';
+    } else {
+      throw ArgumentError('Unexpected assignment type encountered: [$runtimeType]');
     }
   }
 
   String schedule() {
-    switch (runtimeType.toString().replaceAll('_\$_', '')) {
-      case 'BackupAssignment':
-        return (this as BackupAssignment).schedule;
-      case 'ExpirationAssignment':
-        return (this as ExpirationAssignment).schedule;
-      case 'ValidationAssignment':
-        return (this as ValidationAssignment).schedule;
-      case 'KeyRotationAssignment':
-        return (this as KeyRotationAssignment).schedule;
-      default:
-        throw ArgumentError('Unexpected assignment type encountered: [$runtimeType]');
+    if (this is BackupAssignment) {
+      return (this as BackupAssignment).schedule;
+    } else if (this is ExpirationAssignment) {
+      return (this as ExpirationAssignment).schedule;
+    } else if (this is ValidationAssignment) {
+      return (this as ValidationAssignment).schedule;
+    } else if (this is KeyRotationAssignment) {
+      return (this as KeyRotationAssignment).schedule;
+    } else {
+      throw ArgumentError('Unexpected assignment type encountered: [$runtimeType]');
     }
   }
 }

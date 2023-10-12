@@ -20,12 +20,7 @@ run_command(
 )
 
 run_command(
-    command=['flutter', 'pub', 'run', 'build_runner', 'clean'],
-    description='Clean'
-)
-
-run_command(
-    command=['flutter', 'pub', 'run', 'build_runner', 'build', '--delete-conflicting-outputs'],
+    command=['dart', 'run', 'build_runner', 'build'],
     description='Build'
 )
 
