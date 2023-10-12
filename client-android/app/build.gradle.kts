@@ -70,13 +70,33 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("secrets/signing.jks")
+            storePassword = System.getenv("ANDROID_SIGNING_KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("ANDROID_SIGNING_KEY_ALIAS")
+            keyPassword = System.getenv("ANDROID_SIGNING_KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         getByName("release") {
             isMinifyEnabled = true
+
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+
+            applicationVariants.all {
+                outputs
+                    .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
+                    .forEach {
+                        it.outputFileName = "${rootProject.name}_${defaultConfig.versionName}.apk"
+                    }
+            }
+
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 

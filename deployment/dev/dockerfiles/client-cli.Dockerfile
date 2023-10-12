@@ -1,4 +1,4 @@
-FROM stasis-client:dev-latest
+FROM ghcr.io/sndnv/stasis/stasis-client:dev-latest
 
 ARG CLIENT_USER=demiourgos728
 ARG CLIENT_PATH=/opt/docker/bin

@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:server_ui/model/nodes/crate_store_descriptor.dart';
 
 part 'node.freezed.dart';
+
 part 'node.g.dart';
 
 abstract class Node {
@@ -150,15 +151,14 @@ extension ExtendedNode on Node {
   }
 
   Type actualType() {
-    switch (runtimeType) {
-      case _$_LocalNode:
-        return LocalNode;
-      case _$_RemoteHttpNode:
-        return RemoteHttpNode;
-      case _$_RemoteGrpcNode:
-        return RemoteGrpcNode;
-      default:
-        throw ArgumentError('Unexpected node type encountered: [$runtimeType]');
+    if (this is LocalNode) {
+      return LocalNode;
+    } else if (this is RemoteHttpNode) {
+      return RemoteHttpNode;
+    } else if (this is RemoteGrpcNode) {
+      return RemoteGrpcNode;
+    } else {
+      throw ArgumentError('Unexpected node type encountered: [$runtimeType]');
     }
   }
 }
