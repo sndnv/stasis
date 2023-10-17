@@ -1,4 +1,4 @@
-name: Stasis Builds
+name: Stasis Build
 
 on: [push, pull_request]
 
