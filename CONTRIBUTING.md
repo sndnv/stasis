@@ -13,6 +13,8 @@ messages.
 Short and descriptive commit messages are preferred over detailed explanations of the changes; if more context is needed,
 that information should be in the pull request.
 
+> The default branch is `develop` so all PRs should be opened against it.
+
 ## Code Style
 
 Depending on the submodule and the language used in it, different code style and linting tools are available. Their use
@@ -44,3 +46,7 @@ should be avoided as having 100% coverage does not mean the tests are meaningful
 
 Smaller and simpler test scenarios, with limited setup/teardown, are encouraged; this approach tends to create components
 that are relatively small, modular and with a limited set of responsibilities.
+
+## Releasing
+
+Releasing changes involves merging `develop` into `master` and then running the `release` workflow.
