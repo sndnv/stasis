@@ -26,6 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ssh-key: ${{secrets.RELEASE_KEY}}
           ref: master
 
       - name: Setup Python 3
