@@ -1,6 +1,6 @@
 name: identity_ui
 description: Web-based user interface for the `identity` service.
-version: 0.0.1-SNAPSHOT
+version: 0.0.1
 
 publish_to: 'none'
 
