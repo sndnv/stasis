@@ -14,8 +14,6 @@ jobs:
       contents: read
       packages: write
 
-    if: github.ref == 'refs/heads/master'
-
     steps:
       - uses: actions/checkout@v4
 
