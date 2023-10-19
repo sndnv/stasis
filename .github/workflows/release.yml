@@ -41,6 +41,7 @@ jobs:
           git config --global user.email ${{github.actor}}@users.noreply.github.com
           ./release.py $VERBOSE --next $NEXT_VERSION
           git push
+          git push --tags
 
         env:
           NEXT_VERSION: ${{ inputs.next_version }}
