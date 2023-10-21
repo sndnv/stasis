@@ -65,14 +65,15 @@ jobs:
       - name: Build client-cli artifacts
         run: |
           cd client-cli
-          python setup.py bdist --format=zip
-          mv dist/stasis-client-cli-*.zip dist/stasis-client-cli-${{ github.ref_name }}.zip
+          pip install wheel setuptools
+          python setup.py bdist_wheel
+          mv dist/stasis_client_cli-*-py3-none-any.whl.whl dist/stasis_client_cli-${{ github.ref_name }}-py3-none-any.whl
 
       - name: Upload client-cli artifacts
         uses: actions/upload-artifact@v3
         with:
           name: client-cli
-          path: client-cli/dist/stasis-client-cli-${{ github.ref_name }}.zip
+          path: client-cli/dist/stasis_client_cli-${{ github.ref_name }}-py3-none-any.whl
           if-no-files-found: error
           retention-days: 1
 
@@ -229,7 +230,7 @@ jobs:
           fail_on_unmatched_files: true
           files: |
             client/stasis-client-${{ github.ref_name }}.zip
-            client-cli/stasis-client-cli-${{ github.ref_name }}.zip
+            client-cli/stasis_client_cli-${{ github.ref_name }}-py3-none-any.whl
             client-ui-linux/stasis-client-ui-linux-${{ github.ref_name }}.AppImage
             client-ui-macos/stasis-client-ui-macos-${{ github.ref_name }}.dmg
             client-android/stasis-client-android-${{ github.ref_name }}.apk
