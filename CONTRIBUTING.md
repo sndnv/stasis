@@ -13,8 +13,6 @@ messages.
 Short and descriptive commit messages are preferred over detailed explanations of the changes; if more context is needed,
 that information should be in the pull request.
 
-> The default branch is `develop` so all PRs should be opened against it.
-
 ## Code Style
 
 Depending on the submodule and the language used in it, different code style and linting tools are available. Their use
@@ -49,4 +47,5 @@ that are relatively small, modular and with a limited set of responsibilities.
 
 ## Releasing
 
-Releasing changes involves merging `develop` into `master` and then running the `release` workflow.
+Releasing changes involves running the `release` workflow; this will create a new tag/version, which will then trigger
+the publishing of all artifacts.
