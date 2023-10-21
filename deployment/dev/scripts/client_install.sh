@@ -35,8 +35,8 @@ function run_grep() {
 }
 
 SCRIPTS_DIR=$(unset CDPATH && cd "$(dirname "$0")" && echo "${PWD}")
-PRODUCTION_DEPLOYMENT_DIR=$(dirname "${SCRIPTS_DIR}")
-DEPLOYMENT_DIR=$(dirname "${PRODUCTION_DEPLOYMENT_DIR}")
+DEV_DEPLOYMENT_DIR=$(dirname "${SCRIPTS_DIR}")
+DEPLOYMENT_DIR=$(dirname "${DEV_DEPLOYMENT_DIR}")
 REPO_DIR=$(dirname "${DEPLOYMENT_DIR}")
 CLIENT_CLI_DIR="${REPO_DIR}/client-cli"
 CLIENT_UI_DIR="${REPO_DIR}/client-ui"
@@ -73,7 +73,6 @@ CLIENT_CLI_ARCHIVE="${REPO_DIR}/client-cli/dist/stasis-client-cli-${CLIENT_CLI_V
 CLIENT_CLI_ARCHIVE_NAME=$(file_name_from_path ${CLIENT_CLI_ARCHIVE})
 
 CLIENT_PATH="${CLIENT_USER_HOME}/stasis-client"
-CLIENT_UI_PATH="${CLIENT_USER_HOME}/stasis-client-ui"
 
 if [[ "${OSTYPE}" == "linux"* ]]; then
   CLIENT_CONFIG_PATH="${CLIENT_USER_HOME}/.config/stasis-client"
