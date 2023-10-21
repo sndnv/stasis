@@ -6,7 +6,18 @@
 `stasis` is a backup and recovery system with an emphasis on security and privacy; no personal information is collected,
 no unencrypted data leaves a client device and all encryption keys are fully in the control of their owner.
 
+### Linux/macOS Client CLI
 [![asciicast](https://asciinema.org/a/YMIf9oCMfvrbznnMnCrUMfar9.svg)](https://asciinema.org/a/YMIf9oCMfvrbznnMnCrUMfar9?speed=3)
+
+### Linux/macOS Client UI
+| ![Login Screen](assets/screenshots/client_ui_screenshot_1.png)              | ![Home Screen](assets/screenshots/client_ui_screenshot_2.png)     |
+|-----------------------------------------------------------------------------|-------------------------------------------------------------------|
+| ![Backup Definitions Screen](assets/screenshots/client_ui_screenshot_3.png) | ![Recovery Screen](assets/screenshots/client_ui_screenshot_4.png) |
+
+### Android Client
+| ![Bootstrap Screen"](assets/screenshots/client_android_screenshot_1.png) | ![Login Screen](assets/screenshots/client_android_screenshot_2.png) | ![Navigation Hint](assets/screenshots/client_android_screenshot_3.png)           |
+|--------------------------------------------------------------------------|---------------------------------------------------------------------|----------------------------------------------------------------------------------|
+| ![Help Hint](assets/screenshots/client_android_screenshot_4.png)         | ![Home Screens](assets/screenshots/client_android_screenshot_5.png) | ![Definition Details Screen](assets/screenshots/client_android_screenshot_6.png) |
 
 ## Why?
 
@@ -42,7 +53,41 @@ device and recover the original system in an automated and repeatable way.*
 
 ## Installation
 
-Official images and binaries are not yet available, but they can be created locally using the existing [dev tools](deployment/dev).
+### Server
+Docker images for `server`, `server-ui`, `identity` and `identity-ui` can be found under [Packages](https://github.com/sndnv?tab=packages&repo_name=stasis).
+
+> See [deployment/production](deployment/production/README.md) for more information on how to set up and deploy the services.
+
+### Clients
+Client binaries for Linux, macOS and Android can be found for each [release](https://github.com/sndnv/stasis/releases).
+
+#### Linux and macOS
+The provided installer can be used:
+```
+$ curl -s "https://raw.githubusercontent.com/sndnv/stasis/master/deployment/production/scripts/client_install.sh" | bash
+```
+
+###### Removing
+The Linux and macOS clients can be uninstalled using:
+```
+$ curl -s "https://raw.githubusercontent.com/sndnv/stasis/master/deployment/production/scripts/client_uninstall.sh" | bash
+```
+
+###### Updating
+The Linux and macOS clients can be updated by uninstalling the current version and installing the latest one:
+
+```
+$ curl -s "https://raw.githubusercontent.com/sndnv/stasis/master/deployment/production/scripts/client_uninstall.sh" | bash
+$ curl -s "https://raw.githubusercontent.com/sndnv/stasis/master/deployment/production/scripts/client_install.sh" | bash
+```
+
+> Secrets, configuration, logs and operation state are NOT removed when uninstalling the client!
+
+#### Android
+On Android, installing and updating is done by simply downloading the `apk` file and running it.
+
+### Testing
+Images and binaries for testing/development purposes can be created locally using the existing [dev tools](deployment/dev).
 
 ## Development
 
@@ -183,7 +228,7 @@ Deployment, artifact and certificate generation scripts and configuration.
 
 ### Current State
 
-**NOT** production ready but usable
+> Ready for prime time but run in production at your own risk!
 
 * `identity` / `identity-ui` - *authentication service and web UI* - **complete**
 * `server` / `server-ui` - *backup server and web UI* - **operational**; some features are not yet available
