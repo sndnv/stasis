@@ -1,7 +1,7 @@
 package stasis.client.ops.recovery.stages
 
-import akka.NotUsed
-import akka.stream.scaladsl.Source
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
 import stasis.client.collection.RecoveryCollector
 import stasis.client.model.TargetEntity
 import stasis.client.ops.Metrics

@@ -2,7 +2,7 @@ package stasis.core.persistence.manifests
 
 import java.nio.charset.StandardCharsets
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import play.api.libs.json.Json
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.backends.KeyValueBackend

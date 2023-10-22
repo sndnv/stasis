@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.server.model.nodes
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.routing.Node
 import stasis.core.telemetry.TelemetryContext

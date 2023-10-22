@@ -1,6 +1,6 @@
 package stasis.server.security
 
-import akka.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
+import org.apache.pekko.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
 import stasis.core.security.jwt.JwtProvider
 
 import scala.concurrent.{ExecutionContext, Future}

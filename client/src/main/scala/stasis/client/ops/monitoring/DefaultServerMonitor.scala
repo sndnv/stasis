@@ -1,10 +1,10 @@
 package stasis.client.ops.monitoring
 
-import akka.Done
-import akka.actor.typed._
-import akka.actor.typed.scaladsl.AskPattern._
-import akka.actor.typed.scaladsl.{Behaviors, LoggerOps}
-import akka.util.Timeout
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed._
+import org.apache.pekko.actor.typed.scaladsl.AskPattern._
+import org.apache.pekko.actor.typed.scaladsl.{Behaviors, LoggerOps}
+import org.apache.pekko.util.Timeout
 import stasis.client.api.clients.ServerApiEndpointClient
 import stasis.client.tracking.ServerTracker
 import stasis.shared.api.responses.Ping

@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.core.persistence.backends.slick
 
-import akka.Done
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.util.ByteString
 import slick.jdbc.H2Profile
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.core.persistence.backends.slick.SlickBackend

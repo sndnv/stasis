@@ -1,15 +1,15 @@
 package stasis.test.specs.unit.core.networking.http
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{Behavior, SpawnProtocol}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.BasicHttpCredentials
-import akka.http.scaladsl.server.MissingQueryParamRejection
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.util.ByteString
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{Behavior, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.marshalling.Marshal
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.server.MissingQueryParamRejection
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
+import org.apache.pekko.util.ByteString
 import stasis.core.api.Formats._
 import stasis.core.api.MessageResponse
 import stasis.core.networking.http.HttpEndpoint
@@ -73,7 +73,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "successfully process reservation requests" in {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val endpoint = createTestHttpEndpoint()
 
@@ -105,7 +105,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "reject reservation requests that cannot be fulfilled" in {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
@@ -214,7 +214,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "handle generic failures reported by routes" in {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
@@ -243,7 +243,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "reject requests with invalid query parameters" in {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 
     val endpoint = createTestHttpEndpoint()
@@ -267,7 +267,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "reject requests with invalid entities" in {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 
     val endpoint = createTestHttpEndpoint()
@@ -290,10 +290,11 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  private implicit val typedSystem: akka.actor.typed.ActorSystem[SpawnProtocol.Command] = akka.actor.typed.ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
-    "HttpEndpointSpec_Untyped"
-  )
+  private implicit val typedSystem: org.apache.pekko.actor.typed.ActorSystem[SpawnProtocol.Command] =
+    org.apache.pekko.actor.typed.ActorSystem(
+      Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+      "HttpEndpointSpec_Untyped"
+    )
 
   private def createTestHttpEndpoint(
     testCrateStore: Option[MockCrateStore] = None,

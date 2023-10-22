@@ -1,9 +1,9 @@
 package stasis.client.ops.recovery.stages
 
-import akka.NotUsed
-import akka.stream.scaladsl.{Flow, Source}
-import akka.stream.{Materializer, SharedKillSwitch}
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.{Flow, Source}
+import org.apache.pekko.stream.{Materializer, SharedKillSwitch}
+import org.apache.pekko.util.ByteString
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.TargetEntity.Destination
 import stasis.client.model.{EntityMetadata, TargetEntity}

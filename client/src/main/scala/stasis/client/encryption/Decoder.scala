@@ -1,8 +1,8 @@
 package stasis.client.encryption
 
-import akka.NotUsed
-import akka.stream.scaladsl.Flow
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.util.ByteString
 import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceMetadataSecret}
 
 trait Decoder {

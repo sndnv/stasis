@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.client
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.{proto, EntityMetadata, SourceEntity, TargetEntity}
 import stasis.client.tracking.state.{BackupState, RecoveryState}

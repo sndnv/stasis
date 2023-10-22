@@ -1,8 +1,8 @@
 package stasis.client.tracking.trackers
 
-import akka.NotUsed
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.stream.scaladsl.Source
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.stream.scaladsl.Source
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.tracking.ServerTracker
 import stasis.client.tracking.ServerTracker.ServerState

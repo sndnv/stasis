@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.server.model.mocks
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.util.Timeout
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.util.Timeout
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.telemetry.TelemetryContext
 import stasis.server.model.devices.DeviceStore

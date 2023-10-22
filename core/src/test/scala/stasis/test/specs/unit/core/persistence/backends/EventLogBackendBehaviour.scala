@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.core.persistence.backends
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.stream.scaladsl.Sink
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.stream.scaladsl.Sink
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 import stasis.core.persistence.backends.EventLogBackend

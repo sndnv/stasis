@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.core.api.directives
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.server.Directives
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
+import org.apache.pekko.http.scaladsl.server.Directives
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.mockito.captor.ArgCaptor
 import org.mockito.scalatest.AsyncMockitoSugar
 import org.slf4j.Logger

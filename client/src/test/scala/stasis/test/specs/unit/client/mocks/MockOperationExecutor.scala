@@ -3,7 +3,7 @@ package stasis.test.specs.unit.client.mocks
 import java.nio.file.{Path, Paths}
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
-import akka.Done
+import org.apache.pekko.Done
 import stasis.client.collection.rules.internal.IndexedRule
 import stasis.client.collection.rules.{Rule, Specification}
 import stasis.client.ops.recovery.Recovery

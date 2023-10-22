@@ -2,10 +2,10 @@ package stasis.server.api.routes
 
 import java.time.Instant
 
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Route
 import stasis.server.model.datasets.DatasetEntryStore
 import stasis.server.model.devices.DeviceStore
 import stasis.server.security.CurrentUser
@@ -13,7 +13,7 @@ import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.responses.{CreatedDatasetEntry, DeletedDatasetEntry}
 
 class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
   import stasis.core.api.Matchers._
   import stasis.shared.api.Formats._
 

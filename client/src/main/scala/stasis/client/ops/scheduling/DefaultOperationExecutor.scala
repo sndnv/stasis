@@ -1,9 +1,9 @@
 package stasis.client.ops.scheduling
 
-import akka.Done
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.util.Timeout
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.util.Timeout
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.collection.rules.Specification
 import stasis.client.encryption.secrets.DeviceSecret

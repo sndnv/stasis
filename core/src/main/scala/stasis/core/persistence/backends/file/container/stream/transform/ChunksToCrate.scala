@@ -1,8 +1,8 @@
 package stasis.core.persistence.backends.file.container.stream.transform
 
-import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
-import akka.stream.{Attributes, FlowShape, Inlet, Outlet}
-import akka.util.ByteString
+import org.apache.pekko.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
+import org.apache.pekko.stream.{Attributes, FlowShape, Inlet, Outlet}
+import org.apache.pekko.util.ByteString
 import stasis.core.persistence.backends.file.container.CrateChunk
 
 class ChunksToCrate() extends GraphStage[FlowShape[CrateChunk, ByteString]] {

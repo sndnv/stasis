@@ -45,7 +45,7 @@ services:
       - STASIS_MOBILE_CLIENT_DEV_CLIENT_SECRET=mobile-secret
       - STASIS_IDENTITY_UI_DEV_MOBILE_USER_PASSWORD=DvoOjDbYhKGDE9YKBcEBcw # `passw0rd` - derived with salt `7e9b9db3dfe6`
       - STASIS_SERVER_DEV_MOBILE_USER_ID=10ef373e-9c79-4066-8341-856db37b9e00
-      - AKKA_HTTP_CORS_ALLOWED_ORIGINS=*
+      - PEKKO_HTTP_CORS_ALLOWED_ORIGINS=*
     volumes:
       - ./config/identity-bootstrap.conf:/opt/docker/config/identity-bootstrap.conf
       - ./secrets/identity.p12:/opt/docker/certs/identity.p12
@@ -123,8 +123,8 @@ services:
       - STASIS_SERVER_DEV_MOBILE_USER_ID=10ef373e-9c79-4066-8341-856db37b9e00
       - STASIS_SERVER_DEV_MOBILE_USER_SALT=7e9b9db3dfe6
       - STASIS_SERVER_DEV_MOBILE_DEVICE_NODE_ID=ecdd5f59-acaa-4d15-b74b-9fdb57583917
-      - AKKA_HTTP_PARSING_MAX_CONTENT_LENGTH=4G
-      - AKKA_HTTP_CORS_ALLOWED_ORIGINS=*
+      - PEKKO_HTTP_PARSING_MAX_CONTENT_LENGTH=4G
+      - PEKKO_HTTP_CORS_ALLOWED_ORIGINS=*
     volumes:
       - ./config/server-bootstrap.conf:/opt/docker/config/server-bootstrap.conf
       - ./secrets/identity.p12:/opt/docker/certs/identity.p12

@@ -1,11 +1,11 @@
 package stasis.test.specs.unit.server.api.routes
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.Json
 import stasis.core.routing.Node
@@ -28,7 +28,7 @@ import scala.concurrent.Future
 
 class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
   "DeviceBootstrap routes (full permissions)" should "respond with all device bootstrap codes" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     import stasis.shared.api.Formats._
 
     val fixtures = new TestFixtures {}
@@ -71,7 +71,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
   }
 
   "DeviceBootstrap routes (self permissions)" should "respond with all device bootstrap codes" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     import stasis.shared.api.Formats._
 
     val fixtures = new TestFixtures {}
@@ -92,7 +92,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
   }
 
   they should "crate new device bootstrap codes" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     import stasis.shared.api.Formats._
 
     val fixtures = new TestFixtures {}
@@ -137,7 +137,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
   }
 
   they should "successfully execute device bootstrap" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     import stasis.shared.api.Formats._
 
     val fixtures = new TestFixtures {}
@@ -193,7 +193,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     "DeviceBootstrapSpec"
   )
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
+  private implicit val untypedSystem: org.apache.pekko.actor.ActorSystem = typedSystem.classicSystem
 
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 

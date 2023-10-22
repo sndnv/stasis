@@ -1,11 +1,11 @@
 package stasis.client.compression
 
-import akka.NotUsed
-import akka.stream.scaladsl.{Compression => AkkaCompression, Flow}
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.{Compression => PekkoCompression, Flow}
+import org.apache.pekko.util.ByteString
 
 object Gzip extends Encoder with Decoder {
   override val name: String = "gzip"
-  override def compress: Flow[ByteString, ByteString, NotUsed] = AkkaCompression.gzip
-  override def decompress: Flow[ByteString, ByteString, NotUsed] = AkkaCompression.gunzip()
+  override def compress: Flow[ByteString, ByteString, NotUsed] = PekkoCompression.gzip
+  override def decompress: Flow[ByteString, ByteString, NotUsed] = PekkoCompression.gunzip()
 }

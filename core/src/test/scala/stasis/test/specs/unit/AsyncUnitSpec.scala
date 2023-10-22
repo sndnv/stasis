@@ -1,7 +1,7 @@
 package stasis.test.specs.unit
 
-import akka.Done
-import akka.util.Timeout
+import org.apache.pekko.Done
+import org.apache.pekko.util.Timeout
 import org.scalatest.Assertion
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -16,8 +16,8 @@ trait AsyncUnitSpec extends AsyncFlatSpec with Matchers {
     def await: T = Await.result(future, timeout.duration)
   }
 
-  def await(delay: FiniteDuration, withSystem: akka.actor.ActorSystem): Unit = {
-    val _ = akka.pattern
+  def await(delay: FiniteDuration, withSystem: org.apache.pekko.actor.ActorSystem): Unit = {
+    val _ = org.apache.pekko.pattern
       .after(
         duration = delay,
         using = withSystem.scheduler
@@ -25,17 +25,17 @@ trait AsyncUnitSpec extends AsyncFlatSpec with Matchers {
       .await
   }
 
-  def await(delay: FiniteDuration, withSystem: akka.actor.typed.ActorSystem[_]): Unit =
+  def await(delay: FiniteDuration, withSystem: org.apache.pekko.actor.typed.ActorSystem[_]): Unit =
     await(delay, withSystem.classicSystem)
 
-  def after[T](delay: FiniteDuration, using: akka.actor.ActorSystem)(value: => Future[T]): Future[T] =
-    akka.pattern
+  def after[T](delay: FiniteDuration, using: org.apache.pekko.actor.ActorSystem)(value: => Future[T]): Future[T] =
+    org.apache.pekko.pattern
       .after(
         duration = delay,
         using = using.scheduler
       )(value)(using.dispatcher)
 
-  def after[T](delay: FiniteDuration, using: akka.actor.typed.ActorSystem[_])(value: => Future[T]): Future[T] =
+  def after[T](delay: FiniteDuration, using: org.apache.pekko.actor.typed.ActorSystem[_])(value: => Future[T]): Future[T] =
     after(delay, using.classicSystem)(value)
 
   def withRetry(f: => Future[Assertion]): Future[Assertion] =

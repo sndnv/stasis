@@ -2,7 +2,7 @@ package stasis.test.specs.unit.client.mocks
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import akka.Done
+import org.apache.pekko.Done
 import stasis.client.ops.scheduling.{OperationScheduleAssignment, OperationScheduler}
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.schedules.Schedule

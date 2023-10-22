@@ -1,9 +1,9 @@
 package stasis.client.ops.backup
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.stream._
-import akka.stream.scaladsl.{Sink, Source}
-import akka.{Done, NotUsed}
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.stream._
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.{Done, NotUsed}
 import stasis.client.collection.rules.Rule
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.DatasetMetadata

@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.client.ops.recovery.stages.internal
 
-import akka.actor.ActorSystem
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import stasis.client.ops.recovery.stages.internal.MergedCrates
 import stasis.test.specs.unit.AsyncUnitSpec
 

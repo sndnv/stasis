@@ -1,8 +1,8 @@
 package stasis.client.ops.backup.stages.internal
 
-import akka.stream.IOResult
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.stream.IOResult
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import stasis.client.compression.Encoder
 
 import scala.concurrent.Future

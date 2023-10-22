@@ -3,7 +3,7 @@ package stasis.client.staging
 import java.nio.file.attribute.PosixFilePermissions
 import java.nio.file.{Files, Path, StandardCopyOption}
 
-import akka.Done
+import org.apache.pekko.Done
 
 import scala.concurrent.{ExecutionContext, Future}
 

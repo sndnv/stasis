@@ -2,9 +2,9 @@ package stasis.client.encryption.secrets
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import at.favre.lib.hkdf.HKDF
 import stasis.client.encryption.stream.CipherStage
 import stasis.core.packaging.Crate

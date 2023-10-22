@@ -1,10 +1,10 @@
 package stasis.core.api
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
-import akka.http.scaladsl.{Http, HttpsConnectionContext}
-import akka.stream.scaladsl.{Sink, Source}
-import akka.stream.{OverflowStrategy, QueueOfferResult}
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.model.{HttpRequest, HttpResponse}
+import org.apache.pekko.http.scaladsl.{Http, HttpsConnectionContext}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.{OverflowStrategy, QueueOfferResult}
 import stasis.core.networking.exceptions.ClientFailure
 import stasis.core.security.tls.EndpointContext
 

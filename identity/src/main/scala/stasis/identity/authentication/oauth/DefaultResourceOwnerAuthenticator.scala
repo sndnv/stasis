@@ -1,6 +1,6 @@
 package stasis.identity.authentication.oauth
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
 import stasis.core.security.exceptions.AuthenticationFailure
 import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStoreView}
 import stasis.identity.model.secrets.Secret

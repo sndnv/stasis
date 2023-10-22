@@ -1,6 +1,6 @@
 package stasis.identity.api.oauth.directives
 
-import akka.http.scaladsl.server.{Directive, Directive1}
+import org.apache.pekko.http.scaladsl.server.{Directive, Directive1}
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.model.apis.Api
 import stasis.identity.model.clients.Client

@@ -1,10 +1,10 @@
 package stasis.client.security
 
-import akka.actor.typed._
-import akka.actor.typed.scaladsl.AskPattern._
-import akka.actor.typed.scaladsl.{Behaviors, LoggerOps, TimerScheduler}
-import akka.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
-import akka.util.Timeout
+import org.apache.pekko.actor.typed._
+import org.apache.pekko.actor.typed.scaladsl.AskPattern._
+import org.apache.pekko.actor.typed.scaladsl.{Behaviors, LoggerOps, TimerScheduler}
+import org.apache.pekko.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
+import org.apache.pekko.util.Timeout
 import stasis.core.security.oauth.OAuthClient
 import stasis.core.security.oauth.OAuthClient.AccessTokenResponse
 
@@ -32,7 +32,7 @@ object DefaultCredentialsProvider {
     val behaviour = Behaviors.setup[Message] { ctx =>
       Behaviors.withTimers[Message] { timers =>
         implicit val jwtClient: OAuthClient = client
-        implicit val akkaTimers: TimerScheduler[Message] = timers
+        implicit val pekkoTimers: TimerScheduler[Message] = timers
 
         val coreTokenExpiration = tokens.core.expires_in.seconds
         val apiTokenExpiration = tokens.api.expires_in.seconds

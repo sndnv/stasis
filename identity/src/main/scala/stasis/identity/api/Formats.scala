@@ -1,6 +1,6 @@
 package stasis.identity.api
 
-import akka.http.scaladsl.unmarshalling.Unmarshaller
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
 import play.api.libs.json._
 import stasis.identity.api.manage.requests._
 import stasis.identity.api.manage.responses.CreatedClient

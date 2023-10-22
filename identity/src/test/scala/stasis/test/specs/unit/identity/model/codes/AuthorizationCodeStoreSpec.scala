@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.identity.model.codes
 
-import akka.Done
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.identity.model.clients.Client
 import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, StoredAuthorizationCode}

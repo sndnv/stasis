@@ -1,10 +1,10 @@
 package stasis.test.specs.unit.client.service.components
 
-import akka.Done
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{FormData, HttpMethods, HttpRequest, StatusCodes}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.{FormData, HttpMethods, HttpRequest, StatusCodes}
 import org.mockito.scalatest.AsyncMockitoSugar
 import org.scalatest.concurrent.Eventually
 import org.slf4j.{Logger, LoggerFactory}

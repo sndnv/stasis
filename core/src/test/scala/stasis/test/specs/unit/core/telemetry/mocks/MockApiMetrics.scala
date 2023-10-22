@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.core.telemetry.mocks
 
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
+import org.apache.pekko.http.scaladsl.model.{HttpRequest, HttpResponse}
 import stasis.core.api.Metrics
 
 import java.util.concurrent.atomic.AtomicInteger

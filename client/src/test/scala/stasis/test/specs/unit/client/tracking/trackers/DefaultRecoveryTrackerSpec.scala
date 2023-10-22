@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.client.tracking.trackers
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.stream.scaladsl.Sink
-import akka.util.Timeout
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.util.Timeout
 import org.scalatest.{Assertion, BeforeAndAfterAll}
 import org.scalatest.concurrent.Eventually
 import stasis.client.model.TargetEntity

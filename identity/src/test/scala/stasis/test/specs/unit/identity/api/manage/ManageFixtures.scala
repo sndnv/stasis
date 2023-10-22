@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.identity.api.manage
 
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.identity.api.manage.setup.Providers
 import stasis.identity.model.apis.{Api, ApiStore}

@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.core.networking.mocks
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
-import akka.util.{ByteString, Timeout}
-import akka.{Done, NotUsed}
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
+import org.apache.pekko.util.{ByteString, Timeout}
+import org.apache.pekko.{Done, NotUsed}
 import stasis.core.networking.http.{HttpEndpointAddress, HttpEndpointClient}
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.backends.memory.MemoryBackend

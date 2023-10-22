@@ -1,14 +1,14 @@
 package stasis.test.specs.unit.server.service
 
-import akka.Done
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.marshalling.{Marshal, Marshaller}
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.unmarshalling.Unmarshal
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.marshalling.{Marshal, Marshaller}
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import com.typesafe.config.{Config, ConfigFactory}
 import org.jose4j.jwk.JsonWebKey
 import org.scalatest.Assertion
@@ -324,7 +324,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     request: CreateUser,
     jwt: String
   )(implicit trustedContext: EndpointContext): Future[Done] = {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     import stasis.shared.api.Formats._
 
     Http()
@@ -346,7 +346,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     serviceUrl: String,
     jwt: String
   )(implicit trustedContext: EndpointContext): Future[Seq[User]] = {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     import stasis.shared.api.Formats._
 
     Http()
@@ -368,7 +368,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     device: Device.Id,
     jwt: String
   )(implicit trustedContext: EndpointContext): Future[DeviceBootstrapCode] = {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     import stasis.shared.api.Formats._
 
     Http()
@@ -389,7 +389,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     bootstrapUrl: String,
     code: String
   )(implicit trustedContext: EndpointContext): Future[DeviceBootstrapParameters] = {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     import stasis.shared.api.Formats._
 
     Http()

@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.client.ops.backup.stages
 
-import akka.actor.ActorSystem
-import akka.stream.scaladsl.Source
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.scaladsl.Source
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.model.{DatasetMetadata, FilesystemMetadata}

@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.server.model.schedules
 
 import java.time.LocalDateTime
-import akka.Done
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.telemetry.TelemetryContext
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.security.Permission

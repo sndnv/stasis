@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.core.persistence.backends
 
-import akka.Done
+import org.apache.pekko.Done
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.core.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec

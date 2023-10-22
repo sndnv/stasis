@@ -1,7 +1,7 @@
 package stasis.core.security.jwt
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.util.Timeout
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.util.Timeout
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.security.oauth.OAuthClient
 import stasis.core.security.oauth.OAuthClient.AccessTokenResponse
@@ -34,7 +34,7 @@ class DefaultJwtProvider(
           )
           _ <- cache.put(scope, response)
         } yield {
-          val _ = akka.pattern.after(
+          val _ = org.apache.pekko.pattern.after(
             duration = response.expires_in.seconds - expirationTolerance,
             using = untypedSystem.scheduler
           )(cache.delete(scope))

@@ -3,7 +3,7 @@ package stasis.client.ops.scheduling
 import java.nio.file.Path
 import java.time.Instant
 
-import akka.Done
+import org.apache.pekko.Done
 import stasis.client.collection.rules.Specification
 import stasis.client.ops.recovery
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}

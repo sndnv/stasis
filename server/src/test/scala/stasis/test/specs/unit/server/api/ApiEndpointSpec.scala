@@ -1,14 +1,14 @@
 package stasis.test.specs.unit.server.api
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{Behavior, SpawnProtocol}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.BasicHttpCredentials
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{Behavior, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import play.api.libs.json.JsArray
 import stasis.core.api.MessageResponse
 import stasis.core.networking.http.HttpEndpointAddress
@@ -57,7 +57,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
   import stasis.shared.api.Formats._
 
   "An ApiEndpoint" should "successfully authenticate users" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
 
@@ -104,7 +104,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
   }
 
   it should "provide routes for dataset definitions" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
 
@@ -132,7 +132,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
   }
 
   it should "provide routes for dataset entries" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
 
@@ -157,7 +157,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
   }
 
   it should "provide routes for users" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
 
@@ -178,7 +178,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
   }
 
   it should "provide routes for devices" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
 
@@ -200,7 +200,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
   }
 
   it should "provide routes for schedules" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
 
@@ -221,7 +221,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
   }
 
   it should "provide routes for nodes" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
 
@@ -236,7 +236,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
   }
 
   it should "provide routes for manifests" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
 
@@ -251,7 +251,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
   }
 
   it should "provide routes for reservations" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
 
@@ -266,7 +266,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
   }
 
   it should "provide routes for staging operations" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
 
@@ -312,7 +312,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
   }
 
   it should "provide service routes" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
 
@@ -350,7 +350,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
   }
 
   it should "handle generic failures reported by routes" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 
     val userStore: UserStore = MockUserStore()
@@ -385,7 +385,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
   }
 
   it should "reject requests with invalid entities" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 
     val userStore: UserStore = MockUserStore()
@@ -420,10 +420,11 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
       }
   }
 
-  private implicit val typedSystem: akka.actor.typed.ActorSystem[SpawnProtocol.Command] = akka.actor.typed.ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
-    "ApiEndpointSpec_Typed"
-  )
+  private implicit val typedSystem: org.apache.pekko.actor.typed.ActorSystem[SpawnProtocol.Command] =
+    org.apache.pekko.actor.typed.ActorSystem(
+      Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+      "ApiEndpointSpec_Typed"
+    )
 
   private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 

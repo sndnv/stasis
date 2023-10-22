@@ -1,9 +1,9 @@
 package stasis.client.ops.backup.stages
 
-import akka.stream.scaladsl.{FileIO, Flow, Sink, Source, SubFlow}
-import akka.stream.{IOResult, Materializer, SharedKillSwitch}
-import akka.util.ByteString
-import akka.{Done, NotUsed}
+import org.apache.pekko.stream.scaladsl.{FileIO, Flow, Sink, Source, SubFlow}
+import org.apache.pekko.stream.{IOResult, Materializer, SharedKillSwitch}
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.{Done, NotUsed}
 import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceSecret}
 import stasis.client.model.{EntityMetadata, SourceEntity}
 import stasis.client.ops.backup.Providers

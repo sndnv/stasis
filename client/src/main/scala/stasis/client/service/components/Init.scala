@@ -1,7 +1,7 @@
 package stasis.client.service.components
 
-import akka.Done
-import akka.http.scaladsl.Http
+import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.Http
 import stasis.core.security.tls.EndpointContext
 
 import java.io.Console

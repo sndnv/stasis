@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.identity.api
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import play.api.libs.json._
 import stasis.identity.api.Formats._
 import stasis.identity.api.Manage
@@ -17,7 +17,7 @@ import stasis.test.specs.unit.identity.model.Generators
 import scala.concurrent.duration._
 
 class ManageSpec extends RouteTest with ManageFixtures {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
   "Manage routes" should "handle authorization code management requests" in withRetry {
     val providers = createManageProviders(withOwnerScopes = Seq(Manage.Scopes.ManageCodes))

@@ -1,10 +1,10 @@
 package stasis.client.api.clients
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse}
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.{ConnectionContext, Http}
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse}
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
+import org.apache.pekko.http.scaladsl.{ConnectionContext, Http}
 import play.api.libs.json.Format
 import stasis.client.api.clients.exceptions.ServerBootstrapFailure
 import stasis.client.api.clients.internal.InsecureX509TrustManager
@@ -77,7 +77,7 @@ object DefaultServerBootstrapEndpointClient {
       implicit val ec: ExecutionContext = system.executionContext
 
       if (response.status.isSuccess()) {
-        import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+        import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
         Unmarshal(response)
           .to[M]

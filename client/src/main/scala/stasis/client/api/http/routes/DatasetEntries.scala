@@ -2,16 +2,16 @@ package stasis.client.api.http.routes
 
 import java.time.Instant
 
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Route
 import stasis.client.api.http.Context
 
 import scala.concurrent.Future
 
 class DatasetEntries()(implicit context: Context) extends ApiRoutes {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
   import stasis.core.api.Matchers._
   import stasis.shared.api.Formats._
 

@@ -1,6 +1,6 @@
 package stasis.core.security
 
-import akka.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
+import org.apache.pekko.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
 import stasis.core.networking.EndpointAddress
 import stasis.core.persistence.nodes.NodeStoreView
 import stasis.core.routing.Node

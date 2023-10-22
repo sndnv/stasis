@@ -1,8 +1,8 @@
 package stasis.core.persistence.backends.geode
 
-import akka.Done
-import akka.actor.typed.{ActorSystem, DispatcherSelector, SpawnProtocol}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.{ActorSystem, DispatcherSelector, SpawnProtocol}
+import org.apache.pekko.util.ByteString
 import org.apache.geode.cache.Region
 import stasis.core.persistence.Metrics
 import stasis.core.persistence.backends.KeyValueBackend

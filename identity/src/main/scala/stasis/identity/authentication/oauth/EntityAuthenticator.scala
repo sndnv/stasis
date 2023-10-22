@@ -1,7 +1,7 @@
 package stasis.identity.authentication.oauth
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
 import stasis.core.security.exceptions.AuthenticationFailure
 import stasis.identity.model.secrets.Secret
 
@@ -36,7 +36,7 @@ trait EntityAuthenticator[T] {
 
     }
 
-    akka.pattern.after(
+    org.apache.pekko.pattern.after(
       duration = config.authenticationDelay,
       using = system.classicSystem.scheduler
     )(result)

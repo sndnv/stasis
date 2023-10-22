@@ -1,6 +1,6 @@
 package stasis.client.encryption.secrets
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import stasis.shared.model.users.User
 import stasis.shared.secrets.DerivedPasswords
 

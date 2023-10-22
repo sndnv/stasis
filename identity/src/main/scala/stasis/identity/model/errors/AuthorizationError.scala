@@ -1,6 +1,6 @@
 package stasis.identity.model.errors
 
-import akka.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.model.Uri
 
 sealed abstract class AuthorizationError(
   val error: String,

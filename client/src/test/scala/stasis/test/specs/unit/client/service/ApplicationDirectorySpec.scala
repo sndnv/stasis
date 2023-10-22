@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.client.service
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import stasis.client.service.ApplicationDirectory
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers

@@ -1,10 +1,10 @@
 package stasis.test.specs.unit.core.networking.http
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.model.headers.HttpCredentials
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually

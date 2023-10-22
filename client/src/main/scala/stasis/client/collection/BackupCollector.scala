@@ -2,8 +2,8 @@ package stasis.client.collection
 
 import java.nio.file.Path
 
-import akka.NotUsed
-import akka.stream.scaladsl.Source
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
 import stasis.client.api.clients.ServerApiEndpointClient
 import stasis.client.model.{DatasetMetadata, EntityMetadata, SourceEntity}
 import stasis.client.ops.ParallelismConfig

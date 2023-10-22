@@ -1,6 +1,6 @@
 package stasis.identity.authentication.manage
 
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.jose4j.jwt.JwtClaims
 import stasis.core.security.exceptions.AuthenticationFailure
 import stasis.core.security.jwt.JwtAuthenticator

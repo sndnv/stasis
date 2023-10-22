@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.server.model.devices
 
-import akka.Done
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.routing.Node
 import stasis.core.telemetry.TelemetryContext
 import stasis.server.security.CurrentUser

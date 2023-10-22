@@ -1,10 +1,10 @@
 package stasis.server.security.devices
 
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.unmarshalling.Unmarshal
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.marshalling.Marshal
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import org.slf4j.LoggerFactory
 import play.api.libs.json.{Format, Json}
 import stasis.core.api.PoolClient
@@ -129,12 +129,12 @@ class IdentityDeviceCredentialsManager(
   }
 
   private def marshalRequestEntity[T](request: T)(implicit format: Format[T]): Future[RequestEntity] = {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     Marshal(request).to[RequestEntity]
   }
 
   private def unmarshalResponseEntity[T](response: HttpResponse)(implicit format: Format[T]): Future[T] = {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     Unmarshal(response)
       .to[T]

@@ -2,13 +2,13 @@ package stasis.test.specs.unit.identity
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import akka.Done
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.marshalling.{Marshal, Marshaller}
-import akka.http.scaladsl.model.RequestEntity
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.util.Timeout
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.marshalling.{Marshal, Marshaller}
+import org.apache.pekko.http.scaladsl.model.RequestEntity
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.util.Timeout
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.core.persistence.backends.memory.MemoryBackend

@@ -2,7 +2,7 @@ package stasis.identity.service
 
 import java.io.File
 
-import akka.Done
+import org.apache.pekko.Done
 import com.typesafe.config.ConfigFactory
 import com.typesafe.{config => typesafe}
 import org.slf4j.Logger

@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.client.service.components.init
 
-import akka.Done
-import akka.http.scaladsl.model.{FormData, StatusCodes}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.model.{FormData, StatusCodes}
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import stasis.client.service.components.exceptions.ServiceStartupFailure
 import stasis.client.service.components.init.ViaApi
 import stasis.client.service.components.init.ViaApi.InitState
@@ -30,7 +30,7 @@ class ViaApiSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "support retrieving init state (pending)" in {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val routes = ViaApi.routes(credentials = Promise(), startup = Future.successful(Done))
 
@@ -41,7 +41,7 @@ class ViaApiSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "support retrieving init state (completed)" in {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val credentials = Promise.successful(("username", "password".toCharArray))
     val startup = Future.successful(Done)
@@ -54,7 +54,7 @@ class ViaApiSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "support retrieving init state (failed / ServiceStartupFailure)" in {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val credentials = Promise.successful(("username", "password".toCharArray))
     val failure = new ServiceStartupFailure(cause = "api", message = "test failure")
@@ -68,7 +68,7 @@ class ViaApiSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "support retrieving init state (failed / unknown)" in {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val credentials = Promise.successful(("username", "password".toCharArray))
     val failure = new RuntimeException("test failure")

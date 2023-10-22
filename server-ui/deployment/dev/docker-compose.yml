@@ -26,7 +26,7 @@ services:
       - STASIS_SERVER_DEV_CLIENT_SECRET=test-server-secret
       - STASIS_SERVER_DEV_TEST_USER_ID=b21c3f0c-0133-4fb5-883d-95ad3aaa1740
       - STASIS_SERVER_DEV_MANAGEMENT_USER_PASSWORD=manage-passw0rd
-      - AKKA_HTTP_CORS_ALLOWED_ORIGINS=*
+      - PEKKO_HTTP_CORS_ALLOWED_ORIGINS=*
     volumes:
       - ./identity-bootstrap.conf:/opt/docker/config/identity-bootstrap.conf
 
@@ -92,7 +92,7 @@ services:
       - STASIS_SERVER_DEV_TEST_USER_ID=b21c3f0c-0133-4fb5-883d-95ad3aaa1740
       - STASIS_SERVER_DEV_TEST_USER_SALT=d92beb8f7c3b
       - STASIS_SMOKE_TEST_CLIENT_NODE_ID=ef1e47e0-3a55-492e-bf5d-3c09c10c394d
-      - AKKA_HTTP_PARSING_MAX_CONTENT_LENGTH=4G
-      - AKKA_HTTP_CORS_ALLOWED_ORIGINS=*
+      - PEKKO_HTTP_PARSING_MAX_CONTENT_LENGTH=4G
+      - PEKKO_HTTP_CORS_ALLOWED_ORIGINS=*
     volumes:
       - ./server-bootstrap.conf:/opt/docker/config/server-bootstrap.conf

@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.server.security.users
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.model.{HttpResponse, StatusCodes}
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import stasis.core.security.tls.EndpointContext
 import stasis.server.security.users.{IdentityUserCredentialsManager, UserCredentialsManager}
 import stasis.shared.model.users.User

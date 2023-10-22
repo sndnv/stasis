@@ -5,10 +5,10 @@ import java.nio.file.Paths
 import scala.concurrent.duration._
 import scala.concurrent.Future
 
-import akka.actor.ActorSystem
-import akka.stream.scaladsl.Sink
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import org.scalatest.concurrent.Eventually
 import org.scalatest.Assertion
 import stasis.client.analysis.Checksum

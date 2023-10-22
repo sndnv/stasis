@@ -1,7 +1,7 @@
 package stasis.client.service.components.maintenance
 
-import akka.Done
-import akka.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import com.typesafe.{config => typesafe}
 import stasis.client.service.components
 

@@ -2,15 +2,15 @@ package stasis.client.api.http.routes
 
 import java.time.Instant
 
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.unmarshalling.Unmarshaller
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
 import stasis.client.api.http.Context
 import stasis.client.ops.search.Search
 
 class DatasetMetadata()(implicit context: Context) extends ApiRoutes {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
   import stasis.client.api.http.Formats._
   import stasis.core.api.Matchers._
   import DatasetMetadata._

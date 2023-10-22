@@ -2,13 +2,13 @@ package stasis.test.specs.unit.client.service
 
 import java.io.Console
 import java.util.concurrent.ThreadLocalRandom
-import akka.Done
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
+import org.apache.pekko.util.ByteString
 import com.typesafe.config.Config
 import org.mockito.scalatest.AsyncMockitoSugar
 import org.scalatest.Assertion

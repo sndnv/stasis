@@ -2,11 +2,11 @@ package stasis.identity.api.oauth.directives
 
 import scala.util.{Failure, Success}
 
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpChallenges}
-import akka.http.scaladsl.model.{headers, StatusCodes}
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.{Directive, Directive1}
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, HttpChallenges}
+import org.apache.pekko.http.scaladsl.model.{headers, StatusCodes}
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.{Directive, Directive1}
 import org.slf4j.Logger
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.api.Formats._
@@ -15,7 +15,7 @@ import stasis.identity.model.clients.Client
 import stasis.identity.model.errors.TokenError
 
 trait ClientAuthentication extends EntityDiscardingDirectives {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
   protected def log: Logger
 

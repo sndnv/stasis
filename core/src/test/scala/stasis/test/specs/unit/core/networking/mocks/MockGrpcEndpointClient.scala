@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.core.networking.mocks
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
-import akka.{Done, NotUsed}
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.{Done, NotUsed}
 import stasis.core.networking.grpc.{GrpcEndpointAddress, GrpcEndpointClient}
 import stasis.core.packaging
 import stasis.core.packaging.Crate

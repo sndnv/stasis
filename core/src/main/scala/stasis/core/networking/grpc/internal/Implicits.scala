@@ -2,7 +2,7 @@ package stasis.core.networking.grpc.internal
 
 import java.util.UUID
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import stasis.core.networking.exceptions.EndpointFailure
 import stasis.core.networking.grpc.proto
 
@@ -28,9 +28,9 @@ object Implicits {
       case None    => EndpointFailure("Failure message missing")
     }
 
-  implicit def akkaToProtobufByteString(string: ByteString): com.google.protobuf.ByteString =
+  implicit def pekkoToProtobufByteString(string: ByteString): com.google.protobuf.ByteString =
     com.google.protobuf.ByteString.copyFrom(string.asByteBuffer)
 
-  implicit def protobufToAkkaByteString(string: com.google.protobuf.ByteString): ByteString =
+  implicit def protobufToPekkoByteString(string: com.google.protobuf.ByteString): ByteString =
     ByteString.fromByteBuffer(string.asReadOnlyByteBuffer())
 }

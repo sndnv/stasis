@@ -2,8 +2,8 @@ package stasis.identity.model.tokens
 
 import java.time.Instant
 
-import akka.Done
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.identity.model.clients.Client
 import stasis.identity.model.owners.ResourceOwner
@@ -101,6 +101,6 @@ object RefreshTokenStore {
           }
 
       private def expire(token: RefreshToken): Future[Boolean] =
-        akka.pattern.after(expiration, untypedSystem.scheduler)(backend.delete(token))
+        org.apache.pekko.pattern.after(expiration, untypedSystem.scheduler)(backend.delete(token))
     }
 }

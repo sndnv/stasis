@@ -1,8 +1,8 @@
 package stasis.client.ops.recovery.stages.internal
 
-import akka.NotUsed
-import akka.stream.scaladsl.{Concat, Source}
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.{Concat, Source}
+import org.apache.pekko.util.ByteString
 import stasis.client.ops.exceptions.EntityMergeFailure
 
 import java.nio.file.Path

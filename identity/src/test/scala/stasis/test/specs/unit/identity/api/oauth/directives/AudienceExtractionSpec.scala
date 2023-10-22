@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.identity.api.oauth.directives
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directives
 import org.slf4j.Logger
 import play.api.libs.json._
 import stasis.identity.api.oauth.directives.AudienceExtraction
@@ -13,7 +13,7 @@ import stasis.test.specs.unit.identity.model.Generators
 import scala.concurrent.{ExecutionContext, Future}
 
 class AudienceExtractionSpec extends RouteTest {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
   "An AudienceExtraction directive" should "convert client audience to scopes" in withRetry {
     val directive = createDirective(clients = createClientStore(), apis = createApiStore())

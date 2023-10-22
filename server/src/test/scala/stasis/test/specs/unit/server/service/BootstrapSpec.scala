@@ -3,8 +3,8 @@ package stasis.test.specs.unit.server.service
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit.MINUTES
 import java.util.UUID
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import com.typesafe.config.Config
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.networking.grpc.GrpcEndpointAddress

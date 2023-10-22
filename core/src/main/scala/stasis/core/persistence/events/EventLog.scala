@@ -1,7 +1,7 @@
 package stasis.core.persistence.events
 
-import akka.stream.scaladsl.Source
-import akka.{Done, NotUsed}
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.{Done, NotUsed}
 import stasis.core.persistence.backends.EventLogBackend
 
 import scala.concurrent.Future

@@ -2,7 +2,7 @@ package stasis.identity.model.owners
 
 import java.nio.charset.StandardCharsets
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import play.api.libs.json._
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.identity.model.secrets.SecretSerdes.secretFormat

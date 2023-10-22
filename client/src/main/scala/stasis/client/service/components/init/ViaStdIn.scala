@@ -2,7 +2,7 @@ package stasis.client.service.components.init
 
 import java.io.Console
 
-import akka.Done
+import org.apache.pekko.Done
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}

@@ -1,13 +1,13 @@
 package stasis.test.specs.unit.identity.api
 
-import akka.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import play.api.libs.json.{JsObject, Json}
 import stasis.identity.api.Jwks
 import stasis.test.specs.unit.core.security.mocks.MockJwksGenerators
 import stasis.test.specs.unit.identity.RouteTest
 
 class JwksSpec extends RouteTest {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
   "JWKs routes" should "provide a list of available JSON web keys" in withRetry {
     val expectedKeys =

@@ -1,6 +1,6 @@
 package stasis.client.ops.monitoring
 
-import akka.Done
+import org.apache.pekko.Done
 
 import scala.concurrent.Future
 

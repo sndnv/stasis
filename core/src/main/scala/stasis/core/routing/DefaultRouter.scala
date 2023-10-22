@@ -1,11 +1,11 @@
 package stasis.core.routing
 
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.stream.ClosedShape
-import akka.stream.scaladsl.{Broadcast, GraphDSL, RunnableGraph, Source}
-import akka.util.ByteString
-import akka.{Done, NotUsed}
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.stream.ClosedShape
+import org.apache.pekko.stream.scaladsl.{Broadcast, GraphDSL, RunnableGraph, Source}
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.{Done, NotUsed}
 import org.slf4j.LoggerFactory
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.exceptions.ReservationFailure

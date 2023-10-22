@@ -4,8 +4,8 @@ import java.nio.file.Path
 import java.security.MessageDigest
 import java.util.zip.CRC32
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.FileIO
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.FileIO
 
 import scala.concurrent.{ExecutionContext, Future}
 

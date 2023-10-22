@@ -2,8 +2,8 @@ package stasis.server.model.devices
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import akka.Done
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.server.security.Resource
 import stasis.server.security.exceptions.AuthorizationFailure
@@ -142,7 +142,7 @@ object DeviceBootstrapCodeStore {
           .put(code.value, code)
           .map { result =>
             val expiresIn = Instant.now().until(code.expiresAt, ChronoUnit.MILLIS).millis
-            val _ = akka.pattern.after(expiresIn, untypedSystem.scheduler)(delete(code.value))
+            val _ = org.apache.pekko.pattern.after(expiresIn, untypedSystem.scheduler)(delete(code.value))
             result
           }
 

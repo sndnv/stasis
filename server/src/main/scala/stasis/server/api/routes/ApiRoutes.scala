@@ -1,7 +1,7 @@
 package stasis.server.api.routes
 
-import akka.http.scaladsl.server.Directives.onSuccess
-import akka.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.server.Directives.onSuccess
+import org.apache.pekko.http.scaladsl.server.Route
 import org.slf4j.Logger
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.server.security.{CurrentUser, Resource, ResourceProvider}

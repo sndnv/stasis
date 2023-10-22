@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.identity.api.oauth.directives
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directives
 import org.slf4j.Logger
 import stasis.identity.api.oauth.directives.ClientRetrieval
 import stasis.identity.model.clients.{ClientStore, ClientStoreView}

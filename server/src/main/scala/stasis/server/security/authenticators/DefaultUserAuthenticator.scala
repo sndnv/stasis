@@ -2,7 +2,7 @@ package stasis.server.security.authenticators
 
 import java.util.UUID
 
-import akka.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
+import org.apache.pekko.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
 import org.jose4j.jwt.JwtClaims
 import stasis.core.security.exceptions.AuthenticationFailure
 import stasis.core.security.jwt.JwtAuthenticator

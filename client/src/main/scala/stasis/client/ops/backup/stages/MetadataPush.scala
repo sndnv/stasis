@@ -1,8 +1,8 @@
 package stasis.client.ops.backup.stages
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Source}
-import akka.{Done, NotUsed}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Flow, Source}
+import org.apache.pekko.{Done, NotUsed}
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.{DatasetMetadata, EntityMetadata}
 import stasis.client.ops.backup.Providers

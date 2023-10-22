@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.core.api
 
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
+import org.apache.pekko.http.scaladsl.model.{HttpRequest, HttpResponse}
 import stasis.core.api.Metrics
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.core.telemetry.mocks.MockMeter

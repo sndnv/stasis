@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.client.encryption
 
-import akka.actor.ActorSystem
-import akka.stream.scaladsl.{FileIO, Source}
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.scaladsl.{FileIO, Source}
+import org.apache.pekko.util.ByteString
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceMetadataSecret}
 import stasis.client.model.{DatasetMetadata, FilesystemMetadata}

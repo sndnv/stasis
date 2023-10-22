@@ -4,7 +4,7 @@ import java.nio.file.attribute.PosixFileAttributes
 import java.nio.file.{Files, LinkOption, Paths}
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import stasis.client.analysis.{Checksum, Metadata}
 import stasis.client.model.{EntityMetadata, TargetEntity}
 import stasis.core.packaging.Crate

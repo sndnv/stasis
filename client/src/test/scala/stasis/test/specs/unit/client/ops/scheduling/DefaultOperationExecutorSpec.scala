@@ -1,10 +1,10 @@
 package stasis.test.specs.unit.client.ops.scheduling
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.stream.scaladsl.Flow
-import akka.util.ByteString
-import akka.{Done, NotUsed}
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.{Done, NotUsed}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{Assertion, BeforeAndAfterAll}
 import stasis.client.analysis.Checksum

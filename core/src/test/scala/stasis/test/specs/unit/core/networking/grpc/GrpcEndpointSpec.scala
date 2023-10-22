@@ -1,12 +1,12 @@
 package stasis.test.specs.unit.core.networking.grpc
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{Behavior, SpawnProtocol}
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.BasicHttpCredentials
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{Behavior, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import stasis.core.networking.grpc.internal.{Implicits, Requests}
 import stasis.core.networking.grpc.{proto, GrpcEndpoint}
 import stasis.core.packaging.Crate
@@ -500,10 +500,11 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  private implicit val typedSystem: akka.actor.typed.ActorSystem[SpawnProtocol.Command] = akka.actor.typed.ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
-    "GrpcEndpointSpec"
-  )
+  private implicit val typedSystem: org.apache.pekko.actor.typed.ActorSystem[SpawnProtocol.Command] =
+    org.apache.pekko.actor.typed.ActorSystem(
+      Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+      "GrpcEndpointSpec"
+    )
 
   private def createTestGrpcEndpoint(
     testCrateStore: Option[MockCrateStore] = None,

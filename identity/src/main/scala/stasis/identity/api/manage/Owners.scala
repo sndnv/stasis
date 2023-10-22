@@ -1,9 +1,9 @@
 package stasis.identity.api.manage
 
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server._
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server._
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.api.manage.requests.{CreateOwner, UpdateOwner, UpdateOwnerCredentials}
@@ -14,7 +14,7 @@ class Owners(
   store: ResourceOwnerStore,
   ownerSecretConfig: Secret.ResourceOwnerConfig
 ) extends EntityDiscardingDirectives {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
   import stasis.identity.api.Formats._
 
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)

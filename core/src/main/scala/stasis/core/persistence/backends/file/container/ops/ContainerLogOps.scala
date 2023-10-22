@@ -5,7 +5,7 @@ import java.nio.file.{Files, Path, StandardOpenOption}
 import java.nio.{ByteBuffer, ByteOrder}
 import java.util.UUID
 
-import akka.Done
+import org.apache.pekko.Done
 import stasis.core.persistence.backends.file.container.Container
 import stasis.core.persistence.backends.file.container.exceptions.ContainerFailure
 import stasis.core.persistence.backends.file.container.headers.{ContainerHeader, ContainerLogHeader}

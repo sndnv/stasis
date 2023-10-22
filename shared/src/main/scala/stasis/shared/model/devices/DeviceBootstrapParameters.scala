@@ -3,7 +3,7 @@ package stasis.shared.model.devices
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.security.KeyStore
 import java.util.concurrent.ThreadLocalRandom
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import com.typesafe.{config => typesafe}
 import play.api.libs.json.JsObject
 import stasis.core.security.tls.EndpointContext

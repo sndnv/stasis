@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.core.persistence.backends.file.state
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.FileSystemHelpers
 import stasis.test.specs.unit.core.FileSystemHelpers.FileSystemSetup

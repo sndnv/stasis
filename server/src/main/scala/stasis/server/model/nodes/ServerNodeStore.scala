@@ -1,6 +1,6 @@
 package stasis.server.model.nodes
 
-import akka.Done
+import org.apache.pekko.Done
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
 import stasis.server.model.nodes.ServerNodeStore.Manage

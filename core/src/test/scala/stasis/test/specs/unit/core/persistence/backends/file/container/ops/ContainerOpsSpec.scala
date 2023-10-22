@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.core.persistence.backends.file.container.ops
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.util.ByteString
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.util.ByteString
 import org.scalatest.BeforeAndAfter
 import stasis.core.persistence.backends.file.container._
 import stasis.core.persistence.backends.file.container.headers.{ChunkHeader, ContainerHeader}

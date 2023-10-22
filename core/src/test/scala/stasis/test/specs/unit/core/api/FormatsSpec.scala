@@ -2,7 +2,7 @@ package stasis.test.specs.unit.core.api
 
 import java.util.UUID
 
-import akka.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.model.Uri
 import play.api.libs.json.Json
 import stasis.core.api.Formats._
 import stasis.core.networking.grpc.GrpcEndpointAddress

@@ -1,9 +1,9 @@
 package stasis.core.persistence.backends.file.state
 
-import akka.Done
-import akka.stream.Materializer
-import akka.stream.scaladsl.{FileIO, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{FileIO, Sink, Source}
+import org.apache.pekko.util.ByteString
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.nio.file.{FileSystem, Files, Path}

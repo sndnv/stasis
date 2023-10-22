@@ -4,12 +4,12 @@ import java.util.UUID
 
 import scala.collection.mutable
 
-import akka.Done
-import akka.actor.typed.ActorSystem
-import akka.actor.typed.Behavior
-import akka.actor.typed.SpawnProtocol
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.Behavior
+import org.apache.pekko.actor.typed.SpawnProtocol
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import com.typesafe.config.Config
 import org.mockito.scalatest.AsyncMockitoSugar
 import org.mockito.Strictness

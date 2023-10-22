@@ -4,7 +4,7 @@ import java.io.FileNotFoundException
 import java.nio.file._
 import java.nio.file.attribute.PosixFilePermissions
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import net.harawata.appdirs.AppDirsFactory
 
 import scala.concurrent.{ExecutionContext, Future}

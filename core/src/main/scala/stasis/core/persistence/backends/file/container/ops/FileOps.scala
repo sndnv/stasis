@@ -3,7 +3,7 @@ package stasis.core.persistence.backends.file.container.ops
 import java.nio.file.{Files, Path}
 import java.nio.{ByteBuffer, ByteOrder}
 
-import akka.Done
+import org.apache.pekko.Done
 
 import scala.concurrent.{ExecutionContext, Future}
 

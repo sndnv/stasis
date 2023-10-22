@@ -1,10 +1,10 @@
 package stasis.identity.api
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server._
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server._
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.api.oauth._

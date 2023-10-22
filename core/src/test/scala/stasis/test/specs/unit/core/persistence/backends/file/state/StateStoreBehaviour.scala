@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.core.persistence.backends.file.state
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
 import stasis.core.persistence.backends.file.state.StateStore
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.FileSystemHelpers

@@ -1,10 +1,10 @@
 package stasis.client.service.components.init
 
-import akka.Done
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
-import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Route
+import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 import play.api.libs.json.{Format, JsObject, Json}
 import stasis.client.service.components.exceptions.ServiceStartupFailure
 

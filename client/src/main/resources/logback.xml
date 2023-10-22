@@ -33,12 +33,12 @@
         <appender-ref ref="SYNC_CONSOLE"/>
     </appender>
 
-    <variable name="AKKA_LOGLEVEL" value="${STASIS_CLIENT_AKKA_LOGLEVEL:-WARN}"/>
+    <variable name="PEKKO_LOGLEVEL" value="${STASIS_CLIENT_PEKKO_LOGLEVEL:-WARN}"/>
     <variable name="SYSTEM_TRAY_LOGLEVEL" value="${STASIS_CLIENT_SYSTEM_TRAY_LOGLEVEL:-ERROR}"/>
     <variable name="CLIENT_LOGLEVEL" value="${STASIS_CLIENT_LOGLEVEL:-INFO}"/>
     <variable name="CLIENT_LOG_TARGET" value="${STASIS_CLIENT_LOG_TARGET:-FILE}"/>
 
-    <logger name="akka" level="${AKKA_LOGLEVEL}"/>
+    <logger name="org.apache.pekko" level="${PEKKO_LOGLEVEL}"/>
 
     <logger name="dorkbox.systemTray" level="${SYSTEM_TRAY_LOGLEVEL}"/>
 

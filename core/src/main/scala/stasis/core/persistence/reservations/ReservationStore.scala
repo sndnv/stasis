@@ -1,8 +1,8 @@
 package stasis.core.persistence.reservations
 
-import akka.Done
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.util.Timeout
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.util.Timeout
 import stasis.core.packaging.Crate
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.core.persistence.backends.memory.MemoryBackend
@@ -70,7 +70,10 @@ object ReservationStore {
           _ <- cache.put((reservation.crate, reservation.target), reservation.id)
         } yield {
           metrics.recordReservation(reservation)
-          val _ = akka.pattern.after(expiration, untypedSystem.scheduler)(delete(reservation.crate, reservation.target))
+          val _ = org.apache.pekko.pattern.after(
+            duration = expiration,
+            using = untypedSystem.scheduler
+          )(delete(reservation.crate, reservation.target))
           Done
         }
 

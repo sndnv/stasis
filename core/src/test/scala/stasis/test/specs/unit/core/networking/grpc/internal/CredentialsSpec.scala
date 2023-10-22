@@ -1,14 +1,13 @@
 package stasis.test.specs.unit.core.networking.grpc.internal
 
 import java.nio.charset.StandardCharsets
-
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials, CustomHeader, OAuth2BearerToken}
-import akka.parboiled2.util.Base64
+import org.apache.pekko.http.scaladsl.model.HttpRequest
+import org.apache.pekko.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials, CustomHeader, OAuth2BearerToken}
 import stasis.core.networking.exceptions.CredentialsFailure
 import stasis.core.networking.grpc.internal.Credentials
 import stasis.test.specs.unit.AsyncUnitSpec
 
+import java.util.Base64
 import scala.util.control.NonFatal
 
 class CredentialsSpec extends AsyncUnitSpec {
@@ -84,5 +83,5 @@ class CredentialsSpec extends AsyncUnitSpec {
   private val tokenCredentials = s"Bearer $testToken"
 
   private def encode(raw: String): String =
-    Base64.rfc2045().encodeToString(raw.getBytes(StandardCharsets.UTF_8), false)
+    Base64.getEncoder.encodeToString(raw.getBytes(StandardCharsets.UTF_8))
 }

@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.client.service.components
 
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.service.ApplicationTray
 import stasis.client.service.components.{Base, Tracking}

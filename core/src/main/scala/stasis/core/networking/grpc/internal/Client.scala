@@ -1,9 +1,9 @@
 package stasis.core.networking.grpc.internal
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.grpc.GrpcClientSettings
-import akka.grpc.scaladsl.{SingleResponseRequestBuilder, StreamResponseRequestBuilder}
-import akka.http.scaladsl.model.headers.HttpCredentials
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.grpc.GrpcClientSettings
+import org.apache.pekko.grpc.scaladsl.{SingleResponseRequestBuilder, StreamResponseRequestBuilder}
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
 import stasis.core.networking.grpc.{proto, GrpcEndpointAddress}
 import stasis.core.security.tls.EndpointContext
 

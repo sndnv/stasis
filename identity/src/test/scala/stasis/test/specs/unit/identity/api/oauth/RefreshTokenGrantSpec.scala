@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.identity.api.oauth
 
-import akka.http.scaladsl.model
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, CacheDirectives}
-import akka.http.scaladsl.model.{FormData, StatusCodes}
+import org.apache.pekko.http.scaladsl.model
+import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, CacheDirectives}
+import org.apache.pekko.http.scaladsl.model.{FormData, StatusCodes}
 import stasis.identity.api.oauth.RefreshTokenGrant
 import stasis.identity.api.oauth.RefreshTokenGrant.{AccessTokenRequest, AccessTokenResponse}
 import stasis.identity.model.GrantType
@@ -12,7 +12,7 @@ import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
 
 class RefreshTokenGrantSpec extends RouteTest with OAuthFixtures {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
   "RefreshTokenGrant routes" should "validate access token requests content" in withRetry {
     val request = AccessTokenRequest(

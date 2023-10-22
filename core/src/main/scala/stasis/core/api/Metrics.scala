@@ -1,6 +1,6 @@
 package stasis.core.api
 
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
+import org.apache.pekko.http.scaladsl.model.{HttpRequest, HttpResponse}
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.metrics.Meter
 import stasis.core.telemetry.metrics.MeterExtensions._

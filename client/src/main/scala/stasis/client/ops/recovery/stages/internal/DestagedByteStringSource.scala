@@ -1,10 +1,10 @@
 package stasis.client.ops.recovery.stages.internal
 
 import java.nio.file.Path
-import akka.stream.Materializer
-import akka.stream.scaladsl.{FileIO, Source}
-import akka.util.ByteString
-import akka.{Done, NotUsed}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{FileIO, Source}
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.{Done, NotUsed}
 import stasis.client.ops.Metrics
 import stasis.client.ops.recovery.Providers
 

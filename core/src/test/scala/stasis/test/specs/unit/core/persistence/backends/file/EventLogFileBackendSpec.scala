@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.core.persistence.backends.file
 
-import akka.Done
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.util.Timeout
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.util.Timeout
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 import stasis.core.persistence.backends.file.EventLogFileBackend

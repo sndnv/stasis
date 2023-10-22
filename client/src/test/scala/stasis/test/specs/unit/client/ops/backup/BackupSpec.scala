@@ -1,11 +1,11 @@
 package stasis.test.specs.unit.client.ops.backup
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Source}
-import akka.util.ByteString
-import akka.{Done, NotUsed}
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Flow, Source}
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.{Done, NotUsed}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{Assertion, BeforeAndAfterAll}
 import stasis.client.analysis.Checksum

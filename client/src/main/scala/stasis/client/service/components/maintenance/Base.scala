@@ -1,6 +1,6 @@
 package stasis.client.service.components.maintenance
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
 import com.typesafe.{config => typesafe}
 import org.slf4j.Logger
 import stasis.client.service.ApplicationArguments.Mode

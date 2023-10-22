@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.client.ops.recovery.stages
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.collection.RecoveryCollector

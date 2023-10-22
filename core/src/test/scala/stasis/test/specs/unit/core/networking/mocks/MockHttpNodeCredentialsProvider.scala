@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.core.networking.mocks
 
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials}
+import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials}
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.security.NodeCredentialsProvider
 

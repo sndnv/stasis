@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.client.service.components
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.util.ByteString
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.util.ByteString
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.service.{ApplicationDirectory, ApplicationTray}
 import stasis.client.service.components.exceptions.ServiceStartupFailure

@@ -1,11 +1,11 @@
 package stasis.test.specs.unit.server.api.routes
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.{RequestEntity, StatusCodes}
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.marshalling.Marshal
+import org.apache.pekko.http.scaladsl.model.{RequestEntity, StatusCodes}
+import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.routing.Node
 import stasis.core.telemetry.TelemetryContext
@@ -27,7 +27,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
   "DatasetDefinitions routes (full permissions)" should "respond with all definitions" in withRetry {
@@ -215,7 +215,7 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     "DatasetDefinitionsSpec"
   )
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
+  private implicit val untypedSystem: org.apache.pekko.actor.ActorSystem = typedSystem.classicSystem
 
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 

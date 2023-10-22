@@ -1,8 +1,8 @@
 package stasis.client.ops.backup.stages.internal
 
-import akka.stream.scaladsl.{Source, SubFlow}
-import akka.stream.{ActorAttributes, IOResult, Supervision}
-import akka.util.ByteString
+import org.apache.pekko.stream.scaladsl.{Source, SubFlow}
+import org.apache.pekko.stream.{ActorAttributes, IOResult, Supervision}
+import org.apache.pekko.util.ByteString
 
 import scala.concurrent.Future
 

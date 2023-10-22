@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.client.mocks
 
-import akka.Done
+import org.apache.pekko.Done
 import stasis.client.ops.monitoring.ServerMonitor
 
 import scala.concurrent.Future

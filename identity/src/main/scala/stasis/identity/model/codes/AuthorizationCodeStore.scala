@@ -1,7 +1,7 @@
 package stasis.identity.model.codes
 
-import akka.Done
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
 import stasis.core.persistence.backends.KeyValueBackend
 
 import scala.concurrent.duration.FiniteDuration
@@ -27,7 +27,7 @@ object AuthorizationCodeStore {
         backend
           .put(storedCode.code, storedCode)
           .map { result =>
-            val _ = akka.pattern.after(expiration, untypedSystem.scheduler)(backend.delete(storedCode.code))
+            val _ = org.apache.pekko.pattern.after(expiration, untypedSystem.scheduler)(backend.delete(storedCode.code))
             result
           }
 

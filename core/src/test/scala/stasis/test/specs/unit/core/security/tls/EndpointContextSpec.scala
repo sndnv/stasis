@@ -2,11 +2,11 @@ package stasis.test.specs.unit.core.security.tls
 
 import java.io.FileNotFoundException
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, StatusCodes}
-import akka.http.scaladsl.server.Directives
-import akka.http.scaladsl.server.Directives._
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, StatusCodes}
+import org.apache.pekko.http.scaladsl.server.Directives
+import org.apache.pekko.http.scaladsl.server.Directives._
 import com.typesafe.config.{Config, ConfigFactory}
 import stasis.core.security.tls.EndpointContext
 import stasis.test.specs.unit.AsyncUnitSpec

@@ -1,9 +1,9 @@
 package stasis.core.persistence.backends.file.container
 
-import akka.actor.typed.{ActorSystem, DispatcherSelector, SpawnProtocol}
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
-import akka.util.ByteString
-import akka.{Done, NotUsed}
+import org.apache.pekko.actor.typed.{ActorSystem, DispatcherSelector, SpawnProtocol}
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.{Done, NotUsed}
 import stasis.core.persistence.backends.file.container.exceptions.{ContainerFailure, ConversionFailure}
 import stasis.core.persistence.backends.file.container.headers.ContainerHeader
 import stasis.core.persistence.backends.file.container.ops.{ContainerLogOps, ContainerOps, ConversionOps}

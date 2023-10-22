@@ -1,8 +1,8 @@
 package stasis.server.service
 
-import akka.Done
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.util.Timeout
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.util.Timeout
 import com.typesafe.{config => typesafe}
 import slick.jdbc.JdbcProfile
 import stasis.core.packaging.{Crate, Manifest}

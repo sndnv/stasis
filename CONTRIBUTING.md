@@ -23,7 +23,7 @@ Most IDEs are capable of assisting with this task as well; for example, the [Sca
 for [IntelliJ](https://www.jetbrains.com/idea/) can show style warnings and can automatically re-format code.
 
 In general, style warnings/warts should be suppressed only if there is no reasonable way of avoiding them (for example,
-working with some Akka code requires suppressing the `Any` wart).
+working with some Pekko code requires suppressing the `Any` wart).
 
 ### Scala
 

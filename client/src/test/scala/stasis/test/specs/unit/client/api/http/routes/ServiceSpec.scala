@@ -2,9 +2,9 @@ package stasis.test.specs.unit.client.api.http.routes
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 import org.slf4j.LoggerFactory
@@ -17,7 +17,7 @@ import stasis.test.specs.unit.client.mocks._
 import scala.concurrent.duration._
 
 class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
   "Service routes" should "provide ping responses" in withRetry {

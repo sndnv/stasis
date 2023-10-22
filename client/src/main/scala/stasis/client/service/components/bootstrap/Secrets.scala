@@ -1,8 +1,8 @@
 package stasis.client.service.components.bootstrap
 
-import akka.Done
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.util.ByteString
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.{DeviceSecret, UserPassword}
 import stasis.client.service.components.Files

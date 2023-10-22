@@ -1,12 +1,12 @@
 package stasis.identity.api
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server._
-import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server._
+import org.apache.pekko.http.cors.scaladsl.CorsDirectives._
 import org.jose4j.jwk.JsonWebKey
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.api.MessageResponse
@@ -28,7 +28,7 @@ class IdentityEndpoint(
 )(implicit system: ActorSystem[SpawnProtocol.Command], override val telemetry: TelemetryContext)
     extends LoggingDirectives
     with EntityDiscardingDirectives {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
   import stasis.core.api.Formats.messageResponseFormat
 
   override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)

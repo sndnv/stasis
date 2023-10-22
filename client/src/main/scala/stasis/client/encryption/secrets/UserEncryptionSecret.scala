@@ -1,7 +1,7 @@
 package stasis.client.encryption.secrets
 
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import stasis.client.encryption.Aes
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User

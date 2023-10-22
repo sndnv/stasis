@@ -1,9 +1,9 @@
 package stasis.client.service
 
-import akka.Done
-import akka.actor.Scheduler
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.Scheduler
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.service.components.exceptions.ServiceStartupFailure
 
@@ -141,7 +141,7 @@ object Service {
     op: => Unit,
     by: FiniteDuration
   )(implicit system: ActorSystem[SpawnProtocol.Command]): Unit = {
-    val _ = akka.pattern.after(
+    val _ = org.apache.pekko.pattern.after(
       duration = by,
       using = system.classicSystem.scheduler
     ) { Future.successful(op) }(system.executionContext)
@@ -154,7 +154,7 @@ object Service {
       implicit val scheduler: Scheduler = system.classicSystem.scheduler
       implicit val ec: ExecutionContext = system.executionContext
 
-      akka.pattern
+      org.apache.pekko.pattern
         .retry(
           attempt = () => {
             Option(raw) match {

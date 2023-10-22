@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.identity.api.oauth.directives
 
-import akka.http.scaladsl.model
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
-import akka.http.scaladsl.model.{StatusCodes, Uri}
-import akka.http.scaladsl.server.Directives
+import org.apache.pekko.http.scaladsl.model
+import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
+import org.apache.pekko.http.scaladsl.model.{StatusCodes, Uri}
+import org.apache.pekko.http.scaladsl.server.Directives
 import org.slf4j.Logger
 import play.api.libs.json.{JsObject, Json}
 import stasis.identity.api.oauth.directives.ResourceOwnerAuthentication
@@ -126,7 +126,7 @@ class ResourceOwnerAuthenticationSpec extends RouteTest {
   }
 
   it should "fail to authenticate resource owners with invalid extracted credentials (rejected)" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val owners = createOwnerStore()
     val directive = createDirective(owners)

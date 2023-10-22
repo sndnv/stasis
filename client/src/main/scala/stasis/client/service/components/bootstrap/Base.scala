@@ -1,6 +1,6 @@
 package stasis.client.service.components.bootstrap
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
 import org.slf4j.Logger
 import stasis.client.service.ApplicationArguments.Mode
 import stasis.client.service.components.internal.FutureOps

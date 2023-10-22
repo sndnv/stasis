@@ -2,7 +2,7 @@ package stasis.shared.api
 
 import java.nio.charset.StandardCharsets
 import java.time.temporal.ChronoUnit
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.crates.CrateStore

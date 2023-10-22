@@ -3,7 +3,7 @@ package stasis.test.specs.unit.client.collection
 import java.nio.file.Paths
 import java.time.Instant
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import stasis.client.collection.RecoveryCollector
 import stasis.client.model.{DatasetMetadata, EntityMetadata, FilesystemMetadata, TargetEntity}
 import stasis.client.ops.ParallelismConfig

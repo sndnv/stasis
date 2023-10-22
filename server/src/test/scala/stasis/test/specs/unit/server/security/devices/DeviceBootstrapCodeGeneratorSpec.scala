@@ -2,8 +2,8 @@ package stasis.test.specs.unit.server.security.devices
 
 import java.time.Instant
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.server.security.CurrentUser
 import stasis.server.security.devices.DeviceBootstrapCodeGenerator
 import stasis.shared.model.devices.Device

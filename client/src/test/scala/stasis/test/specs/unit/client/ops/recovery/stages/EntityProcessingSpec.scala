@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.client.ops.recovery.stages
 
-import akka.actor.ActorSystem
-import akka.stream.scaladsl.Source
-import akka.stream._
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.stream._
+import org.apache.pekko.util.ByteString
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 import stasis.client.analysis.Checksum

@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.core.security
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
 import org.jose4j.jwk.JsonWebKey
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.backends.memory.MemoryBackend

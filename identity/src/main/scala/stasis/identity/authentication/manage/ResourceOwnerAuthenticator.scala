@@ -1,6 +1,6 @@
 package stasis.identity.authentication.manage
 
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import stasis.identity.model.owners.ResourceOwner
 
 import scala.concurrent.Future

@@ -2,8 +2,8 @@ package stasis.test.specs.unit.client.api.clients
 
 import java.time.Instant
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.client.api.clients.CachedServerApiEndpointClient
 import stasis.core.packaging.Crate
 import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}

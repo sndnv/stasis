@@ -3,7 +3,7 @@ package stasis.core.persistence.reservations
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import stasis.core.packaging.Crate
 import stasis.core.persistence.CrateStorageReservation
 import stasis.core.persistence.backends.KeyValueBackend

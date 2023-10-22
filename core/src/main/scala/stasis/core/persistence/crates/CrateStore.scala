@@ -1,10 +1,10 @@
 package stasis.core.persistence.crates
 
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.{ByteString, Timeout}
-import akka.{Done, NotUsed}
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.{ByteString, Timeout}
+import org.apache.pekko.{Done, NotUsed}
 import com.typesafe.config.Config
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.packaging.{Crate, Manifest}
