@@ -4,11 +4,11 @@ import java.nio.channels.FileChannel
 import java.nio.file.{Path, StandardOpenOption}
 import java.nio.{ByteBuffer, ByteOrder}
 
-import akka.Done
-import akka.stream._
-import akka.stream.scaladsl.Source
-import akka.stream.stage.{GraphStageLogic, GraphStageWithMaterializedValue, OutHandler}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.stream._
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.stream.stage.{GraphStageLogic, GraphStageWithMaterializedValue, OutHandler}
+import org.apache.pekko.util.ByteString
 import stasis.core.persistence.backends.file.container.exceptions.ContainerSourceFailure
 import stasis.core.persistence.backends.file.container.{CrateChunk, CrateChunkDescriptor}
 

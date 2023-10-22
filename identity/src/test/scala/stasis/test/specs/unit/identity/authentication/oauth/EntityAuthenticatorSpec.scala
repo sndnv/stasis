@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.identity.authentication.oauth
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
 import stasis.core.security.exceptions.AuthenticationFailure
 import stasis.identity.authentication.oauth.EntityAuthenticator
 import stasis.identity.model.secrets.Secret

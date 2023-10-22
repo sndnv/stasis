@@ -5,10 +5,10 @@ import java.nio.file.{Path, StandardOpenOption}
 import java.nio.{ByteBuffer, ByteOrder}
 import java.util.UUID
 
-import akka.Done
-import akka.stream._
-import akka.stream.scaladsl.Sink
-import akka.stream.stage.{GraphStageLogic, GraphStageWithMaterializedValue, InHandler}
+import org.apache.pekko.Done
+import org.apache.pekko.stream._
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.stage.{GraphStageLogic, GraphStageWithMaterializedValue, InHandler}
 import stasis.core.persistence.backends.file.container.CrateChunk
 import stasis.core.persistence.backends.file.container.exceptions.ContainerSinkFailure
 import stasis.core.persistence.backends.file.container.headers.ChunkHeader

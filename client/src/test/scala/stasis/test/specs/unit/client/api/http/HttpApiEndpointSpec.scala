@@ -1,13 +1,13 @@
 package stasis.test.specs.unit.client.api.http
 
-import akka.Done
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.headers.BasicHttpCredentials
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.unmarshalling.Unmarshal
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import org.slf4j.LoggerFactory
 import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.api.http.{Context, HttpApiEndpoint}
@@ -27,7 +27,7 @@ import scala.collection.mutable
 import scala.concurrent.Future
 
 class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
   import stasis.client.api.http.Formats._
   import stasis.shared.api.Formats._
 
@@ -138,7 +138,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "handle server API failures reported by routes" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 
     val expectedStatus = StatusCodes.Forbidden
@@ -174,7 +174,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   it should "handle generic failures reported by routes" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 
     val mockApiClient = new MockServerApiEndpointClient(self = Device.generateId()) {

@@ -1,14 +1,14 @@
 package stasis.core.networking.http
 
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.HttpCredentials
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.util.ByteString
-import akka.{Done, NotUsed}
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.marshalling.Marshal
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
+import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.{Done, NotUsed}
 import org.slf4j.LoggerFactory
 import stasis.core.api.PoolClient
 import stasis.core.networking.EndpointClient
@@ -32,7 +32,7 @@ class HttpEndpointClient(
     extends EndpointClient[HttpEndpointAddress, HttpCredentials]
     with PoolClient {
 
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
   import stasis.core.api.Formats._
 
   private implicit val ec: ExecutionContext = system.executionContext

@@ -1,13 +1,13 @@
 package stasis.test.specs.unit.client.mocks
 
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.headers.BasicHttpCredentials
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
-import akka.util.Timeout
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.util.Timeout
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.security.tls.EndpointContext
@@ -28,7 +28,7 @@ class MockServerApiEndpoint(
   definitionsWithoutEntries: Seq[DatasetDefinition.Id] = Seq.empty,
   withDefinitions: Option[Seq[DatasetDefinition]] = None
 )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, timeout: Timeout) {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)

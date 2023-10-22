@@ -1,8 +1,8 @@
 package stasis.client.service.components
 
-import akka.actor.CoordinatedShutdown
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.util.Timeout
+import org.apache.pekko.actor.CoordinatedShutdown
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.util.Timeout
 import com.typesafe.{config => typesafe}
 import org.slf4j.Logger
 import stasis.client.analysis.Checksum

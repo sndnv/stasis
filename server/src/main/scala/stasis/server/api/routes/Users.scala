@@ -1,9 +1,9 @@
 package stasis.server.api.routes
 
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Route
 import stasis.server.model.users.UserStore
 import stasis.server.security.CurrentUser
 import stasis.server.security.users.UserCredentialsManager
@@ -19,7 +19,7 @@ class Users(
   secretsConfig: SecretsConfig
 )(implicit ctx: RoutesContext)
     extends ApiRoutes {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
   def routes(implicit currentUser: CurrentUser): Route =

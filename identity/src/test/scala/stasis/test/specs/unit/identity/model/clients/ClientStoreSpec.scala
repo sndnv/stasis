@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.identity.model.clients
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.identity.model.clients.{Client, ClientStore}
 import stasis.test.specs.unit.AsyncUnitSpec

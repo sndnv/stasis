@@ -1,12 +1,12 @@
 package stasis.core.persistence.backends.memory
 
-import akka.actor.typed._
-import akka.actor.typed.scaladsl.AskPattern._
-import akka.actor.typed.scaladsl.Behaviors
-import akka.stream.scaladsl.Source
-import akka.stream.{CompletionStrategy, OverflowStrategy}
-import akka.util.Timeout
-import akka.{Done, NotUsed}
+import org.apache.pekko.actor.typed._
+import org.apache.pekko.actor.typed.scaladsl.AskPattern._
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.stream.{CompletionStrategy, OverflowStrategy}
+import org.apache.pekko.util.Timeout
+import org.apache.pekko.{Done, NotUsed}
 import stasis.core.persistence.Metrics
 import stasis.core.persistence.backends.EventLogBackend
 import stasis.core.telemetry.TelemetryContext

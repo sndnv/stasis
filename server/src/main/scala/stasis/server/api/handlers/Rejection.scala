@@ -1,9 +1,9 @@
 package stasis.server.api.handlers
 
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.{RejectionHandler, ValidationRejection}
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.{RejectionHandler, ValidationRejection}
 import org.slf4j.Logger
 import stasis.core.api.MessageResponse
 import stasis.core.streaming.Operators.ExtendedSource
@@ -13,7 +13,7 @@ object Rejection {
     RejectionHandler
       .newBuilder()
       .handle { case ValidationRejection(rejectionMessage, _) =>
-        import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+        import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
         import stasis.core.api.Formats.messageResponseFormat
 
         extractRequest { request =>

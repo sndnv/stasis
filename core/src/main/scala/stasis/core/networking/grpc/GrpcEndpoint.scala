@@ -1,16 +1,16 @@
 package stasis.core.networking.grpc
 
-import akka.NotUsed
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.grpc.scaladsl.{GrpcExceptionHandler, GrpcMarshalling}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.Uri.Path
-import akka.http.scaladsl.model.Uri.Path.Segment
-import akka.http.scaladsl.model.headers.HttpCredentials
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
-import akka.stream.scaladsl.{Sink, Source}
-import akka.stream.{Materializer, SystemMaterializer}
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.grpc.scaladsl.{GrpcExceptionHandler, GrpcMarshalling}
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.Uri.Path
+import org.apache.pekko.http.scaladsl.model.Uri.Path.Segment
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
+import org.apache.pekko.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.{Materializer, SystemMaterializer}
 import org.slf4j.LoggerFactory
 import stasis.core.api.Metrics
 import stasis.core.networking.Endpoint

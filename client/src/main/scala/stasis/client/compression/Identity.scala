@@ -1,8 +1,8 @@
 package stasis.client.compression
 
-import akka.NotUsed
-import akka.stream.scaladsl.Flow
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.util.ByteString
 
 object Identity extends Encoder with Decoder {
   override val name: String = "none"

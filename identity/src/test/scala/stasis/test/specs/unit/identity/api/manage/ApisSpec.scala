@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.identity.api.manage
 
-import akka.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import stasis.identity.api.Formats._
 import stasis.identity.api.manage.Apis
 import stasis.identity.api.manage.requests.CreateApi
@@ -11,7 +11,7 @@ import stasis.test.specs.unit.identity.model.Generators
 import scala.concurrent.Future
 
 class ApisSpec extends RouteTest {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
   "Apis routes" should "respond with all APIs" in withRetry {
     val store = createApiStore()

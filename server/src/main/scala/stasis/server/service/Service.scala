@@ -1,9 +1,9 @@
 package stasis.server.service
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.model.headers.HttpCredentials
-import akka.util.Timeout
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
+import org.apache.pekko.util.Timeout
 import com.typesafe.{config => typesafe}
 import io.prometheus.client.hotspot.DefaultExports
 import org.slf4j.{Logger, LoggerFactory}

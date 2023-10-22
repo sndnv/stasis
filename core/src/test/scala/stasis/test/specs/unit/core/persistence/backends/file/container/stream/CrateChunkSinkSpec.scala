@@ -4,9 +4,9 @@ import java.nio.ByteOrder
 import java.nio.file._
 import java.util.UUID
 
-import akka.actor.ActorSystem
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import org.scalatest.BeforeAndAfter
 import stasis.core.persistence.backends.file.container.CrateChunk
 import stasis.core.persistence.backends.file.container.headers.ChunkHeader

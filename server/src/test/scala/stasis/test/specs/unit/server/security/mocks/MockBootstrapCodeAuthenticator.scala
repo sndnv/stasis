@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.server.security.mocks
 
-import akka.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
+import org.apache.pekko.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
 import stasis.core.networking.exceptions.CredentialsFailure
 import stasis.server.security.CurrentUser
 import stasis.server.security.authenticators.BootstrapCodeAuthenticator

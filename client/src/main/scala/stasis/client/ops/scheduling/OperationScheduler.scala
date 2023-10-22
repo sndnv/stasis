@@ -1,6 +1,6 @@
 package stasis.client.ops.scheduling
 
-import akka.Done
+import org.apache.pekko.Done
 import stasis.client.ops.exceptions.ScheduleRetrievalFailure
 import stasis.client.ops.scheduling.OperationScheduler.ActiveSchedule
 import stasis.shared.model.schedules.Schedule

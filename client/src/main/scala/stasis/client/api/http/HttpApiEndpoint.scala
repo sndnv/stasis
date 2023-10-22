@@ -1,11 +1,11 @@
 package stasis.client.api.http
 
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server._
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server._
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.api.http.routes._
@@ -24,7 +24,7 @@ class HttpApiEndpoint(
 )(implicit system: ActorSystem[SpawnProtocol.Command], override val telemetry: TelemetryContext, context: Context)
     extends EntityDiscardingDirectives
     with LoggingDirectives {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
   import stasis.core.api.Formats.messageResponseFormat
 
   override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)

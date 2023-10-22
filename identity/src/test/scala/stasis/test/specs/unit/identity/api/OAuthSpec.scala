@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.identity.api
 
-import akka.http.scaladsl.model
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, CacheDirectives}
-import akka.http.scaladsl.model.{FormData, StatusCodes, Uri}
+import org.apache.pekko.http.scaladsl.model
+import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, CacheDirectives}
+import org.apache.pekko.http.scaladsl.model.{FormData, StatusCodes, Uri}
 import stasis.identity.api.OAuth
 import stasis.identity.api.oauth.directives.AudienceExtraction
 import stasis.identity.model.codes.StoredAuthorizationCode

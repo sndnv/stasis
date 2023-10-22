@@ -2,8 +2,8 @@ package stasis.client.security
 
 import java.util.concurrent.ThreadLocalRandom
 
-import akka.Done
-import akka.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
+import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
 import stasis.core.security.exceptions.AuthenticationFailure
 
 import scala.concurrent.Future

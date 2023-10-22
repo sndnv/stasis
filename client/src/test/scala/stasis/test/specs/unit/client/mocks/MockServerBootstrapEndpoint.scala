@@ -2,13 +2,13 @@ package stasis.test.specs.unit.client.mocks
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Route
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.security.tls.EndpointContext
 import stasis.shared.model.devices.DeviceBootstrapParameters
@@ -19,7 +19,7 @@ class MockServerBootstrapEndpoint(
   expectedCode: String,
   providedParams: DeviceBootstrapParameters
 )(implicit system: ActorSystem[SpawnProtocol.Command]) {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
   private val bootstrapExecuted: AtomicInteger = new AtomicInteger(0)

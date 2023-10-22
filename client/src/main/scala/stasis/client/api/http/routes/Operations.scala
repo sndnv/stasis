@@ -1,14 +1,14 @@
 package stasis.client.api.http.routes
 
-import akka.NotUsed
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.sse.ServerSentEvent
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.unmarshalling.Unmarshaller
-import akka.stream.OverflowStrategy
-import akka.stream.scaladsl.Source
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.sse.ServerSentEvent
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
+import org.apache.pekko.stream.OverflowStrategy
+import org.apache.pekko.stream.scaladsl.Source
 import play.api.libs.json.{Format, Json, Writes}
 import stasis.client.api.http.Context
 import stasis.client.api.http.Formats._
@@ -24,8 +24,8 @@ import scala.concurrent.duration._
 
 class Operations()(implicit context: Context) extends ApiRoutes {
   import Operations._
-  import akka.http.scaladsl.marshalling.sse.EventStreamMarshalling._
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import org.apache.pekko.http.scaladsl.marshalling.sse.EventStreamMarshalling._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
   import stasis.core.api.Matchers._
 
   def routes(): Route =
@@ -266,7 +266,7 @@ class Operations()(implicit context: Context) extends ApiRoutes {
 }
 
 object Operations {
-  import akka.http.scaladsl.server.{Directive, Directive1}
+  import org.apache.pekko.http.scaladsl.server.{Directive, Directive1}
 
   def apply()(implicit context: Context): Operations =
     new Operations()

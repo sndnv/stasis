@@ -1,7 +1,7 @@
 package stasis.client.service.components.bootstrap
 
-import akka.Done
-import akka.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.slf4j.Logger
 import stasis.client.service.components.bootstrap.internal.SelfSignedCertificateGenerator
 import stasis.client.service.{components, ApplicationDirectory, ApplicationTemplates}

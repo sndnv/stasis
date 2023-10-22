@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.client.api.clients
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.model.{HttpResponse, StatusCodes}
 import com.typesafe.config.Config
 import play.api.libs.json.Json
 import stasis.client.api.clients.DefaultServerBootstrapEndpointClient

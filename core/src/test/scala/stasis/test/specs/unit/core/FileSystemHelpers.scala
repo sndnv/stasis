@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.core
 
-import akka.Done
-import akka.stream.Materializer
-import akka.stream.scaladsl.{FileIO, Source}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{FileIO, Source}
+import org.apache.pekko.util.ByteString
 import com.google.common.jimfs.{Configuration, Jimfs}
 
 import java.nio.file._

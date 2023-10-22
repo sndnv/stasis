@@ -1,6 +1,6 @@
 package stasis.client.service.components
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.{DeviceSecret, UserPassword}
 import stasis.client.security.{CredentialsProvider, DefaultCredentialsProvider}

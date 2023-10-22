@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.client.encryption.secrets
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import stasis.client.encryption.secrets.UserAuthenticationPassword
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.UnitSpec

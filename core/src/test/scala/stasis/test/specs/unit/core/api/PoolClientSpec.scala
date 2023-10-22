@@ -1,10 +1,10 @@
 package stasis.test.specs.unit.core.api
 
-import akka.Done
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, StatusCodes}
-import akka.stream.QueueOfferResult
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, StatusCodes}
+import org.apache.pekko.stream.QueueOfferResult
 import com.typesafe.config.{Config, ConfigFactory}
 import stasis.core.api.PoolClient
 import stasis.core.security.tls.EndpointContext

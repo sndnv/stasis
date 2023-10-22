@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.client.service.components.maintenance
 
-import akka.Done
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.util.ByteString
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.service.components.maintenance.{Base, Certificates}
 import stasis.client.service.{components, ApplicationArguments, ApplicationDirectory}

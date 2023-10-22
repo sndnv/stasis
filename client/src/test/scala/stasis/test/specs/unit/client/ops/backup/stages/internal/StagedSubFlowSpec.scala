@@ -1,11 +1,11 @@
 package stasis.test.specs.unit.client.ops.backup.stages.internal
 
 import java.nio.file.{Path, Paths}
-import akka.Done
-import akka.actor.ActorSystem
-import akka.stream.IOResult
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.IOResult
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 import stasis.client.analysis.Checksum

@@ -3,7 +3,7 @@ package stasis.core.security.tls
 import java.io.{FileInputStream, FileNotFoundException}
 import java.security.{KeyStore, SecureRandom}
 
-import akka.http.scaladsl.{ConnectionContext, HttpsConnectionContext, ServerBuilder}
+import org.apache.pekko.http.scaladsl.{ConnectionContext, HttpsConnectionContext, ServerBuilder}
 import com.typesafe.{config => typesafe}
 import javax.net.ssl._
 

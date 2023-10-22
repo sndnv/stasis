@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.client.collection
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import stasis.client.analysis.Checksum
 import stasis.client.collection.{BackupCollector, BackupMetadataCollector}
 import stasis.client.model.{DatasetMetadata, EntityMetadata, FilesystemMetadata, SourceEntity}

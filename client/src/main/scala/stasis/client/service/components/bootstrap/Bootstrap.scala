@@ -1,6 +1,6 @@
 package stasis.client.service.components.bootstrap
 
-import akka.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import stasis.client.api.clients.{DefaultServerBootstrapEndpointClient, ServerBootstrapEndpointClient}
 import stasis.shared.model.devices.DeviceBootstrapParameters
 

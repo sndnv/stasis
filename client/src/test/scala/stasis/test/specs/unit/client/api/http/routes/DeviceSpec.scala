@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.client.api.http.routes
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.LoggerFactory
 import stasis.client.api.http.Context
 import stasis.client.api.http.routes.Device
@@ -15,7 +15,7 @@ import java.time.Instant
 import scala.concurrent.Future
 
 class DeviceSpec extends AsyncUnitSpec with ScalatestRouteTest {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
   import stasis.client.api.http.Formats._
   import stasis.shared.api.Formats._
 

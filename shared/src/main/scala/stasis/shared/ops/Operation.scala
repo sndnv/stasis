@@ -1,6 +1,6 @@
 package stasis.shared.ops
 
-import akka.Done
+import org.apache.pekko.Done
 
 import java.time.Instant
 import scala.concurrent.Future

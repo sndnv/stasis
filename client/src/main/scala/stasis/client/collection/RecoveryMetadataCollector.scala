@@ -2,7 +2,7 @@ package stasis.client.collection
 
 import java.nio.file.Path
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import stasis.client.analysis.{Checksum, Metadata}
 import stasis.client.model.{EntityMetadata, TargetEntity}
 

@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.client.ops.backup.stages
 
-import akka.actor.ActorSystem
-import akka.stream.scaladsl.Sink
-import akka.stream.{Materializer, SystemMaterializer}
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.{Materializer, SystemMaterializer}
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.collection.BackupCollector

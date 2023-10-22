@@ -1,8 +1,8 @@
 package stasis.core.persistence.backends.slick
 
-import akka.Done
-import akka.actor.typed.{ActorSystem, DispatcherSelector, SpawnProtocol}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.{ActorSystem, DispatcherSelector, SpawnProtocol}
+import org.apache.pekko.util.ByteString
 import slick.jdbc.JdbcProfile
 import slick.lifted.ProvenShape
 import stasis.core.persistence.Metrics

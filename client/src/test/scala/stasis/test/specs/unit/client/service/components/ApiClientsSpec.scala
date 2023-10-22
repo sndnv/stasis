@@ -1,10 +1,10 @@
 package stasis.test.specs.unit.client.service.components
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
-import akka.stream.StreamTcpException
-import akka.util.ByteString
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
+import org.apache.pekko.stream.StreamTcpException
+import org.apache.pekko.util.ByteString
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.DeviceSecret

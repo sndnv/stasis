@@ -4,8 +4,8 @@ import java.nio.file.attribute.PosixFileAttributes
 import java.nio.file.{Files, LinkOption, Paths}
 import java.time.Instant
 
-import akka.actor.ActorSystem
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import stasis.client.analysis.{Checksum, Metadata}
 import stasis.client.api.clients.Clients
 import stasis.client.model.{EntityMetadata, TargetEntity}

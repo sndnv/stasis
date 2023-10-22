@@ -1,8 +1,8 @@
 package stasis.client.ops.backup.stages
 
-import akka.NotUsed
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
 import stasis.client.collection.rules.{Rule, Specification}
 import stasis.client.collection.{BackupCollector, BackupMetadataCollector}
 import stasis.client.model.DatasetMetadata

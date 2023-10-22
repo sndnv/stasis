@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.core.security.jwt
 
-import akka.Done
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.scalatest.BeforeAndAfterAll
 import stasis.core.security.jwt.DefaultJwtProvider
 import stasis.core.security.oauth.OAuthClient

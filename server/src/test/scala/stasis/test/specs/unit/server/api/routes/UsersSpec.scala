@@ -1,11 +1,11 @@
 package stasis.test.specs.unit.server.api.routes
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.{RequestEntity, StatusCodes}
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.marshalling.Marshal
+import org.apache.pekko.http.scaladsl.model.{RequestEntity, StatusCodes}
+import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.telemetry.TelemetryContext
 import stasis.server.api.routes.{RoutesContext, Users}
@@ -27,7 +27,7 @@ import scala.concurrent.duration._
 import scala.util.Success
 
 class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
   "Users routes (full permissions)" should "respond with all users" in withRetry {
@@ -760,7 +760,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     "UsersSpec"
   )
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
+  private implicit val untypedSystem: org.apache.pekko.actor.ActorSystem = typedSystem.classicSystem
 
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 

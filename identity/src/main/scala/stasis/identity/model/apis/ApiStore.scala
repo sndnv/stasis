@@ -1,6 +1,6 @@
 package stasis.identity.model.apis
 
-import akka.Done
+import org.apache.pekko.Done
 import stasis.core.persistence.backends.KeyValueBackend
 
 import scala.concurrent.Future

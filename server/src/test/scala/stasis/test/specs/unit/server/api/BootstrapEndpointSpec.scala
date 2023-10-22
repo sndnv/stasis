@@ -1,12 +1,12 @@
 package stasis.test.specs.unit.server.api
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials, OAuth2BearerToken}
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.unmarshalling.Unmarshal
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials, OAuth2BearerToken}
+import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import play.api.libs.json.Json
 import stasis.core.api.MessageResponse
 import stasis.core.routing.Node
@@ -30,7 +30,7 @@ import scala.collection.mutable
 
 class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
   "A BootstrapEndpoint" should "successfully authenticate requests with user credentials" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     import stasis.shared.api.Formats._
 
     val fixtures = new TestFixtures {}
@@ -120,7 +120,7 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
   }
 
   it should "handle generic failures reported by routes" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 
     val fixtures = new TestFixtures {

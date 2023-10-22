@@ -1,12 +1,11 @@
 package stasis.core.networking.grpc.internal
 
 import java.nio.charset.StandardCharsets
-
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials, OAuth2BearerToken}
-import akka.parboiled2.util.Base64
+import org.apache.pekko.http.scaladsl.model.HttpRequest
+import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials, OAuth2BearerToken}
 import stasis.core.networking.exceptions.CredentialsFailure
 
+import java.util.Base64
 import scala.concurrent.Future
 import scala.util.matching.Regex
 
@@ -18,7 +17,7 @@ object Credentials {
   def marshal(credentials: HttpCredentials): String =
     credentials match {
       case BasicHttpCredentials(username, password) =>
-        val encoded = Base64.rfc2045().encodeToString(s"$username:$password".getBytes(StandardCharsets.UTF_8), false)
+        val encoded = Base64.getEncoder.encodeToString(s"$username:$password".getBytes(StandardCharsets.UTF_8))
         s"Basic $encoded"
 
       case OAuth2BearerToken(token) =>
@@ -34,7 +33,7 @@ object Credentials {
 
           case "Basic" =>
             new String(
-              Base64.rfc2045.decodeFast(credentials),
+              Base64.getDecoder.decode(credentials),
               StandardCharsets.UTF_8
             ).split(":").toList match {
               case node :: secret :: Nil =>

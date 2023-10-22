@@ -2,7 +2,7 @@ package stasis.test.specs.unit.core.networking.grpc.internal
 
 import java.util.UUID
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import stasis.core.networking.exceptions.EndpointFailure
 import stasis.core.networking.grpc.internal.Implicits
 import stasis.core.networking.grpc.proto
@@ -38,10 +38,10 @@ class ImplicitsSpec extends UnitSpec {
   }
 
   it should "convert byte strings" in {
-    val akkaByteString = ByteString.fromString("test string")
-    val protoByteString = com.google.protobuf.ByteString.copyFrom(akkaByteString.asByteBuffer)
+    val pekkoByteString = ByteString.fromString("test string")
+    val protoByteString = com.google.protobuf.ByteString.copyFrom(pekkoByteString.asByteBuffer)
 
-    Implicits.akkaToProtobufByteString(akkaByteString) should be(protoByteString)
-    Implicits.protobufToAkkaByteString(protoByteString) should be(akkaByteString)
+    Implicits.pekkoToProtobufByteString(pekkoByteString) should be(protoByteString)
+    Implicits.protobufToPekkoByteString(protoByteString) should be(pekkoByteString)
   }
 }

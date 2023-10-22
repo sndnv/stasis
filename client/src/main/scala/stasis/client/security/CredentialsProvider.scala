@@ -1,6 +1,6 @@
 package stasis.client.security
 
-import akka.http.scaladsl.model.headers.HttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
 
 import scala.concurrent.Future
 

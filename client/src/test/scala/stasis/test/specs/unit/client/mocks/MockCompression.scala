@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.client.mocks
 
-import akka.NotUsed
-import akka.stream.scaladsl.Flow
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.util.ByteString
 import stasis.client.compression.{Compression, Decoder, Encoder}
 import stasis.client.model.{SourceEntity, TargetEntity}
 import stasis.test.specs.unit.client.mocks.MockCompression.Statistic

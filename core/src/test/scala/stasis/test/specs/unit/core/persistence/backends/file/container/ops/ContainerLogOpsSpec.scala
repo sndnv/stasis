@@ -4,7 +4,7 @@ import java.nio.ByteOrder
 import java.nio.file.Paths
 import java.util.UUID
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import org.scalatest.BeforeAndAfter
 import stasis.core.persistence.backends.file.container.Container
 import stasis.core.persistence.backends.file.container.headers.{ContainerHeader, ContainerLogHeader}

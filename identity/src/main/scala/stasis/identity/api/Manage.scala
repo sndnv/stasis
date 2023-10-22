@@ -1,7 +1,7 @@
 package stasis.identity.api
 
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server._
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server._
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.identity.api.manage._
 import stasis.identity.api.manage.directives.{UserAuthentication, UserAuthorization}

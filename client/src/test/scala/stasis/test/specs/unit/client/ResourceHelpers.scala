@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.client
 
-import akka.stream.Materializer
-import akka.util.Timeout
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.Timeout
 import com.google.common.jimfs.{Configuration, Jimfs}
 import stasis.client.analysis.{Checksum, Metadata}
 import stasis.client.model.EntityMetadata

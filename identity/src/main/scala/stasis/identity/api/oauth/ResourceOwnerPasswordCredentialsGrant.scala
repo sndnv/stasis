@@ -1,12 +1,12 @@
 package stasis.identity.api.oauth
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
 
 import scala.concurrent.ExecutionContext
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Route
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.{Format, Json}
 import stasis.identity.api.Formats._
@@ -21,7 +21,7 @@ class ResourceOwnerPasswordCredentialsGrant(
 )(implicit system: ActorSystem[SpawnProtocol.Command])
     extends AuthDirectives {
   import ResourceOwnerPasswordCredentialsGrant._
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
   override implicit protected def ec: ExecutionContext = system.executionContext
   override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)

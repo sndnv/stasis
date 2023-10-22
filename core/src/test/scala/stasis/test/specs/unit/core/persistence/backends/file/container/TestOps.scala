@@ -5,8 +5,8 @@ import java.nio.file.{Files, Path, StandardOpenOption}
 import java.nio.{ByteBuffer, ByteOrder}
 import java.util.UUID
 
-import akka.Done
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.util.ByteString
 import stasis.core.persistence.backends.file.container.headers.{ChunkHeader, ContainerLogHeader}
 import stasis.core.persistence.backends.file.container.{Container, CrateChunk, CrateChunkDescriptor}
 

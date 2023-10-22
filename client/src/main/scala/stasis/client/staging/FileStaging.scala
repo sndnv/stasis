@@ -2,7 +2,7 @@ package stasis.client.staging
 
 import java.nio.file.Path
 
-import akka.Done
+import org.apache.pekko.Done
 
 import scala.concurrent.Future
 

@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.identity.api.manage
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.util.ByteString
 import stasis.identity.api.Formats._
 import stasis.identity.api.manage.Owners
 import stasis.identity.api.manage.requests.{CreateOwner, UpdateOwner, UpdateOwnerCredentials}
@@ -15,7 +15,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class OwnersSpec extends RouteTest {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
   "Owners routes" should "respond with all resource owners" in withRetry {
     val store = createOwnerStore()

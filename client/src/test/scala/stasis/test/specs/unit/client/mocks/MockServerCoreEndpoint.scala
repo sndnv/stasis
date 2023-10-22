@@ -1,11 +1,11 @@
 package stasis.test.specs.unit.client.mocks
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.headers.BasicHttpCredentials
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
-import akka.{Done, NotUsed}
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.{Done, NotUsed}
 import stasis.core.networking.http.HttpEndpoint
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.routing.Node

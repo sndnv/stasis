@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.identity.api.oauth.directives
 
-import akka.http.scaladsl.model
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpChallenges, OAuth2BearerToken}
-import akka.http.scaladsl.server.Directives
+import org.apache.pekko.http.scaladsl.model
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, HttpChallenges, OAuth2BearerToken}
+import org.apache.pekko.http.scaladsl.server.Directives
 import org.slf4j.Logger
 import play.api.libs.json._
 import stasis.identity.api.oauth.directives.ClientAuthentication
@@ -16,7 +16,7 @@ import stasis.test.specs.unit.identity.model.Generators
 import scala.concurrent.duration._
 
 class ClientAuthenticationSpec extends RouteTest {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
   "A ClientAuthentication directive" should "successfully authenticate clients" in withRetry {
     val clients = createClientStore()

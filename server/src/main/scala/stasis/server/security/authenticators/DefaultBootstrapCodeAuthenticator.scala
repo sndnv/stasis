@@ -1,6 +1,6 @@
 package stasis.server.security.authenticators
 
-import akka.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
+import org.apache.pekko.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
 import stasis.core.security.exceptions.AuthenticationFailure
 import stasis.server.model.devices.DeviceBootstrapCodeStore
 import stasis.server.security.CurrentUser

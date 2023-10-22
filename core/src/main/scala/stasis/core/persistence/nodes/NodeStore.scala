@@ -1,8 +1,8 @@
 package stasis.core.persistence.nodes
 
-import akka.Done
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.util.Timeout
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.util.Timeout
 import stasis.core.persistence.StoreInitializationResult
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.core.persistence.backends.memory.MemoryBackend

@@ -1,7 +1,7 @@
 package stasis.client.service.components
 
-import akka.http.scaladsl.Http.ServerBinding
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.Http.ServerBinding
+import org.apache.pekko.util.ByteString
 import org.slf4j.LoggerFactory
 import stasis.client.api.http
 import stasis.client.api.http.HttpApiEndpoint
@@ -48,7 +48,7 @@ object ApiEndpoint {
         trackers = trackers.views,
         search = search,
         terminateService = () => {
-          val _ = akka.pattern.after(
+          val _ = org.apache.pekko.pattern.after(
             duration = terminationDelay,
             using = system.classicSystem.scheduler
           ) { Future.successful(base.terminateService()) }

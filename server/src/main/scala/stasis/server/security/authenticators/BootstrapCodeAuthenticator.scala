@@ -1,6 +1,6 @@
 package stasis.server.security.authenticators
 
-import akka.http.scaladsl.model.headers.HttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
 import stasis.server.security.CurrentUser
 import stasis.shared.model.devices.DeviceBootstrapCode
 

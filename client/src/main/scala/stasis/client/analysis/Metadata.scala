@@ -1,7 +1,7 @@
 package stasis.client.analysis
 
-import akka.Done
-import akka.stream.Materializer
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
 import stasis.client.compression.Compression
 import stasis.client.model.{EntityMetadata, SourceEntity, TargetEntity}
 import stasis.core.packaging.Crate

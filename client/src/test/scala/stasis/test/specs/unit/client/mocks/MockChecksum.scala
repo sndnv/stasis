@@ -3,7 +3,7 @@ package stasis.test.specs.unit.client.mocks
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import stasis.client.analysis.Checksum
 import stasis.test.specs.unit.client.mocks.MockChecksum.Statistic
 

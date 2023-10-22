@@ -1,11 +1,11 @@
 package stasis.server.api
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.{ExceptionHandler, RejectionHandler, Route}
-import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.{ExceptionHandler, RejectionHandler, Route}
+import org.apache.pekko.http.cors.scaladsl.CorsDirectives._
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.api.directives.{EntityDiscardingDirectives, LoggingDirectives}
 import stasis.core.security.tls.EndpointContext

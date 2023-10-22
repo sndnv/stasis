@@ -2,9 +2,9 @@ package stasis.client.api.clients
 
 import java.time.Instant
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.http.caching.LfuCache
-import akka.http.caching.scaladsl.{Cache, CachingSettings}
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.http.caching.LfuCache
+import org.apache.pekko.http.caching.scaladsl.{Cache, CachingSettings}
 import stasis.client.model.DatasetMetadata
 import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}
 import stasis.shared.api.responses.{CreatedDatasetDefinition, CreatedDatasetEntry, Ping}

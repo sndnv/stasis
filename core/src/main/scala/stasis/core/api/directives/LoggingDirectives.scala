@@ -1,9 +1,9 @@
 package stasis.core.api.directives
 
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.http.scaladsl.model.{HttpHeader, Uri}
-import akka.http.scaladsl.server.Directives.{extractRequest, mapResponse}
-import akka.http.scaladsl.server.{Directive, Directive0}
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.http.scaladsl.model.{HttpHeader, Uri}
+import org.apache.pekko.http.scaladsl.server.Directives.{extractRequest, mapResponse}
+import org.apache.pekko.http.scaladsl.server.{Directive, Directive0}
 import org.slf4j.Logger
 import stasis.core.api.Metrics
 import stasis.core.telemetry.TelemetryContext

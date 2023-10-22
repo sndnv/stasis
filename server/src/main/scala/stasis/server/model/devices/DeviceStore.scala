@@ -1,6 +1,6 @@
 package stasis.server.model.devices
 
-import akka.Done
+import org.apache.pekko.Done
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.server.security.{CurrentUser, Resource}
 import stasis.shared.model.devices.Device

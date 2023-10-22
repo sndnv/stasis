@@ -1,10 +1,10 @@
 package stasis.test.specs.unit.core.persistence.crates
 
-import akka.actor.typed.scaladsl.{Behaviors, LoggerOps}
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
-import akka.{Done, NotUsed}
+import org.apache.pekko.actor.typed.scaladsl.{Behaviors, LoggerOps}
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.{Done, NotUsed}
 import com.typesafe.config.ConfigFactory
 import org.mockito.captor.ArgCaptor
 import org.mockito.scalatest.AsyncMockitoSugar

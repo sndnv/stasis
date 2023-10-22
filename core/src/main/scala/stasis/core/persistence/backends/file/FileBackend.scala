@@ -1,9 +1,9 @@
 package stasis.core.persistence.backends.file
 
-import akka.actor.typed.{ActorSystem, DispatcherSelector, SpawnProtocol}
-import akka.stream.scaladsl.{FileIO, Sink, Source}
-import akka.util.ByteString
-import akka.{Done, NotUsed}
+import org.apache.pekko.actor.typed.{ActorSystem, DispatcherSelector, SpawnProtocol}
+import org.apache.pekko.stream.scaladsl.{FileIO, Sink, Source}
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.{Done, NotUsed}
 import stasis.core.persistence.Metrics
 import stasis.core.persistence.backends.StreamingBackend
 import stasis.core.telemetry.TelemetryContext

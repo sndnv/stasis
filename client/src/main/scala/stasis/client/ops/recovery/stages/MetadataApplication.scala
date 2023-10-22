@@ -1,7 +1,7 @@
 package stasis.client.ops.recovery.stages
 
-import akka.stream.scaladsl.Flow
-import akka.{Done, NotUsed}
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.{Done, NotUsed}
 import stasis.client.analysis.Metadata
 import stasis.client.model.TargetEntity
 import stasis.client.ops.{Metrics, ParallelismConfig}

@@ -1,8 +1,8 @@
 package stasis.core.persistence.backends.file.container.ops
 
-import akka.Done
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.util.ByteString
 import stasis.core.persistence.backends.file.container.Container.Index.{ChunkEntryNumber, IndexingFailure}
 import stasis.core.persistence.backends.file.container.exceptions.ContainerFailure
 import stasis.core.persistence.backends.file.container.headers.{ChunkHeader, ContainerHeader}

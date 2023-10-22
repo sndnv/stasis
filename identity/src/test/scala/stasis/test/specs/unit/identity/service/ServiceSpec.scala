@@ -1,11 +1,11 @@
 package stasis.test.specs.unit.identity.service
 
-import akka.Done
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
+import org.apache.pekko.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
+import org.apache.pekko.util.ByteString
 import com.typesafe.config.{Config, ConfigFactory}
 import org.jose4j.jwk.{JsonWebKey, JsonWebKeySet}
 import org.jose4j.jws.JsonWebSignature
@@ -30,7 +30,7 @@ class ServiceSpec extends RouteTest with Eventually {
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
   "Identity Service" should "authenticate and authorize actions, and provide metrics" in {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     import stasis.identity.api.Formats._
 
     implicit val clientContext: HttpsConnectionContext = createTrustedContext()

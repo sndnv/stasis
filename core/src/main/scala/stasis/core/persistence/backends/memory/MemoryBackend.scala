@@ -1,10 +1,10 @@
 package stasis.core.persistence.backends.memory
 
-import akka.Done
-import akka.actor.typed._
-import akka.actor.typed.scaladsl.AskPattern._
-import akka.actor.typed.scaladsl.Behaviors
-import akka.util.Timeout
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed._
+import org.apache.pekko.actor.typed.scaladsl.AskPattern._
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.util.Timeout
 import stasis.core.persistence.Metrics
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.core.telemetry.TelemetryContext

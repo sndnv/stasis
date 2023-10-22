@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.client.mocks
 
 import java.util.concurrent.atomic.AtomicInteger
-import akka.NotUsed
-import akka.stream.scaladsl.Flow
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.util.ByteString
 import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceMetadataSecret}
 import stasis.client.encryption.{Decoder, Encoder}
 import stasis.test.specs.unit.client.mocks.MockEncryption.Statistic

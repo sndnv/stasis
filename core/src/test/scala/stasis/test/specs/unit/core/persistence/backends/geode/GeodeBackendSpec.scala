@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.core.persistence.backends.geode
 
-import akka.Done
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.util.ByteString
 import org.apache.geode.cache.Region
 import org.apache.geode.cache.client.{ClientCache, ClientCacheFactory, ClientRegionShortcut}
 import org.apache.geode.distributed.{ConfigurationProperties, ServerLauncher}

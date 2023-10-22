@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.core.persistence.reservations
 
-import akka.Done
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.packaging.Crate
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.reservations.ReservationStore

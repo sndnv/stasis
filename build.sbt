@@ -9,18 +9,18 @@ homepage := Some(url("https://github.com/sndnv/stasis"))
 ThisBuild / scalaVersion := "2.13.12"
 
 lazy val versions = new {
-  // akka
-  val akka         = "2.6.20"
-  val akkaHttp     = "10.2.10"
-  val akkaHttpCors = "1.2.0"
-  val akkaJson     = "1.39.2"
+  // pekko
+  val pekko         = "1.0.1"
+  val pekkoHttp     = "1.0.0"
+  val pekkoHttpCors = "1.0.0"
+  val pekkoJson     = "2.1.0"
 
   // persistence
   val geode    = "1.15.1"
   val slick    = "3.4.1"
   val postgres = "42.6.0"
   val mariadb  = "3.2.0"
-  val sqlite   = "3.43.0.0"
+  val sqlite   = "3.43.2.1"
   val h2       = "2.2.224"
 
   // telemetry
@@ -60,7 +60,7 @@ lazy val server = (project in file("./server"))
       "org.postgresql"      % "postgresql"                        % versions.postgres,
       "org.mariadb.jdbc"    % "mariadb-java-client"               % versions.mariadb,
       "org.xerial"          % "sqlite-jdbc"                       % versions.sqlite,
-      "ch.megard"          %% "akka-http-cors"                    % versions.akkaHttpCors,
+      "org.apache.pekko"   %% "pekko-http-cors"                   % versions.pekkoHttpCors,
       "io.opentelemetry"    % "opentelemetry-sdk"                 % versions.openTelemetry,
       "io.opentelemetry"    % "opentelemetry-exporter-prometheus" % versions.openTelemetryPrometheus,
       "io.prometheus"       % "simpleclient_hotspot"              % versions.prometheus
@@ -75,14 +75,14 @@ lazy val client = (project in file("./client"))
   .settings(dockerSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "at.favre.lib"       % "hkdf"                              % versions.hkdf,
-      "net.harawata"       % "appdirs"                           % versions.appdirs,
-      "com.typesafe.akka" %% "akka-http-caching"                 % versions.akkaHttp,
-      "com.github.scopt"  %% "scopt"                             % versions.scopt,
-      "io.opentelemetry"   % "opentelemetry-sdk"                 % versions.openTelemetry,
-      "io.opentelemetry"   % "opentelemetry-exporter-prometheus" % versions.openTelemetryPrometheus,
-      "io.prometheus"      % "simpleclient_hotspot"              % versions.prometheus,
-      "com.dorkbox"        % "SystemTray"                        % versions.systemTray
+      "at.favre.lib"      % "hkdf"                              % versions.hkdf,
+      "net.harawata"      % "appdirs"                           % versions.appdirs,
+      "org.apache.pekko" %% "pekko-http-caching"                % versions.pekkoHttp,
+      "com.github.scopt" %% "scopt"                             % versions.scopt,
+      "io.opentelemetry"  % "opentelemetry-sdk"                 % versions.openTelemetry,
+      "io.opentelemetry"  % "opentelemetry-exporter-prometheus" % versions.openTelemetryPrometheus,
+      "io.prometheus"     % "simpleclient_hotspot"              % versions.prometheus,
+      "com.dorkbox"       % "SystemTray"                        % versions.systemTray
     ),
     dockerBaseImage          := jdkDockerImage,
     Universal / javaOptions ++= Seq("-J--add-opens=java.base/sun.security.x509=ALL-UNNAMED"),
@@ -105,7 +105,7 @@ lazy val identity = (project in file("./identity"))
       "org.postgresql"      % "postgresql"                        % versions.postgres,
       "org.mariadb.jdbc"    % "mariadb-java-client"               % versions.mariadb,
       "org.xerial"          % "sqlite-jdbc"                       % versions.sqlite,
-      "ch.megard"          %% "akka-http-cors"                    % versions.akkaHttpCors,
+      "org.apache.pekko"   %% "pekko-http-cors"                   % versions.pekkoHttpCors,
       "io.opentelemetry"    % "opentelemetry-sdk"                 % versions.openTelemetry,
       "io.opentelemetry"    % "opentelemetry-exporter-prometheus" % versions.openTelemetryPrometheus,
       "io.prometheus"       % "simpleclient_hotspot"              % versions.prometheus
@@ -123,16 +123,15 @@ lazy val core = (project in file("./core"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.typesafe.akka"     %% "akka-actor"                        % versions.akka,
-      "com.typesafe.akka"     %% "akka-actor-typed"                  % versions.akka,
-      "com.typesafe.akka"     %% "akka-stream"                       % versions.akka,
-      "com.typesafe.akka"     %% "akka-discovery"                    % versions.akka,
-      "com.typesafe.akka"     %% "akka-slf4j"                        % versions.akka,
-      "com.typesafe.akka"     %% "akka-http"                         % versions.akkaHttp,
-      "com.typesafe.akka"     %% "akka-http-core"                    % versions.akkaHttp,
-      "com.typesafe.akka"     %% "akka-http2-support"                % versions.akkaHttp,
+      "org.apache.pekko"      %% "pekko-actor"                       % versions.pekko,
+      "org.apache.pekko"      %% "pekko-actor-typed"                 % versions.pekko,
+      "org.apache.pekko"      %% "pekko-stream"                      % versions.pekko,
+      "org.apache.pekko"      %% "pekko-discovery"                   % versions.pekko,
+      "org.apache.pekko"      %% "pekko-slf4j"                       % versions.pekko,
+      "org.apache.pekko"      %% "pekko-http"                        % versions.pekkoHttp,
+      "org.apache.pekko"      %% "pekko-http-core"                   % versions.pekkoHttp,
       "com.typesafe.play"     %% "play-json"                         % versions.playJson,
-      "de.heikoseeberger"     %% "akka-http-play-json"               % versions.akkaJson,
+      "com.github.pjfanning"  %% "pekko-http-play-json"              % versions.pekkoJson,
       "org.bitbucket.b_c"      % "jose4j"                            % versions.jose4j,
       "io.opentelemetry"       % "opentelemetry-api"                 % versions.openTelemetry,
       "ch.qos.logback"         % "logback-classic"                   % versions.logback,
@@ -144,9 +143,9 @@ lazy val core = (project in file("./core"))
       "com.h2database"         % "h2"                                % versions.h2                      % Test,
       "org.scalacheck"        %% "scalacheck"                        % versions.scalaCheck              % Test,
       "org.scalatest"         %% "scalatest"                         % versions.scalaTest               % Test,
-      "com.typesafe.akka"     %% "akka-testkit"                      % versions.akka                    % Test,
-      "com.typesafe.akka"     %% "akka-stream-testkit"               % versions.akka                    % Test,
-      "com.typesafe.akka"     %% "akka-http-testkit"                 % versions.akkaHttp                % Test,
+      "org.apache.pekko"      %% "pekko-testkit"                     % versions.pekko                   % Test,
+      "org.apache.pekko"      %% "pekko-stream-testkit"              % versions.pekko                   % Test,
+      "org.apache.pekko"      %% "pekko-http-testkit"                % versions.pekkoHttp               % Test,
       "com.github.tomakehurst" % "wiremock-jre8"                     % versions.wiremock                % Test,
       "org.mockito"           %% "mockito-scala"                     % versions.mockito                 % Test,
       "org.mockito"           %% "mockito-scala-scalatest"           % versions.mockito                 % Test,
@@ -159,16 +158,15 @@ lazy val core = (project in file("./core"))
 lazy val proto = (project in file("./proto"))
   .settings(
     libraryDependencies ++= Seq(
-      "com.typesafe.akka" %% "akka-stream"        % versions.akka,
-      "com.typesafe.akka" %% "akka-http"          % versions.akkaHttp,
-      "com.typesafe.akka" %% "akka-http-core"     % versions.akkaHttp,
-      "com.typesafe.akka" %% "akka-http2-support" % versions.akkaHttp
+      "org.apache.pekko" %% "pekko-stream"    % versions.pekko,
+      "org.apache.pekko" %% "pekko-http"      % versions.pekkoHttp,
+      "org.apache.pekko" %% "pekko-http-core" % versions.pekkoHttp
     ),
     coverageEnabled := false,
-    akkaGrpcCodeGeneratorSettings += "single_line_to_proto_string",
-    dependencyUpdatesFilter -= moduleFilter(organization = "com.typesafe.akka")
+    pekkoGrpcCodeGeneratorSettings += "single_line_to_proto_string",
+    dependencyUpdatesFilter -= moduleFilter(organization = "org.apache.pekko")
   )
-  .enablePlugins(AkkaGrpcPlugin)
+  .enablePlugins(PekkoGrpcPlugin)
 
 lazy val excludedWarts = Seq(
   Wart.Any // too many false positives; more info - https://github.com/wartremover/wartremover/issues/454
@@ -201,7 +199,7 @@ lazy val commonSettings = Seq(
     "-Xlint:infer-any",
     s"-P:wartremover:excluded:${(Compile / sourceManaged).value}"
   ),
-  dependencyUpdatesFilter -= moduleFilter(organization = "com.typesafe.akka")
+  dependencyUpdatesFilter -= moduleFilter(organization = "org.apache.pekko")
 )
 
 lazy val dockerSettings = Seq(

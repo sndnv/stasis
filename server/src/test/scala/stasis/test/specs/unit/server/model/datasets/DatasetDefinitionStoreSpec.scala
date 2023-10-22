@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.server.model.datasets
 
-import akka.Done
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.telemetry.TelemetryContext
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.devices.Device

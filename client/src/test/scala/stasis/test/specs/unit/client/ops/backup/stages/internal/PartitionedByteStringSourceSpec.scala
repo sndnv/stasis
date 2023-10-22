@@ -3,10 +3,10 @@ package stasis.test.specs.unit.client.ops.backup.stages.internal
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
-import akka.actor.ActorSystem
-import akka.stream.IOResult
-import akka.stream.scaladsl.{Flow, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.IOResult
+import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
+import org.apache.pekko.util.ByteString
 import stasis.client.ops.backup.stages.internal.PartitionedByteStringSource
 import stasis.test.specs.unit.AsyncUnitSpec
 

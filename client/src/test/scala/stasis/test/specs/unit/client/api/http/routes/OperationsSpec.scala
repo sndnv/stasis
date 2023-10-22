@@ -1,13 +1,13 @@
 package stasis.test.specs.unit.client.api.http.routes
 
-import akka.{Done, NotUsed}
-import akka.http.scaladsl.model.sse.ServerSentEvent
-import akka.http.scaladsl.model.{MediaTypes, StatusCodes, Uri}
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.{Directives, Route}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.{Done, NotUsed}
+import org.apache.pekko.http.scaladsl.model.sse.ServerSentEvent
+import org.apache.pekko.http.scaladsl.model.{MediaTypes, StatusCodes, Uri}
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.slf4j.LoggerFactory
 import stasis.client.api.http.Context
 import stasis.client.api.http.routes.Operations
@@ -29,7 +29,7 @@ import scala.concurrent.duration._
 class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   "Operations routes" should "provide current operations state (default / active)" in withRetry {
     import Operations._
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val operations: Map[Operation.Id, Operation.Type] = Map(
       Operation.generateId() -> Operation.Type.Backup,
@@ -82,7 +82,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
   they should "provide current operations state (completed)" in withRetry {
     import Operations._
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val operations: Map[Operation.Id, Operation.Type] = Map(
       Operation.generateId() -> Operation.Type.Backup,
@@ -132,7 +132,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
   they should "provide current operations state (all)" in withRetry {
     import Operations._
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val operations: Map[Operation.Id, Operation.Type] = Map(
       Operation.generateId() -> Operation.Type.Backup,
@@ -182,7 +182,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
   they should "provide current backup rules" in withRetry {
     import Operations._
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val mockExecutor = MockOperationExecutor()
     val routes = createRoutes(executor = mockExecutor)
@@ -309,7 +309,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
   they should "support retrieving progress of specific operations (backup)" in withRetry {
     import OperationsSpec._
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val operation = Operation.generateId()
 
@@ -352,7 +352,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
   they should "support retrieving progress of specific operations (recovery)" in withRetry {
     import OperationsSpec._
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val operation = Operation.generateId()
     val mockTrackers = new MockTrackerViews() {
@@ -400,7 +400,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   they should "support retrieving progress stream for specific operations (backup)" in withRetry {
-    import akka.http.scaladsl.unmarshalling.sse.EventStreamUnmarshalling._
+    import org.apache.pekko.http.scaladsl.unmarshalling.sse.EventStreamUnmarshalling._
     import play.api.libs.json.Json
 
     val operation = Operation.generateId()
@@ -465,7 +465,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   they should "support retrieving progress stream for specific operations (recovery)" in withRetry {
-    import akka.http.scaladsl.unmarshalling.sse.EventStreamUnmarshalling._
+    import org.apache.pekko.http.scaladsl.unmarshalling.sse.EventStreamUnmarshalling._
     import play.api.libs.json.Json
 
     val operation = Operation.generateId()

@@ -11,7 +11,7 @@ The provided `docker-compose.yml` defines all `stasis` services and their config
 5) Make sure that:
    * the `server` storage volume path (by default, `./local/server`) exists and is accessible/writable
    * the correct docker images are used for all services
-   * the correct values for `AKKA_HTTP_CORS_ALLOWED_ORIGINS` are set for both `identity` and `server`
+   * the correct values for `PEKKO_HTTP_CORS_ALLOWED_ORIGINS` are set for both `identity` and `server`
 6) Start services with `docker-compose up`
 
 ## After Bootstrap

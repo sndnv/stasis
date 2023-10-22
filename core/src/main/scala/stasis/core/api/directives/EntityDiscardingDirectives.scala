@@ -1,7 +1,7 @@
 package stasis.core.api.directives
 
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.{Directive, Directive0}
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.{Directive, Directive0}
 import stasis.core.streaming.Operators.ExtendedSource
 
 trait EntityDiscardingDirectives {

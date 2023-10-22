@@ -1,6 +1,6 @@
 package stasis.server.model.schedules
 
-import akka.Done
+import org.apache.pekko.Done
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.server.security.Resource
 import stasis.shared.model.schedules.Schedule

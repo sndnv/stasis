@@ -3,9 +3,9 @@ package stasis.core.persistence.backends.file.container.stream.transform
 import java.nio.{ByteBuffer, ByteOrder}
 import java.util.UUID
 
-import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
-import akka.stream.{Attributes, FlowShape, Inlet, Outlet}
-import akka.util.ByteString
+import org.apache.pekko.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
+import org.apache.pekko.stream.{Attributes, FlowShape, Inlet, Outlet}
+import org.apache.pekko.util.ByteString
 import stasis.core.persistence.backends.file.container.CrateChunk
 import stasis.core.persistence.backends.file.container.headers.ChunkHeader
 

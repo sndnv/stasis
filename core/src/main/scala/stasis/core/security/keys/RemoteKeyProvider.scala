@@ -1,12 +1,12 @@
 package stasis.core.security.keys
 
-import akka.Done
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, StatusCodes}
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.{Http, HttpsConnectionContext}
-import akka.util.Timeout
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, StatusCodes}
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
+import org.apache.pekko.http.scaladsl.{Http, HttpsConnectionContext}
+import org.apache.pekko.util.Timeout
 import org.jose4j.jwk.JsonWebKeySet
 import org.jose4j.jws.AlgorithmIdentifiers
 import org.slf4j.LoggerFactory

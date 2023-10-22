@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.client.collection.rules
 
-import akka.util.Timeout
+import org.apache.pekko.util.Timeout
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.core.FileSystemHelpers.FileSystemSetup

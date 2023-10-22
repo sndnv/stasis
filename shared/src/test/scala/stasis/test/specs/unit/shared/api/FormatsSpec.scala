@@ -3,8 +3,8 @@ package stasis.test.specs.unit.shared.api
 import java.time.temporal.ChronoUnit
 import java.time.{Instant, LocalDateTime}
 
-import akka.actor.Cancellable
-import akka.util.ByteString
+import org.apache.pekko.actor.Cancellable
+import org.apache.pekko.util.ByteString
 import play.api.libs.json.Json
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress

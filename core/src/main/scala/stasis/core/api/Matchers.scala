@@ -3,8 +3,8 @@ package stasis.core.api
 import java.time.Instant
 import java.time.format.DateTimeParseException
 
-import akka.http.scaladsl.server.{PathMatcher, PathMatcher1}
-import akka.http.scaladsl.unmarshalling.Unmarshaller
+import org.apache.pekko.http.scaladsl.server.{PathMatcher, PathMatcher1}
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
 
 import scala.concurrent.Future
 import scala.concurrent.duration.{Duration, FiniteDuration}

@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.core.persistence.manifests
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.manifests.ManifestStore

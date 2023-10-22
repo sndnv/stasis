@@ -1,8 +1,8 @@
 package stasis.core.networking
 
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
-import akka.{Done, NotUsed}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.{Done, NotUsed}
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.security.NodeCredentialsProvider
 

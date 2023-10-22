@@ -1,6 +1,6 @@
 package stasis.core.persistence.manifests
 
-import akka.Done
+import org.apache.pekko.Done
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.Metrics
 import stasis.core.persistence.backends.KeyValueBackend

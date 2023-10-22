@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.identity.api.oauth
 
-import akka.http.scaladsl.model.headers.BasicHttpCredentials
-import akka.http.scaladsl.model.{StatusCodes, Uri}
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.model.{StatusCodes, Uri}
 import play.api.libs.json._
 import stasis.identity.api.oauth.ImplicitGrant
 import stasis.identity.api.oauth.ImplicitGrant._
@@ -127,7 +127,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
   }
 
   they should "generate access tokens for valid requests (completed)" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val grant = new ImplicitGrant(config, providers)
@@ -183,7 +183,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
   }
 
   they should "not generate access tokens when invalid redirect URIs are provided" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val (stores, secrets, config, providers) = createOAuthFixtures()
     val grant = new ImplicitGrant(config, providers)

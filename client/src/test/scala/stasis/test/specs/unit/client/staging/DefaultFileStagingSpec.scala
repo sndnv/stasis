@@ -3,7 +3,7 @@ package stasis.test.specs.unit.client.staging
 import java.nio.file.attribute.{PosixFileAttributes, PosixFilePermissions}
 import java.nio.file.{Files, LinkOption, Paths}
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import stasis.client.staging.DefaultFileStaging
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers

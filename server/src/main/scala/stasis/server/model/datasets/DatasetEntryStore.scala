@@ -2,7 +2,7 @@ package stasis.server.model.datasets
 
 import java.time.Instant
 
-import akka.Done
+import org.apache.pekko.Done
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.server.security.Resource
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}

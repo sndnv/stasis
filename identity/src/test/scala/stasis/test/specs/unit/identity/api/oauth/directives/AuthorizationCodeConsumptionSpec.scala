@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.identity.api.oauth.directives
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directives
 import org.slf4j.Logger
 import play.api.libs.json._
 import stasis.identity.api.oauth.directives.AuthorizationCodeConsumption
@@ -17,7 +17,7 @@ import java.util.Base64
 import scala.concurrent.ExecutionContext
 
 class AuthorizationCodeConsumptionSpec extends RouteTest {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
   "An AuthorizationCodeConsumption directive" should "consume valid authorization codes without challenges" in withRetry {
     val codes = createCodeStore()

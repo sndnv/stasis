@@ -1,8 +1,8 @@
 package stasis.client.ops.backup.stages
 
 import java.nio.file.Path
-import akka.NotUsed
-import akka.stream.scaladsl.Flow
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Flow
 import stasis.client.model.{DatasetMetadata, EntityMetadata, FilesystemMetadata}
 import stasis.client.ops.backup.Providers
 import stasis.client.tracking.state.BackupState

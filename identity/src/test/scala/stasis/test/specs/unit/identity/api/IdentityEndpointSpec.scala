@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.identity.api
 
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
-import akka.http.scaladsl.unmarshalling.Unmarshal
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import play.api.libs.json._
 import stasis.core.api.MessageResponse
 import stasis.identity.api.manage.setup.Config
@@ -45,7 +45,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
   }
 
   it should "provide JWKs routes" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val (_, _, oauthConfig, oauthProviders) = createOAuthFixtures()
     val manageProviders = createManageProviders()
@@ -73,7 +73,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
   }
 
   it should "provide management routes" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     import stasis.identity.api.Formats._
 
     val (_, _, oauthConfig, oauthProviders) = createOAuthFixtures()
@@ -103,7 +103,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
   }
 
   it should "handle parameter rejections reported by routes" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 
     val endpointPort = ports.dequeue()
@@ -145,7 +145,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
   }
 
   it should "handle generic failures reported by routes" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 
     val endpointPort = ports.dequeue()
@@ -189,7 +189,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
   }
 
   it should "reject requests with invalid entities" in withRetry {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
     import stasis.core.api.Formats.messageResponseFormat
 
     val endpointPort = ports.dequeue()

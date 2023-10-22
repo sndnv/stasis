@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.core.persistence.mocks
 
-import akka.Done
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.util.Timeout
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.util.Timeout
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node

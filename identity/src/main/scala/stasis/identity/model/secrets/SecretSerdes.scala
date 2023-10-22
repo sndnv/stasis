@@ -2,7 +2,7 @@ package stasis.identity.model.secrets
 
 import java.util.Base64
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import play.api.libs.json._
 
 object SecretSerdes {

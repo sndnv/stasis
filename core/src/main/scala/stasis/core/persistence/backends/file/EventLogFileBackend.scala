@@ -9,16 +9,16 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-import akka.Done
-import akka.NotUsed
-import akka.actor.typed._
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.TimerScheduler
-import akka.actor.typed.scaladsl.AskPattern._
-import akka.stream.CompletionStrategy
-import akka.stream.OverflowStrategy
-import akka.stream.scaladsl.Source
-import akka.util.Timeout
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed._
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.scaladsl.TimerScheduler
+import org.apache.pekko.actor.typed.scaladsl.AskPattern._
+import org.apache.pekko.stream.CompletionStrategy
+import org.apache.pekko.stream.OverflowStrategy
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.Timeout
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import stasis.core.persistence.Metrics

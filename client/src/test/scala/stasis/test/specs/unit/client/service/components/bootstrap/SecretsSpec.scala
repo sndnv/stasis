@@ -2,9 +2,9 @@ package stasis.test.specs.unit.client.service.components.bootstrap
 
 import java.nio.file.Path
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.util.ByteString
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.util.ByteString
 import com.google.common.jimfs.Jimfs
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.client.service.components.Files

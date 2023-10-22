@@ -1,16 +1,16 @@
 package stasis.identity.api
 
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server._
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server._
 import org.jose4j.jwk.JsonWebKey
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.api.directives.EntityDiscardingDirectives
 
 class Jwks(keys: Seq[JsonWebKey]) extends EntityDiscardingDirectives {
   import Jwks._
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 

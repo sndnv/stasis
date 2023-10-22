@@ -100,8 +100,8 @@ services:
       STASIS_IDENTITY_PERSISTENCE_DATABASE_KEEP_ALIVE_CONNECTION: "true"
       STASIS_IDENTITY_BOOTSTRAP_ENABLED: "false"
       STASIS_IDENTITY_BOOTSTRAP_CONFIG: "/opt/docker/config/identity-bootstrap.conf"
-      AKKA_HTTP_SERVER_HEADER: ""
-      AKKA_HTTP_CORS_ALLOWED_ORIGINS: "" # replace with actual allowed origins
+      PEKKO_HTTP_SERVER_HEADER: ""
+      PEKKO_HTTP_CORS_ALLOWED_ORIGINS: "" # replace with actual allowed origins
     volumes:
       - ./bootstrap/identity.conf:/opt/docker/config/identity-bootstrap.conf
       - ./secrets/identity.p12:/opt/docker/secrets/identity.p12
@@ -235,9 +235,9 @@ services:
       STASIS_SERVER_BOOTSTRAP_DEVICES_PARAMETERS_SECRETS_ENCRYPTION_DEVICE_SECRET_KEY_SIZE: "16"
       STASIS_SERVER_SERVICE_BOOTSTRAP_ENABLED: "false"
       STASIS_SERVER_SERVICE_BOOTSTRAP_CONFIG: "/opt/docker/config/server-bootstrap.conf"
-      AKKA_HTTP_SERVER_HEADER: ""
-      AKKA_HTTP_SERVER_PARSING_MAX_CONTENT_LENGTH: "4G"
-      AKKA_HTTP_CORS_ALLOWED_ORIGINS: "" # replace with actual allowed origins
+      PEKKO_HTTP_SERVER_HEADER: ""
+      PEKKO_HTTP_SERVER_PARSING_MAX_CONTENT_LENGTH: "4G"
+      PEKKO_HTTP_CORS_ALLOWED_ORIGINS: "" # replace with actual allowed origins
     volumes:
       - ./bootstrap/server.conf:/opt/docker/config/server-bootstrap.conf
       - ./local/server:/opt/server

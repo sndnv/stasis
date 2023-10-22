@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.identity.api.manage
 
-import akka.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import stasis.identity.api.Formats._
 import stasis.identity.api.manage.Tokens
 import stasis.identity.model.clients.Client
@@ -10,7 +10,7 @@ import stasis.test.specs.unit.identity.api.manage.TokensSpec.PartialStoredRefres
 import stasis.test.specs.unit.identity.model.Generators
 
 class TokensSpec extends RouteTest {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
   "Tokens routes" should "respond with all refresh tokens" in withRetry {
     val store = createTokenStore()

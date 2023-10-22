@@ -1,12 +1,12 @@
 package stasis.test.specs.unit.server.api.routes
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.JsArray
 import stasis.core.networking.http.HttpEndpointAddress
@@ -31,7 +31,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class StagingSpec extends AsyncUnitSpec with ScalatestRouteTest {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
 
   "Staging routes" should "respond with all pending destaging operations" in withRetry {
@@ -84,7 +84,7 @@ class StagingSpec extends AsyncUnitSpec with ScalatestRouteTest {
     "StagingSpec"
   )
 
-  private implicit val untypedSystem: akka.actor.ActorSystem = typedSystem.classicSystem
+  private implicit val untypedSystem: org.apache.pekko.actor.ActorSystem = typedSystem.classicSystem
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private implicit val telemetry: TelemetryContext = MockTelemetryContext()

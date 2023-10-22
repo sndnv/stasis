@@ -2,10 +2,10 @@ package stasis.test.specs.unit.core.api
 
 import java.time.Instant
 
-import akka.http.scaladsl.model.{StatusCodes, Uri}
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.{Directives, Route}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.model.{StatusCodes, Uri}
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import stasis.core.api.Matchers._
 import stasis.test.specs.unit.UnitSpec
 

@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.core.persistence.backends.memory
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.scalatest.concurrent.Eventually
 import stasis.core.persistence.backends.memory.EventLogMemoryBackend
 import stasis.core.telemetry.TelemetryContext

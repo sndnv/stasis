@@ -1,12 +1,12 @@
 package stasis.test.specs.unit.client.api.clients
 
-import akka.NotUsed
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.http.scaladsl.model.headers.BasicHttpCredentials
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
-import akka.stream.scaladsl.{Flow, Source}
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.model.{HttpResponse, StatusCodes}
+import org.apache.pekko.stream.scaladsl.{Flow, Source}
+import org.apache.pekko.util.ByteString
 import com.typesafe.config.Config
 import org.scalatest.concurrent.Eventually
 import stasis.client.api.clients.DefaultServerApiEndpointClient
@@ -496,7 +496,7 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
     )
 
     eventually[Unit] {
-      // ensures the endpoint has started; akka is expected to retry GET requests
+      // ensures the endpoint has started; pekko is expected to retry GET requests
       val _ = client.ping().await
     }
 

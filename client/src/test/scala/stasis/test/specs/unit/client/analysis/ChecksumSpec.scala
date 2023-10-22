@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.client.analysis
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import stasis.client.analysis.Checksum
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers

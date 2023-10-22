@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.server.service
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import com.typesafe.config.Config
 import stasis.core.telemetry.TelemetryContext
 import stasis.server.service.CorePersistence

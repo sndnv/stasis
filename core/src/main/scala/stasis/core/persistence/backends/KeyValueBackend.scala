@@ -1,7 +1,7 @@
 package stasis.core.persistence.backends
 
-import akka.Done
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.util.ByteString
 
 import scala.concurrent.Future
 

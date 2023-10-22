@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.identity.api.manage
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.util.ByteString
 import stasis.identity.api.Formats._
 import stasis.identity.api.manage.Clients
 import stasis.identity.api.manage.requests.{CreateClient, UpdateClient, UpdateClientCredentials}
@@ -17,7 +17,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class ClientsSpec extends RouteTest {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
   "Clients routes" should "respond with all clients" in withRetry {
     val store = createClientStore()

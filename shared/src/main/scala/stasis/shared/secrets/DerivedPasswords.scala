@@ -1,6 +1,6 @@
 package stasis.shared.secrets
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.util.Base64

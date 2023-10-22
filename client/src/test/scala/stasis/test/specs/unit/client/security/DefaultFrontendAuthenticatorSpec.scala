@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.client.security
 
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
+import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
 import stasis.client.security.DefaultFrontendAuthenticator
 import stasis.core.security.exceptions.AuthenticationFailure
 import stasis.test.specs.unit.AsyncUnitSpec

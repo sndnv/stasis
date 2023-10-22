@@ -2,7 +2,7 @@ package stasis.test.specs.unit.identity.model
 
 import java.util.concurrent.ThreadLocalRandom
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import stasis.identity.model.apis.Api
 import stasis.identity.model.clients.Client
 import stasis.identity.model.codes.AuthorizationCode

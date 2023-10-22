@@ -1,10 +1,10 @@
 package stasis.core.security.oauth
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.BasicHttpCredentials
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.{Http, HttpsConnectionContext}
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
+import org.apache.pekko.http.scaladsl.{Http, HttpsConnectionContext}
 import stasis.core.security.Metrics
 import stasis.core.security.exceptions.ProviderFailure
 import stasis.core.security.oauth.OAuthClient.{AccessTokenResponse, GrantType}
@@ -97,7 +97,7 @@ class DefaultOAuthClient(
       }
       .flatMap {
         case HttpResponse(code, _, entity, _) if code.isSuccess() =>
-          import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+          import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
           Unmarshal(entity)
             .to[AccessTokenResponse]

@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.core.routing.mocks
 
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
-import akka.{Done, NotUsed}
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.{Done, NotUsed}
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.exceptions.ReservationFailure

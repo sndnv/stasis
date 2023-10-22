@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.shared.model.devices
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import com.typesafe.{config => typesafe}
 import play.api.libs.json.Json
 import stasis.core.routing.Node

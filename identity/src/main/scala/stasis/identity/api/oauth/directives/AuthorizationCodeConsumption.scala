@@ -7,10 +7,10 @@ import java.util.Base64
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
 
-import akka.actor.typed.scaladsl.LoggerOps
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.{Directive, Route}
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.{Directive, Route}
 import org.slf4j.Logger
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.identity.api.Formats._
@@ -22,7 +22,7 @@ import stasis.identity.model.owners.ResourceOwner
 
 trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
   import AuthorizationCodeConsumption._
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
   protected implicit def ec: ExecutionContext
   protected def log: Logger

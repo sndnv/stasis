@@ -1,10 +1,10 @@
 package stasis.test.specs.unit.core.api.directives
 
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
-import akka.http.scaladsl.server.Directives
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
+import org.apache.pekko.http.scaladsl.server.Directives
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import stasis.core.api.directives.EntityDiscardingDirectives
 import stasis.test.specs.unit.AsyncUnitSpec
 

@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.server.security.mocks
 
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials}
+import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials}
 import stasis.core.networking.exceptions.CredentialsFailure
 import stasis.server.security.CurrentUser
 import stasis.server.security.authenticators.UserAuthenticator

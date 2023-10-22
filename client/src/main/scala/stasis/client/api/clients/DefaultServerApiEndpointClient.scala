@@ -1,10 +1,10 @@
 package stasis.client.api.clients
 
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.HttpCredentials
-import akka.http.scaladsl.unmarshalling.Unmarshal
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.http.scaladsl.marshalling.Marshal
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.encryption.Decoder
 import stasis.client.encryption.secrets.DeviceSecret
@@ -288,7 +288,7 @@ object DefaultServerApiEndpointClient {
   )
 
   implicit class ModelToRequestEntity[M](m: M) {
-    import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     def toEntity(implicit format: Format[M], ec: ExecutionContext): Future[RequestEntity] =
       Marshal(m).to[RequestEntity]
@@ -297,7 +297,7 @@ object DefaultServerApiEndpointClient {
   implicit class ResponseEntityToModel(response: HttpResponse) {
     def to[M](implicit format: Format[M], ec: ExecutionContext, system: ActorSystem[SpawnProtocol.Command]): Future[M] =
       if (response.status.isSuccess()) {
-        import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+        import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
         Unmarshal(response)
           .to[M]

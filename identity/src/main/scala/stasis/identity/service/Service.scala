@@ -1,8 +1,8 @@
 package stasis.identity.service
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.util.Timeout
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.util.Timeout
 import com.typesafe.{config => typesafe}
 import io.prometheus.client.hotspot.DefaultExports
 import org.jose4j.jwk.JsonWebKey

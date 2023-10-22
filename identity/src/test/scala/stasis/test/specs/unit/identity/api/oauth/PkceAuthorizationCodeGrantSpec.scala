@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.identity.api.oauth
 
-import akka.http.scaladsl.model
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, CacheDirectives}
-import akka.http.scaladsl.model.{FormData, StatusCodes, Uri}
+import org.apache.pekko.http.scaladsl.model
+import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, CacheDirectives}
+import org.apache.pekko.http.scaladsl.model.{FormData, StatusCodes, Uri}
 import play.api.libs.json._
 import stasis.identity.api.oauth.PkceAuthorizationCodeGrant
 import stasis.identity.api.oauth.PkceAuthorizationCodeGrant._
@@ -15,7 +15,7 @@ import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
 
 class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
-  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+  import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
   "PkceAuthorizationCodeGrant routes" should "validate authorization requests content" in withRetry {
     val request = AuthorizationRequest(

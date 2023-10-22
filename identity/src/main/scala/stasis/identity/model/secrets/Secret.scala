@@ -3,7 +3,7 @@ package stasis.identity.model.secrets
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import com.typesafe.{config => typesafe}
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec

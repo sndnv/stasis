@@ -5,10 +5,10 @@ import java.nio.file.Paths
 import java.util.UUID
 import java.util.concurrent.Executors
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import org.scalatest.BeforeAndAfter
 import stasis.core.persistence.backends.file.container.Container
 import stasis.core.persistence.backends.file.container.headers.{ChunkHeader, ContainerLogHeader}
