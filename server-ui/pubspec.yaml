@@ -1,6 +1,6 @@
 name: server_ui
 description: Web-based user interface for the `server` service.
-version: 0.0.4
+version: 0.0.5-SNAPSHOT
 
 publish_to: 'none'
 
