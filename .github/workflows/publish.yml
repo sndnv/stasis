@@ -67,7 +67,7 @@ jobs:
           cd client-cli
           pip install wheel setuptools
           python setup.py bdist_wheel
-          mv dist/stasis_client_cli-*-py3-none-any.whl.whl dist/stasis_client_cli-${{ github.ref_name }}-py3-none-any.whl
+          mv dist/stasis_client_cli-*-py3-none-any.whl dist/stasis_client_cli-${{ github.ref_name }}-py3-none-any.whl
 
       - name: Upload client-cli artifacts
         uses: actions/upload-artifact@v3
