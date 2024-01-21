@@ -20,6 +20,7 @@ import stasis.test.client_android.lib.mocks.MockEncryption
 import stasis.test.client_android.lib.mocks.MockFileStaging
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
 import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
+import java.math.BigInteger
 import java.util.concurrent.atomic.AtomicInteger
 
 class PartitionedSourceSpec : WordSpec({
@@ -51,14 +52,19 @@ class PartitionedSourceSpec : WordSpec({
             val extended = PartitionedSource(
                 source = original,
                 providers = providers,
-                withPartSecret = { Fixtures.Secrets.Default.toFileSecret("/ops/source-file-1".asTestResource()) },
+                withPartSecret = {
+                    Fixtures.Secrets.Default.toFileSecret(
+                        "/ops/source-file-1".asTestResource(),
+                        BigInteger.valueOf(1)
+                    )
+                },
                 withMaximumPartSize = maximumPartSize,
                 onPartStaged = { partsStaged.incrementAndGet() }
             )
 
             val entries = extended.partitionAndStage().map { it.second.content() }
 
-            partsStaged.get() shouldBe(3)
+            partsStaged.get() shouldBe (3)
 
             entries shouldBe (listOf("ori", "gin", "al"))
 
@@ -113,7 +119,12 @@ class PartitionedSourceSpec : WordSpec({
             val extended = PartitionedSource(
                 source = original.buffer(),
                 providers = providers,
-                withPartSecret = { Fixtures.Secrets.Default.toFileSecret("/ops/source-file-1".asTestResource()) },
+                withPartSecret = {
+                    Fixtures.Secrets.Default.toFileSecret(
+                        "/ops/source-file-1".asTestResource(),
+                        BigInteger.valueOf(1)
+                    )
+                },
                 withMaximumPartSize = maximumPartSize,
                 onPartStaged = { partsStaged.incrementAndGet() }
             )
@@ -122,7 +133,7 @@ class PartitionedSourceSpec : WordSpec({
                 extended.partitionAndStage().map { it.second.content() }
             }
 
-            partsStaged.get() shouldBe(2)
+            partsStaged.get() shouldBe (2)
 
             e.message shouldBe ("Test failure")
 

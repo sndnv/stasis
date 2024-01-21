@@ -55,7 +55,7 @@ trait EntityProcessing {
   )(implicit operation: Operation.Id, killSwitch: SharedKillSwitch): Future[EntityMetadata] = {
     val result = for {
       file <- EntityProcessing.expectFileMetadata(entity)
-      staged <- stage(entity)
+      staged <- stage(entity, file.checksum)
       crates <- push(staged)
       _ <- discard(staged)
     } yield {
@@ -76,7 +76,8 @@ trait EntityProcessing {
   }
 
   private def stage(
-    entity: SourceEntity
+    entity: SourceEntity,
+    checksum: BigInt
   )(implicit operation: Operation.Id, killSwitch: SharedKillSwitch): Future[Seq[(Path, Path)]] = {
     providers.track.entityProcessingStarted(
       entity = entity.path,
@@ -85,7 +86,7 @@ trait EntityProcessing {
 
     def createPartSecret(partId: Int): DeviceFileSecret = {
       val partPath = Paths.get(s"${entity.path.toAbsolutePath.toString}__part=${partId.toString}")
-      deviceSecret.toFileSecret(partPath)
+      deviceSecret.toFileSecret(forFile = partPath, checksum = checksum)
     }
 
     def recordPartProcessed(): Unit =

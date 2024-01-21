@@ -71,7 +71,8 @@ interface EntityProcessing {
     }
 
     private suspend fun processContentChanged(operation: OperationId, entity: TargetEntity): TargetEntity {
-        val crates = expectFileMetadata(entity).crates
+        val file = expectFileMetadata(entity)
+        val crates = file.crates
 
         providers.track.entityProcessingStarted(
             operation = operation,
@@ -84,7 +85,7 @@ interface EntityProcessing {
 
         try {
             pull(crates, entity.originalPath)
-                .decrypt(withPartSecret = deviceSecret::toFileSecret, providers = providers)
+                .decrypt(withPartSecret = { deviceSecret.toFileSecret(it, file.checksum) }, providers = providers)
                 .merged(onPartProcessed = ::recordPartProcessed)
                 .decompress(decompressor = providers.compression.decoderFor(entity))
                 .destage(to = entity.destinationPath, providers = providers)

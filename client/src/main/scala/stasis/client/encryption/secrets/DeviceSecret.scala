@@ -26,13 +26,14 @@ final case class DeviceSecret(
       .via(encryptionStage)
       .runFold(ByteString.empty)(_ concat _)
 
-  def toFileSecret(forFile: Path): DeviceFileSecret = {
+  def toFileSecret(forFile: Path, checksum: BigInt): DeviceFileSecret = {
     val filePath = forFile.toAbsolutePath.toString
+    val checksumInfo = checksum.toString(radix = 16)
 
     val salt = user.toBytes ++ device.toBytes ++ filePath.getBytes(StandardCharsets.UTF_8)
 
-    val keyInfo = ByteString(s"${user.toString}-${device.toString}-$filePath-key")
-    val ivInfo = ByteString(s"${user.toString}-${device.toString}-$filePath-iv")
+    val keyInfo = ByteString(s"${user.toString}-${device.toString}-$filePath-$checksumInfo-key")
+    val ivInfo = ByteString(s"${user.toString}-${device.toString}-$filePath-$checksumInfo-iv")
 
     val hkdf = HKDF.fromHmacSha512()
 

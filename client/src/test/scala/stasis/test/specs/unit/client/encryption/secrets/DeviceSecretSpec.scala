@@ -43,10 +43,10 @@ class DeviceSecretSpec extends AsyncUnitSpec with SecretsConfig with EncodingHel
   it should "support generating file secrets" in {
     val file = Paths.get("/tmp/some/file")
 
-    val iv = "f09I6Ac7NhtF8xIQ7wIU9A=="
-    val key = "rmoFSdgN+pmm4OSIZf+IHw=="
+    val iv = "uXE+Ru1aojwZa+8IVE49mg=="
+    val key = "aHhX4zqPGYLnr+WI9RF23Q=="
 
-    deviceSecret.toFileSecret(forFile = file) should be(
+    deviceSecret.toFileSecret(forFile = file, checksum = BigInt(42)) should be(
       DeviceFileSecret(
         file = file,
         iv = iv.decodeFromBase64,
