@@ -80,7 +80,7 @@ trait EntityProcessing {
         providers.track.entityPartProcessed(entity = entity.path)
 
       crates
-        .decrypt(withPartSecret = deviceSecret.toFileSecret)
+        .decrypt(withPartSecret = deviceSecret.toFileSecret(_, file.checksum))
         .merge(onPartProcessed = recordPartProcessed)
         .via(killSwitch.flow)
         .decompress(decompressor = decompressor)

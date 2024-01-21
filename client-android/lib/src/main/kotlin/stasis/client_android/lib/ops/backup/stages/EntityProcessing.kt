@@ -23,6 +23,7 @@ import stasis.client_android.lib.utils.Either.Left
 import stasis.client_android.lib.utils.Either.Right
 import stasis.client_android.lib.utils.NonFatal.isNonFatal
 import stasis.client_android.lib.utils.NonFatal.nonFatal
+import java.math.BigInteger
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -62,7 +63,7 @@ interface EntityProcessing {
     suspend fun processContentChanged(operation: OperationId, entity: SourceEntity): EntityMetadata {
         try {
             val file = expectFileMetadata(entity)
-            val staged = stage(operation, entity)
+            val staged = stage(operation, entity, file.checksum)
             val crates = push(staged)
 
             discard(staged)
@@ -79,7 +80,8 @@ interface EntityProcessing {
 
     suspend fun stage(
         operation: OperationId,
-        entity: SourceEntity
+        entity: SourceEntity,
+        checksum: BigInteger
     ): List<Pair<Path, Path>> = withContext(Dispatchers.IO) {
         providers.track.entityProcessingStarted(
             operation = operation,
@@ -88,7 +90,10 @@ interface EntityProcessing {
         )
 
         fun createPartSecret(partId: Int): DeviceFileSecret =
-            deviceSecret.toFileSecret(Paths.get("${entity.path.toAbsolutePath()}__part=$partId"))
+            deviceSecret.toFileSecret(
+                forFile = Paths.get("${entity.path.toAbsolutePath()}__part=$partId"),
+                checksum = checksum
+            )
 
         fun recordPartProcessed(): Unit =
             providers.track.entityPartProcessed(operation = operation, entity = entity.path)

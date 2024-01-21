@@ -8,6 +8,7 @@ import stasis.client_android.lib.encryption.secrets.DeviceFileSecret
 import stasis.client_android.lib.encryption.secrets.DeviceMetadataSecret
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.model.core.CrateId
+import java.math.BigInteger
 import java.nio.file.Paths
 
 class DeviceSecretSpec : WordSpec({
@@ -58,10 +59,10 @@ class DeviceSecretSpec : WordSpec({
         "support generating file secrets" {
             val file = Paths.get("/tmp/some/file")
 
-            val iv = "f09I6Ac7NhtF8xIQ7wIU9A=="
-            val key = "rmoFSdgN+pmm4OSIZf+IHw=="
+            val iv = "uXE+Ru1aojwZa+8IVE49mg=="
+            val key = "aHhX4zqPGYLnr+WI9RF23Q=="
 
-            deviceSecret.toFileSecret(forFile = file) shouldBe (
+            deviceSecret.toFileSecret(forFile = file, checksum = BigInteger.valueOf(42)) shouldBe (
                     DeviceFileSecret(
                         file = file,
                         iv = iv.decodeBase64()!!,
