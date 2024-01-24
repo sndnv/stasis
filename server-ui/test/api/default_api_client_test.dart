@@ -72,7 +72,7 @@ void main() {
 
       final response = jsonEncode(definitions);
 
-      when(underlying.get(Uri.parse('$server/datasets/definitions')))
+      when(underlying.get(Uri.parse('$server/v1/datasets/definitions')))
           .thenAnswer((_) async => http.Response(response, 200));
 
       expect(await client.getDatasetDefinitions(privileged: true), definitions);
@@ -105,7 +105,7 @@ void main() {
 
       final response = jsonEncode(definitions);
 
-      when(underlying.get(Uri.parse('$server/datasets/definitions/own')))
+      when(underlying.get(Uri.parse('$server/v1/datasets/definitions/own')))
           .thenAnswer((_) async => http.Response(response, 200));
 
       expect(await client.getDatasetDefinitions(privileged: false), definitions);
@@ -125,7 +125,7 @@ void main() {
         removedVersions: versions,
       );
 
-      when(underlying.post(Uri.parse('$server/datasets/definitions'),
+      when(underlying.post(Uri.parse('$server/v1/datasets/definitions'),
               headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('{"definition":"test-definition"}', 200));
 
@@ -149,7 +149,7 @@ void main() {
         removedVersions: versions,
       );
 
-      when(underlying.post(Uri.parse('$server/datasets/definitions/own'),
+      when(underlying.post(Uri.parse('$server/v1/datasets/definitions/own'),
               headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('{"definition":"test-definition"}', 200));
 
@@ -174,7 +174,7 @@ void main() {
         removedVersions: versions,
       );
 
-      when(underlying.put(Uri.parse('$server/datasets/definitions/$id'),
+      when(underlying.put(Uri.parse('$server/v1/datasets/definitions/$id'),
               headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('', 200));
 
@@ -199,7 +199,7 @@ void main() {
         removedVersions: versions,
       );
 
-      when(underlying.put(Uri.parse('$server/datasets/definitions/own/$id'),
+      when(underlying.put(Uri.parse('$server/v1/datasets/definitions/own/$id'),
               headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('', 200));
 
@@ -215,7 +215,7 @@ void main() {
 
       const id = 'test-definition';
 
-      when(underlying.delete(Uri.parse('$server/datasets/definitions/$id')))
+      when(underlying.delete(Uri.parse('$server/v1/datasets/definitions/$id')))
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(
@@ -230,7 +230,7 @@ void main() {
 
       const id = 'test-definition';
 
-      when(underlying.delete(Uri.parse('$server/datasets/definitions/own/$id')))
+      when(underlying.delete(Uri.parse('$server/v1/datasets/definitions/own/$id')))
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(
@@ -270,7 +270,7 @@ void main() {
 
       final response = jsonEncode(entries);
 
-      when(underlying.get(Uri.parse('$server/datasets/entries/for-definition/$definition')))
+      when(underlying.get(Uri.parse('$server/v1/datasets/entries/for-definition/$definition')))
           .thenAnswer((_) async => http.Response(response, 200));
 
       expect(await client.getDatasetEntriesForDefinition(privileged: true, definition: definition), entries);
@@ -305,7 +305,7 @@ void main() {
 
       final response = jsonEncode(entries);
 
-      when(underlying.get(Uri.parse('$server/datasets/entries/own/for-definition/$definition')))
+      when(underlying.get(Uri.parse('$server/v1/datasets/entries/own/for-definition/$definition')))
           .thenAnswer((_) async => http.Response(response, 200));
 
       expect(await client.getDatasetEntriesForDefinition(privileged: false, definition: definition), entries);
@@ -317,7 +317,7 @@ void main() {
 
       const id = 'test-entry';
 
-      when(underlying.delete(Uri.parse('$server/datasets/entries/$id')))
+      when(underlying.delete(Uri.parse('$server/v1/datasets/entries/$id')))
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(
@@ -332,7 +332,7 @@ void main() {
 
       const id = 'test-entry';
 
-      when(underlying.delete(Uri.parse('$server/datasets/entries/own/$id')))
+      when(underlying.delete(Uri.parse('$server/v1/datasets/entries/own/$id')))
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(
@@ -355,7 +355,7 @@ void main() {
 
       final response = jsonEncode(users);
 
-      when(underlying.get(Uri.parse('$server/users'))).thenAnswer((_) async => http.Response(response, 200));
+      when(underlying.get(Uri.parse('$server/v1/users'))).thenAnswer((_) async => http.Response(response, 200));
 
       expect(await client.getUsers(), users);
     });
@@ -370,7 +370,7 @@ void main() {
         permissions: {'a', 'b'},
       );
 
-      when(underlying.post(Uri.parse('$server/users'), headers: applicationJson, body: jsonEncode(request)))
+      when(underlying.post(Uri.parse('$server/v1/users'), headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('{"user":"test-user-id"}', 200));
 
       expect(
@@ -385,7 +385,7 @@ void main() {
 
       const id = 'test-user';
 
-      when(underlying.delete(Uri.parse('$server/users/$id'))).thenAnswer((_) async => http.Response('', 200));
+      when(underlying.delete(Uri.parse('$server/v1/users/$id'))).thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.deleteUser(id: id), returnsNormally);
     });
@@ -407,7 +407,7 @@ void main() {
         ),
       );
 
-      when(underlying.put(Uri.parse('$server/users/$id/limits'), headers: applicationJson, body: jsonEncode(request)))
+      when(underlying.put(Uri.parse('$server/v1/users/$id/limits'), headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.updateUserLimits(id: id, request: request), returnsNormally);
@@ -421,7 +421,7 @@ void main() {
 
       const request = UpdateUserPermissions(permissions: {'x', 'y'});
 
-      when(underlying.put(Uri.parse('$server/users/$id/permissions'),
+      when(underlying.put(Uri.parse('$server/v1/users/$id/permissions'),
               headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('', 200));
 
@@ -436,7 +436,7 @@ void main() {
 
       const request = UpdateUserState(active: false);
 
-      when(underlying.put(Uri.parse('$server/users/$id/state'), headers: applicationJson, body: jsonEncode(request)))
+      when(underlying.put(Uri.parse('$server/v1/users/$id/state'), headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.updateUserState(id: id, request: request), returnsNormally);
@@ -450,7 +450,7 @@ void main() {
 
       const request = UpdateUserPassword(rawPassword: 'updated-password');
 
-      when(underlying.put(Uri.parse('$server/users/$id/password'), headers: applicationJson, body: jsonEncode(request)))
+      when(underlying.put(Uri.parse('$server/v1/users/$id/password'), headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.updateUserPassword(id: id, request: request), returnsNormally);
@@ -464,7 +464,7 @@ void main() {
 
       final response = jsonEncode(self);
 
-      when(underlying.get(Uri.parse('$server/users/self'))).thenAnswer((_) async => http.Response(response, 200));
+      when(underlying.get(Uri.parse('$server/v1/users/self'))).thenAnswer((_) async => http.Response(response, 200));
 
       expect(await client.getSelf(), self);
     });
@@ -473,7 +473,7 @@ void main() {
       final underlying = MockClient();
       final client = DefaultApiClient(server: server, underlying: underlying);
 
-      when(underlying.put(Uri.parse('$server/users/self/deactivate'), headers: applicationJson, body: '{}'))
+      when(underlying.put(Uri.parse('$server/v1/users/self/deactivate'), headers: applicationJson, body: '{}'))
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.deactivateSelf(), returnsNormally);
@@ -487,7 +487,7 @@ void main() {
 
       final response = jsonEncode(salt);
 
-      when(underlying.put(Uri.parse('$server/users/self/salt'))).thenAnswer((_) async => http.Response(response, 200));
+      when(underlying.put(Uri.parse('$server/v1/users/self/salt'))).thenAnswer((_) async => http.Response(response, 200));
 
       expect(await client.resetOwnSalt(), salt);
     });
@@ -498,7 +498,7 @@ void main() {
 
       const request = UpdateUserPassword(rawPassword: 'updated-password');
 
-      when(underlying.put(Uri.parse('$server/users/self/password'),
+      when(underlying.put(Uri.parse('$server/v1/users/self/password'),
               headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('', 200));
 
@@ -519,7 +519,7 @@ void main() {
 
       final response = jsonEncode(devices);
 
-      when(underlying.get(Uri.parse('$server/devices'))).thenAnswer((_) async => http.Response(response, 200));
+      when(underlying.get(Uri.parse('$server/v1/devices'))).thenAnswer((_) async => http.Response(response, 200));
 
       expect(await client.getDevices(privileged: true), devices);
     });
@@ -536,7 +536,7 @@ void main() {
 
       final response = jsonEncode(devices);
 
-      when(underlying.get(Uri.parse('$server/devices/own'))).thenAnswer((_) async => http.Response(response, 200));
+      when(underlying.get(Uri.parse('$server/v1/devices/own'))).thenAnswer((_) async => http.Response(response, 200));
 
       expect(await client.getDevices(privileged: false), devices);
     });
@@ -547,7 +547,7 @@ void main() {
 
       const request = CreateDevicePrivileged(name: 'test-name', owner: 'test-owner');
 
-      when(underlying.post(Uri.parse('$server/devices'), headers: applicationJson, body: jsonEncode(request)))
+      when(underlying.post(Uri.parse('$server/v1/devices'), headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('{"device":"test-device-id","node":"test-node-id"}', 200));
 
       expect(
@@ -570,7 +570,7 @@ void main() {
 
       const request = CreateDeviceOwn(name: 'test-name', limits: limits);
 
-      when(underlying.post(Uri.parse('$server/devices/own'), headers: applicationJson, body: jsonEncode(request)))
+      when(underlying.post(Uri.parse('$server/v1/devices/own'), headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('{"device":"test-device-id","node":"test-node-id"}', 200));
 
       expect(
@@ -585,7 +585,7 @@ void main() {
 
       const id = 'test-device';
 
-      when(underlying.delete(Uri.parse('$server/devices/$id'))).thenAnswer((_) async => http.Response('', 200));
+      when(underlying.delete(Uri.parse('$server/v1/devices/$id'))).thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.deleteDevice(privileged: true, id: id), returnsNormally);
     });
@@ -596,7 +596,7 @@ void main() {
 
       const id = 'test-device';
 
-      when(underlying.delete(Uri.parse('$server/devices/own/$id'))).thenAnswer((_) async => http.Response('', 200));
+      when(underlying.delete(Uri.parse('$server/v1/devices/own/$id'))).thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.deleteDevice(privileged: false, id: id), returnsNormally);
     });
@@ -617,7 +617,7 @@ void main() {
         ),
       );
 
-      when(underlying.put(Uri.parse('$server/devices/$id/limits'), headers: applicationJson, body: jsonEncode(request)))
+      when(underlying.put(Uri.parse('$server/v1/devices/$id/limits'), headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.updateDeviceLimits(privileged: true, id: id, request: request), returnsNormally);
@@ -639,7 +639,7 @@ void main() {
         ),
       );
 
-      when(underlying.put(Uri.parse('$server/devices/own/$id/limits'),
+      when(underlying.put(Uri.parse('$server/v1/devices/own/$id/limits'),
               headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('', 200));
 
@@ -654,7 +654,7 @@ void main() {
 
       const request = UpdateDeviceState(active: false);
 
-      when(underlying.put(Uri.parse('$server/devices/$id/state'), headers: applicationJson, body: jsonEncode(request)))
+      when(underlying.put(Uri.parse('$server/v1/devices/$id/state'), headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.updateDeviceState(privileged: true, id: id, request: request), returnsNormally);
@@ -668,7 +668,7 @@ void main() {
 
       const request = UpdateDeviceState(active: false);
 
-      when(underlying.put(Uri.parse('$server/devices/own/$id/state'),
+      when(underlying.put(Uri.parse('$server/v1/devices/own/$id/state'),
               headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('', 200));
 
@@ -691,7 +691,7 @@ void main() {
 
       final response = jsonEncode(devices);
 
-      when(underlying.get(Uri.parse('$server/schedules'))).thenAnswer((_) async => http.Response(response, 200));
+      when(underlying.get(Uri.parse('$server/v1/schedules'))).thenAnswer((_) async => http.Response(response, 200));
 
       expect(await client.getSchedules(), devices);
     });
@@ -710,7 +710,7 @@ void main() {
 
       final response = jsonEncode(devices);
 
-      when(underlying.get(Uri.parse('$server/schedules/public'))).thenAnswer((_) async => http.Response(response, 200));
+      when(underlying.get(Uri.parse('$server/v1/schedules/public'))).thenAnswer((_) async => http.Response(response, 200));
 
       expect(await client.getPublicSchedules(), devices);
     });
@@ -726,7 +726,7 @@ void main() {
         interval: const Duration(seconds: 1),
       );
 
-      when(underlying.post(Uri.parse('$server/schedules'), headers: applicationJson, body: jsonEncode(request)))
+      when(underlying.post(Uri.parse('$server/v1/schedules'), headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('{"schedule":"test-schedule-id"}', 200));
 
       expect(
@@ -743,7 +743,7 @@ void main() {
 
       final request = UpdateSchedule(info: 'test-info', start: DateTime.now(), interval: const Duration(seconds: 1));
 
-      when(underlying.put(Uri.parse('$server/schedules/$id'), headers: applicationJson, body: jsonEncode(request)))
+      when(underlying.put(Uri.parse('$server/v1/schedules/$id'), headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.updateSchedule(id: id, request: request), returnsNormally);
@@ -755,7 +755,7 @@ void main() {
 
       const id = 'test-schedule';
 
-      when(underlying.delete(Uri.parse('$server/schedules/$id'))).thenAnswer((_) async => http.Response('', 200));
+      when(underlying.delete(Uri.parse('$server/v1/schedules/$id'))).thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.deleteSchedule(id: id), returnsNormally);
     });
@@ -785,7 +785,7 @@ void main() {
 
       final response = jsonEncode(nodes);
 
-      when(underlying.get(Uri.parse('$server/nodes'))).thenAnswer((_) async => http.Response(response, 200));
+      when(underlying.get(Uri.parse('$server/v1/nodes'))).thenAnswer((_) async => http.Response(response, 200));
 
       expect(await client.getNodes(), nodes);
     });
@@ -796,7 +796,7 @@ void main() {
 
       final request = CreateNode.local(CrateStoreDescriptor.file(parentDirectory: '/tmp'));
 
-      when(underlying.post(Uri.parse('$server/nodes'), headers: applicationJson, body: jsonEncode(request)))
+      when(underlying.post(Uri.parse('$server/v1/nodes'), headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('{"node":"test-node-id"}', 200));
 
       expect(
@@ -813,7 +813,7 @@ void main() {
 
       final request = UpdateNode.local(CrateStoreDescriptor.file(parentDirectory: '/tmp'));
 
-      when(underlying.put(Uri.parse('$server/nodes/$id'), headers: applicationJson, body: jsonEncode(request)))
+      when(underlying.put(Uri.parse('$server/v1/nodes/$id'), headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.updateNode(id: id, request: request), returnsNormally);
@@ -825,7 +825,7 @@ void main() {
 
       const id = 'test-node';
 
-      when(underlying.delete(Uri.parse('$server/nodes/$id'))).thenAnswer((_) async => http.Response('', 200));
+      when(underlying.delete(Uri.parse('$server/v1/nodes/$id'))).thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.deleteNode(id: id), returnsNormally);
     });
@@ -847,7 +847,7 @@ void main() {
 
       final response = jsonEncode(manifest);
 
-      when(underlying.get(Uri.parse('$server/manifests/${manifest.crate}')))
+      when(underlying.get(Uri.parse('$server/v1/manifests/${manifest.crate}')))
           .thenAnswer((_) async => http.Response(response, 200));
 
       expect(await client.getManifest(crate: manifest.crate), manifest);
@@ -859,7 +859,7 @@ void main() {
 
       const crate = 'test-crate';
 
-      when(underlying.delete(Uri.parse('$server/manifests/$crate'))).thenAnswer((_) async => http.Response('', 200));
+      when(underlying.delete(Uri.parse('$server/v1/manifests/$crate'))).thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.deleteManifest(crate: crate), returnsNormally);
     });
@@ -891,7 +891,7 @@ void main() {
 
       final response = jsonEncode(reservations);
 
-      when(underlying.get(Uri.parse('$server/reservations'))).thenAnswer((_) async => http.Response(response, 200));
+      when(underlying.get(Uri.parse('$server/v1/reservations'))).thenAnswer((_) async => http.Response(response, 200));
 
       expect(await client.getCrateStorageReservations(), reservations);
     });
@@ -902,7 +902,7 @@ void main() {
       final underlying = MockClient();
       final client = DefaultApiClient(server: server, underlying: underlying);
 
-      when(underlying.get(Uri.parse('$server/service/ping')))
+      when(underlying.get(Uri.parse('$server/v1/service/ping')))
           .thenAnswer((_) async => http.Response('{"id":"test-id"}', 200));
 
       expect(await client.ping(), const Ping(id: 'test-id'));

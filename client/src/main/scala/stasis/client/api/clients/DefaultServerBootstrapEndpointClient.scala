@@ -49,7 +49,7 @@ class DefaultServerBootstrapEndpointClient(
       response <- http.singleRequest(
         request = HttpRequest(
           method = HttpMethods.PUT,
-          uri = s"$serverBootstrapUrl/devices/execute"
+          uri = s"$serverBootstrapUrl/v1/devices/execute"
         ).addCredentials(credentials = OAuth2BearerToken(token = bootstrapCode)),
         connectionContext = clientContext
       )

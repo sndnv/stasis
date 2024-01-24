@@ -56,7 +56,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
   import stasis.core.api.Formats._
   import stasis.shared.api.Formats._
 
-  "An ApiEndpoint" should "successfully authenticate users" in withRetry {
+  "An ApiEndpoint (v1)" should "successfully authenticate users" in withRetry {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     val fixtures = new TestFixtures {}
@@ -341,7 +341,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.GET,
-          uri = s"http://localhost:$endpointPort/users/self"
+          uri = s"http://localhost:$endpointPort/v1/users/self"
         ).addCredentials(testCredentials)
       )
       .map { response =>
@@ -373,7 +373,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.PUT,
-          uri = s"http://localhost:$endpointPort/users/self/deactivate"
+          uri = s"http://localhost:$endpointPort/v1/users/self/deactivate"
         ).addCredentials(testCredentials)
       )
       .map { response =>
@@ -408,7 +408,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.POST,
-          uri = s"http://localhost:$endpointPort/users",
+          uri = s"http://localhost:$endpointPort/v1/users",
           entity = HttpEntity(ContentTypes.`application/json`, "{\"a\":1}")
         ).addCredentials(testCredentials)
       )

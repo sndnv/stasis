@@ -91,7 +91,7 @@ class DefaultServerBootstrapEndpointClientSpec : WordSpec({
             actualParams shouldBe (Success(testParams))
 
             val request = server.takeRequest()
-            request.path shouldBe ("/devices/execute")
+            request.path shouldBe ("/v1/devices/execute")
             request.method shouldBe ("PUT")
             request.body.size shouldBe (0)
             request.headers[HttpCredentials.AuthorizationHeader] shouldBe ("Bearer $testCode")

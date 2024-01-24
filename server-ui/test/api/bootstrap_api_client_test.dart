@@ -27,7 +27,7 @@ void main() {
 
       final response = jsonEncode(codes);
 
-      when(underlying.get(Uri.parse('$server/devices/codes'))).thenAnswer((_) async => http.Response(response, 200));
+      when(underlying.get(Uri.parse('$server/v1/devices/codes'))).thenAnswer((_) async => http.Response(response, 200));
 
       expect(await client.getBootstrapCodes(privileged: true), codes);
     });
@@ -45,7 +45,7 @@ void main() {
 
       final response = jsonEncode(codes);
 
-      when(underlying.get(Uri.parse('$server/devices/codes/own')))
+      when(underlying.get(Uri.parse('$server/v1/devices/codes/own')))
           .thenAnswer((_) async => http.Response(response, 200));
 
       expect(await client.getBootstrapCodes(privileged: false), codes);
@@ -57,7 +57,7 @@ void main() {
 
       const device = 'test-device';
 
-      when(underlying.delete(Uri.parse('$server/devices/codes/for-device/$device')))
+      when(underlying.delete(Uri.parse('$server/v1/devices/codes/for-device/$device')))
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.deleteBootstrapCode(privileged: true, forDevice: device), returnsNormally);
@@ -69,7 +69,7 @@ void main() {
 
       const device = 'test-device';
 
-      when(underlying.delete(Uri.parse('$server/devices/codes/own/for-device/$device')))
+      when(underlying.delete(Uri.parse('$server/v1/devices/codes/own/for-device/$device')))
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.deleteBootstrapCode(privileged: false, forDevice: device), returnsNormally);
@@ -88,7 +88,7 @@ void main() {
         expiresAt: DateTime.now(),
       );
 
-      when(underlying.put(Uri.parse('$server/devices/codes/own/for-device/$device')))
+      when(underlying.put(Uri.parse('$server/v1/devices/codes/own/for-device/$device')))
           .thenAnswer((_) async => http.Response(jsonEncode(code), 200));
 
       expect(await client.generateBootstrapCode(forDevice: device), code);

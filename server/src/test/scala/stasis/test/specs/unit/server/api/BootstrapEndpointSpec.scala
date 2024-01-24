@@ -111,7 +111,7 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.GET,
-          uri = s"http://localhost:$endpointPort/devices/codes"
+          uri = s"http://localhost:$endpointPort/v1/devices/codes"
         ).addCredentials(testUserCredentials)
       )
       .map { response =>
@@ -139,7 +139,7 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.DELETE,
-          uri = s"http://localhost:$endpointPort/devices/codes/for-device/${device.id}"
+          uri = s"http://localhost:$endpointPort/v1/devices/codes/for-device/${device.id}"
         ).addCredentials(testUserCredentials)
       )
       .map { response =>

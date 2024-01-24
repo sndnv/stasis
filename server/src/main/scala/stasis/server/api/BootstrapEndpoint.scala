@@ -78,7 +78,7 @@ class BootstrapEndpoint(
           handleRejections(corsRejectionHandler) {
             cors() {
               (handleExceptions(sanitizingExceptionHandler) & handleRejections(rejectionHandler)) {
-                endpointRoutes
+                pathPrefix("v1") { endpointRoutes }
               }
             }
           }

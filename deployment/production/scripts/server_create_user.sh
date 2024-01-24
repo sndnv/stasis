@@ -116,7 +116,7 @@ CREATE_USER_REQUEST="{
 }"
 
 echo -n "[$(now)] Creating user [${NEW_USER_ID}]..."
-CREATE_USER_RESULT=$(curl -sk -H "Content-Type: application/json" -H "Authorization: Bearer ${USER_TOKEN}" -X POST "${SERVER_API_URL}/users" -d "${CREATE_USER_REQUEST}")
+CREATE_USER_RESULT=$(curl -sk -H "Content-Type: application/json" -H "Authorization: Bearer ${USER_TOKEN}" -X POST "${SERVER_API_URL}/v1/users" -d "${CREATE_USER_REQUEST}")
 CREATED_USER_ID=$(jq -r .user <<< "${CREATE_USER_RESULT}")
 
 if [ "${CREATED_USER_ID}" != "" ]
@@ -128,7 +128,7 @@ else
 fi
 
 echo -n "[$(now)] Request user information for [${NEW_USER_ID}]..."
-QUERY_USER_RESULT=$(curl -sk -H "Content-Type: application/json" -H "Authorization: Bearer ${USER_TOKEN}" -X GET "${SERVER_API_URL}/users/${CREATED_USER_ID}")
+QUERY_USER_RESULT=$(curl -sk -H "Content-Type: application/json" -H "Authorization: Bearer ${USER_TOKEN}" -X GET "${SERVER_API_URL}/v1/users/${CREATED_USER_ID}")
 QUERY_USER_SALT=$(jq -r .salt <<< "${QUERY_USER_RESULT}")
 
 if [ "${QUERY_USER_SALT}" != "" ]

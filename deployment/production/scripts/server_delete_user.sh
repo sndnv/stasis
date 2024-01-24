@@ -113,6 +113,6 @@ else
   exit 1
 fi
 
-DELETE_USER_RESULT=$(curl -sk -H "Content-Type: application/json" -H "Authorization: Bearer ${USER_TOKEN}" -X DELETE "${SERVER_API_URL}/users/${TARGET_USER_ID}")
+DELETE_USER_RESULT=$(curl -sk -H "Content-Type: application/json" -H "Authorization: Bearer ${USER_TOKEN}" -X DELETE "${SERVER_API_URL}/v1/users/${TARGET_USER_ID}")
 
 echo ${DELETE_USER_RESULT}

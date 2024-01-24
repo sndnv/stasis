@@ -331,7 +331,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.POST,
-          uri = s"$serviceUrl/users",
+          uri = s"$serviceUrl/v1/users",
           entity = request
         ).addCredentials(OAuth2BearerToken(token = jwt)),
         connectionContext = trustedContext.connection
@@ -353,7 +353,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.GET,
-          uri = s"$serviceUrl/users"
+          uri = s"$serviceUrl/v1/users"
         ).addCredentials(OAuth2BearerToken(token = jwt)),
         connectionContext = trustedContext.connection
       )
@@ -375,7 +375,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.PUT,
-          uri = s"$bootstrapUrl/devices/codes/own/for-device/${device.toString}"
+          uri = s"$bootstrapUrl/v1/devices/codes/own/for-device/${device.toString}"
         ).addCredentials(OAuth2BearerToken(token = jwt)),
         connectionContext = trustedContext.connection
       )
@@ -396,7 +396,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
       .singleRequest(
         request = HttpRequest(
           method = HttpMethods.PUT,
-          uri = s"$bootstrapUrl/devices/execute"
+          uri = s"$bootstrapUrl/v1/devices/execute"
         ).addCredentials(OAuth2BearerToken(token = code)),
         connectionContext = trustedContext.connection
       )

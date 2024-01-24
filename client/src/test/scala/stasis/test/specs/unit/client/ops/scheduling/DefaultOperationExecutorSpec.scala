@@ -26,7 +26,7 @@ import scala.concurrent.{ExecutionException, Future}
 import scala.util.control.NonFatal
 
 class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with BeforeAndAfterAll {
-  "A DefaultOperationExecutor" should "start backups with rules" in {
+  "A DefaultOperationExecutor" should "start backups with rules" in withRetry {
     val mockTracker = new MockBackupTracker()
     val executor = createExecutor(backupTracker = mockTracker)
 
@@ -52,7 +52,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     }
   }
 
-  it should "start backups with files" in {
+  it should "start backups with files" in withRetry {
     val mockTracker = new MockBackupTracker()
     val executor = createExecutor(backupTracker = mockTracker)
 
@@ -79,7 +79,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     }
   }
 
-  it should "resume backups from state" in {
+  it should "resume backups from state" in withRetry {
     val operation = Operation.generateId()
 
     val mockTracker = new MockBackupTracker() {
@@ -114,7 +114,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     }
   }
 
-  it should "start recoveries with definitions" in {
+  it should "start recoveries with definitions" in withRetry {
     val mockTracker = new MockRecoveryTracker()
     val executor = createExecutor(recoveryTracker = mockTracker)
 
@@ -139,7 +139,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     }
   }
 
-  it should "start recoveries with entries" in {
+  it should "start recoveries with entries" in withRetry {
     val mockTracker = new MockRecoveryTracker()
     val executor = createExecutor(recoveryTracker = mockTracker)
 
@@ -163,7 +163,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     }
   }
 
-  it should "start expirations" in {
+  it should "start expirations" in withRetry {
     val executor = createExecutor()
 
     executor
@@ -176,7 +176,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       }
   }
 
-  it should "start validations" in {
+  it should "start validations" in withRetry {
     val executor = createExecutor()
 
     executor
@@ -189,7 +189,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       }
   }
 
-  it should "start key rotations" in {
+  it should "start key rotations" in withRetry {
     val executor = createExecutor()
 
     executor
@@ -202,7 +202,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       }
   }
 
-  it should "stop running operations" in {
+  it should "stop running operations" in withRetry {
     val mockTracker = new MockBackupTracker()
     val executor = createExecutor(slowEncryption = true, backupTracker = mockTracker)
 
@@ -215,7 +215,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     }
   }
 
-  it should "fail to stop operations that are not running" in {
+  it should "fail to stop operations that are not running" in withRetry {
     val executor = createExecutor()
 
     val operation = Operation.generateId()
@@ -225,7 +225,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       .map { result => result should be(empty) }
   }
 
-  it should "handle operation failures" in {
+  it should "handle operation failures" in withRetry {
     val executor = createExecutor()
     val failed = new AtomicBoolean(false)
 
@@ -248,7 +248,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       }
   }
 
-  it should "provide a list of active and completed operations" in {
+  it should "provide a list of active and completed operations" in withRetry {
     val executor = createExecutor()
 
     executor.active.await should be(empty)
@@ -265,7 +265,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     }
   }
 
-  it should "provide the configured backup rules" in {
+  it should "provide the configured backup rules" in withRetry {
     val executor = createExecutor()
 
     executor.rules
@@ -276,7 +276,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       }
   }
 
-  it should "fail to start an operation if one of the same type is already running" in {
+  it should "fail to start an operation if one of the same type is already running" in withRetry {
     val executor = createExecutor(slowEncryption = true)
 
     eventually[Future[Assertion]] {
@@ -299,7 +299,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     }
   }
 
-  it should "fail to resume a backup that is already completed" in {
+  it should "fail to resume a backup that is already completed" in withRetry {
     val operation = Operation.generateId()
 
     val mockTracker = new MockBackupTracker() {
@@ -325,7 +325,7 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       }
   }
 
-  it should "fail to resume a backup no state for it can be found" in {
+  it should "fail to resume a backup no state for it can be found" in withRetry {
     val operation = Operation.generateId()
 
     val mockTracker = new MockBackupTracker()

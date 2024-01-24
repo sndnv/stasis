@@ -24,7 +24,7 @@ class DefaultServerBootstrapEndpointClient(
 
     override suspend fun execute(bootstrapCode: String): Try<DeviceBootstrapParameters> {
         val request = Request.Builder()
-            .url("$server/devices/execute")
+            .url("$server/v1/devices/execute")
             .put(ByteString.EMPTY.toRequestBody())
             .withCredentials(HttpCredentials.OAuth2BearerToken(token = bootstrapCode))
             .build()

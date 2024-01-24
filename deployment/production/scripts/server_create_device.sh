@@ -115,6 +115,6 @@ fi
 
 CREATE_DEVICE_REQUEST="{\"name\":\"${DEVICE_NAME}\"}"
 
-CREATE_DEVICE_RESULT=$(curl -sk -H "Content-Type: application/json" -H "Authorization: Bearer ${USER_TOKEN}" -X POST "${SERVER_API_URL}/devices/own" -d "${CREATE_DEVICE_REQUEST}")
+CREATE_DEVICE_RESULT=$(curl -sk -H "Content-Type: application/json" -H "Authorization: Bearer ${USER_TOKEN}" -X POST "${SERVER_API_URL}/v1/devices/own" -d "${CREATE_DEVICE_REQUEST}")
 
 echo ${CREATE_DEVICE_RESULT}
