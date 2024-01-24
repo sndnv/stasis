@@ -264,6 +264,6 @@ class MockServerApiEndpoint(
       }
     }
 
-    server.bindFlow(handlerFlow = routes)
+    server.bindFlow(handlerFlow = pathPrefix("v1") { routes })
   }
 }

@@ -155,7 +155,7 @@ fi
 
 echo -n "[$(now)] Retrieving users..."
 EXPECTED_USERS_COUNT=2
-ACTUAL_USERS_COUNT=$(curl -sk -H "Authorization: Bearer ${USER_TOKEN}" -X GET "${SERVER_API_URL}/users" | jq ". | length")
+ACTUAL_USERS_COUNT=$(curl -sk -H "Authorization: Bearer ${USER_TOKEN}" -X GET "${SERVER_API_URL}/v1/users" | jq ". | length")
 if [ "${ACTUAL_USERS_COUNT}" = "${EXPECTED_USERS_COUNT}" ]
 then
   echo "found [${ACTUAL_USERS_COUNT}] (OK)"
@@ -165,7 +165,7 @@ fi
 
 echo -n "[$(now)] Retrieving devices..."
 EXPECTED_DEVICES_COUNT=3
-ACTUAL_DEVICES_COUNT=$(curl -sk -H "Authorization: Bearer ${USER_TOKEN}" -X GET "${SERVER_API_URL}/devices" | jq ". | length")
+ACTUAL_DEVICES_COUNT=$(curl -sk -H "Authorization: Bearer ${USER_TOKEN}" -X GET "${SERVER_API_URL}/v1/devices" | jq ". | length")
 if [ "${ACTUAL_DEVICES_COUNT}" = "${EXPECTED_DEVICES_COUNT}" ]
 then
   echo "found [${ACTUAL_DEVICES_COUNT}] (OK)"
@@ -175,7 +175,7 @@ fi
 
 echo -n "[$(now)] Retrieving nodes..."
 EXPECTED_NODES_COUNT=5
-ACTUAL_NODES_COUNT=$(curl -sk -H "Authorization: Bearer ${USER_TOKEN}" -X GET "${SERVER_API_URL}/nodes" | jq ". | length")
+ACTUAL_NODES_COUNT=$(curl -sk -H "Authorization: Bearer ${USER_TOKEN}" -X GET "${SERVER_API_URL}/v1/nodes" | jq ". | length")
 if [ "${ACTUAL_NODES_COUNT}" = "${EXPECTED_NODES_COUNT}" ]
 then
   echo "found [${ACTUAL_NODES_COUNT}] (OK)"
@@ -552,7 +552,7 @@ else
 fi
 
 echo -n "[$(now)] (SECONDARY) Retrieving device bootstrap code..."
-DEVICE_BOOTSTRAP_CODE_RESULT=$(curl -sk -H "${HEADER_JSON}" -H "Authorization: Bearer ${USER_TOKEN}" -X PUT "${SERVER_BOOTSTRAP_URL}/devices/codes/own/for-device/${SECONDARY_DEVICE_ID}")
+DEVICE_BOOTSTRAP_CODE_RESULT=$(curl -sk -H "${HEADER_JSON}" -H "Authorization: Bearer ${USER_TOKEN}" -X PUT "${SERVER_BOOTSTRAP_URL}/v1/devices/codes/own/for-device/${SECONDARY_DEVICE_ID}")
 DEVICE_BOOTSTRAP_CODE=$(jq -r .value <<< "${DEVICE_BOOTSTRAP_CODE_RESULT}")
 
 if [ "${DEVICE_BOOTSTRAP_CODE}" != "" ]

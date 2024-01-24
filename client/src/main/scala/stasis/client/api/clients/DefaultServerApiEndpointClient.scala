@@ -37,6 +37,8 @@ class DefaultServerApiEndpointClient(
   import DefaultServerApiEndpointClient._
   import stasis.shared.api.Formats._
 
+  // TODO = api version
+
   private implicit val ec: ExecutionContext = system.executionContext
 
   override val server: String = apiUrl
@@ -49,7 +51,7 @@ class DefaultServerApiEndpointClient(
         response <- offer(
           request = HttpRequest(
             method = HttpMethods.POST,
-            uri = s"$apiUrl/datasets/definitions/own",
+            uri = s"$apiUrl/v1/datasets/definitions/own",
             entity = entity
           ).addCredentials(credentials = credentials)
         ).transformClientFailures()
@@ -72,7 +74,7 @@ class DefaultServerApiEndpointClient(
       response <- offer(
         request = HttpRequest(
           method = HttpMethods.POST,
-          uri = s"$apiUrl/datasets/entries/own/for-definition/${request.definition.toString}",
+          uri = s"$apiUrl/v1/datasets/entries/own/for-definition/${request.definition.toString}",
           entity = entity
         ).addCredentials(credentials = credentials)
       ).transformClientFailures()
@@ -87,7 +89,7 @@ class DefaultServerApiEndpointClient(
       response <- offer(
         request = HttpRequest(
           method = HttpMethods.GET,
-          uri = s"$apiUrl/datasets/definitions/own"
+          uri = s"$apiUrl/v1/datasets/definitions/own"
         ).addCredentials(credentials = credentials)
       ).transformClientFailures()
       definitions <- response.to[Seq[DatasetDefinition]]
@@ -101,7 +103,7 @@ class DefaultServerApiEndpointClient(
       response <- offer(
         request = HttpRequest(
           method = HttpMethods.GET,
-          uri = s"$apiUrl/datasets/entries/own/for-definition/${definition.toString}"
+          uri = s"$apiUrl/v1/datasets/entries/own/for-definition/${definition.toString}"
         ).addCredentials(credentials = credentials)
       ).transformClientFailures()
       entries <- response.to[Seq[DatasetEntry]]
@@ -115,7 +117,7 @@ class DefaultServerApiEndpointClient(
       response <- offer(
         request = HttpRequest(
           method = HttpMethods.GET,
-          uri = s"$apiUrl/datasets/definitions/own/${definition.toString}"
+          uri = s"$apiUrl/v1/datasets/definitions/own/${definition.toString}"
         ).addCredentials(credentials = credentials)
       ).transformClientFailures()
       definition <- response.to[DatasetDefinition]
@@ -139,7 +141,7 @@ class DefaultServerApiEndpointClient(
       response <- offer(
         request = HttpRequest(
           method = HttpMethods.GET,
-          uri = s"$apiUrl/datasets/entries/own/${entry.toString}"
+          uri = s"$apiUrl/v1/datasets/entries/own/${entry.toString}"
         ).addCredentials(credentials = credentials)
       ).transformClientFailures()
       entry <- response.to[DatasetEntry]
@@ -148,7 +150,7 @@ class DefaultServerApiEndpointClient(
     }
 
   override def latestEntry(definition: DatasetDefinition.Id, until: Option[Instant]): Future[Option[DatasetEntry]] = {
-    val baseUrl = s"$apiUrl/datasets/entries/own/for-definition/${definition.toString}/latest"
+    val baseUrl = s"$apiUrl/v1/datasets/entries/own/for-definition/${definition.toString}/latest"
     for {
       credentials <- credentials
       response <- offer(
@@ -175,7 +177,7 @@ class DefaultServerApiEndpointClient(
       response <- offer(
         request = HttpRequest(
           method = HttpMethods.GET,
-          uri = s"$apiUrl/schedules/public"
+          uri = s"$apiUrl/v1/schedules/public"
         ).addCredentials(credentials = credentials)
       ).transformClientFailures()
       schedules <- response.to[Seq[Schedule]]
@@ -189,7 +191,7 @@ class DefaultServerApiEndpointClient(
       response <- offer(
         request = HttpRequest(
           method = HttpMethods.GET,
-          uri = s"$apiUrl/schedules/public/${schedule.toString}"
+          uri = s"$apiUrl/v1/schedules/public/${schedule.toString}"
         ).addCredentials(credentials = credentials)
       ).transformClientFailures()
       schedule <- response.to[Schedule]
@@ -224,7 +226,7 @@ class DefaultServerApiEndpointClient(
       response <- offer(
         request = HttpRequest(
           method = HttpMethods.GET,
-          uri = s"$apiUrl/users/self"
+          uri = s"$apiUrl/v1/users/self"
         ).addCredentials(credentials = credentials)
       ).transformClientFailures()
       user <- response.to[User]
@@ -238,7 +240,7 @@ class DefaultServerApiEndpointClient(
       response <- offer(
         request = HttpRequest(
           method = HttpMethods.GET,
-          uri = s"$apiUrl/devices/own/${self.toString}"
+          uri = s"$apiUrl/v1/devices/own/${self.toString}"
         ).addCredentials(credentials = credentials)
       ).transformClientFailures()
       device <- response.to[Device]
@@ -252,7 +254,7 @@ class DefaultServerApiEndpointClient(
       response <- offer(
         request = HttpRequest(
           method = HttpMethods.GET,
-          uri = s"$apiUrl/service/ping"
+          uri = s"$apiUrl/v1/service/ping"
         ).addCredentials(credentials = credentials)
       ).transformClientFailures()
       ping <- response.to[Ping]

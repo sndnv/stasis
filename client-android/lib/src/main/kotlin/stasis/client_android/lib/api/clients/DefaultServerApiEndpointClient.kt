@@ -38,7 +38,7 @@ class DefaultServerApiEndpointClient(
     override suspend fun datasetDefinitions(): Try<List<DatasetDefinition>> =
         jsonListRequest<DatasetDefinition> { builder ->
             builder
-                .url("$server/datasets/definitions/own")
+                .url("$server/v1/datasets/definitions/own")
                 .get()
         }.map { definitions -> definitions.filter { it.device == self } }
 
@@ -46,7 +46,7 @@ class DefaultServerApiEndpointClient(
     override suspend fun datasetDefinition(definition: DatasetDefinitionId): Try<DatasetDefinition> =
         jsonRequest<DatasetDefinition> { builder ->
             builder
-                .url("$server/datasets/definitions/own/${definition}")
+                .url("$server/v1/datasets/definitions/own/${definition}")
                 .get()
         }.map { actualDefinition ->
             if (actualDefinition.device == self) {
@@ -60,7 +60,7 @@ class DefaultServerApiEndpointClient(
         if (request.device == self) {
             jsonRequest { builder ->
                 builder
-                    .url("$server/datasets/definitions/own")
+                    .url("$server/v1/datasets/definitions/own")
                     .post(request.toBody())
             }
         } else {
@@ -74,14 +74,14 @@ class DefaultServerApiEndpointClient(
     override suspend fun datasetEntries(definition: DatasetDefinitionId): Try<List<DatasetEntry>> =
         jsonListRequest { builder ->
             builder
-                .url("$server/datasets/entries/own/for-definition/$definition")
+                .url("$server/v1/datasets/entries/own/for-definition/$definition")
                 .get()
         }
 
     override suspend fun datasetEntry(entry: DatasetEntryId): Try<DatasetEntry> =
         jsonRequest { builder ->
             builder
-                .url("$server/datasets/entries/own/$entry")
+                .url("$server/v1/datasets/entries/own/$entry")
                 .get()
         }
 
@@ -89,7 +89,7 @@ class DefaultServerApiEndpointClient(
         definition: DatasetDefinitionId,
         until: Instant?
     ): Try<DatasetEntry?> {
-        val baseUrl = "$server/datasets/entries/own/for-definition/$definition/latest"
+        val baseUrl = "$server/v1/datasets/entries/own/for-definition/$definition/latest"
 
         return jsonRequest<DatasetEntry?> { builder ->
             builder
@@ -110,7 +110,7 @@ class DefaultServerApiEndpointClient(
     override suspend fun createDatasetEntry(request: CreateDatasetEntry): Try<CreatedDatasetEntry> =
         jsonRequest { builder ->
             builder
-                .url("$server/datasets/entries/own/for-definition/${request.definition}")
+                .url("$server/v1/datasets/entries/own/for-definition/${request.definition}")
                 .post(request.toBody())
         }
 
@@ -118,7 +118,7 @@ class DefaultServerApiEndpointClient(
     override suspend fun publicSchedules(): Try<List<Schedule>> =
         jsonListRequest { builder ->
             builder
-                .url("$server/schedules/public")
+                .url("$server/v1/schedules/public")
                 .get()
         }
 
@@ -126,7 +126,7 @@ class DefaultServerApiEndpointClient(
     override suspend fun publicSchedule(schedule: ScheduleId): Try<Schedule> =
         jsonRequest { builder ->
             builder
-                .url("$server/schedules/public/$schedule")
+                .url("$server/v1/schedules/public/$schedule")
                 .get()
         }
 
@@ -152,21 +152,21 @@ class DefaultServerApiEndpointClient(
     override suspend fun user(): Try<User> =
         jsonRequest { builder ->
             builder
-                .url("$server/users/self")
+                .url("$server/v1/users/self")
                 .get()
         }
 
     override suspend fun device(): Try<Device> =
         jsonRequest { builder ->
             builder
-                .url("$server/devices/own/$self")
+                .url("$server/v1/devices/own/$self")
                 .get()
         }
 
     override suspend fun ping(): Try<Ping> =
         jsonRequest { builder ->
             builder
-                .url("$server/service/ping")
+                .url("$server/v1/service/ping")
                 .get()
         }
 

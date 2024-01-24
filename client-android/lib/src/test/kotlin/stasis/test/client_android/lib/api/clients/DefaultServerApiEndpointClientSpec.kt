@@ -97,7 +97,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("POST")
-            actualRequest.path shouldBe ("/datasets/definitions/own")
+            actualRequest.path shouldBe ("/v1/datasets/definitions/own")
             apiClient.moshi.adapter(CreateDatasetDefinition::class.java)
                 .fromJson(actualRequest.body) shouldBe (expectedRequest)
 
@@ -151,7 +151,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("POST")
-            actualRequest.path shouldBe ("/datasets/entries/own/for-definition/${expectedRequest.definition}")
+            actualRequest.path shouldBe ("/v1/datasets/entries/own/for-definition/${expectedRequest.definition}")
             apiClient.moshi.adapter(CreateDatasetEntry::class.java)
                 .fromJson(actualRequest.body) shouldBe (expectedRequest)
 
@@ -185,7 +185,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
-            actualRequest.path shouldBe ("/datasets/definitions/own")
+            actualRequest.path shouldBe ("/v1/datasets/definitions/own")
 
             api.shutdown()
         }
@@ -218,7 +218,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
-            actualRequest.path shouldBe ("/datasets/definitions/own")
+            actualRequest.path shouldBe ("/v1/datasets/definitions/own")
 
             api.shutdown()
         }
@@ -252,7 +252,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
-            actualRequest.path shouldBe ("/datasets/entries/own/for-definition/$definition")
+            actualRequest.path shouldBe ("/v1/datasets/entries/own/for-definition/$definition")
 
             api.shutdown()
         }
@@ -277,7 +277,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
-            actualRequest.path shouldBe ("/datasets/definitions/own/${expectedDefinition.id}")
+            actualRequest.path shouldBe ("/v1/datasets/definitions/own/${expectedDefinition.id}")
 
             api.shutdown()
         }
@@ -305,7 +305,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
-            actualRequest.path shouldBe ("/datasets/definitions/own/${expectedDefinition.id}")
+            actualRequest.path shouldBe ("/v1/datasets/definitions/own/${expectedDefinition.id}")
 
             api.shutdown()
         }
@@ -328,7 +328,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
-            actualRequest.path shouldBe ("/datasets/entries/own/${expectedEntry.id}")
+            actualRequest.path shouldBe ("/v1/datasets/entries/own/${expectedEntry.id}")
 
             api.shutdown()
         }
@@ -352,7 +352,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
-            actualRequest.path shouldBe ("/datasets/entries/own/for-definition/${definition}/latest")
+            actualRequest.path shouldBe ("/v1/datasets/entries/own/for-definition/${definition}/latest")
 
             api.shutdown()
         }
@@ -373,7 +373,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
-            actualRequest.path shouldBe ("/datasets/entries/own/for-definition/${definition}/latest")
+            actualRequest.path shouldBe ("/v1/datasets/entries/own/for-definition/${definition}/latest")
 
             api.shutdown()
         }
@@ -399,7 +399,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
-            actualRequest.path shouldBe ("/datasets/entries/own/for-definition/${definition}/latest?until=$instant")
+            actualRequest.path shouldBe ("/v1/datasets/entries/own/for-definition/${definition}/latest?until=$instant")
 
             api.shutdown()
         }
@@ -431,7 +431,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
-            actualRequest.path shouldBe ("/schedules/public")
+            actualRequest.path shouldBe ("/v1/schedules/public")
 
             api.shutdown()
         }
@@ -454,7 +454,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
-            actualRequest.path shouldBe ("/schedules/public/${expectedSchedule.id}")
+            actualRequest.path shouldBe ("/v1/schedules/public/${expectedSchedule.id}")
 
             api.shutdown()
         }
@@ -477,7 +477,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
-            actualRequest.path shouldBe ("/datasets/entries/own/${expectedEntry.id}")
+            actualRequest.path shouldBe ("/v1/datasets/entries/own/${expectedEntry.id}")
 
             api.shutdown()
         }
@@ -511,7 +511,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
-            actualRequest.path shouldBe ("/users/self")
+            actualRequest.path shouldBe ("/v1/users/self")
 
             api.shutdown()
         }
@@ -534,7 +534,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
-            actualRequest.path shouldBe ("/devices/own/${apiClient.self}")
+            actualRequest.path shouldBe ("/v1/devices/own/${apiClient.self}")
 
             api.shutdown()
         }
@@ -557,7 +557,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
-            actualRequest.path shouldBe ("/service/ping")
+            actualRequest.path shouldBe ("/v1/service/ping")
 
             api.shutdown()
         }

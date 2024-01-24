@@ -106,7 +106,7 @@ USER_TOKEN_REQUEST_PARAMS="grant_type=password&username=${USER_ID}&password=${US
 USER_TOKEN=$(curl -sk -u "${CLIENT_ID}:${CLIENT_SECRET}" -X POST "${IDENTITY_TOKEN_URL}?${USER_TOKEN_REQUEST_PARAMS}" | jq -r .access_token)
 
 echo -n "[$(now)] Retrieving device bootstrap code..."
-DEVICE_BOOTSTRAP_CODE_RESULT=$(curl -sk -H "Content-Type: application/json" -H "Authorization: Bearer ${USER_TOKEN}" -X PUT "${SERVER_BOOTSTRAP_URL}/devices/codes/own/for-device/${DEVICE_ID}")
+DEVICE_BOOTSTRAP_CODE_RESULT=$(curl -sk -H "Content-Type: application/json" -H "Authorization: Bearer ${USER_TOKEN}" -X PUT "${SERVER_BOOTSTRAP_URL}/v1/devices/codes/own/for-device/${DEVICE_ID}")
 DEVICE_BOOTSTRAP_CODE=$(jq -r .value <<< "${DEVICE_BOOTSTRAP_CODE_RESULT}")
 
 if [ "${DEVICE_BOOTSTRAP_CODE}" != "" ]
