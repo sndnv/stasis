@@ -28,6 +28,7 @@ import 'package:server_ui/model/datasets/dataset_definition.dart';
 import 'package:server_ui/model/datasets/dataset_entry.dart';
 import 'package:server_ui/model/devices/device.dart';
 import 'package:server_ui/model/devices/device_bootstrap_code.dart';
+import 'package:server_ui/model/devices/device_key.dart';
 import 'package:server_ui/model/manifests/manifest.dart';
 import 'package:server_ui/model/nodes/node.dart';
 import 'package:server_ui/model/reservations/crate_storage_reservation.dart';
@@ -136,6 +137,12 @@ abstract class DevicesApiClient {
   Future<void> updateDeviceLimits({required bool privileged, required String id, required UpdateDeviceLimits request});
 
   Future<void> updateDeviceState({required bool privileged, required String id, required UpdateDeviceState request});
+
+  Future<List<DeviceKey>> getDeviceKeys({required bool privileged});
+
+  Future<DeviceKey?> getDeviceKey({required bool privileged, required String forDevice});
+
+  Future<void> deleteDeviceKey({required bool privileged, required String forDevice});
 }
 
 abstract class SchedulesApiClient {
