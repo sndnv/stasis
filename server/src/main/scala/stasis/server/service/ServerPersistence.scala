@@ -9,15 +9,20 @@ import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.backends.slick.{SlickBackend, SlickProfile}
 import stasis.core.telemetry.TelemetryContext
 import stasis.server.model.datasets._
-import stasis.server.model.devices.{DeviceBootstrapCodeStore, DeviceStore, DeviceStoreSerdes}
+import stasis.server.model.devices.{
+  DeviceBootstrapCodeStore,
+  DeviceKeyStore,
+  DeviceKeyStoreSerdes,
+  DeviceStore,
+  DeviceStoreSerdes
+}
 import stasis.server.model.schedules.{ScheduleStore, ScheduleStoreSerdes}
 import stasis.server.model.users.{UserStore, UserStoreSerdes}
 import stasis.server.security.Resource
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
-import stasis.shared.model.devices.{Device, DeviceBootstrapCode}
+import stasis.shared.model.devices.{Device, DeviceBootstrapCode, DeviceKey}
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
-
 import scala.concurrent.{ExecutionContext, Future}
 
 class ServerPersistence(
@@ -53,6 +58,8 @@ class ServerPersistence(
 
   val devices: DeviceStore = DeviceStore(backend = backends.devices)
 
+  val deviceKeys: DeviceKeyStore = DeviceKeyStore(backend = backends.deviceKeys)
+
   val schedules: ScheduleStore = ScheduleStore(backend = backends.schedules)
 
   val users: UserStore = UserStore(
@@ -66,6 +73,7 @@ class ServerPersistence(
       _ <- backends.entries.init()
       _ <- backends.deviceBootstrapCodes.init()
       _ <- backends.devices.init()
+      _ <- backends.deviceKeys.init()
       _ <- backends.schedules.init()
       _ <- backends.users.init()
     } yield {
@@ -78,6 +86,7 @@ class ServerPersistence(
       _ <- backends.entries.drop()
       _ <- backends.deviceBootstrapCodes.drop()
       _ <- backends.devices.drop()
+      _ <- backends.deviceKeys.drop()
       _ <- backends.schedules.drop()
       _ <- backends.users.drop()
     } yield {
@@ -102,6 +111,10 @@ class ServerPersistence(
       devices.manageSelf(),
       devices.view(),
       devices.viewSelf(),
+      deviceKeys.manage(),
+      deviceKeys.manageSelf(),
+      deviceKeys.view(),
+      deviceKeys.viewSelf(),
       schedules.manage(),
       schedules.view(),
       schedules.viewPublic(),
@@ -135,6 +148,13 @@ class ServerPersistence(
       profile = profile,
       database = database,
       serdes = DeviceStoreSerdes
+    )
+
+    val deviceKeys: SlickBackend[Device.Id, DeviceKey] = SlickBackend(
+      tableName = "DEVICE_KEYS",
+      profile = profile,
+      database = database,
+      serdes = DeviceKeyStoreSerdes
     )
 
     val schedules: SlickBackend[Schedule.Id, Schedule] = SlickBackend(

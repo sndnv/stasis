@@ -1,15 +1,18 @@
 package stasis.server.api.routes
 
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
-import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
-import stasis.server.model.devices.DeviceStore
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
+import stasis.server.model.devices.{DeviceKeyStore, DeviceStore}
 import stasis.server.model.nodes.ServerNodeStore
 import stasis.server.model.users.UserStore
 import stasis.server.security.CurrentUser
+import stasis.shared.api.requests.UpdateDeviceKey._
 import stasis.shared.api.requests._
-import stasis.shared.api.responses.{CreatedDevice, DeletedDevice}
+import stasis.shared.api.responses.{CreatedDevice, DeletedDevice, DeletedDeviceKey}
 import stasis.shared.model.devices.Device
 
 import scala.concurrent.Future
@@ -104,6 +107,36 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                 updatePrivileged(updateRequest, deviceId)
               }
             }
+          },
+          path("key") {
+            concat(
+              get {
+                resource[DeviceKeyStore.View.Privileged] { view =>
+                  view.get(deviceId).map {
+                    case Some(key) =>
+                      log.debugN("User [{}] successfully retrieved key for device [{}]", currentUser, deviceId)
+                      discardEntity & complete(key)
+
+                    case None =>
+                      log.warnN("User [{}] failed to retrieve key for device [{}]", currentUser, deviceId)
+                      discardEntity & complete(StatusCodes.NotFound)
+                  }
+                }
+              },
+              delete {
+                resource[DeviceKeyStore.Manage.Privileged] { manage =>
+                  manage.delete(deviceId).map { deleted =>
+                    if (deleted) {
+                      log.debugN("User [{}] successfully deleted key for device [{}]", currentUser, deviceId)
+                    } else {
+                      log.warnN("User [{}] failed to delete key for device [{}]", currentUser, deviceId)
+                    }
+
+                    discardEntity & complete(DeletedDeviceKey(existing = deleted))
+                  }
+                }
+              }
+            )
           }
         )
       },
@@ -194,10 +227,104 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                     updateOwn(updateRequest, deviceId)
                   }
                 }
+              },
+              path("key") {
+                concat(
+                  get {
+                    resources[DeviceStore.View.Self, DeviceKeyStore.View.Self] { (deviceView, keyView) =>
+                      deviceView.list(currentUser).flatMap { ownDevices =>
+                        keyView.get(ownDevices.values.map(_.id).toSeq, deviceId).map {
+                          case Some(key) =>
+                            log.debugN("User [{}] successfully retrieved key for device [{}]", currentUser, deviceId)
+                            val entity = HttpEntity(ContentTypes.`application/octet-stream`, Source.single(key.value))
+                            discardEntity & complete(entity)
+
+                          case None =>
+                            log.warnN("User [{}] failed to retrieve key for device [{}]", currentUser, deviceId)
+                            discardEntity & complete(StatusCodes.NotFound)
+                        }
+                      }
+                    }
+                  },
+                  put {
+                    requestEntityPresent {
+                      extractDataBytes { requestStream =>
+                        extractMaterializer { implicit mat =>
+                          resources[DeviceStore.View.Self, UserStore.View.Self, DeviceKeyStore.Manage.Self] {
+                            (deviceView, userView, keyManage) =>
+                              deviceView.list(currentUser).map(devices => (devices.values, devices.get(deviceId))).flatMap {
+                                case (ownDevices, Some(device)) =>
+                                  userView.get(currentUser).flatMap {
+                                    case Some(owner) =>
+                                      for {
+                                        keyBytes <- requestStream.runFold(ByteString.empty)(_ concat _)
+                                        _ <- keyManage.put(ownDevices.map(_.id).toSeq, keyBytes.toDeviceKey(device, owner))
+                                      } yield {
+                                        log.debugN("User [{}] successfully updated key for device [{}]", currentUser, deviceId)
+                                        complete(StatusCodes.OK)
+                                      }
+
+                                    case None =>
+                                      log.warnN(
+                                        "User [{}] failed to update key for device [{}]; device owner [{}] not found",
+                                        currentUser,
+                                        deviceId,
+                                        device.owner
+                                      )
+                                      Future.successful(complete(StatusCodes.BadRequest))
+                                  }
+
+                                case _ =>
+                                  log.warnN(
+                                    "User [{}] failed to update key for device [{}]; device not found",
+                                    currentUser,
+                                    deviceId
+                                  )
+                                  Future.successful(complete(StatusCodes.BadRequest))
+                              }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  delete {
+                    resources[DeviceStore.View.Self, DeviceKeyStore.Manage.Self] { (deviceView, keyManage) =>
+                      deviceView.list(currentUser).flatMap { ownDevices =>
+                        keyManage.delete(ownDevices.values.map(_.id).toSeq, deviceId).map { deleted =>
+                          if (deleted) {
+                            log.debugN("User [{}] successfully deleted key for device [{}]", currentUser, deviceId)
+                          } else {
+                            log.warnN("User [{}] failed to delete key for device [{}]", currentUser, deviceId)
+                          }
+
+                          discardEntity & complete(DeletedDeviceKey(existing = deleted))
+                        }
+                      }
+                    }
+                  }
+                )
               }
             )
+          },
+          path("keys") {
+            resources[DeviceStore.View.Self, DeviceKeyStore.View.Self] { (deviceView, keyView) =>
+              deviceView.list(currentUser).flatMap { ownDevices =>
+                keyView.list(ownDevices.values.map(_.id).toSeq).map { keys =>
+                  log.debugN("User [{}] successfully retrieved [{}] device keys", currentUser, keys.size)
+                  discardEntity & complete(keys)
+                }
+              }
+            }
           }
         )
+      },
+      path("keys") {
+        resource[DeviceKeyStore.View.Privileged] { view =>
+          view.list().map { keys =>
+            log.debugN("User [{}] successfully retrieved [{}] device keys", currentUser, keys.size)
+            discardEntity & complete(keys)
+          }
+        }
       }
     )
 

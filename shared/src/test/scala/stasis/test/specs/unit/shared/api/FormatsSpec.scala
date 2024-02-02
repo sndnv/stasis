@@ -19,8 +19,10 @@ import stasis.shared.ops.Operation
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.shared.model.Generators
-
 import scala.concurrent.duration._
+
+import stasis.shared.model.devices.{Device, DeviceKey}
+import stasis.shared.model.users.User
 
 class FormatsSpec extends UnitSpec {
   "Formats" should "convert permissions to/from JSON" in {
@@ -59,6 +61,29 @@ class FormatsSpec extends UnitSpec {
 
     byteStringFormat.writes(original).toString() should be(json)
     byteStringFormat.reads(Json.parse(json)).asOpt should be(Some(original))
+  }
+
+  they should "convert device keys to/from JSON" in {
+    val original = DeviceKey(value = ByteString("test"), owner = User.generateId(), device = Device.generateId())
+    val json =
+      s"""
+         |{
+         |"owner":"${original.owner}",
+         |"device":"${original.device}"
+         |}
+      """.stripMargin.replaceAll("\n", "").trim
+
+    deviceKeyFormat.writes(original).toString() should be(json)
+
+    deviceKeyFormat.reads(Json.parse(json)).asOpt match {
+      case Some(parsed) =>
+        parsed.owner should be(original.owner)
+        parsed.device should be(original.device)
+        parsed.value should be(empty)
+        parsed.value should not be original.value
+
+      case None => fail("Expected value but none was found")
+    }
   }
 
   they should "convert schedules to/from JSON with 'next_invocation' field" in {
