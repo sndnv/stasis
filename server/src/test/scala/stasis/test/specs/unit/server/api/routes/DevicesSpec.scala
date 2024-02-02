@@ -3,7 +3,7 @@ package stasis.test.specs.unit.server.api.routes
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
-import org.apache.pekko.http.scaladsl.model.{RequestEntity, StatusCodes}
+import org.apache.pekko.http.scaladsl.model.{ContentTypes, RequestEntity, StatusCodes}
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.{Logger, LoggerFactory}
@@ -11,22 +11,24 @@ import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
 import stasis.core.telemetry.TelemetryContext
 import stasis.server.api.routes.{Devices, RoutesContext}
-import stasis.server.model.devices.DeviceStore
+import stasis.server.model.devices.{DeviceKeyStore, DeviceStore}
 import stasis.server.model.nodes.ServerNodeStore
 import stasis.server.model.users.UserStore
 import stasis.server.security.{CurrentUser, ResourceProvider}
 import stasis.shared.api.requests._
-import stasis.shared.api.responses.{CreatedDevice, DeletedDevice}
-import stasis.shared.model.devices.Device
+import stasis.shared.api.responses.{CreatedDevice, DeletedDevice, DeletedDeviceKey}
+import stasis.shared.model.devices.{Device, DeviceKey}
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.mocks.MockNodeStore
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-import stasis.test.specs.unit.server.model.mocks.{MockDeviceStore, MockUserStore}
+import stasis.test.specs.unit.server.model.mocks.{MockDeviceKeyStore, MockDeviceStore, MockUserStore}
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
-
 import scala.concurrent.Future
 import scala.concurrent.duration._
+
+import org.apache.pekko.http.scaladsl.model.headers.`Content-Type`
+import org.apache.pekko.util.ByteString
 
 class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -170,6 +172,76 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
+  they should "respond with device keys" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    val device = devices.head.id
+
+    val deviceKey = DeviceKey(value = ByteString("test-key"), owner = user.id, device = device)
+
+    fixtures.deviceStore.manage().create(devices.head).await
+    fixtures.deviceKeyStore.manageSelf().put(Seq(device), deviceKey).await
+
+    Get(s"/$device/key") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[DeviceKey] should be(deviceKey.copy(value = ByteString.empty))
+    }
+  }
+
+  they should "fail to retrieve missing device keys" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    Get(s"/${devices.head.id}/key") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.NotFound)
+    }
+  }
+
+  they should "delete existing device keys" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    val device = devices.head.id
+
+    val deviceKey = DeviceKey(value = ByteString("test-key"), owner = user.id, device = device)
+
+    fixtures.deviceStore.manage().create(devices.head).await
+    fixtures.deviceKeyStore.manageSelf().put(Seq(device), deviceKey).await
+
+    Delete(s"/$device/key") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[DeletedDeviceKey] should be(DeletedDeviceKey(existing = true))
+
+      fixtures.deviceKeyStore
+        .view()
+        .get(device)
+        .map(_ should be(None))
+    }
+  }
+
+  they should "not delete missing device keys" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    Delete(s"/${devices.head.id}/key") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[DeletedDeviceKey] should be(DeletedDeviceKey(existing = false))
+    }
+  }
+
+  they should "respond with list of device keys" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    val device = devices.head.id
+
+    val deviceKey = DeviceKey(value = ByteString("test-key"), owner = user.id, device = device)
+
+    Future.sequence(devices.map(fixtures.deviceStore.manage().create)).await
+    fixtures.deviceKeyStore.manageSelf().put(Seq(device), deviceKey).await
+
+    Get(s"/keys") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[Seq[DeviceKey]] should be(Seq(deviceKey.copy(value = ByteString.empty)))
+    }
+  }
+
   "Devices routes (self permissions)" should "respond with all devices" in withRetry {
     val fixtures = new TestFixtures {}
     Future.sequence(devices.map(fixtures.deviceStore.manage().create)).await
@@ -310,6 +382,147 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
+  they should "respond with device keys" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    val device = devices.head.id
+
+    val deviceKey = DeviceKey(value = ByteString("test-key"), owner = user.id, device = device)
+
+    fixtures.deviceStore.manage().create(devices.head).await
+    fixtures.deviceKeyStore.manageSelf().put(Seq(device), deviceKey).await
+
+    Get(s"/own/$device/key") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+
+      header[`Content-Type`].map(_.contentType) should be(Some(ContentTypes.`application/octet-stream`))
+
+      val actualKey = response.entity.dataBytes.runFold(ByteString.empty)(_ concat _).await
+      actualKey should be(deviceKey.value)
+    }
+  }
+
+  they should "fail to retrieve missing device keys" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    fixtures.deviceStore.manage().create(devices.head).await
+
+    Get(s"/own/${devices.head.id}/key") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.NotFound)
+    }
+  }
+
+  they should "update device keys" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    val device = devices.head.id
+
+    fixtures.userStore.manage().create(user).await
+    fixtures.deviceStore.manage().create(devices.head).await
+
+    fixtures.deviceKeyStore.view().list().await should be(empty)
+
+    Put(s"/own/$device/key").withEntity(ByteString("test-key")) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+
+      fixtures.deviceKeyStore.viewSelf().get(Seq(device), device).await match {
+        case Some(actualKey) =>
+          actualKey should be(DeviceKey(value = ByteString("test-key"), owner = user.id, device = device))
+
+        case None =>
+          fail("Expected key but none was found")
+      }
+    }
+  }
+
+  they should "fail to update device keys with no key data" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    val device = devices.head.id
+
+    fixtures.userStore.manage().create(user).await
+    fixtures.deviceStore.manage().create(devices.head).await
+
+    fixtures.deviceKeyStore.view().list().await should be(empty)
+
+    Put(s"/own/$device/key") ~> Route.seal(fixtures.routes) ~> check {
+      status should be(StatusCodes.BadRequest)
+    }
+  }
+
+  they should "fail to update device keys for missing users" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    val device = devices.head.id
+
+    fixtures.deviceStore.manage().create(devices.head).await
+
+    fixtures.deviceKeyStore.view().list().await should be(empty)
+
+    Put(s"/own/$device/key").withEntity(ByteString("test-key")) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.BadRequest)
+    }
+  }
+
+  they should "fail to update device keys for missing devices" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    fixtures.userStore.manage().create(user).await
+    fixtures.deviceKeyStore.view().list().await should be(empty)
+
+    Put(s"/own/${devices.head.id}/key").withEntity(ByteString("test-key")) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.BadRequest)
+    }
+  }
+
+  they should "delete existing device keys" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    val device = devices.head.id
+
+    val deviceKey = DeviceKey(value = ByteString("test-key"), owner = user.id, device = device)
+
+    fixtures.deviceStore.manage().create(devices.head).await
+    fixtures.deviceKeyStore.manageSelf().put(Seq(device), deviceKey).await
+
+    Delete(s"/own/$device/key") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[DeletedDeviceKey] should be(DeletedDeviceKey(existing = true))
+
+      fixtures.deviceKeyStore
+        .view()
+        .get(device)
+        .map(_ should be(None))
+    }
+  }
+
+  they should "not delete missing device keys" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    fixtures.deviceStore.manage().create(devices.head).await
+
+    Delete(s"/own/${devices.head.id}/key") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[DeletedDeviceKey] should be(DeletedDeviceKey(existing = false))
+    }
+  }
+
+  they should "respond with list of device keys" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    val device = devices.head.id
+
+    val deviceKey = DeviceKey(value = ByteString("test-key"), owner = user.id, device = device)
+
+    Future.sequence(devices.map(fixtures.deviceStore.manage().create)).await
+    fixtures.deviceKeyStore.manageSelf().put(Seq(device), deviceKey).await
+
+    Get(s"/own/keys") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[Seq[DeviceKey]] should be(Seq(deviceKey.copy(value = ByteString.empty)))
+    }
+  }
+
   private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
     "DevicesSpec"
@@ -325,6 +538,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     lazy val userStore: UserStore = MockUserStore()
 
     lazy val deviceStore: DeviceStore = MockDeviceStore()
+    lazy val deviceKeyStore: DeviceKeyStore = MockDeviceKeyStore()
 
     lazy val nodeStore: NodeStore = new MockNodeStore()
     lazy val serverNodeStore: ServerNodeStore = ServerNodeStore(nodeStore)
@@ -337,6 +551,10 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
         deviceStore.viewSelf(),
         deviceStore.manage(),
         deviceStore.manageSelf(),
+        deviceKeyStore.view(),
+        deviceKeyStore.viewSelf(),
+        deviceKeyStore.manage(),
+        deviceKeyStore.manageSelf(),
         serverNodeStore.manageSelf()
       )
     )

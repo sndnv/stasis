@@ -3,10 +3,11 @@ package stasis.test.specs.unit.shared.model
 import java.time.{Instant, LocalDateTime}
 import java.util.concurrent.ThreadLocalRandom
 
+import org.apache.pekko.util.ByteString
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
-import stasis.shared.model.devices.{Device, DeviceBootstrapCode}
+import stasis.shared.model.devices.{Device, DeviceBootstrapCode, DeviceKey}
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 import stasis.test.Generators._
@@ -46,6 +47,13 @@ object Generators {
       owner = User.generateId(),
       active = true,
       limits = None
+    )
+
+  def generateDeviceKey: DeviceKey =
+    DeviceKey(
+      value = ByteString(generateString(withSize = 16)),
+      owner = User.generateId(),
+      device = Device.generateId()
     )
 
   def generateDefinition(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): DatasetDefinition =

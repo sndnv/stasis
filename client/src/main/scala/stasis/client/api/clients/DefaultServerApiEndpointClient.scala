@@ -37,8 +37,6 @@ class DefaultServerApiEndpointClient(
   import DefaultServerApiEndpointClient._
   import stasis.shared.api.Formats._
 
-  // TODO = api version
-
   private implicit val ec: ExecutionContext = system.executionContext
 
   override val server: String = apiUrl

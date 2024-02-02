@@ -22,6 +22,7 @@ class ServerPersistenceSpec extends AsyncUnitSpec {
     val expectedEntry = Generators.generateEntry
     val expectedInitCode = Generators.generateDeviceBootstrapCode
     val expectedDevice = Generators.generateDevice
+    val expectedDeviceKey = Generators.generateDeviceKey.copy(device = expectedDevice.id)
     val expectedSchedule = Generators.generateSchedule
     val expectedUser = Generators.generateUser
 
@@ -35,6 +36,8 @@ class ServerPersistenceSpec extends AsyncUnitSpec {
       actualInitCode <- persistence.deviceBootstrapCodes.view().get(expectedInitCode.value)
       _ <- persistence.devices.manage().create(expectedDevice)
       actualDevice <- persistence.devices.view().get(expectedDevice.id)
+      _ <- persistence.deviceKeys.manageSelf().put(Seq(expectedDevice.id), expectedDeviceKey)
+      actualDeviceKey <- persistence.deviceKeys.viewSelf().get(Seq(expectedDevice.id), expectedDevice.id)
       _ <- persistence.schedules.manage().create(expectedSchedule)
       actualSchedule <- persistence.schedules.view().get(expectedSchedule.id)
       _ <- persistence.users.manage().create(expectedUser)
@@ -45,6 +48,7 @@ class ServerPersistenceSpec extends AsyncUnitSpec {
       actualEntry should be(Some(expectedEntry))
       actualInitCode should be(Some(expectedInitCode))
       actualDevice should be(Some(expectedDevice))
+      actualDeviceKey should be(Some(expectedDeviceKey))
       actualSchedule should be(Some(expectedSchedule))
       actualUser should be(Some(expectedUser))
     }
@@ -59,11 +63,12 @@ class ServerPersistenceSpec extends AsyncUnitSpec {
     val datasetEntries = 4 // manage + manage-self + view + view-self
     val deviceInitCodes = 4 // manage + manage-self + view + view-self
     val devices = 4 // manage + manage-self + view + view-self
+    val deviceKeys = 4 // manage + manage-self + view + view-self
     val schedules = 3 // manage + view + view-public
     val users = 4 // manage + manage-self + view + view-self
 
     persistence.resources.size should be(
-      datasetDefinitions + datasetEntries + deviceInitCodes + devices + schedules + users
+      datasetDefinitions + datasetEntries + deviceInitCodes + devices + deviceKeys + schedules + users
     )
   }
 

@@ -12,7 +12,7 @@ import stasis.shared.api.requests.UpdateNode.{UpdateLocalNode, UpdateRemoteGrpcN
 import stasis.shared.api.requests._
 import stasis.shared.api.responses._
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
-import stasis.shared.model.devices.{Device, DeviceBootstrapCode, DeviceBootstrapParameters}
+import stasis.shared.model.devices.{Device, DeviceBootstrapCode, DeviceBootstrapParameters, DeviceKey}
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 import stasis.shared.ops.Operation
@@ -76,7 +76,7 @@ object Formats {
   implicit val deviceFormat: Format[Device] =
     Json.format[Device]
 
-  implicit val deviceInitCodeFormat: Format[DeviceBootstrapCode] =
+  implicit val deviceBootstrapCodeFormat: Format[DeviceBootstrapCode] =
     Json.format[DeviceBootstrapCode]
 
   implicit val byteStringFormat: Format[ByteString] =
@@ -126,6 +126,23 @@ object Formats {
 
   implicit val deviceBootstrapParametersFormat: Format[DeviceBootstrapParameters] =
     Json.format[DeviceBootstrapParameters]
+
+  implicit val deviceKeyFormat: Format[DeviceKey] = Format(
+    fjs = k =>
+      for {
+        key <- k.validate[JsObject]
+        owner <- (key \ "owner").validate[User.Id]
+        device <- (key \ "device").validate[Device.Id]
+      } yield {
+        DeviceKey(value = ByteString.empty, owner = owner, device = device)
+      },
+    tjs = { key =>
+      Json.obj(
+        "owner" -> Json.toJson(key.owner),
+        "device" -> Json.toJson(key.device)
+      )
+    }
+  )
 
   implicit val scheduleFormat: Format[Schedule] = {
     val reader = Json.reads[Schedule]
@@ -229,6 +246,9 @@ object Formats {
 
   implicit val deletedManifestFormat: Format[DeletedManifest] =
     Json.format[DeletedManifest]
+
+  implicit val deletedDeviceKeyFormat: Format[DeletedDeviceKey] =
+    Json.format[DeletedDeviceKey]
 
   implicit val createNodeFormat: Format[CreateNode] = Format(
     fjs = _.validate[JsObject].flatMap { node =>
