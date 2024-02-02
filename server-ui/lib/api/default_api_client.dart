@@ -27,6 +27,7 @@ import 'package:server_ui/model/api/responses/updated_user_salt.dart';
 import 'package:server_ui/model/datasets/dataset_definition.dart';
 import 'package:server_ui/model/datasets/dataset_entry.dart';
 import 'package:server_ui/model/devices/device.dart';
+import 'package:server_ui/model/devices/device_key.dart';
 import 'package:server_ui/model/manifests/manifest.dart';
 import 'package:server_ui/model/nodes/node.dart';
 import 'package:server_ui/model/reservations/crate_storage_reservation.dart';
@@ -207,6 +208,26 @@ class DefaultApiClient extends ApiClient
   }) async {
     final path = privileged ? '/v1/devices/$id/state' : '/v1/devices/own/$id/state';
     return await put(data: request.toJson(), to: path);
+  }
+
+  @override
+  Future<List<DeviceKey>> getDeviceKeys({required bool privileged}) async {
+    final path = privileged ? '/v1/devices/keys' : '/v1/devices/own/keys';
+    return await get(from: path, fromJson: DeviceKey.fromJson);
+  }
+
+  @override
+  Future<DeviceKey?> getDeviceKey({required bool privileged, required String forDevice}) async {
+    final path = privileged ? '/v1/devices/$forDevice/key' : '/v1/devices/own/$forDevice/key';
+    return underlying
+        .get(Uri.parse('$server$path'))
+        .andProcessResponseWith((r) => DeviceKey.fromJson(jsonDecode(r.body)));
+  }
+
+  @override
+  Future<void> deleteDeviceKey({required bool privileged, required String forDevice}) async {
+    final path = privileged ? '/v1/devices/$forDevice/key' : '/v1/devices/own/$forDevice/key';
+    return await delete(from: path);
   }
 
   @override

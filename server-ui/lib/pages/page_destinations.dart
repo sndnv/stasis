@@ -12,6 +12,7 @@ abstract class PageRouterDestination {
   static PageRouterDestination definitions = PageRouterDestinationDefinitions();
   static PageRouterDestination users = PageRouterDestinationUsers();
   static PageRouterDestination devices = PageRouterDestinationDevices();
+  static PageRouterDestination deviceKeys = PageRouterDestinationDeviceKeys();
   static PageRouterDestination schedules = PageRouterDestinationSchedules();
   static PageRouterDestination nodes = PageRouterDestinationNodes();
   static PageRouterDestination reservations = PageRouterDestinationReservations();
@@ -23,7 +24,7 @@ class PageRouterDestinationHome extends PageRouterDestination {
       : super(
           key: 'home',
           title: 'Home',
-          route: 'manage',
+          route: '/manage',
           icon: Icons.home,
         );
 }
@@ -33,7 +34,7 @@ class PageRouterDestinationDefinitions extends PageRouterDestination {
       : super(
           key: 'definitions',
           title: 'Dataset Definitions',
-          route: 'manage/datasets/definitions',
+          route: '/manage/datasets/definitions',
           icon: Icons.backup_table,
         );
 }
@@ -43,7 +44,7 @@ class PageRouterDestinationUsers extends PageRouterDestination {
       : super(
           key: 'users',
           title: 'Users',
-          route: 'manage/users',
+          route: '/manage/users',
           icon: Icons.group,
         );
 }
@@ -53,8 +54,18 @@ class PageRouterDestinationDevices extends PageRouterDestination {
       : super(
           key: 'devices',
           title: 'Devices',
-          route: 'manage/devices',
+          route: '/manage/devices',
           icon: Icons.devices,
+        );
+}
+
+class PageRouterDestinationDeviceKeys extends PageRouterDestination {
+  PageRouterDestinationDeviceKeys()
+      : super(
+          key: 'devices-keys',
+          title: 'Device Keys',
+          route: '/manage/device-keys',
+          icon: Icons.key,
         );
 }
 
@@ -63,7 +74,7 @@ class PageRouterDestinationSchedules extends PageRouterDestination {
       : super(
           key: 'schedules',
           title: 'Schedules',
-          route: 'manage/schedules',
+          route: '/manage/schedules',
           icon: Icons.schedule,
         );
 }
@@ -73,7 +84,7 @@ class PageRouterDestinationNodes extends PageRouterDestination {
       : super(
           key: 'nodes',
           title: 'Nodes',
-          route: 'manage/nodes',
+          route: '/manage/nodes',
           icon: Icons.hub,
         );
 }
@@ -83,7 +94,7 @@ class PageRouterDestinationReservations extends PageRouterDestination {
       : super(
           key: 'reservations',
           title: 'Crate Storage Reservations',
-          route: 'manage/reservations',
+          route: '/manage/reservations',
           icon: Icons.data_usage,
         );
 }
@@ -93,7 +104,7 @@ class PageRouterDestinationBootstrapCodes extends PageRouterDestination {
       : super(
           key: 'codes',
           title: 'Bootstrap Codes',
-          route: 'manage/codes',
+          route: '/manage/codes',
           icon: Icons.qr_code,
         );
 }

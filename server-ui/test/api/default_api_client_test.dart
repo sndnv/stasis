@@ -30,6 +30,7 @@ import 'package:server_ui/model/api/responses/updated_user_salt.dart';
 import 'package:server_ui/model/datasets/dataset_definition.dart';
 import 'package:server_ui/model/datasets/dataset_entry.dart';
 import 'package:server_ui/model/devices/device.dart';
+import 'package:server_ui/model/devices/device_key.dart';
 import 'package:server_ui/model/manifests/manifest.dart';
 import 'package:server_ui/model/nodes/crate_store_descriptor.dart';
 import 'package:server_ui/model/nodes/node.dart';
@@ -407,7 +408,8 @@ void main() {
         ),
       );
 
-      when(underlying.put(Uri.parse('$server/v1/users/$id/limits'), headers: applicationJson, body: jsonEncode(request)))
+      when(underlying.put(Uri.parse('$server/v1/users/$id/limits'),
+              headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.updateUserLimits(id: id, request: request), returnsNormally);
@@ -450,7 +452,8 @@ void main() {
 
       const request = UpdateUserPassword(rawPassword: 'updated-password');
 
-      when(underlying.put(Uri.parse('$server/v1/users/$id/password'), headers: applicationJson, body: jsonEncode(request)))
+      when(underlying.put(Uri.parse('$server/v1/users/$id/password'),
+              headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.updateUserPassword(id: id, request: request), returnsNormally);
@@ -487,7 +490,8 @@ void main() {
 
       final response = jsonEncode(salt);
 
-      when(underlying.put(Uri.parse('$server/v1/users/self/salt'))).thenAnswer((_) async => http.Response(response, 200));
+      when(underlying.put(Uri.parse('$server/v1/users/self/salt')))
+          .thenAnswer((_) async => http.Response(response, 200));
 
       expect(await client.resetOwnSalt(), salt);
     });
@@ -617,7 +621,8 @@ void main() {
         ),
       );
 
-      when(underlying.put(Uri.parse('$server/v1/devices/$id/limits'), headers: applicationJson, body: jsonEncode(request)))
+      when(underlying.put(Uri.parse('$server/v1/devices/$id/limits'),
+              headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.updateDeviceLimits(privileged: true, id: id, request: request), returnsNormally);
@@ -654,7 +659,8 @@ void main() {
 
       const request = UpdateDeviceState(active: false);
 
-      when(underlying.put(Uri.parse('$server/v1/devices/$id/state'), headers: applicationJson, body: jsonEncode(request)))
+      when(underlying.put(Uri.parse('$server/v1/devices/$id/state'),
+              headers: applicationJson, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.updateDeviceState(privileged: true, id: id, request: request), returnsNormally);
@@ -673,6 +679,95 @@ void main() {
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.updateDeviceState(privileged: false, id: id, request: request), returnsNormally);
+    });
+
+    test('retrieve all device keys (privileged)', () async {
+      final underlying = MockClient();
+      final client = DefaultApiClient(server: server, underlying: underlying);
+
+      const deviceKeys = [
+        DeviceKey(owner: 'test-owner', device: 'test-device-1'),
+        DeviceKey(owner: 'test-owner', device: 'test-device-2'),
+        DeviceKey(owner: 'test-owner', device: 'test-device-3'),
+      ];
+
+      final response = jsonEncode(deviceKeys);
+
+      when(underlying.get(Uri.parse('$server/v1/devices/keys'))).thenAnswer((_) async => http.Response(response, 200));
+
+      expect(await client.getDeviceKeys(privileged: true), deviceKeys);
+    });
+
+    test('retrieve all device keys (own)', () async {
+      final underlying = MockClient();
+      final client = DefaultApiClient(server: server, underlying: underlying);
+
+      const deviceKeys = [
+        DeviceKey(owner: 'test-owner', device: 'test-device-1'),
+        DeviceKey(owner: 'test-owner', device: 'test-device-2'),
+        DeviceKey(owner: 'test-owner', device: 'test-device-3'),
+      ];
+
+      final response = jsonEncode(deviceKeys);
+
+      when(underlying.get(Uri.parse('$server/v1/devices/own/keys')))
+          .thenAnswer((_) async => http.Response(response, 200));
+
+      expect(await client.getDeviceKeys(privileged: false), deviceKeys);
+    });
+
+    test('retrieve individual device keys (privileged)', () async {
+      final underlying = MockClient();
+      final client = DefaultApiClient(server: server, underlying: underlying);
+
+      const device = 'test-device-1';
+      const deviceKey = DeviceKey(owner: 'test-owner', device: device);
+
+      final response = jsonEncode(deviceKey);
+
+      when(underlying.get(Uri.parse('$server/v1/devices/$device/key')))
+          .thenAnswer((_) async => http.Response(response, 200));
+
+      expect(await client.getDeviceKey(privileged: true, forDevice: device), deviceKey);
+    });
+
+    test('retrieve individual device keys (own)', () async {
+      final underlying = MockClient();
+      final client = DefaultApiClient(server: server, underlying: underlying);
+
+      const device = 'test-device-1';
+      const deviceKey = DeviceKey(owner: 'test-owner', device: device);
+
+      final response = jsonEncode(deviceKey);
+
+      when(underlying.get(Uri.parse('$server/v1/devices/own/$device/key')))
+          .thenAnswer((_) async => http.Response(response, 200));
+
+      expect(await client.getDeviceKey(privileged: false, forDevice: device), deviceKey);
+    });
+
+    test('delete device keys (privileged)', () async {
+      final underlying = MockClient();
+      final client = DefaultApiClient(server: server, underlying: underlying);
+
+      const device = 'test-device';
+
+      when(underlying.delete(Uri.parse('$server/v1/devices/$device/key')))
+          .thenAnswer((_) async => http.Response('', 200));
+
+      expect(() async => await client.deleteDeviceKey(privileged: true, forDevice: device), returnsNormally);
+    });
+
+    test('delete device keys (own)', () async {
+      final underlying = MockClient();
+      final client = DefaultApiClient(server: server, underlying: underlying);
+
+      const device = 'test-device';
+
+      when(underlying.delete(Uri.parse('$server/v1/devices/own/$device/key')))
+          .thenAnswer((_) async => http.Response('', 200));
+
+      expect(() async => await client.deleteDeviceKey(privileged: false, forDevice: device), returnsNormally);
     });
   });
 
@@ -710,7 +805,8 @@ void main() {
 
       final response = jsonEncode(devices);
 
-      when(underlying.get(Uri.parse('$server/v1/schedules/public'))).thenAnswer((_) async => http.Response(response, 200));
+      when(underlying.get(Uri.parse('$server/v1/schedules/public')))
+          .thenAnswer((_) async => http.Response(response, 200));
 
       expect(await client.getPublicSchedules(), devices);
     });

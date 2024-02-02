@@ -16,6 +16,7 @@ import 'package:server_ui/pages/default/home.dart';
 import 'package:server_ui/pages/default/not_found.dart';
 import 'package:server_ui/pages/manage/codes.dart';
 import 'package:server_ui/pages/manage/definitions.dart';
+import 'package:server_ui/pages/manage/device_keys.dart';
 import 'package:server_ui/pages/manage/devices.dart';
 import 'package:server_ui/pages/manage/nodes.dart';
 import 'package:server_ui/pages/manage/reservations.dart';
@@ -154,6 +155,7 @@ class PageRouter {
       destination(PageRouterDestination.home),
       destination(PageRouterDestination.definitions),
       destination(PageRouterDestination.devices),
+      destination(PageRouterDestination.deviceKeys),
       destination(PageRouterDestination.codes),
       divider,
     ];
@@ -224,6 +226,7 @@ class PageRouter {
       PageRouterDestination.home,
       PageRouterDestination.definitions,
       PageRouterDestination.devices,
+      PageRouterDestination.deviceKeys,
       PageRouterDestination.codes,
     ];
 
@@ -348,6 +351,14 @@ class PageRouter {
     ),
   );
 
+  static final Handler _deviceKeysHandler = _pageHandler(
+    PageRouterDestination.deviceKeys,
+        (_, routerContext) => DeviceKeys(
+      client: routerContext.apiClient,
+      privileged: routerContext.usePrivilegedApis.enabled(),
+    ),
+  );
+
   static final Handler _schedulesHandler = _pageHandler(
     PageRouterDestination.schedules,
     (_, routerContext) => Schedules(
@@ -387,6 +398,7 @@ class PageRouter {
     underlying.define(PageRouterDestination.definitions.route, handler: _definitionsHandler);
     underlying.define(PageRouterDestination.users.route, handler: _usersHandler);
     underlying.define(PageRouterDestination.devices.route, handler: _devicesHandler);
+    underlying.define(PageRouterDestination.deviceKeys.route, handler: _deviceKeysHandler);
     underlying.define(PageRouterDestination.schedules.route, handler: _schedulesHandler);
     underlying.define(PageRouterDestination.nodes.route, handler: _nodesHandler);
     underlying.define(PageRouterDestination.reservations.route, handler: _reservationsHandler);
