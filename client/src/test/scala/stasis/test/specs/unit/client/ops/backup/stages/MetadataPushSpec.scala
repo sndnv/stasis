@@ -85,6 +85,8 @@ class MetadataPushSpec extends AsyncUnitSpec { spec =>
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.UserRetrieved) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceRetrieved) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
 
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)

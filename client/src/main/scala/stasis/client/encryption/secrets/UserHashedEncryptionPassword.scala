@@ -10,7 +10,7 @@ final case class UserHashedEncryptionPassword(
   private val hashedPassword: ByteString
 )(implicit target: SecretsConfig)
     extends Secret {
-  def toEncryptionSecret: UserEncryptionSecret = {
+  def toLocalEncryptionSecret: UserLocalEncryptionSecret = {
     val salt = user.toBytes
     val keyInfo = ByteString(s"${user.toString}-encryption-key")
     val ivInfo = ByteString(s"${user.toString}-encryption-iv")
@@ -22,7 +22,22 @@ final case class UserHashedEncryptionPassword(
     val key = hkdf.expand(prk, keyInfo.toArray, target.encryption.deviceSecret.keySize)
     val iv = hkdf.expand(prk, ivInfo.toArray, target.encryption.deviceSecret.ivSize)
 
-    UserEncryptionSecret(user = user, key = ByteString(key), iv = ByteString(iv))
+    UserLocalEncryptionSecret(user = user, key = ByteString(key), iv = ByteString(iv))
+  }
+
+  def toKeyStoreEncryptionSecret: UserKeyStoreEncryptionSecret = {
+    val salt = user.toBytes
+    val keyInfo = ByteString(s"${user.toString}-key-store-encryption-key")
+    val ivInfo = ByteString(s"${user.toString}-key-store-encryption-iv")
+
+    val hkdf = HKDF.fromHmacSha512()
+
+    val prk = hkdf.extract(salt, hashedPassword.toArray)
+
+    val key = hkdf.expand(prk, keyInfo.toArray, target.encryption.deviceSecret.keySize)
+    val iv = hkdf.expand(prk, ivInfo.toArray, target.encryption.deviceSecret.ivSize)
+
+    UserKeyStoreEncryptionSecret(user = user, key = ByteString(key), iv = ByteString(iv))
   }
 }
 

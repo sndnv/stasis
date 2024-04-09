@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.client.api.clients
 
 import java.time.Instant
-
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.util.ByteString
 import stasis.client.api.clients.CachedServerApiEndpointClient
 import stasis.core.packaging.Crate
 import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}
@@ -232,6 +232,34 @@ class CachedServerApiEndpointClientSpec extends AsyncUnitSpec {
       _ <- client.device()
     } yield {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceRetrieved) should be(3)
+    }
+  }
+
+  it should "push current device key, without caching" in {
+    val mockApiClient = MockServerApiEndpointClient()
+    val client = createClient(underlying = mockApiClient)
+
+    val key = ByteString("test-key")
+
+    for {
+      _ <- client.pushDeviceKey(key)
+      _ <- client.pushDeviceKey(key)
+      _ <- client.pushDeviceKey(key)
+    } yield {
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(3)
+    }
+  }
+
+  it should "pull current device key, without caching" in {
+    val mockApiClient = MockServerApiEndpointClient()
+    val client = createClient(underlying = mockApiClient)
+
+    for {
+      _ <- client.pullDeviceKey()
+      _ <- client.pullDeviceKey()
+      _ <- client.pullDeviceKey()
+    } yield {
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(3)
     }
   }
 

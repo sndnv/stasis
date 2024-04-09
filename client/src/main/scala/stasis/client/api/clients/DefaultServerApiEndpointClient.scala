@@ -1,10 +1,12 @@
 package stasis.client.api.clients
 
+import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
 import org.apache.pekko.http.scaladsl.model._
 import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
+import org.apache.pekko.util.ByteString
 import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.encryption.Decoder
 import stasis.client.encryption.secrets.DeviceSecret
@@ -169,7 +171,7 @@ class DefaultServerApiEndpointClient(
     }
   }
 
-  def publicSchedules(): Future[Seq[Schedule]] =
+  override def publicSchedules(): Future[Seq[Schedule]] =
     for {
       credentials <- credentials
       response <- offer(
@@ -183,7 +185,7 @@ class DefaultServerApiEndpointClient(
       schedules
     }
 
-  def publicSchedule(schedule: Schedule.Id): Future[Schedule] =
+  override def publicSchedule(schedule: Schedule.Id): Future[Schedule] =
     for {
       credentials <- credentials
       response <- offer(
@@ -197,7 +199,7 @@ class DefaultServerApiEndpointClient(
       schedule
     }
 
-  def datasetMetadata(entry: DatasetEntry.Id): Future[DatasetMetadata] =
+  override def datasetMetadata(entry: DatasetEntry.Id): Future[DatasetMetadata] =
     for {
       entry <- datasetEntry(entry)
       metadata <- datasetMetadata(entry)
@@ -205,17 +207,25 @@ class DefaultServerApiEndpointClient(
       metadata
     }
 
-  def datasetMetadata(entry: DatasetEntry): Future[DatasetMetadata] =
-    for {
-      entryMetadata <- decryption.core.pull(crate = entry.metadata)
-      entryMetadata <- DatasetMetadata.decrypt(
-        metadataCrate = entry.metadata,
-        metadataSecret = decryption.deviceSecret.toMetadataSecret(metadataCrate = entry.metadata),
-        metadata = entryMetadata,
-        decoder = decryption.decoder
-      )
-    } yield {
-      entryMetadata
+  override def datasetMetadata(entry: DatasetEntry): Future[DatasetMetadata] =
+    decryption match {
+      case DecryptionContext.Default(core, deviceSecret, decoder) =>
+        for {
+          entryMetadata <- core.pull(crate = entry.metadata)
+          entryMetadata <- DatasetMetadata.decrypt(
+            metadataCrate = entry.metadata,
+            metadataSecret = deviceSecret.toMetadataSecret(metadataCrate = entry.metadata),
+            metadata = entryMetadata,
+            decoder = decoder
+          )
+        } yield {
+          entryMetadata
+        }
+
+      case DecryptionContext.Disabled =>
+        Future.failed(
+          new IllegalStateException("Cannot retrieve dataset metadata; decryption context is disabled")
+        )
     }
 
   override def user(): Future[User] =
@@ -244,6 +254,37 @@ class DefaultServerApiEndpointClient(
       device <- response.to[Device]
     } yield {
       device
+    }
+
+  override def pushDeviceKey(key: ByteString): Future[Done] =
+    for {
+      credentials <- credentials
+      response <- offer(
+        request = HttpRequest(
+          method = HttpMethods.PUT,
+          uri = s"$apiUrl/v1/devices/own/${self.toString}/key"
+        ).withEntity(key).addCredentials(credentials = credentials)
+      ).transformClientFailures()
+      _ <- response.processed()
+    } yield {
+      Done
+    }
+
+  override def pullDeviceKey(): Future[Option[ByteString]] =
+    for {
+      credentials <- credentials
+      response <- offer(
+        request = HttpRequest(
+          method = HttpMethods.GET,
+          uri = s"$apiUrl/v1/devices/own/${self.toString}/key"
+        ).addCredentials(credentials = credentials)
+      ).transformClientFailures()
+      key <- response match {
+        case HttpResponse(StatusCodes.NotFound, _, _, _) => Future.successful(None)
+        case _                                           => response.toByteString.map(Some.apply)
+      }
+    } yield {
+      key
     }
 
   override def ping(): Future[Ping] =
@@ -281,11 +322,20 @@ object DefaultServerApiEndpointClient {
       requestBufferSize = requestBufferSize
     )
 
-  final case class DecryptionContext(
-    core: ServerCoreEndpointClient,
-    deviceSecret: DeviceSecret,
-    decoder: Decoder
-  )
+  sealed trait DecryptionContext
+
+  object DecryptionContext {
+    def apply(core: ServerCoreEndpointClient, deviceSecret: DeviceSecret, decoder: Decoder): DecryptionContext =
+      Default(core = core, deviceSecret = deviceSecret, decoder = decoder)
+
+    final case class Default(
+      core: ServerCoreEndpointClient,
+      deviceSecret: DeviceSecret,
+      decoder: Decoder
+    ) extends DecryptionContext
+
+    case object Disabled extends DecryptionContext
+  }
 
   implicit class ModelToRequestEntity[M](m: M) {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -294,13 +344,12 @@ object DefaultServerApiEndpointClient {
       Marshal(m).to[RequestEntity]
   }
 
-  implicit class ResponseEntityToModel(response: HttpResponse) {
-    def to[M](implicit format: Format[M], ec: ExecutionContext, system: ActorSystem[SpawnProtocol.Command]): Future[M] =
-      if (response.status.isSuccess()) {
-        import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+  implicit class ExtendedResponseEntity(response: HttpResponse) {
+    def processed[T](f: () => Future[T])(implicit system: ActorSystem[SpawnProtocol.Command]): Future[T] = {
+      import system.executionContext
 
-        Unmarshal(response)
-          .to[M]
+      if (response.status.isSuccess()) {
+        f()
           .recoverWith { case NonFatal(e) =>
             response.entity.dataBytes.cancelled().flatMap { _ =>
               Future.failed(
@@ -322,6 +371,21 @@ object DefaultServerApiEndpointClient {
               )
             )
           }
+      }
+    }
+
+    def processed()(implicit system: ActorSystem[SpawnProtocol.Command]): Future[Done] =
+      processed[Done](f = () => Future.successful(Done))
+
+    def to[M](implicit format: Format[M], ec: ExecutionContext, system: ActorSystem[SpawnProtocol.Command]): Future[M] =
+      processed[M] { () =>
+        import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+        Unmarshal(response).to[M]
+      }
+
+    def toByteString(implicit ec: ExecutionContext, system: ActorSystem[SpawnProtocol.Command]): Future[ByteString] =
+      processed[ByteString] { () =>
+        Unmarshal(response).to[ByteString]
       }
   }
 

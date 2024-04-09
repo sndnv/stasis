@@ -1,5 +1,7 @@
 package stasis.client.encryption.secrets
 
+import scala.concurrent.Future
+
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
 import stasis.client.encryption.Aes
@@ -7,9 +9,7 @@ import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
 import stasis.shared.secrets.SecretsConfig
 
-import scala.concurrent.Future
-
-final case class UserEncryptionSecret(
+final case class UserKeyStoreEncryptionSecret(
   user: User.Id,
   iv: ByteString,
   private val key: ByteString
@@ -33,11 +33,11 @@ final case class UserEncryptionSecret(
     )
 }
 
-object UserEncryptionSecret {
+object UserKeyStoreEncryptionSecret {
   def apply(
     user: User.Id,
     iv: ByteString,
     key: ByteString
-  )(implicit target: SecretsConfig): UserEncryptionSecret =
-    new UserEncryptionSecret(user, iv, key)
+  )(implicit target: SecretsConfig): UserKeyStoreEncryptionSecret =
+    new UserKeyStoreEncryptionSecret(user, iv, key)
 }

@@ -32,21 +32,26 @@ object ViaStdIn {
   def retrieveCredentials(
     console: Console,
     args: ApplicationArguments.Mode.Bootstrap
-  ): Future[Array[Char]] =
+  ): Future[(String, Array[Char])] =
     Future.fromTry(
       for {
+        name <- args.userName match {
+          case name if name.nonEmpty => Success(name)
+          case _                     => Try(console.readLine("User Name: ")).map(_.trim)
+        }
         password <- args.userPassword match {
           case password if password.nonEmpty => Success(password)
           case _                             => Try(console.readPassword("User Password: "))
         }
-        passwordConfirm <- args.userPassword match {
+        passwordConfirm <- args.userPassword match { // password was explicitly provided; no need for confirmation
           case password if password.nonEmpty => Success(password)
           case _                             => Try(console.readPassword("Confirm Password: "))
         }
       } yield {
+        require(name.nonEmpty, "User name cannot be empty")
         require(password.nonEmpty, "User password cannot be empty")
         require(java.util.Objects.deepEquals(password, passwordConfirm), "Passwords do not match")
-        password
+        (name, password)
       }
     )
 }

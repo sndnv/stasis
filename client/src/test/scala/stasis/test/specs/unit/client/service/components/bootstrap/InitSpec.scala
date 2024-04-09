@@ -42,6 +42,7 @@ class InitSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockitoSugar
           serverBootstrapUrl = expectedServerBootstrapUrl,
           bootstrapCode = expectedBootstrapCode,
           acceptSelfSignedCertificates = true,
+          userName = "",
           userPassword = Array.emptyCharArray,
           userPasswordConfirm = Array.emptyCharArray
         ),
@@ -57,9 +58,11 @@ class InitSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockitoSugar
   }
 
   it should "support credentials retrieval from StdIn" in {
+    val expectedUserName = "test-user"
     val expectedUserPassword = "test-password".toCharArray
 
     val console = mock[java.io.Console]
+    when(console.readLine("User Name: ")).thenReturn(expectedUserName)
     when(console.readPassword("User Password: ")).thenReturn(expectedUserPassword)
     when(console.readPassword("Confirm Password: ")).thenReturn(expectedUserPassword)
 
@@ -69,13 +72,15 @@ class InitSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockitoSugar
         applicationDirectory = createApplicationDirectory(init = _ => ())
       )
       init <- Init(base = base, console = Some(console))
-      userPassword <- init.credentials()
+      (userName, userPassword) <- init.credentials()
     } yield {
+      userName should be(expectedUserName)
       userPassword.mkString should be(expectedUserPassword.mkString)
     }
   }
 
   it should "support credentials retrieval from CLI" in {
+    val expectedUserName = "test-user"
     val expectedUserPassword = "test-password".toCharArray
 
     for {
@@ -84,14 +89,16 @@ class InitSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockitoSugar
           serverBootstrapUrl = "https://test-url",
           bootstrapCode = "test-code",
           acceptSelfSignedCertificates = true,
+          userName = expectedUserName,
           userPassword = expectedUserPassword,
           userPasswordConfirm = expectedUserPassword
         ),
         applicationDirectory = createApplicationDirectory(init = _ => ())
       )
       init <- Init(base = base, console = None)
-      userPassword <- init.credentials()
+      (userName, userPassword) <- init.credentials()
     } yield {
+      userName should be(expectedUserName)
       userPassword.mkString should be(expectedUserPassword.mkString)
     }
   }

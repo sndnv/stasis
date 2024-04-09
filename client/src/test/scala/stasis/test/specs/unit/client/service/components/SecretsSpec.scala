@@ -178,7 +178,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
   private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
-    "SecretsSpec"
+    "ServiceSecretsSpec"
   )
 
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)

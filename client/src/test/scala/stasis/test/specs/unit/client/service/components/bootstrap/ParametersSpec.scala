@@ -28,6 +28,7 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
       serverBootstrapUrl = "https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = true,
+      userName = "",
       userPassword = Array.emptyCharArray,
       userPasswordConfirm = Array.emptyCharArray
     )
@@ -61,6 +62,7 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
       serverBootstrapUrl = "https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = true,
+      userName = "",
       userPassword = Array.emptyCharArray,
       userPasswordConfirm = Array.emptyCharArray
     )
@@ -96,6 +98,7 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
       serverBootstrapUrl = "https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = false,
+      userName = "",
       userPassword = Array.emptyCharArray,
       userPasswordConfirm = Array.emptyCharArray
     )

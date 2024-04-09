@@ -14,7 +14,7 @@ class DefaultTelemetryContext(
 
       case None =>
         throw new IllegalStateException(
-          s"Metrics provider [${tag.toString()}] requested required but could not be found"
+          s"Metrics provider [${tag.toString()}] requested but could not be found"
         )
     }
 }

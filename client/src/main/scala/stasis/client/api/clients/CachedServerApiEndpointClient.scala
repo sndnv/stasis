@@ -1,10 +1,12 @@
 package stasis.client.api.clients
 
-import java.time.Instant
+import org.apache.pekko.Done
 
+import java.time.Instant
 import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
 import org.apache.pekko.http.caching.LfuCache
 import org.apache.pekko.http.caching.scaladsl.{Cache, CachingSettings}
+import org.apache.pekko.util.ByteString
 import stasis.client.model.DatasetMetadata
 import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}
 import stasis.shared.api.responses.{CreatedDatasetDefinition, CreatedDatasetEntry, Ping}
@@ -47,6 +49,12 @@ class CachedServerApiEndpointClient(
 
   override def device(): Future[Device] =
     underlying.device()
+
+  override def pushDeviceKey(key: ByteString): Future[Done] =
+    underlying.pushDeviceKey(key)
+
+  override def pullDeviceKey(): Future[Option[ByteString]] =
+    underlying.pullDeviceKey()
 
   override def ping(): Future[Ping] =
     underlying.ping()
