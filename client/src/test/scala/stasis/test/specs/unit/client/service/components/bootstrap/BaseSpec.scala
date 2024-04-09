@@ -14,6 +14,7 @@ class BaseSpec extends AsyncUnitSpec with ResourceHelpers {
       serverBootstrapUrl = "https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = false,
+      userName = "test-user",
       userPassword = Array.emptyCharArray,
       userPasswordConfirm = Array.emptyCharArray
     )

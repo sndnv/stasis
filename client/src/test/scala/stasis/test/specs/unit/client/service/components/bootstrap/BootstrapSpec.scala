@@ -48,6 +48,7 @@ class BootstrapSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockito
       serverBootstrapUrl = s"https://localhost:$endpointPort",
       bootstrapCode = testCode,
       acceptSelfSignedCertificates = true,
+      userName = "test-user",
       userPassword = Array.emptyCharArray,
       userPasswordConfirm = Array.emptyCharArray
     )
@@ -83,6 +84,7 @@ class BootstrapSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockito
       serverBootstrapUrl = "https://localhost:1234",
       bootstrapCode = testCode,
       acceptSelfSignedCertificates = true,
+      userName = "test-user",
       userPassword = Array.emptyCharArray,
       userPasswordConfirm = Array.emptyCharArray
     )

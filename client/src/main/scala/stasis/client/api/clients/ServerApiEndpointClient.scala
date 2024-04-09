@@ -1,7 +1,9 @@
 package stasis.client.api.clients
 
-import java.time.Instant
+import org.apache.pekko.Done
+import org.apache.pekko.util.ByteString
 
+import java.time.Instant
 import stasis.client.model.DatasetMetadata
 import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}
 import stasis.shared.api.responses.{CreatedDatasetDefinition, CreatedDatasetEntry, Ping}
@@ -32,7 +34,10 @@ trait ServerApiEndpointClient {
   def datasetMetadata(entry: DatasetEntry): Future[DatasetMetadata]
 
   def user(): Future[User]
+
   def device(): Future[Device]
+  def pushDeviceKey(key: ByteString): Future[Done]
+  def pullDeviceKey(): Future[Option[ByteString]]
 
   def ping(): Future[Ping]
 }

@@ -2,6 +2,7 @@ package stasis.test.specs.unit.client.service
 
 import java.io.Console
 import java.util.concurrent.ThreadLocalRandom
+
 import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
@@ -24,13 +25,16 @@ import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks.{MockServerBootstrapEndpoint, MockTokenEndpoint}
 import stasis.test.specs.unit.client.{EncodingHelpers, Fixtures, ResourceHelpers}
-
 import java.util.UUID
+
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Random
 import scala.util.control.NonFatal
+
+import stasis.test.specs.unit.client.mocks.MockServerApiEndpoint
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelpers with Eventually with AsyncMockitoSugar {
   "A Service" should "handle API endpoint requests" in {
@@ -40,8 +44,12 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val apiEndpointPort = ports.dequeue()
     val apiInitPort = ports.dequeue()
 
-    val tokenEndpoint = MockTokenEndpoint(port = tokenEndpointPort, token = "test-token")
+    val tokenEndpoint = MockTokenEndpoint(port = tokenEndpointPort, token = serverApiCredentials.token)
     tokenEndpoint.start()
+
+    val serverApiEndpointPort = ports.dequeue()
+    val serverApiEndpoint = new MockServerApiEndpoint(expectedCredentials = serverApiCredentials)
+      .start(port = serverApiEndpointPort)
 
     val directory = createApplicationDirectory(
       init = dir => {
@@ -61,6 +69,7 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
           s"""{
              |$apiTerminationDelayEntry: "${apiTerminationDelay.toMillis} millis",
              |$tokenEndpointConfigEntry: "http://localhost:$tokenEndpointPort/oauth/token",
+             |$serverApiEndpointConfigEntry: "http://localhost:$serverApiEndpointPort",
              |$apiEndpointConfigEntry: $apiEndpointPort,
              |$apiInitConfigEntry: $apiInitPort,
              }""".stripMargin.replaceAll("\n", "")
@@ -103,6 +112,7 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       .await
 
     stopResponse.status should be(StatusCodes.NoContent)
+    val _ = serverApiEndpoint.flatMap(_.terminate(100.millis))
     await(delay = apiTerminationDelay * 3, withSystem = typedSystem)
 
     Http()
@@ -245,6 +255,14 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
   }
 
   it should "support performing device bootstrap" in {
+    val tokenEndpointPort = ports.dequeue()
+    val tokenEndpoint = MockTokenEndpoint(port = tokenEndpointPort, token = serverApiCredentials.token)
+    tokenEndpoint.start()
+
+    val serverApiEndpointPort = ports.dequeue()
+    val serverApiEndpoint = new MockServerApiEndpoint(expectedCredentials = serverApiCredentials)
+      .start(port = serverApiEndpointPort)
+
     val directory = createApplicationDirectory(init = dir => java.nio.file.Files.createDirectories(dir.config.get))
 
     val config: Config = typedSystem.settings.config.getConfig("stasis.test.client.security.tls")
@@ -254,14 +272,20 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     )
 
     val endpointPort = ports.dequeue()
-
-    val endpoint = new MockServerBootstrapEndpoint(expectedCode = testCode, providedParams = testParams)
+    val endpoint = new MockServerBootstrapEndpoint(
+      expectedCode = testCode,
+      providedParams = testParams.copy(
+        authentication = testParams.authentication.copy(tokenEndpoint = s"http://localhost:$tokenEndpointPort/oauth/token"),
+        serverApi = testParams.serverApi.copy(url = s"http://localhost:$serverApiEndpointPort")
+      )
+    )
     endpoint.start(port = endpointPort, context = Some(endpointContext))
 
     val modeArguments = ApplicationArguments.Mode.Bootstrap(
       serverBootstrapUrl = s"https://localhost:$endpointPort",
       bootstrapCode = testCode,
       acceptSelfSignedCertificates = true,
+      userName = "test-user",
       userPassword = "test-password".toCharArray,
       userPasswordConfirm = "test-password".toCharArray
     )
@@ -283,7 +307,10 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       rules <- directory.pullFile[ByteString](Files.Default.ClientRules)
       schedules <- directory.pullFile[ByteString](Files.Default.ClientSchedules)
       deviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
+      _ <- serverApiEndpoint.flatMap(_.terminate(100.millis))
     } yield {
+      tokenEndpoint.stop()
+
       config.nonEmpty should be(true)
       rules.nonEmpty should be(true)
       schedules.nonEmpty should be(false)
@@ -299,7 +326,10 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val directory = createApplicationDirectory(init = dir => java.nio.file.Files.createDirectories(dir.config.get))
 
     val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = true
+      regenerateApiCertificate = true,
+      deviceSecretOperation = None,
+      userName = "",
+      userPassword = Array.emptyCharArray
     )
 
     val originalConfig = "stasis.client.api.http.context.keystore.password = \"test-password\""
@@ -491,11 +521,16 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
   private val encryptedDeviceSecret = "08ko0LWDalPvEHna/WWuq3LoEaA3m4dQ1QuP".decodeFromBase64 // decrypted == "test-secret"
 
   private val tokenEndpointConfigEntry = "stasis.client.server.authentication.token-endpoint"
+  private val serverApiEndpointConfigEntry = "stasis.client.server.api.url"
   private val apiTerminationDelayEntry = "stasis.client.service.termination-delay"
   private val apiEndpointConfigEntry = "stasis.client.api.http.port"
   private val apiInitConfigEntry = "stasis.client.api.init.port"
 
+  private val serverApiCredentials = OAuth2BearerToken("test-token")
+
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
+
+  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   private trait TestServiceArguments extends Service.Arguments {
     override def raw: Array[String] = Array.empty

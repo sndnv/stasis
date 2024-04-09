@@ -99,11 +99,13 @@ class ViaStdInSpec extends AsyncUnitSpec with AsyncMockitoSugar {
       }
   }
 
-  it should "support retrieving user password" in {
+  it should "support retrieving user name and password" in {
+    val expectedUserName = "test-user"
     val expectedUserPassword = "test-password".toCharArray
     val expectedUserPasswordConfirmation = "test-password".toCharArray
 
     val console = mock[java.io.Console]
+    when(console.readLine("User Name: ")).thenReturn(expectedUserName)
     when(console.readPassword("User Password: ")).thenReturn(expectedUserPassword)
     when(console.readPassword("Confirm Password: ")).thenReturn(expectedUserPasswordConfirmation)
 
@@ -112,30 +114,55 @@ class ViaStdInSpec extends AsyncUnitSpec with AsyncMockitoSugar {
         console = console,
         args = ApplicationArguments.Mode.Bootstrap.empty
       )
-      .map { password =>
+      .map { case (name, password) =>
+        name should be(expectedUserName)
+        password.mkString should be(expectedUserPassword.mkString)
+      }
+  }
+
+  it should "skip asking for user name if it's already provided" in {
+    val expectedUserName = "test-name"
+    val expectedUserPassword = "test-password".toCharArray
+
+    val console = mock[java.io.Console]
+    when(console.readPassword("User Password: ")).thenReturn(expectedUserPassword)
+    when(console.readPassword("Confirm Password: ")).thenReturn(expectedUserPassword)
+
+    ViaStdIn
+      .retrieveCredentials(
+        console = console,
+        args = ApplicationArguments.Mode.Bootstrap.empty.copy(userName = expectedUserName)
+      )
+      .map { case (name, password) =>
+        name.mkString should be(expectedUserName.mkString)
         password.mkString should be(expectedUserPassword.mkString)
       }
   }
 
   it should "skip asking for user password if it's already provided" in {
+    val expectedUserName = "test-name"
     val expectedUserPassword = "test-password".toCharArray
 
     val console = mock[java.io.Console]
+    when(console.readLine("User Name: ")).thenReturn(expectedUserName)
 
     ViaStdIn
       .retrieveCredentials(
         console = console,
         args = ApplicationArguments.Mode.Bootstrap.empty.copy(userPassword = expectedUserPassword)
       )
-      .map { password =>
+      .map { case (name, password) =>
+        name.mkString should be(expectedUserName.mkString)
         password.mkString should be(expectedUserPassword.mkString)
       }
   }
 
-  it should "fail if no or empty user password is provided" in {
-    val expectedUserPassword = Array.emptyCharArray
+  it should "fail if no or empty user name is provided" in {
+    val expectedUserName = "   "
+    val expectedUserPassword = "test-password".toCharArray
 
     val console = mock[java.io.Console]
+    when(console.readLine("User Name: ")).thenReturn(expectedUserName)
     when(console.readPassword("User Password: ")).thenReturn(expectedUserPassword)
     when(console.readPassword("Confirm Password: ")).thenReturn(expectedUserPassword)
 
@@ -146,11 +173,31 @@ class ViaStdInSpec extends AsyncUnitSpec with AsyncMockitoSugar {
       )
       .failed
       .map { e =>
+        e.getMessage should include("User name cannot be empty")
+      }
+  }
+
+  it should "fail if no or empty user password is provided" in {
+    val expectedUserName = "test-user"
+    val expectedUserPassword = Array.emptyCharArray
+
+    val console = mock[java.io.Console]
+    when(console.readPassword("User Password: ")).thenReturn(expectedUserPassword)
+    when(console.readPassword("Confirm Password: ")).thenReturn(expectedUserPassword)
+
+    ViaStdIn
+      .retrieveCredentials(
+        console = console,
+        args = ApplicationArguments.Mode.Bootstrap.empty.copy(userName = expectedUserName)
+      )
+      .failed
+      .map { e =>
         e.getMessage should include("User password cannot be empty")
       }
   }
 
   it should "fail if the provided passwords do not match" in {
+    val expectedUserName = "test-user"
     val expectedUserPassword = "test-password".toCharArray
     val expectedUserPasswordConfirmation = "other-test-password".toCharArray
 
@@ -161,7 +208,7 @@ class ViaStdInSpec extends AsyncUnitSpec with AsyncMockitoSugar {
     ViaStdIn
       .retrieveCredentials(
         console = console,
-        args = ApplicationArguments.Mode.Bootstrap.empty
+        args = ApplicationArguments.Mode.Bootstrap.empty.copy(userName = expectedUserName)
       )
       .failed
       .map { e =>

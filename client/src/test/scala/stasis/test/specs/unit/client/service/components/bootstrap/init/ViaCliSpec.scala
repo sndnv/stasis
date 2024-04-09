@@ -10,6 +10,7 @@ class ViaCliSpec extends AsyncUnitSpec {
       serverBootstrapUrl = "https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = false,
+      userName = "",
       userPassword = Array.emptyCharArray,
       userPasswordConfirm = Array.emptyCharArray
     )
@@ -26,6 +27,7 @@ class ViaCliSpec extends AsyncUnitSpec {
       serverBootstrapUrl = "http://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = false,
+      userName = "",
       userPassword = Array.emptyCharArray,
       userPasswordConfirm = Array.emptyCharArray
     )
@@ -43,6 +45,7 @@ class ViaCliSpec extends AsyncUnitSpec {
       serverBootstrapUrl = "https://test-url",
       bootstrapCode = "",
       acceptSelfSignedCertificates = false,
+      userName = "",
       userPassword = Array.emptyCharArray,
       userPasswordConfirm = Array.emptyCharArray
     )
@@ -60,22 +63,42 @@ class ViaCliSpec extends AsyncUnitSpec {
       serverBootstrapUrl = "https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = false,
+      userName = "test-user",
       userPassword = "test-password".toCharArray,
       userPasswordConfirm = "test-password".toCharArray
     )
 
     ViaCli
       .retrieveCredentials(args = expectedArgs)
-      .map { actualPassword =>
+      .map { case (actualName, actualPassword) =>
+        actualName should be(expectedArgs.userName)
         actualPassword.mkString should be(expectedArgs.userPassword.mkString)
       }
   }
 
+  it should "fail to retrieve credentials if no user name is provided" in {
+    val expectedArgs = ApplicationArguments.Mode.Bootstrap(
+      serverBootstrapUrl = "https://test-url",
+      bootstrapCode = "test-code",
+      acceptSelfSignedCertificates = false,
+      userName = "",
+      userPassword = "test-password".toCharArray,
+      userPasswordConfirm = "test-password".toCharArray
+    )
+
+    ViaCli
+      .retrieveCredentials(args = expectedArgs)
+      .failed
+      .map { e =>
+        e.getMessage should include("User name cannot be empty")
+      }
+  }
   it should "fail to retrieve credentials if no user password is provided" in {
     val expectedArgs = ApplicationArguments.Mode.Bootstrap(
       serverBootstrapUrl = "https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = false,
+      userName = "test-user",
       userPassword = Array.emptyCharArray,
       userPasswordConfirm = Array.emptyCharArray
     )

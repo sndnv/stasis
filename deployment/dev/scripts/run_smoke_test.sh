@@ -183,6 +183,16 @@ else
   echo "failed; expected [${EXPECTED_NODES_COUNT}] but found [${ACTUAL_NODES_COUNT}]"
 fi
 
+echo -n "[$(now)] Retrieving device keys..."
+EXPECTED_INITIAL_DEVICE_KEYS_COUNT=0
+ACTUAL_INITIAL_DEVICE_KEYS_COUNT=$(curl -sk -H "Authorization: Bearer ${USER_TOKEN}" -X GET "${SERVER_API_URL}/v1/devices/keys" | jq ". | length")
+if [ "${ACTUAL_INITIAL_DEVICE_KEYS_COUNT}" = "${EXPECTED_INITIAL_DEVICE_KEYS_COUNT}" ]
+then
+  echo "found [${ACTUAL_INITIAL_DEVICE_KEYS_COUNT}] (OK)"
+else
+  echo "failed; expected [${EXPECTED_INITIAL_DEVICE_KEYS_COUNT}] but found [${ACTUAL_INITIAL_DEVICE_KEYS_COUNT}]"
+fi
+
 echo -n "[$(now)] Looking up PRIMARY client container [${PRIMARY_CLIENT_CONTAINER_NAME}]..."
 PRIMARY_CLIENT_CONTAINER_ID=$(docker ps --filter "name=${PRIMARY_CLIENT_CONTAINER_NAME}" --quiet)
 if [ "${PRIMARY_CLIENT_CONTAINER_ID}" != "" ]
@@ -564,7 +574,7 @@ else
 fi
 
 echo -n "[$(now)] (SECONDARY) Executing device bootstrap..."
-DEVICE_BOOTSTRAP_COMMAND="stasis-client bootstrap --server ${SERVER_BOOTSTRAP_URL_INTERNAL} --code ${DEVICE_BOOTSTRAP_CODE} --accept-self-signed --user-password ${USER_PASSWORD}"
+DEVICE_BOOTSTRAP_COMMAND="stasis-client bootstrap --server ${SERVER_BOOTSTRAP_URL_INTERNAL} --code ${DEVICE_BOOTSTRAP_CODE} --accept-self-signed --user-name ${USER_ID} --user-password ${USER_PASSWORD}"
 DEVICE_BOOTSTRAP_RESULT=$(docker exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${DEVICE_BOOTSTRAP_COMMAND} 2>&1)
 if [ $? = 0 ]
 then
@@ -620,6 +630,27 @@ then
 else
   echo "failed; output was [${CLIENT_SERVICE_STOP_RESULT}]"
   exit 1
+fi
+
+echo -n "[$(now)] (SECONDARY) Pushing device key..."
+DEVICE_KEY_PUSH_COMMAND="stasis-client maintenance --secret push --user-name ${USER_ID} --user-password ${USER_PASSWORD}"
+DEVICE_KEY_PUSH_RESULT=$(docker exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${DEVICE_KEY_PUSH_COMMAND} 2>&1)
+if [ $? = 0 ]
+then
+  echo "OK"
+else
+  echo "failed; output was [${DEVICE_KEY_PUSH_RESULT}]"
+  exit 1
+fi
+
+echo -n "[$(now)] Retrieving device keys..."
+EXPECTED_FINAL_DEVICE_KEYS_COUNT=1
+ACTUAL_FINAL_DEVICE_KEYS_COUNT=$(curl -sk -H "Authorization: Bearer ${USER_TOKEN}" -X GET "${SERVER_API_URL}/v1/devices/keys" | jq ". | length")
+if [ "${ACTUAL_FINAL_DEVICE_KEYS_COUNT}" = "${EXPECTED_FINAL_DEVICE_KEYS_COUNT}" ]
+then
+  echo "found [${ACTUAL_FINAL_DEVICE_KEYS_COUNT}] (OK)"
+else
+  echo "failed; expected [${EXPECTED_FINAL_DEVICE_KEYS_COUNT}] but found [${ACTUAL_FINAL_DEVICE_KEYS_COUNT}]"
 fi
 
 TEST_END="$(date +%s)"

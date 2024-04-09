@@ -58,7 +58,7 @@ object Secrets {
         .pullFile[ByteString](file = Files.DeviceSecret)
         .transformFailureTo(ServiceStartupFailure.file)
       _ = log.debug("Decrypting device secret...")
-      decryptedDeviceSecret <- userPassword.toHashedEncryptionPassword.toEncryptionSecret
+      decryptedDeviceSecret <- userPassword.toHashedEncryptionPassword.toLocalEncryptionSecret
         .decryptDeviceSecret(
           device = device,
           encryptedSecret = encryptedDeviceSecret

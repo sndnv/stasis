@@ -1,4 +1,4 @@
-package stasis.client.service.components.bootstrap.init
+package stasis.client.service.components.maintenance.init
 
 import stasis.client.service.ApplicationArguments
 
@@ -6,19 +6,8 @@ import scala.concurrent.Future
 import scala.util.Try
 
 object ViaCli {
-  def retrieveArguments(
-    args: ApplicationArguments.Mode.Bootstrap
-  ): Future[ApplicationArguments.Mode.Bootstrap] =
-    Future.fromTry(
-      for {
-        _ <- Try(args.validate())
-      } yield {
-        args
-      }
-    )
-
   def retrieveCredentials(
-    args: ApplicationArguments.Mode.Bootstrap
+    args: ApplicationArguments.Mode.Maintenance
   ): Future[(String, Array[Char])] =
     Future.fromTry(
       Try {

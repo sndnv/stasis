@@ -27,6 +27,7 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
       serverBootstrapUrl = "https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = true,
+      userName = "test-user",
       userPassword = "test-password".toCharArray,
       userPasswordConfirm = "test-password".toCharArray
     )
@@ -40,6 +41,8 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
         "--code",
         expectedMode.bootstrapCode,
         "--accept-self-signed",
+        "--user-name",
+        expectedMode.userName,
         "--user-password",
         expectedMode.userPassword.mkString
       )
@@ -48,6 +51,7 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
         mode.serverBootstrapUrl should be(expectedMode.serverBootstrapUrl)
         mode.bootstrapCode should be(expectedMode.bootstrapCode)
         mode.acceptSelfSignedCertificates should be(expectedMode.acceptSelfSignedCertificates)
+        mode.userName should be(expectedMode.userName)
         mode.userPassword.mkString should be(expectedMode.userPassword.mkString)
 
       case other =>
@@ -56,23 +60,97 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
   }
 
   they should "support parsing arguments (maintenance)" in {
-    val expectedMode = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = true
-    )
-
     ApplicationArguments(
       applicationName = "test-application",
-      args = Array(
-        "maintenance",
-        "--regenerate-api-certificate"
-      )
-    ).map {
+      args = Array("maintenance", "--regenerate-api-certificate")
+    ).await match {
       case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance) =>
-        mode.regenerateApiCertificate should be(expectedMode.regenerateApiCertificate)
+        mode.regenerateApiCertificate should be(true)
+        mode.deviceSecretOperation should be(None)
+        mode.userName should be(empty)
+        mode.userPassword should be(empty)
 
       case other =>
         fail(s"Unexpected result received: [$other]")
     }
+
+    ApplicationArguments(
+      applicationName = "test-application",
+      args = Array("maintenance", "--secret", "push")
+    ).await match {
+      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance) =>
+        mode.regenerateApiCertificate should be(false)
+        mode.deviceSecretOperation should be(Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Push))
+        mode.userName should be(empty)
+        mode.userPassword should be(empty)
+
+      case other =>
+        fail(s"Unexpected result received: [$other]")
+    }
+
+    ApplicationArguments(
+      applicationName = "test-application",
+      args = Array("maintenance", "--secret", "pull")
+    ).await match {
+      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance) =>
+        mode.regenerateApiCertificate should be(false)
+        mode.deviceSecretOperation should be(Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Pull))
+        mode.userName should be(empty)
+        mode.userPassword should be(empty)
+
+      case other =>
+        fail(s"Unexpected result received: [$other]")
+    }
+
+    ApplicationArguments(
+      applicationName = "test-application",
+      args = Array("maintenance", "--secret", "push", "--user-name", "test-user")
+    ).await match {
+      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance) =>
+        mode.regenerateApiCertificate should be(false)
+        mode.deviceSecretOperation should be(Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Push))
+        mode.userName should be("test-user")
+        mode.userPassword should be(empty)
+
+      case other =>
+        fail(s"Unexpected result received: [$other]")
+    }
+
+    ApplicationArguments(
+      applicationName = "test-application",
+      args = Array("maintenance", "--secret", "push", "--user-password", "test-password")
+    ).await match {
+      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance) =>
+        mode.regenerateApiCertificate should be(false)
+        mode.deviceSecretOperation should be(Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Push))
+        mode.userName should be(empty)
+        new String(mode.userPassword) should be("test-password")
+
+      case other =>
+        fail(s"Unexpected result received: [$other]")
+    }
+
+    ApplicationArguments(
+      applicationName = "test-application",
+      args = Array("maintenance", "--secret", "push", "--user-name", "test-user", "--user-password", "test-password")
+    ).await match {
+      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance) =>
+        mode.regenerateApiCertificate should be(false)
+        mode.deviceSecretOperation should be(Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Push))
+        mode.userName should be("test-user")
+        new String(mode.userPassword) should be("test-password")
+
+      case other =>
+        fail(s"Unexpected result received: [$other]")
+    }
+
+    ApplicationArguments(
+      applicationName = "test-application",
+      args = Array("maintenance", "--secret", "other")
+    ).failed
+      .map { e =>
+        e.getMessage should be("Invalid arguments provided")
+      }
   }
 
   they should "fail if invalid arguments are provided" in {
@@ -90,6 +168,7 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
       serverBootstrapUrl = "https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = true,
+      userName = "test-user",
       userPassword = Array.emptyCharArray,
       userPasswordConfirm = Array.emptyCharArray
     )
@@ -104,6 +183,7 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
       serverBootstrapUrl = "http://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = true,
+      userName = "test-user",
       userPassword = Array.emptyCharArray,
       userPasswordConfirm = Array.emptyCharArray
     )
@@ -118,6 +198,7 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
       serverBootstrapUrl = "https://test-url",
       bootstrapCode = "",
       acceptSelfSignedCertificates = true,
+      userName = "test-user",
       userPassword = Array.emptyCharArray,
       userPasswordConfirm = Array.emptyCharArray
     )
@@ -129,7 +210,10 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
 
   they should "validate maintenance mode arguments" in {
     val mode = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = true
+      regenerateApiCertificate = true,
+      deviceSecretOperation = None,
+      userName = "",
+      userPassword = Array.emptyCharArray
     )
 
     noException should be thrownBy {
@@ -139,7 +223,10 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
 
   they should "fail if invalid maintenance mode arguments are provided" in {
     val mode = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = true
+      regenerateApiCertificate = true,
+      deviceSecretOperation = None,
+      userName = "",
+      userPassword = Array.emptyCharArray
     )
 
     an[IllegalArgumentException] should be thrownBy {

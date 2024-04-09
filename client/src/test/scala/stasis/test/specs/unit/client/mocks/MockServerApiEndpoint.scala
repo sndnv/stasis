@@ -1,13 +1,14 @@
 package stasis.test.specs.unit.client.mocks
 
+import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.Http
-import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
-import org.apache.pekko.util.Timeout
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.{ByteString, Timeout}
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.security.tls.EndpointContext
@@ -15,16 +16,18 @@ import stasis.core.telemetry.TelemetryContext
 import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}
 import stasis.shared.api.responses.{CreatedDatasetDefinition, CreatedDatasetEntry, Ping}
 import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
-import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.{Device, DeviceKey}
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.shared.model.Generators
-
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
+
 class MockServerApiEndpoint(
-  expectedCredentials: BasicHttpCredentials,
+  expectedCredentials: HttpCredentials,
+  expectedDeviceKey: Option[ByteString] = None,
   definitionsWithoutEntries: Seq[DatasetDefinition.Id] = Seq.empty,
   withDefinitions: Option[Seq[DatasetDefinition]] = None
 )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, timeout: Timeout) {
@@ -41,6 +44,11 @@ class MockServerApiEndpoint(
   private val definitionsStore: MemoryBackend[DatasetDefinition.Id, DatasetDefinition] =
     MemoryBackend[DatasetDefinition.Id, DatasetDefinition](
       s"mock-server-api-definitions-store-${java.util.UUID.randomUUID()}"
+    )
+
+  private val keyStore: MemoryBackend[Device.Id, DeviceKey] =
+    MemoryBackend[Device.Id, DeviceKey](
+      s"mock-server-api-device-key-store-${java.util.UUID.randomUUID()}"
     )
 
   private val definitions: Route =
@@ -211,9 +219,40 @@ class MockServerApiEndpoint(
     }
 
   private val devices: Route =
-    path("own" / JavaUUID) { deviceId =>
-      val device: Device = Generators.generateDevice.copy(id = deviceId)
-      complete(device)
+    pathPrefix("own" / JavaUUID) { deviceId =>
+      concat(
+        pathEndOrSingleSlash {
+          val device: Device = Generators.generateDevice.copy(id = deviceId)
+          complete(device)
+        },
+        path("key") {
+          concat(
+            get {
+              expectedDeviceKey match {
+                case Some(key) => complete(HttpEntity(ContentTypes.`application/octet-stream`, Source.single(key)))
+                case None      => complete(StatusCodes.NotFound)
+              }
+            },
+            put {
+              extractDataBytes { source =>
+                extractExecutionContext { implicit ec =>
+                  val result = for {
+                    key <- source.runFold(ByteString.empty)(_ concat _)
+                    _ <- keyStore.put(
+                      key = deviceId,
+                      value = DeviceKey(value = key, owner = Generators.generateUser.id, device = deviceId)
+                    )
+                  } yield Done
+
+                  onSuccess(result) { _ =>
+                    complete(StatusCodes.OK)
+                  }
+                }
+              }
+            }
+          )
+        }
+      )
     }
 
   private val service: Route =
@@ -253,6 +292,9 @@ class MockServerApiEndpoint(
 
   def definitionExists(definition: DatasetDefinition.Id): Future[Boolean] =
     definitionsStore.contains(definition)
+
+  def deviceKeyExists(forDevice: Device.Id): Future[Boolean] =
+    keyStore.contains(forDevice)
 
   def start(port: Int, context: Option[EndpointContext] = None): Future[Http.ServerBinding] = {
     val server = {

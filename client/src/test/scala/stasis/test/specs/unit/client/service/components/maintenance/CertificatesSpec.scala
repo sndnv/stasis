@@ -16,7 +16,10 @@ import java.nio.file.{Files, Path}
 class CertificatesSpec extends AsyncUnitSpec with ResourceHelpers {
   "A Certificates component" should "support regenerating client API certificates" in {
     val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = true
+      regenerateApiCertificate = true,
+      deviceSecretOperation = None,
+      userName = "",
+      userPassword = Array.emptyCharArray
     )
 
     val directory = createApplicationDirectory(init = dir => Files.createDirectories(dir.config.get))
@@ -45,7 +48,10 @@ class CertificatesSpec extends AsyncUnitSpec with ResourceHelpers {
 
   it should "fail if the current API certificate password is missing" in {
     val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = true
+      regenerateApiCertificate = true,
+      deviceSecretOperation = None,
+      userName = "",
+      userPassword = Array.emptyCharArray
     )
 
     val directory = createApplicationDirectory(init = dir => Files.createDirectories(dir.config.get))
@@ -61,7 +67,10 @@ class CertificatesSpec extends AsyncUnitSpec with ResourceHelpers {
 
   it should "skip API certificate regeneration if the flag is not set" in {
     val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = false
+      regenerateApiCertificate = false,
+      deviceSecretOperation = None,
+      userName = "",
+      userPassword = Array.emptyCharArray
     )
 
     val directory = createApplicationDirectory(init = dir => Files.createDirectories(dir.config.get))
@@ -89,7 +98,10 @@ class CertificatesSpec extends AsyncUnitSpec with ResourceHelpers {
 
   it should "fail if no configuration directory is available" in {
     val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = true
+      regenerateApiCertificate = true,
+      deviceSecretOperation = None,
+      userName = "",
+      userPassword = Array.emptyCharArray
     )
 
     val directory =

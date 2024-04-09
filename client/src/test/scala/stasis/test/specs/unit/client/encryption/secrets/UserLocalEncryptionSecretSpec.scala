@@ -1,13 +1,13 @@
 package stasis.test.specs.unit.client.encryption.secrets
 
 import org.apache.pekko.actor.ActorSystem
-import stasis.client.encryption.secrets.{DeviceSecret, UserEncryptionSecret}
+import stasis.client.encryption.secrets.{DeviceSecret, UserLocalEncryptionSecret}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.EncodingHelpers
 
-class UserEncryptionSecretSpec extends AsyncUnitSpec with SecretsConfig with EncodingHelpers {
-  "A UserEncryptionSecret" should "encrypt device secrets" in {
-    encryptionSecret
+class UserLocalEncryptionSecretSpec extends AsyncUnitSpec with SecretsConfig with EncodingHelpers {
+  "A UserLocalEncryptionSecret" should "encrypt device secrets" in {
+    localEncryptionSecret
       .encryptDeviceSecret(
         secret = deviceSecret
       )
@@ -17,7 +17,7 @@ class UserEncryptionSecretSpec extends AsyncUnitSpec with SecretsConfig with Enc
   }
 
   it should "decrypt device secrets" in {
-    encryptionSecret
+    localEncryptionSecret
       .decryptDeviceSecret(
         device = testDevice,
         encryptedSecret = encryptedDeviceSecret
@@ -28,7 +28,7 @@ class UserEncryptionSecretSpec extends AsyncUnitSpec with SecretsConfig with Enc
   }
 
   it should "not render its content via toString" in {
-    encryptionSecret.toString should be(s"Secret(${encryptionSecret.getClass.getName})")
+    localEncryptionSecret.toString should be(s"Secret(${localEncryptionSecret.getClass.getName})")
   }
 
   private implicit val system: ActorSystem = ActorSystem(name = "UserEncryptionSecretSpec")
@@ -37,7 +37,7 @@ class UserEncryptionSecretSpec extends AsyncUnitSpec with SecretsConfig with Enc
   private val encryptionKey = "nXT1Bw0YCrk79xgnvlUJ5CZByYD9nuSZo9XQghf1xQU="
   private val secret = "BOunLSLKxVbluhDSPZ/wWw=="
 
-  private val encryptionSecret = UserEncryptionSecret(
+  private val localEncryptionSecret = UserLocalEncryptionSecret(
     user = testUser,
     iv = encryptionIv.decodeFromBase64,
     key = encryptionKey.decodeFromBase64

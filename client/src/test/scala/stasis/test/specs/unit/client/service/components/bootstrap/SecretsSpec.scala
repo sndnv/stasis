@@ -2,32 +2,126 @@ package stasis.test.specs.unit.client.service.components.bootstrap
 
 import java.nio.file.Path
 
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.util.ByteString
-import com.google.common.jimfs.Jimfs
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.client.service.components.Files
-import stasis.client.service.components.bootstrap.{Base, Init, Secrets}
-import stasis.client.service.components.exceptions.ServiceStartupFailure
-import stasis.client.service.{ApplicationArguments, ApplicationDirectory}
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.{EncodingHelpers, ResourceHelpers}
-
-import scala.concurrent.{ExecutionContext, Future}
+import scala.collection.mutable
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
+import com.google.common.jimfs.Jimfs
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.Behavior
+import org.apache.pekko.actor.typed.SpawnProtocol
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+import org.apache.pekko.util.ByteString
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import stasis.client.service.ApplicationArguments
+import stasis.client.service.ApplicationDirectory
+import stasis.client.service.components.Files
+import stasis.client.service.components.bootstrap.Base
+import stasis.client.service.components.bootstrap.Init
+import stasis.client.service.components.bootstrap.Secrets
+import stasis.client.service.components.exceptions.ServiceStartupFailure
+import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.client.EncodingHelpers
+import stasis.test.specs.unit.client.ResourceHelpers
+import stasis.test.specs.unit.client.mocks.MockServerApiEndpoint
+import stasis.test.specs.unit.client.mocks.MockTokenEndpoint
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
+
 class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelpers {
-  "A Secrets component" should "support creating new device secrets" in {
+  "A Secrets component" should "supporting retrieving existing device secrets from the server" in {
+    val tokenEndpointPort = ports.dequeue()
+    val tokenEndpoint = MockTokenEndpoint(port = tokenEndpointPort, token = apiCredentials.token)
+    tokenEndpoint.start()
+
+    val apiEndpointPort = ports.dequeue()
+    val apiEndpoint = new MockServerApiEndpoint(
+      expectedCredentials = apiCredentials,
+      expectedDeviceKey = Some(remoteEncryptedDeviceSecret)
+    ).start(port = apiEndpointPort)
+
     val modeArguments = ApplicationArguments.Mode.Bootstrap(
       serverBootstrapUrl = s"https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = true,
+      userName = userName,
       userPassword = userPassword,
       userPasswordConfirm = userPassword
     )
 
-    val directory = createCustomApplicationDirectory()
+    val directory = createCustomApplicationDirectory(
+      tokenEndpointPort = tokenEndpointPort,
+      apiEndpointPort = apiEndpointPort
+    )
+
+    for {
+      base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
+      init <- Init(base, console = None)
+      secrets <- Secrets(base, init)
+      _ <- secrets.create()
+      deviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
+      _ <- apiEndpoint.flatMap(_.terminate(100.millis))
+    } yield {
+      tokenEndpoint.stop()
+      deviceSecret should be(localEncryptedDeviceSecret)
+    }
+  }
+
+  it should "support creating new device secrets" in {
+    val tokenEndpointPort = ports.dequeue()
+    val tokenEndpoint = MockTokenEndpoint(port = tokenEndpointPort, token = apiCredentials.token)
+    tokenEndpoint.start()
+
+    val apiEndpointPort = ports.dequeue()
+    val apiEndpoint = new MockServerApiEndpoint(expectedCredentials = apiCredentials).start(port = apiEndpointPort)
+
+    val modeArguments = ApplicationArguments.Mode.Bootstrap(
+      serverBootstrapUrl = s"https://test-url",
+      bootstrapCode = "test-code",
+      acceptSelfSignedCertificates = true,
+      userName = userName,
+      userPassword = userPassword,
+      userPasswordConfirm = userPassword
+    )
+
+    val directory = createCustomApplicationDirectory(
+      tokenEndpointPort = tokenEndpointPort,
+      apiEndpointPort = apiEndpointPort,
+      deviceSecret = None
+    )
+
+    for {
+      base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
+      init <- Init(base, console = None)
+      secrets <- Secrets(base, init)
+      _ <- secrets.create()
+      deviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
+      _ <- apiEndpoint.flatMap(_.terminate(100.millis))
+    } yield {
+      tokenEndpoint.stop()
+      deviceSecret should not be localEncryptedDeviceSecret
+      deviceSecret.size should be >= Secrets.DefaultDeviceSecretSize
+    }
+  }
+
+  it should "keep existing local device secret" in {
+    val modeArguments = ApplicationArguments.Mode.Bootstrap(
+      serverBootstrapUrl = s"https://test-url",
+      bootstrapCode = "test-code",
+      acceptSelfSignedCertificates = true,
+      userName = userName,
+      userPassword = userPassword,
+      userPasswordConfirm = userPassword
+    )
+
+    val directory = createCustomApplicationDirectory(
+      tokenEndpointPort = 9090,
+      apiEndpointPort = 9091,
+      deviceSecret = Some(localEncryptedDeviceSecret)
+    )
 
     for {
       base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
@@ -36,7 +130,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       _ <- secrets.create()
       deviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
     } yield {
-      deviceSecret.size should be >= Secrets.DefaultDeviceSecretSize
+      deviceSecret should be(localEncryptedDeviceSecret)
     }
   }
 
@@ -45,6 +139,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       serverBootstrapUrl = s"https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = true,
+      userName = userName,
       userPassword = userPassword,
       userPasswordConfirm = userPassword
     )
@@ -55,7 +150,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       base = Base(modeArguments = modeArguments, applicationDirectory = directory).await,
       init = new Init {
         override def arguments(): Future[ApplicationArguments.Mode.Bootstrap] = Future.successful(modeArguments)
-        override def credentials(): Future[Array[Char]] = Future.failed(new RuntimeException("test failure"))
+        override def credentials(): Future[(String, Array[Char])] = Future.failed(new RuntimeException("test failure"))
       }
     ).await
       .create()
@@ -73,6 +168,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       serverBootstrapUrl = s"https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = true,
+      userName = userName,
       userPassword = userPassword,
       userPasswordConfirm = userPassword
     )
@@ -84,7 +180,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       ).await,
       init = new Init {
         override def arguments(): Future[ApplicationArguments.Mode.Bootstrap] = Future.successful(modeArguments)
-        override def credentials(): Future[Array[Char]] = Future.successful(userPassword)
+        override def credentials(): Future[(String, Array[Char])] = Future.successful((userName, userPassword))
       }
     ).await
       .create()
@@ -98,10 +194,18 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
   }
 
   it should "handle device secret file creation failures" in {
+    val tokenEndpointPort = ports.dequeue()
+    val tokenEndpoint = MockTokenEndpoint(port = tokenEndpointPort, token = apiCredentials.token)
+    tokenEndpoint.start()
+
+    val apiEndpointPort = ports.dequeue()
+    val apiEndpoint = new MockServerApiEndpoint(expectedCredentials = apiCredentials).start(port = apiEndpointPort)
+
     val modeArguments = ApplicationArguments.Mode.Bootstrap(
       serverBootstrapUrl = s"https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = true,
+      userName = userName,
       userPassword = userPassword,
       userPasswordConfirm = userPassword
     )
@@ -118,13 +222,59 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
     val path = directory.config.get
     java.nio.file.Files.createDirectories(path)
-    java.nio.file.Files.writeString(path.resolve(Files.ConfigOverride), "")
+    java.nio.file.Files.writeString(
+      path.resolve(Files.ConfigOverride),
+      s"""{
+         |$tokenEndpointConfigEntry: "http://localhost:$tokenEndpointPort/oauth/token",
+         |$apiEndpointConfigEntry: "http://localhost:$apiEndpointPort"
+             }""".stripMargin.replaceAll("\n", "")
+    )
+
+    val result = Secrets(
+      base = Base(modeArguments = modeArguments, applicationDirectory = directory).await,
+      init = new Init {
+        override def arguments(): Future[ApplicationArguments.Mode.Bootstrap] = Future.successful(modeArguments)
+        override def credentials(): Future[(String, Array[Char])] = Future.successful((userName, userPassword))
+      }
+    ).await
+      .create()
+      .failed
+
+    for {
+      e <- result.collect { case NonFatal(e: ServiceStartupFailure) => e }
+      _ <- apiEndpoint.flatMap(_.terminate(100.millis))
+    } yield {
+      tokenEndpoint.stop()
+      e.cause should be("file")
+      e.message should startWith("RuntimeException: test failure")
+    }
+  }
+
+  it should "handle core token retrieval failures" in {
+    val tokenEndpointPort = ports.dequeue()
+    val allowedGrants = Seq("password") // API token retrieval IS allowed; core token retrieval NOT allowed
+    val endpoint = MockTokenEndpoint(port = tokenEndpointPort, token = "test-token", allowedGrants = allowedGrants)
+    endpoint.start()
+
+    val modeArguments = ApplicationArguments.Mode.Bootstrap(
+      serverBootstrapUrl = s"https://test-url",
+      bootstrapCode = "test-code",
+      acceptSelfSignedCertificates = true,
+      userName = userName,
+      userPassword = userPassword,
+      userPasswordConfirm = userPassword
+    )
+
+    val directory = createCustomApplicationDirectory(
+      tokenEndpointPort = tokenEndpointPort,
+      apiEndpointPort = 9091
+    )
 
     Secrets(
       base = Base(modeArguments = modeArguments, applicationDirectory = directory).await,
       init = new Init {
         override def arguments(): Future[ApplicationArguments.Mode.Bootstrap] = Future.successful(modeArguments)
-        override def credentials(): Future[Array[Char]] = Future.successful(userPassword)
+        override def credentials(): Future[(String, Array[Char])] = Future.successful((userName, userPassword))
       }
     ).await
       .create()
@@ -132,8 +282,87 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
         fail(s"Unexpected result received: [$result]")
       }
       .recover { case NonFatal(e: ServiceStartupFailure) =>
-        e.cause should be("file")
-        e.message should startWith("RuntimeException: test failure")
+        endpoint.stop()
+
+        e.cause should be("token")
+        e.message should include("400 Bad Request")
+      }
+  }
+
+  it should "handle API token retrieval failures" in {
+    val tokenEndpointPort = ports.dequeue()
+    val allowedGrants = Seq("client_credentials") // API token retrieval NOT allowed; core token retrieval IS allowed
+    val endpoint = MockTokenEndpoint(port = tokenEndpointPort, token = "test-token", allowedGrants = allowedGrants)
+    endpoint.start()
+
+    val modeArguments = ApplicationArguments.Mode.Bootstrap(
+      serverBootstrapUrl = s"https://test-url",
+      bootstrapCode = "test-code",
+      acceptSelfSignedCertificates = true,
+      userName = userName,
+      userPassword = userPassword,
+      userPasswordConfirm = userPassword
+    )
+
+    val directory = createCustomApplicationDirectory(
+      tokenEndpointPort = tokenEndpointPort,
+      apiEndpointPort = 9091
+    )
+
+    Secrets(
+      base = Base(modeArguments = modeArguments, applicationDirectory = directory).await,
+      init = new Init {
+        override def arguments(): Future[ApplicationArguments.Mode.Bootstrap] = Future.successful(modeArguments)
+        override def credentials(): Future[(String, Array[Char])] = Future.successful((userName, userPassword))
+      }
+    ).await
+      .create()
+      .map { result =>
+        fail(s"Unexpected result received: [$result]")
+      }
+      .recover { case NonFatal(e: ServiceStartupFailure) =>
+        endpoint.stop()
+
+        e.cause should be("token")
+        e.message should include("400 Bad Request")
+      }
+  }
+
+  it should "handle key retrieval failures" in {
+    val tokenEndpointPort = ports.dequeue()
+    val tokenEndpoint = MockTokenEndpoint(port = tokenEndpointPort, token = apiCredentials.token)
+    tokenEndpoint.start()
+
+    val modeArguments = ApplicationArguments.Mode.Bootstrap(
+      serverBootstrapUrl = s"https://test-url",
+      bootstrapCode = "test-code",
+      acceptSelfSignedCertificates = true,
+      userName = userName,
+      userPassword = userPassword,
+      userPasswordConfirm = userPassword
+    )
+
+    val directory = createCustomApplicationDirectory(
+      tokenEndpointPort = tokenEndpointPort,
+      apiEndpointPort = 9999
+    )
+
+    Secrets(
+      base = Base(modeArguments = modeArguments, applicationDirectory = directory).await,
+      init = new Init {
+        override def arguments(): Future[ApplicationArguments.Mode.Bootstrap] = Future.successful(modeArguments)
+        override def credentials(): Future[(String, Array[Char])] = Future.successful((userName, userPassword))
+      }
+    ).await
+      .create()
+      .map { result =>
+        fail(s"Unexpected result received: [$result]")
+      }
+      .recover { case NonFatal(e: ServiceStartupFailure) =>
+        tokenEndpoint.stop()
+
+        e.cause should be("api")
+        e.message should include("Connection refused")
       }
   }
 
@@ -142,11 +371,16 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       serverBootstrapUrl = s"https://test-url",
       bootstrapCode = "test-code",
       acceptSelfSignedCertificates = true,
+      userName = userName,
       userPassword = userPassword,
       userPasswordConfirm = userPassword
     )
 
-    val directory = createCustomApplicationDirectory(deviceSecret = Some(encryptedDeviceSecret))
+    val directory = createCustomApplicationDirectory(
+      tokenEndpointPort = 9090,
+      apiEndpointPort = 9091,
+      deviceSecret = Some(localEncryptedDeviceSecret)
+    )
 
     for {
       base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
@@ -155,19 +389,37 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       _ <- secrets.create()
       deviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
     } yield {
-      deviceSecret should be(encryptedDeviceSecret)
+      deviceSecret should be(localEncryptedDeviceSecret)
     }
   }
 
   private def createCustomApplicationDirectory(): ApplicationDirectory =
-    createCustomApplicationDirectory(deviceSecret = None)
+    createCustomApplicationDirectory(tokenEndpointPort = 9090, apiEndpointPort = 9091, deviceSecret = None)
 
-  private def createCustomApplicationDirectory(deviceSecret: Option[ByteString]): ApplicationDirectory =
+  private def createCustomApplicationDirectory(tokenEndpointPort: Int, apiEndpointPort: Int): ApplicationDirectory =
+    createCustomApplicationDirectory(
+      tokenEndpointPort = tokenEndpointPort,
+      apiEndpointPort = apiEndpointPort,
+      deviceSecret = None
+    )
+
+  private def createCustomApplicationDirectory(
+    apiEndpointPort: Int,
+    tokenEndpointPort: Int,
+    deviceSecret: Option[ByteString]
+  ): ApplicationDirectory =
     createApplicationDirectory(
       init = dir => {
         val path = dir.config.get
         java.nio.file.Files.createDirectories(path)
-        java.nio.file.Files.writeString(path.resolve(Files.ConfigOverride), "")
+
+        java.nio.file.Files.writeString(
+          path.resolve(Files.ConfigOverride),
+          s"""{
+             |$tokenEndpointConfigEntry: "http://localhost:$tokenEndpointPort/oauth/token",
+             |$apiEndpointConfigEntry: "http://localhost:$apiEndpointPort"
+             }""".stripMargin.replaceAll("\n", "")
+        )
 
         deviceSecret.foreach { secret =>
           java.nio.file.Files.write(path.resolve(Files.DeviceSecret), secret.toArray)
@@ -177,12 +429,23 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
   private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
-    "InitSpec"
+    "BootstrapSecretsSpec"
   )
 
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
-  private val encryptedDeviceSecret = "08ko0LWDalPvEHna/WWuq3LoEaA3m4dQ1QuP".decodeFromBase64 // decrypted == "test-secret"
+  private val ports: mutable.Queue[Int] = (39000 to 39100).to(mutable.Queue)
 
+  private val remoteEncryptedDeviceSecret = "trHMvaUulBOLG7NlWGryUHEeGA0IxkE39pEG".decodeFromBase64 // decrypted == "test-secret"
+  private val localEncryptedDeviceSecret = "08ko0LWDalPvEHna/WWuq3LoEaA3m4dQ1QuP".decodeFromBase64 // decrypted == "test-secret"
+
+  private val userName = "test-user"
   private val userPassword = "test-password".toCharArray
+
+  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+  private val apiCredentials = OAuth2BearerToken("test-token")
+
+  private val apiEndpointConfigEntry = "stasis.client.server.api.url"
+  private val tokenEndpointConfigEntry = "stasis.client.server.authentication.token-endpoint"
 }

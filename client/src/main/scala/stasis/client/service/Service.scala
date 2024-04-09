@@ -81,6 +81,9 @@ trait Service { _: Service.Arguments =>
         base <- components.maintenance.Base(modeArguments = mode, applicationDirectory = applicationDirectory)
         certificates <- components.maintenance.Certificates(base)
         _ <- certificates.apply()
+        init <- components.maintenance.Init(base, console = console)
+        secrets <- components.maintenance.Secrets(base, init)
+        _ <- secrets.apply()
       } yield {
         mode
       }

@@ -9,7 +9,7 @@ import scala.concurrent.Future
 
 trait Init {
   def arguments(): Future[ApplicationArguments.Mode.Bootstrap]
-  def credentials(): Future[Array[Char]]
+  def credentials(): Future[(String, Array[Char])]
 }
 
 object Init {
@@ -30,7 +30,7 @@ object Init {
         override def arguments(): Future[ApplicationArguments.Mode.Bootstrap] =
           bootstrap.init.ViaStdIn.retrieveArguments(console, args)
 
-        override def credentials(): Future[Array[Char]] =
+        override def credentials(): Future[(String, Array[Char])] =
           bootstrap.init.ViaStdIn.retrieveCredentials(console, args)
       }
     )
@@ -41,7 +41,7 @@ object Init {
         override def arguments(): Future[ApplicationArguments.Mode.Bootstrap] =
           bootstrap.init.ViaCli.retrieveArguments(args)
 
-        override def credentials(): Future[Array[Char]] =
+        override def credentials(): Future[(String, Array[Char])] =
           bootstrap.init.ViaCli.retrieveCredentials(args)
       }
     )

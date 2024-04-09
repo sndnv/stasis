@@ -1,8 +1,10 @@
 package stasis.test.specs.unit.client.mocks
 
+import org.apache.pekko.Done
+import org.apache.pekko.util.ByteString
+
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
-
 import stasis.client.api.clients.ServerApiEndpointClient
 import stasis.client.model.DatasetMetadata
 import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}
@@ -33,6 +35,8 @@ class MockServerApiEndpointClient(
     Statistic.DatasetMetadataWithEntryRetrieved -> new AtomicInteger(0),
     Statistic.UserRetrieved -> new AtomicInteger(0),
     Statistic.DeviceRetrieved -> new AtomicInteger(0),
+    Statistic.DeviceKeyPushed -> new AtomicInteger(0),
+    Statistic.DeviceKeyPulled -> new AtomicInteger(0),
     Statistic.Ping -> new AtomicInteger(0)
   )
 
@@ -126,6 +130,16 @@ class MockServerApiEndpointClient(
     )
   }
 
+  override def pushDeviceKey(key: ByteString): Future[Done] = {
+    stats(Statistic.DeviceKeyPushed).getAndIncrement()
+    Future.successful(Done)
+  }
+
+  override def pullDeviceKey(): Future[Option[ByteString]] = {
+    stats(Statistic.DeviceKeyPulled).getAndIncrement()
+    Future.successful(Some(ByteString("test-key")))
+  }
+
   override def ping(): Future[Ping] = {
     stats(Statistic.Ping).getAndIncrement()
     Future.successful(Ping())
@@ -152,6 +166,8 @@ object MockServerApiEndpointClient {
     case object DatasetMetadataWithEntryRetrieved extends Statistic
     case object UserRetrieved extends Statistic
     case object DeviceRetrieved extends Statistic
+    case object DeviceKeyPushed extends Statistic
+    case object DeviceKeyPulled extends Statistic
     case object Ping extends Statistic
   }
 }

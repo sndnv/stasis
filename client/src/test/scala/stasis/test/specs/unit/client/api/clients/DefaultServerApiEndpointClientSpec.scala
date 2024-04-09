@@ -351,6 +351,22 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
+  it should "fail to retrieve dataset metadata without a decryption context" in {
+    val apiPort = ports.dequeue()
+    val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials)
+    api.start(port = apiPort)
+
+    val apiClient = createClient(apiPort, decryption = DefaultServerApiEndpointClient.DecryptionContext.Disabled)
+
+    apiClient
+      .datasetMetadata(entry = Generators.generateEntry)
+      .failed
+      .map { e =>
+        e should be(an[IllegalStateException])
+        e.getMessage should be("Cannot retrieve dataset metadata; decryption context is disabled")
+      }
+  }
+
   it should "retrieve current user" in {
     val apiPort = ports.dequeue()
     val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials)
@@ -377,6 +393,51 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .map { device =>
         device.active should be(true)
         device.id should be(apiClient.self)
+      }
+  }
+
+  it should "push current device key" in {
+    val apiPort = ports.dequeue()
+    val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials)
+    api.start(port = apiPort)
+
+    val apiClient = createClient(apiPort)
+
+    for {
+      _ <- apiClient.pushDeviceKey(ByteString("test-key"))
+      deviceKeyExists <- api.deviceKeyExists(apiClient.self)
+    } yield {
+      deviceKeyExists should be(true)
+    }
+  }
+
+  it should "pull current device key" in {
+    val expectedKey = ByteString("test-key")
+
+    val apiPort = ports.dequeue()
+    val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials, expectedDeviceKey = Some(expectedKey))
+    api.start(port = apiPort)
+
+    val apiClient = createClient(apiPort)
+
+    apiClient
+      .pullDeviceKey()
+      .map { key =>
+        key should be(Some(expectedKey))
+      }
+  }
+
+  it should "fail to pull missing device key" in {
+    val apiPort = ports.dequeue()
+    val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials)
+    api.start(port = apiPort)
+
+    val apiClient = createClient(apiPort)
+
+    apiClient
+      .pullDeviceKey()
+      .map { key =>
+        key should be(None)
       }
   }
 
@@ -471,6 +532,7 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
   private def createClient(
     apiPort: Int,
     self: Device.Id = Device.generateId(),
+    decryption: DefaultServerApiEndpointClient.DecryptionContext = defaultContext(),
     context: Option[EndpointContext] = None
   ): DefaultServerApiEndpointClient = {
     val client = new DefaultServerApiEndpointClient(
@@ -480,17 +542,7 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
       },
       credentials = Future.successful(apiCredentials),
       self = self,
-      decryption = DefaultServerApiEndpointClient.DecryptionContext(
-        core = new MockServerCoreEndpointClient(self = Node.generateId(), crates = Map.empty) {
-          override def pull(crate: Crate.Id): Future[Option[Source[ByteString, NotUsed]]] =
-            Future.successful(Some(Source.single(ByteString("test-crate"))))
-        },
-        deviceSecret = Fixtures.Secrets.Default,
-        decoder = new MockEncryption() {
-          override def decrypt(metadataSecret: DeviceMetadataSecret): Flow[ByteString, ByteString, NotUsed] =
-            Flow[ByteString].mapAsync(parallelism = 1)(_ => DatasetMetadata.toByteString(DatasetMetadata.empty))
-        }
-      ),
+      decryption = decryption,
       context = context,
       requestBufferSize = 100
     )
@@ -502,6 +554,19 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     client
   }
+
+  private def defaultContext(): DefaultServerApiEndpointClient.DecryptionContext =
+    DefaultServerApiEndpointClient.DecryptionContext(
+      core = new MockServerCoreEndpointClient(self = Node.generateId(), crates = Map.empty) {
+        override def pull(crate: Crate.Id): Future[Option[Source[ByteString, NotUsed]]] =
+          Future.successful(Some(Source.single(ByteString("test-crate"))))
+      },
+      deviceSecret = Fixtures.Secrets.Default,
+      decoder = new MockEncryption() {
+        override def decrypt(metadataSecret: DeviceMetadataSecret): Flow[ByteString, ByteString, NotUsed] =
+          Flow[ByteString].mapAsync(parallelism = 1)(_ => DatasetMetadata.toByteString(DatasetMetadata.empty))
+      }
+    )
 
   private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
     Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
