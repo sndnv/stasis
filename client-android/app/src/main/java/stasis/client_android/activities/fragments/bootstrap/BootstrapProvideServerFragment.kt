@@ -26,7 +26,7 @@ class BootstrapProvideServerFragment : Fragment() {
             binding.bootstrapProvideServer.validate(withError = R.string.bootstrap_server_error) { bootstrapServerUrl ->
                 findNavController().navigate(
                     BootstrapProvideServerFragmentDirections
-                        .actionBootstrapProvideServerFragmentToBootstrapProvidePasswordFragment(
+                        .actionBootstrapProvideServerFragmentToBootstrapProvideUsernameFragment(
                             bootstrapServerUrl = bootstrapServerUrl
                         )
                 )

@@ -13,13 +13,13 @@
             android:layout_height="192dp"
             android:contentDescription="@string/bootstrap_logo"
             android:src="@drawable/ic_launcher_foreground"
-            app:layout_constraintBottom_toTopOf="@id/bootstrap_provide_password_container"
+            app:layout_constraintBottom_toTopOf="@id/bootstrap_provide_username_container"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <LinearLayout
-            android:id="@+id/bootstrap_provide_password_container"
+            android:id="@+id/bootstrap_provide_username_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
@@ -31,41 +31,21 @@
             app:layout_constraintTop_toBottomOf="@id/logo">
 
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/bootstrap_provide_password"
+                android:id="@+id/bootstrap_provide_username"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:importantForAutofill="no"
-                android:inputType="textPassword"
-                app:endIconMode="password_toggle"
+                android:inputType="text"
                 app:startIconCheckable="true"
                 app:startIconDrawable="@drawable/ic_info">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/bootstrap_provide_password_input"
+                    android:id="@+id/bootstrap_provide_username_input"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="@string/bootstrap_password_hint"
-                    android:inputType="textPassword" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/bootstrap_provide_password_verify"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:importantForAutofill="no"
-                android:inputType="textPassword"
-                app:endIconMode="password_toggle"
-                app:startIconCheckable="true"
-                app:startIconDrawable="@drawable/ic_info">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/bootstrap_provide_password_verify_input"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="@string/bootstrap_password_verify_hint"
-                    android:inputType="textPassword" />
+                    android:hint="@string/bootstrap_username_hint"
+                    android:inputType="text" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <GridLayout
@@ -76,23 +56,23 @@
                 android:rowCount="1">
 
                 <Button
-                    android:id="@+id/bootstrap_provide_password_previous_button"
+                    android:id="@+id/bootstrap_provide_username_previous_button"
                     style="?attr/materialButtonOutlinedStyle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_row="0"
                     android:layout_column="0"
                     android:layout_margin="16dp"
-                    android:text="@string/bootstrap_password_previous_button" />
+                    android:text="@string/bootstrap_username_previous_button" />
 
                 <Button
-                    android:id="@+id/bootstrap_provide_password_next_button"
+                    android:id="@+id/bootstrap_provide_username_next_button"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_row="0"
                     android:layout_column="2"
                     android:layout_margin="16dp"
-                    android:text="@string/bootstrap_password_next_button" />
+                    android:text="@string/bootstrap_username_next_button" />
             </GridLayout>
         </LinearLayout>
 

@@ -113,7 +113,7 @@ object StasisClientDependencies {
         trackerViews: TrackerViews,
         datasetDefinitionsCache: Cache<DatasetDefinitionId, DatasetDefinition>,
         datasetEntriesCache: Cache<DatasetEntryId, DatasetEntry>,
-        datasetMetadataCache:  Cache<DatasetEntryId, DatasetMetadata>
+        datasetMetadataCache: Cache<DatasetEntryId, DatasetMetadata>
     ): ProviderContext.Factory =
         object : ProviderContext.Factory {
             override fun getOrCreate(preferences: SharedPreferences): Reference<ProviderContext> =
@@ -173,6 +173,26 @@ object StasisClientDependencies {
                                         preferences = preferences
                                     )
                                 },
+                                pushDeviceSecret = { api, userPassword ->
+                                    Secrets.pushDeviceSecret(
+                                        user = user,
+                                        userSalt = userSalt,
+                                        userPassword = userPassword,
+                                        device = device,
+                                        preferences = preferences,
+                                        api = api
+                                    )
+                                },
+                                pullDeviceSecret = { api, userPassword ->
+                                    Secrets.pullDeviceSecret(
+                                        user = user,
+                                        userSalt = userSalt,
+                                        userPassword = userPassword,
+                                        device = device,
+                                        preferences = preferences,
+                                        api = api
+                                    )
+                                },
                                 getAuthenticationPassword = { userPassword ->
                                     Secrets.loadUserAuthenticationPassword(
                                         user = user,
@@ -194,7 +214,7 @@ object StasisClientDependencies {
                                 underlying = DefaultServerApiEndpointClient(
                                     serverApiUrl = apiConfig.url,
                                     credentials = { HttpCredentials.OAuth2BearerToken(token = credentials.api.get().access_token) },
-                                    decryption = DefaultServerApiEndpointClient.DecryptionContext(
+                                    decryption = DefaultServerApiEndpointClient.DecryptionContext.Default(
                                         core = coreClient,
                                         deviceSecret = { credentials.deviceSecret.get() },
                                         decoder = Aes

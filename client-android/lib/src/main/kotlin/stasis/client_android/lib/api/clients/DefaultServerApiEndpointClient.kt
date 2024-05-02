@@ -1,5 +1,8 @@
 package stasis.client_android.lib.api.clients
 
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
+import okio.ByteString
 import stasis.client_android.lib.api.clients.exceptions.ResourceMissingFailure
 import stasis.client_android.lib.api.clients.internal.ClientExtensions
 import stasis.client_android.lib.encryption.Decoder
@@ -27,6 +30,7 @@ import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
 import java.time.Instant
 
+@Suppress("TooManyFunctions")
 class DefaultServerApiEndpointClient(
     serverApiUrl: String,
     override val credentials: suspend () -> HttpCredentials,
@@ -138,16 +142,24 @@ class DefaultServerApiEndpointClient(
         }
 
 
-    override suspend fun datasetMetadata(entry: DatasetEntry): Try<DatasetMetadata> = Try {
-        val encryptedEntryMetadata = decryption.core.pull(crate = entry.metadata)
+    override suspend fun datasetMetadata(entry: DatasetEntry): Try<DatasetMetadata> =
+        when (decryption) {
+            is DecryptionContext.Default -> Try {
 
-        DatasetMetadata.decrypt(
-            metadataCrate = entry.metadata,
-            metadataSecret = decryption.deviceSecret().toMetadataSecret(entry.metadata),
-            metadata = encryptedEntryMetadata,
-            decoder = decryption.decoder
-        )
-    }
+                val encryptedEntryMetadata = decryption.core.pull(crate = entry.metadata)
+
+                DatasetMetadata.decrypt(
+                    metadataCrate = entry.metadata,
+                    metadataSecret = decryption.deviceSecret().toMetadataSecret(entry.metadata),
+                    metadata = encryptedEntryMetadata,
+                    decoder = decryption.decoder
+                )
+            }
+
+            is DecryptionContext.Disabled -> {
+                Failure(IllegalStateException("Cannot retrieve dataset metadata; decryption context is disabled"))
+            }
+        }
 
     override suspend fun user(): Try<User> =
         jsonRequest { builder ->
@@ -163,6 +175,29 @@ class DefaultServerApiEndpointClient(
                 .get()
         }
 
+    override suspend fun pushDeviceKey(key: ByteString): Try<Unit> =
+        Try {
+            request { builder ->
+                builder
+                    .url("$server/v1/devices/own/$self/key")
+                    .put(key.toRequestBody("application/octet-stream".toMediaType()))
+            }.successful()
+        }
+
+    override suspend fun pullDeviceKey(): Try<ByteString> =
+        Try {
+            val result = request { builder ->
+                builder
+                    .url("$server/v1/devices/own/$self/key")
+                    .get()
+            }.successful().body?.byteString()?.takeIf { it.size != 0 }
+
+            when (result) {
+                null -> throw ResourceMissingFailure()
+                else -> result
+            }
+        }
+
     override suspend fun ping(): Try<Ping> =
         jsonRequest { builder ->
             builder
@@ -170,9 +205,13 @@ class DefaultServerApiEndpointClient(
                 .get()
         }
 
-    data class DecryptionContext(
-        val core: ServerCoreEndpointClient,
-        val deviceSecret: () -> DeviceSecret,
-        val decoder: Decoder
-    )
+    sealed class DecryptionContext {
+        data class Default(
+            val core: ServerCoreEndpointClient,
+            val deviceSecret: () -> DeviceSecret,
+            val decoder: Decoder
+        ) : DecryptionContext()
+
+        data object Disabled : DecryptionContext()
+    }
 }

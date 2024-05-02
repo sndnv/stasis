@@ -1,8 +1,9 @@
-package stasis.test.client_android.lib.mocks
+package stasis.test.client_android.mocks
 
 import okio.ByteString
 import okio.ByteString.Companion.toByteString
 import stasis.client_android.lib.api.clients.ServerApiEndpointClient
+import stasis.client_android.lib.api.clients.exceptions.ResourceMissingFailure
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
@@ -20,10 +21,12 @@ import stasis.client_android.lib.model.server.schedules.ScheduleId
 import stasis.client_android.lib.model.server.users.User
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Success
-import stasis.test.client_android.lib.model.Generators
+import stasis.client_android.lib.utils.Try.Failure
+import java.lang.RuntimeException
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 open class MockServerApiEndpointClient(
     override val self: DeviceId
@@ -47,21 +50,18 @@ open class MockServerApiEndpointClient(
         Statistic.Ping to AtomicInteger(0)
     )
 
+    private val deviceSecretRef: AtomicReference<ByteString?> = AtomicReference(null)
+
     override val server: String = "mock-api-server"
 
     override suspend fun datasetDefinitions(): Try<List<DatasetDefinition>> {
         stats[Statistic.DatasetDefinitionsRetrieved]?.getAndIncrement()
-        return Success(
-            listOf(
-                Generators.generateDefinition(),
-                Generators.generateDefinition()
-            )
-        )
+        return Success(emptyList())
     }
 
     override suspend fun datasetDefinition(definition: DatasetDefinitionId): Try<DatasetDefinition> {
         stats[Statistic.DatasetDefinitionRetrieved]?.getAndIncrement()
-        return Success(Generators.generateDefinition())
+        return Failure(RuntimeException("Test failure"))
     }
 
     override suspend fun createDatasetDefinition(request: CreateDatasetDefinition): Try<CreatedDatasetDefinition> {
@@ -71,18 +71,12 @@ open class MockServerApiEndpointClient(
 
     override suspend fun datasetEntries(definition: DatasetDefinitionId): Try<List<DatasetEntry>> {
         stats[Statistic.DatasetEntriesRetrieved]?.getAndIncrement()
-        return Success(
-            listOf(
-                Generators.generateEntry(),
-                Generators.generateEntry(),
-                Generators.generateEntry()
-            )
-        )
+        return Success(emptyList())
     }
 
     override suspend fun datasetEntry(entry: DatasetEntryId): Try<DatasetEntry> {
         stats[Statistic.DatasetEntryRetrieved]?.getAndIncrement()
-        return Success(Generators.generateEntry())
+        return Failure(RuntimeException("Test failure"))
     }
 
     override suspend fun latestEntry(
@@ -90,7 +84,7 @@ open class MockServerApiEndpointClient(
         until: Instant?
     ): Try<DatasetEntry?> {
         stats[Statistic.DatasetEntryRetrievedLatest]?.getAndIncrement()
-        return Success(Generators.generateEntry())
+        return Failure(RuntimeException("Test failure"))
     }
 
     override suspend fun createDatasetEntry(request: CreateDatasetEntry): Try<CreatedDatasetEntry> {
@@ -100,18 +94,12 @@ open class MockServerApiEndpointClient(
 
     override suspend fun publicSchedules(): Try<List<Schedule>> {
         stats[Statistic.PublicSchedulesRetrieved]?.getAndIncrement()
-        return Success(
-            listOf(
-                Generators.generateSchedule().copy(isPublic = true),
-                Generators.generateSchedule().copy(isPublic = true),
-                Generators.generateSchedule().copy(isPublic = true)
-            )
-        )
+        return Success(emptyList())
     }
 
     override suspend fun publicSchedule(schedule: ScheduleId): Try<Schedule> {
         stats[Statistic.PublicScheduleRetrieved]?.getAndIncrement()
-        return Success(Generators.generateSchedule().copy(id = schedule, isPublic = true))
+        return Failure(RuntimeException("Test failure"))
     }
 
     override suspend fun datasetMetadata(entry: DatasetEntryId): Try<DatasetMetadata> {
@@ -126,22 +114,26 @@ open class MockServerApiEndpointClient(
 
     override suspend fun user(): Try<User> {
         stats[Statistic.UserRetrieved]?.getAndIncrement()
-        return Success(Generators.generateUser())
+        return Failure(RuntimeException("Test failure"))
     }
 
     override suspend fun device(): Try<Device> {
         stats[Statistic.DeviceRetrieved]?.getAndIncrement()
-        return Success(Generators.generateDevice())
+        return Failure(RuntimeException("Test failure"))
     }
 
     override suspend fun pushDeviceKey(key: ByteString): Try<Unit> {
         stats[Statistic.DeviceKeyPushed]?.getAndIncrement()
+        deviceSecretRef.set(key)
         return Success(Unit)
     }
 
     override suspend fun pullDeviceKey(): Try<ByteString> {
         stats[Statistic.DeviceKeyPulled]?.getAndIncrement()
-        return Success("test-key".toByteArray().toByteString())
+        return when (val secret = deviceSecretRef.get()) {
+            null -> Failure(ResourceMissingFailure())
+            else -> Success(secret)
+        }
     }
 
     override suspend fun ping(): Try<Ping> {
@@ -151,6 +143,9 @@ open class MockServerApiEndpointClient(
 
     val statistics: Map<Statistic, Int>
         get() = stats.mapValues { it.value.get() }
+
+    val deviceSecret: ByteString?
+        get() = deviceSecretRef.get()
 
     sealed class Statistic {
         object DatasetEntryCreated : Statistic()

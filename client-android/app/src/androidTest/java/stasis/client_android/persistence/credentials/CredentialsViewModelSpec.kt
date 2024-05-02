@@ -111,6 +111,42 @@ class CredentialsViewModelSpec {
         }
     }
 
+    @Test
+    fun supportPushingDeviceSecret() {
+        withModel { model ->
+            val pushResult = AtomicReference<Try<Unit>?>(null)
+
+            model.pushDeviceSecret(
+                api = MockServerApiEndpointClient(),
+                password = "password",
+            ) { pushResult.set(it) }
+
+            runBlocking {
+                eventually {
+                    assertThat(pushResult.get()?.isSuccess ?: false, equalTo(true))
+                }
+            }
+        }
+    }
+
+    @Test
+    fun supportPullingDeviceSecret() {
+        withModel { model ->
+            val pullResult = AtomicReference<Try<Unit>?>(null)
+
+            model.pullDeviceSecret(
+                api = MockServerApiEndpointClient(),
+                password = "password",
+            ) { pullResult.set(it) }
+
+            runBlocking {
+                eventually {
+                    assertThat(pullResult.get()?.isSuccess ?: false, equalTo(true))
+                }
+            }
+        }
+    }
+
     @get:Rule
     var instantTaskExecutorRule = InstantTaskExecutorRule()
 
@@ -146,6 +182,8 @@ class CredentialsViewModelSpec {
                                 initDeviceSecret = { Fixtures.Secrets.Default },
                                 loadDeviceSecret = { Success(Fixtures.Secrets.Default) },
                                 storeDeviceSecret = { _, _ -> Success(Fixtures.Secrets.Default) },
+                                pushDeviceSecret = { _, _ -> Success(Unit) },
+                                pullDeviceSecret = { _, _ -> Success(Fixtures.Secrets.Default) },
                                 coroutineScope = CoroutineScope(Dispatchers.IO),
                                 getAuthenticationPassword = { Fixtures.Secrets.UserPassword.toAuthenticationPassword() }
                             ),

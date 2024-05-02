@@ -116,7 +116,9 @@ android {
 
     packaging {
         resources {
-            excludes += setOf("META-INF/atomicfu.kotlin_module")
+            excludes += setOf("META-INF/atomicfu.kotlin_module", "META-INF/LICENSE.md")
+            merges += "META-INF/LICENSE.md"
+            merges += "META-INF/LICENSE-notice.md"
         }
     }
 

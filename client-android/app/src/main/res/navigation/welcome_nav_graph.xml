@@ -51,8 +51,21 @@
         android:label="BootstrapProvideServerFragment">
 
         <action
-            android:id="@+id/action_bootstrapProvideServerFragment_to_bootstrapProvidePasswordFragment"
+            android:id="@+id/action_bootstrapProvideServerFragment_to_bootstrapProvideUsernameFragment"
+            app:destination="@id/bootstrapProvideUsernameFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/bootstrapProvideUsernameFragment"
+        android:name="stasis.client_android.activities.fragments.bootstrap.BootstrapProvideUsernameFragment"
+        android:label="BootstrapProvideUsernameFragment">
+
+        <action
+            android:id="@+id/action_bootstrapProvideUsernameFragment_to_bootstrapProvidePasswordFragment"
             app:destination="@id/bootstrapProvidePasswordFragment" />
+        <argument
+            android:name="bootstrapServerUrl"
+            app:argType="string" />
     </fragment>
 
     <fragment
@@ -65,6 +78,9 @@
             app:destination="@id/bootstrapProvideCodeFragment" />
         <argument
             android:name="bootstrapServerUrl"
+            app:argType="string" />
+        <argument
+            android:name="username"
             app:argType="string" />
     </fragment>
 
@@ -80,6 +96,9 @@
             app:popUpToInclusive="true" />
         <argument
             android:name="bootstrapServerUrl"
+            app:argType="string" />
+        <argument
+            android:name="username"
             app:argType="string" />
         <argument
             android:name="userPassword"

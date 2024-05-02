@@ -8,6 +8,7 @@ import androidx.lifecycle.map
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import okio.ByteString
+import stasis.client_android.lib.api.clients.ServerApiEndpointClient
 import stasis.client_android.lib.security.AccessTokenResponse
 import stasis.client_android.lib.security.CredentialsProvider
 import stasis.client_android.lib.utils.Reference
@@ -110,6 +111,38 @@ class CredentialsRepository(
                     f(result.map {})
                 }
             }
+        ) {
+            null -> f(Failure(RuntimeException("Client not configured")))
+            else -> Unit // do nothing
+        }
+    }
+
+    fun pushDeviceSecret(
+        api: ServerApiEndpointClient,
+        password: String,
+        f: (Try<Unit>) -> Unit
+    ) {
+        when (
+            withOAuthContext { provider ->
+                provider.pushDeviceSecret(
+                    api = api,
+                    password = password,
+                    f = f
+                )
+            }
+        ) {
+            null -> f(Failure(RuntimeException("Client not configured")))
+            else -> Unit // do nothing
+        }
+    }
+
+    fun pullDeviceSecret(
+        api: ServerApiEndpointClient,
+        password: String,
+        f: (Try<Unit>) -> Unit
+    ) {
+        when (
+            withOAuthContext { provider -> provider.pullDeviceSecret(api = api, password = password, f = f) }
         ) {
             null -> f(Failure(RuntimeException("Client not configured")))
             else -> Unit // do nothing

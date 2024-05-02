@@ -1,5 +1,6 @@
 package stasis.client_android.lib.api.clients
 
+import okio.ByteString
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
@@ -18,6 +19,7 @@ import stasis.client_android.lib.model.server.users.User
 import stasis.client_android.lib.utils.Try
 import java.time.Instant
 
+@Suppress("TooManyFunctions")
 interface ServerApiEndpointClient {
     val self: DeviceId
     val server: String
@@ -39,6 +41,8 @@ interface ServerApiEndpointClient {
 
     suspend fun user(): Try<User>
     suspend fun device(): Try<Device>
+    suspend fun pushDeviceKey(key: ByteString): Try<Unit>
+    suspend fun pullDeviceKey(): Try<ByteString>
 
     suspend fun ping(): Try<Ping>
 }

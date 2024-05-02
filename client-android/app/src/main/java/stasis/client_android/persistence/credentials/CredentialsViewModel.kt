@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import okio.ByteString
+import stasis.client_android.lib.api.clients.ServerApiEndpointClient
 import stasis.client_android.lib.security.AccessTokenResponse
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.providers.ProviderContext
@@ -32,4 +33,16 @@ class CredentialsViewModel @Inject constructor(
 
     fun updateDeviceSecret(password: String, secret: ByteString, f: (Try<Unit>) -> Unit) =
         repo.updateDeviceSecret(password, secret, f)
+
+    fun pushDeviceSecret(
+        api: ServerApiEndpointClient,
+        password: String,
+        f: (Try<Unit>) -> Unit
+    ) = repo.pushDeviceSecret(api, password, f)
+
+    fun pullDeviceSecret(
+        api: ServerApiEndpointClient,
+        password: String,
+        f: (Try<Unit>) -> Unit
+    ) = repo.pullDeviceSecret(api, password, f)
 }

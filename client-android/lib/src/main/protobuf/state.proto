@@ -3,9 +3,8 @@ syntax = "proto3";
 import "metadata.proto";
 
 option java_multiple_files = true;
-option java_package = "stasis.client_android.lib.model.proto";
 
-package stasis.client;
+package stasis.client_android.lib.model.proto;
 
 message BackupStateCollection {
   map<string, BackupState> collection = 1;

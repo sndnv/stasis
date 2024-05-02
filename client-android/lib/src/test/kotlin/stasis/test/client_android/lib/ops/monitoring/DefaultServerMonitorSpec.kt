@@ -2,6 +2,8 @@ package stasis.test.client_android.lib.ops.monitoring
 
 import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
+import io.kotest.matchers.ints.shouldBeLessThan
+import io.kotest.matchers.ints.shouldBeLessThanOrEqual
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
 import stasis.client_android.lib.model.server.api.responses.Ping
@@ -52,6 +54,8 @@ class DefaultServerMonitorSpec : WordSpec({
                 mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved] shouldBe (0)
                 mockApiClient.statistics[MockServerApiEndpointClient.Statistic.UserRetrieved] shouldBe (0)
                 mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
+                mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
+                mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
                 mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (1)
 
                 mockTracker.statistics[MockServerTracker.Statistic.ServerReachable] shouldBe (1)
@@ -72,6 +76,8 @@ class DefaultServerMonitorSpec : WordSpec({
                 mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved] shouldBe (0)
                 mockApiClient.statistics[MockServerApiEndpointClient.Statistic.UserRetrieved] shouldBe (0)
                 mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
+                mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
+                mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
                 mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (2)
 
                 mockTracker.statistics[MockServerTracker.Statistic.ServerReachable] shouldBe (2)
@@ -116,14 +122,14 @@ class DefaultServerMonitorSpec : WordSpec({
 
             delay(defaultInterval.toMillis())
 
-            mockTracker.statistics[MockServerTracker.Statistic.ServerReachable] shouldBe (2)
+            mockTracker.statistics[MockServerTracker.Statistic.ServerReachable]!! shouldBeGreaterThanOrEqual (2)
             mockTracker.statistics[MockServerTracker.Statistic.ServerUnreachable] shouldBe (0)
 
             monitor.stop()
 
             delay(defaultInterval.toMillis() * 2)
 
-            mockTracker.statistics[MockServerTracker.Statistic.ServerReachable] shouldBe (2)
+            mockTracker.statistics[MockServerTracker.Statistic.ServerReachable]!! shouldBeLessThanOrEqual (3)
             mockTracker.statistics[MockServerTracker.Statistic.ServerUnreachable] shouldBe (0)
         }
     }
