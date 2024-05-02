@@ -151,7 +151,7 @@ class _OwnersState extends State<Owners> {
               onFormSubmitted: () {
                 final subject = subjectField.controller!.text.trim();
 
-                final password = rawPasswordField.controller!.text.trim();
+                final password = rawPasswordField.controller!.text;
 
                 final futureAuthenticationPassword = (userSaltField.controller?.text.trim() ?? '').isNotEmpty
                     ? DerivedPasswords.deriveHashedUserAuthenticationPassword(
@@ -268,7 +268,7 @@ class _OwnersState extends State<Owners> {
                   : [rawPasswordField],
               submitAction: 'Update',
               onFormSubmitted: () {
-                final password = rawPasswordField.controller!.text.trim();
+                final password = rawPasswordField.controller!.text;
 
                 final futureAuthenticationPassword = (userSaltField.controller?.text.trim() ?? '').isNotEmpty
                     ? DerivedPasswords.deriveHashedUserAuthenticationPassword(

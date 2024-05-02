@@ -145,7 +145,7 @@ class _ClientsState extends State<Clients> {
                 final request = CreateClient(
                   redirectUri: redirectUriField.controller!.text.trim(),
                   tokenExpiration: int.parse(tokenExpirationField.controller!.text.trim()),
-                  rawSecret: rawSecretField.controller!.text.trim(),
+                  rawSecret: rawSecretField.controller!.text,
                   subject: subject.isEmpty ? null : subject,
                 );
 
@@ -235,7 +235,7 @@ class _ClientsState extends State<Clients> {
               submitAction: 'Update',
               onFormSubmitted: () {
                 final request = UpdateClientCredentials(
-                  rawSecret: rawSecretField.controller!.text.trim(),
+                  rawSecret: rawSecretField.controller!.text,
                 );
 
                 final messenger = ScaffoldMessenger.of(context);
