@@ -19,6 +19,7 @@ import stasis.client_android.Fixtures
 import stasis.client_android.await
 import stasis.client_android.eventually
 import stasis.client_android.failure
+import stasis.client_android.lib.api.clients.ServerApiEndpointClient
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.security.AccessTokenResponse
 import stasis.client_android.lib.security.CredentialsProvider
@@ -195,6 +196,130 @@ class CredentialsRepositorySpec {
         }
     }
 
+    @Test
+    fun supportPushingDeviceSecret() {
+        withSharedPreferences { preferences ->
+            val pushedSecret = AtomicBoolean(false)
+            val callbackSuccessful = AtomicBoolean(false)
+
+            val repo = CredentialsRepository(
+                configPreferences = preferences,
+                credentialsPreferences = preferences,
+                contextFactory = createContextFactory(
+                    pushDeviceSecret = { _, _ ->
+                        pushedSecret.set(true)
+                        Success(Unit)
+                    }
+                )
+            )
+
+            repo.pushDeviceSecret(
+                api = MockServerApiEndpointClient(),
+                password = "password",
+            ) { result ->
+                callbackSuccessful.set(result.isSuccess)
+            }
+
+            runBlocking {
+                eventually {
+                    assertThat(pushedSecret.get(), equalTo(true))
+                    assertThat(callbackSuccessful.get(), equalTo(true))
+                }
+            }
+        }
+    }
+
+    @Test
+    fun notPushDeviceSecretWhenNotConfigured() {
+        withSharedPreferences { preferences ->
+            val pushResult = AtomicReference<Try<Unit>?>(null)
+
+            val repo = CredentialsRepository(
+                configPreferences = preferences,
+                credentialsPreferences = preferences,
+                contextFactory = createContextFactory(provideConfig = false)
+            )
+
+            repo.pushDeviceSecret(
+                api = MockServerApiEndpointClient(),
+                password = "password",
+            ) { result ->
+                pushResult.set(result)
+            }
+
+            runBlocking {
+                eventually {
+                    assertThat(
+                        pushResult.get()?.failure()?.message ?: "<missing>",
+                        equalTo("Client not configured")
+                    )
+                }
+            }
+        }
+    }
+
+    @Test
+    fun supportPullingDeviceSecret() {
+        withSharedPreferences { preferences ->
+            val pulledSecret = AtomicBoolean(false)
+            val callbackSuccessful = AtomicBoolean(false)
+
+            val repo = CredentialsRepository(
+                configPreferences = preferences,
+                credentialsPreferences = preferences,
+                contextFactory = createContextFactory(
+                    pullDeviceSecret = { _, _ ->
+                        pulledSecret.set(true)
+                        Success(Fixtures.Secrets.Default)
+                    }
+                )
+            )
+
+            repo.pullDeviceSecret(
+                api = MockServerApiEndpointClient(),
+                password = "password",
+            ) { result ->
+                callbackSuccessful.set(result.isSuccess)
+            }
+
+            runBlocking {
+                eventually {
+                    assertThat(pulledSecret.get(), equalTo(true))
+                    assertThat(callbackSuccessful.get(), equalTo(true))
+                }
+            }
+        }
+    }
+
+    @Test
+    fun notPullDeviceSecretWhenNotConfigured() {
+        withSharedPreferences { preferences ->
+            val pullResult = AtomicReference<Try<Unit>?>(null)
+
+            val repo = CredentialsRepository(
+                configPreferences = preferences,
+                credentialsPreferences = preferences,
+                contextFactory = createContextFactory(provideConfig = false)
+            )
+
+            repo.pullDeviceSecret(
+                api = MockServerApiEndpointClient(),
+                password = "password",
+            ) { result ->
+                pullResult.set(result)
+            }
+
+            runBlocking {
+                eventually {
+                    assertThat(
+                        pullResult.get()?.failure()?.message ?: "<missing>",
+                        equalTo("Client not configured")
+                    )
+                }
+            }
+        }
+    }
+
     @get:Rule
     var instantTaskExecutorRule = InstantTaskExecutorRule()
 
@@ -220,7 +345,9 @@ class CredentialsRepositorySpec {
     private fun createContextFactory(
         withResponse: Try<AccessTokenResponse> = Success(tokenResponse),
         provideConfig: Boolean = true,
-        storeDeviceSecret: suspend (ByteString, CharArray) -> Try<DeviceSecret> = { _, _ -> Success(Fixtures.Secrets.Default) }
+        storeDeviceSecret: suspend (ByteString, CharArray) -> Try<DeviceSecret> = { _, _ -> Success(Fixtures.Secrets.Default) },
+        pushDeviceSecret: suspend (ServerApiEndpointClient, CharArray) -> Try<Unit> = { _, _ -> Success(Unit) },
+        pullDeviceSecret: suspend (ServerApiEndpointClient, CharArray) -> Try<DeviceSecret> = { _, _ -> Success(Fixtures.Secrets.Default) }
     ): ProviderContext.Factory =
         object : ProviderContext.Factory {
             override fun getOrCreate(preferences: SharedPreferences): Reference<ProviderContext> =
@@ -255,6 +382,8 @@ class CredentialsRepositorySpec {
                                 initDeviceSecret = { Fixtures.Secrets.Default },
                                 loadDeviceSecret = { Success(Fixtures.Secrets.Default) },
                                 storeDeviceSecret = storeDeviceSecret,
+                                pushDeviceSecret = pushDeviceSecret,
+                                pullDeviceSecret = pullDeviceSecret,
                                 coroutineScope = CoroutineScope(Dispatchers.IO),
                                 getAuthenticationPassword = { Fixtures.Secrets.UserPassword.toAuthenticationPassword() }
                             ),

@@ -18,8 +18,8 @@ fun <T> LiveData<T>.await(duration: Duration): T {
     val count = CountDownLatch(1)
 
     (object : Observer<T> {
-        override fun onChanged(t: T) {
-            result = t
+        override fun onChanged(value: T) {
+            result = value
             count.countDown()
             this@await.removeObserver(this)
         }

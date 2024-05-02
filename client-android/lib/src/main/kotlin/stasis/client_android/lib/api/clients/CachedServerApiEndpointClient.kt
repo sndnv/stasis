@@ -1,5 +1,6 @@
 package stasis.client_android.lib.api.clients
 
+import okio.ByteString
 import stasis.client_android.lib.api.clients.exceptions.ResourceMissingFailure
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
@@ -23,6 +24,7 @@ import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
+@Suppress("TooManyFunctions")
 class CachedServerApiEndpointClient(
     private val underlying: ServerApiEndpointClient,
     private val datasetDefinitionsCache: Cache<DatasetDefinitionId, DatasetDefinition>,
@@ -74,6 +76,7 @@ class CachedServerApiEndpointClient(
                         datasetEntriesCache.put(id, this)
                     }
                 }
+
                 else -> Try {
                     datasetEntriesCache.getOrLoad(
                         key = entry,
@@ -121,6 +124,12 @@ class CachedServerApiEndpointClient(
 
     override suspend fun device(): Try<Device> =
         underlying.device()
+
+    override suspend fun pushDeviceKey(key: ByteString): Try<Unit> =
+        underlying.pushDeviceKey(key)
+
+    override suspend fun pullDeviceKey(): Try<ByteString> =
+        underlying.pullDeviceKey()
 
     override suspend fun ping(): Try<Ping> =
         underlying.ping()

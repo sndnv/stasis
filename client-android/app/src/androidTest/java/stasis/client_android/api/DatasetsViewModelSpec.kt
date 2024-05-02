@@ -23,6 +23,7 @@ import stasis.client_android.lib.security.CredentialsProvider
 import stasis.client_android.lib.utils.Reference
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Success
+import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.mocks.Generators
 import stasis.client_android.mocks.MockBackupTracker
 import stasis.client_android.mocks.MockOAuthClient
@@ -284,6 +285,8 @@ class DatasetsViewModelSpec {
                                 initDeviceSecret = { Fixtures.Secrets.Default },
                                 loadDeviceSecret = { Success(Fixtures.Secrets.Default) },
                                 storeDeviceSecret = { _, _ -> Success(Fixtures.Secrets.Default) },
+                                pushDeviceSecret = { _, _ -> Success(Unit) },
+                                pullDeviceSecret = { _, _ -> Failure(RuntimeException("Test failure")) },
                                 coroutineScope = CoroutineScope(Dispatchers.IO),
                                 getAuthenticationPassword = { Fixtures.Secrets.UserPassword.toAuthenticationPassword() }
                             ),

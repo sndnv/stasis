@@ -1,5 +1,7 @@
 package stasis.client_android.mocks
 
+import okio.ByteString
+import okio.ByteString.Companion.toByteString
 import stasis.client_android.lib.api.clients.ServerApiEndpointClient
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
@@ -39,6 +41,8 @@ open class MockServerApiEndpointClient(
         Statistic.DatasetMetadataWithEntryRetrieved to AtomicInteger(0),
         Statistic.UserRetrieved to AtomicInteger(0),
         Statistic.DeviceRetrieved to AtomicInteger(0),
+        Statistic.DeviceKeyPushed to AtomicInteger(0),
+        Statistic.DeviceKeyPulled to AtomicInteger(0),
         Statistic.Ping to AtomicInteger(0)
     )
 
@@ -129,6 +133,16 @@ open class MockServerApiEndpointClient(
         return Success(Generators.generateDevice())
     }
 
+    override suspend fun pushDeviceKey(key: ByteString): Try<Unit> {
+        stats[Statistic.DeviceKeyPushed]?.getAndIncrement()
+        return Success(Unit)
+    }
+
+    override suspend fun pullDeviceKey(): Try<ByteString> {
+        stats[Statistic.DeviceKeyPulled]?.getAndIncrement()
+        return Success("test-key".toByteArray().toByteString())
+    }
+
     override suspend fun ping(): Try<Ping> {
         stats[Statistic.Ping]?.getAndIncrement()
         return Success(Ping(id = UUID.randomUUID()))
@@ -151,6 +165,8 @@ open class MockServerApiEndpointClient(
         object DatasetMetadataWithEntryRetrieved : Statistic()
         object UserRetrieved : Statistic()
         object DeviceRetrieved : Statistic()
+        object DeviceKeyPushed : Statistic()
+        object DeviceKeyPulled : Statistic()
         object Ping : Statistic()
     }
 

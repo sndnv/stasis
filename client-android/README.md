@@ -36,7 +36,7 @@ By default, `server` and `identity` have TLS enabled with self-signed certificat
 the Android client has no feature that allows accepting self-signed certificates. Instead, the certificates of
 the services should be imported so that the OS can validate them properly:
 
-1) Copy the certificates to the device (dragging and dropping them in the emulator is possible; the files end up in `Downloads`)
+1) Copy the .pem certificates to the device (dragging and dropping them in the emulator is possible; the files end up in `Downloads`)
 2) Search for `Encryption` in the settings (different OS versions may put these settings in slightly different locations)
 3) Select `Install from SD card` or `Install a certificate` > `CA certificate`
 4) Select each certificate file (from `Downloads`, if it drag-and-drop was used)

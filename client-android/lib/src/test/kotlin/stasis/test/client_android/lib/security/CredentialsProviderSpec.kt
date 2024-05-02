@@ -21,6 +21,7 @@ import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
 import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.eventually
+import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
 import java.time.Duration
 import java.util.Collections
 import java.util.UUID
@@ -102,6 +103,8 @@ class CredentialsProviderSpec : WordSpec({
                 initDeviceSecret = { secret },
                 loadDeviceSecret = { Success(secret) },
                 storeDeviceSecret = { _, _ -> Success(secret) },
+                pushDeviceSecret = { _, _ -> Success(Unit) },
+                pullDeviceSecret = { _, _ -> Failure(RuntimeException("Test failure")) },
                 getAuthenticationPassword = { hashedPassword },
                 coroutineScope = testScope
             )
@@ -165,6 +168,8 @@ class CredentialsProviderSpec : WordSpec({
                 initDeviceSecret = { secret },
                 loadDeviceSecret = { Success(secret) },
                 storeDeviceSecret = { _, _ -> Success(secret) },
+                pushDeviceSecret = { _, _ -> Success(Unit) },
+                pullDeviceSecret = { _, _ -> Failure(RuntimeException("Test failure")) },
                 getAuthenticationPassword = { hashedPassword },
                 coroutineScope = testScope
             )
@@ -223,6 +228,8 @@ class CredentialsProviderSpec : WordSpec({
                 initDeviceSecret = { secret },
                 loadDeviceSecret = { Success(secret) },
                 storeDeviceSecret = { _, _ -> Success(secret) },
+                pushDeviceSecret = { _, _ -> Success(Unit) },
+                pullDeviceSecret = { _, _ -> Failure(RuntimeException("Test failure")) },
                 getAuthenticationPassword = { hashedPassword },
                 coroutineScope = testScope
             )
@@ -276,6 +283,8 @@ class CredentialsProviderSpec : WordSpec({
                 initDeviceSecret = { secret },
                 loadDeviceSecret = { Success(secret) },
                 storeDeviceSecret = { _, _ -> Success(secret) },
+                pushDeviceSecret = { _, _ -> Success(Unit) },
+                pullDeviceSecret = { _, _ -> Failure(RuntimeException("Test failure")) },
                 getAuthenticationPassword = { hashedPassword },
                 coroutineScope = testScope
             )
@@ -341,6 +350,8 @@ class CredentialsProviderSpec : WordSpec({
                 initDeviceSecret = { secret },
                 loadDeviceSecret = { Success(secret) },
                 storeDeviceSecret = { _, _ -> Success(secret) },
+                pushDeviceSecret = { _, _ -> Success(Unit) },
+                pullDeviceSecret = { _, _ -> Failure(RuntimeException("Test failure")) },
                 getAuthenticationPassword = { hashedPassword },
                 coroutineScope = testScope
             )
@@ -406,6 +417,8 @@ class CredentialsProviderSpec : WordSpec({
                 initDeviceSecret = { secret },
                 loadDeviceSecret = { Failure(RuntimeException("Test failure")) },
                 storeDeviceSecret = { _, _ -> Success(secret) },
+                pushDeviceSecret = { _, _ -> Success(Unit) },
+                pullDeviceSecret = { _, _ -> Failure(RuntimeException("Test failure")) },
                 getAuthenticationPassword = { hashedPassword },
                 coroutineScope = testScope
             )
@@ -464,6 +477,8 @@ class CredentialsProviderSpec : WordSpec({
                     secretUpdated.set(true)
                     Success(otherSecret)
                 },
+                pushDeviceSecret = { _, _ -> Success(Unit) },
+                pullDeviceSecret = { _, _ -> Failure(RuntimeException("Test failure")) },
                 getAuthenticationPassword = { hashedPassword },
                 coroutineScope = testScope
             )
@@ -480,6 +495,144 @@ class CredentialsProviderSpec : WordSpec({
                 secretUpdated.get() shouldBe (true)
                 callbackSuccessful.get() shouldBe (true)
                 provider.deviceSecret shouldBe (Success(otherSecret))
+            }
+        }
+
+        "support pushing the device's secret" {
+            val secretPushed = AtomicBoolean(false)
+            val callbackSuccessful = AtomicBoolean(false)
+
+            val client = object : OAuthClient {
+                override suspend fun token(
+                    scope: String?,
+                    parameters: OAuthClient.GrantParameters,
+                ): Try<AccessTokenResponse> {
+                    return Success(response)
+                }
+            }
+
+            val provider = CredentialsProvider(
+                config = config,
+                oAuthClient = client,
+                initDeviceSecret = { secret },
+                loadDeviceSecret = { Success(secret) },
+                storeDeviceSecret = { _, _ -> Success(secret) },
+                pushDeviceSecret = { _, _ ->
+                    secretPushed.set(true)
+                    Success(Unit)
+                },
+                pullDeviceSecret = { _, _ -> Failure(RuntimeException("Test failure")) },
+                getAuthenticationPassword = { hashedPassword },
+                coroutineScope = testScope
+            )
+
+
+            provider.pushDeviceSecret(
+                api = MockServerApiEndpointClient(),
+                password = "test-password"
+            ) {
+                callbackSuccessful.set(it.isSuccess)
+            }
+
+            eventually {
+                secretPushed.get() shouldBe (true)
+                callbackSuccessful.get() shouldBe (true)
+            }
+        }
+
+        "support pulling the device's secret" {
+            val secretPulled = AtomicBoolean(false)
+            val callbackSuccessful = AtomicBoolean(false)
+
+            val client = object : OAuthClient {
+                override suspend fun token(
+                    scope: String?,
+                    parameters: OAuthClient.GrantParameters,
+                ): Try<AccessTokenResponse> {
+                    return Success(response)
+                }
+            }
+
+            val provider = CredentialsProvider(
+                config = config,
+                oAuthClient = client,
+                initDeviceSecret = { secret },
+                loadDeviceSecret = { Success(secret) },
+                storeDeviceSecret = { _, _ -> Success(secret) },
+                pushDeviceSecret = { _, _ -> Success(Unit) },
+                pullDeviceSecret = { _, _ ->
+                    secretPulled.set(true)
+                    Success(secret)
+                },
+                getAuthenticationPassword = { hashedPassword },
+                coroutineScope = testScope
+            )
+
+            eventually {
+                secretPulled.get() shouldBe (false)
+                callbackSuccessful.get() shouldBe (false)
+                shouldThrow<MissingDeviceSecret> { provider.deviceSecret.get() }
+            }
+
+            provider.pullDeviceSecret(
+                api = MockServerApiEndpointClient(),
+                password = "test-password"
+            ) {
+                callbackSuccessful.set(it.isSuccess)
+            }
+
+            eventually {
+                secretPulled.get() shouldBe (true)
+                callbackSuccessful.get() shouldBe (true)
+                provider.deviceSecret shouldBe (Success(secret))
+            }
+        }
+
+        "not update the device's secret if the pull failed" {
+            val secretPulled = AtomicBoolean(false)
+            val callbackSuccessful = AtomicBoolean(false)
+
+            val client = object : OAuthClient {
+                override suspend fun token(
+                    scope: String?,
+                    parameters: OAuthClient.GrantParameters,
+                ): Try<AccessTokenResponse> {
+                    return Success(response)
+                }
+            }
+
+            val provider = CredentialsProvider(
+                config = config,
+                oAuthClient = client,
+                initDeviceSecret = { secret },
+                loadDeviceSecret = { Success(secret) },
+                storeDeviceSecret = { _, _ -> Success(secret) },
+                pushDeviceSecret = { _, _ -> Success(Unit) },
+                pullDeviceSecret = { _, _ ->
+                    secretPulled.set(true)
+                    Failure(RuntimeException("Test failure"))
+                },
+                getAuthenticationPassword = { hashedPassword },
+                coroutineScope = testScope
+            )
+
+            eventually {
+                secretPulled.get() shouldBe (false)
+                callbackSuccessful.get() shouldBe (false)
+                shouldThrow<MissingDeviceSecret> { provider.deviceSecret.get() }
+            }
+
+            provider.pullDeviceSecret(
+                api = MockServerApiEndpointClient(),
+                password = "test-password"
+            ) {
+                callbackSuccessful.set(it.isFailure)
+            }
+
+            eventually {
+                secretPulled.get() shouldBe (true)
+                callbackSuccessful.get() shouldBe (true)
+                shouldThrow<MissingDeviceSecret> { provider.deviceSecret.get() }
             }
         }
     }

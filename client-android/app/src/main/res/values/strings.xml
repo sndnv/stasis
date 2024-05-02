@@ -137,6 +137,11 @@
     <string name="bootstrap_server_hint_extra">Make sure you are entering the URL of a trusted server and that it is entered exactly as shown by that server.</string>
     <string name="bootstrap_server_error">Server cannot be empty</string>
     <string name="bootstrap_server_next_button">Next</string>
+    <string name="bootstrap_username_hint">User</string>
+    <string name="bootstrap_username_hint_extra">User name (for connection to the server, when pulling secrets).</string>
+    <string name="bootstrap_username_error">User name cannot be empty</string>
+    <string name="bootstrap_username_previous_button">Back</string>
+    <string name="bootstrap_username_next_button">Next</string>
     <string name="bootstrap_password_hint">User Password</string>
     <string name="bootstrap_password_hint_extra">This password is required for encrypting the secrets used by this device. Your password is never stored, sent to the server or shared with other services.</string>
     <string name="bootstrap_password_error">Password cannot be empty</string>
@@ -153,6 +158,8 @@
     <string name="bootstrap_failed_dismiss">OK</string>
     <string name="bootstrap_failed_title">Boostrap Failed</string>
     <string name="bootstrap_failed_invalid_code">An invalid bootstrap code was provided.\n\nVerify that the code is entered correctly or obtain a new one.</string>
+    <string name="bootstrap_failed_invalid_credentials">Invalid user and/or password provided</string>
+    <string name="bootstrap_failed_unexpected">An unexpected failure was encountered during bootstrap: %1$s</string>
     <string name="bootstrap_failed_details">%1$s</string>
 
     <!-- Login -->
@@ -480,17 +487,22 @@
     <string name="settings_date_time_format_hint">Show dates as %1$s and time as %2$s</string>
     <string name="settings_ping_interval_hint">The client will contact the server every %1$s</string>
     <string name="settings_manage_device_secret_title">Manage device secret</string>
+    <string name="settings_manage_device_secret_locally_title">Locally</string>
+    <string name="settings_manage_device_secret_remotely_title">On Server</string>
     <string name="settings_manage_device_secret_summary">Allows importing and exporting of the secret used by this device to encrypt and decrypt data</string>
     <string name="settings_manage_device_secret_confirm_title">Warning</string>
     <string name="settings_manage_device_secret_confirm_text">
         This secret is used for encrypting and decrypting data for this device. It should be kept in a secure location and it should not be shared with anyone!\n\n
         - If the secret is lost, existing data cannot be decrypted.\n\n
-        - If the secret is compromised, anyone will be able to decrypt the data coming from this device.
+        - If the secret is compromised, anyone will be able to decrypt the data coming from this device.\n\n
+        - The secret is always encrypted locally before being sent to the server.
     </string>
     <string name="settings_manage_device_secret_confirm_cancel_button_title">Cancel</string>
     <string name="settings_manage_device_secret_confirm_ok_button_title">Continue</string>
     <string name="settings_manage_device_secret_export">Export</string>
     <string name="settings_manage_device_secret_import">Import</string>
+    <string name="settings_manage_device_secret_push">Push</string>
+    <string name="settings_manage_device_secret_pull">Pull</string>
     <string name="settings_manage_device_secret_export_title">Export device secret</string>
     <string name="settings_manage_device_secret_export_copy">Copy</string>
     <string name="settings_manage_device_secret_import_title">Import device secret</string>
@@ -506,6 +518,31 @@
     <string name="settings_manage_device_secret_import_data_invalid">Invalid data provided</string>
     <string name="settings_manage_device_secret_import_successful">Device secret imported</string>
     <string name="settings_manage_device_secret_import_failed">Device secret import failed with: %1$s</string>
+    <string name="settings_manage_device_secret_push_confirm_title">Push device secret</string>
+    <string name="settings_manage_device_secret_push_confirm_text">The device secret will be pushed to server %1$s.\n\n%2$s</string>
+    <string name="settings_manage_device_secret_push_confirm_text_note">The secret is always encrypted locally before being sent.</string>
+    <string name="settings_manage_device_secret_push_in_progress">Pushing device secret to server…</string>
+    <string name="settings_manage_device_secret_push_successful">Device secret pushed</string>
+    <string name="settings_manage_device_secret_push_password_hint">User Password</string>
+    <string name="settings_manage_device_secret_push_password_hint_extra">This password is required for encrypting the device secret. Your password is never stored, sent to the server or shared with other services.</string>
+    <string name="settings_manage_device_secret_push_password_confirmation_hint">Confirm Password</string>
+    <string name="settings_manage_device_secret_push_password_confirmation_hint_extra">Confirming your password ensures that the pushed device secret is correctly encrypted.</string>
+    <string name="settings_manage_device_secret_push_empty_password">A password needs to be provided</string>
+    <string name="settings_manage_device_secret_push_mismatched_passwords">The provided passwords do not match</string>
+    <string name="settings_manage_device_secret_push_failed">Device secret push failed with: %1$s</string>
+    <string name="settings_manage_device_secret_pull_confirm_title">Pull device secret</string>
+    <string name="settings_manage_device_secret_pull_confirm_text">The device secret will be pulled from server %1$s.\n\n%2$s: %3$s</string>
+    <string name="settings_manage_device_secret_pull_confirm_text_warning">Warning</string>
+    <string name="settings_manage_device_secret_pull_confirm_text_note">The secret currently stored on the device will be overwritten. Any data encrypted with the current secret will no longer be accessible!</string>
+    <string name="settings_manage_device_secret_pull_in_progress">Pulling device secret from server…</string>
+    <string name="settings_manage_device_secret_pull_successful">Device secret pulled</string>
+    <string name="settings_manage_device_secret_pull_empty_password">A password needs to be provided</string>
+    <string name="settings_manage_device_secret_pull_mismatched_passwords">The provided passwords do not match</string>
+    <string name="settings_manage_device_secret_pull_failed">Device secret pull failed with: %1$s</string>
+    <string name="settings_manage_device_secret_pull_password_hint">User Password</string>
+    <string name="settings_manage_device_secret_pull_password_hint_extra">This password is required for decrypting the device secret. Your password is never stored, sent to the server or shared with other services.</string>
+    <string name="settings_manage_device_secret_pull_password_confirmation_hint">Confirm Password</string>
+    <string name="settings_manage_device_secret_pull_password_confirmation_hint_extra">Confirming your password ensures that the pushed device secret is correctly encrypted.</string>
     <string name="settings_scheduling_enabled_title">Enable operation scheduling</string>
     <string name="settings_ping_interval_title">Server ping interval</string>
     <string name="settings_reset_config_title">Reset configuration</string>

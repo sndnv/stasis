@@ -5,7 +5,7 @@ import stasis.client_android.lib.encryption.Aes
 import stasis.client_android.lib.model.server.devices.DeviceId
 import stasis.client_android.lib.model.server.users.UserId
 
-data class UserEncryptionSecret(
+data class UserLocalEncryptionSecret(
     val user: UserId,
     val iv: ByteString,
     private val key: ByteString,

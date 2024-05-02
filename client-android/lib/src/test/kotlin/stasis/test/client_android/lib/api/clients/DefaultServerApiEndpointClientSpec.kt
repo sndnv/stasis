@@ -7,8 +7,11 @@ import io.kotest.matchers.shouldBe
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okio.Buffer
+import okio.ByteString
+import okio.ByteString.Companion.toByteString
 import okio.Source
 import stasis.client_android.lib.api.clients.DefaultServerApiEndpointClient
+import stasis.client_android.lib.api.clients.exceptions.ResourceMissingFailure
 import stasis.client_android.lib.encryption.secrets.DeviceMetadataSecret
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.DatasetMetadata.Companion.toByteString
@@ -39,26 +42,28 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
 
         fun createClient(
             serverApiUrl: String,
-            self: DeviceId = UUID.randomUUID()
+            self: DeviceId = UUID.randomUUID(),
+            decryptionContext: DefaultServerApiEndpointClient.DecryptionContext =
+                DefaultServerApiEndpointClient.DecryptionContext.Default(
+                    core = object :
+                        MockServerCoreEndpointClient(self = UUID.randomUUID(), crates = emptyMap()) {
+                        override suspend fun pull(crate: CrateId): Source =
+                            Buffer().writeUtf8("test-crate")
+                    },
+                    deviceSecret = { Fixtures.Secrets.Default },
+                    decoder = object : MockEncryption() {
+                        override fun decrypt(
+                            source: Source,
+                            metadataSecret: DeviceMetadataSecret
+                        ): Source =
+                            Buffer().write(DatasetMetadata.empty().toByteString())
+                    }
+                )
         ): DefaultServerApiEndpointClient = DefaultServerApiEndpointClient(
             serverApiUrl = serverApiUrl,
             credentials = { apiCredentials },
             self = self,
-            decryption = DefaultServerApiEndpointClient.DecryptionContext(
-                core = object :
-                    MockServerCoreEndpointClient(self = UUID.randomUUID(), crates = emptyMap()) {
-                    override suspend fun pull(crate: CrateId): Source =
-                        Buffer().writeUtf8("test-crate")
-                },
-                deviceSecret = { Fixtures.Secrets.Default },
-                decoder = object : MockEncryption() {
-                    override fun decrypt(
-                        source: Source,
-                        metadataSecret: DeviceMetadataSecret
-                    ): Source =
-                        Buffer().write(DatasetMetadata.empty().toByteString())
-                }
-            )
+            decryption = decryptionContext
         )
 
         fun createServer(withResponse: MockResponse? = null): MockWebServer {
@@ -493,6 +498,23 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             api.shutdown()
         }
 
+        "fail to retrieve dataset metadata without a decryption context" {
+            val api = createServer()
+
+            val apiClient = createClient(
+                serverApiUrl = api.url("/").toString(),
+                decryptionContext = DefaultServerApiEndpointClient.DecryptionContext.Disabled
+            )
+
+            val e = shouldThrow<IllegalStateException> {
+                apiClient.datasetMetadata(entry = Generators.generateEntry()).get()
+            }
+
+            e.message shouldBe ("Cannot retrieve dataset metadata; decryption context is disabled")
+
+            api.shutdown()
+        }
+
         "retrieve current user" {
             val expectedUser = Generators.generateUser()
 
@@ -537,6 +559,54 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             actualRequest.path shouldBe ("/v1/devices/own/${apiClient.self}")
 
             api.shutdown()
+        }
+
+        "push current device key" {
+            val api = createServer()
+
+            val apiClient = createClient(api.url("/").toString())
+
+            api.enqueue(MockResponse())
+
+            val actualResponse = apiClient.pushDeviceKey("test-key".toByteArray().toByteString())
+            actualResponse shouldBe (Success(Unit))
+
+            val actualRequest = api.takeRequest()
+            actualRequest.method shouldBe ("PUT")
+            actualRequest.path shouldBe ("/v1/devices/own/${apiClient.self}/key")
+            actualRequest.headers["Content-Type"] shouldBe ("application/octet-stream")
+            actualRequest.body.readUtf8() shouldBe ("test-key")
+        }
+
+        "pull current device key" {
+            val expectedKey = "test-key"
+
+            val api = createServer()
+
+            val apiClient = createClient(api.url("/").toString())
+
+            api.enqueue(MockResponse().setBody(expectedKey))
+
+            val actualResponse = apiClient.pullDeviceKey()
+            actualResponse shouldBe (Success(expectedKey.toByteArray().toByteString()))
+
+            val actualRequest = api.takeRequest()
+            actualRequest.method shouldBe ("GET")
+            actualRequest.path shouldBe ("/v1/devices/own/${apiClient.self}/key")
+        }
+
+        "fail to pull missing device keys" {
+            val api = createServer()
+
+            val apiClient = createClient(api.url("/").toString())
+
+            api.enqueue(MockResponse())
+
+            shouldThrow<ResourceMissingFailure> { apiClient.pullDeviceKey().get() }
+
+            val actualRequest = api.takeRequest()
+            actualRequest.method shouldBe ("GET")
+            actualRequest.path shouldBe ("/v1/devices/own/${apiClient.self}/key")
         }
 
         "make ping requests" {

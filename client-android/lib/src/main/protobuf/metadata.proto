@@ -1,75 +1,74 @@
 syntax = "proto3";
 
 option java_multiple_files = true;
-option java_package = "stasis.client_android.lib.model.proto";
 
-package stasis.client;
+package stasis.client_android.lib.model.proto;
 
 message DatasetMetadata {
-    map<string, EntityMetadata> contentChanged = 1;
-    map<string, EntityMetadata> metadataChanged = 2;
-    FilesystemMetadata filesystem = 3;
+  map<string, EntityMetadata> contentChanged = 1;
+  map<string, EntityMetadata> metadataChanged = 2;
+  FilesystemMetadata filesystem = 3;
 }
 
 message EntityMetadata {
-    oneof entity {
-        FileMetadata file = 1;
-        DirectoryMetadata directory = 2;
-    }
+  oneof entity {
+    FileMetadata file = 1;
+    DirectoryMetadata directory = 2;
+  }
 }
 
 message FileMetadata {
-    string path = 1;
-    int64 size = 2;
-    string link = 3;
-    bool isHidden = 4;
-    int64 created = 5;
-    int64 updated = 6;
-    string owner = 7;
-    string group = 8;
-    string permissions = 9;
-    bytes checksum = 10;
-    map<string, Uuid> crates = 11;
-    string compression = 12;
+  string path = 1;
+  int64 size = 2;
+  string link = 3;
+  bool isHidden = 4;
+  int64 created = 5;
+  int64 updated = 6;
+  string owner = 7;
+  string group = 8;
+  string permissions = 9;
+  bytes checksum = 10;
+  map<string, Uuid> crates = 11;
+  string compression = 12;
 }
 
 message DirectoryMetadata {
-    string path = 1;
-    string link = 2;
-    bool isHidden = 3;
-    int64 created = 4;
-    int64 updated = 5;
-    string owner = 6;
-    string group = 7;
-    string permissions = 8;
+  string path = 1;
+  string link = 2;
+  bool isHidden = 3;
+  int64 created = 4;
+  int64 updated = 5;
+  string owner = 6;
+  string group = 7;
+  string permissions = 8;
 }
 
 message FilesystemMetadata {
-    map<string, EntityState> entities = 1;
+  map<string, EntityState> entities = 1;
 }
 
 message EntityState {
-    message PresentNew {}
-    message PresentExisting { Uuid entry = 1; }
-    message PresentUpdated {}
+  message PresentNew {}
+  message PresentExisting {Uuid entry = 1;}
+  message PresentUpdated {}
 
-    oneof state {
-        PresentNew present_new = 1;
-        PresentExisting present_existing = 2;
-        PresentUpdated present_updated = 3;
-    }
+  oneof state {
+    PresentNew present_new = 1;
+    PresentExisting present_existing = 2;
+    PresentUpdated present_updated = 3;
+  }
 }
 
 message DatasetEntry {
-    Uuid id = 1;
-    Uuid definition = 2;
-    Uuid device = 3;
-    repeated Uuid data = 4;
-    Uuid metadata = 5;
-    int64 created = 6;
+  Uuid id = 1;
+  Uuid definition = 2;
+  Uuid device = 3;
+  repeated Uuid data = 4;
+  Uuid metadata = 5;
+  int64 created = 6;
 }
 
 message Uuid {
-    int64 mostSignificantBits = 1;
-    int64 leastSignificantBits = 2;
+  int64 mostSignificantBits = 1;
+  int64 leastSignificantBits = 2;
 }

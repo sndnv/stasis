@@ -40,7 +40,8 @@ class BootstrapProvidePasswordFragment : Fragment() {
                         BootstrapProvidePasswordFragmentDirections
                             .actionBootstrapProvidePasswordFragmentToBootstrapProvideCodeFragment(
                                 bootstrapServerUrl = args.bootstrapServerUrl,
-                                userPassword = userPassword
+                                userPassword = userPassword,
+                                username = args.username
                             )
                     )
                 }

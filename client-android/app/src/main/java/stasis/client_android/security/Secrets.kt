@@ -3,12 +3,17 @@ package stasis.client_android.security
 import android.content.SharedPreferences
 import okio.ByteString
 import okio.ByteString.Companion.toByteString
+import stasis.client_android.lib.api.clients.ServerApiEndpointClient
+import stasis.client_android.lib.api.clients.exceptions.ResourceMissingFailure
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.encryption.secrets.UserAuthenticationPassword
 import stasis.client_android.lib.encryption.secrets.UserPassword
 import stasis.client_android.lib.model.server.devices.DeviceId
 import stasis.client_android.lib.model.server.users.UserId
 import stasis.client_android.lib.utils.Try
+import stasis.client_android.lib.utils.Try.Companion.flatMap
+import stasis.client_android.lib.utils.Try.Failure
+import stasis.client_android.lib.utils.Try.Success
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getEncryptedDeviceSecret
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getSecretsConfig
 import stasis.client_android.persistence.config.ConfigRepository.Companion.putEncryptedDeviceSecret
@@ -41,7 +46,7 @@ object Secrets {
             password = userPassword,
             target = secretsConfig
         ).toHashedEncryptionPassword()
-            .toEncryptionSecret()
+            .toLocalEncryptionSecret()
             .encryptDeviceSecret(secret = decryptedDeviceSecret)
 
         preferences.putEncryptedDeviceSecret(secret = encryptedDeviceSecret)
@@ -61,7 +66,7 @@ object Secrets {
                 password = userPassword,
                 target = preferences.getSecretsConfig()
             ).toHashedEncryptionPassword()
-                .toEncryptionSecret()
+                .toLocalEncryptionSecret()
                 .decryptDeviceSecret(
                     device = device,
                     encryptedSecret = preferences.getEncryptedDeviceSecret()
@@ -91,12 +96,76 @@ object Secrets {
             password = userPassword,
             target = secretsConfig
         ).toHashedEncryptionPassword()
-            .toEncryptionSecret()
+            .toLocalEncryptionSecret()
             .encryptDeviceSecret(secret = decryptedDeviceSecret)
 
         preferences.putEncryptedDeviceSecret(secret = encryptedDeviceSecret)
 
         decryptedDeviceSecret
+    }
+
+    suspend fun pushDeviceSecret(
+        user: UserId,
+        userSalt: String,
+        userPassword: CharArray,
+        device: DeviceId,
+        preferences: SharedPreferences,
+        api: ServerApiEndpointClient
+    ): Try<Unit> = Try {
+        val secretsConfig = preferences.getSecretsConfig()
+
+        val userEncryptionPassword = UserPassword(
+            user = user,
+            salt = userSalt,
+            password = userPassword,
+            target = secretsConfig
+        ).toHashedEncryptionPassword()
+
+        val decryptedDeviceSecret = userEncryptionPassword
+            .toLocalEncryptionSecret()
+            .decryptDeviceSecret(
+                device = device,
+                encryptedSecret = preferences.getEncryptedDeviceSecret()
+            )
+
+        val encryptedDeviceSecret = userEncryptionPassword
+            .toKeyStoreEncryptionSecret()
+            .encryptDeviceSecret(secret = decryptedDeviceSecret)
+
+        encryptedDeviceSecret
+    }.flatMap { api.pushDeviceKey(it) }
+
+    suspend fun pullDeviceSecret(
+        user: UserId,
+        userSalt: String,
+        userPassword: CharArray,
+        device: DeviceId,
+        preferences: SharedPreferences,
+        api: ServerApiEndpointClient
+    ): Try<DeviceSecret> = api.pullDeviceKey().flatMap { encryptedDeviceSecret ->
+        val secretsConfig = preferences.getSecretsConfig()
+
+        val userEncryptionPassword = UserPassword(
+            user = user,
+            salt = userSalt,
+            password = userPassword,
+            target = secretsConfig
+        ).toHashedEncryptionPassword()
+
+        val decryptedDeviceSecret = userEncryptionPassword
+            .toKeyStoreEncryptionSecret()
+            .decryptDeviceSecret(
+                device = device,
+                encryptedSecret = encryptedDeviceSecret
+            )
+
+        val reEncryptedDeviceSecret = userEncryptionPassword
+            .toLocalEncryptionSecret()
+            .encryptDeviceSecret(secret = decryptedDeviceSecret)
+
+        preferences.putEncryptedDeviceSecret(secret = reEncryptedDeviceSecret)
+
+        Success(decryptedDeviceSecret)
     }
 
     fun loadUserAuthenticationPassword(

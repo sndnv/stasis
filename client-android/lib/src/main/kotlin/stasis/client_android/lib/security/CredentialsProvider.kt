@@ -7,12 +7,14 @@ import org.jose4j.jwt.consumer.InvalidJwtException
 import org.jose4j.jwt.consumer.JwtConsumer
 import org.jose4j.jwt.consumer.JwtConsumerBuilder
 import org.jose4j.jwt.consumer.JwtContext
+import stasis.client_android.lib.api.clients.ServerApiEndpointClient
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.encryption.secrets.UserAuthenticationPassword
 import stasis.client_android.lib.security.exceptions.MissingDeviceSecret
 import stasis.client_android.lib.security.exceptions.TokenExpired
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Companion.flatMap
+import stasis.client_android.lib.utils.Try.Companion.map
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
 import java.time.Duration
@@ -20,12 +22,15 @@ import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 
+@Suppress("LongParameterList")
 class CredentialsProvider(
     private val config: Config,
     private val oAuthClient: OAuthClient,
     private val initDeviceSecret: (ByteString) -> DeviceSecret,
     private val loadDeviceSecret: suspend (CharArray) -> Try<DeviceSecret>,
     private val storeDeviceSecret: suspend (ByteString, CharArray) -> Try<DeviceSecret>,
+    private val pushDeviceSecret: suspend (ServerApiEndpointClient, CharArray) -> Try<Unit>,
+    private val pullDeviceSecret: suspend (ServerApiEndpointClient, CharArray) -> Try<DeviceSecret>,
     private val getAuthenticationPassword: (CharArray) -> UserAuthenticationPassword,
     private val coroutineScope: CoroutineScope,
 ) {
@@ -179,6 +184,30 @@ class CredentialsProvider(
             val deviceSecretResult = storeDeviceSecret(plaintextDeviceSecret, password.toCharArray())
             latestDeviceSecret.set(deviceSecretResult)
             f(deviceSecretResult)
+        }
+    }
+
+    fun pushDeviceSecret(
+        api: ServerApiEndpointClient,
+        password: String,
+        f: (Try<Unit>) -> Unit
+    ) {
+        coroutineScope.launch {
+            f(pushDeviceSecret(api, password.toCharArray()))
+        }
+    }
+
+    fun pullDeviceSecret(
+        api: ServerApiEndpointClient,
+        password: String,
+        f: (Try<Unit>) -> Unit
+    ) {
+        coroutineScope.launch {
+            val deviceSecretResult = pullDeviceSecret(api, password.toCharArray())
+            if (deviceSecretResult.isSuccess) {
+                latestDeviceSecret.set(deviceSecretResult)
+            }
+            f(deviceSecretResult.map { })
         }
     }
 
