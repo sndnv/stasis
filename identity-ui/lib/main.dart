@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
       theme: defaultTheme,
       darkTheme: darkTheme,
       initialRoute: PageRouterDestination.home.route,
-      onGenerateRoute: PageRouter.underlying.generator,
+      onGenerateRoute: PageRouter.generator,
     );
   }
 }
