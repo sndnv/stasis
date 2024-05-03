@@ -20,7 +20,7 @@ void main() {
       expect(generated, contains(config.authorizationEndpoint.toString()));
       expect(generated, contains('response_type=code'));
       expect(generated, contains('client_id=${config.clientId}'));
-      expect(generated, contains('redirect_uri=${Uri.encodeComponent(config.redirectUri.toString())}'));
+      expect(generated, contains('redirect_uri=${Uri.encodeQueryComponent(config.redirectUri.toString())}'));
       expect(generated, contains('code_challenge='));
       expect(generated, contains('code_challenge_method=S256'));
       expect(generated, contains('state='));

@@ -22,6 +22,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 class PageRouter {
   static FluroRouter underlying = FluroRouter.appRouter;
 
+  static Route<dynamic>? generator(RouteSettings routeSettings) {
+    final originalUri = Uri.parse(routeSettings.name ?? '/');
+    final queryParams = Map.of(originalUri.queryParameters);
+
+    final originalRedirectUri = queryParams['redirect_uri'];
+    final escapedRedirectUri =
+        originalRedirectUri != null ? Uri.encodeQueryComponent(Uri.decodeQueryComponent(originalRedirectUri)) : null;
+
+    if (originalRedirectUri != escapedRedirectUri) {
+      queryParams['redirect_uri'] = escapedRedirectUri!;
+      final updatedUri = originalUri.replace(queryParameters: queryParams);
+
+      return underlying.generator(RouteSettings(name: updatedUri.toString(), arguments: routeSettings.arguments));
+    } else {
+      return underlying.generator(routeSettings);
+    }
+  }
+
   static String server = dotenv.env['IDENTITY_UI_IDENTITY_SERVER'] ?? 'http://localhost:8080';
 
   static OAuthConfig oauthConfig = OAuthConfig(
@@ -73,7 +91,7 @@ class PageRouter {
           children: [
             TextSpan(text: 'identity', style: theme.textTheme.titleLarge),
             const WidgetSpan(child: Padding(padding: EdgeInsets.only(left: 4))),
-            TextSpan(text: '/', style: theme.textTheme.titleLarge?.copyWith(color: Colors.white)),
+            TextSpan(text: '/', style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.secondary)),
             const WidgetSpan(child: Padding(padding: EdgeInsets.only(right: 4))),
             TextSpan(text: currentDestination.title, style: theme.textTheme.titleLarge),
           ],
@@ -274,7 +292,7 @@ class PageRouterDestinationHome extends PageRouterDestination {
       : super(
           key: 'home',
           title: 'Home',
-          route: 'manage',
+          route: '/manage',
           icon: Icons.home,
         );
 }
@@ -284,7 +302,7 @@ class PageRouterDestinationApis extends PageRouterDestination {
       : super(
           key: 'apis',
           title: 'APIs',
-          route: 'manage/apis',
+          route: '/manage/apis',
           icon: Icons.storage,
         );
 }
@@ -294,7 +312,7 @@ class PageRouterDestinationClients extends PageRouterDestination {
       : super(
           key: 'clients',
           title: 'Clients',
-          route: 'manage/clients',
+          route: '/manage/clients',
           icon: Icons.apps,
         );
 }
@@ -304,7 +322,7 @@ class PageRouterDestinationCodes extends PageRouterDestination {
       : super(
           key: 'codes',
           title: 'Authorization Codes',
-          route: 'manage/codes',
+          route: '/manage/codes',
           icon: Icons.lock,
         );
 }
@@ -314,7 +332,7 @@ class PageRouterDestinationOwners extends PageRouterDestination {
       : super(
           key: 'owners',
           title: 'Resource Owners',
-          route: 'manage/owners',
+          route: '/manage/owners',
           icon: Icons.person,
         );
 }
@@ -324,7 +342,7 @@ class PageRouterDestinationTokens extends PageRouterDestination {
       : super(
           key: 'tokens',
           title: 'Refresh Tokens',
-          route: 'manage/tokens',
+          route: '/manage/tokens',
           icon: Icons.refresh,
         );
 }
