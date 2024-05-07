@@ -84,34 +84,34 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
         }
       }
 
-      val spec = Specification(rules = rules.map(_._1), onMatchIncluded = _ => (), filesystem = filesystem)(ec).await
+      Specification(rules = rules.map(_._1), onMatchIncluded = _ => (), filesystem = filesystem)(ec).map { spec =>
+        spec.unmatched should be(Seq.empty)
+        spec.entries.size should be < objects.total
 
-      spec.unmatched should be(Seq.empty)
-      spec.entries.size should be < objects.total
+        val includedFromRoot = objects.filesPerDir // rule 1
+        val excludedFromRoot = azRangeSize + zeroOneListSize // rule 2 + rule 3
 
-      val includedFromRoot = objects.filesPerDir // rule 1
-      val excludedFromRoot = azRangeSize + zeroOneListSize // rule 2 + rule 3
+        val includedUnderRootDirs = rootDirsFiles + rootDirs // rule 4
+        val includedUnderChildDirs = acChildFiles + acChildDirs // rule 5
+        val excludedUnderParent0 = parent0Dirs // rule 6
+        val excludedQFiles = qFiles // rule 7
 
-      val includedUnderRootDirs = rootDirsFiles + rootDirs // rule 4
-      val includedUnderChildDirs = acChildFiles + acChildDirs // rule 5
-      val excludedUnderParent0 = parent0Dirs // rule 6
-      val excludedQFiles = qFiles // rule 7
+        val overlappingQFilesInParent0 = objects.nestedChildDirsPerParent
+        val overlappingAcChildFilesInParent0 = includedUnderChildDirs / objects.nestedParentDirs
+        val overlappingEntriesInParent0 = overlappingQFilesInParent0 + overlappingAcChildFilesInParent0
 
-      val overlappingQFilesInParent0 = objects.nestedChildDirsPerParent
-      val overlappingAcChildFilesInParent0 = includedUnderChildDirs / objects.nestedParentDirs
-      val overlappingEntriesInParent0 = overlappingQFilesInParent0 + overlappingAcChildFilesInParent0
+        val entriesUnderRoot = includedFromRoot + work
+        val entriesUnderRootDirs = includedUnderRootDirs + workRoot
+        val entriesUnderNestedDirs = includedUnderChildDirs + excludedUnderParent0 + excludedQFiles - overlappingEntriesInParent0
 
-      val entriesUnderRoot = includedFromRoot + work
-      val entriesUnderRootDirs = includedUnderRootDirs + workRoot
-      val entriesUnderNestedDirs = includedUnderChildDirs + excludedUnderParent0 + excludedQFiles - overlappingEntriesInParent0
+        val totalEntries = entriesUnderRoot + entriesUnderRootDirs + entriesUnderNestedDirs
+        val excludedEntries = excludedFromRoot + excludedUnderParent0 + excludedQFiles - overlappingQFilesInParent0
+        val includedEntries = totalEntries - excludedEntries
 
-      val totalEntries = entriesUnderRoot + entriesUnderRootDirs + entriesUnderNestedDirs
-      val excludedEntries = excludedFromRoot + excludedUnderParent0 + excludedQFiles - overlappingQFilesInParent0
-      val includedEntries = totalEntries - excludedEntries
-
-      (spec.included ++ spec.excluded).distinct.size should be(totalEntries)
-      spec.excluded.size should be(excludedEntries)
-      spec.included.size should be(includedEntries)
+        (spec.included ++ spec.excluded).distinct.size should be(totalEntries)
+        spec.excluded.size should be(excludedEntries)
+        spec.included.size should be(includedEntries)
+      }
     }
 
     it should "provide list of unmatched rules" in {
@@ -120,18 +120,18 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
       val rule1 = Rule(line = "+ /test/ **                # include all files in directory", lineNumber = 0).get
       val rule2 = Rule(line = "+ /work  missing-test-file # include specific file", lineNumber = 0).get
 
-      val spec = Specification(rules = Seq(rule1, rule2), onMatchIncluded = _ => (), filesystem = filesystem)(ec).await
+      Specification(rules = Seq(rule1, rule2), onMatchIncluded = _ => (), filesystem = filesystem)(ec).map { spec =>
+        spec.unmatched.toList match {
+          case (`rule1`, e1) :: (`rule2`, e2) :: Nil =>
+            e1 shouldBe a[NoSuchFileException]
+            e2 shouldBe a[RuleMatchingFailure]
 
-      spec.unmatched.toList match {
-        case (`rule1`, e1) :: (`rule2`, e2) :: Nil =>
-          e1 shouldBe a[NoSuchFileException]
-          e2 shouldBe a[RuleMatchingFailure]
+          case other =>
+            fail(s"Unexpected result received: [$other]")
+        }
 
-        case other =>
-          fail(s"Unexpected result received: [$other]")
+        spec.entries shouldBe empty
       }
-
-      spec.entries shouldBe empty
     }
 
     it should "provide a reason for including/excluding each file" in {
@@ -147,77 +147,79 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
 
       val rules = Seq(rule1, rule2, rule3, rule4, rule5)
 
-      val spec = Specification(rules = rules, onMatchIncluded = _ => (), filesystem = filesystem)(ec).await
+      Specification(rules = rules, onMatchIncluded = _ => (), filesystem = filesystem)(ec).map { spec =>
+        spec.unmatched should be(Seq.empty)
+        spec.entries.size should be(objects.filesPerDir)
 
-      spec.unmatched should be(Seq.empty)
-      spec.entries.size should be(objects.filesPerDir)
+        val files = List(
+          spec.entries.get(filesystem.getPath("/work/a")),
+          spec.entries.get(filesystem.getPath("/work/b")),
+          spec.entries.get(filesystem.getPath("/work/c")),
+          spec.entries.get(filesystem.getPath("/work/d")),
+          spec.entries.get(filesystem.getPath("/work/e")),
+          spec.entries.get(filesystem.getPath("/work/f"))
+        ).flatten
 
-      val files = List(
-        spec.entries.get(filesystem.getPath("/work/a")),
-        spec.entries.get(filesystem.getPath("/work/b")),
-        spec.entries.get(filesystem.getPath("/work/c")),
-        spec.entries.get(filesystem.getPath("/work/d")),
-        spec.entries.get(filesystem.getPath("/work/e")),
-        spec.entries.get(filesystem.getPath("/work/f"))
-      ).flatten
-
-      files match {
-        case fileA :: fileB :: fileC :: fileD :: fileE :: fileF :: Nil =>
-          fileA.operation should be(Rule.Operation.Exclude)
-          fileA.reason should be(
-            Seq(
-              Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule1.original),
-              Specification.Entry.Explanation(operation = Rule.Operation.Exclude, original = rule2.original)
+        files match {
+          case fileA :: fileB :: fileC :: fileD :: fileE :: fileF :: Nil =>
+            fileA.operation should be(Rule.Operation.Exclude)
+            fileA.reason should be(
+              Seq(
+                Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule1.original),
+                Specification.Entry.Explanation(operation = Rule.Operation.Exclude, original = rule2.original)
+              )
             )
-          )
 
-          fileB.operation should be(Rule.Operation.Exclude)
-          fileB.reason should be(
-            Seq(
-              Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule1.original),
-              Specification.Entry.Explanation(operation = Rule.Operation.Exclude, original = rule3.original)
+            fileB.operation should be(Rule.Operation.Exclude)
+            fileB.reason should be(
+              Seq(
+                Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule1.original),
+                Specification.Entry.Explanation(operation = Rule.Operation.Exclude, original = rule3.original)
+              )
             )
-          )
 
-          fileC.operation should be(Rule.Operation.Include)
-          fileC.reason should be(
-            Seq(
-              Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule1.original),
-              Specification.Entry.Explanation(operation = Rule.Operation.Exclude, original = rule4.original),
-              Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule5.original)
+            fileC.operation should be(Rule.Operation.Include)
+            fileC.reason should be(
+              Seq(
+                Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule1.original),
+                Specification.Entry.Explanation(operation = Rule.Operation.Exclude, original = rule4.original),
+                Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule5.original)
+              )
             )
-          )
 
-          fileD.operation should be(Rule.Operation.Include)
-          fileD.reason should be(
-            Seq(
-              Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule1.original),
-              Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule5.original)
+            fileD.operation should be(Rule.Operation.Include)
+            fileD.reason should be(
+              Seq(
+                Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule1.original),
+                Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule5.original)
+              )
             )
-          )
 
-          fileE.operation should be(Rule.Operation.Include)
-          fileE.reason should be(
-            Seq(
-              Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule1.original),
-              Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule5.original)
+            fileE.operation should be(Rule.Operation.Include)
+            fileE.reason should be(
+              Seq(
+                Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule1.original),
+                Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule5.original)
+              )
             )
-          )
 
-          fileF.operation should be(Rule.Operation.Include)
-          fileF.reason should be(
-            Seq(
-              Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule1.original),
-              Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule5.original)
+            fileF.operation should be(Rule.Operation.Include)
+            fileF.reason should be(
+              Seq(
+                Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule1.original),
+                Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule5.original)
+              )
             )
-          )
-        case other =>
-          fail(s"Unexpected result received: [$other]")
+          case other =>
+            fail(s"Unexpected result received: [$other]")
+        }
       }
     }
 
     it should "create an empty spec if no rules are provided" in {
-      Specification(rules = Seq.empty, onMatchIncluded = _ => ())(ec).await should be(Specification.empty)
+      Specification(rules = Seq.empty, onMatchIncluded = _ => ())(ec).map { spec =>
+        spec should be(Specification.empty)
+      }
     }
 
     it should "handle matching failures" in {
@@ -225,14 +227,14 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
 
       val rule1 = Rule("+ /work/missing-dir *", 0).get
 
-      val spec = Specification(rules = Seq(rule1), onMatchIncluded = _ => (), filesystem = filesystem)(ec).await
+      Specification(rules = Seq(rule1), onMatchIncluded = _ => (), filesystem = filesystem)(ec).map { spec =>
+        spec.unmatched.toList match {
+          case (`rule1`, e) :: Nil => e shouldBe a[NoSuchFileException]
+          case other               => fail(s"Unexpected result received: [$other]")
+        }
 
-      spec.unmatched.toList match {
-        case (`rule1`, e) :: Nil => e shouldBe a[NoSuchFileException]
-        case other               => fail(s"Unexpected result received: [$other]")
+        spec.entries shouldBe empty
       }
-
-      spec.entries shouldBe empty
     }
 
     it should "support collecting parent directories" in {

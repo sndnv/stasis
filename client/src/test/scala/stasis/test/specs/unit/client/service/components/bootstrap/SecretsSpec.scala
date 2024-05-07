@@ -1,20 +1,18 @@
 package stasis.test.specs.unit.client.service.components.bootstrap
 
 import java.nio.file.Path
-
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
-
 import com.google.common.jimfs.Jimfs
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.Behavior
 import org.apache.pekko.actor.typed.SpawnProtocol
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
-import org.apache.pekko.util.ByteString
+import org.apache.pekko.util.{ByteString, Timeout}
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import stasis.client.service.ApplicationArguments
@@ -448,4 +446,6 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
   private val apiEndpointConfigEntry = "stasis.client.server.api.url"
   private val tokenEndpointConfigEntry = "stasis.client.server.authentication.token-endpoint"
+
+  override implicit val timeout: Timeout = 5.seconds
 }
