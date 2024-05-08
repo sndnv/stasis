@@ -14,7 +14,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class SlickBackend[K, V](
   protected val tableName: String,
   protected val profile: JdbcProfile,
-  protected val database: JdbcProfile#Backend#DatabaseDef,
+  protected val database: JdbcProfile#Backend#Database,
   protected val serdes: KeyValueBackend.Serdes[K, V]
 )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext)
     extends KeyValueBackend[K, V] {
@@ -115,7 +115,7 @@ object SlickBackend {
   def apply[K, V](
     tableName: String,
     profile: JdbcProfile,
-    database: JdbcProfile#Backend#DatabaseDef,
+    database: JdbcProfile#Backend#Database,
     serdes: KeyValueBackend.Serdes[K, V]
   )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext): SlickBackend[K, V] =
     new SlickBackend[K, V](tableName, profile, database, serdes)

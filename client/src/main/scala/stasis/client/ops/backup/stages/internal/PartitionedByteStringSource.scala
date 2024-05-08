@@ -6,14 +6,11 @@ import org.apache.pekko.util.ByteString
 
 import scala.concurrent.Future
 
-@SuppressWarnings(Array("org.wartremover.warts.Var"))
 class PartitionedByteStringSource(val source: Source[ByteString, Future[IOResult]]) {
   def partition(withMaximumPartSize: Long): SubFlow[ByteString, Future[IOResult], source.Repr, source.Closed] =
     source
-      .statefulMapConcat { () =>
-        var collected: Long = 0
-
-        { current =>
+      .statefulMap[Long, (ByteString, Boolean)](create = () => 0L)(
+        f = (collected, current) => {
           val currentSize = current.length
 
           require(
@@ -22,14 +19,13 @@ class PartitionedByteStringSource(val source: Source[ByteString, Future[IOResult
           )
 
           if (collected + currentSize > withMaximumPartSize) {
-            collected = currentSize.toLong
-            (current, true) :: Nil
+            (currentSize.toLong, (current, true))
           } else {
-            collected += currentSize
-            (current, false) :: Nil
+            (collected + currentSize, (current, false))
           }
-        }
-      }
+        },
+        onComplete = _ => None
+      )
       .withAttributes(ActorAttributes.supervisionStrategy(Supervision.stoppingDecider))
       .splitWhen(_._2)
       .map(_._1)

@@ -6,43 +6,43 @@ name     := projectName
 licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
 homepage := Some(url("https://github.com/sndnv/stasis"))
 
-ThisBuild / scalaVersion := "2.13.12"
+ThisBuild / scalaVersion := "2.13.14"
 
 lazy val versions = new {
   // pekko
-  val pekko         = "1.0.1"
-  val pekkoHttp     = "1.0.0"
-  val pekkoHttpCors = "1.0.0"
-  val pekkoJson     = "2.1.0"
+  val pekko         = "1.0.2"
+  val pekkoHttp     = "1.0.1"
+  val pekkoHttpCors = "1.0.1"
+  val pekkoJson     = "2.5.0"
 
   // persistence
   val geode    = "1.15.1"
-  val slick    = "3.4.1"
-  val postgres = "42.6.0"
-  val mariadb  = "3.2.0"
-  val sqlite   = "3.43.2.1"
+  val slick    = "3.5.1"
+  val postgres = "42.7.3"
+  val mariadb  = "3.3.3"
+  val sqlite   = "3.45.3.0"
   val h2       = "2.2.224"
 
   // telemetry
-  val openTelemetry           = "1.31.0"
-  val openTelemetryPrometheus = "1.31.0-alpha"
+  val openTelemetry           = "1.37.0"
+  val openTelemetryPrometheus = "1.37.0-alpha"
   val prometheus              = "0.16.0"
 
   // testing
-  val scalaCheck    = "1.17.0"
-  val scalaTest     = "3.2.17"
+  val scalaCheck    = "1.18.0"
+  val scalaTest     = "3.2.18"
   val wiremock      = "3.0.1"
-  val mockito       = "1.17.27"
+  val mockito       = "1.17.31"
   val mockitoInline = "5.2.0"
   val jimfs         = "1.3.0"
 
   // misc
-  val playJson   = "2.10.1"
-  val jose4j     = "0.9.3"
+  val playJson   = "2.10.5"
+  val jose4j     = "0.9.6"
   val hkdf       = "2.0.0"
   val appdirs    = "1.2.2"
   val scopt      = "4.1.0"
-  val logback    = "1.4.11"
+  val logback    = "1.5.6"
   val systemTray = "4.4"
 }
 

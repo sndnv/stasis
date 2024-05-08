@@ -56,7 +56,7 @@ class CorePersistence(
 
   val stagingStoreDestagingDelay: FiniteDuration = persistenceConfig.getDuration("staging.destaging-delay").toMillis.millis
 
-  private val database: profile.backend.DatabaseDef = profile.api.Database.forURL(
+  private val database: profile.backend.Database = profile.api.Database.forURL(
     url = databaseUrl,
     user = persistenceConfig.getString("database.user"),
     password = persistenceConfig.getString("database.password"),
