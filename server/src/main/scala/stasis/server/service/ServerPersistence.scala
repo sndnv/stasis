@@ -42,7 +42,7 @@ class ServerPersistence(
 
   val userSaltSize: Int = persistenceConfig.getInt("users.salt-size")
 
-  private val database: profile.backend.DatabaseDef = profile.api.Database.forURL(
+  private val database: profile.backend.Database = profile.api.Database.forURL(
     url = databaseUrl,
     user = persistenceConfig.getString("database.user"),
     password = persistenceConfig.getString("database.password"),

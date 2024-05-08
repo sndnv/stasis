@@ -31,7 +31,7 @@ class Persistence(
   val databaseDriver: String = persistenceConfig.getString("database.driver")
   val databaseKeepAlive: Boolean = persistenceConfig.getBoolean("database.keep-alive-connection")
 
-  private val database: profile.backend.DatabaseDef = profile.api.Database.forURL(
+  private val database: profile.backend.Database = profile.api.Database.forURL(
     url = databaseUrl,
     user = persistenceConfig.getString("database.user"),
     password = persistenceConfig.getString("database.password"),

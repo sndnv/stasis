@@ -64,22 +64,17 @@ object Operators {
       *
       * @return
       */
-    @SuppressWarnings(Array("org.wartremover.warts.Var", "org.wartremover.warts.Null"))
     def dropLatestDuplicates[T >: Null](f: Out => Option[T]): Source[T, Mat] =
-      source.statefulMapConcat { () =>
-        var last: T = null
-
-        { element =>
-          f(element).flatMap {
-            case current if current == last =>
-              None
-
-            case current =>
-              last = current
-              Some(current)
-          }.toList
-        }
-      }
+      source
+        .statefulMap[Option[T], Option[T]](create = () => None)(
+          f = (last, element) =>
+            f(element) match {
+              case current if last == current => (last, None)
+              case current                    => (current, current)
+            },
+          onComplete = _ => None
+        )
+        .mapConcat(_.toList)
   }
 
   implicit class ExtendedByteStringSource[+Mat](source: Source[ByteString, Mat]) {
