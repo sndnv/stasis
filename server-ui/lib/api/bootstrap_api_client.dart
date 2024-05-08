@@ -1,14 +1,13 @@
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
 import 'package:server_ui/api/api_client.dart';
 import 'package:server_ui/model/devices/device_bootstrap_code.dart';
 
 class BootstrapApiClient extends ApiClient implements DeviceBootstrapCodesApiClient {
   BootstrapApiClient({
-    @override required String server,
-    required http.Client underlying,
-  }) : super(server: server, underlying: underlying);
+    @override required super.server,
+    required super.underlying,
+  });
 
   @override
   Future<List<DeviceBootstrapCode>> getBootstrapCodes({required bool privileged}) async {

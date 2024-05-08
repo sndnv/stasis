@@ -15,7 +15,7 @@ import 'package:stasis_client_ui/pages/page_destinations.dart';
 import 'package:stasis_client_ui/pages/page_router.dart';
 
 class ClientApp extends StatefulWidget {
-  const ClientApp({Key? key}) : super(key: key);
+  const ClientApp({super.key});
 
   @override
   State createState() {

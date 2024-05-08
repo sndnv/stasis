@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 
 class CredentialsForm extends StatefulWidget {
   const CredentialsForm({
-    Key? key,
+    super.key,
     required this.loginHandler,
-  }) : super(key: key);
+  });
 
   final Future<void> Function(String, String) loginHandler;
 

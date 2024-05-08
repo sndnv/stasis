@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
 import 'package:server_ui/api/api_client.dart';
 import 'package:server_ui/model/api/requests/create_dataset_definition.dart';
 import 'package:server_ui/model/api/requests/create_device_own.dart';
@@ -46,9 +45,9 @@ class DefaultApiClient extends ApiClient
         ReservationsApiClient,
         ServiceApiClient {
   DefaultApiClient({
-    required String server,
-    required http.Client underlying,
-  }) : super(server: server, underlying: underlying);
+    required super.server,
+    required super.underlying,
+  });
 
   @override
   Future<List<DatasetDefinition>> getDatasetDefinitions({required bool privileged}) async {

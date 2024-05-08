@@ -4,7 +4,7 @@ import 'package:server_ui/pages/page_destinations.dart';
 import 'package:server_ui/pages/page_router.dart';
 
 class NotFound extends StatelessWidget {
-  const NotFound({Key? key}) : super(key: key);
+  const NotFound({super.key});
 
   @override
   Widget build(BuildContext context) {

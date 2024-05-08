@@ -7,7 +7,7 @@ import 'package:identity_ui/pages/default/components.dart';
 import 'package:identity_ui/pages/page_router.dart';
 
 class AuthorizationCallback extends StatelessWidget {
-  AuthorizationCallback({Key? key, required this.config}) : super(key: key);
+  AuthorizationCallback({super.key, required this.config});
   final OAuthConfig config;
 
   final List<String> _requiredParameters = ['code', 'state'];

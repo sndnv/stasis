@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 class BackgroundProcesses extends StatefulWidget {
   const BackgroundProcesses({
-    Key? key,
+    super.key,
     required this.terminationHandler,
-  }) : super(key: key);
+  });
 
   final void Function() terminationHandler;
 

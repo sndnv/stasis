@@ -97,11 +97,11 @@ class GrpcEndpointAddress with _$GrpcEndpointAddress {
 extension ExtendedNode on Node {
   String id() {
     switch (actualType()) {
-      case LocalNode:
+      case const (LocalNode):
         return (this as LocalNode).id;
-      case RemoteHttpNode:
+      case const (RemoteHttpNode):
         return (this as RemoteHttpNode).id;
-      case RemoteGrpcNode:
+      case const (RemoteGrpcNode):
         return (this as RemoteGrpcNode).id;
       default:
         throw ArgumentError('Unexpected node type encountered: [$runtimeType]');
@@ -110,12 +110,12 @@ extension ExtendedNode on Node {
 
   String nodeType() {
     switch (actualType()) {
-      case LocalNode:
+      case const (LocalNode):
         final node = this as LocalNode;
         return '${node.nodeType} / ${node.storeDescriptor.backendType()}';
-      case RemoteHttpNode:
+      case const (RemoteHttpNode):
         return (this as RemoteHttpNode).nodeType;
-      case RemoteGrpcNode:
+      case const (RemoteGrpcNode):
         return (this as RemoteGrpcNode).nodeType;
       default:
         throw ArgumentError('Unexpected node type encountered: [$runtimeType]');
@@ -124,12 +124,12 @@ extension ExtendedNode on Node {
 
   String address() {
     switch (actualType()) {
-      case LocalNode:
+      case const (LocalNode):
         final descriptor = (this as LocalNode).storeDescriptor;
         return descriptor.location();
-      case RemoteHttpNode:
+      case const (RemoteHttpNode):
         return (this as RemoteHttpNode).address.uri;
-      case RemoteGrpcNode:
+      case const (RemoteGrpcNode):
         final address = (this as RemoteGrpcNode).address;
         return '${address.host}:${address.port.toString()}';
       default:
@@ -139,11 +139,11 @@ extension ExtendedNode on Node {
 
   bool storageAllowed() {
     switch (actualType()) {
-      case LocalNode:
+      case const (LocalNode):
         return true;
-      case RemoteHttpNode:
+      case const (RemoteHttpNode):
         return (this as RemoteHttpNode).storageAllowed;
-      case RemoteGrpcNode:
+      case const (RemoteGrpcNode):
         return (this as RemoteGrpcNode).storageAllowed;
       default:
         throw ArgumentError('Unexpected node type encountered: [$runtimeType]');

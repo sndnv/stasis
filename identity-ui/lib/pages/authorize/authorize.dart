@@ -7,12 +7,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class Authorize extends StatelessWidget {
   Authorize({
-    Key? key,
+    super.key,
     required this.authorizationEndpoint,
     required this.oauthConfig,
     required this.passwordDerivationConfig,
     required this.prefs,
-  }) : super(key: key);
+  });
   final Uri authorizationEndpoint;
   final OAuthConfig oauthConfig;
   final UserAuthenticationPasswordDerivationConfig passwordDerivationConfig;

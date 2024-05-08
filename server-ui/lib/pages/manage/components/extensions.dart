@@ -85,14 +85,14 @@ extension ExtendedWidget on Widget {
 extension ExtendedNode on Node {
   Widget renderAddress(BuildContext context) {
     switch (actualType()) {
-      case LocalNode:
+      case const (LocalNode):
         final descriptor = (this as LocalNode).storeDescriptor;
         return descriptor.location().withInfo(
           () {
             List<Widget> descriptorInfo;
 
             switch (descriptor.actualType()) {
-              case StreamingMemoryBackendDescriptor:
+              case const (StreamingMemoryBackendDescriptor):
                 final memory = (descriptor as StreamingMemoryBackendDescriptor);
                 descriptorInfo = [
                   ListTile(
@@ -117,7 +117,7 @@ extension ExtendedNode on Node {
                   ),
                 ];
                 break;
-              case ContainerBackendDescriptor:
+              case const (ContainerBackendDescriptor):
                 final container = (descriptor as ContainerBackendDescriptor);
                 descriptorInfo = [
                   ListTile(
@@ -142,7 +142,7 @@ extension ExtendedNode on Node {
                   ),
                 ];
                 break;
-              case FileBackendDescriptor:
+              case const (FileBackendDescriptor):
                 final file = (descriptor as FileBackendDescriptor);
                 descriptorInfo = [
                   ListTile(
@@ -172,9 +172,9 @@ extension ExtendedNode on Node {
             );
           },
         );
-      case RemoteHttpNode:
+      case const (RemoteHttpNode):
         return Text((this as RemoteHttpNode).address.uri);
-      case RemoteGrpcNode:
+      case const (RemoteGrpcNode):
         final address = (this as RemoteGrpcNode).address;
         return Row(
           children: [

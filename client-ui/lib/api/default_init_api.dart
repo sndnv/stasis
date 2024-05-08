@@ -4,14 +4,13 @@ import 'package:stasis_client_ui/api/api_client.dart';
 import 'package:stasis_client_ui/api/endpoint_context.dart';
 import 'package:stasis_client_ui/config/config.dart';
 import 'package:stasis_client_ui/model/service/init_state.dart';
-import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart' as io_client;
 
 class DefaultInitApi extends ApiClient implements InitApi {
   DefaultInitApi({
-    required String server,
-    required http.Client underlying,
-  }) : super(server: server, underlying: underlying);
+    required super.server,
+    required super.underlying,
+  });
 
   static DefaultInitApi fromConfig({required Config config, bool insecure = false}) {
     final apiConfig = config.getConfig('init');

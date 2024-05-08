@@ -21,15 +21,14 @@ import 'package:stasis_client_ui/model/schedules/active_schedule.dart';
 import 'package:stasis_client_ui/model/schedules/schedule.dart';
 import 'package:stasis_client_ui/model/service/ping.dart';
 import 'package:stasis_client_ui/model/users/user.dart';
-import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart' as io_client;
 
 class DefaultClientApi extends ApiClient implements ClientApi {
   DefaultClientApi({
-    required String server,
-    required http.Client underlying,
+    required super.server,
+    required super.underlying,
     required String apiToken,
-  }) : super(server: server, underlying: underlying, token: apiToken);
+  }) : super(token: apiToken);
 
   static DefaultClientApi fromConfig({required Config config, required String apiToken, bool insecure = false}) {
     final apiType = config.getString('type');

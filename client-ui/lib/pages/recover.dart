@@ -9,9 +9,9 @@ import 'package:flutter/material.dart';
 
 class Recover extends StatefulWidget {
   const Recover({
-    Key? key,
+    super.key,
     required this.client,
-  }) : super(key: key);
+  });
 
   final ClientApi client;
 
@@ -185,11 +185,11 @@ class _RecoverState extends State<Recover> {
 
 class RecoverButton extends StatefulWidget {
   const RecoverButton({
-    Key? key,
+    super.key,
     required this.definitionController,
     required this.entryController,
     required this.onPressed,
-  }) : super(key: key);
+  });
 
   final TextEditingController definitionController;
   final DatasetEntryController entryController;
