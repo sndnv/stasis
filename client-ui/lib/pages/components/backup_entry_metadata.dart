@@ -12,11 +12,11 @@ import 'package:flutter/material.dart';
 
 class BackupEntryMetadata extends StatefulWidget {
   const BackupEntryMetadata({
-    Key? key,
+    super.key,
     required this.client,
     required this.entry,
     required this.metadata,
-  }) : super(key: key);
+  });
 
   final ClientApi client;
 

@@ -45,20 +45,20 @@ Widget buildPage<T>({
         Widget error;
 
         switch (snapshot.error.runtimeType) {
-          case ApiUnavailable:
+          case const (ApiUnavailable):
             error = errorInfo(
               title: 'Background Service Unavailable',
               description: 'Failed to connect to background service.',
             );
             break;
-          case AuthenticationFailure:
+          case const (AuthenticationFailure):
             error = errorInfo(
               title: 'Authentication Failure',
               description:
                   'Background service request was rejected by the server.\n\nCheck the logs for more information.',
             );
             break;
-          case TimeoutException:
+          case const (TimeoutException):
             error = errorInfo(
               title: 'Request Timeout',
               description: 'Background service took too long to respond.',

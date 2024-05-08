@@ -9,12 +9,12 @@ import 'package:flutter/material.dart';
 
 class Login extends StatefulWidget {
   const Login({
-    Key? key,
+    super.key,
     required this.init,
     required this.client,
     required this.processes,
     required this.loginCallback,
-  }) : super(key: key);
+  });
 
   final InitApi init;
   final ClientApi? client;

@@ -193,8 +193,8 @@ void main() {
 }
 
 class TestApiClient extends ApiClient {
-  TestApiClient(String server, http.Client client, {String? token})
-      : super(token: token, server: server, underlying: client);
+  TestApiClient(String server, http.Client client, {super.token})
+      : super(server: server, underlying: client);
 
   Future<List<TestData>> getMultiple() async {
     return await get(from: '/test/get', fromJson: TestData.fromJson);

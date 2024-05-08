@@ -7,7 +7,7 @@ import 'package:server_ui/pages/default/components.dart';
 import 'package:server_ui/pages/page_destinations.dart';
 
 class AuthorizationCallback extends StatelessWidget {
-  AuthorizationCallback({Key? key, required this.config}) : super(key: key);
+  AuthorizationCallback({super.key, required this.config});
   final OAuthConfig config;
 
   final List<String> _requiredParameters = ['code', 'state'];
