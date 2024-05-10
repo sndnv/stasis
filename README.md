@@ -47,7 +47,7 @@ device and recover the original system in an automated and repeatable way.*
   various storage backends (**[Apache Geode](https://geode.apache.org/)**, **[Slick](https://scala-slick.org/)**,
   **in-memory**, **file-based**) are supported and used
 * ***Secrets Escrow*** -
-  (*TODO*) enables storing encrypted device secrets on the server to simplify recovering of a lost or replaced device
+  enables storing encrypted device secrets on the server to simplify recovering of a lost or replaced device
 * ***Serverless Mode*** -
   (*TODO*) enables creating backups and recovering from them without the presence of a server
 
