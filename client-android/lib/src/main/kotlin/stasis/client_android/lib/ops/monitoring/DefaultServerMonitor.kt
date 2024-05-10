@@ -35,7 +35,7 @@ class DefaultServerMonitor(
             delay(timeMillis = interval.toMillis())
         } catch (_: CancellationException) {
             // do nothing
-        } catch (e: Throwable) {
+        } catch (_: Throwable) {
             tracker.unreachable(api.server)
             delay(timeMillis = max(interval.toMillis() / UnreachableIntervalReduction, initialDelay.toMillis()))
         } finally {
