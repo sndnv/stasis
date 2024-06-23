@@ -161,6 +161,11 @@ void main() {
       expect(() async => await future.andProcessResponse(), throwsA(const TypeMatcher<AuthorizationFailure>()));
     });
 
+    test('handle 409 responses', () async {
+      final future = Future.value(http.Response('', 409));
+      expect(() async => await future.andProcessResponse(), throwsA(const TypeMatcher<ConflictFailure>()));
+    });
+
     test('handle 4xx responses', () async {
       final future = Future.value(http.Response('', 400));
       expect(() async => await future.andProcessResponse(), throwsA(const TypeMatcher<BadRequest>()));
