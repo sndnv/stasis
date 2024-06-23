@@ -1,20 +1,30 @@
 package stasis.test.specs.unit.client.service.components
 
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.util.ByteString
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.client.service.{ApplicationDirectory, ApplicationTray}
-import stasis.client.service.components.exceptions.ServiceStartupFailure
-import stasis.client.service.components.{Base, Files, Init, Secrets}
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.mocks.MockTokenEndpoint
-import stasis.test.specs.unit.client.{EncodingHelpers, ResourceHelpers}
-
 import java.util.UUID
+
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.util.control.NonFatal
+
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.Behavior
+import org.apache.pekko.actor.typed.SpawnProtocol
+import org.apache.pekko.util.ByteString
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import stasis.client.service.components.exceptions.ServiceStartupFailure
+import stasis.client.service.components.internal.ConfigOverride
+import stasis.client.service.components.Base
+import stasis.client.service.components.Files
+import stasis.client.service.components.Init
+import stasis.client.service.components.Secrets
+import stasis.client.service.ApplicationDirectory
+import stasis.client.service.ApplicationTray
+import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.client.mocks.MockTokenEndpoint
+import stasis.test.specs.unit.client.EncodingHelpers
+import stasis.test.specs.unit.client.ResourceHelpers
 
 class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelpers {
   "A Secrets component" should "create itself from config" in {
@@ -35,6 +45,64 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       endpoint.stop()
       secrets.deviceSecret.user should be(expectedUser)
       secrets.deviceSecret.device should be(expectedDevice)
+    }
+  }
+
+  it should "support verifying user password" in {
+    val tokenEndpointPort = ports.dequeue()
+    val endpoint = MockTokenEndpoint(port = tokenEndpointPort, token = "test-token")
+    endpoint.start()
+
+    val directory = createCustomApplicationDirectory(tokenEndpointPort)
+
+    Secrets(
+      base = Base(
+        applicationDirectory = directory,
+        applicationTray = ApplicationTray.NoOp(),
+        terminate = () => ()
+      ).await,
+      init = new Init {
+        override def credentials(): Future[(String, Array[Char])] = Future.successful((username, password))
+      }
+    ).map { secrets =>
+      endpoint.stop()
+
+      secrets.verifyUserPassword(password) should be(true)
+      secrets.verifyUserPassword("other-password".toCharArray) should be(false)
+    }
+  }
+
+  it should "support updating user credentials" in {
+    val tokenEndpointPort = ports.dequeue()
+    val endpoint = MockTokenEndpoint(port = tokenEndpointPort, token = "test-token")
+    endpoint.start()
+
+    val directory = createCustomApplicationDirectory(tokenEndpointPort)
+
+    for {
+      base <- Base(applicationDirectory = directory, applicationTray = ApplicationTray.NoOp(), terminate = () => ())
+      secrets <- Secrets(base = base, init = () => Future.successful((username, password)))
+      currentPasswordValidBeforeUpdate = secrets.verifyUserPassword(password)
+      newPasswordValidBeforeUpdate = secrets.verifyUserPassword(newPassword)
+      existingDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
+      existingSalt = ConfigOverride.load(directory).getString(userSaltConfigEntry)
+      _ <- secrets.updateUserCredentials(newPassword, newSalt)
+      updatedDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
+      updatedSalt = ConfigOverride.load(directory).getString(userSaltConfigEntry)
+      currentPasswordValidAfterUpdate = secrets.verifyUserPassword(password)
+      newPasswordValidAfterUpdate = secrets.verifyUserPassword(newPassword)
+    } yield {
+      endpoint.stop()
+
+      currentPasswordValidBeforeUpdate should be(true)
+      newPasswordValidBeforeUpdate should be(false)
+      existingSalt should be("test-salt")
+      existingDeviceSecret should be(encryptedDeviceSecret)
+
+      updatedSalt should be(newSalt)
+      updatedDeviceSecret should be(reEncryptedDeviceSecret)
+      currentPasswordValidAfterUpdate should be(false)
+      newPasswordValidAfterUpdate should be(true)
     }
   }
 
@@ -171,7 +239,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
         java.nio.file.Files.write(path.resolve(Files.DeviceSecret), deviceSecret.toArray)
         java.nio.file.Files.writeString(
           path.resolve(Files.ConfigOverride),
-          s"""{$tokenEndpointConfigEntry: "http://localhost:$tokenEndpointPort/oauth/token"}"""
+          s"""{$tokenEndpointConfigEntry: "http://localhost:$tokenEndpointPort/oauth/token", $userSaltConfigEntry: "test-salt"}"""
         )
       }
     )
@@ -186,11 +254,15 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
   private val ports: mutable.Queue[Int] = (29000 to 29100).to(mutable.Queue)
 
   private val encryptedDeviceSecret = "08ko0LWDalPvEHna/WWuq3LoEaA3m4dQ1QuP".decodeFromBase64 // decrypted == "test-secret"
+  private val reEncryptedDeviceSecret = "hU9e2iNzu8H3G5e4kmBMi4hMG3Y9ZCl2oYGG".decodeFromBase64 // decrypted == "test-secret"
 
   private val username = "test-user"
   private val password = "test-password".toCharArray
+  private val newPassword = "new-password".toCharArray
+  private val newSalt = "new-salt"
   private val expectedUser = UUID.fromString("3256119f-068c-4c17-9184-2ec46f48ca54")
   private val expectedDevice = UUID.fromString("bc3b2b9a-3d04-4c8c-a6bb-b4ee428d1a99")
 
   private val tokenEndpointConfigEntry = "stasis.client.server.authentication.token-endpoint"
+  private val userSaltConfigEntry = "stasis.client.server.api.user-salt"
 }

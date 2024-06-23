@@ -2,6 +2,8 @@ package stasis.test.specs.unit.client.api.http.routes
 
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.concurrent.Future
+
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
@@ -13,8 +15,10 @@ import stasis.client.api.http.routes.Service
 import stasis.shared.api.responses.Ping
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks._
-
 import scala.concurrent.duration._
+
+import org.apache.pekko.Done
+import stasis.test.specs.unit.client.Fixtures
 
 class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -50,7 +54,12 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
       scheduler = MockOperationScheduler(),
       trackers = MockTrackerViews(),
       search = MockSearch(),
-      terminateService = terminate,
+      handlers = Context.Handlers(
+        terminateService = terminate,
+        verifyUserPassword = _ => false,
+        updateUserCredentials = (_, _) => Future.successful(Done)
+      ),
+      secretsConfig = Fixtures.Secrets.DefaultConfig,
       log = LoggerFactory.getLogger(this.getClass.getName)
     )
 

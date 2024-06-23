@@ -1,26 +1,43 @@
 package stasis.test.specs.unit.client.service.components
 
+import java.util.concurrent.atomic.AtomicInteger
+
+import scala.collection.mutable
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.control.NonFatal
+
+import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.Behavior
+import org.apache.pekko.actor.typed.SpawnProtocol
 import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
-import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
-import org.slf4j.{Logger, LoggerFactory}
+import org.apache.pekko.http.scaladsl.model.HttpMethods
+import org.apache.pekko.http.scaladsl.model.HttpRequest
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.util.ByteString
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import stasis.client.api.clients.Clients
+import stasis.client.encryption.Aes
+import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.ops.monitoring.ServerMonitor
-import stasis.client.ops.scheduling.{OperationExecutor, OperationScheduler}
+import stasis.client.ops.scheduling.OperationExecutor
+import stasis.client.ops.scheduling.OperationScheduler
 import stasis.client.ops.search.Search
+import stasis.client.security.CredentialsProvider
 import stasis.client.service.ApplicationTray
 import stasis.client.service.components._
 import stasis.client.service.components.exceptions.ServiceStartupFailure
+import stasis.shared.model.devices.Device
+import stasis.shared.model.users.User
+import stasis.shared.secrets.SecretsConfig
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.client.mocks._
-
-import java.util.concurrent.atomic.AtomicInteger
-import scala.collection.mutable
-import scala.concurrent.duration._
-import scala.util.control.NonFatal
 
 class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
   "An ApiEndpoint component" should "create itself from config" in {
@@ -54,7 +71,8 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
         override def scheduler: OperationScheduler = MockOperationScheduler()
         override def monitor: ServerMonitor = MockServerMonitor()
         override def search: Search = MockSearch()
-      }
+      },
+      secrets = secrets
     ).map { endpoint =>
       noException should be thrownBy endpoint.api.start().await
       java.nio.file.Files.readString(directory.config.get.resolve(Files.ApiToken)) should not be empty
@@ -102,7 +120,8 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
         override def scheduler: OperationScheduler = MockOperationScheduler()
         override def monitor: ServerMonitor = MockServerMonitor()
         override def search: Search = MockSearch()
-      }
+      },
+      secrets = secrets
     ).await
 
     val _ = endpoint.api.start().await
@@ -147,7 +166,8 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
         override def scheduler: OperationScheduler = MockOperationScheduler()
         override def monitor: ServerMonitor = MockServerMonitor()
         override def search: Search = MockSearch()
-      }
+      },
+      secrets = secrets
     ).map { result =>
       fail(s"Unexpected result received: [$result]")
     }.recover { case NonFatal(e: ServiceStartupFailure) =>
@@ -187,7 +207,8 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
         override def scheduler: OperationScheduler = MockOperationScheduler()
         override def monitor: ServerMonitor = MockServerMonitor()
         override def search: Search = MockSearch()
-      }
+      },
+      secrets = secrets
     ).await
 
     endpoint.api
@@ -213,4 +234,30 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
   private val apiTerminationDelayEntry = "stasis.client.service.termination-delay"
 
   private val ports: mutable.Queue[Int] = (30000 to 30100).to(mutable.Queue)
+
+  implicit val secretsConfig: SecretsConfig = SecretsConfig(
+    config = typedSystem.settings.config.getConfig("stasis.client.secrets"),
+    ivSize = Aes.IvSize
+  )
+
+  private val secrets = new Secrets {
+    override def deviceSecret: DeviceSecret =
+      DeviceSecret(
+        user = User.generateId(),
+        device = Device.generateId(),
+        secret = ByteString.empty
+      )
+
+    override def credentialsProvider: CredentialsProvider =
+      new CredentialsProvider {
+        override def core: Future[HttpCredentials] = Future.successful(OAuth2BearerToken(token = "test-token"))
+        override def api: Future[HttpCredentials] = Future.successful(OAuth2BearerToken(token = "test-token"))
+      }
+
+    override def config: SecretsConfig = secretsConfig
+
+    override def verifyUserPassword: Array[Char] => Boolean = _ => false
+
+    override def updateUserCredentials: (Array[Char], String) => Future[Done] = (_, _) => Future.successful(Done)
+  }
 }

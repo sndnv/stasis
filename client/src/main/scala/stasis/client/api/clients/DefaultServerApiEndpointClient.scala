@@ -1,7 +1,14 @@
 package stasis.client.api.clients
 
+import java.time.Instant
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.control.NonFatal
+
 import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.SpawnProtocol
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
 import org.apache.pekko.http.scaladsl.model._
 import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
@@ -15,16 +22,18 @@ import stasis.core.api.PoolClient
 import stasis.core.networking.exceptions.ClientFailure
 import stasis.core.security.tls.EndpointContext
 import stasis.core.streaming.Operators.ExtendedSource
-import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}
-import stasis.shared.api.responses.{CreatedDatasetDefinition, CreatedDatasetEntry, Ping}
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.api.requests.ResetUserPassword
+import stasis.shared.api.requests.CreateDatasetDefinition
+import stasis.shared.api.requests.CreateDatasetEntry
+import stasis.shared.api.responses.UpdatedUserSalt
+import stasis.shared.api.responses.CreatedDatasetDefinition
+import stasis.shared.api.responses.CreatedDatasetEntry
+import stasis.shared.api.responses.Ping
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
-
-import java.time.Instant
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
 
 class DefaultServerApiEndpointClient(
   apiUrl: String,
@@ -240,6 +249,36 @@ class DefaultServerApiEndpointClient(
       user <- response.to[User]
     } yield {
       user
+    }
+
+  override def resetUserSalt(): Future[UpdatedUserSalt] =
+    for {
+      credentials <- credentials
+      response <- offer(
+        request = HttpRequest(
+          method = HttpMethods.PUT,
+          uri = s"$apiUrl/v1/users/self/salt"
+        ).addCredentials(credentials = credentials)
+      ).transformClientFailures()
+      salt <- response.to[UpdatedUserSalt]
+    } yield {
+      salt
+    }
+
+  override def resetUserPassword(request: ResetUserPassword): Future[Done] =
+    for {
+      entity <- request.toEntity
+      credentials <- credentials
+      response <- offer(
+        request = HttpRequest(
+          method = HttpMethods.PUT,
+          uri = s"$apiUrl/v1/users/self/password",
+          entity = entity
+        ).addCredentials(credentials = credentials)
+      ).transformClientFailures()
+      _ <- response.processed()
+    } yield {
+      Done
     }
 
   override def device(): Future[Device] =

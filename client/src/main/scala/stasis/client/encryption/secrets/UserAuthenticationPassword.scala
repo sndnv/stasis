@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 // doc - sent to auth provider
 sealed trait UserAuthenticationPassword extends Secret {
   def extract(): String
+  def digested(): String
 }
 
 object UserAuthenticationPassword {
@@ -28,6 +29,8 @@ object UserAuthenticationPassword {
         DerivedPasswords.encode(hashedPassword)
       }
     }
+
+    override def digested(): String = DerivedPasswords.digest(password = hashedPassword)
   }
 
   object Hashed {
@@ -51,6 +54,8 @@ object UserAuthenticationPassword {
         rawPassword.utf8String
       }
     }
+
+    override def digested(): String = DerivedPasswords.digest(password = rawPassword)
   }
 
   object Unhashed {

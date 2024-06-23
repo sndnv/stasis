@@ -22,7 +22,7 @@ class Service()(implicit context: Context) extends ApiRoutes {
       path("stop") {
         put {
           log.info("Received client termination request; stopping...")
-          context.terminateService()
+          context.handlers.terminateService()
           consumeEntity & complete(StatusCodes.NoContent)
         }
       }

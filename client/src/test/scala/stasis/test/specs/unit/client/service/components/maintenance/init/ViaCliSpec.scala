@@ -5,51 +5,117 @@ import stasis.client.service.components.maintenance.init.ViaCli
 import stasis.test.specs.unit.AsyncUnitSpec
 
 class ViaCliSpec extends AsyncUnitSpec {
-  "An Init via CLI" should "support retrieving credentials" in {
+  "An Init via CLI" should "support retrieving current credentials" in {
     val expectedArgs = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = false,
       deviceSecretOperation = None,
-      userName = "test-user",
-      userPassword = "test-password".toCharArray
+      userCredentialsOperation = None,
+      currentUserName = "test-user",
+      currentUserPassword = "test-password".toCharArray,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     ViaCli
-      .retrieveCredentials(args = expectedArgs)
+      .retrieveCurrentCredentials(args = expectedArgs)
       .map { case (actualName, actualPassword) =>
-        actualName should be(expectedArgs.userName)
-        actualPassword.mkString should be(expectedArgs.userPassword.mkString)
+        actualName should be(expectedArgs.currentUserName)
+        actualPassword.mkString should be(expectedArgs.currentUserPassword.mkString)
       }
   }
 
-  it should "fail to retrieve credentials if no user name is provided" in {
+  it should "fail to retrieve current credentials if no user name is provided" in {
     val expectedArgs = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = false,
       deviceSecretOperation = None,
-      userName = "",
-      userPassword = "test-password".toCharArray
+      userCredentialsOperation = None,
+      currentUserName = "",
+      currentUserPassword = "test-password".toCharArray,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     ViaCli
-      .retrieveCredentials(args = expectedArgs)
+      .retrieveCurrentCredentials(args = expectedArgs)
       .failed
       .map { e =>
-        e.getMessage should include("User name cannot be empty")
+        e.getMessage should include("Current user name cannot be empty")
       }
   }
 
-  it should "fail to retrieve credentials if no user password is provided" in {
+  it should "fail to retrieve current credentials if no user password is provided" in {
     val expectedArgs = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = false,
       deviceSecretOperation = None,
-      userName = "test-user",
-      userPassword = Array.emptyCharArray
+      userCredentialsOperation = None,
+      currentUserName = "test-user",
+      currentUserPassword = Array.emptyCharArray,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     ViaCli
-      .retrieveCredentials(args = expectedArgs)
+      .retrieveCurrentCredentials(args = expectedArgs)
       .failed
       .map { e =>
-        e.getMessage should include("User password cannot be empty")
+        e.getMessage should include("Current user password cannot be empty")
+      }
+  }
+
+  it should "support retrieving new credentials" in {
+    val expectedArgs = ApplicationArguments.Mode.Maintenance(
+      regenerateApiCertificate = false,
+      deviceSecretOperation = None,
+      userCredentialsOperation = None,
+      currentUserName = "",
+      currentUserPassword = Array.emptyCharArray,
+      newUserPassword = "test-password".toCharArray,
+      newUserSalt = "test-salt"
+    )
+
+    ViaCli
+      .retrieveNewCredentials(args = expectedArgs)
+      .map { case (actualPassword, actualSalt) =>
+        actualPassword.mkString should be(expectedArgs.newUserPassword.mkString)
+        actualSalt should be(expectedArgs.newUserSalt)
+      }
+  }
+
+  it should "fail to retrieve new credentials if no user password is provided" in {
+    val expectedArgs = ApplicationArguments.Mode.Maintenance(
+      regenerateApiCertificate = false,
+      deviceSecretOperation = None,
+      userCredentialsOperation = None,
+      currentUserName = "",
+      currentUserPassword = Array.emptyCharArray,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = "test-salt"
+    )
+
+    ViaCli
+      .retrieveNewCredentials(args = expectedArgs)
+      .failed
+      .map { e =>
+        e.getMessage should include("New user password cannot be empty")
+      }
+  }
+
+  it should "fail to retrieve new credentials if no user salt is provided" in {
+    val expectedArgs = ApplicationArguments.Mode.Maintenance(
+      regenerateApiCertificate = false,
+      deviceSecretOperation = None,
+      userCredentialsOperation = None,
+      currentUserName = "",
+      currentUserPassword = Array.emptyCharArray,
+      newUserPassword = "test-password".toCharArray,
+      newUserSalt = ""
+    )
+
+    ViaCli
+      .retrieveNewCredentials(args = expectedArgs)
+      .failed
+      .map { e =>
+        e.getMessage should include("New user salt cannot be empty")
       }
   }
 }

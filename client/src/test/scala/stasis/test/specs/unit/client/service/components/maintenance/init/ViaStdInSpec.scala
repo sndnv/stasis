@@ -6,16 +6,16 @@ import stasis.client.service.components.maintenance.init.ViaStdIn
 import stasis.test.specs.unit.AsyncUnitSpec
 
 class ViaStdInSpec extends AsyncUnitSpec with AsyncMockitoSugar {
-  "An Init via StdIn" should "support retrieving user name and password" in {
+  "An Init via StdIn" should "support retrieving current user name and password" in {
     val expectedUserName = "test-user"
     val expectedUserPassword = "test-password".toCharArray
 
     val console = mock[java.io.Console]
-    when(console.readLine("User Name: ")).thenReturn(expectedUserName)
-    when(console.readPassword("User Password: ")).thenReturn(expectedUserPassword)
+    when(console.readLine("Current User Name: ")).thenReturn(expectedUserName)
+    when(console.readPassword("Current User Password: ")).thenReturn(expectedUserPassword)
 
     ViaStdIn
-      .retrieveCredentials(
+      .retrieveCurrentCredentials(
         console = console,
         args = ApplicationArguments.Mode.Maintenance.empty
       )
@@ -25,17 +25,17 @@ class ViaStdInSpec extends AsyncUnitSpec with AsyncMockitoSugar {
       }
   }
 
-  it should "skip asking for user name if it's already provided" in {
+  it should "skip asking for current user name if it's already provided" in {
     val expectedUserName = "test-name"
     val expectedUserPassword = "test-password".toCharArray
 
     val console = mock[java.io.Console]
-    when(console.readPassword("User Password: ")).thenReturn(expectedUserPassword)
+    when(console.readPassword("Current User Password: ")).thenReturn(expectedUserPassword)
 
     ViaStdIn
-      .retrieveCredentials(
+      .retrieveCurrentCredentials(
         console = console,
-        args = ApplicationArguments.Mode.Maintenance.empty.copy(userName = expectedUserName)
+        args = ApplicationArguments.Mode.Maintenance.empty.copy(currentUserName = expectedUserName)
       )
       .map { case (name, password) =>
         name.mkString should be(expectedUserName.mkString)
@@ -43,17 +43,17 @@ class ViaStdInSpec extends AsyncUnitSpec with AsyncMockitoSugar {
       }
   }
 
-  it should "skip asking for user password if it's already provided" in {
+  it should "skip asking for current user password if it's already provided" in {
     val expectedUserName = "test-name"
     val expectedUserPassword = "test-password".toCharArray
 
     val console = mock[java.io.Console]
-    when(console.readLine("User Name: ")).thenReturn(expectedUserName)
+    when(console.readLine("Current User Name: ")).thenReturn(expectedUserName)
 
     ViaStdIn
-      .retrieveCredentials(
+      .retrieveCurrentCredentials(
         console = console,
-        args = ApplicationArguments.Mode.Maintenance.empty.copy(userPassword = expectedUserPassword)
+        args = ApplicationArguments.Mode.Maintenance.empty.copy(currentUserPassword = expectedUserPassword)
       )
       .map { case (name, password) =>
         name.mkString should be(expectedUserName.mkString)
@@ -61,41 +61,134 @@ class ViaStdInSpec extends AsyncUnitSpec with AsyncMockitoSugar {
       }
   }
 
-  it should "fail if no or empty user name is provided" in {
+  it should "fail if no or empty current user name is provided" in {
     val expectedUserName = "   "
     val expectedUserPassword = "test-password".toCharArray
 
     val console = mock[java.io.Console]
-    when(console.readLine("User Name: ")).thenReturn(expectedUserName)
-    when(console.readPassword("User Password: ")).thenReturn(expectedUserPassword)
+    when(console.readLine("Current User Name: ")).thenReturn(expectedUserName)
+    when(console.readPassword("Current User Password: ")).thenReturn(expectedUserPassword)
 
     ViaStdIn
-      .retrieveCredentials(
+      .retrieveCurrentCredentials(
         console = console,
         args = ApplicationArguments.Mode.Maintenance.empty
       )
       .failed
       .map { e =>
-        e.getMessage should include("User name cannot be empty")
+        e.getMessage should include("Current user name cannot be empty")
       }
   }
 
-  it should "fail if no or empty user password is provided" in {
+  it should "fail if no or empty current user password is provided" in {
     val expectedUserName = "test-name"
     val expectedUserPassword = Array.emptyCharArray
 
     val console = mock[java.io.Console]
-    when(console.readLine("User Name: ")).thenReturn(expectedUserName)
-    when(console.readPassword("User Password: ")).thenReturn(expectedUserPassword)
+    when(console.readLine("Current User Name: ")).thenReturn(expectedUserName)
+    when(console.readPassword("Current User Password: ")).thenReturn(expectedUserPassword)
 
     ViaStdIn
-      .retrieveCredentials(
+      .retrieveCurrentCredentials(
         console = console,
         args = ApplicationArguments.Mode.Maintenance.empty
       )
       .failed
       .map { e =>
-        e.getMessage should include("User password cannot be empty")
+        e.getMessage should include("Current user password cannot be empty")
+      }
+  }
+
+  it should "support retrieving new user name and password" in {
+    val expectedUserPassword = "test-password".toCharArray
+    val expectedUserSalt = "test-salt"
+
+    val console = mock[java.io.Console]
+    when(console.readPassword("New User Password: ")).thenReturn(expectedUserPassword)
+    when(console.readLine("New User Salt: ")).thenReturn(expectedUserSalt)
+
+    ViaStdIn
+      .retrieveNewCredentials(
+        console = console,
+        args = ApplicationArguments.Mode.Maintenance.empty
+      )
+      .map { case (password, salt) =>
+        password.mkString should be(expectedUserPassword.mkString)
+        salt should be(expectedUserSalt)
+      }
+  }
+
+  it should "skip asking for new user password if it's already provided" in {
+    val expectedUserPassword = "test-password".toCharArray
+    val expectedUserSalt = "test-salt"
+
+    val console = mock[java.io.Console]
+    when(console.readLine("New User Salt: ")).thenReturn(expectedUserSalt)
+
+    ViaStdIn
+      .retrieveNewCredentials(
+        console = console,
+        args = ApplicationArguments.Mode.Maintenance.empty.copy(newUserPassword = expectedUserPassword)
+      )
+      .map { case (password, salt) =>
+        password.mkString should be(expectedUserPassword.mkString)
+        salt should be(expectedUserSalt)
+      }
+  }
+
+  it should "skip asking for new user salt if it's already provided" in {
+    val expectedUserPassword = "test-password".toCharArray
+    val expectedUserSalt = "test-salt"
+
+    val console = mock[java.io.Console]
+    when(console.readPassword("New User Password: ")).thenReturn(expectedUserPassword)
+
+    ViaStdIn
+      .retrieveNewCredentials(
+        console = console,
+        args = ApplicationArguments.Mode.Maintenance.empty.copy(newUserSalt = expectedUserSalt)
+      )
+      .map { case (password, salt) =>
+        password.mkString should be(expectedUserPassword.mkString)
+        salt should be(expectedUserSalt)
+      }
+  }
+
+  it should "fail if no or empty new user password is provided" in {
+    val expectedUserPassword = Array.emptyCharArray
+    val expectedUserSalt = "test-salt"
+
+    val console = mock[java.io.Console]
+    when(console.readPassword("New User Password: ")).thenReturn(expectedUserPassword)
+    when(console.readLine("New User Salt: ")).thenReturn(expectedUserSalt)
+
+    ViaStdIn
+      .retrieveNewCredentials(
+        console = console,
+        args = ApplicationArguments.Mode.Maintenance.empty
+      )
+      .failed
+      .map { e =>
+        e.getMessage should include("New user password cannot be empty")
+      }
+  }
+
+  it should "fail if no or empty new user salt is provided" in {
+    val expectedUserPassword = "test-password".toCharArray
+    val expectedUserSalt = "   "
+
+    val console = mock[java.io.Console]
+    when(console.readPassword("New User Password: ")).thenReturn(expectedUserPassword)
+    when(console.readLine("New User Salt: ")).thenReturn(expectedUserSalt)
+
+    ViaStdIn
+      .retrieveNewCredentials(
+        console = console,
+        args = ApplicationArguments.Mode.Maintenance.empty
+      )
+      .failed
+      .map { e =>
+        e.getMessage should include("New user salt cannot be empty")
       }
   }
 }

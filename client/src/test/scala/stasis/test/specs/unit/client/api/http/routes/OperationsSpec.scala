@@ -26,6 +26,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
+import stasis.test.specs.unit.client.Fixtures
+
 class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   "Operations routes" should "provide current operations state (default / active)" in withRetry {
     import Operations._
@@ -780,7 +782,12 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       scheduler = scheduler,
       trackers = trackers,
       search = MockSearch(),
-      terminateService = () => (),
+      handlers = Context.Handlers(
+        terminateService = () => (),
+        verifyUserPassword = _ => false,
+        updateUserCredentials = (_, _) => Future.successful(Done)
+      ),
+      secretsConfig = Fixtures.Secrets.DefaultConfig,
       log = LoggerFactory.getLogger(this.getClass.getName)
     )
 

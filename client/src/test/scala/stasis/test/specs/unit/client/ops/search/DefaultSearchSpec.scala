@@ -96,6 +96,8 @@ class DefaultSearchSpec extends AsyncUnitSpec {
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved) should be(2)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.UserRetrieved) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.UserSaltReset) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.UserPasswordUpdated) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceRetrieved) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)

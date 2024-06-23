@@ -1,15 +1,17 @@
 package stasis.client.service.components.bootstrap
 
+import java.nio.charset.StandardCharsets
+
 import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.slf4j.Logger
 import stasis.client.service.components.bootstrap.internal.SelfSignedCertificateGenerator
 import stasis.client.service.{components, ApplicationDirectory, ApplicationTemplates}
 import stasis.shared.model.devices.DeviceBootstrapParameters
-
 import java.nio.file.attribute.PosixFilePermissions
 import java.nio.file.{Files, Path}
 import java.util.concurrent.ThreadLocalRandom
+
 import scala.concurrent.Future
 import scala.util.{Failure, Random, Success, Try}
 
@@ -114,7 +116,17 @@ object Parameters {
     Try {
       val path = parent.resolve(file)
       log.info("Creating [{}] from template...", path)
-      val _ = Files.writeString(path, template)
+
+      val _ = Files.deleteIfExists(path)
+      val permissions = PosixFilePermissions.fromString(ApplicationDirectory.Default.CreatedFilePermissions)
+      val _ = Files.createFile(path, PosixFilePermissions.asFileAttribute(permissions))
+
+      val out = Files.newOutputStream(path)
+      try {
+        out.write(template.getBytes(StandardCharsets.UTF_8))
+      } finally {
+        out.close()
+      }
 
       Done
     }

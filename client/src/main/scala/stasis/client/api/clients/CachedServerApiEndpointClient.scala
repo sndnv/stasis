@@ -1,22 +1,30 @@
 package stasis.client.api.clients
 
-import org.apache.pekko.Done
-
 import java.time.Instant
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import org.apache.pekko.http.caching.LfuCache
-import org.apache.pekko.http.caching.scaladsl.{Cache, CachingSettings}
-import org.apache.pekko.util.ByteString
-import stasis.client.model.DatasetMetadata
-import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}
-import stasis.shared.api.responses.{CreatedDatasetDefinition, CreatedDatasetEntry, Ping}
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
-import stasis.shared.model.devices.Device
-import stasis.shared.model.schedules.Schedule
-import stasis.shared.model.users.User
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.SpawnProtocol
+import org.apache.pekko.http.caching.LfuCache
+import org.apache.pekko.http.caching.scaladsl.Cache
+import org.apache.pekko.http.caching.scaladsl.CachingSettings
+import org.apache.pekko.util.ByteString
+import stasis.client.model.DatasetMetadata
+import stasis.shared.api.requests.ResetUserPassword
+import stasis.shared.api.requests.CreateDatasetDefinition
+import stasis.shared.api.requests.CreateDatasetEntry
+import stasis.shared.api.responses.UpdatedUserSalt
+import stasis.shared.api.responses.CreatedDatasetDefinition
+import stasis.shared.api.responses.CreatedDatasetEntry
+import stasis.shared.api.responses.Ping
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
+import stasis.shared.model.devices.Device
+import stasis.shared.model.schedules.Schedule
+import stasis.shared.model.users.User
 
 class CachedServerApiEndpointClient(
   config: CachedServerApiEndpointClient.Config,
@@ -46,6 +54,12 @@ class CachedServerApiEndpointClient(
 
   override def user(): Future[User] =
     underlying.user()
+
+  override def resetUserSalt(): Future[UpdatedUserSalt] =
+    underlying.resetUserSalt()
+
+  override def resetUserPassword(request: ResetUserPassword): Future[Done] =
+    underlying.resetUserPassword(request)
 
   override def device(): Future[Device] =
     underlying.device()

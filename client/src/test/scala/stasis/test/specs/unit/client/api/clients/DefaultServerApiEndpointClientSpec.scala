@@ -27,12 +27,14 @@ import stasis.test.specs.unit.client.Fixtures
 import stasis.test.specs.unit.client.mocks.{MockEncryption, MockServerApiEndpoint, MockServerCoreEndpointClient}
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.shared.model.Generators
-
 import java.time.Instant
+
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
+
+import stasis.shared.api.requests.ResetUserPassword
 
 class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
   "A DefaultServerApiEndpointClient" should "create dataset definitions" in {
@@ -378,6 +380,34 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
       .user()
       .map { user =>
         user.active should be(true)
+      }
+  }
+
+  it should "reset the current user's salt" in {
+    val apiPort = ports.dequeue()
+    val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials)
+    api.start(port = apiPort)
+
+    val apiClient = createClient(apiPort)
+
+    apiClient
+      .resetUserSalt()
+      .map { salt =>
+        salt.salt should be("updated-salt")
+      }
+  }
+
+  it should "update the current user's password" in {
+    val apiPort = ports.dequeue()
+    val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials)
+    api.start(port = apiPort)
+
+    val apiClient = createClient(apiPort)
+
+    apiClient
+      .resetUserPassword(request = ResetUserPassword(rawPassword = "updated-password"))
+      .map { _ =>
+        succeed
       }
   }
 

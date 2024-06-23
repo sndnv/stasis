@@ -46,8 +46,11 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val modeArguments = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = false,
       deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Push),
-      userName = userName,
-      userPassword = userPassword
+      userCredentialsOperation = None,
+      currentUserName = userName,
+      currentUserPassword = userPassword,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     val directory = createCustomApplicationDirectory(
@@ -87,8 +90,11 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val modeArguments = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = false,
       deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Pull),
-      userName = userName,
-      userPassword = userPassword
+      userCredentialsOperation = None,
+      currentUserName = userName,
+      currentUserPassword = userPassword,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     val directory = createCustomApplicationDirectory(
@@ -116,15 +122,21 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val modeArguments = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = false,
       deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Push),
-      userName = userName,
-      userPassword = userPassword
+      userCredentialsOperation = None,
+      currentUserName = userName,
+      currentUserPassword = userPassword,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     val directory = createCustomApplicationDirectory(apiEndpointPort = 9090, tokenEndpointPort = 9091)
 
     Secrets(
       base = Base(modeArguments = modeArguments, applicationDirectory = directory).await,
-      init = () => Future.failed(new RuntimeException("test failure"))
+      init = new Init {
+        override def currentCredentials(): Future[(String, Array[Char])] = Future.failed(new RuntimeException("test failure"))
+        override def newCredentials(): Future[(Array[Char], String)] = Future.failed(new RuntimeException("test failure"))
+      }
     ).map { result =>
       fail(s"Unexpected result received: [$result]")
     }.recover { case NonFatal(e: ServiceStartupFailure) =>
@@ -141,8 +153,11 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val modeArguments = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = false,
       deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Pull),
-      userName = userName,
-      userPassword = userPassword
+      userCredentialsOperation = None,
+      currentUserName = userName,
+      currentUserPassword = userPassword,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     val directory = createCustomApplicationDirectory(
@@ -171,8 +186,11 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val modeArguments = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = false,
       deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Pull),
-      userName = userName,
-      userPassword = userPassword
+      userCredentialsOperation = None,
+      currentUserName = userName,
+      currentUserPassword = userPassword,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     val directory = createCustomApplicationDirectory(
@@ -182,7 +200,10 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
     Secrets(
       base = Base(modeArguments = modeArguments, applicationDirectory = directory).await,
-      init = () => Future.successful((userName, userPassword))
+      init = new Init {
+        override def currentCredentials(): Future[(String, Array[Char])] = Future.successful((userName, userPassword))
+        override def newCredentials(): Future[(Array[Char], String)] = Future.failed(new RuntimeException("test failure"))
+      }
     ).map { result =>
       fail(s"Unexpected result received: [$result]")
     }.recover { case NonFatal(e: ServiceStartupFailure) =>
@@ -202,8 +223,11 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val modeArguments = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = false,
       deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Pull),
-      userName = userName,
-      userPassword = userPassword
+      userCredentialsOperation = None,
+      currentUserName = userName,
+      currentUserPassword = userPassword,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     val directory = createCustomApplicationDirectory(
@@ -213,7 +237,10 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
     Secrets(
       base = Base(modeArguments = modeArguments, applicationDirectory = directory).await,
-      init = () => Future.successful((userName, userPassword))
+      init = new Init {
+        override def currentCredentials(): Future[(String, Array[Char])] = Future.successful((userName, userPassword))
+        override def newCredentials(): Future[(Array[Char], String)] = Future.failed(new RuntimeException("test failure"))
+      }
     ).map { result =>
       fail(s"Unexpected result received: [$result]")
     }.recover { case NonFatal(e: ServiceStartupFailure) =>
@@ -232,8 +259,11 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val modeArguments = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = false,
       deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Pull),
-      userName = userName,
-      userPassword = userPassword
+      userCredentialsOperation = None,
+      currentUserName = userName,
+      currentUserPassword = userPassword,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     val directory = createCustomApplicationDirectory(
@@ -270,8 +300,11 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val modeArguments = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = false,
       deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Pull),
-      userName = userName,
-      userPassword = userPassword
+      userCredentialsOperation = None,
+      currentUserName = userName,
+      currentUserPassword = userPassword,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     val directory = createCustomApplicationDirectory(
@@ -299,8 +332,11 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val modeArguments = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = false,
       deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Push),
-      userName = userName,
-      userPassword = userPassword
+      userCredentialsOperation = None,
+      currentUserName = userName,
+      currentUserPassword = userPassword,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     val filesystem = Jimfs.newFileSystem()
@@ -331,8 +367,11 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val modeArguments = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = false,
       deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Push),
-      userName = userName,
-      userPassword = userPassword
+      userCredentialsOperation = None,
+      currentUserName = userName,
+      currentUserPassword = userPassword,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     val directory = createCustomApplicationDirectory(
@@ -361,8 +400,11 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val modeArguments = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = false,
       deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Push),
-      userName = userName,
-      userPassword = userPassword
+      userCredentialsOperation = None,
+      currentUserName = userName,
+      currentUserPassword = userPassword,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     val directory = createCustomApplicationDirectory(
@@ -399,8 +441,11 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val modeArguments = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = false,
       deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Pull),
-      userName = userName,
-      userPassword = userPassword
+      userCredentialsOperation = None,
+      currentUserName = userName,
+      currentUserPassword = userPassword,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     val directory = createCustomApplicationDirectory(
@@ -438,8 +483,11 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val modeArguments = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = false,
       deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Pull),
-      userName = userName,
-      userPassword = userPassword
+      userCredentialsOperation = None,
+      currentUserName = userName,
+      currentUserPassword = userPassword,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     val filesystem = Jimfs.newFileSystem()
@@ -464,7 +512,10 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
     val result = Secrets(
       base = Base(modeArguments = modeArguments, applicationDirectory = directory).await,
-      init = () => Future.successful((userName, userPassword))
+      init = new Init {
+        override def currentCredentials(): Future[(String, Array[Char])] = Future.successful((userName, userPassword))
+        override def newCredentials(): Future[(Array[Char], String)] = Future.failed(new RuntimeException("test failure"))
+      }
     ).await
       .apply()
       .failed
@@ -483,8 +534,11 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val modeArguments = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = false,
       deviceSecretOperation = None,
-      userName = userName,
-      userPassword = userPassword
+      userCredentialsOperation = None,
+      currentUserName = userName,
+      currentUserPassword = userPassword,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     val directory = createCustomApplicationDirectory(apiEndpointPort = 9098, tokenEndpointPort = 9099)
