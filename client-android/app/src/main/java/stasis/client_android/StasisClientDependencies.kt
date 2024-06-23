@@ -1,7 +1,5 @@
 package stasis.client_android
 
-import stasis.client_android.lib.ops.backup.Providers as BackupProviders
-import stasis.client_android.lib.ops.recovery.Providers as RecoveryProviders
 import android.app.Application
 import android.content.SharedPreferences
 import android.os.HandlerThread
@@ -29,10 +27,8 @@ import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.model.server.datasets.DatasetEntry
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.model.server.devices.Device
-import stasis.client_android.lib.model.server.devices.DeviceId
 import stasis.client_android.lib.model.server.schedules.Schedule
 import stasis.client_android.lib.model.server.users.User
-import stasis.client_android.lib.model.server.users.UserId
 import stasis.client_android.lib.ops.backup.Backup
 import stasis.client_android.lib.ops.monitoring.DefaultServerMonitor
 import stasis.client_android.lib.ops.scheduling.DefaultOperationExecutor
@@ -46,10 +42,11 @@ import stasis.client_android.lib.utils.Reference
 import stasis.client_android.persistence.cache.DatasetEntryCacheFileSerdes
 import stasis.client_android.persistence.cache.DatasetMetadataCacheFileSerdes
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getAuthenticationConfig
+import stasis.client_android.persistence.config.ConfigRepository.Companion.getSecretsConfig
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getServerApiConfig
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getServerCoreConfig
 import stasis.client_android.providers.ProviderContext
-import stasis.client_android.security.Secrets
+import stasis.client_android.security.DefaultCredentialsManagementBridge
 import stasis.client_android.settings.Settings.getPingInterval
 import stasis.client_android.tracking.DefaultBackupTracker
 import stasis.client_android.tracking.DefaultRecoveryTracker
@@ -60,6 +57,8 @@ import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Singleton
+import stasis.client_android.lib.ops.backup.Providers as BackupProviders
+import stasis.client_android.lib.ops.recovery.Providers as RecoveryProviders
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -131,9 +130,10 @@ object StasisClientDependencies {
                         create = { (authenticationConfig, coreConfig, apiConfig) ->
                             val coroutineScope = CoroutineScope(dispatcher)
 
-                            val user: UserId = UUID.fromString(apiConfig.user)
-                            val userSalt: String = apiConfig.userSalt
-                            val device: DeviceId = UUID.fromString(apiConfig.device)
+                            val bridge = DefaultCredentialsManagementBridge(
+                                apiConfig = apiConfig,
+                                preferences = preferences
+                            )
 
                             val credentials = CredentialsProvider(
                                 config = CredentialsProvider.Config(
@@ -146,61 +146,7 @@ object StasisClientDependencies {
                                     client = authenticationConfig.clientId,
                                     clientSecret = authenticationConfig.clientSecret
                                 ),
-                                initDeviceSecret = { secret ->
-                                    Secrets.initDeviceSecret(
-                                        user = user,
-                                        device = device,
-                                        secret = secret,
-                                        preferences = preferences
-                                    )
-                                },
-                                loadDeviceSecret = { userPassword ->
-                                    Secrets.loadDeviceSecret(
-                                        user = user,
-                                        userSalt = userSalt,
-                                        userPassword = userPassword,
-                                        device = device,
-                                        preferences = preferences
-                                    )
-                                },
-                                storeDeviceSecret = { secret, userPassword ->
-                                    Secrets.storeDeviceSecret(
-                                        user = user,
-                                        userSalt = userSalt,
-                                        userPassword = userPassword,
-                                        device = device,
-                                        secret = secret,
-                                        preferences = preferences
-                                    )
-                                },
-                                pushDeviceSecret = { api, userPassword ->
-                                    Secrets.pushDeviceSecret(
-                                        user = user,
-                                        userSalt = userSalt,
-                                        userPassword = userPassword,
-                                        device = device,
-                                        preferences = preferences,
-                                        api = api
-                                    )
-                                },
-                                pullDeviceSecret = { api, userPassword ->
-                                    Secrets.pullDeviceSecret(
-                                        user = user,
-                                        userSalt = userSalt,
-                                        userPassword = userPassword,
-                                        device = device,
-                                        preferences = preferences,
-                                        api = api
-                                    )
-                                },
-                                getAuthenticationPassword = { userPassword ->
-                                    Secrets.loadUserAuthenticationPassword(
-                                        user = user,
-                                        userSalt = userSalt,
-                                        userPassword = userPassword,
-                                        preferences = preferences
-                                    )
-                                },
+                                bridge = bridge,
                                 coroutineScope = coroutineScope
                             )
 
@@ -219,7 +165,7 @@ object StasisClientDependencies {
                                         deviceSecret = { credentials.deviceSecret.get() },
                                         decoder = Aes
                                     ),
-                                    self = device
+                                    self = bridge.device
                                 ),
                                 datasetDefinitionsCache = datasetDefinitionsCache,
                                 datasetEntriesCache = datasetEntriesCache,
@@ -294,7 +240,8 @@ object StasisClientDependencies {
                                 executor = executor,
                                 trackers = trackerViews,
                                 credentials = credentials,
-                                monitor = monitor
+                                monitor = monitor,
+                                secretsConfig = preferences.getSecretsConfig()
                             )
                         },
                         destroy = { context -> context?.credentials?.logout() }

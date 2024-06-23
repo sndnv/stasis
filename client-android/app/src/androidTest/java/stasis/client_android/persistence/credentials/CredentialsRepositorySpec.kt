@@ -21,6 +21,7 @@ import stasis.client_android.eventually
 import stasis.client_android.failure
 import stasis.client_android.lib.api.clients.ServerApiEndpointClient
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
+import stasis.client_android.lib.encryption.secrets.UserAuthenticationPassword
 import stasis.client_android.lib.security.AccessTokenResponse
 import stasis.client_android.lib.security.CredentialsProvider
 import stasis.client_android.lib.security.OAuthClient
@@ -29,6 +30,7 @@ import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Success
 import stasis.client_android.mocks.Generators
 import stasis.client_android.mocks.MockBackupTracker
+import stasis.client_android.mocks.MockCredentialsManagementBridge
 import stasis.client_android.mocks.MockOperationExecutor
 import stasis.client_android.mocks.MockRecoveryTracker
 import stasis.client_android.mocks.MockSearch
@@ -125,6 +127,125 @@ class CredentialsRepositorySpec {
 
                     assertThat(
                         loginResult.get()?.failure()?.message ?: "<missing>",
+                        equalTo("Client not configured")
+                    )
+                }
+            }
+        }
+    }
+
+    @Test
+    fun supportVerifyingUserPassword() {
+        withSharedPreferences { preferences ->
+            val passwordVerificationResult = AtomicBoolean(false)
+            val callbackSuccessful = AtomicBoolean(false)
+
+            val repo = CredentialsRepository(
+                configPreferences = preferences,
+                credentialsPreferences = preferences,
+                contextFactory = createContextFactory(
+                    verifyUserPassword = { _ ->
+                        passwordVerificationResult.set(true)
+                        true
+                    }
+                )
+            )
+
+            repo.verifyUserPassword(password = "password") { result ->
+                callbackSuccessful.set(result)
+            }
+
+            runBlocking {
+                eventually {
+                    assertThat(passwordVerificationResult.get(), equalTo(true))
+                    assertThat(callbackSuccessful.get(), equalTo(true))
+                }
+            }
+        }
+    }
+
+    @Test
+    fun notVerifyUserPasswordWhenNotConfigured() {
+        withSharedPreferences { preferences ->
+            val passwordVerificationResult = AtomicBoolean(false)
+
+            val repo = CredentialsRepository(
+                configPreferences = preferences,
+                credentialsPreferences = preferences,
+                contextFactory = createContextFactory(provideConfig = false)
+            )
+
+            repo.verifyUserPassword(password = "password") { result ->
+                passwordVerificationResult.set(result)
+            }
+
+            runBlocking {
+                eventually {
+                    assertThat(passwordVerificationResult.get(), equalTo(false))
+                }
+            }
+        }
+    }
+
+    @Test
+    fun supportUpdatingUserCredentials() {
+        withSharedPreferences { preferences ->
+            val credentialsUpdated = AtomicBoolean(false)
+            val callbackSuccessful = AtomicBoolean(false)
+
+            val repo = CredentialsRepository(
+                configPreferences = preferences,
+                credentialsPreferences = preferences,
+                contextFactory = createContextFactory(
+                    updateUserCredentials = { _, _, _ ->
+                        credentialsUpdated.set(true)
+                        Success(Fixtures.Secrets.UserPassword.toAuthenticationPassword())
+                    }
+                )
+            )
+
+            repo.updateUserCredentials(
+                api = MockServerApiEndpointClient(),
+                currentPassword = "current-password",
+                newPassword = "new-password",
+                newSalt = null
+            ) { result ->
+                callbackSuccessful.set(result.isSuccess)
+            }
+
+            runBlocking {
+                eventually {
+                    assertThat(credentialsUpdated.get(), equalTo(true))
+                    assertThat(callbackSuccessful.get(), equalTo(true))
+                }
+            }
+        }
+    }
+
+    @Test
+    fun notUpdateUserCredentialsWhenNotConfigured() {
+        withSharedPreferences { preferences ->
+            val updateResult = AtomicReference<Try<Unit>?>(null)
+
+            val repo = CredentialsRepository(
+                configPreferences = preferences,
+                credentialsPreferences = preferences,
+                contextFactory = createContextFactory(provideConfig = false)
+            )
+
+            repo.updateUserCredentials(
+                api = MockServerApiEndpointClient(),
+                currentPassword = "current-password",
+                newPassword = "new-password",
+                newSalt = null
+            ) { result ->
+                updateResult.set(result)
+            }
+
+            runBlocking {
+                eventually {
+                    assertThat(
+                        updateResult.get()?.failure()?.message ?: "<missing>",
                         equalTo("Client not configured")
                     )
                 }
@@ -345,6 +466,12 @@ class CredentialsRepositorySpec {
     private fun createContextFactory(
         withResponse: Try<AccessTokenResponse> = Success(tokenResponse),
         provideConfig: Boolean = true,
+        verifyUserPassword: (CharArray) -> Boolean = { _ -> false },
+        updateUserCredentials: (CharArray, CharArray, String?) -> Try<UserAuthenticationPassword> = { _, _, _ ->
+            Success(
+                Fixtures.Secrets.UserPassword.toAuthenticationPassword()
+            )
+        },
         storeDeviceSecret: suspend (ByteString, CharArray) -> Try<DeviceSecret> = { _, _ -> Success(Fixtures.Secrets.Default) },
         pushDeviceSecret: suspend (ServerApiEndpointClient, CharArray) -> Try<Unit> = { _, _ -> Success(Unit) },
         pullDeviceSecret: suspend (ServerApiEndpointClient, CharArray) -> Try<DeviceSecret> = { _, _ -> Success(Fixtures.Secrets.Default) }
@@ -379,15 +506,39 @@ class CredentialsRepositorySpec {
                                         parameters: OAuthClient.GrantParameters,
                                     ): Try<AccessTokenResponse> = withResponse
                                 },
-                                initDeviceSecret = { Fixtures.Secrets.Default },
-                                loadDeviceSecret = { Success(Fixtures.Secrets.Default) },
-                                storeDeviceSecret = storeDeviceSecret,
-                                pushDeviceSecret = pushDeviceSecret,
-                                pullDeviceSecret = pullDeviceSecret,
-                                coroutineScope = CoroutineScope(Dispatchers.IO),
-                                getAuthenticationPassword = { Fixtures.Secrets.UserPassword.toAuthenticationPassword() }
+                                bridge = object : MockCredentialsManagementBridge(
+                                    deviceSecret = Fixtures.Secrets.Default,
+                                    authenticationPassword = Fixtures.Secrets.UserPassword.toAuthenticationPassword()
+                                ) {
+                                    override fun verifyUserPassword(userPassword: CharArray): Boolean =
+                                        verifyUserPassword(userPassword)
+
+                                    override suspend fun updateUserCredentials(
+                                        currentUserPassword: CharArray,
+                                        newUserPassword: CharArray,
+                                        newUserSalt: String?
+                                    ): Try<UserAuthenticationPassword> =
+                                        updateUserCredentials(currentUserPassword, newUserPassword, newUserSalt)
+
+                                    override suspend fun storeDeviceSecret(
+                                        secret: ByteString,
+                                        userPassword: CharArray
+                                    ): Try<DeviceSecret> = storeDeviceSecret(secret, userPassword)
+
+                                    override suspend fun pushDeviceSecret(
+                                        api: ServerApiEndpointClient,
+                                        userPassword: CharArray
+                                    ): Try<Unit> = pushDeviceSecret(api, userPassword)
+
+                                    override suspend fun pullDeviceSecret(
+                                        api: ServerApiEndpointClient,
+                                        userPassword: CharArray
+                                    ): Try<DeviceSecret> = pullDeviceSecret(api, userPassword)
+                                },
+                                coroutineScope = CoroutineScope(Dispatchers.IO)
                             ),
-                            monitor = MockServerMonitor()
+                            monitor = MockServerMonitor(),
+                            secretsConfig = Fixtures.Secrets.DefaultConfig
                         )
                     },
                     destroy = {}

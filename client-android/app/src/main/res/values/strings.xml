@@ -481,26 +481,53 @@
 
     <!-- Settings -->
     <string name="settings_category_date_time">Date/Time</string>
-    <string name="settings_category_secrets">Secrets</string>
+    <string name="settings_category_user_credentials">Manage User Credentials</string>
+    <string name="settings_category_device_secret">Manage Device Secret</string>
     <string name="settings_category_debug">Debug</string>
     <string name="settings_date_time_format_title">Format</string>
     <string name="settings_date_time_format_hint">Show dates as %1$s and time as %2$s</string>
     <string name="settings_ping_interval_hint">The client will contact the server every %1$s</string>
-    <string name="settings_manage_device_secret_title">Manage device secret</string>
-    <string name="settings_manage_device_secret_locally_title">Locally</string>
-    <string name="settings_manage_device_secret_remotely_title">On Server</string>
-    <string name="settings_manage_device_secret_summary">Allows importing and exporting of the secret used by this device to encrypt and decrypt data</string>
+    <string name="settings_manage_user_credentials_update_password_title">Update password</string>
+    <string name="settings_manage_user_credentials_update_password_summary">Allows updating the password for the current user</string>
+    <string name="settings_manage_user_credentials_update_salt_title">Update salt value</string>
+    <string name="settings_manage_user_credentials_update_salt_summary">(Advanced) Allows updating the salt value for the current user</string>
+    <string name="settings_manage_device_secret_remotely_push_title">Push secret</string>
+    <string name="settings_manage_device_secret_remotely_push_summary">Pushes the current device secret to the server</string>
+    <string name="settings_manage_device_secret_remotely_pull_title">Pull secret</string>
+    <string name="settings_manage_device_secret_remotely_pull_summary">Pulls a device secret from the server, if any is available</string>
+    <string name="settings_manage_device_secret_locally_export_title">Export secret</string>
+    <string name="settings_manage_device_secret_locally_export_summary">(Advanced) Allows manually exporting the current device secret</string>
+    <string name="settings_manage_device_secret_locally_import_title">Import secret</string>
+    <string name="settings_manage_device_secret_locally_import_summary">(Advanced) Allows manually importing a new secret for this device</string>
     <string name="settings_manage_device_secret_confirm_title">Warning</string>
     <string name="settings_manage_device_secret_confirm_text">
         This secret is used for encrypting and decrypting data for this device. It should be kept in a secure location and it should not be shared with anyone!\n\n
         - If the secret is lost, existing data cannot be decrypted.\n\n
         - If the secret is compromised, anyone will be able to decrypt the data coming from this device.\n\n
-        - The secret is always encrypted locally before being sent to the server.
     </string>
+    <string name="settings_manage_user_credentials_confirm_cancel_button_title">Cancel</string>
+    <string name="settings_manage_user_credentials_confirm_ok_button_title">Update</string>
+    <string name="settings_manage_user_credentials_update_password">Update user password</string>
+    <string name="settings_manage_user_credentials_update_password_current_password_hint">Current Password</string>
+    <string name="settings_manage_user_credentials_update_password_current_password_confirmation_hint">Confirm Password</string>
+    <string name="settings_manage_user_credentials_update_password_new_password_hint">New Password</string>
+    <string name="settings_manage_user_credentials_update_password_new_password_confirmation_hint">Confirm Password</string>
+    <string name="settings_manage_user_credentials_update_salt">Update user salt</string>
+    <string name="settings_manage_user_credentials_update_salt_current_password_hint">Current Password</string>
+    <string name="settings_manage_user_credentials_update_salt_current_password_confirmation_hint">Confirm Password</string>
+    <string name="settings_manage_user_credentials_update_salt_new_salt_hint">New Salt</string>
+    <string name="settings_manage_user_credentials_update_salt_new_salt_confirmation_hint">Confirm Salt</string>
+    <string name="settings_manage_user_credentials_empty_password">A password needs to be provided</string>
+    <string name="settings_manage_user_credentials_mismatched_passwords">The provided passwords do not match</string>
+    <string name="settings_manage_user_credentials_empty_salt_value">A salt value needs to be provided</string>
+    <string name="settings_manage_user_credentials_mismatched_salt_values">The provided salt values do not match</string>
+    <string name="settings_manage_user_credentials_invalid_current_password">The provided password is not valid</string>
+    <string name="settings_manage_user_credentials_password_update_successful">User password updated</string>
+    <string name="settings_manage_user_credentials_password_update_failed">User password update failed with: %1$s</string>
+    <string name="settings_manage_user_credentials_salt_update_successful">User salt value updated</string>
+    <string name="settings_manage_user_credentials_salt_update_failed">User salt value update failed with: %1$s</string>
     <string name="settings_manage_device_secret_confirm_cancel_button_title">Cancel</string>
     <string name="settings_manage_device_secret_confirm_ok_button_title">Continue</string>
-    <string name="settings_manage_device_secret_export">Export</string>
-    <string name="settings_manage_device_secret_import">Import</string>
     <string name="settings_manage_device_secret_push">Push</string>
     <string name="settings_manage_device_secret_pull">Pull</string>
     <string name="settings_manage_device_secret_export_title">Export device secret</string>
@@ -515,6 +542,7 @@
     <string name="settings_manage_device_secret_export_clip_created">Device secret copied to clipboard</string>
     <string name="settings_manage_device_secret_import_empty_password">A password needs to be provided</string>
     <string name="settings_manage_device_secret_import_mismatched_passwords">The provided passwords do not match</string>
+    <string name="settings_manage_device_secret_import_invalid_current_password">The provided password is not valid</string>
     <string name="settings_manage_device_secret_import_data_invalid">Invalid data provided</string>
     <string name="settings_manage_device_secret_import_successful">Device secret imported</string>
     <string name="settings_manage_device_secret_import_failed">Device secret import failed with: %1$s</string>
@@ -529,6 +557,7 @@
     <string name="settings_manage_device_secret_push_password_confirmation_hint_extra">Confirming your password ensures that the pushed device secret is correctly encrypted.</string>
     <string name="settings_manage_device_secret_push_empty_password">A password needs to be provided</string>
     <string name="settings_manage_device_secret_push_mismatched_passwords">The provided passwords do not match</string>
+    <string name="settings_manage_device_secret_push_invalid_current_password">The provided password is not valid</string>
     <string name="settings_manage_device_secret_push_failed">Device secret push failed with: %1$s</string>
     <string name="settings_manage_device_secret_pull_confirm_title">Pull device secret</string>
     <string name="settings_manage_device_secret_pull_confirm_text">The device secret will be pulled from server %1$s.\n\n%2$s: %3$s</string>
@@ -538,6 +567,7 @@
     <string name="settings_manage_device_secret_pull_successful">Device secret pulled</string>
     <string name="settings_manage_device_secret_pull_empty_password">A password needs to be provided</string>
     <string name="settings_manage_device_secret_pull_mismatched_passwords">The provided passwords do not match</string>
+    <string name="settings_manage_device_secret_pull_invalid_current_password">The provided password is not valid</string>
     <string name="settings_manage_device_secret_pull_failed">Device secret pull failed with: %1$s</string>
     <string name="settings_manage_device_secret_pull_password_hint">User Password</string>
     <string name="settings_manage_device_secret_pull_password_hint_extra">This password is required for decrypting the device secret. Your password is never stored, sent to the server or shared with other services.</string>

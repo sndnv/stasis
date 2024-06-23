@@ -51,7 +51,12 @@ object Settings {
 
     object Keys {
         const val DateTimeFormat: String = "date_time_format"
-        const val ManageDeviceSecret: String = "manage_device_secret"
+        const val ManageUserCredentialsUpdatePassword: String = "manage_user_credentials_update_password"
+        const val ManageUserCredentialsUpdateSalt: String = "manage_user_credentials_update_salt"
+        const val ManageDeviceSecretRemotelyPush: String = "manage_device_secret_remotely_push"
+        const val ManageDeviceSecretRemotelyPull: String = "manage_device_secret_remotely_pull"
+        const val ManageDeviceSecretLocallyExport: String = "manage_device_secret_locally_export"
+        const val ManageDeviceSecretLocallyImport: String = "manage_device_secret_locally_import"
         const val SchedulingEnabled: String = "scheduling_enabled"
         const val PingInterval: String = "ping_interval"
         const val ResetConfig: String = "reset_config"

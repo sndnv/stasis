@@ -5,9 +5,11 @@ import stasis.client_android.lib.api.clients.exceptions.ResourceMissingFailure
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
+import stasis.client_android.lib.model.server.api.requests.ResetUserPassword
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetDefinition
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetEntry
 import stasis.client_android.lib.model.server.api.responses.Ping
+import stasis.client_android.lib.model.server.api.responses.UpdatedUserSalt
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.model.server.datasets.DatasetEntry
@@ -121,6 +123,12 @@ class CachedServerApiEndpointClient(
 
     override suspend fun user(): Try<User> =
         underlying.user()
+
+    override suspend fun resetUserSalt(): Try<UpdatedUserSalt> =
+        underlying.resetUserSalt()
+
+    override suspend fun resetUserPassword(request: ResetUserPassword): Try<Unit> =
+        underlying.resetUserPassword(request)
 
     override suspend fun device(): Try<Device> =
         underlying.device()

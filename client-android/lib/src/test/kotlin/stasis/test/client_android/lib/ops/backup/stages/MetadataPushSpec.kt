@@ -86,6 +86,8 @@ class MetadataPushSpec : WordSpec({
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.UserRetrieved] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.UserSaltReset] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.UserPasswordUpdated] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)

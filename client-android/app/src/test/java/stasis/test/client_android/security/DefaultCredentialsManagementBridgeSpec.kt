@@ -7,63 +7,48 @@ import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import okio.ByteString
 import okio.ByteString.Companion.toByteString
-import org.hamcrest.CoreMatchers.anyOf
-import org.hamcrest.CoreMatchers.containsString
-import org.hamcrest.CoreMatchers.equalTo
-import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.CoreMatchers.*
+import org.hamcrest.MatcherAssert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import stasis.client_android.lib.encryption.secrets.UserPassword
 import stasis.client_android.persistence.config.ConfigRepository
-import stasis.client_android.security.Secrets
+import stasis.client_android.persistence.config.ConfigRepository.Companion.getSecretsConfig
+import stasis.client_android.security.DefaultCredentialsManagementBridge
 import stasis.client_android.serialization.ByteStrings.decodeFromBase64
 import stasis.client_android.serialization.ByteStrings.encodeAsBase64
 import stasis.test.client_android.mocks.MockServerApiEndpointClient
-import java.util.Base64
 import java.util.UUID
+
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Config.OLDEST_SDK])
-class SecretsSpec {
+class DefaultCredentialsManagementBridgeSpec {
     @Test
-    fun generateRawDeviceSecrets() {
-        val expectedSecretSize = 42
-
-        val generatedSecret = Secrets.generateRawDeviceSecret(secretSize = expectedSecretSize)
-
-        assertThat(generatedSecret.size, equalTo(expectedSecretSize))
-    }
-
-    @Test
-    fun createDeviceSecrets() {
+    fun initDeviceSecrets() {
         val preferences = initPreferences()
 
-        val editor = mockk<SharedPreferences.Editor>(relaxUnitFun = true)
-        every { preferences.edit() } returns editor
+        val user = UUID.randomUUID()
+        val device = UUID.randomUUID()
+        val secret = "test-secret".toByteArray().toByteString()
 
-        every {
-            editor.putString(
-                ConfigRepository.Companion.Keys.Secrets.EncryptedDeviceSecret,
-                any()
-            )
-        } returns editor
-
-        every { editor.commit() } returns true
-
-        runBlocking {
-            val result = Secrets.createDeviceSecret(
-                user = UUID.randomUUID(),
+        val bridge = DefaultCredentialsManagementBridge(
+            apiConfig = stasis.client_android.persistence.config.Config.ServerApi(
+                url = "http://localhost:1234",
+                user = user.toString(),
                 userSalt = "test-salt",
-                userPassword = "test-password".toCharArray(),
-                device = UUID.randomUUID(),
-                preferences = preferences
-            )
+                device = device.toString()
+            ),
+            preferences = preferences
+        )
 
-            assertThat(result.isSuccess, equalTo(true))
+        val result = bridge.initDeviceSecret(secret = secret)
 
-            verify(exactly = 1) { editor.commit() }
-        }
+        assertThat(result.user, equalTo(user))
+        assertThat(result.device, equalTo(device))
+        assertThat(result.secret, equalTo(secret))
     }
 
     @Test
@@ -75,14 +60,18 @@ class SecretsSpec {
         val userPassword = "test-password".toCharArray()
         val device = UUID.randomUUID()
 
-        runBlocking {
-            val result = Secrets.loadDeviceSecret(
-                user = user,
+        val bridge = DefaultCredentialsManagementBridge(
+            apiConfig = stasis.client_android.persistence.config.Config.ServerApi(
+                url = "http://localhost:1234",
+                user = user.toString(),
                 userSalt = userSalt,
-                userPassword = userPassword,
-                device = device,
-                preferences = preferences
-            )
+                device = device.toString()
+            ),
+            preferences = preferences
+        )
+
+        runBlocking {
+            val result = bridge.loadDeviceSecret(userPassword = userPassword)
 
             // loading of all config is expected to be successful but actual
             // device secret decryption should fail because there's no valid
@@ -120,14 +109,20 @@ class SecretsSpec {
         val userPassword = "test-password".toCharArray()
         val device = UUID.randomUUID()
 
-        runBlocking {
-            val result = Secrets.storeDeviceSecret(
-                user = user,
+        val bridge = DefaultCredentialsManagementBridge(
+            apiConfig = stasis.client_android.persistence.config.Config.ServerApi(
+                url = "http://localhost:1234",
+                user = user.toString(),
                 userSalt = userSalt,
+                device = device.toString()
+            ),
+            preferences = preferences
+        )
+
+        runBlocking {
+            val result = bridge.storeDeviceSecret(
                 userPassword = userPassword,
-                device = device,
-                secret = "other-secret".toByteArray().toByteString(),
-                preferences = preferences
+                secret = "other-secret".toByteArray().toByteString()
             )
 
             assertThat(result.isSuccess, equalTo(true))
@@ -150,13 +145,19 @@ class SecretsSpec {
 
         val api = MockServerApiEndpointClient()
 
-        runBlocking {
-            val result = Secrets.pushDeviceSecret(
-                user = user,
+        val bridge = DefaultCredentialsManagementBridge(
+            apiConfig = stasis.client_android.persistence.config.Config.ServerApi(
+                url = "http://localhost:1234",
+                user = user.toString(),
                 userSalt = userSalt,
+                device = device.toString()
+            ),
+            preferences = preferences
+        )
+
+        runBlocking {
+            val result = bridge.pushDeviceSecret(
                 userPassword = userPassword,
-                device = device,
-                preferences = preferences,
                 api = api
             )
 
@@ -195,6 +196,16 @@ class SecretsSpec {
 
         val api = MockServerApiEndpointClient()
 
+        val bridge = DefaultCredentialsManagementBridge(
+            apiConfig = stasis.client_android.persistence.config.Config.ServerApi(
+                url = "http://localhost:1234",
+                user = user.toString(),
+                userSalt = userSalt,
+                device = device.toString()
+            ),
+            preferences = preferences
+        )
+
         assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed], equalTo(0))
         assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled], equalTo(0))
 
@@ -206,12 +217,8 @@ class SecretsSpec {
 
             assertThat(api.deviceSecret, equalTo(remoteSecret))
 
-            val result = Secrets.pullDeviceSecret(
-                user = user,
-                userSalt = userSalt,
+            val result = bridge.pullDeviceSecret(
                 userPassword = userPassword,
-                device = device,
-                preferences = preferences,
                 api = api
             )
 
@@ -225,17 +232,53 @@ class SecretsSpec {
     }
 
     @Test
-    fun reEncryptDeviceSecrets() {
+    fun verifyUserPasswords() {
+        val preferences = initPreferences()
+        val secretsConfig = preferences.getSecretsConfig()
+
+        val user = UUID.randomUUID()
+        val userSalt = "test-salt"
+        val userPassword = "test-password".toCharArray()
+        val device = UUID.randomUUID()
+
+        val bridge = DefaultCredentialsManagementBridge(
+            apiConfig = stasis.client_android.persistence.config.Config.ServerApi(
+                url = "http://localhost:1234",
+                user = user.toString(),
+                userSalt = userSalt,
+                device = device.toString()
+            ),
+            preferences = preferences
+        )
+
+        assertThat(bridge.verifyUserPassword(userPassword), equalTo(false))
+        assertThat(bridge.verifyUserPassword("other-password".toCharArray()), equalTo(false))
+
+        val digestedUserPassword = UserPassword(
+            user = user,
+            salt = userSalt,
+            password = userPassword,
+            target = secretsConfig
+        ).toAuthenticationPassword().digested()
+
+        bridge.initDigestedUserPassword(digestedUserPassword = digestedUserPassword)
+
+        assertThat(bridge.verifyUserPassword(userPassword), equalTo(true))
+        assertThat(bridge.verifyUserPassword("other-password".toCharArray()), equalTo(false))
+    }
+
+    @Test
+    fun updateUserCredentials() {
         val initialSecret = "AYjniRpLv1QH20sZ_j4oSXNnyv1SUVNNYrZc".decodeFromBase64()
-        val updatedSecret = "LPkQoxt4QMX2l1GErZFm0p8ZQUv3Fbrvmug-"
+        val updatedSecret = "N8GnydPb-AwAx5Ebf0HR3aJ1lKhk4cdM-ELd"
 
         val preferences = initPreferences(withSecret = initialSecret)
+        val secretsConfig = preferences.getSecretsConfig()
 
         val user = UUID.fromString("34df2cbe-3bb8-4b2d-a6ab-c193acb23f54")
         val device = UUID.fromString("26fc913b-d67c-4174-be56-c125081c3567")
-        val initialSalt = "test-salt"
-        val initialPassword = "test-password".toCharArray()
-        val newSalt = "other-salt"
+        val oldSalt = "test-salt"
+        val oldUserPassword = "test-password".toCharArray()
         val newPassword = "other-password".toCharArray()
 
         val editor = mockk<SharedPreferences.Editor>(relaxUnitFun = true)
@@ -250,60 +293,75 @@ class SecretsSpec {
 
         every { editor.commit() } returns true
 
+        val bridge = DefaultCredentialsManagementBridge(
+            apiConfig = stasis.client_android.persistence.config.Config.ServerApi(
+                url = "http://localhost:1234",
+                user = user.toString(),
+                userSalt = oldSalt,
+                device = device.toString()
+            ),
+            preferences = preferences
+        )
+
+        assertThat(bridge.verifyUserPassword(oldUserPassword), equalTo(false))
+        assertThat(bridge.verifyUserPassword(newPassword), equalTo(false))
+
+        val digestedUserPassword = UserPassword(
+            user = user,
+            salt = oldSalt,
+            password = oldUserPassword,
+            target = secretsConfig
+        ).toAuthenticationPassword().digested()
+
+        bridge.initDigestedUserPassword(digestedUserPassword = digestedUserPassword)
+
+        assertThat(bridge.verifyUserPassword(oldUserPassword), equalTo(true))
+        assertThat(bridge.verifyUserPassword(newPassword), equalTo(false))
+
         runBlocking {
-            val result = Secrets.reEncryptDeviceSecret(
-                user = user,
-                currentUserSalt = initialSalt,
-                currentUserPassword = initialPassword,
-                newUserSalt = newSalt,
+            val result = bridge.updateUserCredentials(
+                currentUserPassword = oldUserPassword,
                 newUserPassword = newPassword,
-                device = device,
-                preferences = preferences
+                newUserSalt = oldSalt
             )
 
             assertThat(result.isSuccess, equalTo(true))
+
+            assertThat(result.get().user, equalTo(user))
+            assertThat(result.get().extract().isNotBlank(), equalTo(true))
+
+            assertThat(bridge.verifyUserPassword(oldUserPassword), equalTo(false))
+            assertThat(bridge.verifyUserPassword(newPassword), equalTo(true))
 
             verify(exactly = 1) { editor.commit() }
         }
     }
 
     @Test
-    fun loadUserAuthenticationPasswords() {
+    fun getUserAuthenticationPasswords() {
         val preferences = initPreferences()
 
         val user = UUID.randomUUID()
         val userSalt = "test-salt"
         val userPassword = "test-password".toCharArray()
+        val device = UUID.randomUUID()
 
-        val result = Secrets.loadUserAuthenticationPassword(
-            user = user,
-            userSalt = userSalt,
-            userPassword = userPassword,
+        val bridge = DefaultCredentialsManagementBridge(
+            apiConfig = stasis.client_android.persistence.config.Config.ServerApi(
+                url = "http://localhost:1234",
+                user = user.toString(),
+                userSalt = userSalt,
+                device = device.toString()
+            ),
             preferences = preferences
+        )
+
+        val result = bridge.getAuthenticationPassword(
+            userPassword = userPassword
         )
 
         assertThat(result.user, equalTo(user))
         assertThat(result.extract().isNotBlank(), equalTo(true))
-    }
-
-    @Test
-    fun initDeviceSecrets() {
-        val preferences = initPreferences()
-
-        val user = UUID.randomUUID()
-        val device = UUID.randomUUID()
-        val secret = "test-secret".toByteArray().toByteString()
-
-        val result = Secrets.initDeviceSecret(
-            user = user,
-            device = device,
-            secret = secret,
-            preferences = preferences
-        )
-
-        assertThat(result.user, equalTo(user))
-        assertThat(result.device, equalTo(device))
-        assertThat(result.secret, equalTo(secret))
     }
 
     private fun initPreferences(withSecret: ByteString? = null): SharedPreferences {

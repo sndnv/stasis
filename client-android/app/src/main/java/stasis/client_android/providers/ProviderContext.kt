@@ -3,6 +3,7 @@ package stasis.client_android.providers
 import android.content.SharedPreferences
 import stasis.client_android.lib.api.clients.ServerApiEndpointClient
 import stasis.client_android.lib.api.clients.ServerCoreEndpointClient
+import stasis.client_android.lib.encryption.secrets.Secret
 import stasis.client_android.lib.ops.monitoring.ServerMonitor
 import stasis.client_android.lib.ops.scheduling.OperationExecutor
 import stasis.client_android.lib.ops.search.Search
@@ -17,7 +18,8 @@ data class ProviderContext(
     val executor: OperationExecutor,
     val trackers: TrackerViews,
     val credentials: CredentialsProvider,
-    val monitor: ServerMonitor
+    val monitor: ServerMonitor,
+    val secretsConfig: Secret.Config
 ) {
     interface Factory {
         fun getOrCreate(preferences: SharedPreferences): Reference<ProviderContext>

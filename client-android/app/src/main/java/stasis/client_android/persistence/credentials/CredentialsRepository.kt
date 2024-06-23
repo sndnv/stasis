@@ -9,6 +9,7 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import okio.ByteString
 import stasis.client_android.lib.api.clients.ServerApiEndpointClient
+import stasis.client_android.lib.encryption.secrets.UserPassword
 import stasis.client_android.lib.security.AccessTokenResponse
 import stasis.client_android.lib.security.CredentialsProvider
 import stasis.client_android.lib.utils.Reference
@@ -29,8 +30,11 @@ class CredentialsRepository(
     private val credentialsPreferences: SharedPreferences,
     private val contextFactory: ProviderContext.Factory,
 ) : SharedPreferences.OnSharedPreferenceChangeListener {
+    private val contextRef: Reference<ProviderContext> =
+        contextFactory.getOrCreate(configPreferences)
+
     private val providerRef: Reference<CredentialsProvider> =
-        contextFactory.getOrCreate(configPreferences).map { providerContext ->
+        contextRef.map { providerContext ->
             providerContext.credentials
                 .setOnCoreTokenUpdatedHandler(this) { updateToken(it, Keys.DeviceToken) }
                 .setOnApiTokenUpdatedHandler(this) { updateToken(it, Keys.UserToken) }
@@ -55,12 +59,15 @@ class CredentialsRepository(
 
         credentialsPreferences.getTokens()?.let { (userToken, deviceToken) ->
             credentialsPreferences.getPlaintextDeviceSecret()?.let { plaintextDeviceSecret ->
-                withOAuthContext { provider ->
-                    provider.init(
-                        coreToken = deviceToken,
-                        apiToken = userToken,
-                        plaintextDeviceSecret = plaintextDeviceSecret
-                    )
+                credentialsPreferences.getDigestedUserPassword()?.let { digestedUserPassword ->
+                    withOAuthContext { provider ->
+                        provider.init(
+                            coreToken = deviceToken,
+                            apiToken = userToken,
+                            plaintextDeviceSecret = plaintextDeviceSecret,
+                            digestedUserPassword = digestedUserPassword
+                        )
+                    }
                 }
             }
         }
@@ -70,7 +77,10 @@ class CredentialsRepository(
         when (
             withOAuthContext { provider ->
                 provider.login(username, password) { result ->
-                    result.foreach { credentialsPreferences.putPlaintextDeviceSecret(it.secret) }
+                    result.foreach {
+                        credentialsPreferences.putPlaintextDeviceSecret(it.first.secret)
+                        credentialsPreferences.putDigestedUserPassword(it.second)
+                    }
                     f(result.map {})
                 }
             }
@@ -90,6 +100,7 @@ class CredentialsRepository(
                     .remove(Keys.UserToken)
                     .remove(Keys.DeviceToken)
                     .remove(Keys.PlaintextDeviceSecret)
+                    .remove(Keys.DigestedUserPassword)
                     .commit()
 
                 f()
@@ -98,6 +109,42 @@ class CredentialsRepository(
             null -> f()
             else -> Unit // do nothing
         }
+    }
+
+    fun verifyUserPassword(password: String, f: (Boolean) -> Unit) {
+        when (
+            withOAuthContext { provider ->
+                provider.verifyUserPassword(password = password, f = f)
+            }
+        ) {
+            null -> f(false)
+            else -> Unit // do nothing
+        }
+    }
+
+    fun updateUserCredentials(
+        api: ServerApiEndpointClient,
+        currentPassword: String,
+        newPassword: String,
+        newSalt: String?,
+        f: (Try<Unit>) -> Unit
+    ) = when (
+        withOAuthContext { provider ->
+            provider.updateUserCredentials(
+                api = api,
+                currentPassword = currentPassword,
+                newPassword = newPassword,
+                newSalt = newSalt
+            ) { result ->
+                result.foreach {
+                    credentialsPreferences.putDigestedUserPassword(it)
+                }
+                f(result.map {})
+            }
+        }
+    ) {
+        null -> f(Failure(RuntimeException("Client not configured")))
+        else -> Unit // do nothing
     }
 
     fun updateDeviceSecret(password: String, secret: ByteString, f: (Try<Unit>) -> Unit) {
@@ -198,6 +245,7 @@ class CredentialsRepository(
             const val UserToken: String = "user_token"
             const val DeviceToken: String = "device_token"
             const val PlaintextDeviceSecret: String = "device_secret"
+            const val DigestedUserPassword: String = "digested_user_password"
         }
 
         const val EncryptedPreferencesFileName: String =
@@ -244,5 +292,15 @@ class CredentialsRepository(
 
         fun SharedPreferences.getPlaintextDeviceSecret(): ByteString? =
             this.getString(Keys.PlaintextDeviceSecret, null)?.decodeFromBase64()
+
+        fun SharedPreferences.putDigestedUserPassword(password: String) {
+            this
+                .edit()
+                .putString(Keys.DigestedUserPassword, password)
+                .commit()
+        }
+
+        fun SharedPreferences.getDigestedUserPassword(): String? =
+            this.getString(Keys.DigestedUserPassword, null)
     }
 }

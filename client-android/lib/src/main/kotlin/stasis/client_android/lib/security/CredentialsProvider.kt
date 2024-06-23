@@ -9,7 +9,7 @@ import org.jose4j.jwt.consumer.JwtConsumerBuilder
 import org.jose4j.jwt.consumer.JwtContext
 import stasis.client_android.lib.api.clients.ServerApiEndpointClient
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
-import stasis.client_android.lib.encryption.secrets.UserAuthenticationPassword
+import stasis.client_android.lib.model.server.api.requests.ResetUserPassword
 import stasis.client_android.lib.security.exceptions.MissingDeviceSecret
 import stasis.client_android.lib.security.exceptions.TokenExpired
 import stasis.client_android.lib.utils.Try
@@ -26,12 +26,7 @@ import java.util.concurrent.atomic.AtomicReference
 class CredentialsProvider(
     private val config: Config,
     private val oAuthClient: OAuthClient,
-    private val initDeviceSecret: (ByteString) -> DeviceSecret,
-    private val loadDeviceSecret: suspend (CharArray) -> Try<DeviceSecret>,
-    private val storeDeviceSecret: suspend (ByteString, CharArray) -> Try<DeviceSecret>,
-    private val pushDeviceSecret: suspend (ServerApiEndpointClient, CharArray) -> Try<Unit>,
-    private val pullDeviceSecret: suspend (ServerApiEndpointClient, CharArray) -> Try<DeviceSecret>,
-    private val getAuthenticationPassword: (CharArray) -> UserAuthenticationPassword,
+    private val bridge: CredentialsManagementBridge,
     private val coroutineScope: CoroutineScope,
 ) {
     private val onCoreTokenUpdatedHandlers: ConcurrentHashMap<Any, (Try<AccessTokenResponse>) -> Unit> =
@@ -89,6 +84,7 @@ class CredentialsProvider(
         coreToken: AccessTokenResponse,
         apiToken: AccessTokenResponse,
         plaintextDeviceSecret: ByteString,
+        digestedUserPassword: String,
     ) {
         try {
             val coreExpiresIn = extractor.process(coreToken.access_token).expiresIn()
@@ -97,7 +93,8 @@ class CredentialsProvider(
             coreTokenManager.scheduleWithClientCredentials(Success(coreToken.copy(expires_in = coreExpiresIn)))
             apiTokenManager.scheduleWithRefreshToken(Success(apiToken.copy(expires_in = apiExpiresIn)))
 
-            latestDeviceSecret.set(Success(initDeviceSecret(plaintextDeviceSecret)))
+            latestDeviceSecret.set(Success(bridge.initDeviceSecret(plaintextDeviceSecret)))
+            bridge.initDigestedUserPassword(digestedUserPassword)
         } catch (_: InvalidJwtException) {
             when (val apiRefreshToken = apiToken.refresh_token) {
                 null -> {
@@ -108,7 +105,8 @@ class CredentialsProvider(
 
                 else -> init(
                     apiRefreshToken = apiRefreshToken,
-                    plaintextDeviceSecret = plaintextDeviceSecret
+                    plaintextDeviceSecret = plaintextDeviceSecret,
+                    digestedUserPassword = digestedUserPassword
                 )
             }
         }
@@ -116,7 +114,8 @@ class CredentialsProvider(
 
     fun init(
         apiRefreshToken: String,
-        plaintextDeviceSecret: ByteString
+        plaintextDeviceSecret: ByteString,
+        digestedUserPassword: String,
     ) {
         coroutineScope.launch {
             val coreTokenResponse = oAuthClient.token(
@@ -131,15 +130,16 @@ class CredentialsProvider(
 
             coreTokenManager.scheduleWithClientCredentials(coreTokenResponse)
             apiTokenManager.scheduleWithRefreshToken(apiTokenResponse)
-            latestDeviceSecret.set(Success(initDeviceSecret(plaintextDeviceSecret)))
+            latestDeviceSecret.set(Success(bridge.initDeviceSecret(plaintextDeviceSecret)))
+            bridge.initDigestedUserPassword(digestedUserPassword)
         }
     }
 
-    fun login(username: String, password: String, f: (Try<DeviceSecret>) -> Unit) {
+    fun login(username: String, password: String, f: (Try<Pair<DeviceSecret, String>>) -> Unit) {
         coroutineScope.launch {
-            when (val deviceSecretResult = loadDeviceSecret(password.toCharArray())) {
+            when (val deviceSecretResult = bridge.loadDeviceSecret(password.toCharArray())) {
                 is Success -> {
-                    val authenticationPassword = getAuthenticationPassword(password.toCharArray())
+                    val authenticationPassword = bridge.getAuthenticationPassword(password.toCharArray())
 
                     val coreTokenResponse = oAuthClient.token(
                         scope = config.coreScope,
@@ -158,12 +158,13 @@ class CredentialsProvider(
                     apiTokenManager.scheduleWithRefreshToken(apiTokenResponse)
                     latestDeviceSecret.set(deviceSecretResult)
 
-                    f(coreTokenResponse.flatMap { apiTokenResponse }.flatMap { deviceSecretResult })
+                    f(coreTokenResponse.flatMap { apiTokenResponse }
+                        .flatMap { deviceSecretResult.map { Pair(it, authenticationPassword.digested()) } })
                 }
 
                 is Failure -> {
                     latestDeviceSecret.set(deviceSecretResult)
-                    f(deviceSecretResult)
+                    f(Failure(deviceSecretResult.exception))
                 }
             }
         }
@@ -175,13 +176,41 @@ class CredentialsProvider(
         latestDeviceSecret.set(Failure(MissingDeviceSecret()))
     }
 
+    fun verifyUserPassword(password: String, f: (Boolean) -> Unit) {
+        coroutineScope.launch {
+            f(bridge.verifyUserPassword(password.toCharArray()))
+        }
+    }
+
+    fun updateUserCredentials(
+        api: ServerApiEndpointClient,
+        currentPassword: String,
+        newPassword: String,
+        newSalt: String?,
+        f: (Try<String>) -> Unit
+    ) {
+        coroutineScope.launch {
+            val result = bridge.updateUserCredentials(
+                currentUserPassword = currentPassword.toCharArray(),
+                newUserPassword = newPassword.toCharArray(),
+                newUserSalt = newSalt
+            ).flatMap { updatedAuthenticationPassword ->
+                api.resetUserPassword(
+                    request = ResetUserPassword(rawPassword = updatedAuthenticationPassword.extract())
+                ).map { updatedAuthenticationPassword.digested() }
+            }
+
+            f(result)
+        }
+    }
+
     fun updateDeviceSecret(
         plaintextDeviceSecret: ByteString,
         password: String,
         f: (Try<DeviceSecret>) -> Unit
     ) {
         coroutineScope.launch {
-            val deviceSecretResult = storeDeviceSecret(plaintextDeviceSecret, password.toCharArray())
+            val deviceSecretResult = bridge.storeDeviceSecret(plaintextDeviceSecret, password.toCharArray())
             latestDeviceSecret.set(deviceSecretResult)
             f(deviceSecretResult)
         }
@@ -193,7 +222,7 @@ class CredentialsProvider(
         f: (Try<Unit>) -> Unit
     ) {
         coroutineScope.launch {
-            f(pushDeviceSecret(api, password.toCharArray()))
+            f(bridge.pushDeviceSecret(api, password.toCharArray()))
         }
     }
 
@@ -203,7 +232,7 @@ class CredentialsProvider(
         f: (Try<Unit>) -> Unit
     ) {
         coroutineScope.launch {
-            val deviceSecretResult = pullDeviceSecret(api, password.toCharArray())
+            val deviceSecretResult = bridge.pullDeviceSecret(api, password.toCharArray())
             if (deviceSecretResult.isSuccess) {
                 latestDeviceSecret.set(deviceSecretResult)
             }
