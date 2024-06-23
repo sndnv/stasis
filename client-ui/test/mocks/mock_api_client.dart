@@ -1,5 +1,7 @@
 import 'package:stasis_client_ui/api/api_client.dart';
 import 'package:stasis_client_ui/model/api/requests/create_dataset_definition.dart';
+import 'package:stasis_client_ui/model/api/requests/update_user_password.dart';
+import 'package:stasis_client_ui/model/api/requests/update_user_salt.dart';
 import 'package:stasis_client_ui/model/api/responses/created_dataset_definition.dart';
 import 'package:stasis_client_ui/model/api/responses/operation_started.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_definition.dart';
@@ -363,6 +365,16 @@ class MockApiClient extends ApiClient implements InitApi, ClientApi {
     );
 
     return Future.value(user);
+  }
+
+  @override
+  Future<void> updateOwnPassword({required UpdateUserPassword request}) {
+    return Future.value();
+  }
+
+  @override
+  Future<void> updateOwnSalt({required UpdateUserSalt request}) {
+    return Future.value();
   }
 
   @override

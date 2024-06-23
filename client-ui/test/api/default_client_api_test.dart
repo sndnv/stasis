@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:stasis_client_ui/api/default_client_api.dart';
 import 'package:stasis_client_ui/config/config.dart';
+import 'package:stasis_client_ui/model/api/requests/update_user_password.dart';
+import 'package:stasis_client_ui/model/api/requests/update_user_salt.dart';
 import 'package:stasis_client_ui/model/datasets/entity_metadata.dart';
 import 'package:stasis_client_ui/utils/pair.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -421,6 +423,32 @@ void main() {
           .thenAnswer((_) async => http.Response(jsonEncode(user), 200));
 
       expect(await client.getSelf(), user);
+    });
+
+    test('update the current user password', () async {
+      final underlying = MockClient();
+      final client = DefaultClientApi(server: server, underlying: underlying, apiToken: apiToken);
+
+      const request = UpdateUserPassword(currentPassword: 'old-password', newPassword: 'new-password');
+
+      when(underlying.put(Uri.parse('$server/user/password'),
+          headers: {...applicationJson, ...authorization}, body: jsonEncode(request)))
+          .thenAnswer((_) async => http.Response('', 200));
+
+      expect(() async => await client.updateOwnPassword(request: request), returnsNormally);
+    });
+
+    test('update the current user salt', () async {
+      final underlying = MockClient();
+      final client = DefaultClientApi(server: server, underlying: underlying, apiToken: apiToken);
+
+      const request = UpdateUserSalt(currentPassword: 'test-password', newSalt: 'new-salt');
+
+      when(underlying.put(Uri.parse('$server/user/salt'),
+          headers: {...applicationJson, ...authorization}, body: jsonEncode(request)))
+          .thenAnswer((_) async => http.Response('', 200));
+
+      expect(() async => await client.updateOwnSalt(request: request), returnsNormally);
     });
 
     test('get current device', () async {

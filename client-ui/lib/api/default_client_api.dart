@@ -5,6 +5,8 @@ import 'package:stasis_client_ui/api/api_client.dart';
 import 'package:stasis_client_ui/api/endpoint_context.dart';
 import 'package:stasis_client_ui/config/config.dart';
 import 'package:stasis_client_ui/model/api/requests/create_dataset_definition.dart';
+import 'package:stasis_client_ui/model/api/requests/update_user_password.dart';
+import 'package:stasis_client_ui/model/api/requests/update_user_salt.dart';
 import 'package:stasis_client_ui/model/api/responses/created_dataset_definition.dart';
 import 'package:stasis_client_ui/model/api/responses/operation_started.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_definition.dart';
@@ -121,6 +123,18 @@ class DefaultClientApi extends ApiClient implements ClientApi {
   Future<User> getSelf() async {
     const path = '/user';
     return await getOne(from: path, fromJson: User.fromJson);
+  }
+
+  @override
+  Future<void> updateOwnPassword({required UpdateUserPassword request}) async {
+    const path = '/user/password';
+    return await put(data: request.toJson(), to: path);
+  }
+
+  @override
+  Future<void> updateOwnSalt({required UpdateUserSalt request}) async {
+    const path = '/user/salt';
+    return await put(data: request.toJson(), to: path);
   }
 
   @override

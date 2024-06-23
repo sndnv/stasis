@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:stasis_client_ui/model/api/requests/create_dataset_definition.dart';
+import 'package:stasis_client_ui/model/api/requests/update_user_password.dart';
+import 'package:stasis_client_ui/model/api/requests/update_user_salt.dart';
 import 'package:stasis_client_ui/model/api/responses/created_dataset_definition.dart';
 import 'package:stasis_client_ui/model/api/responses/operation_started.dart';
 import 'package:stasis_client_ui/model/operations/operation.dart';
@@ -164,6 +166,10 @@ abstract class ClientApi {
 
   Future<User> getSelf();
 
+  Future<void> updateOwnPassword({required UpdateUserPassword request});
+
+  Future<void> updateOwnSalt({required UpdateUserSalt request});
+
   Future<Device> getCurrentDevice();
 
   Future<Map<String, ServerState>> getCurrentDeviceConnections();
@@ -234,6 +240,15 @@ class AuthorizationFailure implements Exception {
   }
 }
 
+class ConflictFailure implements Exception {
+  final String message = 'Conflict encountered while processing request';
+
+  @override
+  String toString() {
+    return message;
+  }
+}
+
 class BadRequest implements Exception {
   BadRequest({required this.message, required this.status});
 
@@ -276,6 +291,8 @@ extension ExtendedResponse<R extends http.BaseResponse> on Future<R> {
         return Future.error(AuthenticationFailure());
       } else if (response.statusCode == 403) {
         return Future.error(AuthorizationFailure());
+      } else if (response.statusCode == 409) {
+        return Future.error(ConflictFailure());
       } else if (response.statusCode >= 400 && response.statusCode < 500) {
         return Future.error(
           BadRequest(
