@@ -178,6 +178,46 @@ class DefaultClientApiSpec(unittest.TestCase):
         )
 
     @patch('requests.request')
+    def test_should_update_current_user_password(self, mock_request):
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
+        mock_request.return_value = MockResponse.success()
+
+        update_request = {'a': 1, 'b': 2}
+        self.assertEqual(client.user_password_update(request=update_request), {'successful': True, 'operation': None})
+
+        self.assert_valid_request(
+            mock=mock_request,
+            expected_method='put',
+            expected_url='/user/password',
+            expected_request_data=update_request
+        )
+
+    @patch('requests.request')
+    def test_should_update_current_user_salt(self, mock_request):
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
+        mock_request.return_value = MockResponse.success()
+
+        update_request = {'a': 1, 'b': 2}
+        self.assertEqual(client.user_salt_update(request=update_request), {'successful': True, 'operation': None})
+
+        self.assert_valid_request(
+            mock=mock_request,
+            expected_method='put',
+            expected_url='/user/salt',
+            expected_request_data=update_request
+        )
+
+    @patch('requests.request')
     def test_should_get_current_device(self, mock_request):
         client = DefaultClientApi(
             api_url=self.url,

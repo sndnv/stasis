@@ -21,6 +21,8 @@ class InactiveClientApiSpec(unittest.TestCase):
         query = 'test.*'
         until = '2020-02-02T02:02:02'
         definition_request = {'a': 1, 'b': 2}
+        user_password_update_request = {'a': 1, 'b': 2}
+        user_salt_update_request = {'a': 1, 'b': 2}
 
         with self.assertRaises(Abort):
             api.stop()
@@ -42,6 +44,12 @@ class InactiveClientApiSpec(unittest.TestCase):
 
         with self.assertRaises(Abort):
             api.user()
+
+        with self.assertRaises(Abort):
+            api.user_password_update(request=user_password_update_request)
+
+        with self.assertRaises(Abort):
+            api.user_salt_update(request=user_salt_update_request)
 
         with self.assertRaises(Abort):
             api.device()

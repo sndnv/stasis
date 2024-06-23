@@ -268,6 +268,148 @@ class ServiceSpec(unittest.TestCase):
         self.assertTrue(json.loads(result.output))
         self.assertEqual(context.api.stats['user'], 1)
 
+    def test_should_update_current_user_password(self):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        runner = Runner(cli)
+        result = runner.invoke(
+            args=[
+                'update', 'user', 'password',
+                '--current-password', 'abc',
+                '--verify-current-password', 'abc',
+                '--new-password', 'xyz',
+                '--verify-new-password', 'xyz',
+            ],
+            obj=context
+        )
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertTrue(json.loads(result.output))
+        self.assertEqual(context.api.stats['user_password_update'], 1)
+
+    def test_should_fail_to_update_user_password_with_mismatched_current_passwords(self):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        runner = Runner(cli)
+        result = runner.invoke(
+            args=[
+                'update', 'user', 'password',
+                '--current-password', 'abc',
+                '--verify-current-password', '123',
+                '--new-password', 'xyz',
+                '--verify-new-password', 'xyz',
+            ],
+            obj=context
+        )
+
+        self.assertEqual(result.exit_code, 1)
+        self.assertIn('Aborted!', result.output)
+
+    def test_should_fail_to_update_user_password_with_mismatched_new_passwords(self):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        runner = Runner(cli)
+        result = runner.invoke(
+            args=[
+                'update', 'user', 'password',
+                '--current-password', 'abc',
+                '--verify-current-password', 'abc',
+                '--new-password', 'xyz',
+                '--verify-new-password', '123',
+            ],
+            obj=context
+        )
+
+        self.assertEqual(result.exit_code, 1)
+        self.assertIn('Aborted!', result.output)
+
+    def test_should_fail_to_update_user_password_with_identical_current_and_new_passwords(self):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        runner = Runner(cli)
+        result = runner.invoke(
+            args=[
+                'update', 'user', 'password',
+                '--current-password', 'abc',
+                '--verify-current-password', 'abc',
+                '--new-password', 'abc',
+                '--verify-new-password', 'abc',
+            ],
+            obj=context
+        )
+
+        self.assertEqual(result.exit_code, 1)
+        self.assertIn('Aborted!', result.output)
+
+    def test_should_update_current_user_salt(self):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        runner = Runner(cli)
+        result = runner.invoke(
+            args=[
+                'update', 'user', 'salt',
+                '--current-password', 'abc',
+                '--verify-current-password', 'abc',
+                '--new-salt', 'xyz',
+                '--verify-new-salt', 'xyz',
+            ],
+            obj=context
+        )
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertTrue(json.loads(result.output))
+        self.assertEqual(context.api.stats['user_salt_update'], 1)
+
+    def test_should_fail_to_update_user_salt_with_mismatched_new_passwords(self):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        runner = Runner(cli)
+        result = runner.invoke(
+            args=[
+                'update', 'user', 'salt',
+                '--current-password', 'abc',
+                '--verify-current-password', '123',
+                '--new-salt', 'xyz',
+                '--verify-new-salt', 'xyz',
+            ],
+            obj=context
+        )
+
+        self.assertEqual(result.exit_code, 1)
+        self.assertIn('Aborted!', result.output)
+
+    def test_should_fail_to_update_user_salt_with_mismatched_new_salt_values(self):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        runner = Runner(cli)
+        result = runner.invoke(
+            args=[
+                'update', 'user', 'salt',
+                '--current-password', 'abc',
+                '--verify-current-password', 'abc',
+                '--new-salt', 'xyz',
+                '--verify-new-salt', '123',
+            ],
+            obj=context
+        )
+
+        self.assertEqual(result.exit_code, 1)
+        self.assertIn('Aborted!', result.output)
+
     def test_should_show_current_device(self):
         context = Context()
         context.api = MockClientApi()

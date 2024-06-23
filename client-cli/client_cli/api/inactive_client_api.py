@@ -38,6 +38,12 @@ class InactiveClientApi(ClientApi):
     def user(self):
         InactiveClientApi._abort()
 
+    def user_password_update(self, request):
+        InactiveClientApi._abort()
+
+    def user_salt_update(self, request):
+        InactiveClientApi._abort()
+
     def device(self):
         InactiveClientApi._abort()
 
