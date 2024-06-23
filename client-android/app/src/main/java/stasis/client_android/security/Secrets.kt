@@ -17,6 +17,7 @@ import stasis.client_android.lib.utils.Try.Success
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getEncryptedDeviceSecret
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getSecretsConfig
 import stasis.client_android.persistence.config.ConfigRepository.Companion.putEncryptedDeviceSecret
+import stasis.client_android.serialization.ByteStrings.encodeAsBase64
 import java.util.concurrent.ThreadLocalRandom
 
 object Secrets {
@@ -166,6 +167,43 @@ object Secrets {
         preferences.putEncryptedDeviceSecret(secret = reEncryptedDeviceSecret)
 
         Success(decryptedDeviceSecret)
+    }
+
+    suspend fun reEncryptDeviceSecret(
+        user: UserId,
+        currentUserSalt: String,
+        currentUserPassword: CharArray,
+        newUserSalt: String,
+        newUserPassword: CharArray,
+        device: DeviceId,
+        preferences: SharedPreferences
+    ): Try<Unit> = Try {
+        val secretsConfig = preferences.getSecretsConfig()
+
+        val currentUserEncryptionPassword = UserPassword(
+            user = user,
+            salt = currentUserSalt,
+            password = currentUserPassword,
+            target = secretsConfig
+        ).toHashedEncryptionPassword().toLocalEncryptionSecret()
+
+        val newUserEncryptionPassword = UserPassword(
+            user = user,
+            salt = newUserSalt,
+            password = newUserPassword,
+            target = secretsConfig
+        ).toHashedEncryptionPassword().toLocalEncryptionSecret()
+
+        val decryptedDeviceSecret = currentUserEncryptionPassword
+            .decryptDeviceSecret(
+                device = device,
+                encryptedSecret = preferences.getEncryptedDeviceSecret()
+            )
+
+        val encryptedDeviceSecret = newUserEncryptionPassword
+            .encryptDeviceSecret(decryptedDeviceSecret)
+
+        preferences.putEncryptedDeviceSecret(encryptedDeviceSecret)
     }
 
     fun loadUserAuthenticationPassword(

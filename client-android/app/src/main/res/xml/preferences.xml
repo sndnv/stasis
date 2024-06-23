@@ -9,11 +9,38 @@
             app:title="@string/settings_date_time_format_title" />
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="@string/settings_category_secrets">
+    <PreferenceCategory app:title="@string/settings_category_user_credentials">
         <Preference
-            app:key="manage_device_secret"
-            app:summary="@string/settings_manage_device_secret_summary"
-            app:title="@string/settings_manage_device_secret_title" />
+            app:key="manage_user_credentials_update_password"
+            app:summary="@string/settings_manage_user_credentials_update_password_summary"
+            app:title="@string/settings_manage_user_credentials_update_password_title" />
+
+        <Preference
+            app:key="manage_user_credentials_update_salt"
+            app:summary="@string/settings_manage_user_credentials_update_salt_summary"
+            app:title="@string/settings_manage_user_credentials_update_salt_title" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/settings_category_device_secret">
+        <Preference
+            app:key="manage_device_secret_remotely_push"
+            app:summary="@string/settings_manage_device_secret_remotely_push_summary"
+            app:title="@string/settings_manage_device_secret_remotely_push_title" />
+
+        <Preference
+            app:key="manage_device_secret_remotely_pull"
+            app:summary="@string/settings_manage_device_secret_remotely_pull_summary"
+            app:title="@string/settings_manage_device_secret_remotely_pull_title" />
+
+        <Preference
+            app:key="manage_device_secret_locally_export"
+            app:summary="@string/settings_manage_device_secret_locally_export_summary"
+            app:title="@string/settings_manage_device_secret_locally_export_title" />
+
+        <Preference
+            app:key="manage_device_secret_locally_import"
+            app:summary="@string/settings_manage_device_secret_locally_import_summary"
+            app:title="@string/settings_manage_device_secret_locally_import_title" />
     </PreferenceCategory>
 
     <PreferenceCategory app:title="@string/settings_category_debug">

@@ -24,6 +24,7 @@ import stasis.client_android.lib.utils.Reference
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Success
 import stasis.client_android.mocks.MockBackupTracker
+import stasis.client_android.mocks.MockCredentialsManagementBridge
 import stasis.client_android.mocks.MockOAuthClient
 import stasis.client_android.mocks.MockOperationExecutor
 import stasis.client_android.mocks.MockRecoveryTracker
@@ -88,6 +89,40 @@ class CredentialsViewModelSpec {
                         model.device.await().failure().message,
                         equalTo("No access token found")
                     )
+                }
+            }
+        }
+    }
+
+    @Test
+    fun supportVerifyingUserPassword() {
+        withModel { model ->
+            val updateResult = AtomicBoolean(false)
+            model.verifyUserPassword(password = "password") { updateResult.set(it) }
+
+            runBlocking {
+                eventually {
+                    assertThat(updateResult.get(), equalTo(true))
+                }
+            }
+        }
+    }
+
+    @Test
+    fun supportUpdatingUserCredentials() {
+        withModel { model ->
+            val updateResult = AtomicReference<Try<Unit>?>(null)
+
+            model.updateUserCredentials(
+                api = MockServerApiEndpointClient(),
+                currentPassword = "current-password",
+                newPassword = "new-password",
+                newSalt = null
+            ) { updateResult.set(it) }
+
+            runBlocking {
+                eventually {
+                    assertThat(updateResult.get()?.isSuccess ?: false, equalTo(true))
                 }
             }
         }
@@ -179,15 +214,17 @@ class CredentialsViewModelSpec {
                                     expirationTolerance = Duration.ZERO
                                 ),
                                 oAuthClient = MockOAuthClient(),
-                                initDeviceSecret = { Fixtures.Secrets.Default },
-                                loadDeviceSecret = { Success(Fixtures.Secrets.Default) },
-                                storeDeviceSecret = { _, _ -> Success(Fixtures.Secrets.Default) },
-                                pushDeviceSecret = { _, _ -> Success(Unit) },
-                                pullDeviceSecret = { _, _ -> Success(Fixtures.Secrets.Default) },
-                                coroutineScope = CoroutineScope(Dispatchers.IO),
-                                getAuthenticationPassword = { Fixtures.Secrets.UserPassword.toAuthenticationPassword() }
+                                bridge = object : MockCredentialsManagementBridge(
+                                    deviceSecret = Fixtures.Secrets.Default,
+                                    authenticationPassword = Fixtures.Secrets.UserPassword.toAuthenticationPassword()
+                                ) {
+                                    override fun verifyUserPassword(userPassword: CharArray): Boolean =
+                                        true
+                                },
+                                coroutineScope = CoroutineScope(Dispatchers.IO)
                             ),
-                            monitor = MockServerMonitor()
+                            monitor = MockServerMonitor(),
+                            secretsConfig = Fixtures.Secrets.DefaultConfig
                         )
                     },
                     destroy = {}

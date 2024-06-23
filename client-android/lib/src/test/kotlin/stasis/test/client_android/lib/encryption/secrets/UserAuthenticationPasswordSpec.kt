@@ -36,6 +36,19 @@ class UserAuthenticationPasswordSpec : WordSpec({
                 actualPassword.extract()
             }
         }
+
+        "support providing a digested version of the hashed password" {
+            val originalPassword = "test-password"
+            val digestedPassword =
+                "c2KtMdtdEMnxjhRjqxjdvpxUgZzO410G0LK09qrg-zqMDL9qSaIgoLRoU2X7ueHOa4_XWAcABv4lXD6B0ddUwA"
+
+            val actualPassword = UserAuthenticationPassword.Hashed(
+                user = UUID.randomUUID(),
+                hashedPassword = originalPassword.encodeUtf8()
+            )
+
+            actualPassword.digested() shouldBe (digestedPassword)
+        }
     }
 
     "A Unhashed UserAuthenticationPassword" should {
@@ -63,6 +76,19 @@ class UserAuthenticationPasswordSpec : WordSpec({
             shouldThrow<IllegalStateException> {
                 actualPassword.extract()
             }
+        }
+
+        "support providing a digested version of the raw password" {
+            val originalPassword = "test-password"
+            val digestedPassword =
+                "c2KtMdtdEMnxjhRjqxjdvpxUgZzO410G0LK09qrg-zqMDL9qSaIgoLRoU2X7ueHOa4_XWAcABv4lXD6B0ddUwA"
+
+            val actualPassword = UserAuthenticationPassword.Unhashed(
+                user = UUID.randomUUID(),
+                rawPassword = originalPassword.encodeUtf8()
+            )
+
+            actualPassword.digested() shouldBe (digestedPassword)
         }
     }
 })

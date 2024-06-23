@@ -6,9 +6,11 @@ import stasis.client_android.lib.api.clients.ServerApiEndpointClient
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
+import stasis.client_android.lib.model.server.api.requests.ResetUserPassword
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetDefinition
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetEntry
 import stasis.client_android.lib.model.server.api.responses.Ping
+import stasis.client_android.lib.model.server.api.responses.UpdatedUserSalt
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.model.server.datasets.DatasetEntry
@@ -40,6 +42,8 @@ open class MockServerApiEndpointClient(
         Statistic.DatasetMetadataWithEntryIdRetrieved to AtomicInteger(0),
         Statistic.DatasetMetadataWithEntryRetrieved to AtomicInteger(0),
         Statistic.UserRetrieved to AtomicInteger(0),
+        Statistic.UserSaltReset to AtomicInteger(0),
+        Statistic.UserPasswordUpdated to AtomicInteger(0),
         Statistic.DeviceRetrieved to AtomicInteger(0),
         Statistic.DeviceKeyPushed to AtomicInteger(0),
         Statistic.DeviceKeyPulled to AtomicInteger(0),
@@ -128,6 +132,17 @@ open class MockServerApiEndpointClient(
         return Success(Generators.generateUser())
     }
 
+
+    override suspend fun resetUserSalt(): Try<UpdatedUserSalt> {
+        stats[Statistic.UserSaltReset]?.getAndIncrement()
+        return Success(UpdatedUserSalt("test-salt"))
+    }
+
+    override suspend fun resetUserPassword(request: ResetUserPassword): Try<Unit> {
+        stats[Statistic.UserPasswordUpdated]?.getAndIncrement()
+        return Success(Unit)
+    }
+
     override suspend fun device(): Try<Device> {
         stats[Statistic.DeviceRetrieved]?.getAndIncrement()
         return Success(Generators.generateDevice())
@@ -164,6 +179,8 @@ open class MockServerApiEndpointClient(
         object DatasetMetadataWithEntryIdRetrieved : Statistic()
         object DatasetMetadataWithEntryRetrieved : Statistic()
         object UserRetrieved : Statistic()
+        object UserSaltReset : Statistic()
+        object UserPasswordUpdated : Statistic()
         object DeviceRetrieved : Statistic()
         object DeviceKeyPushed : Statistic()
         object DeviceKeyPulled : Statistic()

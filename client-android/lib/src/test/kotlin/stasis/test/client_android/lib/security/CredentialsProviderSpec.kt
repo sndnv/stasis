@@ -3,11 +3,13 @@ package stasis.test.client_android.lib.security
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.shouldBe
+import okio.ByteString
 import okio.ByteString.Companion.toByteString
 import org.jose4j.jwk.RsaJwkGenerator
 import org.jose4j.jws.AlgorithmIdentifiers
 import org.jose4j.jws.JsonWebSignature
 import org.jose4j.jwt.JwtClaims
+import stasis.client_android.lib.api.clients.ServerApiEndpointClient
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.encryption.secrets.UserAuthenticationPassword
 import stasis.client_android.lib.security.AccessTokenResponse
@@ -21,6 +23,7 @@ import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
 import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.eventually
+import stasis.test.client_android.lib.mocks.MockCredentialsManagementBridge
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
 import java.time.Duration
 import java.util.Collections
@@ -80,8 +83,7 @@ class CredentialsProviderSpec : WordSpec({
         "support initializing with existing token responses (valid)" {
             val requested = AtomicInteger(0)
 
-            val coreUpdates =
-                Collections.synchronizedList(mutableListOf<Try<AccessTokenResponse>>())
+            val coreUpdates = Collections.synchronizedList(mutableListOf<Try<AccessTokenResponse>>())
             val apiUpdates = Collections.synchronizedList(mutableListOf<Try<AccessTokenResponse>>())
 
             val coreToken = response.copy(access_token = createJwt(), refresh_token = null)
@@ -100,12 +102,10 @@ class CredentialsProviderSpec : WordSpec({
             val provider = CredentialsProvider(
                 config = config,
                 oAuthClient = client,
-                initDeviceSecret = { secret },
-                loadDeviceSecret = { Success(secret) },
-                storeDeviceSecret = { _, _ -> Success(secret) },
-                pushDeviceSecret = { _, _ -> Success(Unit) },
-                pullDeviceSecret = { _, _ -> Failure(RuntimeException("Test failure")) },
-                getAuthenticationPassword = { hashedPassword },
+                bridge = MockCredentialsManagementBridge(
+                    deviceSecret = secret,
+                    authenticationPassword = hashedPassword
+                ),
                 coroutineScope = testScope
             )
 
@@ -116,7 +116,8 @@ class CredentialsProviderSpec : WordSpec({
             provider.init(
                 coreToken = coreToken,
                 apiToken = apiToken,
-                plaintextDeviceSecret = secret.secret
+                plaintextDeviceSecret = secret.secret,
+                digestedUserPassword = "test-password"
             )
 
             eventually {
@@ -165,12 +166,10 @@ class CredentialsProviderSpec : WordSpec({
             val provider = CredentialsProvider(
                 config = config,
                 oAuthClient = client,
-                initDeviceSecret = { secret },
-                loadDeviceSecret = { Success(secret) },
-                storeDeviceSecret = { _, _ -> Success(secret) },
-                pushDeviceSecret = { _, _ -> Success(Unit) },
-                pullDeviceSecret = { _, _ -> Failure(RuntimeException("Test failure")) },
-                getAuthenticationPassword = { hashedPassword },
+                bridge = MockCredentialsManagementBridge(
+                    deviceSecret = secret,
+                    authenticationPassword = hashedPassword
+                ),
                 coroutineScope = testScope
             )
 
@@ -181,7 +180,8 @@ class CredentialsProviderSpec : WordSpec({
             provider.init(
                 coreToken = coreToken,
                 apiToken = apiToken,
-                plaintextDeviceSecret = secret.secret
+                plaintextDeviceSecret = secret.secret,
+                digestedUserPassword = "test-password"
             )
 
             eventually {
@@ -225,12 +225,10 @@ class CredentialsProviderSpec : WordSpec({
             val provider = CredentialsProvider(
                 config = config,
                 oAuthClient = client,
-                initDeviceSecret = { secret },
-                loadDeviceSecret = { Success(secret) },
-                storeDeviceSecret = { _, _ -> Success(secret) },
-                pushDeviceSecret = { _, _ -> Success(Unit) },
-                pullDeviceSecret = { _, _ -> Failure(RuntimeException("Test failure")) },
-                getAuthenticationPassword = { hashedPassword },
+                bridge = MockCredentialsManagementBridge(
+                    deviceSecret = secret,
+                    authenticationPassword = hashedPassword
+                ),
                 coroutineScope = testScope
             )
 
@@ -241,7 +239,8 @@ class CredentialsProviderSpec : WordSpec({
             provider.init(
                 coreToken = coreToken,
                 apiToken = apiToken,
-                plaintextDeviceSecret = secret.secret
+                plaintextDeviceSecret = secret.secret,
+                digestedUserPassword = "test-password"
             )
 
             eventually {
@@ -280,12 +279,10 @@ class CredentialsProviderSpec : WordSpec({
             val provider = CredentialsProvider(
                 config = config,
                 oAuthClient = client,
-                initDeviceSecret = { secret },
-                loadDeviceSecret = { Success(secret) },
-                storeDeviceSecret = { _, _ -> Success(secret) },
-                pushDeviceSecret = { _, _ -> Success(Unit) },
-                pullDeviceSecret = { _, _ -> Failure(RuntimeException("Test failure")) },
-                getAuthenticationPassword = { hashedPassword },
+                bridge = MockCredentialsManagementBridge(
+                    deviceSecret = secret,
+                    authenticationPassword = hashedPassword
+                ),
                 coroutineScope = testScope
             )
 
@@ -295,7 +292,8 @@ class CredentialsProviderSpec : WordSpec({
 
             provider.init(
                 apiRefreshToken = "api-token",
-                plaintextDeviceSecret = secret.secret
+                plaintextDeviceSecret = secret.secret,
+                digestedUserPassword = "test-password"
             )
 
             eventually {
@@ -347,12 +345,10 @@ class CredentialsProviderSpec : WordSpec({
             val provider = CredentialsProvider(
                 config = config,
                 oAuthClient = client,
-                initDeviceSecret = { secret },
-                loadDeviceSecret = { Success(secret) },
-                storeDeviceSecret = { _, _ -> Success(secret) },
-                pushDeviceSecret = { _, _ -> Success(Unit) },
-                pullDeviceSecret = { _, _ -> Failure(RuntimeException("Test failure")) },
-                getAuthenticationPassword = { hashedPassword },
+                bridge = MockCredentialsManagementBridge(
+                    deviceSecret = secret,
+                    authenticationPassword = hashedPassword
+                ),
                 coroutineScope = testScope
             )
 
@@ -414,12 +410,13 @@ class CredentialsProviderSpec : WordSpec({
             val provider = CredentialsProvider(
                 config = config,
                 oAuthClient = client,
-                initDeviceSecret = { secret },
-                loadDeviceSecret = { Failure(RuntimeException("Test failure")) },
-                storeDeviceSecret = { _, _ -> Success(secret) },
-                pushDeviceSecret = { _, _ -> Success(Unit) },
-                pullDeviceSecret = { _, _ -> Failure(RuntimeException("Test failure")) },
-                getAuthenticationPassword = { hashedPassword },
+                bridge = object : MockCredentialsManagementBridge(
+                    deviceSecret = secret,
+                    authenticationPassword = hashedPassword
+                ) {
+                    override suspend fun loadDeviceSecret(userPassword: CharArray): Try<DeviceSecret> =
+                        Failure(RuntimeException("Test failure"))
+                },
                 coroutineScope = testScope
             )
 
@@ -448,6 +445,95 @@ class CredentialsProviderSpec : WordSpec({
             }
         }
 
+        "support verifying user passwords" {
+            val currentPassword = "test-password"
+
+            val verificationResult = AtomicBoolean(false)
+            val callbackSuccessful = AtomicBoolean(false)
+
+            val client = object : OAuthClient {
+                override suspend fun token(
+                    scope: String?,
+                    parameters: OAuthClient.GrantParameters,
+                ): Try<AccessTokenResponse> {
+                    return Success(response)
+                }
+            }
+
+            val provider = CredentialsProvider(
+                config = config,
+                oAuthClient = client,
+                bridge = object : MockCredentialsManagementBridge(
+                    deviceSecret = secret,
+                    authenticationPassword = hashedPassword
+                ) {
+                    override fun verifyUserPassword(userPassword: CharArray): Boolean {
+                        return String(userPassword) == currentPassword
+                    }
+                },
+                coroutineScope = testScope
+            )
+
+            verificationResult.get() shouldBe (false)
+            callbackSuccessful.get() shouldBe (false)
+            provider.verifyUserPassword(password = currentPassword) { result ->
+                verificationResult.set(result)
+                callbackSuccessful.set(true)
+            }
+
+            eventually {
+                verificationResult.get() shouldBe (true)
+                callbackSuccessful.get() shouldBe (true)
+            }
+        }
+
+        "support updating user credentials" {
+            val credentialsUpdated = AtomicBoolean(false)
+            val callbackSuccessful = AtomicBoolean(false)
+
+            val client = object : OAuthClient {
+                override suspend fun token(
+                    scope: String?,
+                    parameters: OAuthClient.GrantParameters,
+                ): Try<AccessTokenResponse> {
+                    return Success(response)
+                }
+            }
+
+            val mockApi = MockServerApiEndpointClient()
+
+            val provider = CredentialsProvider(
+                config = config,
+                oAuthClient = client,
+                bridge = MockCredentialsManagementBridge(
+                    deviceSecret = secret,
+                    authenticationPassword = hashedPassword
+                ),
+                coroutineScope = testScope
+            )
+
+            credentialsUpdated.get() shouldBe (false)
+            callbackSuccessful.get() shouldBe (false)
+
+            mockApi.statistics[MockServerApiEndpointClient.Statistic.UserPasswordUpdated] shouldBe (0)
+
+            provider.updateUserCredentials(
+                api = mockApi,
+                currentPassword = "current-password",
+                newPassword = "new-password",
+                newSalt = "test-salt"
+            ) { result ->
+                credentialsUpdated.set(result.isSuccess)
+                callbackSuccessful.set(true)
+            }
+
+            eventually {
+                credentialsUpdated.get() shouldBe (true)
+                callbackSuccessful.get() shouldBe (true)
+                mockApi.statistics[MockServerApiEndpointClient.Statistic.UserPasswordUpdated] shouldBe (1)
+            }
+        }
+
         "support updating the device's secret" {
             val secretUpdated = AtomicBoolean(false)
             val callbackSuccessful = AtomicBoolean(false)
@@ -471,15 +557,18 @@ class CredentialsProviderSpec : WordSpec({
             val provider = CredentialsProvider(
                 config = config,
                 oAuthClient = client,
-                initDeviceSecret = { secret },
-                loadDeviceSecret = { Success(secret) },
-                storeDeviceSecret = { _, _ ->
-                    secretUpdated.set(true)
-                    Success(otherSecret)
+                bridge = object : MockCredentialsManagementBridge(
+                    deviceSecret = secret,
+                    authenticationPassword = hashedPassword
+                ) {
+                    override suspend fun storeDeviceSecret(
+                        secret: ByteString,
+                        userPassword: CharArray
+                    ): Try<DeviceSecret> {
+                        secretUpdated.set(true)
+                        return Success(otherSecret)
+                    }
                 },
-                pushDeviceSecret = { _, _ -> Success(Unit) },
-                pullDeviceSecret = { _, _ -> Failure(RuntimeException("Test failure")) },
-                getAuthenticationPassword = { hashedPassword },
                 coroutineScope = testScope
             )
 
@@ -514,15 +603,18 @@ class CredentialsProviderSpec : WordSpec({
             val provider = CredentialsProvider(
                 config = config,
                 oAuthClient = client,
-                initDeviceSecret = { secret },
-                loadDeviceSecret = { Success(secret) },
-                storeDeviceSecret = { _, _ -> Success(secret) },
-                pushDeviceSecret = { _, _ ->
-                    secretPushed.set(true)
-                    Success(Unit)
+                bridge = object : MockCredentialsManagementBridge(
+                    deviceSecret = secret,
+                    authenticationPassword = hashedPassword
+                ) {
+                    override suspend fun pushDeviceSecret(
+                        api: ServerApiEndpointClient,
+                        userPassword: CharArray
+                    ): Try<Unit> {
+                        secretPushed.set(true)
+                        return Success(Unit)
+                    }
                 },
-                pullDeviceSecret = { _, _ -> Failure(RuntimeException("Test failure")) },
-                getAuthenticationPassword = { hashedPassword },
                 coroutineScope = testScope
             )
 
@@ -556,15 +648,18 @@ class CredentialsProviderSpec : WordSpec({
             val provider = CredentialsProvider(
                 config = config,
                 oAuthClient = client,
-                initDeviceSecret = { secret },
-                loadDeviceSecret = { Success(secret) },
-                storeDeviceSecret = { _, _ -> Success(secret) },
-                pushDeviceSecret = { _, _ -> Success(Unit) },
-                pullDeviceSecret = { _, _ ->
-                    secretPulled.set(true)
-                    Success(secret)
+                bridge = object : MockCredentialsManagementBridge(
+                    deviceSecret = secret,
+                    authenticationPassword = hashedPassword
+                ) {
+                    override suspend fun pullDeviceSecret(
+                        api: ServerApiEndpointClient,
+                        userPassword: CharArray
+                    ): Try<DeviceSecret> {
+                        secretPulled.set(true)
+                        return Success(secret)
+                    }
                 },
-                getAuthenticationPassword = { hashedPassword },
                 coroutineScope = testScope
             )
 
@@ -604,15 +699,18 @@ class CredentialsProviderSpec : WordSpec({
             val provider = CredentialsProvider(
                 config = config,
                 oAuthClient = client,
-                initDeviceSecret = { secret },
-                loadDeviceSecret = { Success(secret) },
-                storeDeviceSecret = { _, _ -> Success(secret) },
-                pushDeviceSecret = { _, _ -> Success(Unit) },
-                pullDeviceSecret = { _, _ ->
-                    secretPulled.set(true)
-                    Failure(RuntimeException("Test failure"))
+                bridge = object : MockCredentialsManagementBridge(
+                    deviceSecret = secret,
+                    authenticationPassword = hashedPassword
+                ) {
+                    override suspend fun pullDeviceSecret(
+                        api: ServerApiEndpointClient,
+                        userPassword: CharArray
+                    ): Try<DeviceSecret> {
+                        secretPulled.set(true)
+                        return Failure(RuntimeException("Test failure"))
+                    }
                 },
-                getAuthenticationPassword = { hashedPassword },
                 coroutineScope = testScope
             )
 

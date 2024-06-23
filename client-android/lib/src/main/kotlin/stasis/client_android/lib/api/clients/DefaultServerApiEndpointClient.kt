@@ -1,6 +1,7 @@
 package stasis.client_android.lib.api.clients
 
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okio.ByteString
 import stasis.client_android.lib.api.clients.exceptions.ResourceMissingFailure
@@ -10,9 +11,11 @@ import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
+import stasis.client_android.lib.model.server.api.requests.ResetUserPassword
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetDefinition
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetEntry
 import stasis.client_android.lib.model.server.api.responses.Ping
+import stasis.client_android.lib.model.server.api.responses.UpdatedUserSalt
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.model.server.datasets.DatasetEntry
@@ -166,6 +169,22 @@ class DefaultServerApiEndpointClient(
             builder
                 .url("$server/v1/users/self")
                 .get()
+        }
+
+    override suspend fun resetUserSalt(): Try<UpdatedUserSalt> =
+        jsonRequest { builder ->
+            builder
+                .url("$server/v1/users/self/salt")
+                .put("".toRequestBody())
+        }
+
+    override suspend fun resetUserPassword(request: ResetUserPassword): Try<Unit> =
+        Try {
+            request { builder ->
+                builder
+                    .url("$server/v1/users/self/password")
+                    .put(request.toBody())
+            }.successful()
         }
 
     override suspend fun device(): Try<Device> =

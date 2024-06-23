@@ -4,9 +4,11 @@ import okio.ByteString
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
+import stasis.client_android.lib.model.server.api.requests.ResetUserPassword
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetDefinition
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetEntry
 import stasis.client_android.lib.model.server.api.responses.Ping
+import stasis.client_android.lib.model.server.api.responses.UpdatedUserSalt
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.model.server.datasets.DatasetEntry
@@ -40,6 +42,9 @@ interface ServerApiEndpointClient {
     suspend fun datasetMetadata(entry: DatasetEntry): Try<DatasetMetadata>
 
     suspend fun user(): Try<User>
+    suspend fun resetUserSalt(): Try<UpdatedUserSalt>
+    suspend fun resetUserPassword(request: ResetUserPassword): Try<Unit>
+
     suspend fun device(): Try<Device>
     suspend fun pushDeviceKey(key: ByteString): Try<Unit>
     suspend fun pullDeviceKey(): Try<ByteString>

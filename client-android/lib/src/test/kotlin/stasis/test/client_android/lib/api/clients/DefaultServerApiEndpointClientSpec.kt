@@ -7,7 +7,6 @@ import io.kotest.matchers.shouldBe
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okio.Buffer
-import okio.ByteString
 import okio.ByteString.Companion.toByteString
 import okio.Source
 import stasis.client_android.lib.api.clients.DefaultServerApiEndpointClient
@@ -18,7 +17,9 @@ import stasis.client_android.lib.model.DatasetMetadata.Companion.toByteString
 import stasis.client_android.lib.model.core.CrateId
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
+import stasis.client_android.lib.model.server.api.requests.ResetUserPassword
 import stasis.client_android.lib.model.server.api.responses.Ping
+import stasis.client_android.lib.model.server.api.responses.UpdatedUserSalt
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetEntry
 import stasis.client_android.lib.model.server.devices.Device
@@ -536,6 +537,44 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             actualRequest.path shouldBe ("/v1/users/self")
 
             api.shutdown()
+        }
+
+        "reset the current user's salt" {
+            val expectedResponse = UpdatedUserSalt(salt = "test-salt")
+            val api = createServer()
+
+            val apiClient = createClient(api.url("/").toString())
+
+            api.enqueue(
+                MockResponse().setBody(
+                    apiClient.moshi.adapter(UpdatedUserSalt::class.java).toJson(expectedResponse)
+                )
+            )
+
+            val actualResponse = apiClient.resetUserSalt()
+            actualResponse shouldBe (Success(expectedResponse))
+
+            val actualRequest = api.takeRequest()
+            actualRequest.method shouldBe ("PUT")
+            actualRequest.path shouldBe ("/v1/users/self/salt")
+            actualRequest.body.size shouldBe (0)
+        }
+
+        "update the current user's password" {
+            val request = ResetUserPassword(rawPassword = "test-password")
+            val api = createServer()
+
+            val apiClient = createClient(api.url("/").toString())
+
+            api.enqueue(MockResponse())
+
+            val actualResponse = apiClient.resetUserPassword(request)
+            actualResponse shouldBe (Success(Unit))
+
+            val actualRequest = api.takeRequest()
+            actualRequest.method shouldBe ("PUT")
+            actualRequest.path shouldBe ("/v1/users/self/password")
+            actualRequest.body.readUtf8() shouldBe ("""{"raw_password":"test-password"}""")
         }
 
         "retrieve current device" {

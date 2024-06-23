@@ -31,6 +31,23 @@ class CredentialsViewModel @Inject constructor(
     fun logout(f: () -> Unit): Unit =
         repo.logout(f)
 
+    fun verifyUserPassword(password: String, f: (Boolean) -> Unit) =
+        repo.verifyUserPassword(password, f)
+
+    fun updateUserCredentials(
+        api: ServerApiEndpointClient,
+        currentPassword: String,
+        newPassword: String,
+        newSalt: String?,
+        f: (Try<Unit>) -> Unit
+    ) = repo.updateUserCredentials(
+        api = api,
+        currentPassword = currentPassword,
+        newPassword = newPassword,
+        newSalt = newSalt,
+        f = f
+    )
+
     fun updateDeviceSecret(password: String, secret: ByteString, f: (Try<Unit>) -> Unit) =
         repo.updateDeviceSecret(password, secret, f)
 
