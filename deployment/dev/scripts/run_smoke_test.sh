@@ -633,7 +633,7 @@ else
 fi
 
 echo -n "[$(now)] (SECONDARY) Pushing device key..."
-DEVICE_KEY_PUSH_COMMAND="stasis-client maintenance --secret push --user-name ${USER_ID} --user-password ${USER_PASSWORD}"
+DEVICE_KEY_PUSH_COMMAND="stasis-client maintenance --secret push --current-user-name ${USER_ID} --current-user-password ${USER_PASSWORD}"
 DEVICE_KEY_PUSH_RESULT=$(docker exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${DEVICE_KEY_PUSH_COMMAND} 2>&1)
 if [ $? = 0 ]
 then
