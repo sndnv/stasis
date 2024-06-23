@@ -15,6 +15,8 @@ class MockClientApi(ClientApi):
             'dataset_entries': 0,
             'dataset_entries_for_definition': 0,
             'user': 0,
+            'user_password_update': 0,
+            'user_salt_update': 0,
             'device': 0,
             'device_connections': 0,
             'operations': 0,
@@ -65,6 +67,14 @@ class MockClientApi(ClientApi):
     def user(self):
         self.stats['user'] += 1
         return mock_data.USER
+
+    def user_password_update(self, request):
+        self.stats['user_password_update'] += 1
+        return {'successful': True}
+
+    def user_salt_update(self, request):
+        self.stats['user_salt_update'] += 1
+        return {'successful': True}
 
     def device(self):
         self.stats['device'] += 1

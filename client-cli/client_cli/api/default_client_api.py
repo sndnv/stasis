@@ -50,6 +50,12 @@ class DefaultClientApi(ClientApi):
     def user(self):
         return self.get(url='/user')
 
+    def user_password_update(self, request):
+        return self.put(url='/user/password', data=request)
+
+    def user_salt_update(self, request):
+        return self.put(url='/user/salt', data=request)
+
     def device(self):
         return self.get(url='/device')
 

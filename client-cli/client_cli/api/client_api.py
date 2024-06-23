@@ -75,6 +75,24 @@ class ClientApi(ABC):
         """
 
     @abstractmethod
+    def user_password_update(self, request):
+        """
+        Updates the current user's password.
+
+        :param request: data to use for password update
+        :return: dict with result of action
+        """
+
+    @abstractmethod
+    def user_salt_update(self, request):
+        """
+        Updates the current user's salt.
+
+        :param request: data to use for salt update
+        :return: dict with result of action
+        """
+
+    @abstractmethod
     def device(self):
         """
         Retrieves information about the current device.

@@ -119,6 +119,76 @@ status.add_command(status_user)
 status.add_command(status_device)
 
 
+@click.command(name="password")
+@click.pass_context
+@click.option('-cp', '--current-password', prompt=True, hide_input=True, help='Current client owner password')
+@click.option('-vcp', '--verify-current-password', prompt=True, hide_input=True,
+              help='Current client owner password (verify)')
+@click.option('-np', '--new-password', prompt=True, hide_input=True, help='New client owner password')
+@click.option('-vnp', '--verify-new-password', prompt=True, hide_input=True,
+              help='New client owner password (verify)')
+def update_user_password(ctx, current_password, verify_current_password, new_password, verify_new_password):
+    """Update the password of the current user."""
+    if current_password != verify_current_password:
+        logging.error('Provided current passwords do not match!')
+        raise click.Abort()
+
+    if new_password != verify_new_password:
+        logging.error('Provided new passwords do not match!')
+        raise click.Abort()
+
+    if current_password == new_password:
+        logging.error('Provided current and new passwords are the same!')
+        raise click.Abort()
+
+    request = {'current_password': current_password, 'new_password': new_password}
+
+    response = ctx.obj.api.user_password_update(request)
+
+    click.echo(ctx.obj.rendering.render_operation_response(response))
+
+
+@click.command(name="salt")
+@click.pass_context
+@click.option('-cp', '--current-password', prompt=True, hide_input=True, help='Current client owner password')
+@click.option('-vcp', '--verify-current-password', prompt=True, hide_input=True,
+              help='Current client owner password (verify)')
+@click.option('-np', '--new-salt', prompt=True, help='New client owner salt')
+@click.option('-vnp', '--verify-new-salt', prompt=True, help='New client owner salt (verify)')
+def update_user_salt(ctx, current_password, verify_current_password, new_salt, verify_new_salt):
+    """Update the salt value of the current user."""
+    if current_password != verify_current_password:
+        logging.error('Provided passwords do not match!')
+        raise click.Abort()
+
+    if new_salt != verify_new_salt:
+        logging.error('Provided salt values do not match!')
+        raise click.Abort()
+
+    request = {'current_password': current_password, 'new_salt': new_salt}
+
+    response = ctx.obj.api.user_salt_update(request)
+
+    click.echo(ctx.obj.rendering.render_operation_response(response))
+
+
+@click.group(name="user")
+def update_user():
+    """Update user settings."""
+
+
+update_user.add_command(update_user_password)
+update_user.add_command(update_user_salt)
+
+
+@click.group()
+def update():
+    """Update device and user settings."""
+
+
+update.add_command(update_user)
+
+
 @click.group(name='service')
 def cli():
     """Showing and managing the client's state."""
@@ -127,6 +197,7 @@ def cli():
 cli.add_command(start)
 cli.add_command(stop)
 cli.add_command(status)
+cli.add_command(update)
 
 
 def _stop_background_service(api, confirmed):
