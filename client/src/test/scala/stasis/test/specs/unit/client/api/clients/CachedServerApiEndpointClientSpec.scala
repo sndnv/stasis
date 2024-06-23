@@ -1,20 +1,26 @@
 package stasis.test.specs.unit.client.api.clients
 
 import java.time.Instant
+
+import scala.concurrent.duration._
+
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.Behavior
+import org.apache.pekko.actor.typed.SpawnProtocol
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.util.ByteString
 import stasis.client.api.clients.CachedServerApiEndpointClient
 import stasis.core.packaging.Crate
-import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.api.requests.CreateDatasetDefinition
+import stasis.shared.api.requests.CreateDatasetEntry
+import stasis.shared.api.requests.ResetUserPassword
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks.MockServerApiEndpointClient
 import stasis.test.specs.unit.shared.model.Generators
-
-import scala.concurrent.duration._
 
 class CachedServerApiEndpointClientSpec extends AsyncUnitSpec {
   "A CachedServerApiEndpointClient" should "create dataset definitions, without caching" in {
@@ -219,6 +225,34 @@ class CachedServerApiEndpointClientSpec extends AsyncUnitSpec {
       _ <- client.user()
     } yield {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.UserRetrieved) should be(3)
+    }
+  }
+
+  it should "reset the current user's salt, without caching" in {
+    val mockApiClient = MockServerApiEndpointClient()
+    val client = createClient(underlying = mockApiClient)
+
+    for {
+      _ <- client.resetUserSalt()
+      _ <- client.resetUserSalt()
+      _ <- client.resetUserSalt()
+    } yield {
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.UserSaltReset) should be(3)
+    }
+  }
+
+  it should "update the current user's password, without caching" in {
+    val mockApiClient = MockServerApiEndpointClient()
+    val client = createClient(underlying = mockApiClient)
+
+    val request = ResetUserPassword(rawPassword = "test")
+
+    for {
+      _ <- client.resetUserPassword(request = request)
+      _ <- client.resetUserPassword(request = request)
+      _ <- client.resetUserPassword(request = request)
+    } yield {
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.UserPasswordUpdated) should be(3)
     }
   }
 

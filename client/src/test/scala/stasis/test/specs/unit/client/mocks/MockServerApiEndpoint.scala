@@ -24,6 +24,7 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
 import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
+import stasis.shared.api.responses.UpdatedUserSalt
 
 class MockServerApiEndpoint(
   expectedCredentials: HttpCredentials,
@@ -213,9 +214,23 @@ class MockServerApiEndpoint(
     }
 
   private val users: Route =
-    path("self") {
-      val user: User = Generators.generateUser
-      complete(user)
+    pathPrefix("self") {
+      concat(
+        pathEndOrSingleSlash {
+          val user: User = Generators.generateUser
+          complete(user)
+        },
+        path("salt") {
+          put {
+            complete(UpdatedUserSalt(salt = "updated-salt"))
+          }
+        },
+        path("password") {
+          put {
+            complete(StatusCodes.OK)
+          }
+        }
+      )
     }
 
   private val devices: Route =

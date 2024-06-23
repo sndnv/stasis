@@ -63,7 +63,7 @@ object Secrets {
           user <- UUID.fromString(rawConfig.getString("server.api.user")).future
           userSalt <- rawConfig.getString("server.api.user-salt").future
           device <- UUID.fromString(rawConfig.getString("server.api.device")).future
-          (username, password) <- init.credentials().transformFailureTo(ServiceStartupFailure.credentials)
+          (username, password) <- init.currentCredentials().transformFailureTo(ServiceStartupFailure.credentials)
           userPassword = UserPassword(user = user, salt = userSalt, password = password)(secretsConfig)
           _ = log.debug("Loading encrypted device secret from [{}]...", Files.DeviceSecret)
           encryptedDeviceSecret <- directory

@@ -50,12 +50,15 @@ object ApplicationArguments {
     final case class Maintenance(
       regenerateApiCertificate: Boolean,
       deviceSecretOperation: Option[Maintenance.DeviceSecretOperation],
-      userName: String,
-      userPassword: Array[Char]
+      userCredentialsOperation: Option[Maintenance.UserCredentialsOperation],
+      currentUserName: String,
+      currentUserPassword: Array[Char],
+      newUserPassword: Array[Char],
+      newUserSalt: String
     ) extends Mode {
       def validate(): Unit =
         require(
-          Seq(regenerateApiCertificate, deviceSecretOperation.nonEmpty).exists(identity),
+          Seq(regenerateApiCertificate, deviceSecretOperation.nonEmpty, userCredentialsOperation.nonEmpty).exists(identity),
           "At least one maintenance flag must be set"
         )
     }
@@ -64,14 +67,22 @@ object ApplicationArguments {
       def empty: Maintenance = Maintenance(
         regenerateApiCertificate = false,
         deviceSecretOperation = None,
-        userName = "",
-        userPassword = Array.emptyCharArray
+        userCredentialsOperation = None,
+        currentUserName = "",
+        currentUserPassword = Array.emptyCharArray,
+        newUserPassword = Array.emptyCharArray,
+        newUserSalt = ""
       )
 
       sealed trait DeviceSecretOperation
       object DeviceSecretOperation {
         case object Push extends DeviceSecretOperation
         case object Pull extends DeviceSecretOperation
+      }
+
+      sealed trait UserCredentialsOperation
+      object UserCredentialsOperation {
+        case object Reset extends UserCredentialsOperation
       }
     }
   }
@@ -165,6 +176,59 @@ object ApplicationArguments {
               }
             }
             .text("Regenerate the TLS certificate for the client's own API."),
+          opt[String]("credentials")
+            .action { case (operationArg, args) =>
+              (args.mode: @unchecked) match {
+                case mode: Mode.Maintenance =>
+                  val operation: Maintenance.UserCredentialsOperation = (operationArg: @unchecked) match {
+                    case "reset" => Mode.Maintenance.UserCredentialsOperation.Reset
+                  }
+
+                  args.copy(mode = mode.copy(userCredentialsOperation = Some(operation)))
+              }
+            }
+            .children(
+              opt[String]("current-user-password")
+                .valueName("<password>")
+                .action { case (password, args) =>
+                  (args.mode: @unchecked) match {
+                    case mode: Mode.Maintenance => args.copy(mode = mode.copy(currentUserPassword = password.toCharArray))
+                  }
+                }
+                .optional()
+                .text("Current user password (for re-encrypting device secret after resetting the credentials)."),
+              opt[String]("new-user-password")
+                .valueName("<password>")
+                .action { case (password, args) =>
+                  (args.mode: @unchecked) match {
+                    case mode: Mode.Maintenance => args.copy(mode = mode.copy(newUserPassword = password.toCharArray))
+                  }
+                }
+                .optional()
+                .text("New user password (for re-encrypting device secret after resetting the credentials)."),
+              opt[String]("new-user-salt")
+                .valueName("<salt>")
+                .action { case (salt, args) =>
+                  (args.mode: @unchecked) match {
+                    case mode: Mode.Maintenance => args.copy(mode = mode.copy(newUserSalt = salt))
+                  }
+                }
+                .optional()
+                .text("New user salt (for re-encrypting device secret after resetting the credentials).")
+            )
+            .validate { v =>
+              v.toLowerCase match {
+                case "reset" =>
+                  success
+
+                case other =>
+                  failure(
+                    s"Credentials management operation must be one of [reset] but [$other] provided"
+                  )
+              }
+            }
+            .valueName("[reset]")
+            .text("Update user credentials and re-encrypt device secret."),
           opt[String]("secret")
             .action { case (operationArg, args) =>
               (args.mode: @unchecked) match {
@@ -178,25 +242,25 @@ object ApplicationArguments {
               }
             }
             .children(
-              opt[String]("user-name")
+              opt[String]("current-user-name")
                 .valueName("<name>")
                 .action { case (name, args) =>
                   (args.mode: @unchecked) match {
-                    case mode: Mode.Maintenance => args.copy(mode = mode.copy(userName = name))
+                    case mode: Mode.Maintenance => args.copy(mode = mode.copy(currentUserName = name))
                   }
                 }
                 .optional()
-                .text("User name (for connection to the server, when pushing or pulling secrets)."),
-              opt[String]("user-password")
+                .text("Current user name (for connection to the server, when pushing or pulling secrets)."),
+              opt[String]("current-user-password")
                 .valueName("<password>")
                 .action { case (password, args) =>
                   (args.mode: @unchecked) match {
-                    case mode: Mode.Maintenance => args.copy(mode = mode.copy(userPassword = password.toCharArray))
+                    case mode: Mode.Maintenance => args.copy(mode = mode.copy(currentUserPassword = password.toCharArray))
                   }
                 }
                 .optional()
                 .text(
-                  "User password (for connection to the server and encrypting/decrypting the client secret, when pushing or pulling secrets)."
+                  "Current user password (for connection to the server and encrypting/decrypting the client secret, when pushing or pulling secrets)."
                 )
             )
             .validate { v =>

@@ -1,22 +1,32 @@
 package stasis.client.service.components
 
-import org.apache.pekko.util.ByteString
-import stasis.client.encryption.Aes
-import stasis.client.encryption.secrets.{DeviceSecret, UserPassword}
-import stasis.client.security.{CredentialsProvider, DefaultCredentialsProvider}
-import stasis.client.service.components.exceptions.ServiceStartupFailure
-import stasis.core.security.oauth.{DefaultOAuthClient, OAuthClient}
-import stasis.core.security.tls.EndpointContext
-import stasis.shared.secrets.SecretsConfig
-
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicReference
+
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Try
 
+import org.apache.pekko.Done
+import org.apache.pekko.util.ByteString
+import stasis.client.encryption.Aes
+import stasis.client.encryption.secrets.DeviceSecret
+import stasis.client.encryption.secrets.UserPassword
+import stasis.client.security.CredentialsProvider
+import stasis.client.security.DefaultCredentialsProvider
+import stasis.client.service.components.exceptions.ServiceStartupFailure
+import stasis.client.service.components.internal.ConfigOverride
+import stasis.core.security.oauth.DefaultOAuthClient
+import stasis.core.security.oauth.OAuthClient
+import stasis.core.security.tls.EndpointContext
+import stasis.shared.secrets.SecretsConfig
+
 trait Secrets {
   def deviceSecret: DeviceSecret
   def credentialsProvider: CredentialsProvider
+  def config: SecretsConfig
+  def verifyUserPassword: Array[Char] => Boolean
+  def updateUserCredentials: (Array[Char], String) => Future[Done]
 }
 
 object Secrets {
@@ -53,6 +63,8 @@ object Secrets {
         salt = userSalt,
         password = password
       )(secretsConfig)
+      authenticationPassword = userPassword.toAuthenticationPassword
+      latestUserCredentialsRef = new AtomicReference[(String, String)](authenticationPassword.digested(), userSalt)
       _ = log.debug("Loading encrypted device secret from [{}]...", Files.DeviceSecret)
       encryptedDeviceSecret <- directory
         .pullFile[ByteString](file = Files.DeviceSecret)
@@ -78,7 +90,7 @@ object Secrets {
           scope = apiScope,
           parameters = OAuthClient.GrantParameters.ResourceOwnerPasswordCredentials(
             username = username,
-            password = userPassword.toAuthenticationPassword.extract()
+            password = authenticationPassword.extract()
           )
         )
         .transformFailureTo(ServiceStartupFailure.token)
@@ -96,6 +108,41 @@ object Secrets {
             ),
             client = oauthClient
           )
+
+        override val config: SecretsConfig = secretsConfig
+
+        override val verifyUserPassword: Array[Char] => Boolean =
+          password => {
+            val (digestedPassword, latestSalt) = latestUserCredentialsRef.get()
+
+            digestedPassword == UserPassword(
+              user = user,
+              salt = latestSalt,
+              password = password
+            )(secretsConfig).toAuthenticationPassword.digested()
+          }
+
+        override val updateUserCredentials: (Array[Char], String) => Future[Done] = { case (newPassword, newSalt) =>
+          ConfigOverride.update(directory = directory, path = "stasis.client.server.api.user-salt", value = newSalt)
+
+          val newUserPassword = UserPassword(
+            user = user,
+            salt = newSalt,
+            password = newPassword
+          )(secretsConfig)
+
+          val digestedAuthenticationPassword = newUserPassword.toAuthenticationPassword.digested()
+          val localEncryptionSecret = newUserPassword.toHashedEncryptionPassword.toLocalEncryptionSecret
+
+          for {
+            encryptedDeviceSecret <- localEncryptionSecret.encryptDeviceSecret(deviceSecret)
+            _ = log.info("Storing encrypted device secret to [{}]...", Files.DeviceSecret)
+            _ <- directory.pushFile[ByteString](file = Files.DeviceSecret, content = encryptedDeviceSecret)
+          } yield {
+            latestUserCredentialsRef.set((digestedAuthenticationPassword, newSalt))
+            Done
+          }
+        }
       }
     }
   }

@@ -328,8 +328,11 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val modeArguments = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = true,
       deviceSecretOperation = None,
-      userName = "",
-      userPassword = Array.emptyCharArray
+      userCredentialsOperation = None,
+      currentUserName = "",
+      currentUserPassword = Array.emptyCharArray,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     val originalConfig = "stasis.client.api.http.context.keystore.password = \"test-password\""

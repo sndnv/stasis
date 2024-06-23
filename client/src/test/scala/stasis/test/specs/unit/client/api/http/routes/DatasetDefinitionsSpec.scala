@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.client.api.http.routes
 
+import scala.concurrent.Future
+
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
 import org.apache.pekko.http.scaladsl.model.{RequestEntity, StatusCodes}
 import org.apache.pekko.http.scaladsl.server.Route
@@ -13,8 +15,10 @@ import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.devices.Device
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks._
-
 import scala.concurrent.duration._
+
+import org.apache.pekko.Done
+import stasis.test.specs.unit.client.Fixtures
 
 class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -40,6 +44,8 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.UserRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.UserSaltReset) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.UserPasswordUpdated) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
@@ -75,6 +81,8 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.UserRetrieved) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.UserSaltReset) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.UserPasswordUpdated) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
@@ -93,7 +101,12 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       scheduler = scheduler,
       trackers = MockTrackerViews(),
       search = MockSearch(),
-      terminateService = () => (),
+      handlers = Context.Handlers(
+        terminateService = () => (),
+        verifyUserPassword = _ => false,
+        updateUserCredentials = (_, _) => Future.successful(Done)
+      ),
+      secretsConfig = Fixtures.Secrets.DefaultConfig,
       log = LoggerFactory.getLogger(this.getClass.getName)
     )
 

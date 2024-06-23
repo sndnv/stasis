@@ -18,8 +18,11 @@ class CertificatesSpec extends AsyncUnitSpec with ResourceHelpers {
     val modeArguments = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = true,
       deviceSecretOperation = None,
-      userName = "",
-      userPassword = Array.emptyCharArray
+      userCredentialsOperation = None,
+      currentUserName = "",
+      currentUserPassword = Array.emptyCharArray,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     val directory = createApplicationDirectory(init = dir => Files.createDirectories(dir.config.get))
@@ -50,8 +53,11 @@ class CertificatesSpec extends AsyncUnitSpec with ResourceHelpers {
     val modeArguments = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = true,
       deviceSecretOperation = None,
-      userName = "",
-      userPassword = Array.emptyCharArray
+      userCredentialsOperation = None,
+      currentUserName = "",
+      currentUserPassword = Array.emptyCharArray,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     val directory = createApplicationDirectory(init = dir => Files.createDirectories(dir.config.get))
@@ -69,8 +75,11 @@ class CertificatesSpec extends AsyncUnitSpec with ResourceHelpers {
     val modeArguments = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = false,
       deviceSecretOperation = None,
-      userName = "",
-      userPassword = Array.emptyCharArray
+      userCredentialsOperation = None,
+      currentUserName = "",
+      currentUserPassword = Array.emptyCharArray,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     val directory = createApplicationDirectory(init = dir => Files.createDirectories(dir.config.get))
@@ -100,8 +109,11 @@ class CertificatesSpec extends AsyncUnitSpec with ResourceHelpers {
     val modeArguments = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = true,
       deviceSecretOperation = None,
-      userName = "",
-      userPassword = Array.emptyCharArray
+      userCredentialsOperation = None,
+      currentUserName = "",
+      currentUserPassword = Array.emptyCharArray,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     val directory =

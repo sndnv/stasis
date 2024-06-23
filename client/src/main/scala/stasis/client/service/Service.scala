@@ -67,7 +67,7 @@ trait Service { _: Service.Arguments =>
         secrets <- components.Secrets(base, init)
         clients <- components.ApiClients(base, secrets)
         ops <- components.Ops(base, tracking, clients, secrets)
-        endpoint <- components.ApiEndpoint(base, tracking, clients, ops)
+        endpoint <- components.ApiEndpoint(base, tracking, clients, ops, secrets)
         _ <- endpoint.api.start()
       } yield {
         base.tray.init()

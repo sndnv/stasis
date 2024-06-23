@@ -1,30 +1,37 @@
 package stasis.test.specs.unit.client.api.http
 
+import scala.collection.mutable
+import scala.concurrent.Future
+
 import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.Behavior
+import org.apache.pekko.actor.typed.SpawnProtocol
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
-import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
+import org.apache.pekko.http.scaladsl.model.HttpMethods
+import org.apache.pekko.http.scaladsl.model.HttpRequest
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import org.slf4j.LoggerFactory
 import stasis.client.api.clients.exceptions.ServerApiFailure
-import stasis.client.api.http.{Context, HttpApiEndpoint}
+import stasis.client.api.http.Context
+import stasis.client.api.http.HttpApiEndpoint
 import stasis.client.model.DatasetMetadata
 import stasis.core.api.MessageResponse
 import stasis.shared.api.responses.Ping
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.client.Fixtures
 import stasis.test.specs.unit.client.mocks._
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-
-import scala.collection.mutable
-import scala.concurrent.Future
 
 class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -212,7 +219,12 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       scheduler = MockOperationScheduler(),
       trackers = MockTrackerViews(),
       search = MockSearch(),
-      terminateService = () => (),
+      handlers = Context.Handlers(
+        terminateService = () => (),
+        verifyUserPassword = _ => false,
+        updateUserCredentials = (_, _) => Future.successful(Done)
+      ),
+      secretsConfig = Fixtures.Secrets.DefaultConfig,
       log = LoggerFactory.getLogger(this.getClass.getName)
     )
 

@@ -1,18 +1,24 @@
 package stasis.client.api.clients
 
+import java.time.Instant
+
+import scala.concurrent.Future
+
 import org.apache.pekko.Done
 import org.apache.pekko.util.ByteString
-
-import java.time.Instant
 import stasis.client.model.DatasetMetadata
-import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}
-import stasis.shared.api.responses.{CreatedDatasetDefinition, CreatedDatasetEntry, Ping}
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.api.requests.ResetUserPassword
+import stasis.shared.api.requests.CreateDatasetDefinition
+import stasis.shared.api.requests.CreateDatasetEntry
+import stasis.shared.api.responses.UpdatedUserSalt
+import stasis.shared.api.responses.CreatedDatasetDefinition
+import stasis.shared.api.responses.CreatedDatasetEntry
+import stasis.shared.api.responses.Ping
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
-
-import scala.concurrent.Future
 
 trait ServerApiEndpointClient {
   def self: Device.Id
@@ -34,6 +40,8 @@ trait ServerApiEndpointClient {
   def datasetMetadata(entry: DatasetEntry): Future[DatasetMetadata]
 
   def user(): Future[User]
+  def resetUserSalt(): Future[UpdatedUserSalt]
+  def resetUserPassword(request: ResetUserPassword): Future[Done]
 
   def device(): Future[Device]
   def pushDeviceKey(key: ByteString): Future[Done]

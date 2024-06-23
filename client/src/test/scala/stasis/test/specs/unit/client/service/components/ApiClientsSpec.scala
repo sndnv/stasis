@@ -1,24 +1,32 @@
 package stasis.test.specs.unit.client.service.components
 
+import java.util.UUID
+
+import scala.concurrent.Future
+
+import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.Behavior
+import org.apache.pekko.actor.typed.SpawnProtocol
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.apache.pekko.stream.StreamTcpException
 import org.apache.pekko.util.ByteString
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.security.CredentialsProvider
 import stasis.client.service.ApplicationTray
-import stasis.client.service.components.{ApiClients, Base, Secrets}
+import stasis.client.service.components.ApiClients
+import stasis.client.service.components.Base
+import stasis.client.service.components.Secrets
 import stasis.core.packaging.Crate
 import stasis.shared.model.users.User
 import stasis.shared.secrets.SecretsConfig
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
-
-import java.util.UUID
-import scala.concurrent.Future
 
 class ApiClientsSpec extends AsyncUnitSpec with ResourceHelpers {
   "An ApiClients component" should "create itself from config" in {
@@ -51,6 +59,12 @@ class ApiClientsSpec extends AsyncUnitSpec with ResourceHelpers {
               override def core: Future[HttpCredentials] = Future.successful(OAuth2BearerToken(token = "test-token"))
               override def api: Future[HttpCredentials] = Future.successful(OAuth2BearerToken(token = "test-token"))
             }
+
+          override def config: SecretsConfig = secretsConfig
+
+          override def verifyUserPassword: Array[Char] => Boolean = _ => false
+
+          override def updateUserCredentials: (Array[Char], String) => Future[Done] = (_, _) => Future.successful(Done)
         }
       )
       pingFailure <- apiClients.clients.api.ping().failed

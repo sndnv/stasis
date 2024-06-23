@@ -8,7 +8,8 @@ import stasis.client.service.ApplicationArguments
 import stasis.client.service.components.maintenance
 
 trait Init {
-  def credentials(): Future[(String, Array[Char])]
+  def currentCredentials(): Future[(String, Array[Char])]
+  def newCredentials(): Future[(Array[Char], String)]
 }
 
 object Init {
@@ -26,16 +27,22 @@ object Init {
   def viaStdIn(console: Console, args: ApplicationArguments.Mode.Maintenance): Future[Init] =
     Future.successful(
       new Init {
-        override def credentials(): Future[(String, Array[Char])] =
-          maintenance.init.ViaStdIn.retrieveCredentials(console, args)
+        override def currentCredentials(): Future[(String, Array[Char])] =
+          maintenance.init.ViaStdIn.retrieveCurrentCredentials(console, args)
+
+        override def newCredentials(): Future[(Array[Char], String)] =
+          maintenance.init.ViaStdIn.retrieveNewCredentials(console, args)
       }
     )
 
   def viaCli(args: ApplicationArguments.Mode.Maintenance): Future[Init] =
     Future.successful(
       new Init {
-        override def credentials(): Future[(String, Array[Char])] =
-          maintenance.init.ViaCli.retrieveCredentials(args)
+        override def currentCredentials(): Future[(String, Array[Char])] =
+          maintenance.init.ViaCli.retrieveCurrentCredentials(args)
+
+        override def newCredentials(): Future[(Array[Char], String)] =
+          maintenance.init.ViaCli.retrieveNewCredentials(args)
       }
     )
 }

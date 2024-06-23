@@ -1,22 +1,28 @@
 package stasis.test.specs.unit.client.mocks
 
-import org.apache.pekko.Done
-import org.apache.pekko.util.ByteString
-
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
+
+import scala.concurrent.Future
+
+import org.apache.pekko.Done
+import org.apache.pekko.util.ByteString
 import stasis.client.api.clients.ServerApiEndpointClient
 import stasis.client.model.DatasetMetadata
-import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}
-import stasis.shared.api.responses.{CreatedDatasetDefinition, CreatedDatasetEntry, Ping}
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.api.requests.ResetUserPassword
+import stasis.shared.api.requests.CreateDatasetDefinition
+import stasis.shared.api.requests.CreateDatasetEntry
+import stasis.shared.api.responses.UpdatedUserSalt
+import stasis.shared.api.responses.CreatedDatasetDefinition
+import stasis.shared.api.responses.CreatedDatasetEntry
+import stasis.shared.api.responses.Ping
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.client.mocks.MockServerApiEndpointClient.Statistic
 import stasis.test.specs.unit.shared.model.Generators
-
-import scala.concurrent.Future
 
 class MockServerApiEndpointClient(
   override val self: Device.Id
@@ -34,6 +40,8 @@ class MockServerApiEndpointClient(
     Statistic.DatasetMetadataWithEntryIdRetrieved -> new AtomicInteger(0),
     Statistic.DatasetMetadataWithEntryRetrieved -> new AtomicInteger(0),
     Statistic.UserRetrieved -> new AtomicInteger(0),
+    Statistic.UserSaltReset -> new AtomicInteger(0),
+    Statistic.UserPasswordUpdated -> new AtomicInteger(0),
     Statistic.DeviceRetrieved -> new AtomicInteger(0),
     Statistic.DeviceKeyPushed -> new AtomicInteger(0),
     Statistic.DeviceKeyPulled -> new AtomicInteger(0),
@@ -123,6 +131,16 @@ class MockServerApiEndpointClient(
     )
   }
 
+  override def resetUserSalt(): Future[UpdatedUserSalt] = {
+    stats(Statistic.UserSaltReset).getAndIncrement()
+    Future.successful(UpdatedUserSalt(salt = "test-salt"))
+  }
+
+  override def resetUserPassword(request: ResetUserPassword): Future[Done] = {
+    stats(Statistic.UserPasswordUpdated).getAndIncrement()
+    Future.successful(Done)
+  }
+
   override def device(): Future[Device] = {
     stats(Statistic.DeviceRetrieved).getAndIncrement()
     Future.successful(
@@ -165,6 +183,8 @@ object MockServerApiEndpointClient {
     case object DatasetMetadataWithEntryIdRetrieved extends Statistic
     case object DatasetMetadataWithEntryRetrieved extends Statistic
     case object UserRetrieved extends Statistic
+    case object UserSaltReset extends Statistic
+    case object UserPasswordUpdated extends Statistic
     case object DeviceRetrieved extends Statistic
     case object DeviceKeyPushed extends Statistic
     case object DeviceKeyPulled extends Statistic

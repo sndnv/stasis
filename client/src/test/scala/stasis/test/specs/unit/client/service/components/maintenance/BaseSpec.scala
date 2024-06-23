@@ -13,8 +13,11 @@ class BaseSpec extends AsyncUnitSpec with ResourceHelpers {
     val modeArguments = ApplicationArguments.Mode.Maintenance(
       regenerateApiCertificate = true,
       deviceSecretOperation = None,
-      userName = "",
-      userPassword = Array.emptyCharArray
+      userCredentialsOperation = None,
+      currentUserName = "",
+      currentUserPassword = Array.emptyCharArray,
+      newUserPassword = Array.emptyCharArray,
+      newUserSalt = ""
     )
 
     Base(

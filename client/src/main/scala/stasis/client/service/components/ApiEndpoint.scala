@@ -23,7 +23,7 @@ object ApiEndpoint {
   implicit val tokenFileToByteString: String => ByteString =
     (content: String) => ByteString.fromString(content)
 
-  def apply(base: Base, tracking: Tracking, apiClients: ApiClients, ops: Ops): Future[ApiEndpoint] = {
+  def apply(base: Base, tracking: Tracking, apiClients: ApiClients, ops: Ops, secrets: Secrets): Future[ApiEndpoint] = {
     import apiClients._
     import base._
     import ops._
@@ -47,12 +47,17 @@ object ApiEndpoint {
         scheduler = scheduler,
         trackers = trackers.views,
         search = search,
-        terminateService = () => {
-          val _ = org.apache.pekko.pattern.after(
-            duration = terminationDelay,
-            using = system.classicSystem.scheduler
-          ) { Future.successful(base.terminateService()) }
-        },
+        handlers = http.Context.Handlers(
+          terminateService = () => {
+            val _ = org.apache.pekko.pattern.after(
+              duration = terminationDelay,
+              using = system.classicSystem.scheduler
+            ) { Future.successful(base.terminateService()) }
+          },
+          verifyUserPassword = secrets.verifyUserPassword,
+          updateUserCredentials = secrets.updateUserCredentials
+        ),
+        secretsConfig = secrets.config,
         log = LoggerFactory.getLogger(this.getClass.getName)
       )
 
