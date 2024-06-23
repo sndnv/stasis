@@ -449,7 +449,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     fixtures.userStore.manage().create(users.head).await
 
     Put(s"/${users.head.id}/password")
-      .withEntity(updateUserPasswordRequest) ~> fixtures.routes ~> check {
+      .withEntity(resetUserPasswordRequest) ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
 
       fixtures.credentialsManager.resourceOwnersCreated should be(0)
@@ -461,7 +461,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
       fixtures.credentialsManager.failures should be(0)
 
       fixtures.credentialsManager.latestPassword should not be empty
-      fixtures.credentialsManager.latestPassword should not be updateUserPasswordRequest.rawPassword
+      fixtures.credentialsManager.latestPassword should not be resetUserPasswordRequest.rawPassword
     }
   }
 
@@ -473,7 +473,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     fixtures.userStore.manage().create(users.head).await
 
     Put(s"/${users.head.id}/password")
-      .withEntity(updateUserPasswordRequest) ~> fixtures.routes ~> check {
+      .withEntity(resetUserPasswordRequest) ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
 
       fixtures.credentialsManager.resourceOwnersCreated should be(0)
@@ -485,7 +485,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
       fixtures.credentialsManager.failures should be(0)
 
       fixtures.credentialsManager.latestPassword should not be empty
-      fixtures.credentialsManager.latestPassword should be(updateUserPasswordRequest.rawPassword)
+      fixtures.credentialsManager.latestPassword should be(resetUserPasswordRequest.rawPassword)
     }
   }
 
@@ -500,7 +500,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     fixtures.userStore.manage().create(users.head).await
 
     Put(s"/${users.head.id}/password")
-      .withEntity(updateUserPasswordRequest) ~> fixtures.routes ~> check {
+      .withEntity(resetUserPasswordRequest) ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
 
       fixtures.credentialsManager.resourceOwnersCreated should be(0)
@@ -524,7 +524,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     fixtures.userStore.manage().create(users.head).await
 
     Put(s"/${users.head.id}/password")
-      .withEntity(updateUserPasswordRequest) ~> fixtures.routes ~> check {
+      .withEntity(resetUserPasswordRequest) ~> fixtures.routes ~> check {
       status should be(StatusCodes.Conflict)
 
       fixtures.credentialsManager.resourceOwnersCreated should be(0)
@@ -675,7 +675,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     val fixtures = new TestFixtures {}
     fixtures.userStore.manage().create(users.head).await
 
-    Put("/self/password").withEntity(updateUserPasswordRequest) ~> fixtures.routes ~> check {
+    Put("/self/password").withEntity(resetUserPasswordRequest) ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
 
       fixtures.credentialsManager.resourceOwnersCreated should be(0)
@@ -689,7 +689,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
       fixtures.credentialsManager.latestPassword should not be empty
 
       // when users reset their own password, hashing happens on the client side
-      fixtures.credentialsManager.latestPassword should be(updateUserPasswordRequest.rawPassword)
+      fixtures.credentialsManager.latestPassword should be(resetUserPasswordRequest.rawPassword)
     }
   }
 
@@ -703,7 +703,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
 
     fixtures.userStore.manage().create(users.head).await
 
-    Put("/self/password").withEntity(updateUserPasswordRequest) ~> fixtures.routes ~> check {
+    Put("/self/password").withEntity(resetUserPasswordRequest) ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
 
       fixtures.credentialsManager.resourceOwnersCreated should be(0)
@@ -726,7 +726,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
 
     fixtures.userStore.manage().create(users.head).await
 
-    Put("/self/password").withEntity(updateUserPasswordRequest) ~> fixtures.routes ~> check {
+    Put("/self/password").withEntity(resetUserPasswordRequest) ~> fixtures.routes ~> check {
       status should be(StatusCodes.Conflict)
 
       fixtures.credentialsManager.resourceOwnersCreated should be(0)
@@ -742,7 +742,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
   they should "fail to update the current user's password if the user is missing" in withRetry {
     val fixtures = new TestFixtures {}
 
-    Put("/self/password").withEntity(updateUserPasswordRequest) ~> fixtures.routes ~> check {
+    Put("/self/password").withEntity(resetUserPasswordRequest) ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
 
       fixtures.credentialsManager.resourceOwnersCreated should be(0)
@@ -835,7 +835,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     permissions = Set(Permission.View.Service)
   )
 
-  private val updateUserPasswordRequest = UpdateUserPassword(
+  private val resetUserPasswordRequest = ResetUserPassword(
     rawPassword = "test-password"
   )
 
@@ -853,6 +853,6 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
   private implicit def updateRequestToEntity(request: UpdateUserState): RequestEntity =
     Marshal(request).to[RequestEntity].await
 
-  private implicit def updateUserPasswordRequestToEntity(request: UpdateUserPassword): RequestEntity =
+  private implicit def resetUserPasswordRequestToEntity(request: ResetUserPassword): RequestEntity =
     Marshal(request).to[RequestEntity].await
 }

@@ -205,7 +205,7 @@ class Users(
           },
           path("password") {
             put {
-              entity(as[UpdateUserPassword]) { updateRequest =>
+              entity(as[ResetUserPassword]) { updateRequest =>
                 resource[UserStore.Manage.Privileged] { manage =>
                   val salt = manage.generateSalt()
 
@@ -334,7 +334,7 @@ class Users(
           },
           path("password") {
             put {
-              entity(as[UpdateUserPassword]) { updateRequest =>
+              entity(as[ResetUserPassword]) { updateRequest =>
                 resources[UserStore.Manage.Self, UserStore.View.Self] { case (_, view) =>
                   view.get(currentUser).flatMap {
                     case Some(_) =>

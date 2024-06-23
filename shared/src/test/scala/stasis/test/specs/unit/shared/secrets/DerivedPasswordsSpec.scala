@@ -46,4 +46,12 @@ class DerivedPasswordsSpec extends UnitSpec {
 
     actual should be(expected)
   }
+
+  they should "support digesting passwords" in {
+    val original = ByteString("some-test-password")
+    val expected = "M6GhAqQNfxfqhpwQM8kchu1UEWs0QJxsPjbTtXNa4qpbVx5TtDMiaxRxcYVYGuBJVeSvriI_HO-YwztZyrRoSw"
+    val actual = DerivedPasswords.digest(password = original)
+
+    actual should be(expected)
+  }
 }

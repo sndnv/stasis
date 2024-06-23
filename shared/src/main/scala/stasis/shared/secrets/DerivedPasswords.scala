@@ -1,9 +1,10 @@
 package stasis.shared.secrets
 
 import org.apache.pekko.util.ByteString
-
 import java.nio.charset.{Charset, StandardCharsets}
+import java.security.MessageDigest
 import java.util.Base64
+
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 
@@ -61,7 +62,13 @@ object DerivedPasswords {
   }
 
   def encode(hashedPassword: ByteString): String =
-    Base64.getUrlEncoder.withoutPadding.encodeToString(hashedPassword.toArray)
+    encode(hashedPassword.toArray)
+
+  def digest(password: ByteString): String =
+    encode(MessageDigest.getInstance("SHA3-512").digest(password.toArray))
+
+  private def encode(bytes: Array[Byte]): String =
+    Base64.getUrlEncoder.withoutPadding.encodeToString(bytes)
 
   private def authenticationSalt(saltPrefix: String, salt: String): String =
     s"$saltPrefix-authentication-$salt"
