@@ -178,8 +178,17 @@ object Formats {
   implicit val updateUserStateRequestFormat: Format[UpdateUserState] =
     Json.format[UpdateUserState]
 
-  implicit val updateUserPasswordRequestFormat: Format[UpdateUserPassword] =
-    Json.format[UpdateUserPassword]
+  implicit val updateUserSaltRequestFormat: Format[UpdateUserSalt] =
+    Json.format[UpdateUserSalt]
+
+  implicit val updateUserSaltOwnRequestFormat: Format[UpdateUserSaltOwn] =
+    Json.format[UpdateUserSaltOwn]
+
+  implicit val resetUserPasswordRequestFormat: Format[ResetUserPassword] =
+    Json.format[ResetUserPassword]
+
+  implicit val updateUserPasswordOwnRequestFormat: Format[UpdateUserPasswordOwn] =
+    Json.format[UpdateUserPasswordOwn]
 
   implicit val createDeviceRequestPrivilegedFormat: Format[CreateDevicePrivileged] =
     Json.format[CreateDevicePrivileged]
