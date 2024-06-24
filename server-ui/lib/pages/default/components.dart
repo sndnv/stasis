@@ -24,7 +24,7 @@ SvgPicture createLogo({double size = 48.0}) {
 
 Card createBasicCard(ThemeData theme, List<Widget> children) {
   return Card(
-    color: theme.colorScheme.surfaceVariant,
+    color: theme.colorScheme.surfaceContainerHighest,
     child: Column(
       children: [
         Padding(
