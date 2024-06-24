@@ -292,7 +292,7 @@ class Home extends StatelessWidget {
             ),
             ElevatedButton(
               style: ButtonStyle(
-                backgroundColor: MaterialStateColor.resolveWith((states) => theme.buttonTheme.colorScheme!.error),
+                backgroundColor: WidgetStateColor.resolveWith((states) => theme.buttonTheme.colorScheme!.error),
               ),
               onPressed: () {
                 final messenger = ScaffoldMessenger.of(context);
