@@ -11,6 +11,7 @@ import androidx.annotation.StringRes
 import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.navArgs
 import dagger.hilt.android.AndroidEntryPoint
 import stasis.client_android.R
@@ -27,7 +28,9 @@ import stasis.client_android.lib.tracking.state.BackupState
 import stasis.client_android.lib.tracking.state.RecoveryState
 import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.providers.ProviderContext
+import stasis.client_android.utils.LiveDataExtensions.minimize
 import java.nio.file.Path
+import java.time.Duration
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -77,7 +80,7 @@ class OperationDetailsFragment : Fragment() {
             is Operation.Type.Backup -> providerContext.trackers.backup.updates(operation)
             is Operation.Type.Recovery -> providerContext.trackers.recovery.updates(operation)
             else -> null
-        }
+        }?.minimize(interval = Duration.ofMillis(500), lifecycleScope)
 
         updates?.observe(viewLifecycleOwner) { state ->
             val progress = state.asProgress()
@@ -120,6 +123,7 @@ class OperationDetailsFragment : Fragment() {
                                 )
                             )
                 }
+
                 else -> {
                     binding.operationCompleted.text =
                         context.getString(R.string.operation_field_content_completed)
@@ -163,6 +167,7 @@ class OperationDetailsFragment : Fragment() {
                         binding.operationMetadata.isVisible = false
                     }
                 }
+
                 else -> binding.operationMetadata.isVisible = false
             }
 
@@ -183,6 +188,7 @@ class OperationDetailsFragment : Fragment() {
                             Triple(entity, processed.processedParts, processed.expectedParts)
                         }.toList()
                     )
+
                     is RecoveryState -> mapOf(
                         "examined" to state.entities.examined.map { Triple(it, 1, 1) }.toList(),
                         "collected" to state.entities.collected.keys.map { Triple(it, 1, 1) }.toList(),
@@ -194,6 +200,7 @@ class OperationDetailsFragment : Fragment() {
                         }.toList(),
                         "metadata-applied" to state.entities.metadataApplied.map { Triple(it, 1, 1) }.toList()
                     )
+
                     else -> emptyMap()
                 }
 
@@ -209,9 +216,11 @@ class OperationDetailsFragment : Fragment() {
                 is BackupState -> {
                     state.entities.unmatched + state.failures + state.entities.failed.map { (k, v) -> "[$k] - $v" }
                 }
+
                 is RecoveryState -> {
                     state.failures + state.entities.failed.map { (k, v) -> "[$k] - $v" }
                 }
+
                 else -> emptyList()
             }
 
