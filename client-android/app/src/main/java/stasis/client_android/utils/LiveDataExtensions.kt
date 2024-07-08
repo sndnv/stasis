@@ -11,7 +11,10 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.Observer
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.time.Duration
 
 object LiveDataExtensions {
     infix fun <A, B> LiveData<A>.and(that: LiveData<B>): LiveData<Pair<A, B>> =
@@ -88,4 +91,42 @@ object LiveDataExtensions {
             observer.onChanged(it)
         }
     }
+
+    fun <T> LiveData<T>.minimize(interval: Duration, scope: CoroutineScope): LiveData<T> =
+        object : MediatorLiveData<T>() {
+            val intervalMillis = interval.toMillis()
+
+            var latestElement: T? = null
+            var lastEmitted: Long = 0L
+
+            var job: Job? = null
+
+            init {
+                addSource(this@minimize) { currentElement ->
+                    val now = System.currentTimeMillis()
+                    val remaining = (lastEmitted + intervalMillis) - now
+
+                    if (remaining <= 0) {
+                        job?.cancel()
+
+                        value = currentElement
+                        latestElement = currentElement
+                        lastEmitted = now
+                    } else {
+                        latestElement = currentElement
+
+                        if (job?.isActive != true) {
+                            job = scope.launch {
+                                delay(intervalMillis)
+
+                                postValue(latestElement)
+                                lastEmitted = System.currentTimeMillis()
+                            }
+                        } else {
+                            // do nothing
+                        }
+                    }
+                }
+            }
+        }
 }

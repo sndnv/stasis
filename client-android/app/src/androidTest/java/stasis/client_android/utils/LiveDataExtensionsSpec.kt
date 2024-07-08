@@ -21,9 +21,12 @@ import stasis.client_android.lib.utils.Try
 import stasis.client_android.utils.LiveDataExtensions.and
 import stasis.client_android.utils.LiveDataExtensions.await
 import stasis.client_android.utils.LiveDataExtensions.liveData
+import stasis.client_android.utils.LiveDataExtensions.minimize
 import stasis.client_android.utils.LiveDataExtensions.observeOnce
 import stasis.client_android.utils.LiveDataExtensions.optionalLiveData
+import java.time.Duration
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.math.exp
 
 @RunWith(AndroidJUnit4::class)
 class LiveDataExtensionsSpec {
@@ -140,6 +143,36 @@ class LiveDataExtensionsSpec {
         runBlocking {
             eventually {
                 assertThat(actual.get(), equalTo(expectedA))
+            }
+        }
+    }
+
+    @Test
+    fun supportMinimizingLiveDataUpdates() {
+        val interval = Duration.ofMillis(700)
+        val original = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9)
+        val expected = listOf(1, 5, 7, 9)
+
+        val mutableA = MutableLiveData<Int>()
+
+        val a: LiveData<Int> = mutableA.minimize(
+            interval = interval,
+            scope = CoroutineScope(Dispatchers.IO)
+        )
+
+        val actual = mutableListOf<Int>()
+        a.observeForever { value -> actual += value }
+
+        runBlocking {
+            original.map {
+                delay(it * 50L)
+                mutableA.postValue(it)
+            }
+        }
+
+        runBlocking {
+            eventually {
+                assertThat(actual, equalTo(expected))
             }
         }
     }
