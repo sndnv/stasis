@@ -57,6 +57,7 @@ class _LoginState extends State<Login> {
             );
           } else {
             content = CredentialsForm(
+              applicationName: widget.processes.serviceBinary,
               loginHandler: (u, p) async {
                 if (activeProcesses.isEmpty) {
                   await widget.processes.start();

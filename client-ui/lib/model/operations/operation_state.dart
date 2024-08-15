@@ -61,6 +61,7 @@ class BackupStateEntities with _$BackupStateEntities {
     required List<String> discovered,
     required List<String> unmatched,
     required List<String> examined,
+    required List<String> skipped,
     required List<String> collected,
     required Map<String, PendingSourceEntity> pending,
     required Map<String, ProcessedSourceEntity> processed,
