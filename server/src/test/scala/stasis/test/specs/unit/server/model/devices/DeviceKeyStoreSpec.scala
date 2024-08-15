@@ -46,6 +46,28 @@ class DeviceKeyStoreSpec extends AsyncUnitSpec {
     store.viewSelf().requiredPermission should be(Permission.View.Self)
   }
 
+  it should "check existence of device keys for own devices via view resource (self)" in {
+    val store = MockDeviceKeyStore(withKeys = Seq(mockDeviceKey))
+
+    store.viewSelf().exists(Seq(mockDevice.id), mockDevice.id).map(result => result should be(true))
+  }
+
+  it should "fail to check existence of existing device keys for other devices via view resource (self)" in {
+    val store = MockDeviceKeyStore()
+
+    store
+      .viewSelf()
+      .exists(Seq.empty, mockDevice.id)
+      .map { response =>
+        fail(s"Received unexpected response from store: [$response]")
+      }
+      .recover { case NonFatal(e) =>
+        e.getMessage should be(
+          s"Expected to retrieve own device key but key for device [${mockDevice.id}] found"
+        )
+      }
+  }
+
   it should "return existing device keys for own devices via view resource (self)" in {
     val store = MockDeviceKeyStore(withKeys = Seq(mockDeviceKey))
 
