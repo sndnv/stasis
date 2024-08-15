@@ -617,6 +617,7 @@ void main() {
           discovered: ['/some/path/01'],
           unmatched: [],
           examined: [],
+          skipped: [],
           collected: [],
           pending: {},
           processed: {},
@@ -652,6 +653,7 @@ void main() {
             discovered: [],
             unmatched: [],
             examined: [],
+            skipped: [],
             collected: [],
             pending: {},
             processed: {},
@@ -671,6 +673,7 @@ void main() {
             discovered: ['/tmp/file/one'],
             unmatched: ['a', 'b', 'c'],
             examined: ['/tmp/file/two'],
+            skipped: ['/tmp/file/three'],
             collected: ['/tmp/file/one'],
             pending: {
               '/tmp/file/two': PendingSourceEntity(expectedParts: 1, processedParts: 2),

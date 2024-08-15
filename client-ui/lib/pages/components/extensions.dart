@@ -112,7 +112,7 @@ extension ExtendedOperationState on OperationState {
       return Progress(
         started: state.started,
         total: state.entities.discovered.length,
-        processed: state.entities.processed.length,
+        processed: state.entities.skipped.length + state.entities.processed.length,
         failures: state.entities.failed.length + state.failures.length,
         completed: state.completed,
       );

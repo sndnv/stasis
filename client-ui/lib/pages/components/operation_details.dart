@@ -87,6 +87,7 @@ class _OperationDetailsState extends State<OperationDetails> {
             final stageValues = {
               'discovered': state.entities.discovered.map((e) => Triple(e, 1, 1)).toList(),
               'examined': state.entities.examined.map((e) => Triple(e, 1, 1)).toList(),
+              'skipped': state.entities.skipped.map((e) => Triple(e, 1, 1)).toList(),
               'collected': state.entities.collected.map((e) => Triple(e, 1, 1)).toList(),
               'pending': state.entities.pending.entries.map((e) {
                 return Triple(e.key, e.value.processedParts, e.value.expectedParts);

@@ -176,6 +176,8 @@ extension ExtendedOperationStageName on String {
         return 'Discovered';
       case 'examined':
         return 'Examined';
+      case 'skipped':
+        return 'Skipped';
       case 'collected':
         return 'Collected';
       case 'pending':

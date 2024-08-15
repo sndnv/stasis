@@ -134,6 +134,7 @@ void main() {
     test('convert operation stage names to strings', () {
       expect('discovered'.toOperationStageString(), 'Discovered');
       expect('examined'.toOperationStageString(), 'Examined');
+      expect('skipped'.toOperationStageString(), 'Skipped');
       expect('collected'.toOperationStageString(), 'Collected');
       expect('pending'.toOperationStageString(), 'Pending');
       expect('processed'.toOperationStageString(), 'Processed');
