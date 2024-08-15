@@ -21,7 +21,8 @@ import stasis.client_android.lib.utils.Try
 
 class PullDialogFragment(
     private val server: String,
-    private val pullSecret: (String, f: (Try<Unit>) -> Unit) -> Unit
+    private val secretAvailable: (f: (Boolean) -> Unit) -> Unit,
+    private val pullSecret: (String, String?, f: (Try<Unit>) -> Unit) -> Unit
 ) : DialogFragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -35,6 +36,14 @@ class PullDialogFragment(
 
         val passwordConfirmationView =
             view.findViewById<TextInputLayout>(R.id.pull_device_secret_password_confirmation)
+
+        val remotePasswordView =
+            view.findViewById<TextInputLayout>(R.id.pull_device_secret_remote_password)
+
+        val remotePasswordShowButton =
+            view.findViewById<TextView>(R.id.pull_device_secret_show_remote_password)
+
+        val info = view.findViewById<TextView>(R.id.pull_device_secret_info)
 
         passwordView.setStartIconOnClickListener {
             MaterialAlertDialogBuilder(requireContext())
@@ -50,28 +59,62 @@ class PullDialogFragment(
                 .show()
         }
 
-        view.findViewById<TextView>(R.id.pull_device_secret_info).text =
-            getString(R.string.settings_manage_device_secret_pull_confirm_text)
-                .renderAsSpannable(
-                    Common.StyledString(
-                        placeholder = "%1\$s",
-                        content = server,
-                        style = StyleSpan(Typeface.BOLD)
-                    ),
-                    Common.StyledString(
-                        placeholder = "%2\$s",
-                        content = getString(R.string.settings_manage_device_secret_pull_confirm_text_warning),
-                        style = StyleSpan(Typeface.BOLD_ITALIC)
-                    ),
-                    Common.StyledString(
-                        placeholder = "%3\$s",
-                        content = getString(R.string.settings_manage_device_secret_pull_confirm_text_note),
-                        style = StyleSpan(Typeface.ITALIC)
-                    )
+        remotePasswordView.setStartIconOnClickListener {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.settings_manage_device_secret_pull_remote_password_hint)
+                .setMessage(getString(R.string.settings_manage_device_secret_pull_remote_password_hint_extra))
+                .show()
+        }
+
+        remotePasswordShowButton.setOnClickListener {
+            remotePasswordView.isVisible = true
+            remotePasswordShowButton.isVisible = false
+        }
+
+        info.text = getString(R.string.settings_manage_device_secret_pull_info_text)
+            .renderAsSpannable(
+                Common.StyledString(
+                    placeholder = "%1\$s",
+                    content = server,
+                    style = StyleSpan(Typeface.BOLD)
+                ),
+                Common.StyledString(
+                    placeholder = "%2\$s",
+                    content = getString(R.string.settings_manage_device_secret_pull_confirm_text_warning),
+                    style = StyleSpan(Typeface.BOLD_ITALIC)
+                ),
+                Common.StyledString(
+                    placeholder = "%3\$s",
+                    content = getString(R.string.settings_manage_device_secret_pull_confirm_text_note),
+                    style = StyleSpan(Typeface.ITALIC)
                 )
+            )
 
         val inProgress = view.findViewById<CircularProgressIndicator>(R.id.pull_device_secret_in_progress)
+
         val confirmButton = view.findViewById<Button>(R.id.pull_device_secret_confirm)
+
+        secretAvailable { available ->
+            inProgress.isVisible = false
+            confirmButton.isVisible = true
+
+            if (available) {
+                passwordView.isVisible = true
+                passwordConfirmationView.isVisible = true
+                remotePasswordShowButton.isVisible = true
+            } else {
+                confirmButton.isEnabled = false
+
+                info.text = getString(R.string.settings_manage_device_secret_pull_unavailable_info_text)
+                    .renderAsSpannable(
+                        Common.StyledString(
+                            placeholder = "%1\$s",
+                            content = server,
+                            style = StyleSpan(Typeface.BOLD)
+                        )
+                    )
+            }
+        }
 
         view.findViewById<Button>(R.id.pull_device_secret_cancel).setOnClickListener {
             dialog?.dismiss()
@@ -83,15 +126,16 @@ class PullDialogFragment(
             passwordConfirmationView.isErrorEnabled = false
             passwordConfirmationView.error = null
 
-            val password = passwordView.editText?.text?.toString() ?: ""
-            val passwordConfirmation = passwordConfirmationView.editText?.text?.toString() ?: ""
+            val password = passwordView.editText?.text?.toString().orEmpty()
+            val passwordConfirmation = passwordConfirmationView.editText?.text?.toString().orEmpty()
+            val remotePassword = remotePasswordView.editText?.text?.toString()?.ifEmpty { null }
 
             when {
                 password == passwordConfirmation && password.isNotEmpty() -> {
                     confirmButton.isVisible = false
                     inProgress.isVisible = true
 
-                    pullSecret(password) {
+                    pullSecret(password, remotePassword) {
                         if (it is Try.Failure && it.exception is InvalidUserCredentials) {
                             passwordView.isErrorEnabled = true
                             passwordView.error =
@@ -123,6 +167,14 @@ class PullDialogFragment(
         }
 
         return view
+    }
+
+    override fun onStart() {
+        super.onStart()
+        dialog?.window?.setLayout(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
     }
 
     companion object {

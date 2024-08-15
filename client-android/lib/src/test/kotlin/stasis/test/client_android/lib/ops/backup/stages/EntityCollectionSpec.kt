@@ -70,6 +70,7 @@ class EntityCollectionSpec : WordSpec({
             mockTracker.statistics[MockBackupTracker.Statistic.EntityDiscovered] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (3)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntitySkipped] shouldBe (1)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (2)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessingStarted] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityPartProcessed] shouldBe (0)

@@ -12,5 +12,6 @@ class ConfigViewModel @Inject constructor(application: Application) : AndroidVie
         get() = repo.available
 
     fun bootstrap(params: DeviceBootstrapParameters) = repo.bootstrap(params)
+
     fun reset() = repo.reset()
 }

@@ -8,10 +8,13 @@ import androidx.lifecycle.map
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import okio.ByteString
+import stasis.client_android.lib.api.clients.DefaultServerApiEndpointClient
 import stasis.client_android.lib.api.clients.ServerApiEndpointClient
+import stasis.client_android.lib.encryption.Aes
 import stasis.client_android.lib.encryption.secrets.UserPassword
 import stasis.client_android.lib.security.AccessTokenResponse
 import stasis.client_android.lib.security.CredentialsProvider
+import stasis.client_android.lib.security.HttpCredentials
 import stasis.client_android.lib.utils.Reference
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Companion.foreach
@@ -21,6 +24,7 @@ import stasis.client_android.lib.utils.Try.Success
 import stasis.client_android.persistence.Converters.Companion.toAccessTokenResponse
 import stasis.client_android.persistence.Converters.Companion.toJson
 import stasis.client_android.persistence.config.ConfigRepository
+import stasis.client_android.persistence.config.ConfigRepository.Companion.getServerApiConfig
 import stasis.client_android.providers.ProviderContext
 import stasis.client_android.serialization.ByteStrings.decodeFromBase64
 import stasis.client_android.serialization.ByteStrings.encodeAsBase64
@@ -167,6 +171,7 @@ class CredentialsRepository(
     fun pushDeviceSecret(
         api: ServerApiEndpointClient,
         password: String,
+        remotePassword: String?,
         f: (Try<Unit>) -> Unit
     ) {
         when (
@@ -174,6 +179,7 @@ class CredentialsRepository(
                 provider.pushDeviceSecret(
                     api = api,
                     password = password,
+                    remotePassword = remotePassword,
                     f = f
                 )
             }
@@ -186,10 +192,51 @@ class CredentialsRepository(
     fun pullDeviceSecret(
         api: ServerApiEndpointClient,
         password: String,
+        remotePassword: String?,
         f: (Try<Unit>) -> Unit
     ) {
         when (
-            withOAuthContext { provider -> provider.pullDeviceSecret(api = api, password = password, f = f) }
+            withOAuthContext { provider ->
+                provider.pullDeviceSecret(
+                    api = api,
+                    password = password,
+                    remotePassword = remotePassword,
+                    f = f
+                )
+            }
+        ) {
+            null -> f(Failure(RuntimeException("Client not configured")))
+            else -> Unit // do nothing
+        }
+    }
+
+    fun reEncryptDeviceSecret(
+        currentPassword: String,
+        oldPassword: String,
+        f: (Try<Unit>) -> Unit
+    ) {
+        when (
+            withOAuthContext { provider ->
+                provider.reEncryptDeviceSecret(
+                    currentPassword = currentPassword,
+                    oldPassword = oldPassword,
+                    f = f
+                )
+            }
+        ) {
+            null -> f(Failure(RuntimeException("Client not configured")))
+            else -> Unit // do nothing
+        }
+    }
+
+    fun remoteDeviceSecretExists(
+        api: ServerApiEndpointClient,
+        f: (Try<Boolean>) -> Unit
+    ) {
+        when (
+            withOAuthContext { provider ->
+                provider.remoteDeviceSecretExists(api = api, f = f)
+            }
         ) {
             null -> f(Failure(RuntimeException("Client not configured")))
             else -> Unit // do nothing

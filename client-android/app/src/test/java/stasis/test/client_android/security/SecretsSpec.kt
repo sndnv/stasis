@@ -15,12 +15,13 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import stasis.client_android.lib.utils.Try
+import stasis.client_android.lib.utils.Try.Companion.map
 import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.security.Secrets
 import stasis.client_android.serialization.ByteStrings.decodeFromBase64
 import stasis.client_android.serialization.ByteStrings.encodeAsBase64
 import stasis.test.client_android.mocks.MockServerApiEndpointClient
-import java.util.Base64
 import java.util.UUID
 
 @RunWith(RobolectricTestRunner::class)
@@ -33,6 +34,18 @@ class SecretsSpec {
         val generatedSecret = Secrets.generateRawDeviceSecret(secretSize = expectedSecretSize)
 
         assertThat(generatedSecret.size, equalTo(expectedSecretSize))
+    }
+
+    @Test
+    fun checkIfDeviceSecretExists() {
+        val localSecret = "AYjniRpLv1QH20sZ_j4oSXNnyv1SUVNNYrZc".decodeFromBase64()
+
+        val preferencesWithoutSecret = initPreferences()
+
+        val preferencesWithSecret = initPreferences(withSecret = localSecret)
+
+        assertThat(Secrets.localDeviceSecretExists(preferencesWithoutSecret), equalTo(false))
+        assertThat(Secrets.localDeviceSecretExists(preferencesWithSecret), equalTo(true))
     }
 
     @Test
@@ -68,7 +81,7 @@ class SecretsSpec {
 
     @Test
     fun loadDeviceSecrets() {
-        val preferences = initPreferences()
+        val preferences = initPreferences(withSecret = "invalid-secret".toByteArray().toByteString())
 
         val user = UUID.randomUUID()
         val userSalt = "test-salt"
@@ -155,6 +168,7 @@ class SecretsSpec {
                 user = user,
                 userSalt = userSalt,
                 userPassword = userPassword,
+                remotePassword = null,
                 device = device,
                 preferences = preferences,
                 api = api
@@ -164,6 +178,43 @@ class SecretsSpec {
 
             assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed], equalTo(1))
             assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled], equalTo(0))
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists], equalTo(0))
+
+            assertThat(api.deviceSecret, equalTo(remoteSecret))
+        }
+    }
+
+    @Test
+    fun pushDeviceSecretsWithProvidedRemotePassword() {
+        val localSecret = "AYjniRpLv1QH20sZ_j4oSXNnyv1SUVNNYrZc".decodeFromBase64()
+        val remoteSecret = "99nW-RbFPqmZgPjLeDV-6VCeid8o45y0qd6b".decodeFromBase64()
+
+        val preferences = initPreferences(withSecret = localSecret)
+
+        val user = UUID.fromString("34df2cbe-3bb8-4b2d-a6ab-c193acb23f54")
+        val userSalt = "test-salt"
+        val userPassword = "test-password".toCharArray()
+        val remotePassword = "other-password".toCharArray()
+        val device = UUID.fromString("26fc913b-d67c-4174-be56-c125081c3567")
+
+        val api = MockServerApiEndpointClient()
+
+        runBlocking {
+            val result = Secrets.pushDeviceSecret(
+                user = user,
+                userSalt = userSalt,
+                userPassword = userPassword,
+                remotePassword = remotePassword,
+                device = device,
+                preferences = preferences,
+                api = api
+            )
+
+            assertThat(result.isSuccess, equalTo(true))
+
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed], equalTo(1))
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled], equalTo(0))
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists], equalTo(0))
 
             assertThat(api.deviceSecret, equalTo(remoteSecret))
         }
@@ -197,12 +248,14 @@ class SecretsSpec {
 
         assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed], equalTo(0))
         assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled], equalTo(0))
+        assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists], equalTo(0))
 
         runBlocking {
             api.pushDeviceKey(remoteSecret)
 
             assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed], equalTo(1))
             assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled], equalTo(0))
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists], equalTo(0))
 
             assertThat(api.deviceSecret, equalTo(remoteSecret))
 
@@ -210,6 +263,7 @@ class SecretsSpec {
                 user = user,
                 userSalt = userSalt,
                 userPassword = userPassword,
+                remotePassword = null,
                 device = device,
                 preferences = preferences,
                 api = api
@@ -219,6 +273,67 @@ class SecretsSpec {
 
             assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed], equalTo(1))
             assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled], equalTo(1))
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists], equalTo(0))
+
+            verify(exactly = 1) { editor.commit() }
+        }
+    }
+
+    @Test
+    fun pullDeviceSecretsWithProvidedRemotePassword() {
+        val localSecret = "AYjniRpLv1QH20sZ_j4oSXNnyv1SUVNNYrZc".decodeFromBase64()
+        val remoteSecret = "99nW-RbFPqmZgPjLeDV-6VCeid8o45y0qd6b".decodeFromBase64()
+
+        val preferences = initPreferences()
+
+        val editor = mockk<SharedPreferences.Editor>(relaxUnitFun = true)
+        every { preferences.edit() } returns editor
+
+        every {
+            editor.putString(
+                ConfigRepository.Companion.Keys.Secrets.EncryptedDeviceSecret,
+                localSecret.encodeAsBase64()
+            )
+        } returns editor
+
+        every { editor.commit() } returns true
+
+        val user = UUID.fromString("34df2cbe-3bb8-4b2d-a6ab-c193acb23f54")
+        val userSalt = "test-salt"
+        val userPassword = "test-password".toCharArray()
+        val remotePassword = "other-password".toCharArray()
+        val device = UUID.fromString("26fc913b-d67c-4174-be56-c125081c3567")
+
+        val api = MockServerApiEndpointClient()
+
+        assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed], equalTo(0))
+        assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled], equalTo(0))
+        assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists], equalTo(0))
+
+        runBlocking {
+            api.pushDeviceKey(remoteSecret)
+
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed], equalTo(1))
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled], equalTo(0))
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists], equalTo(0))
+
+            assertThat(api.deviceSecret, equalTo(remoteSecret))
+
+            val result = Secrets.pullDeviceSecret(
+                user = user,
+                userSalt = userSalt,
+                userPassword = userPassword,
+                remotePassword = remotePassword,
+                device = device,
+                preferences = preferences,
+                api = api
+            )
+
+            assertThat(result.isSuccess, equalTo(true))
+
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed], equalTo(1))
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled], equalTo(1))
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists], equalTo(0))
 
             verify(exactly = 1) { editor.commit() }
         }
@@ -226,6 +341,110 @@ class SecretsSpec {
 
     @Test
     fun reEncryptDeviceSecrets() {
+        val initialSecret = "AYjniRpLv1QH20sZ_j4oSXNnyv1SUVNNYrZc".decodeFromBase64()
+        val updatedSecret = "LPkQoxt4QMX2l1GErZFm0p8ZQUv3Fbrvmug-"
+
+        val preferences = initPreferences(withSecret = initialSecret)
+
+        val user = UUID.fromString("34df2cbe-3bb8-4b2d-a6ab-c193acb23f54")
+        val device = UUID.fromString("26fc913b-d67c-4174-be56-c125081c3567")
+        val initialSalt = "test-salt"
+        val initialPassword = "test-password".toCharArray()
+        val newSalt = "other-salt"
+        val newPassword = "other-password".toCharArray()
+
+        val editor = mockk<SharedPreferences.Editor>(relaxUnitFun = true)
+        every { preferences.edit() } returns editor
+
+        every {
+            editor.putString(
+                ConfigRepository.Companion.Keys.Secrets.EncryptedDeviceSecret,
+                updatedSecret
+            )
+        } returns editor
+
+        every { editor.commit() } returns true
+
+        val api = MockServerApiEndpointClient()
+
+        runBlocking {
+            val result = Secrets.reEncryptDeviceSecret(
+                user = user,
+                currentUserSalt = initialSalt,
+                currentUserPassword = initialPassword,
+                newUserSalt = newSalt,
+                newUserPassword = newPassword,
+                device = device,
+                preferences = preferences,
+                api = api
+            )
+
+            assertThat(result.isSuccess, equalTo(true))
+
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed], equalTo(0))
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled], equalTo(0))
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists], equalTo(1))
+
+            verify(exactly = 1) { editor.commit() }
+        }
+    }
+
+    @Test
+    fun reEncryptDeviceSecretsAndUpdateRemoteSecret() {
+        val initialSecret = "AYjniRpLv1QH20sZ_j4oSXNnyv1SUVNNYrZc".decodeFromBase64()
+        val updatedSecret = "LPkQoxt4QMX2l1GErZFm0p8ZQUv3Fbrvmug-"
+
+        val preferences = initPreferences(withSecret = initialSecret)
+
+        val user = UUID.fromString("34df2cbe-3bb8-4b2d-a6ab-c193acb23f54")
+        val device = UUID.fromString("26fc913b-d67c-4174-be56-c125081c3567")
+        val initialSalt = "test-salt"
+        val initialPassword = "test-password".toCharArray()
+        val newSalt = "other-salt"
+        val newPassword = "other-password".toCharArray()
+
+        val editor = mockk<SharedPreferences.Editor>(relaxUnitFun = true)
+        every { preferences.edit() } returns editor
+
+        every {
+            editor.putString(
+                ConfigRepository.Companion.Keys.Secrets.EncryptedDeviceSecret,
+                updatedSecret
+            )
+        } returns editor
+
+        every { editor.commit() } returns true
+
+        val api = object : MockServerApiEndpointClient(self = UUID.randomUUID()) {
+            override suspend fun deviceKeyExists(): Try<Boolean> =
+                super.deviceKeyExists().map { true }
+
+        }
+
+        runBlocking {
+            val result = Secrets.reEncryptDeviceSecret(
+                user = user,
+                currentUserSalt = initialSalt,
+                currentUserPassword = initialPassword,
+                newUserSalt = newSalt,
+                newUserPassword = newPassword,
+                device = device,
+                preferences = preferences,
+                api = api
+            )
+
+            assertThat(result.isSuccess, equalTo(true))
+
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed], equalTo(1))
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled], equalTo(0))
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists], equalTo(1))
+
+            verify(exactly = 1) { editor.commit() }
+        }
+    }
+
+    @Test
+    fun reEncryptDeviceSecretsLocallyOnlyWhenNoApiProvided() {
         val initialSecret = "AYjniRpLv1QH20sZ_j4oSXNnyv1SUVNNYrZc".decodeFromBase64()
         val updatedSecret = "LPkQoxt4QMX2l1GErZFm0p8ZQUv3Fbrvmug-"
 
@@ -258,7 +477,8 @@ class SecretsSpec {
                 newUserSalt = newSalt,
                 newUserPassword = newPassword,
                 device = device,
-                preferences = preferences
+                preferences = preferences,
+                api = null
             )
 
             assertThat(result.isSuccess, equalTo(true))
@@ -314,7 +534,7 @@ class SecretsSpec {
                 ConfigRepository.Companion.Keys.Secrets.EncryptedDeviceSecret,
                 null
             )
-        } returns ((withSecret ?: "invalid-secret".toByteArray().toByteString()).encodeAsBase64())
+        } returns withSecret?.encodeAsBase64()
 
         every {
             preferences.getInt(

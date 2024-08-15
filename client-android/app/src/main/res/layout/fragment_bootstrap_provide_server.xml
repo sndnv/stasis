@@ -3,60 +3,88 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <ImageView
-            android:id="@+id/logo"
-            android:layout_width="192dp"
-            android:layout_height="192dp"
-            android:contentDescription="@string/bootstrap_logo"
-            android:src="@drawable/ic_launcher_foreground"
-            app:layout_constraintBottom_toTopOf="@id/bootstrap_provide_server_container"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <LinearLayout
-            android:id="@+id/bootstrap_provide_server_container"
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingStart="64dp"
-            android:paddingEnd="64dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/logo">
+            android:layout_height="match_parent">
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/bootstrap_provide_server"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+            <ImageView
+                android:id="@+id/logo"
+                android:layout_width="192dp"
+                android:layout_height="192dp"
+                android:contentDescription="@string/bootstrap_logo"
+                android:src="@drawable/ic_launcher_foreground"
+                app:layout_constraintBottom_toTopOf="@id/bootstrap_provide_server_container"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <LinearLayout
+                android:id="@+id/bootstrap_provide_server_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:importantForAutofill="no"
-                android:inputType="text"
-                app:endIconMode="clear_text"
-                app:prefixText="@string/bootstrap_server_prefix"
-                app:startIconCheckable="true"
-                app:startIconDrawable="@drawable/ic_warning">
+                android:orientation="vertical"
+                android:paddingStart="64dp"
+                android:paddingEnd="64dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/logo">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/bootstrap_provide_server_input"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/bootstrap_provide_server"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="@string/bootstrap_server_hint" />
+                    android:importantForAutofill="no"
+                    android:inputType="text"
+                    app:endIconMode="clear_text"
+                    app:prefixText="@string/bootstrap_server_prefix"
+                    app:startIconCheckable="true"
+                    app:startIconDrawable="@drawable/ic_warning">
 
-            </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/bootstrap_provide_server_input"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/bootstrap_server_hint" />
 
-            <Button
-                android:id="@+id/bootstrap_provide_server_next_button"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="16dp"
-                android:text="@string/bootstrap_server_next_button" />
-        </LinearLayout>
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <TableLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_margin="16dp"
+            android:stretchColumns="0,1,2">
+
+            <TableRow>
+
+                <Button
+                    android:id="@+id/bootstrap_provide_server_previous_button"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/bootstrap_server_previous_button" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/bootstrap_provide_server_step"
+                    android:textAlignment="center" />
+
+                <Button
+                    android:id="@+id/bootstrap_provide_server_next_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/bootstrap_server_next_button" />
+            </TableRow>
+        </TableLayout>
+    </RelativeLayout>
 </layout>

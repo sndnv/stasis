@@ -54,12 +54,25 @@ class CredentialsViewModel @Inject constructor(
     fun pushDeviceSecret(
         api: ServerApiEndpointClient,
         password: String,
+        remotePassword: String?,
         f: (Try<Unit>) -> Unit
-    ) = repo.pushDeviceSecret(api, password, f)
+    ) = repo.pushDeviceSecret(api, password, remotePassword, f)
 
     fun pullDeviceSecret(
         api: ServerApiEndpointClient,
         password: String,
+        remotePassword: String?,
         f: (Try<Unit>) -> Unit
-    ) = repo.pullDeviceSecret(api, password, f)
+    ) = repo.pullDeviceSecret(api, password, remotePassword, f)
+
+    fun reEncryptDeviceSecret(
+        currentPassword: String,
+        oldPassword: String,
+        f: (Try<Unit>) -> Unit
+    ) = repo.reEncryptDeviceSecret(currentPassword, oldPassword, f)
+
+    fun remoteDeviceSecretExists(
+        api: ServerApiEndpointClient,
+        f: (Try<Boolean>) -> Unit
+    ) = repo.remoteDeviceSecretExists(api, f)
 }

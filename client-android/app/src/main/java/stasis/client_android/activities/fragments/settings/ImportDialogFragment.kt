@@ -62,12 +62,12 @@ class ImportDialogFragment(
             passwordConfirmationView.isErrorEnabled = false
             passwordConfirmationView.error = null
 
-            val password = passwordView.editText?.text?.toString() ?: ""
-            val passwordConfirmation = passwordConfirmationView.editText?.text?.toString() ?: ""
+            val password = passwordView.editText?.text?.toString().orEmpty()
+            val passwordConfirmation = passwordConfirmationView.editText?.text?.toString().orEmpty()
 
             when {
                 password == passwordConfirmation && password.isNotEmpty() -> {
-                    val secret = importedSecretView.editText?.text?.toString() ?: ""
+                    val secret = importedSecretView.editText?.text?.toString().orEmpty()
 
                     try {
                         require(secret.isNotBlank())
@@ -106,11 +106,17 @@ class ImportDialogFragment(
                         getString(R.string.settings_manage_device_secret_import_mismatched_passwords)
                 }
             }
-
-
         }
 
         return view
+    }
+
+    override fun onStart() {
+        super.onStart()
+        dialog?.window?.setLayout(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
     }
 
     companion object {

@@ -19,9 +19,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import stasis.client_android.R
+import stasis.client_android.StasisClientDependencies
 import stasis.client_android.activities.helpers.Common
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.TextInputExtensions.validate
+import stasis.client_android.api.clients.MockOAuthClient
+import stasis.client_android.api.clients.MockServerApiEndpointClient
 import stasis.client_android.databinding.FragmentBootstrapProvideCodeBinding
 import stasis.client_android.lib.api.clients.DefaultServerApiEndpointClient
 import stasis.client_android.lib.api.clients.ServerBootstrapEndpointClient
@@ -34,10 +37,13 @@ import stasis.client_android.lib.security.HttpCredentials
 import stasis.client_android.lib.security.OAuthClient
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Companion.flatMap
+import stasis.client_android.lib.utils.Try.Companion.map
+import stasis.client_android.lib.utils.Try.Companion.recoverWith
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
 import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getSecretsConfig
+import stasis.client_android.persistence.config.ConfigRepository.Companion.saveUsername
 import stasis.client_android.persistence.config.ConfigViewModel
 import stasis.client_android.persistence.rules.RuleViewModel
 import stasis.client_android.security.Secrets
@@ -121,8 +127,11 @@ class BootstrapProvideCodeFragment : Fragment() {
                         val user = UUID.fromString(params.serverApi.user)
                         val userSalt = params.serverApi.userSalt
                         val userPassword = args.userPassword.toCharArray()
+                        val remotePassword = args.remotePassword?.toCharArray()
                         val device = UUID.fromString(params.serverApi.device)
                         val preferences = ConfigRepository.getPreferences(context)
+
+                        preferences.saveUsername(username = null)
 
                         val authenticationPassword = UserPassword(
                             user = user,
@@ -131,11 +140,14 @@ class BootstrapProvideCodeFragment : Fragment() {
                             target = preferences.getSecretsConfig()
                         ).toAuthenticationPassword()
 
-                        val oAuthClient = DefaultOAuthClient(
-                            tokenEndpoint = params.authentication.tokenEndpoint,
-                            client = params.authentication.clientId,
-                            clientSecret = params.authentication.clientSecret
-                        )
+                        val oAuthClient = when {
+                            StasisClientDependencies.mocksEnabled(server = params.serverApi.url) -> MockOAuthClient()
+                            else -> DefaultOAuthClient(
+                                tokenEndpoint = params.authentication.tokenEndpoint,
+                                client = params.authentication.clientId,
+                                clientSecret = params.authentication.clientSecret
+                            )
+                        }
 
                         val apiTokenResponse = oAuthClient.token(
                             scope = params.authentication.scopes.api,
@@ -145,34 +157,50 @@ class BootstrapProvideCodeFragment : Fragment() {
                             )
                         )
 
-                        val api = DefaultServerApiEndpointClient(
-                            serverApiUrl = params.serverApi.url,
-                            credentials = { HttpCredentials.OAuth2BearerToken(token = apiTokenResponse.get().access_token) },
-                            decryption = DefaultServerApiEndpointClient.DecryptionContext.Disabled,
-                            self = device
-                        )
+                        val api = when {
+                            StasisClientDependencies.mocksEnabled(server = params.serverApi.url) -> MockServerApiEndpointClient()
+                            else -> DefaultServerApiEndpointClient(
+                                serverApiUrl = params.serverApi.url,
+                                credentials = { HttpCredentials.OAuth2BearerToken(token = apiTokenResponse.get().access_token) },
+                                decryption = DefaultServerApiEndpointClient.DecryptionContext.Disabled,
+                                self = device
+                            )
+                        }
 
-                        val pullResult = Secrets.pullDeviceSecret(
-                            user = user,
-                            userSalt = userSalt,
-                            userPassword = userPassword,
-                            device = device,
-                            preferences = preferences,
-                            api = api,
-                        )
+                        val createSecret = when {
+                            args.overwriteExisting && args.pullSecret -> Secrets.pullDeviceSecret(
+                                user = user,
+                                userSalt = userSalt,
+                                userPassword = userPassword,
+                                remotePassword = remotePassword,
+                                device = device,
+                                preferences = preferences,
+                                api = api,
+                            ).flatMap {
+                                Success(false) // pull successful; do not create
+                            }.recoverWith { e ->
+                                when (e) {
+                                    is ResourceMissingFailure -> Success(true)
+                                    else -> Failure(e)
+                                }
+                            }
 
-                        when (pullResult) {
-                            is Success -> Success(Unit)
-                            is Failure -> if (pullResult.exception is ResourceMissingFailure) {
-                                Secrets.createDeviceSecret(
+                            args.overwriteExisting -> Success(true) // do not pull; create
+
+                            else -> Success(false) // do not pull; do not create
+                        }
+
+                        createSecret.flatMap { create ->
+                            when (create) {
+                                true -> Secrets.createDeviceSecret(
                                     user = user,
                                     userSalt = userSalt,
                                     userPassword = userPassword,
                                     device = device,
                                     preferences = preferences
                                 )
-                            } else {
-                                Failure(pullResult.exception)
+
+                                false -> Success(Unit)
                             }
                         }
                     }

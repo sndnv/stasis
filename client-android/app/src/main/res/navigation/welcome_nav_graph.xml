@@ -22,8 +22,8 @@
             app:popUpToInclusive="true" />
 
         <action
-            android:id="@+id/action_welcomeFragment_to_bootstrapProvideServerFragment"
-            app:destination="@id/bootstrapProvideServerFragment"
+            android:id="@+id/action_welcomeFragment_to_bootstrapIntroFragment"
+            app:destination="@id/bootstrapIntroFragment"
             app:popUpTo="@id/welcomeFragment"
             app:popUpToInclusive="true" />
     </fragment>
@@ -38,12 +38,26 @@
             app:destination="@id/welcomeFragment"
             app:popUpTo="@id/loginFragment"
             app:popUpToInclusive="true" />
+
+        <action
+            android:id="@+id/action_loginFragment_to_bootstrapIntroFragment"
+            app:destination="@id/bootstrapIntroFragment" />
     </fragment>
 
     <activity
         android:id="@+id/mainActivity"
         android:name="stasis.client_android.activities.MainActivity"
         android:label="MainActivity" />
+
+    <fragment
+        android:id="@+id/bootstrapIntroFragment"
+        android:name="stasis.client_android.activities.fragments.bootstrap.BootstrapIntroFragment"
+        android:label="BootstrapIntroFragment">
+
+        <action
+            android:id="@+id/action_bootstrapIntroFragment_to_bootstrapProvideServerFragment"
+            app:destination="@id/bootstrapProvideServerFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/bootstrapProvideServerFragment"
@@ -74,13 +88,32 @@
         android:label="BootstrapProvidePasswordFragment">
 
         <action
-            android:id="@+id/action_bootstrapProvidePasswordFragment_to_bootstrapProvideCodeFragment"
+            android:id="@+id/action_bootstrapProvidePasswordFragment_to_bootstrapProvideSecretFragment"
+            app:destination="@id/bootstrapProvideSecretFragment" />
+        <argument
+            android:name="bootstrapServerUrl"
+            app:argType="string" />
+        <argument
+            android:name="username"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/bootstrapProvideSecretFragment"
+        android:name="stasis.client_android.activities.fragments.bootstrap.BootstrapProvideSecretFragment"
+        android:label="BootstrapProvideSecretFragment">
+
+        <action
+            android:id="@+id/action_bootstrapProvideSecretFragment_to_bootstrapProvideCodeFragment"
             app:destination="@id/bootstrapProvideCodeFragment" />
         <argument
             android:name="bootstrapServerUrl"
             app:argType="string" />
         <argument
             android:name="username"
+            app:argType="string" />
+        <argument
+            android:name="userPassword"
             app:argType="string" />
     </fragment>
 
@@ -103,5 +136,15 @@
         <argument
             android:name="userPassword"
             app:argType="string" />
+        <argument
+            android:name="remotePassword"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="overwriteExisting"
+            app:argType="boolean" />
+        <argument
+            android:name="pullSecret"
+            app:argType="boolean" />
     </fragment>
 </navigation>

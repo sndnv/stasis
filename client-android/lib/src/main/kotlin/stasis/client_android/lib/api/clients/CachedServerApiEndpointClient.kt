@@ -139,6 +139,9 @@ class CachedServerApiEndpointClient(
     override suspend fun pullDeviceKey(): Try<ByteString> =
         underlying.pullDeviceKey()
 
+    override suspend fun deviceKeyExists(): Try<Boolean> =
+        underlying.deviceKeyExists()
+
     override suspend fun ping(): Try<Ping> =
         underlying.ping()
 

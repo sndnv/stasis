@@ -4,7 +4,6 @@ import android.content.SharedPreferences
 import okio.ByteString
 import okio.ByteString.Companion.toByteString
 import stasis.client_android.lib.api.clients.ServerApiEndpointClient
-import stasis.client_android.lib.api.clients.exceptions.ResourceMissingFailure
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.encryption.secrets.UserAuthenticationPassword
 import stasis.client_android.lib.encryption.secrets.UserPassword
@@ -12,16 +11,19 @@ import stasis.client_android.lib.model.server.devices.DeviceId
 import stasis.client_android.lib.model.server.users.UserId
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Companion.flatMap
-import stasis.client_android.lib.utils.Try.Failure
+import stasis.client_android.lib.utils.Try.Companion.flatten
 import stasis.client_android.lib.utils.Try.Success
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getEncryptedDeviceSecret
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getSecretsConfig
 import stasis.client_android.persistence.config.ConfigRepository.Companion.putEncryptedDeviceSecret
-import stasis.client_android.serialization.ByteStrings.encodeAsBase64
 import java.util.concurrent.ThreadLocalRandom
 
 object Secrets {
     const val DefaultDeviceSecretSize: Int = 128
+
+    fun localDeviceSecretExists(
+        preferences: SharedPreferences,
+    ): Boolean = Try { preferences.getEncryptedDeviceSecret() }.isSuccess
 
     suspend fun createDeviceSecret(
         user: UserId,
@@ -109,6 +111,7 @@ object Secrets {
         user: UserId,
         userSalt: String,
         userPassword: CharArray,
+        remotePassword: CharArray?,
         device: DeviceId,
         preferences: SharedPreferences,
         api: ServerApiEndpointClient
@@ -129,8 +132,18 @@ object Secrets {
                 encryptedSecret = preferences.getEncryptedDeviceSecret()
             )
 
-        val encryptedDeviceSecret = userEncryptionPassword
-            .toKeyStoreEncryptionSecret()
+        val keyStoreEncryptionSecret = when (remotePassword) {
+            null -> userEncryptionPassword.toKeyStoreEncryptionSecret()
+
+            else -> UserPassword(
+                user = user,
+                salt = userSalt,
+                password = remotePassword,
+                target = secretsConfig
+            ).toHashedEncryptionPassword().toKeyStoreEncryptionSecret()
+        }
+
+        val encryptedDeviceSecret = keyStoreEncryptionSecret
             .encryptDeviceSecret(secret = decryptedDeviceSecret)
 
         encryptedDeviceSecret
@@ -140,6 +153,7 @@ object Secrets {
         user: UserId,
         userSalt: String,
         userPassword: CharArray,
+        remotePassword: CharArray?,
         device: DeviceId,
         preferences: SharedPreferences,
         api: ServerApiEndpointClient
@@ -153,12 +167,21 @@ object Secrets {
             target = secretsConfig
         ).toHashedEncryptionPassword()
 
-        val decryptedDeviceSecret = userEncryptionPassword
-            .toKeyStoreEncryptionSecret()
-            .decryptDeviceSecret(
-                device = device,
-                encryptedSecret = encryptedDeviceSecret
-            )
+        val keyStoreEncryptionSecret = when (remotePassword) {
+            null -> userEncryptionPassword.toKeyStoreEncryptionSecret()
+
+            else -> UserPassword(
+                user = user,
+                salt = userSalt,
+                password = remotePassword,
+                target = secretsConfig
+            ).toHashedEncryptionPassword().toKeyStoreEncryptionSecret()
+        }
+
+        val decryptedDeviceSecret = keyStoreEncryptionSecret.decryptDeviceSecret(
+            device = device,
+            encryptedSecret = encryptedDeviceSecret
+        )
 
         val reEncryptedDeviceSecret = userEncryptionPassword
             .toLocalEncryptionSecret()
@@ -176,7 +199,8 @@ object Secrets {
         newUserSalt: String,
         newUserPassword: CharArray,
         device: DeviceId,
-        preferences: SharedPreferences
+        preferences: SharedPreferences,
+        api: ServerApiEndpointClient?
     ): Try<Unit> = Try {
         val secretsConfig = preferences.getSecretsConfig()
 
@@ -185,26 +209,45 @@ object Secrets {
             salt = currentUserSalt,
             password = currentUserPassword,
             target = secretsConfig
-        ).toHashedEncryptionPassword().toLocalEncryptionSecret()
+        ).toHashedEncryptionPassword()
 
         val newUserEncryptionPassword = UserPassword(
             user = user,
             salt = newUserSalt,
             password = newUserPassword,
             target = secretsConfig
-        ).toHashedEncryptionPassword().toLocalEncryptionSecret()
+        ).toHashedEncryptionPassword()
 
         val decryptedDeviceSecret = currentUserEncryptionPassword
+            .toLocalEncryptionSecret()
             .decryptDeviceSecret(
                 device = device,
                 encryptedSecret = preferences.getEncryptedDeviceSecret()
             )
 
-        val encryptedDeviceSecret = newUserEncryptionPassword
+        val localEncryptedDeviceSecret = newUserEncryptionPassword
+            .toLocalEncryptionSecret()
             .encryptDeviceSecret(decryptedDeviceSecret)
 
-        preferences.putEncryptedDeviceSecret(encryptedDeviceSecret)
-    }
+        preferences.putEncryptedDeviceSecret(localEncryptedDeviceSecret)
+
+        when (api) {
+            null -> Success(Unit) // do nothing
+            else -> {
+                api.deviceKeyExists().flatMap { exists ->
+                    if (exists) {
+                        val keyStoreEncryptedDeviceSecret = newUserEncryptionPassword
+                            .toKeyStoreEncryptionSecret()
+                            .encryptDeviceSecret(decryptedDeviceSecret)
+
+                        api.pushDeviceKey(keyStoreEncryptedDeviceSecret)
+                    } else {
+                        Success(Unit) // do nothing
+                    }
+                }
+            }
+        }
+    }.flatten()
 
     fun loadUserAuthenticationPassword(
         user: UserId,

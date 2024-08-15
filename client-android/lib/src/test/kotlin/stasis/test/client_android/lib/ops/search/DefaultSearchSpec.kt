@@ -116,6 +116,7 @@ class DefaultSearchSpec : WordSpec({
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
         }
     }

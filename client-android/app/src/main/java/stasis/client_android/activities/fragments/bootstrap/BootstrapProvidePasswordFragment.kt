@@ -11,8 +11,8 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import stasis.client_android.R
-import stasis.client_android.activities.helpers.TextInputExtensions.validate
-import stasis.client_android.activities.helpers.TextInputExtensions.validateMatches
+import stasis.client_android.activities.helpers.TextInputExtensions.validateSecret
+import stasis.client_android.activities.helpers.TextInputExtensions.validateSecretMatches
 import stasis.client_android.databinding.FragmentBootstrapProvidePasswordBinding
 
 class BootstrapProvidePasswordFragment : Fragment() {
@@ -29,8 +29,8 @@ class BootstrapProvidePasswordFragment : Fragment() {
         }
 
         binding.bootstrapProvidePasswordNextButton.setOnClickListener {
-            binding.bootstrapProvidePassword.validate(withError = R.string.bootstrap_password_error) { userPassword ->
-                binding.bootstrapProvidePasswordVerify.validateMatches(
+            binding.bootstrapProvidePassword.validateSecret(withError = R.string.bootstrap_password_error) { userPassword ->
+                binding.bootstrapProvidePasswordVerify.validateSecretMatches(
                     that = binding.bootstrapProvidePassword,
                     withError = R.string.bootstrap_password_verify_error
                 ) {
@@ -38,7 +38,7 @@ class BootstrapProvidePasswordFragment : Fragment() {
 
                     findNavController().navigate(
                         BootstrapProvidePasswordFragmentDirections
-                            .actionBootstrapProvidePasswordFragmentToBootstrapProvideCodeFragment(
+                            .actionBootstrapProvidePasswordFragmentToBootstrapProvideSecretFragment(
                                 bootstrapServerUrl = args.bootstrapServerUrl,
                                 userPassword = userPassword,
                                 username = args.username
@@ -49,11 +49,11 @@ class BootstrapProvidePasswordFragment : Fragment() {
         }
 
         binding.bootstrapProvidePassword.editText?.doOnTextChanged { _, _, _, _ ->
-            binding.bootstrapProvidePassword.validate(withError = R.string.bootstrap_password_error)
+            binding.bootstrapProvidePassword.validateSecret(withError = R.string.bootstrap_password_error)
         }
 
         binding.bootstrapProvidePasswordVerify.editText?.doOnTextChanged { _, _, _, _ ->
-            binding.bootstrapProvidePasswordVerify.validateMatches(
+            binding.bootstrapProvidePasswordVerify.validateSecretMatches(
                 that = binding.bootstrapProvidePassword,
                 withError = R.string.bootstrap_password_verify_error
             )

@@ -23,6 +23,7 @@ class MockBackupTracker : BackupTracker, BackupTrackerView, BackupTrackerManage 
         Statistic.EntityDiscovered to AtomicInteger(0),
         Statistic.SpecificationProcessed to AtomicInteger(0),
         Statistic.EntityExamined to AtomicInteger(0),
+        Statistic.EntitySkipped to AtomicInteger(0),
         Statistic.EntityCollected to AtomicInteger(0),
         Statistic.EntityProcessingStarted to AtomicInteger(0),
         Statistic.EntityPartProcessed to AtomicInteger(0),
@@ -66,6 +67,10 @@ class MockBackupTracker : BackupTracker, BackupTrackerView, BackupTrackerManage 
 
     override fun entityExamined(operation: OperationId, entity: Path) {
         stats[Statistic.EntityExamined]?.getAndIncrement()
+    }
+
+    override fun entitySkipped(operation: OperationId, entity: Path) {
+        stats[Statistic.EntitySkipped]?.getAndIncrement()
     }
 
     override fun entityCollected(operation: OperationId, entity: SourceEntity) {
@@ -115,6 +120,7 @@ class MockBackupTracker : BackupTracker, BackupTrackerView, BackupTrackerManage 
         object Started : Statistic()
         object EntityDiscovered : Statistic()
         object SpecificationProcessed : Statistic()
+        object EntitySkipped : Statistic()
         object EntityExamined : Statistic()
         object EntityCollected : Statistic()
         object EntityProcessingStarted : Statistic()

@@ -148,6 +148,7 @@ object Common {
     fun String.toOperationStageString(context: Context): String = when (this) {
         "discovered" -> context.getString(R.string.operation_stage_discovered)
         "examined" -> context.getString(R.string.operation_stage_examined)
+        "skipped" -> context.getString(R.string.operation_stage_skipped)
         "collected" -> context.getString(R.string.operation_stage_collected)
         "pending" -> context.getString(R.string.operation_stage_pending)
         "processed" -> context.getString(R.string.operation_stage_processed)
@@ -273,7 +274,7 @@ object Common {
                 else -> withContext.getString(R.string.api_other_failure, e.message)
             }
 
-            message?.let { Toast.makeText(withContext, it, Toast.LENGTH_SHORT).show() }
+            message?.let { Toast.makeText(withContext, it, Toast.LENGTH_LONG).show() }
 
             if (e is AccessDeniedFailure) {
                 LocalBroadcastManager.getInstance(withContext).sendBroadcast(

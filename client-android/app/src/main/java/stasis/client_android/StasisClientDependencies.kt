@@ -11,6 +11,11 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import stasis.client_android.api.clients.MockConfig
+import stasis.client_android.api.clients.MockOAuthClient
+import stasis.client_android.api.clients.MockServerApiEndpointClient
+import stasis.client_android.api.clients.MockServerBootstrapEndpointClient
+import stasis.client_android.api.clients.MockServerCoreEndpointClient
 import stasis.client_android.lib.analysis.Checksum
 import stasis.client_android.lib.api.clients.CachedServerApiEndpointClient
 import stasis.client_android.lib.api.clients.Clients
@@ -75,9 +80,10 @@ object StasisClientDependencies {
     fun provideServerBootstrapEndpointClientFactory(): ServerBootstrapEndpointClient.Factory =
         object : ServerBootstrapEndpointClient.Factory {
             override fun create(server: String): ServerBootstrapEndpointClient =
-                DefaultServerBootstrapEndpointClient(
-                    serverBootstrapUrl = server
-                )
+                when {
+                    mocksEnabled(server) -> MockServerBootstrapEndpointClient()
+                    else -> DefaultServerBootstrapEndpointClient(serverBootstrapUrl = server)
+                }
         }
 
     @Singleton
@@ -141,32 +147,41 @@ object StasisClientDependencies {
                                     apiScope = authenticationConfig.scopeApi,
                                     expirationTolerance = Defaults.CredentialsExpirationTolerance
                                 ),
-                                oAuthClient = DefaultOAuthClient(
-                                    tokenEndpoint = authenticationConfig.tokenEndpoint,
-                                    client = authenticationConfig.clientId,
-                                    clientSecret = authenticationConfig.clientSecret
-                                ),
+                                oAuthClient = when {
+                                    mocksEnabled(server = apiConfig.url) -> MockOAuthClient()
+                                    else -> DefaultOAuthClient(
+                                        tokenEndpoint = authenticationConfig.tokenEndpoint,
+                                        client = authenticationConfig.clientId,
+                                        clientSecret = authenticationConfig.clientSecret
+                                    )
+                                },
                                 bridge = bridge,
                                 coroutineScope = coroutineScope
                             )
 
-                            val coreClient = DefaultServerCoreEndpointClient(
-                                serverCoreUrl = coreConfig.address,
-                                credentials = { HttpCredentials.OAuth2BearerToken(token = credentials.core.get().access_token) },
-                                self = UUID.fromString(coreConfig.nodeId)
-                            )
+                            val coreClient = when {
+                                mocksEnabled(server = apiConfig.url) -> MockServerCoreEndpointClient()
+                                else -> DefaultServerCoreEndpointClient(
+                                    serverCoreUrl = coreConfig.address,
+                                    credentials = { HttpCredentials.OAuth2BearerToken(token = credentials.core.get().access_token) },
+                                    self = UUID.fromString(coreConfig.nodeId)
+                                )
+                            }
 
                             val apiClient = CachedServerApiEndpointClient(
-                                underlying = DefaultServerApiEndpointClient(
-                                    serverApiUrl = apiConfig.url,
-                                    credentials = { HttpCredentials.OAuth2BearerToken(token = credentials.api.get().access_token) },
-                                    decryption = DefaultServerApiEndpointClient.DecryptionContext.Default(
-                                        core = coreClient,
-                                        deviceSecret = { credentials.deviceSecret.get() },
-                                        decoder = Aes
-                                    ),
-                                    self = bridge.device
-                                ),
+                                underlying = when {
+                                    mocksEnabled(server = apiConfig.url) -> MockServerApiEndpointClient()
+                                    else -> DefaultServerApiEndpointClient(
+                                        serverApiUrl = apiConfig.url,
+                                        credentials = { HttpCredentials.OAuth2BearerToken(token = credentials.api.get().access_token) },
+                                        decryption = DefaultServerApiEndpointClient.DecryptionContext.Default(
+                                            core = coreClient,
+                                            deviceSecret = { credentials.deviceSecret.get() },
+                                            decoder = Aes
+                                        ),
+                                        self = bridge.device
+                                    )
+                                },
                                 datasetDefinitionsCache = datasetDefinitionsCache,
                                 datasetEntriesCache = datasetEntriesCache,
                                 datasetMetadataCache = datasetMetadataCache
@@ -311,6 +326,9 @@ object StasisClientDependencies {
             target = application.applicationContext.cacheDir.toPath().resolve(name),
             serdes = serdes
         )
+
+    fun mocksEnabled(server: String): Boolean =
+        BuildConfig.DEBUG && server == MockConfig.ServerApi
 
     object Defaults {
         const val MaxBackupPartSize: Long = 32L * 1024L * 1024L // 128MB

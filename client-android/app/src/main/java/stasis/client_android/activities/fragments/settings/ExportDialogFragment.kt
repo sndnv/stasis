@@ -55,6 +55,14 @@ class ExportDialogFragment(
         return view
     }
 
+    override fun onStart() {
+        super.onStart()
+        dialog?.window?.setLayout(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
+    }
+
     companion object {
         const val DialogTag: String =
             "stasis.client_android.activities.fragments.settings.ExportDialogFragment"

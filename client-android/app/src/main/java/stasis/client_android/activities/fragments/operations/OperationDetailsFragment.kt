@@ -180,6 +180,7 @@ class OperationDetailsFragment : Fragment() {
                     is BackupState -> mapOf(
                         "discovered" to state.entities.discovered.map { Triple(it, 1, 1) }.toList(),
                         "examined" to state.entities.examined.map { Triple(it, 1, 1) }.toList(),
+                        "skipped" to state.entities.skipped.map { Triple(it, 1, 1) }.toList(),
                         "collected" to state.entities.collected.keys.map { Triple(it, 1, 1) }.toList(),
                         "pending" to state.entities.pending.map { (entity, pending) ->
                             Triple(entity, pending.processedParts, pending.expectedParts)

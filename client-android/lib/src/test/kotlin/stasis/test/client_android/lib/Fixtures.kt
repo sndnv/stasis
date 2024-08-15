@@ -176,6 +176,7 @@ object Fixtures {
                 discovered = setOf(Metadata.FileOneMetadata.path),
                 unmatched = listOf("a", "b", "c"),
                 examined = setOf(Metadata.FileTwoMetadata.path),
+                skipped = setOf(Metadata.FileTwoMetadata.path),
                 collected = mapOf(
                     Metadata.FileOneMetadata.path to SourceEntity(
                         path = Metadata.FileOneMetadata.path,
@@ -389,6 +390,7 @@ object Fixtures {
                         discovered = listOf(Fixtures.Metadata.FileOneMetadata.path.toString()),
                         unmatched = listOf("a", "b", "c"),
                         examined = listOf(Fixtures.Metadata.FileTwoMetadata.path.toString()),
+                        skipped = listOf(Fixtures.Metadata.FileTwoMetadata.path.toString()),
                         collected = mapOf(
                             Fixtures.Metadata.FileOneMetadata.path.toString() to stasis.client_android.lib.model
                                 .proto.SourceEntity(

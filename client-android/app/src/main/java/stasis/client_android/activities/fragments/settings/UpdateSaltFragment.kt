@@ -55,10 +55,10 @@ class UpdateSaltFragment(
             newSaltConfirmationView.isErrorEnabled = false
             newSaltConfirmationView.error = null
 
-            val currentPassword = currentPasswordView.editText?.text?.toString() ?: ""
-            val currentPasswordConfirmation = currentPasswordConfirmationView.editText?.text?.toString() ?: ""
-            val newSalt = newSaltView.editText?.text?.toString() ?: ""
-            val newSaltConfirmation = newSaltConfirmationView.editText?.text?.toString() ?: ""
+            val currentPassword = currentPasswordView.editText?.text?.toString().orEmpty()
+            val currentPasswordConfirmation = currentPasswordConfirmationView.editText?.text?.toString().orEmpty()
+            val newSalt = newSaltView.editText?.text?.toString().orEmpty()
+            val newSaltConfirmation = newSaltConfirmationView.editText?.text?.toString().orEmpty()
 
             val currentPasswordsMatch = currentPassword == currentPasswordConfirmation
             val newSaltsMatch = newSalt == newSaltConfirmation
@@ -125,6 +125,14 @@ class UpdateSaltFragment(
         }
 
         return view
+    }
+
+    override fun onStart() {
+        super.onStart()
+        dialog?.window?.setLayout(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
     }
 
     companion object {

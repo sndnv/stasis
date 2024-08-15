@@ -154,6 +154,7 @@ class CredentialsViewModelSpec {
             model.pushDeviceSecret(
                 api = MockServerApiEndpointClient(),
                 password = "password",
+                remotePassword = null,
             ) { pushResult.set(it) }
 
             runBlocking {
@@ -172,11 +173,47 @@ class CredentialsViewModelSpec {
             model.pullDeviceSecret(
                 api = MockServerApiEndpointClient(),
                 password = "password",
+                remotePassword = null,
             ) { pullResult.set(it) }
 
             runBlocking {
                 eventually {
                     assertThat(pullResult.get()?.isSuccess ?: false, equalTo(true))
+                }
+            }
+        }
+    }
+
+    @Test
+    fun supportReEncryptingDeviceSecret() {
+        withModel { model ->
+            val reEncryptionResult = AtomicReference<Try<Unit>?>(null)
+
+            model.reEncryptDeviceSecret(
+                currentPassword = "password",
+                oldPassword = "other-password",
+            ) { reEncryptionResult.set(it) }
+
+            runBlocking {
+                eventually {
+                    assertThat(reEncryptionResult.get()?.isSuccess ?: false, equalTo(true))
+                }
+            }
+        }
+    }
+
+    @Test
+    fun supportCheckingIfRemoteDeviceSecretExists() {
+        withModel { model ->
+            val result = AtomicReference<Try<Boolean>?>(null)
+
+            model.remoteDeviceSecretExists(
+                api = MockServerApiEndpointClient()
+            ) { result.set(it) }
+
+            runBlocking {
+                eventually {
+                    assertThat(result.get()?.isSuccess ?: false, equalTo(true))
                 }
             }
         }

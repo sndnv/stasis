@@ -268,6 +268,7 @@ class CommonSpec {
 
         assertThat("discovered".toOperationStageString(context), equalTo("Discovered"))
         assertThat("examined".toOperationStageString(context), equalTo("Examined"))
+        assertThat("skipped".toOperationStageString(context), equalTo("Skipped"))
         assertThat("collected".toOperationStageString(context), equalTo("Collected"))
         assertThat("pending".toOperationStageString(context), equalTo("Pending"))
         assertThat("processed".toOperationStageString(context), equalTo("Processed"))

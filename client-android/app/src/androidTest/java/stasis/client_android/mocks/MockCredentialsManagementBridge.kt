@@ -22,10 +22,18 @@ open class MockCredentialsManagementBridge(
     override suspend fun storeDeviceSecret(secret: ByteString, userPassword: CharArray): Try<DeviceSecret> =
         Success(deviceSecret)
 
-    override suspend fun pushDeviceSecret(api: ServerApiEndpointClient, userPassword: CharArray): Try<Unit> =
+    override suspend fun pushDeviceSecret(
+        api: ServerApiEndpointClient,
+        userPassword: CharArray,
+        remotePassword: CharArray?
+    ): Try<Unit> =
         Success(Unit)
 
-    override suspend fun pullDeviceSecret(api: ServerApiEndpointClient, userPassword: CharArray): Try<DeviceSecret> =
+    override suspend fun pullDeviceSecret(
+        api: ServerApiEndpointClient,
+        userPassword: CharArray,
+        remotePassword: CharArray?
+    ): Try<DeviceSecret> =
         Success(deviceSecret)
 
     override fun initDigestedUserPassword(digestedUserPassword: String) =
@@ -35,6 +43,7 @@ open class MockCredentialsManagementBridge(
         false
 
     override suspend fun updateUserCredentials(
+        api: ServerApiEndpointClient,
         currentUserPassword: CharArray,
         newUserPassword: CharArray,
         newUserSalt: String?
@@ -43,6 +52,11 @@ open class MockCredentialsManagementBridge(
             is UserAuthenticationPassword.Hashed -> Success(authenticationPassword.copy())
             is UserAuthenticationPassword.Unhashed -> Success(authenticationPassword.copy())
         }
+
+    override suspend fun reEncryptDeviceSecret(
+        currentUserPassword: CharArray,
+        oldUserPassword: CharArray
+    ): Try<Unit> = Success(Unit)
 
     override fun getAuthenticationPassword(userPassword: CharArray): UserAuthenticationPassword =
         when (authenticationPassword) {

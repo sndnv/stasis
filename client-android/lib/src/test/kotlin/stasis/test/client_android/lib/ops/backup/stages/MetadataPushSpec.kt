@@ -91,6 +91,7 @@ class MetadataPushSpec : WordSpec({
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
 
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
@@ -100,6 +101,7 @@ class MetadataPushSpec : WordSpec({
             mockTracker.statistics[MockBackupTracker.Statistic.EntityDiscovered] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntitySkipped] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessingStarted] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityPartProcessed] shouldBe (0)

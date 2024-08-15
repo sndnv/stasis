@@ -58,6 +58,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
 
             client.datasetDefinitions()
@@ -89,6 +90,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
         }
 
@@ -119,6 +121,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
 
             client.datasetDefinition(definition = definition1)
@@ -142,6 +145,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
 
             client.datasetDefinition(definition = definition2)
@@ -165,6 +169,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
         }
 
@@ -200,6 +205,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
 
             client.createDatasetDefinition(
@@ -243,6 +249,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
         }
 
@@ -274,6 +281,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
         }
 
@@ -303,6 +311,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
 
             client.datasetEntry(entry = entry)
@@ -328,6 +337,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
         }
 
@@ -357,6 +367,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
 
             client.latestEntry(definition = definition, until = null)
@@ -382,6 +393,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
         }
 
@@ -416,6 +428,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
         }
 
@@ -447,6 +460,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
 
             client.createDatasetEntry(
@@ -479,6 +493,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
         }
 
@@ -510,6 +525,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
         }
 
@@ -543,6 +559,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
         }
 
@@ -572,6 +589,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
 
             client.datasetMetadata(entry = entry)
@@ -597,6 +615,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
         }
 
@@ -633,6 +652,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
 
             client.datasetMetadata(entry = entry)
@@ -658,6 +678,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
         }
 
@@ -689,6 +710,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
         }
 
@@ -718,6 +740,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
         }
 
@@ -749,6 +772,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
         }
 
@@ -780,6 +804,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (5)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
         }
 
@@ -811,6 +836,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (3)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
         }
 
@@ -840,6 +866,37 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (3)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
+        }
+
+        "check if a device key exists (without caching)" {
+            val underlying = MockServerApiEndpointClient()
+
+            val client = createClient(underlying = underlying)
+
+            client.deviceKeyExists()
+            client.deviceKeyExists()
+            client.deviceKeyExists()
+
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntriesRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionCreated] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionsRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.PublicSchedulesRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.PublicScheduleRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.UserRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.UserSaltReset] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.UserPasswordUpdated] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (3)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
         }
 
@@ -871,6 +928,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (5)
         }
     }

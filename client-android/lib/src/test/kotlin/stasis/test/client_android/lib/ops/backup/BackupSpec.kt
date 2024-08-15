@@ -47,6 +47,7 @@ import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
+@Suppress("LargeClass")
 class BackupSpec : WordSpec({
     val operationScope = CoroutineScope(Dispatchers.IO)
 
@@ -208,6 +209,7 @@ class BackupSpec : WordSpec({
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
 
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
@@ -217,7 +219,8 @@ class BackupSpec : WordSpec({
             mockTracker.statistics[MockBackupTracker.Statistic.EntityDiscovered] shouldBe (7) // 2 directories + 5 files
             mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (1)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (7) // 2 directories + 5 files
-            mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (5) // 2 unchanged + 5 changed entities
+            mockTracker.statistics[MockBackupTracker.Statistic.EntitySkipped] shouldBe (2) // 2 unchanged entities
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (5) // 5 changed entities
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessingStarted] shouldBe (5) // ...
             mockTracker.statistics[MockBackupTracker.Statistic.EntityPartProcessed] shouldBe (3) // 3 files
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (5) // 2 unchanged + 5 changed entities
@@ -298,6 +301,7 @@ class BackupSpec : WordSpec({
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
 
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
@@ -307,6 +311,7 @@ class BackupSpec : WordSpec({
             mockTracker.statistics[MockBackupTracker.Statistic.EntityDiscovered] shouldBe (3)
             mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (3)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntitySkipped] shouldBe (1)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (2)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessingStarted] shouldBe (2)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityPartProcessed] shouldBe (1)
@@ -392,6 +397,7 @@ class BackupSpec : WordSpec({
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
 
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
@@ -401,6 +407,7 @@ class BackupSpec : WordSpec({
             mockTracker.statistics[MockBackupTracker.Statistic.EntityDiscovered] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (3)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntitySkipped] shouldBe (1)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (2)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessingStarted] shouldBe (2)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityPartProcessed] shouldBe (1)
@@ -498,6 +505,7 @@ class BackupSpec : WordSpec({
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
 
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
@@ -507,6 +515,7 @@ class BackupSpec : WordSpec({
             mockTracker.statistics[MockBackupTracker.Statistic.EntityDiscovered] shouldBe (3)
             mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (3)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntitySkipped] shouldBe (1)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (2)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessingStarted] shouldBe (2)
             mockTracker.statistics[MockBackupTracker.Statistic.EntityPartProcessed] shouldBe (1)
@@ -566,6 +575,7 @@ class BackupSpec : WordSpec({
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
 
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
@@ -575,6 +585,7 @@ class BackupSpec : WordSpec({
             tracker.statistics[MockBackupTracker.Statistic.EntityDiscovered] shouldBe (1)
             tracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
             tracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
+            tracker.statistics[MockBackupTracker.Statistic.EntitySkipped] shouldBe (0)
             tracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (0)
             tracker.statistics[MockBackupTracker.Statistic.EntityProcessingStarted] shouldBe (0)
             tracker.statistics[MockBackupTracker.Statistic.EntityPartProcessed] shouldBe (0)
