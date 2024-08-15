@@ -254,6 +254,27 @@ class DefaultClientApiSpec(unittest.TestCase):
         )
 
     @patch('requests.request')
+    def test_should_reencrypt_current_device_secret(self, mock_request):
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
+        mock_request.return_value = MockResponse.success()
+
+        update_request = {'a': 1, 'b': 2}
+        self.assertEqual(client.device_reencrypt_secret(request=update_request),
+                         {'successful': True, 'operation': None})
+
+        self.assert_valid_request(
+            mock=mock_request,
+            expected_method='put',
+            expected_url='/device/key/re-encrypt',
+            expected_request_data=update_request
+        )
+
+    @patch('requests.request')
     def test_should_get_active_operations(self, mock_request):
         client = DefaultClientApi(
             api_url=self.url,

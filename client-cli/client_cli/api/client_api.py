@@ -109,6 +109,15 @@ class ClientApi(ABC):
         """
 
     @abstractmethod
+    def device_reencrypt_secret(self, request):
+        """
+        Re-encrypts the secret for the current device.
+
+        :param request: data to use for re-encryption
+        :return: dict with result of action
+        """
+
+    @abstractmethod
     def operations(self, state):
         """
         Retrieves the currently active operations.
