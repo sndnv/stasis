@@ -14,6 +14,7 @@ import java.nio.file.Paths
 import java.time.Instant
 import java.util.UUID
 
+@Suppress("TooManyFunctions")
 data class BackupState(
     val operation: OperationId,
     val definition: DatasetDefinitionId,
@@ -35,6 +36,9 @@ data class BackupState(
 
     fun entityExamined(entity: Path): BackupState =
         copy(entities = entities.copy(examined = entities.examined.plus(element = entity)))
+
+    fun entitySkipped(entity: Path): BackupState =
+        copy(entities = entities.copy(skipped = entities.skipped.plus(element = entity)))
 
     fun entityCollected(entity: SourceEntity): BackupState =
         copy(entities = entities.copy(collected = entities.collected + (entity.path to entity)))
@@ -121,7 +125,7 @@ data class BackupState(
 
     override fun asProgress(): Operation.Progress = Operation.Progress(
         total = entities.discovered.size,
-        processed = entities.processed.size,
+        processed = entities.skipped.size + entities.processed.size,
         failures = entities.failed.size + failures.size,
         completed = completed
     )
@@ -130,6 +134,7 @@ data class BackupState(
         val discovered: Set<Path>,
         val unmatched: List<String>,
         val examined: Set<Path>,
+        val skipped: Set<Path>,
         val collected: Map<Path, SourceEntity>,
         val pending: Map<Path, PendingSourceEntity>,
         val processed: Map<Path, ProcessedSourceEntity>,
@@ -140,6 +145,7 @@ data class BackupState(
                 discovered = emptySet(),
                 unmatched = emptyList(),
                 examined = emptySet(),
+                skipped = emptySet(),
                 collected = emptyMap(),
                 pending = emptyMap(),
                 processed = emptyMap(),
@@ -192,6 +198,7 @@ data class BackupState(
                     discovered = state.entities.discovered.map { it.toAbsolutePath().toString() }.toList(),
                     unmatched = state.entities.unmatched,
                     examined = state.entities.examined.map { it.toAbsolutePath().toString() }.toList(),
+                    skipped = state.entities.skipped.map { it.toAbsolutePath().toString() }.toList(),
                     collected = state.entities.collected.map { (k, v) ->
                         k.toAbsolutePath().toString() to toProtoSourceEntity(v)
                     }.toMap(),
@@ -224,6 +231,7 @@ data class BackupState(
                             discovered = entities.discovered.map { Paths.get(it) }.toSet(),
                             unmatched = entities.unmatched,
                             examined = entities.examined.map { Paths.get(it) }.toSet(),
+                            skipped = entities.skipped.map { Paths.get(it) }.toSet(),
                             collected = entities.collected.map { (k, v) ->
                                 Paths.get(k) to fromProtoSourceEntity(v)
                             }.toMap(),

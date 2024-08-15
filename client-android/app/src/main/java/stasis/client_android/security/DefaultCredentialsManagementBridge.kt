@@ -52,22 +52,28 @@ class DefaultCredentialsManagementBridge(
     )
 
     override suspend fun pushDeviceSecret(
-        api: ServerApiEndpointClient, userPassword: CharArray
+        api: ServerApiEndpointClient,
+        userPassword: CharArray,
+        remotePassword: CharArray?
     ): Try<Unit> = Secrets.pushDeviceSecret(
         user = user,
         userSalt = userSaltRef.get(),
         userPassword = userPassword,
+        remotePassword = remotePassword,
         device = device,
         preferences = preferences,
         api = api
     )
 
     override suspend fun pullDeviceSecret(
-        api: ServerApiEndpointClient, userPassword: CharArray
+        api: ServerApiEndpointClient,
+        userPassword: CharArray,
+        remotePassword: CharArray?
     ): Try<DeviceSecret> = Secrets.pullDeviceSecret(
         user = user,
         userSalt = userSaltRef.get(),
         userPassword = userPassword,
+        remotePassword = remotePassword,
         device = device,
         preferences = preferences,
         api = api
@@ -90,7 +96,10 @@ class DefaultCredentialsManagementBridge(
     }
 
     override suspend fun updateUserCredentials(
-        currentUserPassword: CharArray, newUserPassword: CharArray, newUserSalt: String?
+        api: ServerApiEndpointClient,
+        currentUserPassword: CharArray,
+        newUserPassword: CharArray,
+        newUserSalt: String?
     ): Try<UserAuthenticationPassword> {
         val actualUserSalt = newUserSalt ?: userSaltRef.get()
 
@@ -102,9 +111,13 @@ class DefaultCredentialsManagementBridge(
             newUserPassword = newUserPassword,
             device = device,
             preferences = preferences,
+            api = api
         ).map {
             val newUserAuthenticationPassword = Secrets.loadUserAuthenticationPassword(
-                user = user, userSalt = actualUserSalt, userPassword = newUserPassword, preferences = preferences
+                user = user,
+                userSalt = actualUserSalt,
+                userPassword = newUserPassword,
+                preferences = preferences
             )
 
             userSaltRef.set(actualUserSalt)
@@ -113,6 +126,25 @@ class DefaultCredentialsManagementBridge(
             newUserAuthenticationPassword
         }
     }
+
+    override suspend fun reEncryptDeviceSecret(
+        currentUserPassword: CharArray,
+        oldUserPassword: CharArray
+    ): Try<Unit> {
+        val actualUserSalt = userSaltRef.get()
+
+        return Secrets.reEncryptDeviceSecret(
+            user = user,
+            currentUserSalt = actualUserSalt,
+            currentUserPassword = oldUserPassword,
+            newUserSalt = actualUserSalt,
+            newUserPassword = currentUserPassword,
+            device = device,
+            preferences = preferences,
+            api = null
+        )
+    }
+
 
     override fun getAuthenticationPassword(
         userPassword: CharArray

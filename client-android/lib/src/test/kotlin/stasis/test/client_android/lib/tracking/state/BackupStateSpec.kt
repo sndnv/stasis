@@ -59,6 +59,7 @@ class BackupStateSpec : WordSpec({
                 .entityExamined(entity = entity2)
                 .entityExamined(entity = entity3)
                 .entityCollected(entity = sourceEntity1)
+                .entitySkipped(entity = entity2)
                 .failureEncountered(RuntimeException("Test failure #1"))
                 .entityCollected(entity = sourceEntity3)
                 .entityProcessingStarted(entity = entity1, expectedParts = 3)
@@ -79,6 +80,7 @@ class BackupStateSpec : WordSpec({
                         discovered = setOf(entity1, entity2, entity3),
                         unmatched = listOf("a", "b", "c"),
                         examined = setOf(entity1, entity2, entity3),
+                        skipped = setOf(entity2),
                         collected = mapOf(
                             entity1 to sourceEntity1,
                             entity3 to sourceEntity3
@@ -149,8 +151,13 @@ class BackupStateSpec : WordSpec({
             val backup = BackupState
                 .start(operation = Operation.generateId(), definition = UUID.randomUUID())
                 .entityDiscovered(entity = entity1)
+                .entityDiscovered(entity = entity2)
+                .entityDiscovered(entity = entity3)
+                .entityExamined(entity = entity1)
                 .entityExamined(entity = entity2)
+                .entityExamined(entity = entity3)
                 .entityCollected(entity = sourceEntity1)
+                .entitySkipped(entity = entity2)
                 .entityCollected(entity = sourceEntity3)
                 .entityProcessingStarted(entity = entity1, expectedParts = 1)
                 .entityPartProcessed(entity = entity1)
@@ -163,8 +170,8 @@ class BackupStateSpec : WordSpec({
 
             backup.asProgress() shouldBe (
                     Operation.Progress(
-                        total = 1,
-                        processed = 1,
+                        total = 3,
+                        processed = 2,
                         failures = 2,
                         completed = backup.completed
                     )

@@ -15,6 +15,7 @@ import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
+import stasis.client_android.BuildConfig
 import stasis.client_android.MainNavGraphDirections
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.StyledString
@@ -23,6 +24,7 @@ import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullD
 import stasis.client_android.activities.helpers.Transitions.operationComplete
 import stasis.client_android.activities.helpers.Transitions.operationInProgress
 import stasis.client_android.activities.receivers.LogoutReceiver
+import stasis.client_android.api.clients.MockConfig
 import stasis.client_android.databinding.ActivityMainBinding
 import stasis.client_android.lib.tracking.ServerTracker
 import stasis.client_android.lib.utils.Try.Companion.flatMap
@@ -148,71 +150,85 @@ class MainActivity : AppCompatActivity() {
                     R.string.navigation_subtitle_home,
                     null
                 )
+
                 R.id.backupFragment -> Triple(
                     R.id.item_backup,
                     R.string.navigation_subtitle_backup_definitions,
                     R.string.context_help_backup_definitions
                 )
+
                 R.id.datasetDefinitionDetailsFragment -> Triple(
                     R.id.item_backup,
                     R.string.navigation_subtitle_backup_definition_details,
                     R.string.context_help_backup_definition_details
                 )
+
                 R.id.datasetEntryDetailsFragment -> Triple(
                     R.id.item_backup,
                     R.string.navigation_subtitle_backup_entry_details,
                     R.string.context_help_backup_entry_details
                 )
+
                 R.id.newDatasetDefinitionFragment -> Triple(
                     R.id.item_backup,
                     R.string.navigation_subtitle_backup_new_definition,
                     R.string.context_help_backup_new_definition
                 )
+
                 R.id.recoverFragment -> Triple(
                     R.id.item_recover,
                     R.string.navigation_subtitle_recover,
                     R.string.context_help_recover
                 )
+
                 R.id.searchFragment -> Triple(
                     R.id.item_search,
                     R.string.navigation_subtitle_search,
                     R.string.context_help_search
                 )
+
                 R.id.operationsFragment -> Triple(
                     R.id.item_operations,
                     R.string.navigation_subtitle_operations,
                     R.string.context_help_operations
                 )
+
                 R.id.operationDetailsFragment -> Triple(
                     R.id.item_operations,
                     R.string.navigation_subtitle_operation_details,
                     R.string.context_help_operation_details
                 )
+
                 R.id.statusFragment -> Triple(
                     R.id.item_status,
                     R.string.navigation_subtitle_status,
                     R.string.context_help_status
                 )
+
                 R.id.rulesFragment -> Triple(
                     R.id.item_rules,
                     R.string.navigation_subtitle_rules,
                     R.string.context_help_rules
                 )
+
                 R.id.schedulesFragment -> Triple(
                     R.id.item_schedules,
                     R.string.navigation_subtitle_schedules,
                     R.string.context_help_schedules
                 )
+
                 R.id.settingsFragment -> Triple(
                     R.id.item_settings,
                     R.string.navigation_subtitle_settings,
                     null
                 )
+
                 R.id.aboutFragment -> Triple(
                     R.id.item_about,
                     R.string.navigation_subtitle_about,
                     null
                 )
+
                 else -> throw IllegalArgumentException("Unexpected menu item selected [${destination.id}]")
             }
 
@@ -245,6 +261,7 @@ class MainActivity : AppCompatActivity() {
                             getString(R.string.context_help_first_time_hint_description),
                         )
                     }
+
                     else -> null
                 }
 
@@ -277,6 +294,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
+
                 R.id.unreachable_servers -> {
                     when (val servers = unreachableServersRef.get()) {
                         null -> false
@@ -306,6 +324,23 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
+
+                R.id.debug_mode -> {
+                    MaterialAlertDialogBuilder(binding.root.context)
+                        .setTitle(getString(R.string.debug_mode_dialog_title))
+                        .setMessage(getString(R.string.debug_mode_dialog_content))
+                        .show()
+                    true
+                }
+
+                R.id.mock_mode -> {
+                    MaterialAlertDialogBuilder(binding.root.context)
+                        .setTitle(getString(R.string.mock_mode_dialog_title))
+                        .setMessage(getString(R.string.mock_mode_dialog_content))
+                        .show()
+                    true
+                }
+
                 else -> false
             }
         }
@@ -314,6 +349,15 @@ class MainActivity : AppCompatActivity() {
             val unreachable = servers.filterValues { !it.reachable }
 
             binding.topAppBar.menu.findItem(R.id.unreachable_servers).isVisible = unreachable.isNotEmpty()
+
+            if (BuildConfig.DEBUG) {
+                val isMockServer = servers.keys.contains(MockConfig.ServerApi)
+                binding.topAppBar.menu.findItem(R.id.debug_mode).isVisible = !isMockServer
+                binding.topAppBar.menu.findItem(R.id.mock_mode).isVisible = isMockServer
+            } else {
+                binding.topAppBar.menu.findItem(R.id.debug_mode).isVisible = false
+                binding.topAppBar.menu.findItem(R.id.mock_mode).isVisible = false
+            }
 
             if (unreachable.isNotEmpty()) {
                 unreachableServersRef.set(unreachable)

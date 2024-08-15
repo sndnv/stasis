@@ -25,6 +25,7 @@ import stasis.client_android.activities.helpers.Common.asString
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsDate
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsTime
+import stasis.client_android.lib.api.clients.exceptions.ResourceMissingFailure
 import stasis.client_android.lib.security.exceptions.InvalidUserCredentials
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
@@ -112,7 +113,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                                                 result.exception.message
                                             )
                                         },
-                                        Toast.LENGTH_SHORT
+                                        Toast.LENGTH_LONG
                                     ).show()
                                 }
                             }
@@ -158,7 +159,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                                                 result.exception.message
                                             )
                                         },
-                                        Toast.LENGTH_SHORT
+                                        Toast.LENGTH_LONG
                                     ).show()
                                 }
                             }
@@ -186,7 +187,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 }
                 .setPositiveButton(R.string.settings_manage_device_secret_confirm_ok_button_title) { _, _ ->
                     ExportDialogFragment(
-                        secret = preferences.getPlaintextDeviceSecret()?.encodeAsBase64() ?: ""
+                        secret = preferences.getPlaintextDeviceSecret()?.encodeAsBase64().orEmpty()
                     ).show(parentFragmentManager, ExportDialogFragment.DialogTag)
                 }
                 .show()
@@ -226,7 +227,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                                                         result.exception.message
                                                     )
                                                 },
-                                                Toast.LENGTH_SHORT
+                                                Toast.LENGTH_LONG
                                             ).show()
                                         }
                                     }
@@ -251,12 +252,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
             PushDialogFragment(
                 server = providerContext.api.server,
-                pushSecret = { password, f ->
+                pushSecret = { password, remotePassword, f ->
                     credentials.verifyUserPassword(password = password) { isValid ->
                         if (isValid) {
                             credentials.pushDeviceSecret(
                                 api = providerContext.api,
-                                password = password
+                                password = password,
+                                remotePassword = remotePassword
                             ) { result ->
                                 lifecycleScope.launch {
                                     f(result)
@@ -273,7 +275,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                                                 result.exception.message
                                             )
                                         },
-                                        Toast.LENGTH_SHORT
+                                        Toast.LENGTH_LONG
                                     ).show()
                                 }
                             }
@@ -296,12 +298,35 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
             PullDialogFragment(
                 server = providerContext.api.server,
-                pullSecret = { password, f ->
+                secretAvailable = { f ->
+                    credentials.remoteDeviceSecretExists(providerContext.api) { result ->
+                        lifecycleScope.launch {
+                            when (result) {
+                                is Success ->
+                                    f(result.value)
+
+                                is Failure -> {
+                                    f(false)
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(
+                                            R.string.settings_manage_device_secret_pull_unavailable,
+                                            result.exception.message
+                                        ),
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            }
+                        }
+                    }
+                },
+                pullSecret = { password, remotePassword, f ->
                     credentials.verifyUserPassword(password = password) { isValid ->
                         if (isValid) {
                             credentials.pullDeviceSecret(
                                 api = providerContext.api,
-                                password = password
+                                password = password,
+                                remotePassword = remotePassword
                             ) { result ->
                                 lifecycleScope.launch {
                                     f(result)
@@ -315,10 +340,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
                                             is Failure -> context.getString(
                                                 R.string.settings_manage_device_secret_pull_failed,
-                                                result.exception.message
+                                                if (result.exception is ResourceMissingFailure) {
+                                                    context.getString(R.string.settings_manage_device_secret_pull_failed_missing)
+                                                } else {
+                                                    result.exception.message
+                                                }
                                             )
                                         },
-                                        Toast.LENGTH_SHORT
+                                        Toast.LENGTH_LONG
                                     ).show()
                                 }
                             }

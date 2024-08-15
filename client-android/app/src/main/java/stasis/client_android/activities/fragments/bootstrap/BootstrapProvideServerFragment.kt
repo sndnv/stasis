@@ -22,6 +22,10 @@ class BootstrapProvideServerFragment : Fragment() {
             false
         )
 
+        binding.bootstrapProvideServerPreviousButton.setOnClickListener {
+            findNavController().popBackStack()
+        }
+
         binding.bootstrapProvideServerNextButton.setOnClickListener {
             binding.bootstrapProvideServer.validate(withError = R.string.bootstrap_server_error) { bootstrapServerUrl ->
                 findNavController().navigate(

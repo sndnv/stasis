@@ -10,6 +10,7 @@ import okio.Buffer
 import okio.ByteString.Companion.toByteString
 import okio.Source
 import stasis.client_android.lib.api.clients.DefaultServerApiEndpointClient
+import stasis.client_android.lib.api.clients.exceptions.EndpointFailure
 import stasis.client_android.lib.api.clients.exceptions.ResourceMissingFailure
 import stasis.client_android.lib.encryption.secrets.DeviceMetadataSecret
 import stasis.client_android.lib.model.DatasetMetadata
@@ -645,6 +646,50 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
 
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
+            actualRequest.path shouldBe ("/v1/devices/own/${apiClient.self}/key")
+        }
+
+        "check current device key (existing)" {
+            val api = createServer()
+
+            val apiClient = createClient(api.url("/").toString())
+
+            api.enqueue(MockResponse())
+
+            val actualResponse = apiClient.deviceKeyExists()
+            actualResponse shouldBe (Success(true))
+
+            val actualRequest = api.takeRequest()
+            actualRequest.method shouldBe ("HEAD")
+            actualRequest.path shouldBe ("/v1/devices/own/${apiClient.self}/key")
+        }
+
+        "check current device key (missing)" {
+            val api = createServer()
+
+            val apiClient = createClient(api.url("/").toString())
+
+            api.enqueue(MockResponse().setResponseCode(404))
+
+            val actualResponse = apiClient.deviceKeyExists()
+            actualResponse shouldBe (Success(false))
+
+            val actualRequest = api.takeRequest()
+            actualRequest.method shouldBe ("HEAD")
+            actualRequest.path shouldBe ("/v1/devices/own/${apiClient.self}/key")
+        }
+
+        "handle failures when checking device keys" {
+            val api = createServer()
+
+            val apiClient = createClient(api.url("/").toString())
+
+            api.enqueue(MockResponse().setResponseCode(500))
+
+            shouldThrow<EndpointFailure> { apiClient.deviceKeyExists().get() }
+
+            val actualRequest = api.takeRequest()
+            actualRequest.method shouldBe ("HEAD")
             actualRequest.path shouldBe ("/v1/devices/own/${apiClient.self}/key")
         }
 

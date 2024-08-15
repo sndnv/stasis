@@ -158,6 +158,7 @@ class DefaultCredentialsManagementBridgeSpec {
         runBlocking {
             val result = bridge.pushDeviceSecret(
                 userPassword = userPassword,
+                remotePassword = null,
                 api = api
             )
 
@@ -165,6 +166,7 @@ class DefaultCredentialsManagementBridgeSpec {
 
             assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed], equalTo(1))
             assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled], equalTo(0))
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists], equalTo(0))
 
             assertThat(api.deviceSecret, equalTo(remoteSecret))
         }
@@ -208,17 +210,20 @@ class DefaultCredentialsManagementBridgeSpec {
 
         assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed], equalTo(0))
         assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled], equalTo(0))
+        assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists], equalTo(0))
 
         runBlocking {
             api.pushDeviceKey(remoteSecret)
 
             assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed], equalTo(1))
             assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled], equalTo(0))
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists], equalTo(0))
 
             assertThat(api.deviceSecret, equalTo(remoteSecret))
 
             val result = bridge.pullDeviceSecret(
                 userPassword = userPassword,
+                remotePassword = null,
                 api = api
             )
 
@@ -226,6 +231,7 @@ class DefaultCredentialsManagementBridgeSpec {
 
             assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed], equalTo(1))
             assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled], equalTo(1))
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists], equalTo(0))
 
             verify(exactly = 1) { editor.commit() }
         }
@@ -318,8 +324,11 @@ class DefaultCredentialsManagementBridgeSpec {
         assertThat(bridge.verifyUserPassword(oldUserPassword), equalTo(true))
         assertThat(bridge.verifyUserPassword(newPassword), equalTo(false))
 
+        val api = MockServerApiEndpointClient()
+
         runBlocking {
             val result = bridge.updateUserCredentials(
+                api = api,
                 currentUserPassword = oldUserPassword,
                 newUserPassword = newPassword,
                 newUserSalt = oldSalt
@@ -327,11 +336,62 @@ class DefaultCredentialsManagementBridgeSpec {
 
             assertThat(result.isSuccess, equalTo(true))
 
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed], equalTo(0))
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled], equalTo(0))
+            assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists], equalTo(1))
+
             assertThat(result.get().user, equalTo(user))
             assertThat(result.get().extract().isNotBlank(), equalTo(true))
 
             assertThat(bridge.verifyUserPassword(oldUserPassword), equalTo(false))
             assertThat(bridge.verifyUserPassword(newPassword), equalTo(true))
+
+            verify(exactly = 1) { editor.commit() }
+        }
+    }
+
+    @Test
+    fun reEncryptDeviceSecrets() {
+        val initialSecret = "AYjniRpLv1QH20sZ_j4oSXNnyv1SUVNNYrZc".decodeFromBase64()
+        val updatedSecret = "N8GnydPb-AwAx5Ebf0HR3aJ1lKhk4cdM-ELd"
+
+        val preferences = initPreferences(withSecret = initialSecret)
+
+        val user = UUID.fromString("34df2cbe-3bb8-4b2d-a6ab-c193acb23f54")
+        val device = UUID.fromString("26fc913b-d67c-4174-be56-c125081c3567")
+        val oldSalt = "test-salt"
+        val oldUserPassword = "test-password".toCharArray()
+        val currentUserPassword = "other-password".toCharArray()
+
+        val editor = mockk<SharedPreferences.Editor>(relaxUnitFun = true)
+        every { preferences.edit() } returns editor
+
+        every {
+            editor.putString(
+                ConfigRepository.Companion.Keys.Secrets.EncryptedDeviceSecret,
+                updatedSecret
+            )
+        } returns editor
+
+        every { editor.commit() } returns true
+
+        val bridge = DefaultCredentialsManagementBridge(
+            apiConfig = stasis.client_android.persistence.config.Config.ServerApi(
+                url = "http://localhost:1234",
+                user = user.toString(),
+                userSalt = oldSalt,
+                device = device.toString()
+            ),
+            preferences = preferences
+        )
+
+        runBlocking {
+            val result = bridge.reEncryptDeviceSecret(
+                currentUserPassword = currentUserPassword,
+                oldUserPassword = oldUserPassword,
+            )
+
+            assertThat(result.isSuccess, equalTo(true))
 
             verify(exactly = 1) { editor.commit() }
         }

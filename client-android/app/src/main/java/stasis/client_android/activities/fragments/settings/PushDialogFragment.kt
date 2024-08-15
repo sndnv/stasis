@@ -21,7 +21,7 @@ import stasis.client_android.lib.utils.Try
 
 class PushDialogFragment(
     private val server: String,
-    private val pushSecret: (String, f: (Try<Unit>) -> Unit) -> Unit
+    private val pushSecret: (String, String?, f: (Try<Unit>) -> Unit) -> Unit
 ) : DialogFragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -36,6 +36,12 @@ class PushDialogFragment(
         val passwordConfirmationView =
             view.findViewById<TextInputLayout>(R.id.push_device_secret_password_confirmation)
 
+        val remotePasswordView =
+            view.findViewById<TextInputLayout>(R.id.push_device_secret_remote_password)
+
+        val remotePasswordShowButton =
+            view.findViewById<TextView>(R.id.push_device_secret_show_remote_password)
+
         passwordView.setStartIconOnClickListener {
             MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.settings_manage_device_secret_push_password_hint)
@@ -48,6 +54,18 @@ class PushDialogFragment(
                 .setTitle(R.string.settings_manage_device_secret_push_password_confirmation_hint)
                 .setMessage(getString(R.string.settings_manage_device_secret_push_password_confirmation_hint_extra))
                 .show()
+        }
+
+        remotePasswordView.setStartIconOnClickListener {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.settings_manage_device_secret_push_remote_password_hint)
+                .setMessage(getString(R.string.settings_manage_device_secret_push_remote_password_hint_extra))
+                .show()
+        }
+
+        remotePasswordShowButton.setOnClickListener {
+            remotePasswordView.isVisible = true
+            remotePasswordShowButton.isVisible = false
         }
 
         view.findViewById<TextView>(R.id.push_device_secret_info).text =
@@ -78,15 +96,16 @@ class PushDialogFragment(
             passwordConfirmationView.isErrorEnabled = false
             passwordConfirmationView.error = null
 
-            val password = passwordView.editText?.text?.toString() ?: ""
-            val passwordConfirmation = passwordConfirmationView.editText?.text?.toString() ?: ""
+            val password = passwordView.editText?.text?.toString().orEmpty()
+            val passwordConfirmation = passwordConfirmationView.editText?.text?.toString().orEmpty()
+            val remotePassword = remotePasswordView.editText?.text?.toString()?.ifEmpty { null }
 
             when {
                 password == passwordConfirmation && password.isNotEmpty() -> {
                     confirmButton.isVisible = false
                     inProgress.isVisible = true
 
-                    pushSecret(password) {
+                    pushSecret(password, remotePassword) {
                         if (it is Try.Failure && it.exception is InvalidUserCredentials) {
                             passwordView.isErrorEnabled = true
                             passwordView.error =
@@ -118,6 +137,14 @@ class PushDialogFragment(
         }
 
         return view
+    }
+
+    override fun onStart() {
+        super.onStart()
+        dialog?.window?.setLayout(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
     }
 
     companion object {

@@ -48,6 +48,7 @@ interface ServerApiEndpointClient {
     suspend fun device(): Try<Device>
     suspend fun pushDeviceKey(key: ByteString): Try<Unit>
     suspend fun pullDeviceKey(): Try<ByteString>
+    suspend fun deviceKeyExists(): Try<Boolean>
 
     suspend fun ping(): Try<Ping>
 }

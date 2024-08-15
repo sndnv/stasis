@@ -51,6 +51,7 @@ open class MockServerApiEndpointClient(
         Statistic.DeviceRetrieved to AtomicInteger(0),
         Statistic.DeviceKeyPushed to AtomicInteger(0),
         Statistic.DeviceKeyPulled to AtomicInteger(0),
+        Statistic.DeviceKeyExists to AtomicInteger(0),
         Statistic.Ping to AtomicInteger(0)
     )
 
@@ -150,6 +151,11 @@ open class MockServerApiEndpointClient(
         }
     }
 
+    override suspend fun deviceKeyExists(): Try<Boolean> {
+        stats[Statistic.DeviceKeyExists]?.getAndIncrement()
+        return Success(false)
+    }
+
     override suspend fun ping(): Try<Ping> {
         stats[Statistic.Ping]?.getAndIncrement()
         return Success(Ping(id = UUID.randomUUID()))
@@ -179,6 +185,7 @@ open class MockServerApiEndpointClient(
         object DeviceRetrieved : Statistic()
         object DeviceKeyPushed : Statistic()
         object DeviceKeyPulled : Statistic()
+        object DeviceKeyExists : Statistic()
         object Ping : Statistic()
     }
 

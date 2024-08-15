@@ -101,6 +101,13 @@ class DefaultBackupTracker(
         )
     )
 
+    override fun entitySkipped(operation: OperationId, entity: Path) = send(
+        event = BackupEvent.EntitySkipped(
+            operation = operation,
+            entity = entity
+        )
+    )
+
     override fun entityCollected(operation: OperationId, entity: SourceEntity) = send(
         event = BackupEvent.EntityCollected(
             operation = operation,
@@ -214,6 +221,7 @@ class DefaultBackupTracker(
                         is BackupEvent.EntityDiscovered -> existing.entityDiscovered(event.entity)
                         is BackupEvent.SpecificationProcessed -> existing.specificationProcessed(event.unmatched)
                         is BackupEvent.EntityExamined -> existing.entityExamined(event.entity)
+                        is BackupEvent.EntitySkipped -> existing.entitySkipped(event.entity)
                         is BackupEvent.EntityCollected -> existing.entityCollected(event.entity)
                         is BackupEvent.EntityProcessingStarted -> existing.entityProcessingStarted(
                             event.entity,
@@ -330,6 +338,11 @@ class DefaultBackupTracker(
         ) : BackupEvent()
 
         data class EntityExamined(
+            override val operation: OperationId,
+            val entity: Path
+        ) : BackupEvent()
+
+        data class EntitySkipped(
             override val operation: OperationId,
             val entity: Path
         ) : BackupEvent()

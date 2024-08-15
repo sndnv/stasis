@@ -57,6 +57,7 @@ class DefaultBackupTrackerSpec {
         tracker.specificationProcessed(operation, unmatched = emptyList())
         tracker.entityExamined(operation, entity = file1)
         tracker.entityExamined(operation, entity = file2)
+        tracker.entitySkipped(operation, entity = file2)
         tracker.entityCollected(operation, entity = sourceEntity)
         tracker.entityProcessingStarted(operation, entity = file2, expectedParts = 3)
         tracker.entityPartProcessed(operation, entity = file2)
@@ -76,6 +77,7 @@ class DefaultBackupTrackerSpec {
                 assertThat(completedState.entities.discovered.size, equalTo(2))
                 assertThat(completedState.entities.unmatched.size, equalTo(0))
                 assertThat(completedState.entities.examined.size, equalTo(2))
+                assertThat(completedState.entities.skipped.size, equalTo(1))
                 assertThat(completedState.entities.collected.size, equalTo(1))
                 assertThat(completedState.entities.pending.size, equalTo(1))
                 assertThat(completedState.entities.processed.size, equalTo(1))
@@ -165,10 +167,12 @@ class DefaultBackupTrackerSpec {
         runBlocking {
             tracker.started(operation, definition = UUID.randomUUID())
             tracker.entityExamined(operation, entity = file)
+            tracker.entitySkipped(operation, entity = file)
 
             eventually {
                 val operationStateExamined = tracker.updates(operation).await()
                 assertThat(operationStateExamined.entities.examined.size, equalTo(1))
+                assertThat(operationStateExamined.entities.skipped.size, equalTo(1))
                 assertThat(operationStateExamined.completed, equalTo(null))
             }
 
@@ -180,6 +184,7 @@ class DefaultBackupTrackerSpec {
             eventually {
                 val operationStateCompleted = tracker.updates(operation).await()
                 assertThat(operationStateCompleted.entities.examined.size, equalTo(1))
+                assertThat(operationStateCompleted.entities.skipped.size, equalTo(1))
                 assertThat(operationStateCompleted.completed, not(equalTo(null)))
             }
         }

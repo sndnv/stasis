@@ -191,6 +191,7 @@ class CredentialsProvider(
     ) {
         coroutineScope.launch {
             val result = bridge.updateUserCredentials(
+                api = api,
                 currentUserPassword = currentPassword.toCharArray(),
                 newUserPassword = newPassword.toCharArray(),
                 newUserSalt = newSalt
@@ -219,24 +220,62 @@ class CredentialsProvider(
     fun pushDeviceSecret(
         api: ServerApiEndpointClient,
         password: String,
+        remotePassword: String?,
         f: (Try<Unit>) -> Unit
     ) {
         coroutineScope.launch {
-            f(bridge.pushDeviceSecret(api, password.toCharArray()))
+            f(
+                bridge.pushDeviceSecret(
+                    api = api,
+                    userPassword = password.toCharArray(),
+                    remotePassword = remotePassword?.toCharArray()
+                )
+            )
         }
     }
 
     fun pullDeviceSecret(
         api: ServerApiEndpointClient,
         password: String,
+        remotePassword: String?,
         f: (Try<Unit>) -> Unit
     ) {
         coroutineScope.launch {
-            val deviceSecretResult = bridge.pullDeviceSecret(api, password.toCharArray())
+            val deviceSecretResult = bridge.pullDeviceSecret(
+                api = api,
+                userPassword = password.toCharArray(),
+                remotePassword = remotePassword?.toCharArray()
+            )
             if (deviceSecretResult.isSuccess) {
                 latestDeviceSecret.set(deviceSecretResult)
             }
             f(deviceSecretResult.map { })
+        }
+    }
+
+    fun reEncryptDeviceSecret(
+        currentPassword: String,
+        oldPassword: String,
+        f: (Try<Unit>) -> Unit
+    ) {
+        coroutineScope.launch {
+            f(
+                bridge.reEncryptDeviceSecret(
+                    currentUserPassword = currentPassword.toCharArray(),
+                    oldUserPassword = oldPassword.toCharArray()
+                )
+            )
+        }
+    }
+
+    fun remoteDeviceSecretExists(
+        api: ServerApiEndpointClient,
+        f: (Try<Boolean>) -> Unit
+    ) {
+        coroutineScope.launch {
+            f(
+                api.deviceKeyExists()
+            )
         }
     }
 

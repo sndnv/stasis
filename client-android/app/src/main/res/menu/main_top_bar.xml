@@ -2,6 +2,20 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/debug_mode"
+        android:contentDescription="@string/debug_mode_button_hint"
+        android:icon="@drawable/ic_debug"
+        android:title="@string/debug_mode_button_hint"
+        android:visible="false"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/mock_mode"
+        android:contentDescription="@string/mock_mode_button_hint"
+        android:icon="@drawable/ic_mock"
+        android:title="@string/mock_mode_button_hint"
+        android:visible="false"
+        app:showAsAction="always" />
+    <item
         android:id="@+id/unreachable_servers"
         android:contentDescription="@string/unreachable_servers_button_hint"
         android:icon="@drawable/ic_warning"

@@ -53,10 +53,10 @@ class UpdatePasswordFragment(
             newPasswordConfirmationView.isErrorEnabled = false
             newPasswordConfirmationView.error = null
 
-            val currentPassword = currentPasswordView.editText?.text?.toString() ?: ""
-            val currentPasswordConfirmation = currentPasswordConfirmationView.editText?.text?.toString() ?: ""
-            val newPassword = newPasswordView.editText?.text?.toString() ?: ""
-            val newPasswordConfirmation = newPasswordConfirmationView.editText?.text?.toString() ?: ""
+            val currentPassword = currentPasswordView.editText?.text?.toString().orEmpty()
+            val currentPasswordConfirmation = currentPasswordConfirmationView.editText?.text?.toString().orEmpty()
+            val newPassword = newPasswordView.editText?.text?.toString().orEmpty()
+            val newPasswordConfirmation = newPasswordConfirmationView.editText?.text?.toString().orEmpty()
 
             val currentPasswordsMatch = currentPassword == currentPasswordConfirmation
             val newPasswordsMatch = newPassword == newPasswordConfirmation
@@ -123,6 +123,14 @@ class UpdatePasswordFragment(
         }
 
         return view
+    }
+
+    override fun onStart() {
+        super.onStart()
+        dialog?.window?.setLayout(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
     }
 
     companion object {

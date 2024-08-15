@@ -28,7 +28,7 @@ class WelcomeFragment : Fragment() {
         val directions = when {
             config.available && credentials.available -> WelcomeFragmentDirections.actionWelcomeFragmentToMainActivity()
             config.available -> WelcomeFragmentDirections.actionWelcomeFragmentToLoginFragment()
-            else -> WelcomeFragmentDirections.actionWelcomeFragmentToBootstrapProvideServerFragment()
+            else -> WelcomeFragmentDirections.actionWelcomeFragmentToBootstrapIntroFragment()
         }
 
         findNavController().navigate(directions)

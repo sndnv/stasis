@@ -15,6 +15,7 @@ interface BackupTracker {
     fun entityDiscovered(operation: OperationId, entity: Path)
     fun specificationProcessed(operation: OperationId, unmatched: List<Pair<Rule, Throwable>>)
     fun entityExamined(operation: OperationId, entity: Path)
+    fun entitySkipped(operation: OperationId, entity: Path)
     fun entityCollected(operation: OperationId, entity: SourceEntity)
     fun entityProcessingStarted(operation: OperationId, entity: Path, expectedParts: Int)
     fun entityPartProcessed(operation: OperationId, entity: Path)

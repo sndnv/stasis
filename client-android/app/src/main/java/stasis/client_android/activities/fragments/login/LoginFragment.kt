@@ -8,12 +8,18 @@ import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import stasis.client_android.R
 import stasis.client_android.databinding.FragmentLoginBinding
+import stasis.client_android.lib.api.clients.DefaultServerApiEndpointClient
 import stasis.client_android.lib.api.clients.exceptions.AccessDeniedFailure
+import stasis.client_android.lib.encryption.Aes
+import stasis.client_android.lib.security.HttpCredentials
+import stasis.client_android.lib.security.exceptions.InvalidUserCredentials
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
 import stasis.client_android.persistence.config.ConfigRepository
@@ -51,8 +57,8 @@ class LoginFragment : Fragment() {
         binding.loginSaveUsername.isChecked = savedUsername != null
 
         binding.loginButton.setOnClickListener {
-            val username = binding.loginUsername.editText?.text?.toString()?.trim() ?: ""
-            val password = binding.loginPassword.editText?.text?.toString()?.trim() ?: ""
+            val username = binding.loginUsername.editText?.text?.toString()?.trim().orEmpty()
+            val password = binding.loginPassword.editText?.text?.toString().orEmpty()
 
             if (username.isEmpty()) {
                 binding.loginUsername.isErrorEnabled = true
@@ -120,8 +126,43 @@ class LoginFragment : Fragment() {
                         }
                     }
                 }
-
             }
+        }
+
+        binding.loginMoreOptionsButton.setOnClickListener {
+            MoreOptionsDialogFragment(
+                reEncryptDeviceSecret = { currentPassword, oldPassword, f ->
+                    credentials.reEncryptDeviceSecret(
+                        currentPassword = currentPassword,
+                        oldPassword = oldPassword
+                    ) { result ->
+                        when {
+                            result is Failure && result.exception is AEADBadTagException -> lifecycleScope.launch {
+                                f(Failure(InvalidUserCredentials()))
+                            }
+
+                            else -> {
+                                f(result)
+
+                                lifecycleScope.launch {
+                                    Toast.makeText(
+                                        context,
+                                        when (result) {
+                                            is Success -> getString(R.string.login_reencrypt_secret_successful)
+                                            is Failure -> getString(
+                                                R.string.login_reencrypt_secret_failed,
+                                                result.exception.message
+                                            )
+                                        },
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            }
+                        }
+                    }
+                }
+            )
+                .show(parentFragmentManager, MoreOptionsDialogFragment.DialogTag)
         }
 
         return binding.root

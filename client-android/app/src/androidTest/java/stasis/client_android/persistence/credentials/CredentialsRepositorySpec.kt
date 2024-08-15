@@ -337,6 +337,7 @@ class CredentialsRepositorySpec {
             repo.pushDeviceSecret(
                 api = MockServerApiEndpointClient(),
                 password = "password",
+                remotePassword = null,
             ) { result ->
                 callbackSuccessful.set(result.isSuccess)
             }
@@ -364,6 +365,7 @@ class CredentialsRepositorySpec {
             repo.pushDeviceSecret(
                 api = MockServerApiEndpointClient(),
                 password = "password",
+                remotePassword = null,
             ) { result ->
                 pushResult.set(result)
             }
@@ -399,6 +401,7 @@ class CredentialsRepositorySpec {
             repo.pullDeviceSecret(
                 api = MockServerApiEndpointClient(),
                 password = "password",
+                remotePassword = null,
             ) { result ->
                 callbackSuccessful.set(result.isSuccess)
             }
@@ -426,6 +429,7 @@ class CredentialsRepositorySpec {
             repo.pullDeviceSecret(
                 api = MockServerApiEndpointClient(),
                 password = "password",
+                remotePassword = null,
             ) { result ->
                 pullResult.set(result)
             }
@@ -434,6 +438,129 @@ class CredentialsRepositorySpec {
                 eventually {
                     assertThat(
                         pullResult.get()?.failure()?.message ?: "<missing>",
+                        equalTo("Client not configured")
+                    )
+                }
+            }
+        }
+    }
+
+    @Test
+    fun supportReEncryptingDeviceSecret() {
+        withSharedPreferences { preferences ->
+            val reEncryptedSecret = AtomicBoolean(false)
+            val callbackSuccessful = AtomicBoolean(false)
+
+            val repo = CredentialsRepository(
+                configPreferences = preferences,
+                credentialsPreferences = preferences,
+                contextFactory = createContextFactory(
+                    reEncryptDeviceSecret = { _, _ ->
+                        reEncryptedSecret.set(true)
+                        Success(Unit)
+                    }
+                )
+            )
+
+            repo.reEncryptDeviceSecret(
+                currentPassword = "password",
+                oldPassword = "other-password",
+            ) { result ->
+                callbackSuccessful.set(result.isSuccess)
+            }
+
+            runBlocking {
+                eventually {
+                    assertThat(reEncryptedSecret.get(), equalTo(true))
+                    assertThat(callbackSuccessful.get(), equalTo(true))
+                }
+            }
+        }
+    }
+
+    @Test
+    fun notReEncryptDeviceSecretWhenNotConfigured() {
+        withSharedPreferences { preferences ->
+            val reEncryptionResult = AtomicReference<Try<Unit>?>(null)
+
+            val repo = CredentialsRepository(
+                configPreferences = preferences,
+                credentialsPreferences = preferences,
+                contextFactory = createContextFactory(provideConfig = false)
+            )
+
+            repo.reEncryptDeviceSecret(
+                currentPassword = "password",
+                oldPassword = "other-password",
+            ) { result ->
+                reEncryptionResult.set(result)
+            }
+
+            runBlocking {
+                eventually {
+                    assertThat(
+                        reEncryptionResult.get()?.failure()?.message ?: "<missing>",
+                        equalTo("Client not configured")
+                    )
+                }
+            }
+        }
+    }
+
+    @Test
+    fun supportCheckingIfRemoteDeviceSecretExists() {
+        withSharedPreferences { preferences ->
+            val callbackSuccessful = AtomicBoolean(false)
+
+            val repo = CredentialsRepository(
+                configPreferences = preferences,
+                credentialsPreferences = preferences,
+                contextFactory = createContextFactory()
+            )
+
+            val api = MockServerApiEndpointClient()
+
+            repo.remoteDeviceSecretExists(
+                api = api,
+            ) { result ->
+                callbackSuccessful.set(result.isSuccess)
+            }
+
+            runBlocking {
+                eventually {
+                    assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists], equalTo(1))
+                    assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled], equalTo(0))
+                    assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed], equalTo(0))
+                    assertThat(callbackSuccessful.get(), equalTo(true))
+                }
+            }
+        }
+    }
+
+    @Test
+    fun notCheckIfRemoteDeviceSecretExistsWhenNotConfigured() {
+        withSharedPreferences { preferences ->
+            val checkResult = AtomicReference<Try<Boolean>?>(null)
+
+            val repo = CredentialsRepository(
+                configPreferences = preferences,
+                credentialsPreferences = preferences,
+                contextFactory = createContextFactory(provideConfig = false)
+            )
+
+            val api = MockServerApiEndpointClient()
+
+            repo.remoteDeviceSecretExists(api = api) { result ->
+                assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists], equalTo(0))
+                assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled], equalTo(0))
+                assertThat(api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed], equalTo(0))
+                checkResult.set(result)
+            }
+
+            runBlocking {
+                eventually {
+                    assertThat(
+                        checkResult.get()?.failure()?.message ?: "<missing>",
                         equalTo("Client not configured")
                     )
                 }
@@ -474,7 +601,8 @@ class CredentialsRepositorySpec {
         },
         storeDeviceSecret: suspend (ByteString, CharArray) -> Try<DeviceSecret> = { _, _ -> Success(Fixtures.Secrets.Default) },
         pushDeviceSecret: suspend (ServerApiEndpointClient, CharArray) -> Try<Unit> = { _, _ -> Success(Unit) },
-        pullDeviceSecret: suspend (ServerApiEndpointClient, CharArray) -> Try<DeviceSecret> = { _, _ -> Success(Fixtures.Secrets.Default) }
+        pullDeviceSecret: suspend (ServerApiEndpointClient, CharArray) -> Try<DeviceSecret> = { _, _ -> Success(Fixtures.Secrets.Default) },
+        reEncryptDeviceSecret: suspend (CharArray, CharArray) -> Try<Unit> = { _, _ -> Success(Unit) }
     ): ProviderContext.Factory =
         object : ProviderContext.Factory {
             override fun getOrCreate(preferences: SharedPreferences): Reference<ProviderContext> =
@@ -514,6 +642,7 @@ class CredentialsRepositorySpec {
                                         verifyUserPassword(userPassword)
 
                                     override suspend fun updateUserCredentials(
+                                        api: ServerApiEndpointClient,
                                         currentUserPassword: CharArray,
                                         newUserPassword: CharArray,
                                         newUserSalt: String?
@@ -527,13 +656,20 @@ class CredentialsRepositorySpec {
 
                                     override suspend fun pushDeviceSecret(
                                         api: ServerApiEndpointClient,
-                                        userPassword: CharArray
+                                        userPassword: CharArray,
+                                        remotePassword: CharArray?
                                     ): Try<Unit> = pushDeviceSecret(api, userPassword)
 
                                     override suspend fun pullDeviceSecret(
                                         api: ServerApiEndpointClient,
-                                        userPassword: CharArray
+                                        userPassword: CharArray,
+                                        remotePassword: CharArray?
                                     ): Try<DeviceSecret> = pullDeviceSecret(api, userPassword)
+
+                                    override suspend fun reEncryptDeviceSecret(
+                                        currentUserPassword: CharArray,
+                                        oldUserPassword: CharArray
+                                    ): Try<Unit> = reEncryptDeviceSecret(currentUserPassword, oldUserPassword)
                                 },
                                 coroutineScope = CoroutineScope(Dispatchers.IO)
                             ),

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/login_more_options_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawablePadding="4dp"
+            android:padding="16dp"
+            android:text="@string/login_more_options_title"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            app:drawableStartCompat="@drawable/ic_settings" />
+
+        <LinearLayout
+            android:id="@+id/login_reencrypt_secret"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/login_reencrypt_secret_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/login_reencrypt_secret_title"
+                android:textAppearance="?attr/textAppearanceListItem" />
+
+            <TextView
+                android:id="@+id/login_reencrypt_secret_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/login_reencrypt_secret_content"
+                android:textAppearance="?attr/textAppearanceListItemSecondary" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/login_bootstrap"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/login_bootstrap_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/login_bootstrap_title"
+                android:textAppearance="?attr/textAppearanceListItem" />
+
+            <TextView
+                android:id="@+id/login_bootstrap_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/login_bootstrap_content"
+                android:textAppearance="?attr/textAppearanceListItemSecondary" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/login_reset_password"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/login_reset_password_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:enabled="false"
+                android:text="@string/login_reset_password_title"
+                android:textAppearance="?attr/textAppearanceListItem" />
+
+            <TextView
+                android:id="@+id/login_reset_password_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:enabled="false"
+                android:text="@string/login_reset_password_content"
+                android:textAppearance="?attr/textAppearanceListItemSecondary" />
+
+        </LinearLayout>
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/login_more_options_cancel"
+        style="?attr/materialButtonOutlinedStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_gravity="center"
+        android:layout_marginBottom="8dp"
+        android:text="@string/login_more_options_cancel_button_title" />
+</RelativeLayout>

@@ -217,6 +217,21 @@ class DefaultServerApiEndpointClient(
             }
         }
 
+    override suspend fun deviceKeyExists(): Try<Boolean> =
+        Try {
+            request { builder ->
+                builder
+                    .url("$server/v1/devices/own/$self/key")
+                    .head()
+            }.successful()
+        }.map { true }.recoverWith {
+            when (it) {
+                is ResourceMissingFailure -> Success(false)
+                else -> Failure(it)
+            }
+        }
+
+
     override suspend fun ping(): Try<Ping> =
         jsonRequest { builder ->
             builder

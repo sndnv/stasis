@@ -58,6 +58,14 @@
     <string name="navigation_subtitle_settings">Settings</string>
     <string name="navigation_subtitle_about">About</string>
 
+    <!-- Debug/Mock Mode -->
+    <string name="debug_mode_button_hint">Debug Mode Enabled</string>
+    <string name="debug_mode_dialog_title">Debug Mode Enabled</string>
+    <string name="debug_mode_dialog_content">The application is running in debug mode and is connected to a server.</string>
+    <string name="mock_mode_button_hint">Mock Mode Enabled</string>
+    <string name="mock_mode_dialog_title">Mock Mode Enabled</string>
+    <string name="mock_mode_dialog_content">The application is running in mock mode; there is no connection to a server and many features will not work as expected.</string>
+
     <!-- Unreachable Servers -->
     <string name="unreachable_servers_button_hint">Unreachable Servers</string>
     <string name="unreachable_servers_dialog_title">Unreachable Servers</string>
@@ -132,10 +140,19 @@
 
     <!-- Bootstrap -->
     <string name="bootstrap_logo">Application logo</string>
+    <string name="bootstrap_intro_title">Device Bootstrap</string>
+    <string name="bootstrap_intro_content">The application will now guide you through the steps necessary to (re-)initialize this device.</string>
+    <string name="bootstrap_intro_next_button">Next</string>
+    <string name="bootstrap_provide_server_step">1/5</string>
+    <string name="bootstrap_provide_username_step">2/5</string>
+    <string name="bootstrap_provide_password_step">3/5</string>
+    <string name="bootstrap_provide_secret_step">4/5</string>
+    <string name="bootstrap_provide_code_step">5/5</string>
     <string name="bootstrap_server_prefix">https://</string>
     <string name="bootstrap_server_hint">Bootstrap Server URL</string>
     <string name="bootstrap_server_hint_extra">Make sure you are entering the URL of a trusted server and that it is entered exactly as shown by that server.</string>
     <string name="bootstrap_server_error">Server cannot be empty</string>
+    <string name="bootstrap_server_previous_button">Back</string>
     <string name="bootstrap_server_next_button">Next</string>
     <string name="bootstrap_username_hint">User</string>
     <string name="bootstrap_username_hint_extra">User name (for connection to the server, when pulling secrets).</string>
@@ -148,8 +165,23 @@
     <string name="bootstrap_password_verify_hint">Verify Password</string>
     <string name="bootstrap_password_verify_hint_extra">Your password is never stored, sent to the server or shared with other services.</string>
     <string name="bootstrap_password_verify_error">Passwords do not match</string>
+    <string name="bootstrap_secret_pull_allowed_hint">Download device secret</string>
+    <string name="bootstrap_secret_pull_allowed_hint_extra">If this device has its secret stored on the server, it will be downloaded during bootstrap.</string>
+    <string name="bootstrap_secret_pull_allowed_hint_pattern">%1$s\n%2$s</string>
+    <string name="bootstrap_secret_overwrite_existing_hint">Overwrite device secret</string>
+    <string name="bootstrap_secret_overwrite_existing_hint_extra">The secret currently stored on the device will be overwritten. Any data encrypted with the current secret may become inaccessible!</string>
+    <string name="bootstrap_secret_overwrite_existing_hint_pattern">%1$s\n%2$s</string>
+    <string name="bootstrap_secret_show_remote_password_hint">Override remote password</string>
+    <string name="bootstrap_secret_show_remote_password_hint_extra">Provide a different password for decrypting the downloaded secret.</string>
+    <string name="bootstrap_secret_show_remote_password_hint_pattern">%1$s\n%2$s</string>
+    <string name="bootstrap_remote_password_hint">Remote Password</string>
+    <string name="bootstrap_remote_password_hint_extra">If the device secret stored on the server was encrypted with a different password, it can be provided here. Otherwise, the current user password will be used for the decryption.</string>
+    <string name="bootstrap_remote_password_verify_hint">Verify Password</string>
+    <string name="bootstrap_remote_password_verify_hint_extra">Your password is never stored, sent to the server or shared with other services.</string>
     <string name="bootstrap_password_previous_button">Back</string>
     <string name="bootstrap_password_next_button">Next</string>
+    <string name="bootstrap_secret_previous_button">Back</string>
+    <string name="bootstrap_secret_next_button">Next</string>
     <string name="bootstrap_code_hint">Bootstrap Code</string>
     <string name="bootstrap_code_hint_extra">This code is required for securely initializing the device and should be entered exactly as shown by the server.</string>
     <string name="bootstrap_code_error">Code cannot be empty</string>
@@ -171,10 +203,29 @@
     <string name="login_save_username">Remember me</string>
     <string name="login_successful">Login successful</string>
     <string name="login_button">Login</string>
+    <string name="login_more_options_button"><u>More options</u></string>
     <string name="login_failed_dismiss">OK</string>
     <string name="login_failed_title">Login Failed</string>
     <string name="login_failed_details">%1$s</string>
     <string name="login_failed_invalid_credentials">Invalid user and/or password provided</string>
+    <string name="login_more_options_title">More options</string>
+    <string name="login_reencrypt_secret_title">Re-encrypt device secret</string>
+    <string name="login_reencrypt_secret_content">If your password was changed on a different device, this allows decrypting the secret of this device using the old password and re-encrypting it using the new one.</string>
+    <string name="login_reencrypt_secret_current_password_hint">Current Password</string>
+    <string name="login_reencrypt_secret_current_password_confirmation_hint">Confirm Password</string>
+    <string name="login_reencrypt_secret_old_password_hint">Old Password</string>
+    <string name="login_reencrypt_secret_cancel_button_title">Cancel</string>
+    <string name="login_reencrypt_secret_ok_button_title">Update</string>
+    <string name="login_reencrypt_secret_empty_password">A password needs to be provided</string>
+    <string name="login_reencrypt_secret_mismatched_passwords">The provided passwords do not match</string>
+    <string name="login_reencrypt_secret_invalid_old_password">The provided password is not valid</string>
+    <string name="login_reencrypt_secret_successful">Device secret successfully re-encrypted</string>
+    <string name="login_reencrypt_secret_failed">Device secret re-encryption failed with: %1$s</string>
+    <string name="login_bootstrap_title">Re-initialize device</string>
+    <string name="login_bootstrap_content">Allows re-running the bootstrap process for this device.</string>
+    <string name="login_reset_password_title">Reset user password</string>
+    <string name="login_reset_password_content">You can reset your password after logging in or, if that\'s not possible, contact your system administrator.</string>
+    <string name="login_more_options_cancel_button_title">Close</string>
 
     <!-- Welcome -->
     <string name="welcome_message">Welcome</string>
@@ -375,6 +426,7 @@
     <!-- Operation Stages/Steps -->
     <string name="operation_stage_discovered">Discovered</string>
     <string name="operation_stage_examined">Examined</string>
+    <string name="operation_stage_skipped">Skipped</string>
     <string name="operation_stage_collected">Collected</string>
     <string name="operation_stage_pending">Pending</string>
     <string name="operation_stage_processed">Processed</string>
@@ -494,7 +546,7 @@
     <string name="settings_manage_device_secret_remotely_push_title">Push secret</string>
     <string name="settings_manage_device_secret_remotely_push_summary">Pushes the current device secret to the server</string>
     <string name="settings_manage_device_secret_remotely_pull_title">Pull secret</string>
-    <string name="settings_manage_device_secret_remotely_pull_summary">Pulls a device secret from the server, if any is available</string>
+    <string name="settings_manage_device_secret_remotely_pull_summary">Pulls a device secret from the server, if available</string>
     <string name="settings_manage_device_secret_locally_export_title">Export secret</string>
     <string name="settings_manage_device_secret_locally_export_summary">(Advanced) Allows manually exporting the current device secret</string>
     <string name="settings_manage_device_secret_locally_import_title">Import secret</string>
@@ -549,30 +601,37 @@
     <string name="settings_manage_device_secret_push_confirm_title">Push device secret</string>
     <string name="settings_manage_device_secret_push_confirm_text">The device secret will be pushed to server %1$s.\n\n%2$s</string>
     <string name="settings_manage_device_secret_push_confirm_text_note">The secret is always encrypted locally before being sent.</string>
-    <string name="settings_manage_device_secret_push_in_progress">Pushing device secret to server…</string>
     <string name="settings_manage_device_secret_push_successful">Device secret pushed</string>
     <string name="settings_manage_device_secret_push_password_hint">User Password</string>
     <string name="settings_manage_device_secret_push_password_hint_extra">This password is required for encrypting the device secret. Your password is never stored, sent to the server or shared with other services.</string>
     <string name="settings_manage_device_secret_push_password_confirmation_hint">Confirm Password</string>
     <string name="settings_manage_device_secret_push_password_confirmation_hint_extra">Confirming your password ensures that the pushed device secret is correctly encrypted.</string>
+    <string name="settings_manage_device_secret_push_remote_password_hint">Remote Password (optional)</string>
+    <string name="settings_manage_device_secret_push_remote_password_hint_extra">Password override if the remote secret should have a different password.</string>
+    <string name="settings_manage_device_secret_push_show_remote_password_button_title"><u>Use different remote password…</u></string>
     <string name="settings_manage_device_secret_push_empty_password">A password needs to be provided</string>
     <string name="settings_manage_device_secret_push_mismatched_passwords">The provided passwords do not match</string>
     <string name="settings_manage_device_secret_push_invalid_current_password">The provided password is not valid</string>
     <string name="settings_manage_device_secret_push_failed">Device secret push failed with: %1$s</string>
     <string name="settings_manage_device_secret_pull_confirm_title">Pull device secret</string>
-    <string name="settings_manage_device_secret_pull_confirm_text">The device secret will be pulled from server %1$s.\n\n%2$s: %3$s</string>
+    <string name="settings_manage_device_secret_pull_info_text">The device secret will be pulled from server %1$s.\n\n%2$s: %3$s</string>
+    <string name="settings_manage_device_secret_pull_unavailable_info_text">No device secret found on server %1$s.</string>
     <string name="settings_manage_device_secret_pull_confirm_text_warning">Warning</string>
     <string name="settings_manage_device_secret_pull_confirm_text_note">The secret currently stored on the device will be overwritten. Any data encrypted with the current secret will no longer be accessible!</string>
-    <string name="settings_manage_device_secret_pull_in_progress">Pulling device secret from server…</string>
     <string name="settings_manage_device_secret_pull_successful">Device secret pulled</string>
     <string name="settings_manage_device_secret_pull_empty_password">A password needs to be provided</string>
     <string name="settings_manage_device_secret_pull_mismatched_passwords">The provided passwords do not match</string>
     <string name="settings_manage_device_secret_pull_invalid_current_password">The provided password is not valid</string>
     <string name="settings_manage_device_secret_pull_failed">Device secret pull failed with: %1$s</string>
+    <string name="settings_manage_device_secret_pull_failed_missing">Secret not found</string>
+    <string name="settings_manage_device_secret_pull_unavailable">Failed to retrieve remote device secret status: %1$s</string>
     <string name="settings_manage_device_secret_pull_password_hint">User Password</string>
     <string name="settings_manage_device_secret_pull_password_hint_extra">This password is required for decrypting the device secret. Your password is never stored, sent to the server or shared with other services.</string>
     <string name="settings_manage_device_secret_pull_password_confirmation_hint">Confirm Password</string>
     <string name="settings_manage_device_secret_pull_password_confirmation_hint_extra">Confirming your password ensures that the pushed device secret is correctly encrypted.</string>
+    <string name="settings_manage_device_secret_pull_remote_password_hint">Remote Password (optional)</string>
+    <string name="settings_manage_device_secret_pull_remote_password_hint_extra">Password override if the remote secret has a different password.</string>
+    <string name="settings_manage_device_secret_pull_show_remote_password_button_title"><u>Use different remote password…</u></string>
     <string name="settings_scheduling_enabled_title">Enable operation scheduling</string>
     <string name="settings_ping_interval_title">Server ping interval</string>
     <string name="settings_reset_config_title">Reset configuration</string>

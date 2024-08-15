@@ -609,7 +609,8 @@ class CredentialsProviderSpec : WordSpec({
                 ) {
                     override suspend fun pushDeviceSecret(
                         api: ServerApiEndpointClient,
-                        userPassword: CharArray
+                        userPassword: CharArray,
+                        remotePassword: CharArray?
                     ): Try<Unit> {
                         secretPushed.set(true)
                         return Success(Unit)
@@ -621,7 +622,9 @@ class CredentialsProviderSpec : WordSpec({
 
             provider.pushDeviceSecret(
                 api = MockServerApiEndpointClient(),
-                password = "test-password"
+
+                password = "test-password",
+                remotePassword = null
             ) {
                 callbackSuccessful.set(it.isSuccess)
             }
@@ -654,7 +657,8 @@ class CredentialsProviderSpec : WordSpec({
                 ) {
                     override suspend fun pullDeviceSecret(
                         api: ServerApiEndpointClient,
-                        userPassword: CharArray
+                        userPassword: CharArray,
+                        remotePassword: CharArray?
                     ): Try<DeviceSecret> {
                         secretPulled.set(true)
                         return Success(secret)
@@ -671,7 +675,8 @@ class CredentialsProviderSpec : WordSpec({
 
             provider.pullDeviceSecret(
                 api = MockServerApiEndpointClient(),
-                password = "test-password"
+                password = "test-password",
+                remotePassword = null
             ) {
                 callbackSuccessful.set(it.isSuccess)
             }
@@ -705,7 +710,8 @@ class CredentialsProviderSpec : WordSpec({
                 ) {
                     override suspend fun pullDeviceSecret(
                         api: ServerApiEndpointClient,
-                        userPassword: CharArray
+                        userPassword: CharArray,
+                        remotePassword: CharArray?
                     ): Try<DeviceSecret> {
                         secretPulled.set(true)
                         return Failure(RuntimeException("Test failure"))
@@ -722,7 +728,8 @@ class CredentialsProviderSpec : WordSpec({
 
             provider.pullDeviceSecret(
                 api = MockServerApiEndpointClient(),
-                password = "test-password"
+                password = "test-password",
+                remotePassword = null
             ) {
                 callbackSuccessful.set(it.isFailure)
             }
@@ -731,6 +738,93 @@ class CredentialsProviderSpec : WordSpec({
                 secretPulled.get() shouldBe (true)
                 callbackSuccessful.get() shouldBe (true)
                 shouldThrow<MissingDeviceSecret> { provider.deviceSecret.get() }
+            }
+        }
+
+        "support re-encrypting the device's secret" {
+            val secretReEncrypted = AtomicBoolean(false)
+            val callbackSuccessful = AtomicBoolean(false)
+
+            val client = object : OAuthClient {
+                override suspend fun token(
+                    scope: String?,
+                    parameters: OAuthClient.GrantParameters,
+                ): Try<AccessTokenResponse> {
+                    return Success(response)
+                }
+            }
+
+            val provider = CredentialsProvider(
+                config = config,
+                oAuthClient = client,
+                bridge = object : MockCredentialsManagementBridge(
+                    deviceSecret = secret,
+                    authenticationPassword = hashedPassword
+                ) {
+                    override suspend fun reEncryptDeviceSecret(
+                        currentUserPassword: CharArray,
+                        oldUserPassword: CharArray
+                    ): Try<Unit> {
+                        secretReEncrypted.set(true)
+                        return Success(Unit)
+                    }
+                },
+                coroutineScope = testScope
+            )
+
+            eventually {
+                secretReEncrypted.get() shouldBe (false)
+                callbackSuccessful.get() shouldBe (false)
+            }
+
+            provider.reEncryptDeviceSecret(
+                currentPassword = "test-password",
+                oldPassword = "other-password"
+            ) {
+                callbackSuccessful.set(it.isSuccess)
+            }
+
+            eventually {
+                secretReEncrypted.get() shouldBe (true)
+                callbackSuccessful.get() shouldBe (true)
+            }
+        }
+
+        "support checking if the device's remote secret exists" {
+            val callbackSuccessful = AtomicBoolean(false)
+
+            val client = object : OAuthClient {
+                override suspend fun token(
+                    scope: String?,
+                    parameters: OAuthClient.GrantParameters,
+                ): Try<AccessTokenResponse> {
+                    return Success(response)
+                }
+            }
+
+            val provider = CredentialsProvider(
+                config = config,
+                oAuthClient = client,
+                bridge = MockCredentialsManagementBridge(
+                    deviceSecret = secret,
+                    authenticationPassword = hashedPassword
+                ),
+                coroutineScope = testScope
+            )
+
+            val api = MockServerApiEndpointClient()
+
+            provider.remoteDeviceSecretExists(
+                api = api,
+            ) {
+                callbackSuccessful.set(it.isSuccess)
+            }
+
+            eventually {
+                api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (1)
+                api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+                api.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
+                callbackSuccessful.get() shouldBe (true)
             }
         }
     }
