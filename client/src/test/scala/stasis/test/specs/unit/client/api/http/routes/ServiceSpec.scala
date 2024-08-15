@@ -10,7 +10,7 @@ import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 import org.slf4j.LoggerFactory
-import stasis.client.api.http.Context
+import stasis.client.api.Context
 import stasis.client.api.http.routes.Service
 import stasis.shared.api.responses.Ping
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -57,7 +57,8 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
       handlers = Context.Handlers(
         terminateService = terminate,
         verifyUserPassword = _ => false,
-        updateUserCredentials = (_, _) => Future.successful(Done)
+        updateUserCredentials = (_, _) => Future.successful(Done),
+        reEncryptDeviceSecret = _ => Future.successful(Done)
       ),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
       log = LoggerFactory.getLogger(this.getClass.getName)

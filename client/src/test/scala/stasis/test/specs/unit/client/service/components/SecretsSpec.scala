@@ -1,11 +1,9 @@
 package stasis.test.specs.unit.client.service.components
 
 import java.util.UUID
-
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.util.control.NonFatal
-
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.Behavior
@@ -21,8 +19,9 @@ import stasis.client.service.components.Init
 import stasis.client.service.components.Secrets
 import stasis.client.service.ApplicationDirectory
 import stasis.client.service.ApplicationTray
+import stasis.shared.model.devices.Device
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.mocks.MockTokenEndpoint
+import stasis.test.specs.unit.client.mocks.{MockServerApiEndpointClient, MockTokenEndpoint}
 import stasis.test.specs.unit.client.EncodingHelpers
 import stasis.test.specs.unit.client.ResourceHelpers
 
@@ -72,10 +71,14 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     }
   }
 
-  it should "support updating user credentials" in {
+  it should "support updating user credentials (and replace existing key on server)" in {
     val tokenEndpointPort = ports.dequeue()
     val endpoint = MockTokenEndpoint(port = tokenEndpointPort, token = "test-token")
     endpoint.start()
+
+    val apiClient = new MockServerApiEndpointClient(self = Device.generateId()) {
+      override def deviceKeyExists(): Future[Boolean] = Future.successful(true)
+    }
 
     val directory = createCustomApplicationDirectory(tokenEndpointPort)
 
@@ -86,7 +89,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       newPasswordValidBeforeUpdate = secrets.verifyUserPassword(newPassword)
       existingDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
       existingSalt = ConfigOverride.load(directory).getString(userSaltConfigEntry)
-      _ <- secrets.updateUserCredentials(newPassword, newSalt)
+      _ <- secrets.updateUserCredentials(apiClient, newPassword, newSalt)
       updatedDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
       updatedSalt = ConfigOverride.load(directory).getString(userSaltConfigEntry)
       currentPasswordValidAfterUpdate = secrets.verifyUserPassword(password)
@@ -103,6 +106,102 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       updatedDeviceSecret should be(reEncryptedDeviceSecret)
       currentPasswordValidAfterUpdate should be(false)
       newPasswordValidAfterUpdate should be(true)
+
+      apiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(1)
+    }
+  }
+
+  it should "support updating user credentials (and not replace non-existing key on server)" in {
+    val tokenEndpointPort = ports.dequeue()
+    val endpoint = MockTokenEndpoint(port = tokenEndpointPort, token = "test-token")
+    endpoint.start()
+
+    val apiClient = new MockServerApiEndpointClient(self = Device.generateId()) {
+      override def deviceKeyExists(): Future[Boolean] = Future.successful(false)
+    }
+
+    val directory = createCustomApplicationDirectory(tokenEndpointPort)
+
+    for {
+      base <- Base(applicationDirectory = directory, applicationTray = ApplicationTray.NoOp(), terminate = () => ())
+      secrets <- Secrets(base = base, init = () => Future.successful((username, password)))
+      currentPasswordValidBeforeUpdate = secrets.verifyUserPassword(password)
+      newPasswordValidBeforeUpdate = secrets.verifyUserPassword(newPassword)
+      existingDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
+      existingSalt = ConfigOverride.load(directory).getString(userSaltConfigEntry)
+      _ <- secrets.updateUserCredentials(apiClient, newPassword, newSalt)
+      updatedDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
+      updatedSalt = ConfigOverride.load(directory).getString(userSaltConfigEntry)
+      currentPasswordValidAfterUpdate = secrets.verifyUserPassword(password)
+      newPasswordValidAfterUpdate = secrets.verifyUserPassword(newPassword)
+    } yield {
+      endpoint.stop()
+
+      currentPasswordValidBeforeUpdate should be(true)
+      newPasswordValidBeforeUpdate should be(false)
+      existingSalt should be("test-salt")
+      existingDeviceSecret should be(encryptedDeviceSecret)
+
+      updatedSalt should be(newSalt)
+      updatedDeviceSecret should be(reEncryptedDeviceSecret)
+      currentPasswordValidAfterUpdate should be(false)
+      newPasswordValidAfterUpdate should be(true)
+
+      apiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(0)
+    }
+  }
+
+  it should "support re-encrypting device secrets (and replace existing key on server)" in {
+    val tokenEndpointPort = ports.dequeue()
+    val endpoint = MockTokenEndpoint(port = tokenEndpointPort, token = "test-token")
+    endpoint.start()
+
+    val directory = createCustomApplicationDirectory(tokenEndpointPort)
+
+    val apiClient = new MockServerApiEndpointClient(self = Device.generateId()) {
+      override def deviceKeyExists(): Future[Boolean] = Future.successful(false)
+    }
+
+    for {
+      base <- Base(applicationDirectory = directory, applicationTray = ApplicationTray.NoOp(), terminate = () => ())
+      secrets <- Secrets(base = base, init = () => Future.successful((username, password)))
+      existingDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
+      _ <- secrets.reEncryptDeviceSecret(apiClient, newPassword)
+      updatedDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
+    } yield {
+      endpoint.stop()
+
+      existingDeviceSecret should be(encryptedDeviceSecret)
+      updatedDeviceSecret should be(reEncryptedDeviceSecretWithExistingSalt)
+
+      apiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(0)
+    }
+  }
+
+  it should "support re-encrypting device secrets (and not replace non-existing key on server)" in {
+    val tokenEndpointPort = ports.dequeue()
+    val endpoint = MockTokenEndpoint(port = tokenEndpointPort, token = "test-token")
+    endpoint.start()
+
+    val directory = createCustomApplicationDirectory(tokenEndpointPort)
+
+    val apiClient = new MockServerApiEndpointClient(self = Device.generateId()) {
+      override def deviceKeyExists(): Future[Boolean] = Future.successful(true)
+    }
+
+    for {
+      base <- Base(applicationDirectory = directory, applicationTray = ApplicationTray.NoOp(), terminate = () => ())
+      secrets <- Secrets(base = base, init = () => Future.successful((username, password)))
+      existingDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
+      _ <- secrets.reEncryptDeviceSecret(apiClient, newPassword)
+      updatedDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
+    } yield {
+      endpoint.stop()
+
+      existingDeviceSecret should be(encryptedDeviceSecret)
+      updatedDeviceSecret should be(reEncryptedDeviceSecretWithExistingSalt)
+
+      apiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(1)
     }
   }
 
@@ -253,8 +352,14 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
   private val ports: mutable.Queue[Int] = (29000 to 29100).to(mutable.Queue)
 
-  private val encryptedDeviceSecret = "08ko0LWDalPvEHna/WWuq3LoEaA3m4dQ1QuP".decodeFromBase64 // decrypted == "test-secret"
-  private val reEncryptedDeviceSecret = "hU9e2iNzu8H3G5e4kmBMi4hMG3Y9ZCl2oYGG".decodeFromBase64 // decrypted == "test-secret"
+  private val encryptedDeviceSecret =
+    "08ko0LWDalPvEHna/WWuq3LoEaA3m4dQ1QuP".decodeFromBase64 // decrypted == "test-secret"
+
+  private val reEncryptedDeviceSecret =
+    "hU9e2iNzu8H3G5e4kmBMi4hMG3Y9ZCl2oYGG".decodeFromBase64 // decrypted == "test-secret"
+
+  private val reEncryptedDeviceSecretWithExistingSalt =
+    "6eLw3FNBRPoS6WDTeRbLxR5kuc6zBov9nuMX".decodeFromBase64 // decrypted == "test-secret"
 
   private val username = "test-user"
   private val password = "test-password".toCharArray

@@ -21,6 +21,7 @@ class MockBackupTracker extends BackupTracker {
     Statistic.EntityDiscovered -> new AtomicInteger(0),
     Statistic.SpecificationProcessed -> new AtomicInteger(0),
     Statistic.EntityExamined -> new AtomicInteger(0),
+    Statistic.EntitySkipped -> new AtomicInteger(0),
     Statistic.EntityCollected -> new AtomicInteger(0),
     Statistic.EntityProcessingStarted -> new AtomicInteger(0),
     Statistic.EntityPartProcessed -> new AtomicInteger(0),
@@ -58,6 +59,9 @@ class MockBackupTracker extends BackupTracker {
     contentChanged: Boolean
   )(implicit operation: Operation.Id): Unit =
     stats(Statistic.EntityExamined).incrementAndGet()
+
+  override def entitySkipped(entity: Path)(implicit operation: Operation.Id): Unit =
+    stats(Statistic.EntitySkipped).incrementAndGet()
 
   override def entityCollected(entity: SourceEntity)(implicit operation: Operation.Id): Unit =
     stats(Statistic.EntityCollected).incrementAndGet()
@@ -100,6 +104,7 @@ object MockBackupTracker {
     case object EntityDiscovered extends Statistic
     case object SpecificationProcessed extends Statistic
     case object EntityExamined extends Statistic
+    case object EntitySkipped extends Statistic
     case object EntityCollected extends Statistic
     case object EntityProcessingStarted extends Statistic
     case object EntityPartProcessed extends Statistic

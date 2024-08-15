@@ -32,6 +32,9 @@ final case class BackupState(
   def entityExamined(entity: Path): BackupState =
     copy(entities = entities.copy(examined = entities.examined + entity))
 
+  def entitySkipped(entity: Path): BackupState =
+    copy(entities = entities.copy(skipped = entities.skipped + entity))
+
   def entityCollected(entity: SourceEntity): BackupState =
     copy(entities = entities.copy(collected = entities.collected + (entity.path -> entity)))
 
@@ -113,7 +116,7 @@ final case class BackupState(
   override def asProgress: Operation.Progress = Operation.Progress(
     started = started,
     total = entities.discovered.size,
-    processed = entities.processed.size,
+    processed = entities.skipped.size + entities.processed.size,
     failures = entities.failed.size + failures.size,
     completed = completed
   )
@@ -135,6 +138,7 @@ object BackupState {
     discovered: Set[Path],
     unmatched: Seq[String],
     examined: Set[Path],
+    skipped: Set[Path],
     collected: Map[Path, SourceEntity],
     pending: Map[Path, PendingSourceEntity],
     processed: Map[Path, ProcessedSourceEntity],
@@ -146,6 +150,7 @@ object BackupState {
       discovered = Set.empty,
       unmatched = Seq.empty,
       examined = Set.empty,
+      skipped = Set.empty,
       collected = Map.empty,
       pending = Map.empty,
       processed = Map.empty,
@@ -183,6 +188,7 @@ object BackupState {
           discovered = state.entities.discovered.map(_.toAbsolutePath.toString).toSeq,
           unmatched = state.entities.unmatched,
           examined = state.entities.examined.map(_.toAbsolutePath.toString).toSeq,
+          skipped = state.entities.skipped.map(_.toAbsolutePath.toString).toSeq,
           collected = state.entities.collected.map { case (k, v) =>
             k.toAbsolutePath.toString -> toProtoSourceEntity(v)
           },
@@ -213,6 +219,7 @@ object BackupState {
               discovered = entities.discovered.map(Paths.get(_)).toSet,
               unmatched = entities.unmatched,
               examined = entities.examined.map(Paths.get(_)).toSet,
+              skipped = entities.skipped.map(Paths.get(_)).toSet,
               collected = entities.collected.map { case (k, v) => Paths.get(k) -> fromProtoSourceEntity(v) },
               pending = entities.pending.map { case (k, v) => Paths.get(k) -> fromProtoPendingSourceEntity(v) },
               processed = entities.processed.map { case (k, v) => Paths.get(k) -> fromProtoProcessedSourceEntity(v) },

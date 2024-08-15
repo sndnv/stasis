@@ -46,6 +46,7 @@ trait ServerApiEndpointClient {
   def device(): Future[Device]
   def pushDeviceKey(key: ByteString): Future[Done]
   def pullDeviceKey(): Future[Option[ByteString]]
+  def deviceKeyExists(): Future[Boolean]
 
   def ping(): Future[Ping]
 }

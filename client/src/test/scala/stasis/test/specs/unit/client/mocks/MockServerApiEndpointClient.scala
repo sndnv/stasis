@@ -45,6 +45,7 @@ class MockServerApiEndpointClient(
     Statistic.DeviceRetrieved -> new AtomicInteger(0),
     Statistic.DeviceKeyPushed -> new AtomicInteger(0),
     Statistic.DeviceKeyPulled -> new AtomicInteger(0),
+    Statistic.DeviceKeyExists -> new AtomicInteger(0),
     Statistic.Ping -> new AtomicInteger(0)
   )
 
@@ -158,6 +159,11 @@ class MockServerApiEndpointClient(
     Future.successful(Some(ByteString("test-key")))
   }
 
+  override def deviceKeyExists(): Future[Boolean] = {
+    stats(Statistic.DeviceKeyExists).getAndIncrement()
+    Future.successful(false)
+  }
+
   override def ping(): Future[Ping] = {
     stats(Statistic.Ping).getAndIncrement()
     Future.successful(Ping())
@@ -188,6 +194,7 @@ object MockServerApiEndpointClient {
     case object DeviceRetrieved extends Statistic
     case object DeviceKeyPushed extends Statistic
     case object DeviceKeyPulled extends Statistic
+    case object DeviceKeyExists extends Statistic
     case object Ping extends Statistic
   }
 }

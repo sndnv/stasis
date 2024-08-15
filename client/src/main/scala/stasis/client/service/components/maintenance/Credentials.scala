@@ -19,29 +19,17 @@ trait Credentials {
 }
 
 object Credentials {
-  def apply(base: Base, init: Init): Future[Credentials] = {
+  def apply(base: Base, mode: ApplicationArguments.Mode.Maintenance): Future[Credentials] = {
     import base._
 
-    base.args.userCredentialsOperation match {
-      case None =>
-        Future.successful(
-          new Credentials {
-            override def apply(): Future[Done] = {
-              log.debug("No credentials operation requested; skipping...")
-              Future.successful(Done)
-            }
-          }
-        )
-
-      case Some(ApplicationArguments.Mode.Maintenance.UserCredentialsOperation.Reset) =>
+    mode match {
+      case operation: ApplicationArguments.Mode.Maintenance.ResetUserCredentials =>
         for {
           secretsConfig <- SecretsConfig(config = rawConfig.getConfig("secrets"), ivSize = Aes.IvSize).future
           user <- UUID.fromString(rawConfig.getString("server.api.user")).future
           userSalt <- rawConfig.getString("server.api.user-salt").future
           device <- UUID.fromString(rawConfig.getString("server.api.device")).future
-          (_, currentPassword) <- init.currentCredentials().transformFailureTo(ServiceStartupFailure.credentials)
-          (newPassword, newSalt) <- init.newCredentials().transformFailureTo(ServiceStartupFailure.credentials)
-          userPassword = UserPassword(user = user, salt = userSalt, password = currentPassword)(secretsConfig)
+          userPassword = UserPassword(user = user, salt = userSalt, password = operation.currentUserPassword)(secretsConfig)
           _ = log.debug("Loading encrypted device secret from [{}]...", Files.DeviceSecret)
           encryptedDeviceSecret <- directory
             .pullFile[ByteString](file = Files.DeviceSecret)
@@ -58,14 +46,14 @@ object Credentials {
             override def apply(): Future[Done] = {
               val newLocalEncryptionSecret = UserPassword(
                 user = user,
-                salt = newSalt,
-                password = newPassword
+                salt = operation.newUserSalt,
+                password = operation.newUserPassword
               )(secretsConfig).toHashedEncryptionPassword.toLocalEncryptionSecret
 
               ConfigOverride.update(
                 directory = directory,
                 path = "stasis.client.server.api.user-salt",
-                value = newSalt
+                value = operation.newUserSalt
               )
 
               for {
@@ -79,6 +67,16 @@ object Credentials {
             }
           }
         }
+
+      case _ =>
+        Future.successful(
+          new Credentials {
+            override def apply(): Future[Done] = {
+              log.debug("No credentials operation requested; skipping...")
+              Future.successful(Done)
+            }
+          }
+        )
     }
   }
 }

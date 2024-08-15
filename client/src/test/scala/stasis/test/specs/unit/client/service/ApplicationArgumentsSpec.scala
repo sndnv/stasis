@@ -59,35 +59,25 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
     }
   }
 
-  they should "support parsing arguments (maintenance --regenerate-api-certificate)" in {
+  they should "support parsing arguments (maintenance regenerate-api-certificate)" in {
     ApplicationArguments(
       applicationName = "test-application",
-      args = Array("maintenance", "--regenerate-api-certificate")
+      args = Array("maintenance", "regenerate-api-certificate")
     ).await match {
-      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance) =>
-        mode.regenerateApiCertificate should be(true)
-        mode.deviceSecretOperation should be(None)
-        mode.userCredentialsOperation should be(None)
-        mode.currentUserName should be(empty)
-        mode.currentUserPassword should be(empty)
-        mode.newUserPassword should be(empty)
-        mode.newUserSalt should be(empty)
+      case ApplicationArguments(ApplicationArguments.Mode.Maintenance.RegenerateApiCertificate) =>
+        succeed
 
       case other =>
         fail(s"Unexpected result received: [$other]")
     }
   }
 
-  they should "support parsing arguments (maintenance --secret)" in {
+  they should "support parsing arguments (maintenance credentials)" in {
     ApplicationArguments(
       applicationName = "test-application",
-      args = Array("maintenance", "--secret", "push")
+      args = Array("maintenance", "credentials", "reset")
     ).await match {
-      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance) =>
-        mode.regenerateApiCertificate should be(false)
-        mode.deviceSecretOperation should be(Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Push))
-        mode.userCredentialsOperation should be(None)
-        mode.currentUserName should be(empty)
+      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance.ResetUserCredentials) =>
         mode.currentUserPassword should be(empty)
         mode.newUserPassword should be(empty)
         mode.newUserSalt should be(empty)
@@ -98,47 +88,9 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
 
     ApplicationArguments(
       applicationName = "test-application",
-      args = Array("maintenance", "--secret", "pull")
+      args = Array("maintenance", "credentials", "reset", "--current-user-password", "test-password")
     ).await match {
-      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance) =>
-        mode.regenerateApiCertificate should be(false)
-        mode.deviceSecretOperation should be(Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Pull))
-        mode.userCredentialsOperation should be(None)
-        mode.currentUserName should be(empty)
-        mode.currentUserPassword should be(empty)
-        mode.newUserPassword should be(empty)
-        mode.newUserSalt should be(empty)
-
-      case other =>
-        fail(s"Unexpected result received: [$other]")
-    }
-
-    ApplicationArguments(
-      applicationName = "test-application",
-      args = Array("maintenance", "--secret", "push", "--current-user-name", "test-user")
-    ).await match {
-      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance) =>
-        mode.regenerateApiCertificate should be(false)
-        mode.deviceSecretOperation should be(Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Push))
-        mode.userCredentialsOperation should be(None)
-        mode.currentUserName should be("test-user")
-        mode.currentUserPassword should be(empty)
-        mode.newUserPassword should be(empty)
-        mode.newUserSalt should be(empty)
-
-      case other =>
-        fail(s"Unexpected result received: [$other]")
-    }
-
-    ApplicationArguments(
-      applicationName = "test-application",
-      args = Array("maintenance", "--secret", "push", "--current-user-password", "test-password")
-    ).await match {
-      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance) =>
-        mode.regenerateApiCertificate should be(false)
-        mode.deviceSecretOperation should be(Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Push))
-        mode.userCredentialsOperation should be(None)
-        mode.currentUserName should be(empty)
+      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance.ResetUserCredentials) =>
         new String(mode.currentUserPassword) should be("test-password")
         mode.newUserPassword should be(empty)
         mode.newUserSalt should be(empty)
@@ -149,75 +101,9 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
 
     ApplicationArguments(
       applicationName = "test-application",
-      args =
-        Array("maintenance", "--secret", "push", "--current-user-name", "test-user", "--current-user-password", "test-password")
+      args = Array("maintenance", "credentials", "reset", "--new-user-password", "test-password")
     ).await match {
-      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance) =>
-        mode.regenerateApiCertificate should be(false)
-        mode.deviceSecretOperation should be(Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Push))
-        mode.userCredentialsOperation should be(None)
-        mode.currentUserName should be("test-user")
-        new String(mode.currentUserPassword) should be("test-password")
-        mode.newUserPassword should be(empty)
-        mode.newUserSalt should be(empty)
-
-      case other =>
-        fail(s"Unexpected result received: [$other]")
-    }
-
-    ApplicationArguments(
-      applicationName = "test-application",
-      args = Array("maintenance", "--secret", "other")
-    ).failed
-      .map { e =>
-        e.getMessage should be("Invalid arguments provided")
-      }
-  }
-
-  they should "support parsing arguments (maintenance --credentials)" in {
-    ApplicationArguments(
-      applicationName = "test-application",
-      args = Array("maintenance", "--credentials", "reset")
-    ).await match {
-      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance) =>
-        mode.regenerateApiCertificate should be(false)
-        mode.deviceSecretOperation should be(None)
-        mode.userCredentialsOperation should be(Some(ApplicationArguments.Mode.Maintenance.UserCredentialsOperation.Reset))
-        mode.currentUserName should be(empty)
-        mode.currentUserPassword should be(empty)
-        mode.newUserPassword should be(empty)
-        mode.newUserSalt should be(empty)
-
-      case other =>
-        fail(s"Unexpected result received: [$other]")
-    }
-
-    ApplicationArguments(
-      applicationName = "test-application",
-      args = Array("maintenance", "--credentials", "reset", "--current-user-password", "test-password")
-    ).await match {
-      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance) =>
-        mode.regenerateApiCertificate should be(false)
-        mode.deviceSecretOperation should be(None)
-        mode.userCredentialsOperation should be(Some(ApplicationArguments.Mode.Maintenance.UserCredentialsOperation.Reset))
-        mode.currentUserName should be(empty)
-        new String(mode.currentUserPassword) should be("test-password")
-        mode.newUserPassword should be(empty)
-        mode.newUserSalt should be(empty)
-
-      case other =>
-        fail(s"Unexpected result received: [$other]")
-    }
-
-    ApplicationArguments(
-      applicationName = "test-application",
-      args = Array("maintenance", "--credentials", "reset", "--new-user-password", "test-password")
-    ).await match {
-      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance) =>
-        mode.regenerateApiCertificate should be(false)
-        mode.deviceSecretOperation should be(None)
-        mode.userCredentialsOperation should be(Some(ApplicationArguments.Mode.Maintenance.UserCredentialsOperation.Reset))
-        mode.currentUserName should be(empty)
+      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance.ResetUserCredentials) =>
         mode.currentUserPassword should be(empty)
         new String(mode.newUserPassword) should be("test-password")
         mode.newUserSalt should be(empty)
@@ -228,13 +114,9 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
 
     ApplicationArguments(
       applicationName = "test-application",
-      args = Array("maintenance", "--credentials", "reset", "--new-user-salt", "test-salt")
+      args = Array("maintenance", "credentials", "reset", "--new-user-salt", "test-salt")
     ).await match {
-      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance) =>
-        mode.regenerateApiCertificate should be(false)
-        mode.deviceSecretOperation should be(None)
-        mode.userCredentialsOperation should be(Some(ApplicationArguments.Mode.Maintenance.UserCredentialsOperation.Reset))
-        mode.currentUserName should be(empty)
+      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance.ResetUserCredentials) =>
         mode.currentUserPassword should be(empty)
         mode.newUserPassword should be(empty)
         mode.newUserSalt should be("test-salt")
@@ -247,7 +129,7 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
       applicationName = "test-application",
       args = Array(
         "maintenance",
-        "--credentials",
+        "credentials",
         "reset",
         "--current-user-password",
         "current-password",
@@ -257,11 +139,7 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
         "test-salt"
       )
     ).await match {
-      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance) =>
-        mode.regenerateApiCertificate should be(false)
-        mode.deviceSecretOperation should be(None)
-        mode.userCredentialsOperation should be(Some(ApplicationArguments.Mode.Maintenance.UserCredentialsOperation.Reset))
-        mode.currentUserName should be(empty)
+      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance.ResetUserCredentials) =>
         new String(mode.currentUserPassword) should be("current-password")
         new String(mode.newUserPassword) should be("new-password")
         mode.newUserSalt should be("test-salt")
@@ -272,7 +150,165 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
 
     ApplicationArguments(
       applicationName = "test-application",
-      args = Array("maintenance", "--credentials", "other")
+      args = Array("maintenance", "credentials", "other")
+    ).failed
+      .map { e =>
+        e.getMessage should be("Invalid arguments provided")
+      }
+  }
+
+  they should "support parsing arguments (maintenance secret)" in {
+    ApplicationArguments(
+      applicationName = "test-application",
+      args = Array("maintenance", "secret", "push")
+    ).await match {
+      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance.PushDeviceSecret) =>
+        mode.currentUserName should be(empty)
+        mode.currentUserPassword should be(empty)
+        mode.remotePassword should be(empty)
+
+      case other =>
+        fail(s"Unexpected result received: [$other]")
+    }
+
+    ApplicationArguments(
+      applicationName = "test-application",
+      args = Array("maintenance", "secret", "pull")
+    ).await match {
+      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance.PullDeviceSecret) =>
+        mode.currentUserName should be(empty)
+        mode.currentUserPassword should be(empty)
+        mode.remotePassword should be(empty)
+
+      case other =>
+        fail(s"Unexpected result received: [$other]")
+    }
+
+    ApplicationArguments(
+      applicationName = "test-application",
+      args = Array("maintenance", "secret", "re-encrypt")
+    ).await match {
+      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance.ReEncryptDeviceSecret) =>
+        mode.currentUserName should be(empty)
+        mode.currentUserPassword should be(empty)
+        mode.oldUserPassword should be(empty)
+
+      case other =>
+        fail(s"Unexpected result received: [$other]")
+    }
+
+    ApplicationArguments(
+      applicationName = "test-application",
+      args = Array("maintenance", "secret", "push", "--current-user-name", "test-user")
+    ).await match {
+      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance.PushDeviceSecret) =>
+        mode.currentUserName should be("test-user")
+        mode.currentUserPassword should be(empty)
+        mode.remotePassword should be(empty)
+
+      case other =>
+        fail(s"Unexpected result received: [$other]")
+    }
+
+    ApplicationArguments(
+      applicationName = "test-application",
+      args = Array("maintenance", "secret", "push", "--current-user-password", "test-password")
+    ).await match {
+      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance.PushDeviceSecret) =>
+        mode.currentUserName should be(empty)
+        new String(mode.currentUserPassword) should be("test-password")
+        mode.remotePassword should be(empty)
+
+      case other =>
+        fail(s"Unexpected result received: [$other]")
+    }
+
+    ApplicationArguments(
+      applicationName = "test-application",
+      args =
+        Array("maintenance", "secret", "push", "--current-user-name", "test-user", "--current-user-password", "test-password")
+    ).await match {
+      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance.PushDeviceSecret) =>
+        mode.currentUserName should be("test-user")
+        new String(mode.currentUserPassword) should be("test-password")
+        mode.remotePassword should be(empty)
+
+      case other =>
+        fail(s"Unexpected result received: [$other]")
+    }
+
+    ApplicationArguments(
+      applicationName = "test-application",
+      args = Array(
+        "maintenance",
+        "secret",
+        "push",
+        "--current-user-name",
+        "test-user",
+        "--current-user-password",
+        "test-password",
+        "--remote-password",
+        "other-password"
+      )
+    ).await match {
+      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance.PushDeviceSecret) =>
+        mode.currentUserName should be("test-user")
+        new String(mode.currentUserPassword) should be("test-password")
+        mode.remotePassword.map(new String(_)) should be(Some("other-password"))
+
+      case other =>
+        fail(s"Unexpected result received: [$other]")
+    }
+
+    ApplicationArguments(
+      applicationName = "test-application",
+      args = Array(
+        "maintenance",
+        "secret",
+        "pull",
+        "--current-user-name",
+        "test-user",
+        "--current-user-password",
+        "test-password",
+        "--remote-password",
+        "other-password"
+      )
+    ).await match {
+      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance.PullDeviceSecret) =>
+        mode.currentUserName should be("test-user")
+        new String(mode.currentUserPassword) should be("test-password")
+        mode.remotePassword.map(new String(_)) should be(Some("other-password"))
+
+      case other =>
+        fail(s"Unexpected result received: [$other]")
+    }
+
+    ApplicationArguments(
+      applicationName = "test-application",
+      args = Array(
+        "maintenance",
+        "secret",
+        "re-encrypt",
+        "--current-user-name",
+        "test-user",
+        "--current-user-password",
+        "test-password",
+        "--old-user-password",
+        "other-password"
+      )
+    ).await match {
+      case ApplicationArguments(mode: ApplicationArguments.Mode.Maintenance.ReEncryptDeviceSecret) =>
+        mode.currentUserName should be("test-user")
+        new String(mode.currentUserPassword) should be("test-password")
+        new String(mode.oldUserPassword) should be("other-password")
+
+      case other =>
+        fail(s"Unexpected result received: [$other]")
+    }
+
+    ApplicationArguments(
+      applicationName = "test-application",
+      args = Array("maintenance", "secret", "other")
     ).failed
       .map { e =>
         e.getMessage should be("Invalid arguments provided")
@@ -335,34 +371,11 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
   }
 
   they should "validate maintenance mode arguments" in {
-    val mode = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = true,
-      deviceSecretOperation = None,
-      userCredentialsOperation = None,
-      currentUserName = "",
-      currentUserPassword = Array.emptyCharArray,
-      newUserPassword = Array.emptyCharArray,
-      newUserSalt = ""
-    )
-
-    noException should be thrownBy {
-      mode.validate()
-    }
-  }
-
-  they should "fail if invalid maintenance mode arguments are provided" in {
-    val mode = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = true,
-      deviceSecretOperation = None,
-      userCredentialsOperation = None,
-      currentUserName = "",
-      currentUserPassword = Array.emptyCharArray,
-      newUserPassword = Array.emptyCharArray,
-      newUserSalt = ""
-    )
-
-    an[IllegalArgumentException] should be thrownBy {
-      mode.copy(regenerateApiCertificate = false).validate()
-    }
+    noException should be thrownBy { ApplicationArguments.Mode.Maintenance.RegenerateApiCertificate.validate() }
+    noException should be thrownBy { ApplicationArguments.Mode.Maintenance.PushDeviceSecret.empty.validate() }
+    noException should be thrownBy { ApplicationArguments.Mode.Maintenance.PullDeviceSecret.empty.validate() }
+    noException should be thrownBy { ApplicationArguments.Mode.Maintenance.ReEncryptDeviceSecret.empty.validate() }
+    noException should be thrownBy { ApplicationArguments.Mode.Maintenance.ResetUserCredentials.empty.validate() }
+    an[IllegalArgumentException] should be thrownBy { ApplicationArguments.Mode.Maintenance.Empty.validate() }
   }
 }

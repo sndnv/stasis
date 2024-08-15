@@ -212,6 +212,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockTracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntitySkipped) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(3)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(2)
@@ -222,6 +223,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
 
           mockTelemetry.ops.backup.entityExamined should be(0)
+          mockTelemetry.ops.backup.entitySkipped should be(0)
           mockTelemetry.ops.backup.entityCollected should be(0)
           mockTelemetry.ops.backup.entityChunkProcessed should be >= 6
           mockTelemetry.ops.backup.entityProcessed should be(3)
@@ -312,6 +314,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
 
           mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntitySkipped) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(1)
           mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
@@ -320,6 +323,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
 
           mockTelemetry.ops.backup.entityExamined should be(0)
+          mockTelemetry.ops.backup.entitySkipped should be(0)
           mockTelemetry.ops.backup.entityCollected should be(0)
           mockTelemetry.ops.backup.entityChunkProcessed should be >= (expectedChunks * 3)
           mockTelemetry.ops.backup.entityProcessed should be(1)
@@ -406,6 +410,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
 
           mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntitySkipped) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
@@ -414,6 +419,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
 
           mockTelemetry.ops.backup.entityExamined should be(0)
+          mockTelemetry.ops.backup.entitySkipped should be(0)
           mockTelemetry.ops.backup.entityCollected should be(0)
           mockTelemetry.ops.backup.entityChunkProcessed should be(3) // x3 == one for each step before push
           mockTelemetry.ops.backup.entityProcessed should be(0)
@@ -513,6 +519,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
 
           mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntitySkipped) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.MetadataCollected) should be(0)
@@ -521,6 +528,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
 
           mockTelemetry.ops.backup.entityExamined should be(0)
+          mockTelemetry.ops.backup.entitySkipped should be(0)
           mockTelemetry.ops.backup.entityCollected should be(0)
           // (expectedParts - 1) == number of successful parts
           // x8 == 2 parts X 4 steps for each part
@@ -634,6 +642,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockTracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+          mockTracker.statistics(MockBackupTracker.Statistic.EntitySkipped) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be >= 1
           mockTracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be >= 1

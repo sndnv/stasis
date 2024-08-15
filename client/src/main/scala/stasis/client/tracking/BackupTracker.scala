@@ -16,6 +16,7 @@ trait BackupTracker extends BackupTracker.View with BackupTracker.Manage {
   def entityDiscovered(entity: Path)(implicit operation: Operation.Id): Unit
   def specificationProcessed(unmatched: Seq[(Rule, Throwable)])(implicit operation: Operation.Id): Unit
   def entityExamined(entity: Path, metadataChanged: Boolean, contentChanged: Boolean)(implicit operation: Operation.Id): Unit
+  def entitySkipped(entity: Path)(implicit operation: Operation.Id): Unit
   def entityCollected(entity: SourceEntity)(implicit operation: Operation.Id): Unit
   def entityProcessingStarted(entity: Path, expectedParts: Int)(implicit operation: Operation.Id): Unit
   def entityPartProcessed(entity: Path)(implicit operation: Operation.Id): Unit

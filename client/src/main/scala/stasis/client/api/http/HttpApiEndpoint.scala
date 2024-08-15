@@ -1,23 +1,28 @@
 package stasis.client.api.http
 
+import scala.concurrent.Future
+import scala.util.control.NonFatal
+import scala.util.Failure
+import scala.util.Success
+
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.SpawnProtocol
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server._
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import stasis.client.api.Context
 import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.api.http.routes._
 import stasis.client.security.FrontendAuthenticator
 import stasis.core.api.MessageResponse
-import stasis.core.api.directives.{EntityDiscardingDirectives, LoggingDirectives}
+import stasis.core.api.directives.EntityDiscardingDirectives
+import stasis.core.api.directives.LoggingDirectives
 import stasis.core.security.tls.EndpointContext
 import stasis.core.telemetry.TelemetryContext
-
-import scala.concurrent.Future
-import scala.util.control.NonFatal
-import scala.util.{Failure, Success}
 
 class HttpApiEndpoint(
   authenticator: FrontendAuthenticator

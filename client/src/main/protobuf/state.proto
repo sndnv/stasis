@@ -35,6 +35,7 @@ message BackupEntities {
   repeated string discovered = 1;
   repeated string unmatched = 2;
   repeated string examined = 3;
+  repeated string skipped = 8;
   map<string, SourceEntity> collected = 4;
   map<string, PendingSourceEntity> pending = 5;
   map<string, ProcessedSourceEntity> processed = 6;

@@ -20,7 +20,6 @@ import stasis.client.service.ApplicationDirectory
 import stasis.client.service.components.Files
 import stasis.client.service.components.exceptions.ServiceStartupFailure
 import stasis.client.service.components.maintenance.Base
-import stasis.client.service.components.maintenance.Init
 import stasis.client.service.components.maintenance.Secrets
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.EncodingHelpers
@@ -30,7 +29,7 @@ import stasis.test.specs.unit.client.mocks.MockTokenEndpoint
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelpers {
-  "A Secrets component" should "push device secrets to server API" in {
+  "A Secrets component" should "push device secrets to server API (with matching remote password)" in {
     val tokenEndpointPort = ports.dequeue()
     val tokenEndpoint = MockTokenEndpoint(port = tokenEndpointPort, token = apiCredentials.token)
     tokenEndpoint.start()
@@ -38,19 +37,15 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val apiEndpointPort = ports.dequeue()
     val apiEndpoint = new MockServerApiEndpoint(
       expectedCredentials = apiCredentials,
-      expectedDeviceKey = Some(remoteEncryptedDeviceSecret)
+      expectedDeviceKey = None
     )
 
     val apiEndpointBinding = apiEndpoint.start(port = apiEndpointPort)
 
-    val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = false,
-      deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Push),
-      userCredentialsOperation = None,
+    val modeArguments = ApplicationArguments.Mode.Maintenance.PushDeviceSecret(
       currentUserName = userName,
       currentUserPassword = userPassword,
-      newUserPassword = Array.emptyCharArray,
-      newUserSalt = ""
+      remotePassword = None
     )
 
     val directory = createCustomApplicationDirectory(
@@ -61,20 +56,68 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
     for {
       base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
-      init <- Init(base, console = None)
-      secrets <- Secrets(base, init)
-      deviceKeyExistsBefore <- apiEndpoint.deviceKeyExists(deviceId)
+      secrets <- Secrets(base, modeArguments)
+      deviceKeyBefore <- apiEndpoint.deviceKey(deviceId)
       _ <- secrets.apply()
-      deviceKeyExistsAfter <- apiEndpoint.deviceKeyExists(deviceId)
+      deviceKeyAfter <- apiEndpoint.deviceKey(deviceId)
       _ <- apiEndpointBinding.flatMap(_.terminate(100.millis))
     } yield {
       tokenEndpoint.stop()
-      deviceKeyExistsBefore should be(false)
-      deviceKeyExistsAfter should be(true)
+
+      deviceKeyBefore should be(empty)
+
+      deviceKeyAfter match {
+        case Some(key) => key should be(remoteEncryptedDeviceSecret)
+        case None      => fail(s"Expected device key but none was found")
+      }
     }
   }
 
-  it should "pull device secrets from server API" in {
+  it should "push device secrets to server API (with different remote password)" in {
+    val tokenEndpointPort = ports.dequeue()
+    val tokenEndpoint = MockTokenEndpoint(port = tokenEndpointPort, token = apiCredentials.token)
+    tokenEndpoint.start()
+
+    val apiEndpointPort = ports.dequeue()
+    val apiEndpoint = new MockServerApiEndpoint(
+      expectedCredentials = apiCredentials,
+      expectedDeviceKey = None
+    )
+
+    val apiEndpointBinding = apiEndpoint.start(port = apiEndpointPort)
+
+    val modeArguments = ApplicationArguments.Mode.Maintenance.PushDeviceSecret(
+      currentUserName = userName,
+      currentUserPassword = userPassword,
+      remotePassword = Some(remotePassword)
+    )
+
+    val directory = createCustomApplicationDirectory(
+      tokenEndpointPort = tokenEndpointPort,
+      apiEndpointPort = apiEndpointPort,
+      deviceSecret = Some(localEncryptedDeviceSecret)
+    )
+
+    for {
+      base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
+      secrets <- Secrets(base, modeArguments)
+      deviceKeyBefore <- apiEndpoint.deviceKey(deviceId)
+      _ <- secrets.apply()
+      deviceKeyAfter <- apiEndpoint.deviceKey(deviceId)
+      _ <- apiEndpointBinding.flatMap(_.terminate(100.millis))
+    } yield {
+      tokenEndpoint.stop()
+
+      deviceKeyBefore should be(empty)
+
+      deviceKeyAfter match {
+        case Some(key) => key should be(remoteEncrypteWithCustomPassworddDeviceSecret)
+        case None      => fail(s"Expected device key but none was found")
+      }
+    }
+  }
+
+  it should "pull device secrets from server API (with matching remote password)" in {
     val tokenEndpointPort = ports.dequeue()
     val tokenEndpoint = MockTokenEndpoint(port = tokenEndpointPort, token = apiCredentials.token)
     tokenEndpoint.start()
@@ -87,14 +130,10 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
     val apiEndpointBinding = apiEndpoint.start(port = apiEndpointPort)
 
-    val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = false,
-      deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Pull),
-      userCredentialsOperation = None,
+    val modeArguments = ApplicationArguments.Mode.Maintenance.PullDeviceSecret(
       currentUserName = userName,
       currentUserPassword = userPassword,
-      newUserPassword = Array.emptyCharArray,
-      newUserSalt = ""
+      remotePassword = None
     )
 
     val directory = createCustomApplicationDirectory(
@@ -105,8 +144,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
     for {
       base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
-      init <- Init(base, console = None)
-      secrets <- Secrets(base, init)
+      secrets <- Secrets(base, modeArguments)
       missingDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret).failed
       _ <- secrets.apply()
       _ <- apiEndpointBinding.flatMap(_.terminate(100.millis))
@@ -118,46 +156,189 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     }
   }
 
-  it should "handle credentials retrieval failures" in {
-    val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = false,
-      deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Push),
-      userCredentialsOperation = None,
-      currentUserName = userName,
-      currentUserPassword = userPassword,
-      newUserPassword = Array.emptyCharArray,
-      newUserSalt = ""
-    )
-
-    val directory = createCustomApplicationDirectory(apiEndpointPort = 9090, tokenEndpointPort = 9091)
-
-    Secrets(
-      base = Base(modeArguments = modeArguments, applicationDirectory = directory).await,
-      init = new Init {
-        override def currentCredentials(): Future[(String, Array[Char])] = Future.failed(new RuntimeException("test failure"))
-        override def newCredentials(): Future[(Array[Char], String)] = Future.failed(new RuntimeException("test failure"))
-      }
-    ).map { result =>
-      fail(s"Unexpected result received: [$result]")
-    }.recover { case NonFatal(e: ServiceStartupFailure) =>
-      e.cause should be("credentials")
-      e.message should be("RuntimeException: test failure")
-    }
-  }
-
-  it should "handle local device secret decryption failures" in {
+  it should "pull device secrets from server API (with different remote password)" in {
     val tokenEndpointPort = ports.dequeue()
     val tokenEndpoint = MockTokenEndpoint(port = tokenEndpointPort, token = apiCredentials.token)
     tokenEndpoint.start()
 
-    val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = false,
-      deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Pull),
-      userCredentialsOperation = None,
+    val apiEndpointPort = ports.dequeue()
+    val apiEndpoint = new MockServerApiEndpoint(
+      expectedCredentials = apiCredentials,
+      expectedDeviceKey = Some(remoteEncrypteWithCustomPassworddDeviceSecret)
+    )
+
+    val apiEndpointBinding = apiEndpoint.start(port = apiEndpointPort)
+
+    val modeArguments = ApplicationArguments.Mode.Maintenance.PullDeviceSecret(
       currentUserName = userName,
       currentUserPassword = userPassword,
-      newUserPassword = Array.emptyCharArray,
-      newUserSalt = ""
+      remotePassword = Some(remotePassword)
+    )
+
+    val directory = createCustomApplicationDirectory(
+      tokenEndpointPort = tokenEndpointPort,
+      apiEndpointPort = apiEndpointPort,
+      deviceSecret = None
+    )
+
+    for {
+      base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
+      secrets <- Secrets(base, modeArguments)
+      missingDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret).failed
+      _ <- secrets.apply()
+      _ <- apiEndpointBinding.flatMap(_.terminate(100.millis))
+      existingDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
+    } yield {
+      tokenEndpoint.stop()
+      missingDeviceSecret.getMessage should startWith(s"File [${Files.DeviceSecret}] not found")
+      existingDeviceSecret should be(localEncryptedDeviceSecret)
+    }
+  }
+
+  it should "re-encrypt device secrets (and replace existing remote secret)" in {
+    val tokenEndpointPort = ports.dequeue()
+    val tokenEndpoint = MockTokenEndpoint(port = tokenEndpointPort, token = apiCredentials.token)
+    tokenEndpoint.start()
+
+    val apiEndpointPort = ports.dequeue()
+    val apiEndpoint = new MockServerApiEndpoint(
+      expectedCredentials = apiCredentials,
+      expectedDeviceKey = Some(remoteEncryptedDeviceSecret)
+    )
+
+    val apiEndpointBinding = apiEndpoint.start(port = apiEndpointPort)
+
+    val modeArguments = ApplicationArguments.Mode.Maintenance.ReEncryptDeviceSecret(
+      currentUserName = userName,
+      currentUserPassword = userPassword,
+      oldUserPassword = "other-password".toCharArray
+    )
+
+    val directory = createCustomApplicationDirectory(
+      tokenEndpointPort = tokenEndpointPort,
+      apiEndpointPort = apiEndpointPort,
+      deviceSecret = Some(localEncryptedDeviceSecret)
+    )
+
+    for {
+      base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
+      secrets <- Secrets(base, modeArguments)
+      originalDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
+      deviceKeyExistsBefore <- apiEndpoint.deviceKeyExists(deviceId)
+      _ <- secrets.apply()
+      _ <- apiEndpointBinding.flatMap(_.terminate(100.millis))
+      updatedDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
+      deviceKeyExistsAfter <- apiEndpoint.deviceKeyExists(deviceId)
+    } yield {
+      tokenEndpoint.stop()
+      deviceKeyExistsBefore should be(false)
+      originalDeviceSecret should be(localEncryptedDeviceSecret)
+      updatedDeviceSecret should be(updatedLocalEncryptedDeviceSecret)
+      deviceKeyExistsAfter should be(true)
+    }
+  }
+
+  it should "re-encrypt device secrets (and not replace missing remote secret)" in {
+    val tokenEndpointPort = ports.dequeue()
+    val tokenEndpoint = MockTokenEndpoint(port = tokenEndpointPort, token = apiCredentials.token)
+    tokenEndpoint.start()
+
+    val apiEndpointPort = ports.dequeue()
+    val apiEndpoint = new MockServerApiEndpoint(
+      expectedCredentials = apiCredentials,
+      expectedDeviceKey = None
+    )
+
+    val apiEndpointBinding = apiEndpoint.start(port = apiEndpointPort)
+
+    val modeArguments = ApplicationArguments.Mode.Maintenance.ReEncryptDeviceSecret(
+      currentUserName = userName,
+      currentUserPassword = userPassword,
+      oldUserPassword = "other-password".toCharArray
+    )
+
+    val directory = createCustomApplicationDirectory(
+      tokenEndpointPort = tokenEndpointPort,
+      apiEndpointPort = apiEndpointPort,
+      deviceSecret = Some(localEncryptedDeviceSecret)
+    )
+
+    for {
+      base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
+      secrets <- Secrets(base, modeArguments)
+      originalDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
+      deviceKeyExistsBefore <- apiEndpoint.deviceKeyExists(deviceId)
+      _ <- secrets.apply()
+      _ <- apiEndpointBinding.flatMap(_.terminate(100.millis))
+      updatedDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
+      deviceKeyExistsAfter <- apiEndpoint.deviceKeyExists(deviceId)
+    } yield {
+      tokenEndpoint.stop()
+      deviceKeyExistsBefore should be(false)
+      originalDeviceSecret should be(localEncryptedDeviceSecret)
+      updatedDeviceSecret should be(updatedLocalEncryptedDeviceSecret)
+      deviceKeyExistsAfter should be(false)
+    }
+  }
+
+  it should "handle local device secret decryption failures during push" in {
+    val tokenEndpointPort = ports.dequeue()
+    val tokenEndpoint = MockTokenEndpoint(port = tokenEndpointPort, token = apiCredentials.token)
+    tokenEndpoint.start()
+
+    val modeArguments = ApplicationArguments.Mode.Maintenance.PushDeviceSecret(
+      currentUserName = userName,
+      currentUserPassword = userPassword,
+      remotePassword = None
+    )
+
+    val directory = createCustomApplicationDirectory(
+      tokenEndpointPort = tokenEndpointPort,
+      apiEndpointPort = 9100,
+      deviceSecret = Some(ByteString.fromString("invalid-device-key"))
+    )
+
+    for {
+      base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
+      e <- Secrets(base, modeArguments).failed.map { case NonFatal(e: ServiceStartupFailure) => e }
+    } yield {
+      tokenEndpoint.stop()
+      e.cause should be("credentials")
+      e.message should include("Tag mismatch")
+    }
+  }
+
+  it should "handle local device secret decryption failures during re-encryption" in {
+    val modeArguments = ApplicationArguments.Mode.Maintenance.ReEncryptDeviceSecret(
+      currentUserName = userName,
+      currentUserPassword = userPassword,
+      oldUserPassword = "other-password".toCharArray
+    )
+
+    val directory = createCustomApplicationDirectory(
+      tokenEndpointPort = 9101,
+      apiEndpointPort = 9102,
+      deviceSecret = Some(ByteString.fromString("invalid-device-key"))
+    )
+
+    for {
+      base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
+      e <- Secrets(base, modeArguments).failed.map { case NonFatal(e: ServiceStartupFailure) => e }
+    } yield {
+      e.cause should be("credentials")
+      e.message should include("Tag mismatch")
+    }
+  }
+
+  it should "handle local device secret decryption failures during pull" in {
+    val tokenEndpointPort = ports.dequeue()
+    val tokenEndpoint = MockTokenEndpoint(port = tokenEndpointPort, token = apiCredentials.token)
+    tokenEndpoint.start()
+
+    val modeArguments = ApplicationArguments.Mode.Maintenance.PullDeviceSecret(
+      currentUserName = userName,
+      currentUserPassword = userPassword,
+      remotePassword = None
     )
 
     val directory = createCustomApplicationDirectory(
@@ -168,8 +349,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
     for {
       base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
-      init <- Init(base, console = None)
-      e <- Secrets(base, init).failed.map { case NonFatal(e: ServiceStartupFailure) => e }
+      e <- Secrets(base, modeArguments).failed.map { case NonFatal(e: ServiceStartupFailure) => e }
     } yield {
       tokenEndpoint.stop()
       e.cause should be("credentials")
@@ -183,14 +363,10 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val endpoint = MockTokenEndpoint(port = tokenEndpointPort, token = "test-token", allowedGrants = allowedGrants)
     endpoint.start()
 
-    val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = false,
-      deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Pull),
-      userCredentialsOperation = None,
+    val modeArguments = ApplicationArguments.Mode.Maintenance.PullDeviceSecret(
       currentUserName = userName,
       currentUserPassword = userPassword,
-      newUserPassword = Array.emptyCharArray,
-      newUserSalt = ""
+      remotePassword = None
     )
 
     val directory = createCustomApplicationDirectory(
@@ -200,10 +376,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
     Secrets(
       base = Base(modeArguments = modeArguments, applicationDirectory = directory).await,
-      init = new Init {
-        override def currentCredentials(): Future[(String, Array[Char])] = Future.successful((userName, userPassword))
-        override def newCredentials(): Future[(Array[Char], String)] = Future.failed(new RuntimeException("test failure"))
-      }
+      mode = modeArguments
     ).map { result =>
       fail(s"Unexpected result received: [$result]")
     }.recover { case NonFatal(e: ServiceStartupFailure) =>
@@ -220,14 +393,10 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val endpoint = MockTokenEndpoint(port = tokenEndpointPort, token = "test-token", allowedGrants = allowedGrants)
     endpoint.start()
 
-    val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = false,
-      deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Pull),
-      userCredentialsOperation = None,
+    val modeArguments = ApplicationArguments.Mode.Maintenance.PullDeviceSecret(
       currentUserName = userName,
       currentUserPassword = userPassword,
-      newUserPassword = Array.emptyCharArray,
-      newUserSalt = ""
+      remotePassword = None
     )
 
     val directory = createCustomApplicationDirectory(
@@ -237,10 +406,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
     Secrets(
       base = Base(modeArguments = modeArguments, applicationDirectory = directory).await,
-      init = new Init {
-        override def currentCredentials(): Future[(String, Array[Char])] = Future.successful((userName, userPassword))
-        override def newCredentials(): Future[(Array[Char], String)] = Future.failed(new RuntimeException("test failure"))
-      }
+      mode = modeArguments
     ).map { result =>
       fail(s"Unexpected result received: [$result]")
     }.recover { case NonFatal(e: ServiceStartupFailure) =>
@@ -256,14 +422,10 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val tokenEndpoint = MockTokenEndpoint(port = tokenEndpointPort, token = apiCredentials.token)
     tokenEndpoint.start()
 
-    val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = false,
-      deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Pull),
-      userCredentialsOperation = None,
+    val modeArguments = ApplicationArguments.Mode.Maintenance.PullDeviceSecret(
       currentUserName = userName,
       currentUserPassword = userPassword,
-      newUserPassword = Array.emptyCharArray,
-      newUserSalt = ""
+      remotePassword = None
     )
 
     val directory = createCustomApplicationDirectory(
@@ -274,8 +436,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
     for {
       base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
-      init <- Init(base, console = None)
-      secrets <- Secrets(base, init)
+      secrets <- Secrets(base, modeArguments)
       e <- secrets.apply().failed.map { case NonFatal(e: ServiceStartupFailure) => e }
     } yield {
       tokenEndpoint.stop()
@@ -297,14 +458,10 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
     val apiEndpointBinding = apiEndpoint.start(port = apiEndpointPort)
 
-    val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = false,
-      deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Pull),
-      userCredentialsOperation = None,
+    val modeArguments = ApplicationArguments.Mode.Maintenance.PullDeviceSecret(
       currentUserName = userName,
       currentUserPassword = userPassword,
-      newUserPassword = Array.emptyCharArray,
-      newUserSalt = ""
+      remotePassword = None
     )
 
     val directory = createCustomApplicationDirectory(
@@ -315,8 +472,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
     for {
       base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
-      init <- Init(base, console = None)
-      secrets <- Secrets(base, init)
+      secrets <- Secrets(base, modeArguments)
       e <- secrets.apply().failed.map { case NonFatal(e: ServiceStartupFailure) => e }
       _ <- apiEndpointBinding.flatMap(_.terminate(100.millis))
       missingDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret).failed
@@ -329,14 +485,10 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
   }
 
   it should "handle failures when loading device secret from file" in {
-    val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = false,
-      deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Push),
-      userCredentialsOperation = None,
+    val modeArguments = ApplicationArguments.Mode.Maintenance.PushDeviceSecret(
       currentUserName = userName,
       currentUserPassword = userPassword,
-      newUserPassword = Array.emptyCharArray,
-      newUserSalt = ""
+      remotePassword = None
     )
 
     val filesystem = Jimfs.newFileSystem()
@@ -351,8 +503,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
     for {
       base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
-      init <- Init(base, console = None)
-      e <- Secrets(base, init).failed.map { case NonFatal(e: ServiceStartupFailure) => e }
+      e <- Secrets(base, modeArguments).failed.map { case NonFatal(e: ServiceStartupFailure) => e }
     } yield {
       e.cause should be("file")
       e.message should include("test failure")
@@ -364,14 +515,10 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val tokenEndpoint = MockTokenEndpoint(port = tokenEndpointPort, token = apiCredentials.token)
     tokenEndpoint.start()
 
-    val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = false,
-      deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Push),
-      userCredentialsOperation = None,
+    val modeArguments = ApplicationArguments.Mode.Maintenance.PushDeviceSecret(
       currentUserName = userName,
       currentUserPassword = userPassword,
-      newUserPassword = Array.emptyCharArray,
-      newUserSalt = ""
+      remotePassword = None
     )
 
     val directory = createCustomApplicationDirectory(
@@ -382,8 +529,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
     for {
       base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
-      init <- Init(base, console = None)
-      secrets <- Secrets(base, init)
+      secrets <- Secrets(base, modeArguments)
       e <- secrets.apply().failed.map { case NonFatal(e: ServiceStartupFailure) => e }
     } yield {
       tokenEndpoint.stop()
@@ -397,14 +543,10 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val tokenEndpoint = MockTokenEndpoint(port = tokenEndpointPort, token = apiCredentials.token)
     tokenEndpoint.start()
 
-    val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = false,
-      deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Push),
-      userCredentialsOperation = None,
+    val modeArguments = ApplicationArguments.Mode.Maintenance.PushDeviceSecret(
       currentUserName = userName,
       currentUserPassword = userPassword,
-      newUserPassword = Array.emptyCharArray,
-      newUserSalt = ""
+      remotePassword = None
     )
 
     val directory = createCustomApplicationDirectory(
@@ -415,8 +557,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
     for {
       base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
-      init <- Init(base, console = None)
-      secrets <- Secrets(base, init)
+      secrets <- Secrets(base, modeArguments)
       e <- secrets.apply().failed.map { case NonFatal(e: ServiceStartupFailure) => e }
     } yield {
       tokenEndpoint.stop()
@@ -438,14 +579,10 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
     val apiEndpointBinding = apiEndpoint.start(port = apiEndpointPort)
 
-    val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = false,
-      deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Pull),
-      userCredentialsOperation = None,
+    val modeArguments = ApplicationArguments.Mode.Maintenance.PullDeviceSecret(
       currentUserName = userName,
       currentUserPassword = userPassword,
-      newUserPassword = Array.emptyCharArray,
-      newUserSalt = ""
+      remotePassword = None
     )
 
     val directory = createCustomApplicationDirectory(
@@ -456,8 +593,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
     for {
       base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
-      init <- Init(base, console = None)
-      secrets <- Secrets(base, init)
+      secrets <- Secrets(base, modeArguments)
       e <- secrets.apply().failed.map { case NonFatal(e: ServiceStartupFailure) => e }
       _ <- apiEndpointBinding.flatMap(_.terminate(100.millis))
       missingDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret).failed
@@ -469,7 +605,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     }
   }
 
-  it should "handle device secret file creation failures" in {
+  it should "handle device secret file creation failures during pull" in {
     val tokenEndpointPort = ports.dequeue()
     val tokenEndpoint = MockTokenEndpoint(port = tokenEndpointPort, token = apiCredentials.token)
     tokenEndpoint.start()
@@ -480,14 +616,10 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       expectedDeviceKey = Some(remoteEncryptedDeviceSecret)
     ).start(port = apiEndpointPort)
 
-    val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = false,
-      deviceSecretOperation = Some(ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Pull),
-      userCredentialsOperation = None,
+    val modeArguments = ApplicationArguments.Mode.Maintenance.PullDeviceSecret(
       currentUserName = userName,
       currentUserPassword = userPassword,
-      newUserPassword = Array.emptyCharArray,
-      newUserSalt = ""
+      remotePassword = None
     )
 
     val filesystem = Jimfs.newFileSystem()
@@ -512,10 +644,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
     val result = Secrets(
       base = Base(modeArguments = modeArguments, applicationDirectory = directory).await,
-      init = new Init {
-        override def currentCredentials(): Future[(String, Array[Char])] = Future.successful((userName, userPassword))
-        override def newCredentials(): Future[(Array[Char], String)] = Future.failed(new RuntimeException("test failure"))
-      }
+      mode = modeArguments
     ).await
       .apply()
       .failed
@@ -530,23 +659,105 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     }
   }
 
-  it should "skip secrets operations if none are requested" in {
-    val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = false,
-      deviceSecretOperation = None,
-      userCredentialsOperation = None,
+  it should "handle missing local device secrets during re-encryption" in {
+    val tokenEndpointPort = ports.dequeue()
+    val tokenEndpoint = MockTokenEndpoint(port = tokenEndpointPort, token = apiCredentials.token)
+    tokenEndpoint.start()
+
+    val apiEndpointPort = ports.dequeue()
+    val apiEndpoint = new MockServerApiEndpoint(
+      expectedCredentials = apiCredentials,
+      expectedDeviceKey = Some(remoteEncryptedDeviceSecret)
+    ).start(port = apiEndpointPort)
+
+    val modeArguments = ApplicationArguments.Mode.Maintenance.ReEncryptDeviceSecret(
       currentUserName = userName,
       currentUserPassword = userPassword,
-      newUserPassword = Array.emptyCharArray,
-      newUserSalt = ""
+      oldUserPassword = "other-password".toCharArray
     )
+
+    val directory = createCustomApplicationDirectory(
+      tokenEndpointPort = tokenEndpointPort,
+      apiEndpointPort = apiEndpointPort,
+      deviceSecret = None
+    )
+
+    for {
+      base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
+      secrets <- Secrets(base, modeArguments)
+      e <- secrets.apply().failed.map { case NonFatal(e: ServiceStartupFailure) => e }
+      _ <- apiEndpoint.flatMap(_.terminate(100.millis))
+    } yield {
+      tokenEndpoint.stop()
+      e.cause should be("credentials")
+      e.message should include("Failed to re-encrypt device secret; no secret was found locally")
+    }
+  }
+
+  it should "handle device secret file creation failures during re-encryption" in {
+    val tokenEndpointPort = ports.dequeue()
+    val tokenEndpoint = MockTokenEndpoint(port = tokenEndpointPort, token = apiCredentials.token)
+    tokenEndpoint.start()
+
+    val apiEndpointPort = ports.dequeue()
+    val apiEndpoint = new MockServerApiEndpoint(
+      expectedCredentials = apiCredentials,
+      expectedDeviceKey = Some(remoteEncryptedDeviceSecret)
+    ).start(port = apiEndpointPort)
+
+    val modeArguments = ApplicationArguments.Mode.Maintenance.ReEncryptDeviceSecret(
+      currentUserName = userName,
+      currentUserPassword = userPassword,
+      oldUserPassword = "other-password".toCharArray
+    )
+
+    val filesystem = Jimfs.newFileSystem()
+
+    val directory = new ApplicationDirectory.Default(
+      applicationName = "test-app",
+      filesystem = filesystem
+    ) {
+      override def pushFile[T](file: String, content: T)(implicit ec: ExecutionContext, m: T => ByteString): Future[Path] =
+        Future.failed(new RuntimeException("test failure"))
+    }
+
+    val path = directory.config.get
+    java.nio.file.Files.createDirectories(path)
+
+    java.nio.file.Files.writeString(
+      path.resolve(Files.ConfigOverride),
+      s"""{
+         |$tokenEndpointConfigEntry: "http://localhost:$tokenEndpointPort/oauth/token",
+         |$apiEndpointConfigEntry: "http://localhost:$apiEndpointPort"
+             }""".stripMargin.replaceAll("\n", "")
+    )
+
+    java.nio.file.Files.write(path.resolve(Files.DeviceSecret), localEncryptedDeviceSecret.toArray)
+
+    val result = Secrets(
+      base = Base(modeArguments = modeArguments, applicationDirectory = directory).await,
+      mode = modeArguments
+    ).await
+      .apply()
+      .failed
+
+    for {
+      e <- result.collect { case NonFatal(e: ServiceStartupFailure) => e }
+      _ <- apiEndpoint.flatMap(_.terminate(100.millis))
+    } yield {
+      e.cause should be("file")
+      e.message should startWith("RuntimeException: test failure")
+    }
+  }
+
+  it should "skip secrets operations if none are requested" in {
+    val modeArguments = ApplicationArguments.Mode.Maintenance.RegenerateApiCertificate
 
     val directory = createCustomApplicationDirectory(apiEndpointPort = 9098, tokenEndpointPort = 9099)
 
     for {
       base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
-      init <- Init(base, console = None)
-      secrets <- Secrets(base, init)
+      secrets <- Secrets(base, modeArguments)
       _ <- secrets.apply()
       missingDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret).failed
     } yield {
@@ -594,12 +805,22 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
   private val ports: mutable.Queue[Int] = (40000 to 40100).to(mutable.Queue)
 
-  private val remoteEncryptedDeviceSecret = "trHMvaUulBOLG7NlWGryUHEeGA0IxkE39pEG".decodeFromBase64 // decrypted == "test-secret"
-  private val localEncryptedDeviceSecret = "08ko0LWDalPvEHna/WWuq3LoEaA3m4dQ1QuP".decodeFromBase64 // decrypted == "test-secret"
+  private val remoteEncryptedDeviceSecret =
+    "trHMvaUulBOLG7NlWGryUHEeGA0IxkE39pEG".decodeFromBase64 // decrypted == "test-secret"
+
+  private val remoteEncrypteWithCustomPassworddDeviceSecret =
+    "OQ/wJ2KKtYBg4gnW3ZHjXj6xSv6Lcuix/FJw".decodeFromBase64 // decrypted == "test-secret"
+
+  private val localEncryptedDeviceSecret =
+    "08ko0LWDalPvEHna/WWuq3LoEaA3m4dQ1QuP".decodeFromBase64 // decrypted == "test-secret"
+
+  private val updatedLocalEncryptedDeviceSecret =
+    "APz4aR/btAyhOtLXhA+gExjZoKd4t4sfkCE7".decodeFromBase64 // decrypted == "test-secret"
 
   private val deviceId = java.util.UUID.fromString("bc3b2b9a-3d04-4c8c-a6bb-b4ee428d1a99")
   private val userName = "test-user"
   private val userPassword = "test-password".toCharArray
+  private val remotePassword = "remote-password".toCharArray
 
   private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 

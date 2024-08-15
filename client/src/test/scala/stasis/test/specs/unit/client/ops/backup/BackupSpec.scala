@@ -106,6 +106,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceRetrieved) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
 
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
@@ -115,7 +116,8 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         tracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(7) // 2 directories + 5 files
         tracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(1)
         tracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(7) // 2 directories + 5 files
-        tracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(5) // 2 unchanged + 5 changed entities
+        tracker.statistics(MockBackupTracker.Statistic.EntitySkipped) should be(2) // 2 unchanged
+        tracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(5) // 5 changed entities
         tracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(5) // 2 unchanged + 5 changed entities
         tracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(3) // 3 files
         tracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(5) // 2 unchanged + 5 changed entities
@@ -187,6 +189,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceRetrieved) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
 
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
@@ -196,6 +199,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         tracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(3)
         tracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
         tracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(3)
+        tracker.statistics(MockBackupTracker.Statistic.EntitySkipped) should be(1)
         tracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(2)
         tracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(2)
         tracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(1)
@@ -272,6 +276,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceRetrieved) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
 
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
@@ -281,6 +286,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         tracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
         tracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
         tracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(3)
+        tracker.statistics(MockBackupTracker.Statistic.EntitySkipped) should be(1)
         tracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(2)
         tracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(2)
         tracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(1)
@@ -369,6 +375,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceRetrieved) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
 
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
@@ -378,6 +385,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         tracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(3)
         tracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
         tracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(3)
+        tracker.statistics(MockBackupTracker.Statistic.EntitySkipped) should be(1)
         tracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(2)
         tracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(2)
         tracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(1)
@@ -431,6 +439,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
 
       mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
@@ -440,6 +449,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
       tracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(1)
       tracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
       tracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+      tracker.statistics(MockBackupTracker.Statistic.EntitySkipped) should be(0)
       tracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
       tracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(0)
       tracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(0)
@@ -512,6 +522,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
           tracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.EntitySkipped) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.EntityProcessed) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(0)
@@ -545,6 +556,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
           tracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.EntitySkipped) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(0)
@@ -578,6 +590,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
           tracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+          tracker.statistics(MockBackupTracker.Statistic.EntitySkipped) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(0)
           tracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(0)

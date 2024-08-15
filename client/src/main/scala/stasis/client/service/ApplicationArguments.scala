@@ -1,9 +1,8 @@
 package stasis.client.service
 
-import scopt.OptionParser
-import stasis.client.service.ApplicationArguments.Mode.Maintenance
-
 import scala.concurrent.Future
+
+import scopt.OptionParser
 
 final case class ApplicationArguments(
   mode: ApplicationArguments.Mode
@@ -47,42 +46,81 @@ object ApplicationArguments {
         )
     }
 
-    final case class Maintenance(
-      regenerateApiCertificate: Boolean,
-      deviceSecretOperation: Option[Maintenance.DeviceSecretOperation],
-      userCredentialsOperation: Option[Maintenance.UserCredentialsOperation],
-      currentUserName: String,
-      currentUserPassword: Array[Char],
-      newUserPassword: Array[Char],
-      newUserSalt: String
-    ) extends Mode {
+    sealed trait Maintenance extends Mode {
       def validate(): Unit =
-        require(
-          Seq(regenerateApiCertificate, deviceSecretOperation.nonEmpty, userCredentialsOperation.nonEmpty).exists(identity),
-          "At least one maintenance flag must be set"
-        )
+        require(this != Maintenance.Empty, "At least one maintenance flag must be set")
     }
 
     object Maintenance {
-      def empty: Maintenance = Maintenance(
-        regenerateApiCertificate = false,
-        deviceSecretOperation = None,
-        userCredentialsOperation = None,
-        currentUserName = "",
-        currentUserPassword = Array.emptyCharArray,
-        newUserPassword = Array.emptyCharArray,
-        newUserSalt = ""
-      )
+      sealed trait UserCredentialsOperation extends Maintenance
 
-      sealed trait DeviceSecretOperation
-      object DeviceSecretOperation {
-        case object Push extends DeviceSecretOperation
-        case object Pull extends DeviceSecretOperation
+      sealed trait DeviceSecretOperation extends Maintenance {
+        def currentUserName: String
+        def currentUserPassword: Array[Char]
       }
 
-      sealed trait UserCredentialsOperation
-      object UserCredentialsOperation {
-        case object Reset extends UserCredentialsOperation
+      final case object Empty extends Maintenance
+
+      final case object RegenerateApiCertificate extends Maintenance
+
+      final case class PushDeviceSecret(
+        override val currentUserName: String,
+        override val currentUserPassword: Array[Char],
+        remotePassword: Option[Array[Char]]
+      ) extends DeviceSecretOperation
+
+      object PushDeviceSecret {
+        def empty: PushDeviceSecret =
+          PushDeviceSecret(
+            currentUserName = "",
+            currentUserPassword = Array.emptyCharArray,
+            remotePassword = None
+          )
+      }
+
+      final case class PullDeviceSecret(
+        override val currentUserName: String,
+        override val currentUserPassword: Array[Char],
+        remotePassword: Option[Array[Char]]
+      ) extends DeviceSecretOperation
+
+      object PullDeviceSecret {
+        def empty: PullDeviceSecret =
+          PullDeviceSecret(
+            currentUserName = "",
+            currentUserPassword = Array.emptyCharArray,
+            remotePassword = None
+          )
+      }
+
+      final case class ReEncryptDeviceSecret(
+        override val currentUserName: String,
+        override val currentUserPassword: Array[Char],
+        oldUserPassword: Array[Char]
+      ) extends DeviceSecretOperation
+
+      object ReEncryptDeviceSecret {
+        def empty: ReEncryptDeviceSecret =
+          ReEncryptDeviceSecret(
+            currentUserName = "",
+            currentUserPassword = Array.emptyCharArray,
+            oldUserPassword = Array.emptyCharArray
+          )
+      }
+
+      final case class ResetUserCredentials(
+        currentUserPassword: Array[Char],
+        newUserPassword: Array[Char],
+        newUserSalt: String
+      ) extends UserCredentialsOperation
+
+      object ResetUserCredentials {
+        def empty: ResetUserCredentials =
+          ResetUserCredentials(
+            currentUserPassword = Array.emptyCharArray,
+            newUserPassword = Array.emptyCharArray,
+            newUserSalt = ""
+          )
       }
     }
   }
@@ -166,111 +204,163 @@ object ApplicationArguments {
 
       cmd("maintenance")
         .abbr("m")
-        .action((_, args) => args.copy(mode = Mode.Maintenance.empty))
+        .action((_, args) => args.copy(mode = Mode.Maintenance.Empty))
         .text("\tStarting the client in maintenance mode.\n")
         .children(
-          opt[Unit]("regenerate-api-certificate")
+          cmd("regenerate-api-certificate")
             .action { case (_, args) =>
               (args.mode: @unchecked) match {
-                case mode: Mode.Maintenance => args.copy(mode = mode.copy(regenerateApiCertificate = true))
+                case _: Mode.Maintenance => args.copy(mode = Mode.Maintenance.RegenerateApiCertificate)
               }
             }
             .text("Regenerate the TLS certificate for the client's own API."),
-          opt[String]("credentials")
-            .action { case (operationArg, args) =>
-              (args.mode: @unchecked) match {
-                case mode: Mode.Maintenance =>
-                  val operation: Maintenance.UserCredentialsOperation = (operationArg: @unchecked) match {
-                    case "reset" => Mode.Maintenance.UserCredentialsOperation.Reset
-                  }
-
-                  args.copy(mode = mode.copy(userCredentialsOperation = Some(operation)))
-              }
-            }
+          cmd("credentials")
             .children(
-              opt[String]("current-user-password")
-                .valueName("<password>")
-                .action { case (password, args) =>
-                  (args.mode: @unchecked) match {
-                    case mode: Mode.Maintenance => args.copy(mode = mode.copy(currentUserPassword = password.toCharArray))
-                  }
-                }
-                .optional()
-                .text("Current user password (for re-encrypting device secret after resetting the credentials)."),
-              opt[String]("new-user-password")
-                .valueName("<password>")
-                .action { case (password, args) =>
-                  (args.mode: @unchecked) match {
-                    case mode: Mode.Maintenance => args.copy(mode = mode.copy(newUserPassword = password.toCharArray))
-                  }
-                }
-                .optional()
-                .text("New user password (for re-encrypting device secret after resetting the credentials)."),
-              opt[String]("new-user-salt")
-                .valueName("<salt>")
-                .action { case (salt, args) =>
-                  (args.mode: @unchecked) match {
-                    case mode: Mode.Maintenance => args.copy(mode = mode.copy(newUserSalt = salt))
-                  }
-                }
-                .optional()
-                .text("New user salt (for re-encrypting device secret after resetting the credentials).")
+              cmd("reset")
+                .action((_, args) => args.copy(mode = Mode.Maintenance.ResetUserCredentials.empty))
+                .children(
+                  opt[String]("current-user-password")
+                    .valueName("<password>")
+                    .action { case (password, args) =>
+                      (args.mode: @unchecked) match {
+                        case mode: Mode.Maintenance.ResetUserCredentials =>
+                          args.copy(mode = mode.copy(currentUserPassword = password.toCharArray))
+                      }
+                    }
+                    .optional()
+                    .text("Current user password (for re-encrypting device secret after resetting the credentials)."),
+                  opt[String]("new-user-password")
+                    .valueName("<password>")
+                    .action { case (password, args) =>
+                      (args.mode: @unchecked) match {
+                        case mode: Mode.Maintenance.ResetUserCredentials =>
+                          args.copy(mode = mode.copy(newUserPassword = password.toCharArray))
+                      }
+                    }
+                    .optional()
+                    .text("New user password (for re-encrypting device secret after resetting the credentials)."),
+                  opt[String]("new-user-salt")
+                    .valueName("<salt>")
+                    .action { case (salt, args) =>
+                      (args.mode: @unchecked) match {
+                        case mode: Mode.Maintenance.ResetUserCredentials =>
+                          args.copy(mode = mode.copy(newUserSalt = salt))
+                      }
+                    }
+                    .optional()
+                    .text("New user salt (for re-encrypting device secret after resetting the credentials).")
+                )
+                .text("Reset user credentials.")
             )
-            .validate { v =>
-              v.toLowerCase match {
-                case "reset" =>
-                  success
-
-                case other =>
-                  failure(
-                    s"Credentials management operation must be one of [reset] but [$other] provided"
-                  )
-              }
-            }
-            .valueName("[reset]")
-            .text("Update user credentials and re-encrypt device secret."),
-          opt[String]("secret")
-            .action { case (operationArg, args) =>
-              (args.mode: @unchecked) match {
-                case mode: Mode.Maintenance =>
-                  val operation: Maintenance.DeviceSecretOperation = (operationArg: @unchecked) match {
-                    case "push" => Mode.Maintenance.DeviceSecretOperation.Push
-                    case "pull" => Mode.Maintenance.DeviceSecretOperation.Pull
-                  }
-
-                  args.copy(mode = mode.copy(deviceSecretOperation = Some(operation)))
-              }
-            }
+            .text("Manage the current user credentials"),
+          cmd("secret")
             .children(
-              opt[String]("current-user-name")
-                .valueName("<name>")
-                .action { case (name, args) =>
-                  (args.mode: @unchecked) match {
-                    case mode: Mode.Maintenance => args.copy(mode = mode.copy(currentUserName = name))
-                  }
-                }
-                .optional()
-                .text("Current user name (for connection to the server, when pushing or pulling secrets)."),
-              opt[String]("current-user-password")
-                .valueName("<password>")
-                .action { case (password, args) =>
-                  (args.mode: @unchecked) match {
-                    case mode: Mode.Maintenance => args.copy(mode = mode.copy(currentUserPassword = password.toCharArray))
-                  }
-                }
-                .optional()
-                .text(
-                  "Current user password (for connection to the server and encrypting/decrypting the client secret, when pushing or pulling secrets)."
+              cmd("push")
+                .action((_, args) => args.copy(mode = Mode.Maintenance.PushDeviceSecret.empty))
+                .children(
+                  opt[String]("current-user-name")
+                    .valueName("<name>")
+                    .action { case (name, args) =>
+                      (args.mode: @unchecked) match {
+                        case mode: Mode.Maintenance.PushDeviceSecret =>
+                          args.copy(mode = mode.copy(currentUserName = name))
+                      }
+                    }
+                    .optional()
+                    .text("Current user name (for connection to the server)."),
+                  opt[String]("current-user-password")
+                    .valueName("<password>")
+                    .action { case (password, args) =>
+                      (args.mode: @unchecked) match {
+                        case mode: Mode.Maintenance.PushDeviceSecret =>
+                          args.copy(mode = mode.copy(currentUserPassword = password.toCharArray))
+                      }
+                    }
+                    .optional()
+                    .text("Current user password (for connection to the server)."),
+                  opt[String]("remote-password")
+                    .valueName("<password>")
+                    .action { case (password, args) =>
+                      (args.mode: @unchecked) match {
+                        case mode: Mode.Maintenance.PushDeviceSecret =>
+                          args.copy(mode = mode.copy(remotePassword = Some(password.toCharArray)))
+                      }
+                    }
+                    .optional()
+                    .text("Password override if the remote secret should have a different password.")
+                ),
+              cmd("pull")
+                .action((_, args) => args.copy(mode = Mode.Maintenance.PullDeviceSecret.empty))
+                .children(
+                  opt[String]("current-user-name")
+                    .valueName("<name>")
+                    .action { case (name, args) =>
+                      (args.mode: @unchecked) match {
+                        case mode: Mode.Maintenance.PullDeviceSecret =>
+                          args.copy(mode = mode.copy(currentUserName = name))
+                      }
+                    }
+                    .optional()
+                    .text("Current user name (for connection to the server)."),
+                  opt[String]("current-user-password")
+                    .valueName("<password>")
+                    .action { case (password, args) =>
+                      (args.mode: @unchecked) match {
+                        case mode: Mode.Maintenance.PullDeviceSecret =>
+                          args.copy(mode = mode.copy(currentUserPassword = password.toCharArray))
+                      }
+                    }
+                    .optional()
+                    .text("Current user password (for connection to the server)."),
+                  opt[String]("remote-password")
+                    .valueName("<password>")
+                    .action { case (password, args) =>
+                      (args.mode: @unchecked) match {
+                        case mode: Mode.Maintenance.PullDeviceSecret =>
+                          args.copy(mode = mode.copy(remotePassword = Some(password.toCharArray)))
+                      }
+                    }
+                    .optional()
+                    .text("Password override if the remote secret has a different password.")
+                ),
+              cmd("re-encrypt")
+                .action((_, args) => args.copy(mode = Mode.Maintenance.ReEncryptDeviceSecret.empty))
+                .children(
+                  opt[String]("current-user-name")
+                    .valueName("<name>")
+                    .action { case (name, args) =>
+                      (args.mode: @unchecked) match {
+                        case mode: Mode.Maintenance.ReEncryptDeviceSecret =>
+                          args.copy(mode = mode.copy(currentUserName = name))
+                      }
+                    }
+                    .optional()
+                    .text("Current user name (for connection to the server)."),
+                  opt[String]("current-user-password")
+                    .valueName("<password>")
+                    .action { case (password, args) =>
+                      (args.mode: @unchecked) match {
+                        case mode: Mode.Maintenance.ReEncryptDeviceSecret =>
+                          args.copy(mode = mode.copy(currentUserPassword = password.toCharArray))
+                      }
+                    }
+                    .optional()
+                    .text("Current user password (for connection to the server)."),
+                  opt[String]("old-user-password")
+                    .valueName("<password>")
+                    .action { case (password, args) =>
+                      (args.mode: @unchecked) match {
+                        case mode: Mode.Maintenance.ReEncryptDeviceSecret =>
+                          args.copy(mode = mode.copy(oldUserPassword = password.toCharArray))
+                      }
+                    }
+                    .optional()
+                    .text("User password previously used for encrypting the local device secret.")
                 )
             )
-            .validate { v =>
-              v.toLowerCase match {
-                case "push" | "pull" => success
-                case other           => failure(s"Secrets management operation must be one of [push, pull] but [$other] provided")
-              }
-            }
-            .valueName("[push|pull]")
-            .text("Use the server to store or retrieve the client's secret.")
+            .text(
+              "Manage the current client secret - Use the server to store or retrieve the secret, or re-encrypt it with a new user password."
+            )
         )
     }
 }

@@ -45,6 +45,7 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
     tracker.specificationProcessed(unmatched = Seq.empty)
     tracker.specificationProcessed(unmatched = Seq(rule -> new RuntimeException("Test failure #1")))
     tracker.entityExamined(entity = entity, metadataChanged = false, contentChanged = false)
+    tracker.entitySkipped(entity = entity)
     tracker.entityCollected(entity = sourceEntity)
     tracker.entityProcessingStarted(entity = entity, expectedParts = 1)
     tracker.entityPartProcessed(entity = entity)
@@ -68,6 +69,7 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
           discovered = Set(entity),
           unmatched = Seq("Rule [+ /work ?] failed with [RuntimeException - Test failure #1]"),
           examined = Set(entity),
+          skipped = Set(entity),
           collected = Map(entity -> sourceEntity),
           pending = Map.empty,
           processed = Map(

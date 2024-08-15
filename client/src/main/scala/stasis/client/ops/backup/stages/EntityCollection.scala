@@ -26,9 +26,14 @@ trait EntityCollection {
           contentChanged = entity.hasContentChanged
         )
       }
-      .filter(_.hasChanged)
       .wireTap { entity =>
-        metrics.recordEntityCollected(entity = entity)
-        providers.track.entityCollected(entity = entity)
+        if (entity.hasChanged) {
+          metrics.recordEntityCollected(entity = entity)
+          providers.track.entityCollected(entity = entity)
+        } else {
+          metrics.recordEntitySkipped(entity = entity)
+          providers.track.entitySkipped(entity = entity.path)
+        }
       }
+      .filter(_.hasChanged)
 }

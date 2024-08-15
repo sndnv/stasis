@@ -206,6 +206,7 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
         discovered = Set(entity1),
         unmatched = Seq("a", "b", "c"),
         examined = Set(entity2),
+        skipped = Set.empty,
         collected = Map(entity1 -> sourceEntity),
         pending = Map(entity2 -> PendingSourceEntity(expectedParts = 1, processedParts = 2)),
         processed = Map(
@@ -239,6 +240,7 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
          |"discovered":["/tmp/file/one"],
          |"unmatched":["a","b","c"],
          |"examined":["/tmp/file/two"],
+         |"skipped":[],
          |"collected":["/tmp/file/one"],
          |"pending":{"/tmp/file/two":{"expected_parts":1,"processed_parts":2}},
          |"processed":{"/tmp/file/one":{"expected_parts":1,"processed_parts":1},"/tmp/file/two":{"expected_parts":0,"processed_parts":0}},

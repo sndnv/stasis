@@ -3,7 +3,7 @@ package stasis.client.api.http.routes
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
-import stasis.client.api.http.Context
+import stasis.client.api.Context
 import stasis.shared.api.responses.Ping
 
 class Service()(implicit context: Context) extends ApiRoutes {

@@ -1,5 +1,6 @@
 package stasis.test.specs.unit.client.service.components
 
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.mutable
@@ -21,7 +22,7 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.util.ByteString
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import stasis.client.api.clients.Clients
+import stasis.client.api.clients.{Clients, ServerApiEndpointClient}
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.ops.monitoring.ServerMonitor
@@ -146,6 +147,148 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
     terminationCounter.get should be(1)
   }
 
+  it should "provide a user password verification handler via context" in {
+    val apiEndpointPort = ports.dequeue()
+
+    val passwordVerified = new AtomicBoolean(false)
+
+    val directory = createApplicationDirectory(
+      init = dir => {
+        val path = dir.config.get
+        java.nio.file.Files.createDirectories(path)
+        java.nio.file.Files.writeString(
+          path.resolve(Files.ConfigOverride),
+          s"""{$apiEndpointConfigEntry: $apiEndpointPort}"""
+        )
+      }
+    )
+
+    val base = Base(applicationDirectory = directory, applicationTray = ApplicationTray.NoOp(), terminate = () => ()).await
+
+    ApiEndpoint(
+      base = base,
+      tracking = Tracking(base).await,
+      apiClients = new ApiClients {
+        override def clients: Clients =
+          Clients(
+            api = MockServerApiEndpointClient(),
+            core = MockServerCoreEndpointClient()
+          )
+      },
+      ops = new Ops {
+        override def executor: OperationExecutor = MockOperationExecutor()
+        override def scheduler: OperationScheduler = MockOperationScheduler()
+        override def monitor: ServerMonitor = MockServerMonitor()
+        override def search: Search = MockSearch()
+      },
+      secrets = new MockSecrets {
+        override def verifyUserPassword: Array[Char] => Boolean = { password =>
+          val _ = passwordVerified.set(true)
+          super.verifyUserPassword(password)
+        }
+      }
+    ).map { endpoint =>
+      passwordVerified.get() should be(false)
+      endpoint.context.handlers.verifyUserPassword("test-password".toCharArray)
+      passwordVerified.get() should be(true)
+    }
+  }
+
+  it should "provide a user credentials update handler via context" in {
+    val apiEndpointPort = ports.dequeue()
+
+    val credentialsUpdated = new AtomicBoolean(false)
+
+    val directory = createApplicationDirectory(
+      init = dir => {
+        val path = dir.config.get
+        java.nio.file.Files.createDirectories(path)
+        java.nio.file.Files.writeString(
+          path.resolve(Files.ConfigOverride),
+          s"""{$apiEndpointConfigEntry: $apiEndpointPort}"""
+        )
+      }
+    )
+
+    val base = Base(applicationDirectory = directory, applicationTray = ApplicationTray.NoOp(), terminate = () => ()).await
+
+    ApiEndpoint(
+      base = base,
+      tracking = Tracking(base).await,
+      apiClients = new ApiClients {
+        override def clients: Clients =
+          Clients(
+            api = MockServerApiEndpointClient(),
+            core = MockServerCoreEndpointClient()
+          )
+      },
+      ops = new Ops {
+        override def executor: OperationExecutor = MockOperationExecutor()
+        override def scheduler: OperationScheduler = MockOperationScheduler()
+        override def monitor: ServerMonitor = MockServerMonitor()
+        override def search: Search = MockSearch()
+      },
+      secrets = new MockSecrets {
+        override def updateUserCredentials: (ServerApiEndpointClient, Array[Char], String) => Future[Done] = {
+          case (api, password, salt) =>
+            val _ = credentialsUpdated.set(true)
+            super.updateUserCredentials(api, password, salt)
+        }
+      }
+    ).map { endpoint =>
+      credentialsUpdated.get() should be(false)
+      endpoint.context.handlers.updateUserCredentials("test-password".toCharArray, "test-salt")
+      credentialsUpdated.get() should be(true)
+    }
+  }
+
+  it should "provide a device secret re-encryption handler via context" in {
+    val apiEndpointPort = ports.dequeue()
+
+    val secretReEncrypted = new AtomicBoolean(false)
+
+    val directory = createApplicationDirectory(
+      init = dir => {
+        val path = dir.config.get
+        java.nio.file.Files.createDirectories(path)
+        java.nio.file.Files.writeString(
+          path.resolve(Files.ConfigOverride),
+          s"""{$apiEndpointConfigEntry: $apiEndpointPort}"""
+        )
+      }
+    )
+
+    val base = Base(applicationDirectory = directory, applicationTray = ApplicationTray.NoOp(), terminate = () => ()).await
+
+    ApiEndpoint(
+      base = base,
+      tracking = Tracking(base).await,
+      apiClients = new ApiClients {
+        override def clients: Clients =
+          Clients(
+            api = MockServerApiEndpointClient(),
+            core = MockServerCoreEndpointClient()
+          )
+      },
+      ops = new Ops {
+        override def executor: OperationExecutor = MockOperationExecutor()
+        override def scheduler: OperationScheduler = MockOperationScheduler()
+        override def monitor: ServerMonitor = MockServerMonitor()
+        override def search: Search = MockSearch()
+      },
+      secrets = new MockSecrets {
+        override def reEncryptDeviceSecret: (ServerApiEndpointClient, Array[Char]) => Future[Done] = { case (api, password) =>
+          val _ = secretReEncrypted.set(true)
+          super.reEncryptDeviceSecret(api, password)
+        }
+      }
+    ).map { endpoint =>
+      secretReEncrypted.get() should be(false)
+      endpoint.context.handlers.reEncryptDeviceSecret("test-password".toCharArray)
+      secretReEncrypted.get() should be(true)
+    }
+  }
+
   it should "handle token file write failures" in {
     val directory = createApplicationDirectory(init = _ => ())
 
@@ -235,12 +378,14 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
 
   private val ports: mutable.Queue[Int] = (30000 to 30100).to(mutable.Queue)
 
+  private val secrets = new MockSecrets()
+
   implicit val secretsConfig: SecretsConfig = SecretsConfig(
     config = typedSystem.settings.config.getConfig("stasis.client.secrets"),
     ivSize = Aes.IvSize
   )
 
-  private val secrets = new Secrets {
+  private class MockSecrets extends Secrets {
     override def deviceSecret: DeviceSecret =
       DeviceSecret(
         user = User.generateId(),
@@ -258,6 +403,9 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
 
     override def verifyUserPassword: Array[Char] => Boolean = _ => false
 
-    override def updateUserCredentials: (Array[Char], String) => Future[Done] = (_, _) => Future.successful(Done)
+    override def updateUserCredentials: (ServerApiEndpointClient, Array[Char], String) => Future[Done] = (_, _, _) =>
+      Future.successful(Done)
+
+    override def reEncryptDeviceSecret: (ServerApiEndpointClient, Array[Char]) => Future[Done] = (_, _) => Future.successful(Done)
   }
 }

@@ -79,10 +79,13 @@ trait Service { _: Service.Arguments =>
 
       for {
         base <- components.maintenance.Base(modeArguments = mode, applicationDirectory = applicationDirectory)
+        init <- components.maintenance.Init(base, console = console)
+        mode <- init.retrieveCredentials()
         certificates <- components.maintenance.Certificates(base)
         _ <- certificates.apply()
-        init <- components.maintenance.Init(base, console = console)
-        secrets <- components.maintenance.Secrets(base, init)
+        credentials <- components.maintenance.Credentials(base, mode)
+        _ <- credentials.apply()
+        secrets <- components.maintenance.Secrets(base, mode)
         _ <- secrets.apply()
       } yield {
         mode

@@ -12,7 +12,7 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.LoggerFactory
-import stasis.client.api.http.Context
+import stasis.client.api.Context
 import stasis.client.api.http.routes.User
 import stasis.shared.api.requests.UpdateUserPasswordOwn
 import stasis.shared.api.requests.UpdateUserSaltOwn
@@ -50,6 +50,7 @@ class UserSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
     }
   }
@@ -64,7 +65,7 @@ class UserSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val routes = createRoutes(
       api = mockApiClient,
       verifyUserPassword = provided => provided.sameElements(currentPassword.toCharArray),
-      updateUserCredentials = (_, updatedSalt) => {
+      updateUserCredentials = (_, _) => {
         updatedUserCredentials.set(true)
         Future.successful(Done)
       }
@@ -94,6 +95,7 @@ class UserSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
     }
   }
@@ -141,6 +143,7 @@ class UserSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
     }
   }
@@ -187,6 +190,7 @@ class UserSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
     }
   }
@@ -234,6 +238,7 @@ class UserSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
     }
   }
@@ -254,7 +259,8 @@ class UserSpec extends AsyncUnitSpec with ScalatestRouteTest {
       handlers = Context.Handlers(
         terminateService = () => (),
         verifyUserPassword = verifyUserPassword,
-        updateUserCredentials = updateUserCredentials
+        updateUserCredentials = updateUserCredentials,
+        reEncryptDeviceSecret = _ => Future.successful(Done)
       ),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
       log = LoggerFactory.getLogger(this.getClass.getName)

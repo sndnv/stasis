@@ -68,6 +68,7 @@ class EntityCollectionSpec extends AsyncUnitSpec {
         mockTracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(3)
+        mockTracker.statistics(MockBackupTracker.Statistic.EntitySkipped) should be(1)
         mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(2)
         mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(0)
@@ -78,6 +79,7 @@ class EntityCollectionSpec extends AsyncUnitSpec {
         mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
 
         mockTelemetry.ops.backup.entityExamined should be(3)
+        mockTelemetry.ops.backup.entitySkipped should be(1)
         mockTelemetry.ops.backup.entityCollected should be(2)
         mockTelemetry.ops.backup.entityChunkProcessed should be(0)
         mockTelemetry.ops.backup.entityProcessed should be(0)

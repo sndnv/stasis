@@ -203,6 +203,7 @@ object Formats {
           "discovered" -> Json.toJson(backup.entities.discovered),
           "unmatched" -> Json.toJson(backup.entities.unmatched),
           "examined" -> Json.toJson(backup.entities.examined),
+          "skipped" -> Json.toJson(backup.entities.skipped),
           "collected" -> Json.toJson(backup.entities.collected.keySet),
           "pending" -> Json.toJson(backup.entities.pending.map(e => e._1.toAbsolutePath.toString -> e._2)),
           "processed" -> Json.toJson(backup.entities.processed.map(e => e._1.toAbsolutePath.toString -> e._2)),

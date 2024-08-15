@@ -26,21 +26,11 @@ trait Secrets {
 }
 
 object Secrets {
-  def apply(base: Base, init: Init): Future[Secrets] = {
+  def apply(base: Base, mode: ApplicationArguments.Mode.Maintenance): Future[Secrets] = {
     import base._
 
-    base.args.deviceSecretOperation match {
-      case None =>
-        Future.successful(
-          new Secrets {
-            override def apply(): Future[Done] = {
-              log.debug("No secrets operation requested; skipping...")
-              Future.successful(Done)
-            }
-          }
-        )
-
-      case Some(deviceSecretOperation) =>
+    mode match {
+      case operation: ApplicationArguments.Mode.Maintenance.DeviceSecretOperation =>
         val coreScope = Try(rawConfig.getString("server.authentication.scopes.core")).toOption
         val apiScope = Try(rawConfig.getString("server.authentication.scopes.api")).toOption
 
@@ -63,8 +53,7 @@ object Secrets {
           user <- UUID.fromString(rawConfig.getString("server.api.user")).future
           userSalt <- rawConfig.getString("server.api.user-salt").future
           device <- UUID.fromString(rawConfig.getString("server.api.device")).future
-          (username, password) <- init.currentCredentials().transformFailureTo(ServiceStartupFailure.credentials)
-          userPassword = UserPassword(user = user, salt = userSalt, password = password)(secretsConfig)
+          userPassword = UserPassword(user = user, salt = userSalt, password = operation.currentUserPassword)(secretsConfig)
           _ = log.debug("Loading encrypted device secret from [{}]...", Files.DeviceSecret)
           encryptedDeviceSecret <- directory
             .pullFile[ByteString](file = Files.DeviceSecret)
@@ -72,7 +61,16 @@ object Secrets {
             .recover { case _: FileNotFoundException => None }
             .transformFailureTo(ServiceStartupFailure.file)
           hashedEncryptionPassword = userPassword.toHashedEncryptionPassword
-          keyStoreEncryptionSecret = hashedEncryptionPassword.toKeyStoreEncryptionSecret
+          getKeyStoreEncryptionSecret = (remotePassword: Option[Array[Char]]) =>
+            remotePassword match {
+              case Some(password) =>
+                log.debug("Remote password provided for device key en/decryption...")
+                UserPassword(user = user, salt = userSalt, password = password)(
+                  secretsConfig
+                ).toHashedEncryptionPassword.toKeyStoreEncryptionSecret
+              case None =>
+                hashedEncryptionPassword.toKeyStoreEncryptionSecret
+            }
           localEncryptionSecret = hashedEncryptionPassword.toLocalEncryptionSecret
           decryptedDeviceSecret <- encryptedDeviceSecret match {
             case Some(encryptedSecret) =>
@@ -98,7 +96,7 @@ object Secrets {
             .token(
               scope = apiScope,
               parameters = OAuthClient.GrantParameters.ResourceOwnerPasswordCredentials(
-                username = username,
+                username = operation.currentUserName,
                 password = userPassword.toAuthenticationPassword.extract()
               )
             )
@@ -123,11 +121,11 @@ object Secrets {
             requestBufferSize = rawConfig.getInt("server.api.request-buffer-size")
           )
 
-          def push(): Future[Done] =
+          def push(remotePassword: Option[Array[Char]]): Future[Done] =
             decryptedDeviceSecret match {
               case Some(secret) =>
                 for {
-                  encryptedDeviceSecret <- keyStoreEncryptionSecret.encryptDeviceSecret(secret = secret)
+                  encryptedDeviceSecret <- getKeyStoreEncryptionSecret(remotePassword).encryptDeviceSecret(secret = secret)
                   _ <- apiClient.pushDeviceKey(encryptedDeviceSecret).transformFailureTo(ServiceStartupFailure.api)
                 } yield {
                   Done
@@ -141,11 +139,11 @@ object Secrets {
                 )
             }
 
-          def pull(): Future[Done] = for {
+          def pull(remotePassword: Option[Array[Char]]): Future[Done] = for {
             keyResponse <- apiClient.pullDeviceKey().transformFailureTo(ServiceStartupFailure.api)
             decryptedDeviceSecret <- keyResponse match {
               case Some(encryptedDeviceSecret) =>
-                keyStoreEncryptionSecret
+                getKeyStoreEncryptionSecret(remotePassword)
                   .decryptDeviceSecret(device = device, encryptedSecret = encryptedDeviceSecret)
                   .transformFailureTo(ServiceStartupFailure.credentials)
 
@@ -165,19 +163,70 @@ object Secrets {
             Done
           }
 
+          def reEncrypt(oldUserPassword: Array[Char]): Future[Done] =
+            for {
+              actualDeviceSecret <- decryptedDeviceSecret match {
+                case Some(secret) =>
+                  Future.successful(secret)
+
+                case None =>
+                  Future.failed(
+                    ServiceStartupFailure.credentials(
+                      e = new RuntimeException("Failed to re-encrypt device secret; no secret was found locally")
+                    )
+                  )
+              }
+              newHashedEncryptionPassword = UserPassword(
+                user = user,
+                salt = userSalt,
+                password = oldUserPassword
+              )(secretsConfig).toHashedEncryptionPassword
+              localReEncryptionSecret = newHashedEncryptionPassword.toLocalEncryptionSecret
+              keyStoreReEncryptionSecret = newHashedEncryptionPassword.toKeyStoreEncryptionSecret
+              encryptedLocalDeviceSecret <- localReEncryptionSecret.encryptDeviceSecret(secret = actualDeviceSecret)
+              _ = log.infoN("Storing encrypted device secret to [{}]...", Files.DeviceSecret)
+              _ <- directory
+                .pushFile[ByteString](file = Files.DeviceSecret, content = encryptedLocalDeviceSecret)
+                .transformFailureTo(ServiceStartupFailure.file)
+              remoteDeviceSecretExists <- apiClient.deviceKeyExists()
+              _ <-
+                if (remoteDeviceSecretExists) {
+                  log.debug("Pushing re-encrypted device secret to [{}]...", apiClient.server)
+                  keyStoreReEncryptionSecret.encryptDeviceSecret(secret = actualDeviceSecret).flatMap(apiClient.pushDeviceKey)
+                } else {
+                  Future.successful(Done)
+                }
+            } yield {
+              Done
+            }
+
           new Secrets {
             override def apply(): Future[Done] =
-              deviceSecretOperation match {
-                case ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Push =>
+              operation match {
+                case operation: ApplicationArguments.Mode.Maintenance.PushDeviceSecret =>
                   log.debug("Pushing device secret to [{}]...", apiClient.server)
-                  push()
+                  push(operation.remotePassword)
 
-                case ApplicationArguments.Mode.Maintenance.DeviceSecretOperation.Pull =>
+                case operation: ApplicationArguments.Mode.Maintenance.PullDeviceSecret =>
                   log.debug("Pulling device secret from [{}]...", apiClient.server)
-                  pull()
+                  pull(operation.remotePassword)
+
+                case operation: ApplicationArguments.Mode.Maintenance.ReEncryptDeviceSecret =>
+                  log.debug("Re-encrypting device secret...")
+                  reEncrypt(operation.oldUserPassword)
               }
           }
         }
+
+      case _ =>
+        Future.successful(
+          new Secrets {
+            override def apply(): Future[Done] = {
+              log.debug("No secrets operation requested; skipping...")
+              Future.successful(Done)
+            }
+          }
+        )
     }
   }
 }

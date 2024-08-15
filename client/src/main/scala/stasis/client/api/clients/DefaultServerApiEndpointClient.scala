@@ -319,11 +319,30 @@ class DefaultServerApiEndpointClient(
         ).addCredentials(credentials = credentials)
       ).transformClientFailures()
       key <- response match {
-        case HttpResponse(StatusCodes.NotFound, _, _, _) => Future.successful(None)
-        case _                                           => response.toByteString.map(Some.apply)
+        case HttpResponse(status, _, _, _) if status.isSuccess() => response.toByteString.map(Some.apply)
+        case HttpResponse(StatusCodes.NotFound, _, _, _)         => Future.successful(None)
+        case _                                                   => response.asFailure
       }
     } yield {
       key
+    }
+
+  override def deviceKeyExists(): Future[Boolean] =
+    for {
+      credentials <- credentials
+      response <- offer(
+        request = HttpRequest(
+          method = HttpMethods.HEAD,
+          uri = s"$apiUrl/v1/devices/own/${self.toString}/key"
+        ).addCredentials(credentials = credentials)
+      ).transformClientFailures()
+      result <- response match {
+        case HttpResponse(status, _, _, _) if status.isSuccess() => Future.successful(true)
+        case HttpResponse(StatusCodes.NotFound, _, _, _)         => Future.successful(false)
+        case _                                                   => response.asFailure
+      }
+    } yield {
+      result
     }
 
   override def ping(): Future[Ping] =
@@ -400,16 +419,7 @@ object DefaultServerApiEndpointClient {
             }
           }
       } else {
-        Unmarshal(response)
-          .to[String]
-          .flatMap { responseContent =>
-            Future.failed(
-              new ServerApiFailure(
-                status = response.status,
-                message = s"Server API request failed with [${response.status.value}]: [$responseContent]"
-              )
-            )
-          }
+        response.asFailure
       }
     }
 
@@ -426,6 +436,21 @@ object DefaultServerApiEndpointClient {
       processed[ByteString] { () =>
         Unmarshal(response).to[ByteString]
       }
+
+    def asFailure[T](implicit system: ActorSystem[SpawnProtocol.Command]): Future[T] = {
+      import system.executionContext
+
+      Unmarshal(response)
+        .to[String]
+        .flatMap { responseContent =>
+          Future.failed(
+            new ServerApiFailure(
+              status = response.status,
+              message = s"Server API request failed with [${response.status.value}]: [$responseContent]"
+            )
+          )
+        }
+    }
   }
 
   implicit class HttpResponseWithTransformedFailures(op: => Future[HttpResponse]) {

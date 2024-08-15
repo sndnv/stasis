@@ -21,18 +21,13 @@ import stasis.client.service.components.exceptions.ServiceStartupFailure
 import stasis.client.service.components.internal.ConfigOverride
 import stasis.client.service.components.maintenance.Base
 import stasis.client.service.components.maintenance.Credentials
-import stasis.client.service.components.maintenance.Init
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.EncodingHelpers
 import stasis.test.specs.unit.client.ResourceHelpers
 
 class CredentialsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelpers {
   "A Credentials component" should "reset user credentials" in {
-    val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = false,
-      deviceSecretOperation = None,
-      userCredentialsOperation = Some(ApplicationArguments.Mode.Maintenance.UserCredentialsOperation.Reset),
-      currentUserName = currentUserName,
+    val modeArguments = ApplicationArguments.Mode.Maintenance.ResetUserCredentials(
       currentUserPassword = currentUserPassword,
       newUserPassword = newUserPassword,
       newUserSalt = newUserSalt
@@ -44,8 +39,7 @@ class CredentialsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHe
 
     for {
       base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
-      init <- Init(base, console = None)
-      credentials <- Credentials(base, init)
+      credentials <- Credentials(base, modeArguments)
       existingUserSalt = ConfigOverride.load(directory).getString(userSaltConfigEntry)
       existingDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
       _ <- credentials.apply()
@@ -59,80 +53,8 @@ class CredentialsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHe
     }
   }
 
-  it should "handle current credentials retrieval failures" in {
-    val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = false,
-      deviceSecretOperation = None,
-      userCredentialsOperation = Some(ApplicationArguments.Mode.Maintenance.UserCredentialsOperation.Reset),
-      currentUserName = currentUserName,
-      currentUserPassword = currentUserPassword,
-      newUserPassword = newUserPassword,
-      newUserSalt = newUserSalt
-    )
-
-    val directory = createCustomApplicationDirectory(
-      deviceSecret = Some(currentEncryptedDeviceSecret)
-    )
-
-    Credentials(
-      base = Base(modeArguments = modeArguments, applicationDirectory = directory).await,
-      init = new Init {
-        override def currentCredentials(): Future[(String, Array[Char])] =
-          Future.failed(new RuntimeException("test failure"))
-
-        override def newCredentials(): Future[(Array[Char], String)] =
-          Future.successful((newUserPassword, newUserSalt))
-      }
-    )
-      .map { result =>
-        fail(s"Unexpected result received: [$result]")
-      }
-      .recover { case NonFatal(e: ServiceStartupFailure) =>
-        e.cause should be("credentials")
-        e.message should be("RuntimeException: test failure")
-      }
-  }
-
-  it should "handle new credentials retrieval failures" in {
-    val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = false,
-      deviceSecretOperation = None,
-      userCredentialsOperation = Some(ApplicationArguments.Mode.Maintenance.UserCredentialsOperation.Reset),
-      currentUserName = currentUserName,
-      currentUserPassword = currentUserPassword,
-      newUserPassword = newUserPassword,
-      newUserSalt = newUserSalt
-    )
-
-    val directory = createCustomApplicationDirectory(
-      deviceSecret = Some(currentEncryptedDeviceSecret)
-    )
-
-    Credentials(
-      base = Base(modeArguments = modeArguments, applicationDirectory = directory).await,
-      init = new Init {
-        override def currentCredentials(): Future[(String, Array[Char])] =
-          Future.successful((currentUserName, currentUserPassword))
-
-        override def newCredentials(): Future[(Array[Char], String)] =
-          Future.failed(new RuntimeException("test failure"))
-      }
-    )
-      .map { result =>
-        fail(s"Unexpected result received: [$result]")
-      }
-      .recover { case NonFatal(e: ServiceStartupFailure) =>
-        e.cause should be("credentials")
-        e.message should be("RuntimeException: test failure")
-      }
-  }
-
   it should "handle failures when loading device secret from file" in {
-    val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = false,
-      deviceSecretOperation = None,
-      userCredentialsOperation = Some(ApplicationArguments.Mode.Maintenance.UserCredentialsOperation.Reset),
-      currentUserName = currentUserName,
+    val modeArguments = ApplicationArguments.Mode.Maintenance.ResetUserCredentials(
       currentUserPassword = currentUserPassword,
       newUserPassword = newUserPassword,
       newUserSalt = newUserSalt
@@ -150,8 +72,7 @@ class CredentialsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHe
 
     for {
       base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
-      init <- Init(base, console = None)
-      e <- Credentials(base, init).failed.map { case NonFatal(e: ServiceStartupFailure) => e }
+      e <- Credentials(base, modeArguments).failed.map { case NonFatal(e: ServiceStartupFailure) => e }
     } yield {
       e.cause should be("file")
       e.message should include("test failure")
@@ -159,11 +80,7 @@ class CredentialsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHe
   }
 
   it should "handle device secret decryption failures" in {
-    val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = false,
-      deviceSecretOperation = None,
-      userCredentialsOperation = Some(ApplicationArguments.Mode.Maintenance.UserCredentialsOperation.Reset),
-      currentUserName = currentUserName,
+    val modeArguments = ApplicationArguments.Mode.Maintenance.ResetUserCredentials(
       currentUserPassword = currentUserPassword,
       newUserPassword = newUserPassword,
       newUserSalt = newUserSalt
@@ -175,8 +92,7 @@ class CredentialsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHe
 
     for {
       base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
-      init <- Init(base, console = None)
-      e <- Credentials(base, init).failed.map { case NonFatal(e: ServiceStartupFailure) => e }
+      e <- Credentials(base, modeArguments).failed.map { case NonFatal(e: ServiceStartupFailure) => e }
     } yield {
       e.cause should be("credentials")
       e.message should include("Tag mismatch")
@@ -184,15 +100,7 @@ class CredentialsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHe
   }
 
   it should "skip credentials operations if none are requested" in {
-    val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = false,
-      deviceSecretOperation = None,
-      userCredentialsOperation = None,
-      currentUserName = currentUserName,
-      currentUserPassword = currentUserPassword,
-      newUserPassword = newUserPassword,
-      newUserSalt = newUserSalt
-    )
+    val modeArguments = ApplicationArguments.Mode.Maintenance.RegenerateApiCertificate
 
     val directory = createCustomApplicationDirectory(
       deviceSecret = Some(currentEncryptedDeviceSecret)
@@ -200,8 +108,7 @@ class CredentialsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHe
 
     for {
       base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
-      init <- Init(base, console = None)
-      credentials <- Credentials(base, init)
+      credentials <- Credentials(base, modeArguments)
       existingUserSalt = ConfigOverride.load(directory).getString(userSaltConfigEntry)
       existingDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
       _ <- credentials.apply()
@@ -245,7 +152,6 @@ class CredentialsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHe
   private val reEncryptedDeviceSecret = "hU9e2iNzu8H3G5e4kmBMi4hMG3Y9ZCl2oYGG".decodeFromBase64 // decrypted == "test-secret"
 
   private val currentUserSalt = "test-salt"
-  private val currentUserName = "test-user"
   private val currentUserPassword = "test-password".toCharArray
   private val newUserPassword = "new-password".toCharArray
   private val newUserSalt = "new-salt"

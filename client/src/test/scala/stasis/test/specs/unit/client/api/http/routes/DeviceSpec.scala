@@ -1,21 +1,24 @@
 package stasis.test.specs.unit.client.api.http.routes
 
-import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.{RequestEntity, StatusCodes}
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.LoggerFactory
-import stasis.client.api.http.Context
+import stasis.client.api.Context
 import stasis.client.api.http.routes.Device
 import stasis.client.tracking.ServerTracker
 import stasis.shared.model
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks._
+
 import java.time.Instant
-
 import scala.concurrent.Future
-
 import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.marshalling.Marshal
+import stasis.shared.api.requests.ReEncryptDeviceSecret
 import stasis.test.specs.unit.client.Fixtures
+
+import java.util.concurrent.atomic.AtomicBoolean
 
 class DeviceSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -47,6 +50,7 @@ class DeviceSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceRetrieved) should be(1)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
     }
   }
@@ -74,11 +78,31 @@ class DeviceSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
+  they should "update the current device secret" in withRetry {
+    val encryptedDeviceSecret = new AtomicBoolean(false)
+
+    val routes = createRoutes(
+      reEncryptDeviceSecret = { _ =>
+        encryptedDeviceSecret.set(true)
+        Future.successful(Done)
+      }
+    )
+
+    val request = ReEncryptDeviceSecret(userPassword = "test-password")
+
+    Put("/key/re-encrypt").withEntity(Marshal(request).to[RequestEntity].await) ~> routes ~> check {
+      status should be(StatusCodes.OK)
+
+      encryptedDeviceSecret.get() should be(true)
+    }
+  }
+
   def createRoutes(
     api: MockServerApiEndpointClient = MockServerApiEndpointClient(),
     executor: MockOperationExecutor = MockOperationExecutor(),
     scheduler: MockOperationScheduler = MockOperationScheduler(),
-    trackers: MockTrackerViews = MockTrackerViews()
+    trackers: MockTrackerViews = MockTrackerViews(),
+    reEncryptDeviceSecret: Array[Char] => Future[Done] = _ => Future.successful(Done)
   ): Route = {
     implicit val context: Context = Context(
       api = api,
@@ -89,7 +113,8 @@ class DeviceSpec extends AsyncUnitSpec with ScalatestRouteTest {
       handlers = Context.Handlers(
         terminateService = () => (),
         verifyUserPassword = _ => false,
-        updateUserCredentials = (_, _) => Future.successful(Done)
+        updateUserCredentials = (_, _) => Future.successful(Done),
+        reEncryptDeviceSecret = reEncryptDeviceSecret
       ),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
       log = LoggerFactory.getLogger(this.getClass.getName)

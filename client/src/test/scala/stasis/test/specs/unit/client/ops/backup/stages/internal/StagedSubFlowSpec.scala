@@ -68,6 +68,7 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
         mockEncryption.statistics(MockEncryption.Statistic.MetadataDecrypted) should be(0)
 
         mockTelemetry.ops.backup.entityExamined should be(0)
+        mockTelemetry.ops.backup.entitySkipped should be(0)
         mockTelemetry.ops.backup.entityCollected should be(0)
         mockTelemetry.ops.backup.entityChunkProcessed should be(1)
         mockTelemetry.ops.backup.entityProcessed should be(0)
@@ -117,6 +118,7 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
         mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
 
         mockTelemetry.ops.backup.entityExamined should be(0)
+        mockTelemetry.ops.backup.entitySkipped should be(0)
         mockTelemetry.ops.backup.entityCollected should be(0)
         mockTelemetry.ops.backup.entityChunkProcessed should be(0)
         mockTelemetry.ops.backup.entityProcessed should be(0)
@@ -165,6 +167,7 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
         mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
 
         mockTelemetry.ops.backup.entityExamined should be(0)
+        mockTelemetry.ops.backup.entitySkipped should be(0)
         mockTelemetry.ops.backup.entityCollected should be(0)
         mockTelemetry.ops.backup.entityChunkProcessed should be(0)
         mockTelemetry.ops.backup.entityProcessed should be(0)
@@ -235,6 +238,7 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
           mockEncryption.statistics(MockEncryption.Statistic.MetadataDecrypted) should be(0)
 
           mockTelemetry.ops.backup.entityExamined should be(0)
+          mockTelemetry.ops.backup.entitySkipped should be(0)
           mockTelemetry.ops.backup.entityCollected should be(0)
           mockTelemetry.ops.backup.entityChunkProcessed should be(2)
           mockTelemetry.ops.backup.entityProcessed should be(0)

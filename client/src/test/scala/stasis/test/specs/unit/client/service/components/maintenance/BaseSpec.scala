@@ -10,15 +10,7 @@ import stasis.test.specs.unit.client.ResourceHelpers
 
 class BaseSpec extends AsyncUnitSpec with ResourceHelpers {
   "A Base component" should "create itself" in {
-    val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = true,
-      deviceSecretOperation = None,
-      userCredentialsOperation = None,
-      currentUserName = "",
-      currentUserPassword = Array.emptyCharArray,
-      newUserPassword = Array.emptyCharArray,
-      newUserSalt = ""
-    )
+    val modeArguments = ApplicationArguments.Mode.Maintenance.RegenerateApiCertificate
 
     Base(
       modeArguments = modeArguments,

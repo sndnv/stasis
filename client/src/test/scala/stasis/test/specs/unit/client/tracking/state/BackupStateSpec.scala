@@ -43,6 +43,7 @@ class BackupStateSpec extends UnitSpec {
       .entityExamined(entity = entity1)
       .entityExamined(entity = entity2)
       .entityExamined(entity = entity3)
+      .entitySkipped(entity = entity2)
       .entityCollected(entity = sourceEntity1)
       .failureEncountered(new RuntimeException("Test failure #1"))
       .entityCollected(entity = sourceEntity3)
@@ -64,6 +65,7 @@ class BackupStateSpec extends UnitSpec {
         discovered = Set(entity1, entity2, entity3),
         unmatched = Seq("a", "b", "c"),
         examined = Set(entity1, entity2, entity3),
+        skipped = Set(entity2),
         collected = Map(
           entity1 -> sourceEntity1,
           entity3 -> sourceEntity3
@@ -139,6 +141,7 @@ class BackupStateSpec extends UnitSpec {
       .start(operation = Operation.generateId(), definition = DatasetDefinition.generateId())
       .entityDiscovered(entity = entity1)
       .entityExamined(entity = entity2)
+      .entitySkipped(entity = entity3)
       .entityCollected(entity = sourceEntity1)
       .entityCollected(entity = sourceEntity3)
       .entityProcessingStarted(entity = entity1, expectedParts = 1)
@@ -154,7 +157,7 @@ class BackupStateSpec extends UnitSpec {
       Operation.Progress(
         started = backup.started,
         total = 1,
-        processed = 1,
+        processed = 2,
         failures = 2,
         completed = backup.completed
       )

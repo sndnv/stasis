@@ -47,6 +47,7 @@ class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with Before
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
 
       mockTracker.statistics(MockServerTracker.Statistic.ServerReachable) should be(0)
@@ -71,6 +72,7 @@ class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with Before
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(1)
 
       mockTracker.statistics(MockServerTracker.Statistic.ServerReachable) should be(1)
@@ -95,6 +97,7 @@ class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with Before
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be >= 2
 
       mockTracker.statistics(MockServerTracker.Statistic.ServerReachable) should be >= 2

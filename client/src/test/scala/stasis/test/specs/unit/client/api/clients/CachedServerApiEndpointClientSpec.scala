@@ -297,6 +297,19 @@ class CachedServerApiEndpointClientSpec extends AsyncUnitSpec {
     }
   }
 
+  it should "check current device key, without caching" in {
+    val mockApiClient = MockServerApiEndpointClient()
+    val client = createClient(underlying = mockApiClient)
+
+    for {
+      _ <- client.deviceKeyExists()
+      _ <- client.deviceKeyExists()
+      _ <- client.deviceKeyExists()
+    } yield {
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(3)
+    }
+  }
+
   it should "make ping requests, without caching" in {
     val mockApiClient = MockServerApiEndpointClient()
     val client = createClient(underlying = mockApiClient)

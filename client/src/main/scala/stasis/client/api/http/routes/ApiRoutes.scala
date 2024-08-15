@@ -1,7 +1,7 @@
 package stasis.client.api.http.routes
 
 import org.slf4j.Logger
-import stasis.client.api.http.Context
+import stasis.client.api.Context
 import stasis.core.api.directives.EntityDiscardingDirectives
 
 trait ApiRoutes extends EntityDiscardingDirectives {
