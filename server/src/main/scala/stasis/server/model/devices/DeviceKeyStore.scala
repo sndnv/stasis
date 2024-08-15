@@ -16,6 +16,7 @@ trait DeviceKeyStore { store =>
 
   protected def put(key: DeviceKey): Future[Done]
   protected def delete(forDevice: Device.Id): Future[Boolean]
+  protected def exists(forDevice: Device.Id): Future[Boolean]
   protected def get(forDevice: Device.Id): Future[Option[DeviceKey]]
   protected def list(): Future[Seq[DeviceKey]]
 
@@ -30,6 +31,17 @@ trait DeviceKeyStore { store =>
 
   final def viewSelf(): DeviceKeyStore.View.Self =
     new DeviceKeyStore.View.Self {
+      override def exists(ownDevices: Seq[Device.Id], forDevice: Device.Id): Future[Boolean] =
+        if (ownDevices.contains(forDevice)) {
+          store.exists(forDevice)
+        } else {
+          Future.failed(
+            new IllegalArgumentException(
+              s"Expected to retrieve own device key but key for device [${forDevice.toString}] found"
+            )
+          )
+        }
+
       override def get(ownDevices: Seq[Device.Id], forDevice: Device.Id): Future[Option[DeviceKey]] =
         if (ownDevices.contains(forDevice)) {
           store.get(forDevice)
@@ -86,6 +98,7 @@ object DeviceKeyStore {
     }
 
     sealed trait Self extends Resource {
+      def exists(ownDevices: Seq[Device.Id], forDevice: Device.Id): Future[Boolean]
       def get(ownDevices: Seq[Device.Id], forDevice: Device.Id): Future[Option[DeviceKey]]
       def list(ownDevices: Seq[Device.Id]): Future[Seq[DeviceKey]]
       override def requiredPermission: Permission = Permission.View.Self
@@ -116,6 +129,9 @@ object DeviceKeyStore {
 
       override protected def delete(forDevice: Device.Id): Future[Boolean] =
         backend.delete(forDevice)
+
+      override protected def exists(forDevice: Device.Id): Future[Boolean] =
+        backend.contains(forDevice)
 
       override protected def get(forDevice: Device.Id): Future[Option[DeviceKey]] =
         backend.get(forDevice)

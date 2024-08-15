@@ -3,9 +3,11 @@ package stasis.test.specs.unit.server.api.routes
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
+import org.apache.pekko.http.scaladsl.model.headers.`Content-Type`
 import org.apache.pekko.http.scaladsl.model.{ContentTypes, RequestEntity, StatusCodes}
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.util.ByteString
 import org.slf4j.{Logger, LoggerFactory}
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
@@ -24,11 +26,9 @@ import stasis.test.specs.unit.core.persistence.mocks.MockNodeStore
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.model.mocks.{MockDeviceKeyStore, MockDeviceStore, MockUserStore}
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
+
 import scala.concurrent.Future
 import scala.concurrent.duration._
-
-import org.apache.pekko.http.scaladsl.model.headers.`Content-Type`
-import org.apache.pekko.util.ByteString
 
 class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -379,6 +379,32 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Delete(s"/own/${devices.head.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DeletedDevice] should be(DeletedDevice(existing = false))
+    }
+  }
+
+  they should "support checking if device keys exist" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    val device1 = devices.head.id
+    val device2 = devices.last.id
+
+    val deviceKey = DeviceKey(value = ByteString("test-key"), owner = user.id, device = device1)
+
+    fixtures.deviceStore.manage().create(devices.head).await
+    fixtures.deviceStore.manage().create(devices.last.copy(owner = user.id)).await
+    fixtures.deviceKeyStore.manageSelf().put(Seq(device1), deviceKey).await
+
+    Head(s"/own/$device1/key") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+
+      header[`Content-Type`].map(_.contentType) should be(Some(ContentTypes.`application/octet-stream`))
+
+      val actualKey = response.entity.dataBytes.runFold(ByteString.empty)(_ concat _).await
+      actualKey should be(ByteString.empty)
+    }
+
+    Head(s"/own/$device2/key") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.NotFound)
     }
   }
 

@@ -230,6 +230,22 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
               },
               path("key") {
                 concat(
+                  head {
+                    resources[DeviceStore.View.Self, DeviceKeyStore.View.Self] { (deviceView, keyView) =>
+                      deviceView.list(currentUser).flatMap { ownDevices =>
+                        keyView.exists(ownDevices.values.map(_.id).toSeq, deviceId).map {
+                          case true =>
+                            log.debugN("User [{}] successfully retrieved key information for device [{}]", currentUser, deviceId)
+                            val entity = HttpEntity(ContentTypes.`application/octet-stream`, Source.empty)
+                            discardEntity & complete(entity)
+
+                          case false =>
+                            log.debugN("User [{}] failed to retrieve key information for device [{}]", currentUser, deviceId)
+                            discardEntity & complete(StatusCodes.NotFound)
+                        }
+                      }
+                    }
+                  },
                   get {
                     resources[DeviceStore.View.Self, DeviceKeyStore.View.Self] { (deviceView, keyView) =>
                       deviceView.list(currentUser).flatMap { ownDevices =>
