@@ -322,6 +322,7 @@ RENDERING_ELEMENTS = {
 OPERATION_STAGE_DESCRIPTIONS = {
     'discovered': {'fg': 'white', 'title': 'found', 'priority': 0},
     'examined': {'fg': 'yellow', 'title': 'examined', 'priority': 1},
+    'skipped': {'fg': 'white', 'title': 'skipped', 'priority': 1},
     'collected': {'fg': 'cyan', 'title': 'collected', 'priority': 2},
     'pending': {'fg': 'cyan', 'title': 'pending', 'priority': 3},
     'processed': {'fg': 'green', 'title': 'processed', 'priority': 4},

@@ -22,6 +22,7 @@ class InactiveClientApiSpec(unittest.TestCase):
         until = '2020-02-02T02:02:02'
         definition_request = {'a': 1, 'b': 2}
         user_password_update_request = {'a': 1, 'b': 2}
+        device_secret_reencrypt_request = {'a': 1}
         user_salt_update_request = {'a': 1, 'b': 2}
 
         with self.assertRaises(Abort):
@@ -56,6 +57,9 @@ class InactiveClientApiSpec(unittest.TestCase):
 
         with self.assertRaises(Abort):
             api.device_connections()
+
+        with self.assertRaises(Abort):
+            api.device_reencrypt_secret(request=device_secret_reencrypt_request)
 
         with self.assertRaises(Abort):
             api.operations(state='all')

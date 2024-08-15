@@ -422,6 +422,43 @@ class ServiceSpec(unittest.TestCase):
         self.assertTrue(json.loads(result.output))
         self.assertEqual(context.api.stats['device'], 1)
 
+    def test_should_reencrypt_current_device_secret(self):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        runner = Runner(cli)
+        result = runner.invoke(
+            args=[
+                'update', 'device', 're-encrypt-secret',
+                '--user-password', 'abc',
+                '--verify-user-password', 'abc',
+            ],
+            obj=context
+        )
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertTrue(json.loads(result.output))
+        self.assertEqual(context.api.stats['device_reencrypt_secret'], 1)
+
+    def test_should_fail_to_reencrypt_current_device_secret_with_mismatched_passwords(self):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        runner = Runner(cli)
+        result = runner.invoke(
+            args=[
+                'update', 'device', 're-encrypt-secret',
+                '--user-password', 'abc',
+                '--verify-user-password', 'xyz',
+            ],
+            obj=context
+        )
+
+        self.assertEqual(result.exit_code, 1)
+        self.assertIn('Aborted!', result.output)
+
 
 class MockProcess:
     def __init__(self):

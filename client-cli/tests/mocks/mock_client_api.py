@@ -19,6 +19,7 @@ class MockClientApi(ClientApi):
             'user_salt_update': 0,
             'device': 0,
             'device_connections': 0,
+            'device_reencrypt_secret': 0,
             'operations': 0,
             'operation_follow': 0,
             'operation_progress': 0,
@@ -83,6 +84,10 @@ class MockClientApi(ClientApi):
     def device_connections(self):
         self.stats['device_connections'] += 1
         return mock_data.ACTIVE_CONNECTIONS
+
+    def device_reencrypt_secret(self, request):
+        self.stats['device_reencrypt_secret'] += 1
+        return {'successful': True}
 
     def operations(self, state):
         self.stats['operations'] += 1

@@ -181,12 +181,40 @@ update_user.add_command(update_user_password)
 update_user.add_command(update_user_salt)
 
 
+@click.command(name="re-encrypt-secret")
+@click.pass_context
+@click.option('-p', '--user-password', prompt=True, hide_input=True, help='Client owner password')
+@click.option('-vp', '--verify-user-password', prompt=True, hide_input=True, help='Client owner password (verify)')
+def reencrypt_device_secret(ctx, user_password, verify_user_password):
+    """Re-encrypt the secret of the current device with the provided user password.\n\n
+    Can be used in cases where the authentication and local device secret credentials have become out-of-sync
+    (if, for example, the user has reset their password on another device)."""
+    if user_password != verify_user_password:
+        logging.error('Provided passwords do not match!')
+        raise click.Abort()
+
+    request = {'user_password': user_password}
+
+    response = ctx.obj.api.device_reencrypt_secret(request)
+
+    click.echo(ctx.obj.rendering.render_operation_response(response))
+
+
+@click.group(name="device")
+def update_device():
+    """Update device settings."""
+
+
+update_device.add_command(reencrypt_device_secret)
+
+
 @click.group()
 def update():
     """Update device and user settings."""
 
 
 update.add_command(update_user)
+update.add_command(update_device)
 
 
 @click.group(name='service')
