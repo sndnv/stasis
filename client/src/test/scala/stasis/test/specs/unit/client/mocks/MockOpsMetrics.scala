@@ -8,17 +8,23 @@ import java.util.concurrent.atomic.AtomicInteger
 object MockOpsMetrics {
   class BackupOperation extends Metrics.BackupOperation {
     private val entityExaminedRecorded: AtomicInteger = new AtomicInteger(0)
+    private val entitySkippedRecorded: AtomicInteger = new AtomicInteger(0)
     private val entityCollectedRecorded: AtomicInteger = new AtomicInteger(0)
     private val entityChunkProcessedRecorded: AtomicInteger = new AtomicInteger(0)
     private val entityProcessedRecorded: AtomicInteger = new AtomicInteger(0)
 
     def entityExamined: Int = entityExaminedRecorded.get()
+    def entitySkipped: Int = entitySkippedRecorded.get()
     def entityCollected: Int = entityCollectedRecorded.get()
     def entityChunkProcessed: Int = entityChunkProcessedRecorded.get()
     def entityProcessed: Int = entityProcessedRecorded.get()
 
     override def recordEntityExamined(entity: SourceEntity): Unit = {
       val _ = entityExaminedRecorded.incrementAndGet()
+    }
+
+    override def recordEntitySkipped(entity: SourceEntity): Unit = {
+      val _ = entitySkippedRecorded.incrementAndGet()
     }
 
     override def recordEntityCollected(entity: SourceEntity): Unit = {

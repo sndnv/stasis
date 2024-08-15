@@ -17,7 +17,7 @@ import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import org.slf4j.LoggerFactory
 import stasis.client.api.clients.exceptions.ServerApiFailure
-import stasis.client.api.http.Context
+import stasis.client.api.Context
 import stasis.client.api.http.HttpApiEndpoint
 import stasis.client.model.DatasetMetadata
 import stasis.core.api.MessageResponse
@@ -222,7 +222,8 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       handlers = Context.Handlers(
         terminateService = () => (),
         verifyUserPassword = _ => false,
-        updateUserCredentials = (_, _) => Future.successful(Done)
+        updateUserCredentials = (_, _) => Future.successful(Done),
+        reEncryptDeviceSecret = _ => Future.successful(Done)
       ),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
       log = LoggerFactory.getLogger(this.getClass.getName)

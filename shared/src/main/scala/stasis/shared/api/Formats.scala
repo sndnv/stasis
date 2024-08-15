@@ -202,6 +202,9 @@ object Formats {
   implicit val updateDeviceStateRequestFormat: Format[UpdateDeviceState] =
     Json.format[UpdateDeviceState]
 
+  implicit val reEncryptDeviceSecretFormat: Format[ReEncryptDeviceSecret] =
+    Json.format[ReEncryptDeviceSecret]
+
   implicit val createScheduleRequestFormat: Format[CreateSchedule] =
     Json.format[CreateSchedule]
 

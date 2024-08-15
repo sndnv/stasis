@@ -1,4 +1,4 @@
-package stasis.client.api.http
+package stasis.client.api
 
 import scala.concurrent.Future
 
@@ -25,6 +25,7 @@ object Context {
   final case class Handlers(
     terminateService: () => Unit,
     verifyUserPassword: Array[Char] => Boolean,
-    updateUserCredentials: (Array[Char], String) => Future[Done]
+    updateUserCredentials: (Array[Char], String) => Future[Done],
+    reEncryptDeviceSecret: Array[Char] => Future[Done]
   )
 }

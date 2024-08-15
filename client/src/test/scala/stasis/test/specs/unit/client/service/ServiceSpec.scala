@@ -325,15 +325,7 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
   it should "support performing maintenance" in {
     val directory = createApplicationDirectory(init = dir => java.nio.file.Files.createDirectories(dir.config.get))
 
-    val modeArguments = ApplicationArguments.Mode.Maintenance(
-      regenerateApiCertificate = true,
-      deviceSecretOperation = None,
-      userCredentialsOperation = None,
-      currentUserName = "",
-      currentUserPassword = Array.emptyCharArray,
-      newUserPassword = Array.emptyCharArray,
-      newUserSalt = ""
-    )
+    val modeArguments = ApplicationArguments.Mode.Maintenance.RegenerateApiCertificate
 
     val originalConfig = "stasis.client.api.http.context.keystore.password = \"test-password\""
     val originalKeyStore = ByteString("test-keystore")

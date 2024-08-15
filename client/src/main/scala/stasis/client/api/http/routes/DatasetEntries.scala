@@ -6,7 +6,7 @@ import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
-import stasis.client.api.http.Context
+import stasis.client.api.Context
 
 import scala.concurrent.Future
 

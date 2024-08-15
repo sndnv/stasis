@@ -10,7 +10,7 @@ import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
 import org.apache.pekko.stream.OverflowStrategy
 import org.apache.pekko.stream.scaladsl.Source
 import play.api.libs.json.{Format, Json, Writes}
-import stasis.client.api.http.Context
+import stasis.client.api.Context
 import stasis.client.api.http.Formats._
 import stasis.client.collection.rules.{Rule, Specification}
 import stasis.client.ops.recovery.Recovery
@@ -207,6 +207,7 @@ class Operations()(implicit context: Context) extends ApiRoutes {
                       .map(update => ServerSentEvent.apply(update))
                       .keepAlive(maxIdle = heartbeatInterval, injectedElem = () => ServerSentEvent.heartbeat)
 
+                  @scala.annotation.nowarn
                   def backupUpdates: Future[Source[ServerSentEvent, NotUsed]] = for {
                     isBackup <- context.trackers.backup.exists(operation) if isBackup
                   } yield {
@@ -214,6 +215,7 @@ class Operations()(implicit context: Context) extends ApiRoutes {
                     sseSource(context.trackers.backup.updates(operation))
                   }
 
+                  @scala.annotation.nowarn
                   def recoveryUpdates: Future[Source[ServerSentEvent, NotUsed]] = for {
                     isRecovery <- context.trackers.recovery.exists(operation) if isRecovery
                   } yield {

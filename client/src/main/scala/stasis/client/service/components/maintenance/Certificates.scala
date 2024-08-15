@@ -1,13 +1,16 @@
 package stasis.client.service.components.maintenance
 
+import java.nio.file.Files
+import java.nio.file.Path
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import com.typesafe.{config => typesafe}
 import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
-import com.typesafe.{config => typesafe}
+import stasis.client.service.ApplicationArguments
 import stasis.client.service.components
-
-import java.nio.file.{Files, Path}
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 
 trait Certificates {
   def apply(): Future[Done]
@@ -17,7 +20,7 @@ object Certificates {
   def apply(base: Base): Future[Certificates] = {
     import base._
 
-    Try(base.args.validate()).future.map { _ =>
+    Future.successful(
       new Certificates {
         override def apply(): Future[Done] =
           for {
@@ -26,41 +29,43 @@ object Certificates {
             Done
           }
       }
-    }
+    )
   }
 
   def regenerateApiCertificate(base: Base): Future[Done] = {
     import base._
 
-    if (args.regenerateApiCertificate) {
-      log.infoN("Generating a new client API certificate...")
+    args match {
+      case ApplicationArguments.Mode.Maintenance.RegenerateApiCertificate =>
+        log.infoN("Generating a new client API certificate...")
 
-      for {
-        parent <- directory.configDirectory match {
-          case Some(parent) => Future.successful(parent)
-          case None         => Future.failed(new RuntimeException("No configuration directory is available"))
-        }
-        currentPassword <- rawConfig.getString("api.http.context.keystore.password").future
-        _ = require(
-          currentPassword.nonEmpty,
-          "Client API certificate regeneration failed; could not retrieve existing certificate password"
-        )
-        (_, newPassword) <- components.bootstrap.Parameters
-          .createKeyStore(
-            name = components.bootstrap.Parameters.KeyStore.CertificateName,
-            storeType = components.bootstrap.Parameters.KeyStore.Type,
-            passwordSize = components.bootstrap.Parameters.KeyStore.PasswordSize,
-            parent = parent,
-            file = components.Files.KeyStores.ClientApi
+        for {
+          parent <- directory.configDirectory match {
+            case Some(parent) => Future.successful(parent)
+            case None         => Future.failed(new RuntimeException("No configuration directory is available"))
+          }
+          currentPassword <- rawConfig.getString("api.http.context.keystore.password").future
+          _ = require(
+            currentPassword.nonEmpty,
+            "Client API certificate regeneration failed; could not retrieve existing certificate password"
           )
-          .future
-        _ <- replacePassword(parent = parent, config = configOverride, newPassword = newPassword)
-      } yield {
-        Done
-      }
-    } else {
-      log.debugN("Client API certificate regeneration flag not set; skipping...")
-      Future.successful(Done)
+          (_, newPassword) <- components.bootstrap.Parameters
+            .createKeyStore(
+              name = components.bootstrap.Parameters.KeyStore.CertificateName,
+              storeType = components.bootstrap.Parameters.KeyStore.Type,
+              passwordSize = components.bootstrap.Parameters.KeyStore.PasswordSize,
+              parent = parent,
+              file = components.Files.KeyStores.ClientApi
+            )
+            .future
+          _ <- replacePassword(parent = parent, config = configOverride, newPassword = newPassword)
+        } yield {
+          Done
+        }
+
+      case _ =>
+        log.debugN("Client API certificate regeneration flag not set; skipping...")
+        Future.successful(Done)
     }
   }
 

@@ -70,6 +70,9 @@ class CachedServerApiEndpointClient(
   override def pullDeviceKey(): Future[Option[ByteString]] =
     underlying.pullDeviceKey()
 
+  override def deviceKeyExists(): Future[Boolean] =
+    underlying.deviceKeyExists()
+
   override def ping(): Future[Ping] =
     underlying.ping()
 

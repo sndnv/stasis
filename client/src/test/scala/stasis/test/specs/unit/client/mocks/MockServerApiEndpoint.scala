@@ -34,6 +34,7 @@ class MockServerApiEndpoint(
 )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, timeout: Timeout) {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
   import stasis.shared.api.Formats._
+  import system.executionContext
 
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
@@ -242,26 +243,38 @@ class MockServerApiEndpoint(
         },
         path("key") {
           concat(
+            head {
+              expectedDeviceKey match {
+                case Some(_) => complete(HttpEntity(ContentTypes.`application/octet-stream`, Source.empty))
+                case None =>
+                  onSuccess(keyStore.get(deviceId)) {
+                    case Some(_) => complete(HttpEntity(ContentTypes.`application/octet-stream`, Source.empty))
+                    case None    => complete(StatusCodes.NotFound)
+                  }
+              }
+            },
             get {
               expectedDeviceKey match {
                 case Some(key) => complete(HttpEntity(ContentTypes.`application/octet-stream`, Source.single(key)))
-                case None      => complete(StatusCodes.NotFound)
+                case None =>
+                  onSuccess(keyStore.get(deviceId)) {
+                    case Some(key) => complete(HttpEntity(ContentTypes.`application/octet-stream`, Source.single(key.value)))
+                    case None      => complete(StatusCodes.NotFound)
+                  }
               }
             },
             put {
               extractDataBytes { source =>
-                extractExecutionContext { implicit ec =>
-                  val result = for {
-                    key <- source.runFold(ByteString.empty)(_ concat _)
-                    _ <- keyStore.put(
-                      key = deviceId,
-                      value = DeviceKey(value = key, owner = Generators.generateUser.id, device = deviceId)
-                    )
-                  } yield Done
+                val result = for {
+                  key <- source.runFold(ByteString.empty)(_ concat _)
+                  _ <- keyStore.put(
+                    key = deviceId,
+                    value = DeviceKey(value = key, owner = Generators.generateUser.id, device = deviceId)
+                  )
+                } yield Done
 
-                  onSuccess(result) { _ =>
-                    complete(StatusCodes.OK)
-                  }
+                onSuccess(result) { _ =>
+                  complete(StatusCodes.OK)
                 }
               }
             }
@@ -310,6 +323,9 @@ class MockServerApiEndpoint(
 
   def deviceKeyExists(forDevice: Device.Id): Future[Boolean] =
     keyStore.contains(forDevice)
+
+  def deviceKey(forDevice: Device.Id): Future[Option[ByteString]] =
+    keyStore.get(forDevice).map(_.map(_.value))
 
   def start(port: Int, context: Option[EndpointContext] = None): Future[Http.ServerBinding] = {
     val server = {

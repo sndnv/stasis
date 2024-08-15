@@ -471,6 +471,74 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
+  it should "handle failures when pulling device keys" in {
+    val apiPort = ports.dequeue()
+    val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials.copy(username = "invalid"))
+    api.start(port = apiPort)
+
+    val apiClient = createClient(apiPort, waitForSuccess = false)
+
+    apiClient
+      .pullDeviceKey()
+      .map { result =>
+        fail(s"Unexpected result received: [$result]")
+      }
+      .recover { case NonFatal(e: ServerApiFailure) =>
+        e.status should be(StatusCodes.Unauthorized)
+
+        e.getMessage should startWith("Server API request failed with [401 Unauthorized]")
+      }
+  }
+
+  it should "check current device key (existing)" in {
+    val expectedKey = ByteString("test-key")
+
+    val apiPort = ports.dequeue()
+    val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials, expectedDeviceKey = Some(expectedKey))
+    api.start(port = apiPort)
+
+    val apiClient = createClient(apiPort)
+
+    apiClient
+      .deviceKeyExists()
+      .map { result =>
+        result should be(true)
+      }
+  }
+
+  it should "check current device key (missing)" in {
+    val apiPort = ports.dequeue()
+    val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials, expectedDeviceKey = None)
+    api.start(port = apiPort)
+
+    val apiClient = createClient(apiPort)
+
+    apiClient
+      .deviceKeyExists()
+      .map { result =>
+        result should be(false)
+      }
+  }
+
+  it should "handle failures when checking device keys" in {
+    val apiPort = ports.dequeue()
+    val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials.copy(username = "invalid"))
+    api.start(port = apiPort)
+
+    val apiClient = createClient(apiPort, waitForSuccess = false)
+
+    apiClient
+      .deviceKeyExists()
+      .map { result =>
+        fail(s"Unexpected result received: [$result]")
+      }
+      .recover { case NonFatal(e: ServerApiFailure) =>
+        e.status should be(StatusCodes.Unauthorized)
+
+        e.getMessage should startWith("Server API request failed with [401 Unauthorized]")
+      }
+  }
+
   it should "make ping requests" in {
     val apiPort = ports.dequeue()
     val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials)
@@ -563,7 +631,8 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
     apiPort: Int,
     self: Device.Id = Device.generateId(),
     decryption: DefaultServerApiEndpointClient.DecryptionContext = defaultContext(),
-    context: Option[EndpointContext] = None
+    context: Option[EndpointContext] = None,
+    waitForSuccess: Boolean = true
   ): DefaultServerApiEndpointClient = {
     val client = new DefaultServerApiEndpointClient(
       apiUrl = context match {
@@ -577,9 +646,11 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
       requestBufferSize = 100
     )
 
-    eventually[Unit] {
-      // ensures the endpoint has started; pekko is expected to retry GET requests
-      val _ = client.ping().await
+    if (waitForSuccess) {
+      eventually[Unit] {
+        // ensures the endpoint has started; pekko is expected to retry GET requests
+        val _ = client.ping().await
+      }
     }
 
     client

@@ -135,6 +135,7 @@ object Metrics {
 
   trait BackupOperation extends MetricsProvider {
     def recordEntityExamined(entity: SourceEntity): Unit
+    def recordEntitySkipped(entity: SourceEntity): Unit
     def recordEntityCollected(entity: SourceEntity): Unit
     def recordEntityChunkProcessed(step: String, bytes: Int): Unit
     def recordEntityChunkProcessed(step: String, extra: String, bytes: Int): Unit
@@ -144,6 +145,7 @@ object Metrics {
   object BackupOperation {
     object NoOp extends BackupOperation {
       override def recordEntityExamined(entity: SourceEntity): Unit = ()
+      override def recordEntitySkipped(entity: SourceEntity): Unit = ()
       override def recordEntityCollected(entity: SourceEntity): Unit = ()
       override def recordEntityChunkProcessed(step: String, bytes: Int): Unit = ()
       override def recordEntityChunkProcessed(step: String, extra: String, bytes: Int): Unit = ()
@@ -169,6 +171,21 @@ object Metrics {
         entityHandledBytes.add(
           value = entitySize,
           Labels.Step -> "examined",
+          Labels.Type -> entityType
+        )
+      }
+
+      override def recordEntitySkipped(entity: SourceEntity): Unit = {
+        val (entityType, entitySize) = getEntityLabelsAndSize(from = entity)
+
+        entitiesHandled.inc(
+          Labels.Step -> "skipped",
+          Labels.Type -> entityType
+        )
+
+        entityHandledBytes.add(
+          value = entitySize,
+          Labels.Step -> "skipped",
           Labels.Type -> entityType
         )
       }

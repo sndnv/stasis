@@ -3,7 +3,7 @@ package stasis.client.service.components
 import org.apache.pekko.http.scaladsl.Http.ServerBinding
 import org.apache.pekko.util.ByteString
 import org.slf4j.LoggerFactory
-import stasis.client.api.http
+import stasis.client.api.Context
 import stasis.client.api.http.HttpApiEndpoint
 import stasis.client.security.DefaultFrontendAuthenticator
 import stasis.client.service.components.exceptions.ServiceStartupFailure
@@ -12,6 +12,7 @@ import stasis.core.security.tls.EndpointContext
 import scala.concurrent.Future
 
 trait ApiEndpoint {
+  def context: Context
   def api: ApiEndpoint.Startable
 }
 
@@ -33,21 +34,17 @@ object ApiEndpoint {
       tokenSize <- rawConfig.getInt("api.authentication.token-size").future
       frontendAuthenticator = DefaultFrontendAuthenticator(tokenSize)
       _ = log.debug("Creating API token file [{}]...", Files.ApiToken)
-      tokenFile <-
-        directory
-          .pushFile(
-            file = Files.ApiToken,
-            content = frontendAuthenticator.token
-          )
-          .transformFailureTo(ServiceStartupFailure.file)
+      tokenFile <- directory
+        .pushFile(file = Files.ApiToken, content = frontendAuthenticator.token)
+        .transformFailureTo(ServiceStartupFailure.file)
     } yield {
-      implicit val context: http.Context = http.Context(
+      implicit val ctx: Context = Context(
         api = clients.api,
         executor = executor,
         scheduler = scheduler,
         trackers = trackers.views,
         search = search,
-        handlers = http.Context.Handlers(
+        handlers = Context.Handlers(
           terminateService = () => {
             val _ = org.apache.pekko.pattern.after(
               duration = terminationDelay,
@@ -55,7 +52,8 @@ object ApiEndpoint {
             ) { Future.successful(base.terminateService()) }
           },
           verifyUserPassword = secrets.verifyUserPassword,
-          updateUserCredentials = secrets.updateUserCredentials
+          updateUserCredentials = secrets.updateUserCredentials(clients.api, _, _),
+          reEncryptDeviceSecret = secrets.reEncryptDeviceSecret(clients.api, _)
         ),
         secretsConfig = secrets.config,
         log = LoggerFactory.getLogger(this.getClass.getName)
@@ -64,7 +62,9 @@ object ApiEndpoint {
       log.debug("Successfully created API token file [{}]", tokenFile)
 
       new ApiEndpoint {
-        override def api: Startable =
+        override val context: Context = ctx
+
+        override val api: Startable =
           rawConfig.getString("api.type").toLowerCase match {
             case "http" =>
               val api = HttpApiEndpoint(authenticator = frontendAuthenticator)

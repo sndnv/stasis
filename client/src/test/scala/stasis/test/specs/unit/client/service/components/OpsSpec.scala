@@ -3,16 +3,17 @@ package stasis.test.specs.unit.client.service.components
 import scala.concurrent.Future
 
 import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.Behavior
 import org.apache.pekko.actor.typed.SpawnProtocol
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.apache.pekko.util.ByteString
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import stasis.client.api.clients.Clients
+import stasis.client.api.clients.ServerApiEndpointClient
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.security.CredentialsProvider
@@ -76,7 +77,11 @@ class OpsSpec extends AsyncUnitSpec with ResourceHelpers {
 
         override def verifyUserPassword: Array[Char] => Boolean = _ => false
 
-        override def updateUserCredentials: (Array[Char], String) => Future[Done] = (_, _) => Future.successful(Done)
+        override def updateUserCredentials: (ServerApiEndpointClient, Array[Char], String) => Future[Done] =
+          (_, _, _) => Future.successful(Done)
+
+        override def reEncryptDeviceSecret: (ServerApiEndpointClient, Array[Char]) => Future[Done] =
+          (_, _) => Future.successful(Done)
       }
     ).map { ops =>
       ops.executor.active.await shouldBe empty

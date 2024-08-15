@@ -175,6 +175,7 @@ object Fixtures {
         discovered = Set(Metadata.FileOneMetadata.path),
         unmatched = Seq("a", "b", "c"),
         examined = Set(Metadata.FileTwoMetadata.path),
+        skipped = Set(Metadata.FileTwoMetadata.path),
         collected = Map(
           Metadata.FileOneMetadata.path -> SourceEntity(
             path = Metadata.FileOneMetadata.path,
@@ -366,6 +367,7 @@ object Fixtures {
             discovered = Seq(Fixtures.Metadata.FileOneMetadata.path.toString),
             unmatched = Seq("a", "b", "c"),
             examined = Seq(Fixtures.Metadata.FileTwoMetadata.path.toString),
+            skipped = Seq(Fixtures.Metadata.FileTwoMetadata.path.toString),
             collected = Map(
               Fixtures.Metadata.FileOneMetadata.path.toString -> proto.state.SourceEntity(
                 path = Fixtures.Metadata.FileOneMetadata.path.toString,

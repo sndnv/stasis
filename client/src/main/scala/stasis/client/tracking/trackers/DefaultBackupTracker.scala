@@ -103,6 +103,14 @@ class DefaultBackupTracker(
     val _ = events.store(event = BackupEvent.EntityExamined(operation, entity))
   }
 
+  override def entitySkipped(
+    entity: Path
+  )(implicit operation: Operation.Id): Unit = {
+    log.debugN("[{}] (backup) - Entity [{}] skipped", operation, entity)
+
+    val _ = events.store(event = BackupEvent.EntitySkipped(operation, entity))
+  }
+
   override def entityCollected(
     entity: SourceEntity
   )(implicit operation: Operation.Id): Unit = {
@@ -219,6 +227,11 @@ object DefaultBackupTracker {
       entity: Path
     ) extends BackupEvent
 
+    final case class EntitySkipped(
+      override val operation: Operation.Id,
+      entity: Path
+    ) extends BackupEvent
+
     final case class EntityCollected(
       override val operation: Operation.Id,
       entity: SourceEntity
@@ -292,6 +305,7 @@ object DefaultBackupTracker {
           case EntityDiscovered(_, entity)                       => existing.entityDiscovered(entity)
           case SpecificationProcessed(_, unmatched)              => existing.specificationProcessed(unmatched)
           case EntityExamined(_, entity)                         => existing.entityExamined(entity)
+          case EntitySkipped(_, entity)                          => existing.entitySkipped(entity)
           case EntityCollected(_, entity)                        => existing.entityCollected(entity)
           case EntityProcessingStarted(_, entity, expectedParts) => existing.entityProcessingStarted(entity, expectedParts)
           case EntityPartProcessed(_, entity)                    => existing.entityPartProcessed(entity)

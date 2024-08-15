@@ -9,7 +9,7 @@ import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.slf4j.LoggerFactory
-import stasis.client.api.http.Context
+import stasis.client.api.Context
 import stasis.client.api.http.routes.Operations
 import stasis.client.ops.recovery.Recovery.PathQuery
 import stasis.client.tracking.state.{BackupState, RecoveryState}
@@ -785,7 +785,8 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       handlers = Context.Handlers(
         terminateService = () => (),
         verifyUserPassword = _ => false,
-        updateUserCredentials = (_, _) => Future.successful(Done)
+        updateUserCredentials = (_, _) => Future.successful(Done),
+        reEncryptDeviceSecret = _ => Future.successful(Done)
       ),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
       log = LoggerFactory.getLogger(this.getClass.getName)

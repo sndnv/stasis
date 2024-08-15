@@ -95,6 +95,7 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
     mockTracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(7) // 2 directories + 5 files
     mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(1)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+    mockTracker.statistics(MockBackupTracker.Statistic.EntitySkipped) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(0)
@@ -155,6 +156,7 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
     mockTracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(2) // 2 valid files
     mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+    mockTracker.statistics(MockBackupTracker.Statistic.EntitySkipped) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(0)
@@ -228,6 +230,7 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
     mockTracker.statistics(MockBackupTracker.Statistic.EntityDiscovered) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.SpecificationProcessed) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityExamined) should be(0)
+    mockTracker.statistics(MockBackupTracker.Statistic.EntitySkipped) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityCollected) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityProcessingStarted) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.EntityPartProcessed) should be(0)

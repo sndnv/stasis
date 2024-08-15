@@ -19,6 +19,7 @@ class MetricsSpec extends UnitSpec {
 
     val backupMetrics = Metrics.BackupOperation.NoOp
     noException should be thrownBy backupMetrics.recordEntityExamined(entity = null)
+    noException should be thrownBy backupMetrics.recordEntitySkipped(entity = null)
     noException should be thrownBy backupMetrics.recordEntityCollected(entity = null)
     noException should be thrownBy backupMetrics.recordEntityChunkProcessed(step = null, bytes = 0)
     noException should be thrownBy backupMetrics.recordEntityChunkProcessed(step = null, extra = null, bytes = 0)
@@ -64,14 +65,15 @@ class MetricsSpec extends UnitSpec {
 
     val backupMetrics = new Metrics.BackupOperation.Default(meter = meter, namespace = "test")
     backupMetrics.recordEntityExamined(entity = fileSourceEntity)
+    backupMetrics.recordEntitySkipped(entity = fileSourceEntity)
     backupMetrics.recordEntityCollected(entity = directorySourceEntity)
     backupMetrics.recordEntityChunkProcessed(step = "a", bytes = 1)
     backupMetrics.recordEntityChunkProcessed(step = "b", bytes = 2)
     backupMetrics.recordEntityChunkProcessed(step = "c", extra = "d", bytes = 2)
     backupMetrics.recordEntityProcessed(metadata = Left(fileSourceEntity.currentMetadata))
 
-    meter.metric(name = "test_operations_backup_entities_handled") should be(3)
-    meter.metric(name = "test_operations_backup_entity_handled_bytes") should be(3)
+    meter.metric(name = "test_operations_backup_entities_handled") should be(4)
+    meter.metric(name = "test_operations_backup_entity_handled_bytes") should be(4)
     meter.metric(name = "test_operations_backup_entity_chunks_processed") should be(3)
     meter.metric(name = "test_operations_backup_entity_chunk_processed_bytes") should be(3)
 
