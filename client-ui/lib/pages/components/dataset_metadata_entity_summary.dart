@@ -9,14 +9,15 @@ import 'package:stasis_client_ui/pages/components/sizing.dart';
 import 'package:flutter/material.dart';
 
 class DatasetMetadataEntitySummary {
-  static ExpansionTile build(BuildContext context,
-      ClientApi client, {
-        required DatasetEntry parentEntry,
-        required String entity,
-        required EntityState state,
-        required EntityMetadata? metadataChanged,
-        required EntityMetadata? contentChanged,
-      }) {
+  static ExpansionTile build(
+    BuildContext context,
+    ClientApi client, {
+    required DatasetEntry parentEntry,
+    required String entity,
+    required EntityState state,
+    required EntityMetadata? metadataChanged,
+    required EntityMetadata? contentChanged,
+  }) {
     final theme = Theme.of(context);
     final smallBold = theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold);
     final mediumBold = theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold);
@@ -62,15 +63,14 @@ class DatasetMetadataEntitySummary {
     }
         .entries
         .map(
-          (e) =>
-          Row(
+          (e) => Row(
             children: [
               Expanded(flex: 1, child: Text(e.key, style: theme.textTheme.bodyMedium, textAlign: TextAlign.end)),
               const Padding(padding: EdgeInsets.symmetric(horizontal: 4.0)),
               Expanded(flex: 5, child: Text(e.value, style: mediumBold)),
             ],
           ),
-    )
+        )
         .toList();
 
     final recoveryButton = ElevatedButton(
@@ -115,12 +115,13 @@ class DatasetMetadataEntitySummary {
     );
   }
 
-  static void _startRecovery(BuildContext context,
-      ClientApi client, {
-        required String definition,
-        required String entry,
-        required String path,
-      }) {
+  static void _startRecovery(
+    BuildContext context,
+    ClientApi client, {
+    required String definition,
+    required String entry,
+    required String path,
+  }) {
     final operation = client.recoverFrom(
       definition: definition,
       entry: entry,
@@ -135,6 +136,8 @@ class DatasetMetadataEntitySummary {
       messenger.showSnackBar(const SnackBar(content: Text('Recovery started...')));
     }).onError((e, stackTrace) {
       messenger.showSnackBar(SnackBar(content: Text('Failed to start recovery: [$e]')));
-    }).whenComplete(() => Navigator.pop(context));
+    }).whenComplete(() {
+      if (context.mounted) Navigator.pop(context);
+    });
   }
 }

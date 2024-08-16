@@ -76,7 +76,7 @@ class _BackupState extends State<Backup> {
         final addDefinitionButton = media.size.width > Sizing.xs
             ? FloatingActionButton.extended(
                 heroTag: null,
-                onPressed: () => _createDatasetDefinition(context, currentDevice),
+                onPressed: () => _createDatasetDefinition(currentDevice),
                 icon: const Icon(Icons.add),
                 label: const Text('ADD DEFINITION'),
               )
@@ -84,7 +84,7 @@ class _BackupState extends State<Backup> {
                 message: 'Add definition',
                 child: FloatingActionButton.small(
                   heroTag: null,
-                  onPressed: () => _createDatasetDefinition(context, currentDevice),
+                  onPressed: () => _createDatasetDefinition(currentDevice),
                   child: const Icon(Icons.add),
                 ),
               );
@@ -118,7 +118,7 @@ class _BackupState extends State<Backup> {
     );
   }
 
-  void _createDatasetDefinition(BuildContext context, Device currentDevice) {
+  void _createDatasetDefinition(Device currentDevice) {
     final infoField = formField(
       title: 'Info',
       errorMessage: 'Info cannot be empty',
@@ -171,7 +171,9 @@ class _BackupState extends State<Backup> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to create dataset definition: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
             )
           ],

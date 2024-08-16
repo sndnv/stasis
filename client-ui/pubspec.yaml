@@ -13,23 +13,23 @@ dependencies:
 
   collection: ^1.18.0
   cupertino_icons: ^1.0.8
-  freezed_annotation: ^2.4.1
+  freezed_annotation: ^2.4.4
   json_annotation: ^4.9.0
-  http: ^1.2.1
+  http: ^1.2.2
   oauth2: ^2.0.2
   sse_channel: ^0.1.1
   fluro: ^2.0.5
   flutter_svg: ^2.0.10+1
   intl: ^0.19.0
   flutter_fancy_tree_view: ^1.6.0
-  flutter_json_view: ^1.1.4
+  flutter_json_view: ^1.1.5
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints: ^3.0.2
-  build_runner: ^2.4.9
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.12
   freezed: ^2.4.5
   json_serializable: ^6.8.0
   mockito: ^5.4.4

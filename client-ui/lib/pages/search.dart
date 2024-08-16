@@ -39,7 +39,9 @@ class _SearchState extends State<Search> {
             .searchDatasetMetadata(searchQuery: _searchController.text.trim(), until: _untilController.value)
             .then((result) => setState(() => _searchResult = result))
             .onError((e, stackTrace) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Search failed: [$e]')));
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Search failed: [$e]')));
+          }
         });
       }
     }
@@ -169,7 +171,9 @@ class _SearchState extends State<Search> {
                             messenger.showSnackBar(const SnackBar(content: Text('Recovery started...')));
                           }).onError((e, stackTrace) {
                             messenger.showSnackBar(SnackBar(content: Text('Failed to start recovery: [$e]')));
-                          }).whenComplete(() => Navigator.pop(context));
+                          }).whenComplete(() {
+                            if (context.mounted) Navigator.pop(context);
+                          });
                         },
                       );
                     },
