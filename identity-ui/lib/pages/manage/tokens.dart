@@ -48,7 +48,7 @@ class _TokensState extends State<Tokens> {
                     children: [
                       IconButton(
                         tooltip: 'Remove Refresh Token',
-                        onPressed: () => _removeToken(context, token.token),
+                        onPressed: () => _removeToken(token.token),
                         icon: const Icon(Icons.delete),
                       ),
                     ],
@@ -62,7 +62,7 @@ class _TokensState extends State<Tokens> {
     );
   }
 
-  void _removeToken(BuildContext context, String token) {
+  void _removeToken(String token) {
     showDialog(
       context: context,
       builder: (context) {
@@ -84,7 +84,9 @@ class _TokensState extends State<Tokens> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to remove refresh token: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
               child: const Text('Remove'),
             ),

@@ -33,7 +33,7 @@ class _ClientsState extends State<Clients> {
               actions: [
                 IconButton(
                   tooltip: 'Create New Client',
-                  onPressed: () => _createClient(context),
+                  onPressed: () => _createClient(),
                   icon: const Icon(Icons.add),
                 ),
               ],
@@ -73,12 +73,12 @@ class _ClientsState extends State<Clients> {
                       IconButton(
                         tooltip:
                             widget.client.clientId == client.id ? 'Cannot update the current client' : 'Update Client',
-                        onPressed: widget.client.clientId == client.id ? null : () => _editClient(context, client),
+                        onPressed: widget.client.clientId == client.id ? null : () => _editClient(client),
                         icon: const Icon(Icons.edit),
                       ),
                       IconButton(
                         tooltip: 'Update Client Credentials',
-                        onPressed: () => _editClientCredentials(context, client),
+                        onPressed: () => _editClientCredentials(client),
                         icon: const Icon(Icons.lock_reset),
                       ),
                       IconButton(
@@ -98,7 +98,7 @@ class _ClientsState extends State<Clients> {
     );
   }
 
-  void _createClient(BuildContext context) async {
+  void _createClient() async {
     final redirectUriField = formField(
       title: 'Redirect URI',
       errorMessage: 'Redirect URI cannot be empty',
@@ -126,7 +126,7 @@ class _ClientsState extends State<Clients> {
 
     showDialog(
       context: context,
-      builder: (_) {
+      builder: (context) {
         return SimpleDialog(
           title: const Text('Create New Client'),
           contentPadding: const EdgeInsets.all(16),
@@ -156,7 +156,9 @@ class _ClientsState extends State<Clients> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to create client: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
             )
           ],
@@ -165,7 +167,7 @@ class _ClientsState extends State<Clients> {
     );
   }
 
-  void _editClient(BuildContext context, Client existing) {
+  void _editClient(Client existing) {
     final tokenExpirationField = formField(
       title: 'Token Expiration (seconds)',
       errorMessage: 'Token expiration is required',
@@ -206,7 +208,9 @@ class _ClientsState extends State<Clients> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to update client: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
             )
           ],
@@ -215,7 +219,7 @@ class _ClientsState extends State<Clients> {
     );
   }
 
-  void _editClientCredentials(BuildContext context, Client existing) {
+  void _editClientCredentials(Client existing) {
     final rawSecretField = formField(
       title: 'Secret',
       secret: true,
@@ -245,7 +249,9 @@ class _ClientsState extends State<Clients> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to update client credentials: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
             )
           ],
@@ -276,7 +282,9 @@ class _ClientsState extends State<Clients> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to remove client: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
               child: const Text('Remove'),
             ),
