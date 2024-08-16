@@ -56,24 +56,28 @@ class _DatasetEntriesState extends State<DatasetEntries> {
 
             return [
               DataCell(entry.id.asShortId()),
-              DataCell(entry.data.length.toString().withInfo(() {
-                showDialog(
-                  context: context,
-                  builder: (_) => SimpleDialog(
-                    title: Text('Crates for entry [${entry.id.toMinimizedString()}]'),
-                    children: (entry.data.toList()..sort())
-                        .map(
-                          (crate) => ListTile(
-                            title: widget.privileged
-                                ? crate.withInfo(() => _showCrateManifest(crate))
-                                : crate.withCopyButton(),
-                            leading: const Icon(Icons.data_usage),
+              DataCell(
+                entry.data.isNotEmpty
+                    ? entry.data.length.toString().withInfo(() {
+                        showDialog(
+                          context: context,
+                          builder: (_) => SimpleDialog(
+                            title: Text('Crates for entry [${entry.id.toMinimizedString()}]'),
+                            children: (entry.data.toList()..sort())
+                                .map(
+                                  (crate) => ListTile(
+                                    title: widget.privileged
+                                        ? crate.withInfo(() => _showCrateManifest(crate))
+                                        : crate.withCopyButton(),
+                                    leading: const Icon(Icons.data_usage),
+                                  ),
+                                )
+                                .toList(),
                           ),
-                        )
-                        .toList(),
-                  ),
-                );
-              })),
+                        );
+                      })
+                    : Text(entry.data.length.toString()),
+              ),
               DataCell(entry.metadata.asShortId()),
               DataCell(Text(entry.created.render())),
               DataCell(
@@ -125,8 +129,9 @@ class _DatasetEntriesState extends State<DatasetEntries> {
   }
 
   void _showCrateManifest(String crate) {
+    final ctx = context;
+
     widget.manifestsClient.getManifest(crate: crate).then((manifest) {
-      final ctx = context;
       if (!ctx.mounted) return;
 
       showDialog(
@@ -213,6 +218,28 @@ class _DatasetEntriesState extends State<DatasetEntries> {
                 ),
               ),
             ),
+          ],
+        ),
+      );
+    }).onError((e, stackTrace) {
+      if (!ctx.mounted) return;
+      showDialog(
+        context: ctx,
+        builder: (BuildContext context) => SimpleDialog(
+          title: Text('Manifest for Crate [${crate.toMinimizedString()}]'),
+          children: [
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SelectionArea(
+                  child: Text(
+                    e is BadRequest && e.message.contains('could not be found')
+                        ? 'Manifest for crate [$crate] was not found'
+                        : 'Failed to retrieve manifest for crate [$crate]: [$e]',
+                  ),
+                ),
+              ],
+            )
           ],
         ),
       );
