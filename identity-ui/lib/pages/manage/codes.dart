@@ -46,7 +46,7 @@ class _CodesState extends State<Codes> {
                     children: [
                       IconButton(
                         tooltip: 'Remote Authorization Code',
-                        onPressed: () => _removeCode(context, code.code),
+                        onPressed: () => _removeCode(code.code),
                         icon: const Icon(Icons.delete),
                       ),
                     ],
@@ -60,7 +60,7 @@ class _CodesState extends State<Codes> {
     );
   }
 
-  void _removeCode(BuildContext context, String code) {
+  void _removeCode(String code) {
     showDialog(
       context: context,
       builder: (context) {
@@ -82,7 +82,9 @@ class _CodesState extends State<Codes> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to remove authorization code: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
               child: const Text('Remove'),
             ),

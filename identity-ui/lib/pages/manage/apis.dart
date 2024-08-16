@@ -22,7 +22,7 @@ class _ApisState extends State<Apis> {
   Widget build(BuildContext context) {
     return buildPage<List<Api>>(
       of: () => widget.client.getApis(),
-      builder: (context, apis) {
+      builder: (_, apis) {
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -31,7 +31,7 @@ class _ApisState extends State<Apis> {
               actions: [
                 IconButton(
                   tooltip: 'Create New API',
-                  onPressed: () => _createApi(context),
+                  onPressed: () => _createApi(),
                   icon: const Icon(Icons.add),
                 ),
               ],
@@ -49,7 +49,7 @@ class _ApisState extends State<Apis> {
                       children: [
                         IconButton(
                           tooltip: widget.client.audience == api.id ? 'Cannot remove the current API' : 'Remove API',
-                          onPressed: widget.client.audience == api.id ? null : () => _removeApi(context, api.id),
+                          onPressed: widget.client.audience == api.id ? null : () => _removeApi(api.id),
                           icon: const Icon(Icons.delete),
                         )
                       ],
@@ -64,7 +64,7 @@ class _ApisState extends State<Apis> {
     );
   }
 
-  void _createApi(BuildContext context) async {
+  void _createApi() async {
     final idField = formField(
       title: 'ID',
       errorMessage: 'API ID cannot be empty',
@@ -73,7 +73,7 @@ class _ApisState extends State<Apis> {
 
     showDialog(
       context: context,
-      builder: (_) {
+      builder: (context) {
         return SimpleDialog(
           title: const Text('Create New API'),
           contentPadding: const EdgeInsets.all(16),
@@ -91,7 +91,9 @@ class _ApisState extends State<Apis> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to create API: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
             )
           ],
@@ -100,7 +102,7 @@ class _ApisState extends State<Apis> {
     );
   }
 
-  void _removeApi(BuildContext context, String id) {
+  void _removeApi(String id) {
     showDialog(
       context: context,
       builder: (context) {
@@ -122,7 +124,9 @@ class _ApisState extends State<Apis> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to remove API: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
               child: const Text('Remove'),
             ),

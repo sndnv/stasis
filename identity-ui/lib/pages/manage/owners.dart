@@ -39,7 +39,7 @@ class _OwnersState extends State<Owners> {
               actions: [
                 IconButton(
                   tooltip: 'Create New Resource Owner',
-                  onPressed: () => _createOwner(context),
+                  onPressed: () => _createOwner(),
                   icon: const Icon(Icons.add),
                 ),
               ],
@@ -78,21 +78,19 @@ class _OwnersState extends State<Owners> {
                         tooltip: widget.client.subject == owner.username
                             ? 'Cannot update the current resource owner'
                             : 'Update Resource Owner',
-                        onPressed: widget.client.subject == owner.username ? null : () => _editOwner(context, owner),
+                        onPressed: widget.client.subject == owner.username ? null : () => _editOwner(owner),
                         icon: const Icon(Icons.edit),
                       ),
                       IconButton(
                         tooltip: 'Update Resource Owner Credentials',
-                        onPressed: () => _editOwnerCredentials(context, owner),
+                        onPressed: () => _editOwnerCredentials(owner),
                         icon: const Icon(Icons.lock_reset),
                       ),
                       IconButton(
                         tooltip: widget.client.subject == owner.username
                             ? 'Cannot remove the current resource owner'
                             : 'Remove Resource Owner',
-                        onPressed: widget.client.subject == owner.username
-                            ? null
-                            : () => _removeOwner(context, owner.username),
+                        onPressed: widget.client.subject == owner.username ? null : () => _removeOwner(owner.username),
                         icon: const Icon(Icons.delete),
                       ),
                     ],
@@ -106,7 +104,7 @@ class _OwnersState extends State<Owners> {
     );
   }
 
-  void _createOwner(BuildContext context) async {
+  void _createOwner() async {
     final usernameField = formField(
       title: 'Username',
       errorMessage: 'Username cannot be empty',
@@ -138,7 +136,7 @@ class _OwnersState extends State<Owners> {
 
     showDialog(
       context: context,
-      builder: (_) {
+      builder: (context) {
         return SimpleDialog(
           title: const Text('Create New Resource Owner'),
           contentPadding: const EdgeInsets.all(16),
@@ -184,7 +182,9 @@ class _OwnersState extends State<Owners> {
                   onError: (e) {
                     messenger.showSnackBar(SnackBar(content: Text('Failed to generate authentication password: [$e]')));
                   },
-                ).whenComplete(() => Navigator.pop(context));
+                ).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
             )
           ],
@@ -193,7 +193,7 @@ class _OwnersState extends State<Owners> {
     );
   }
 
-  void _editOwner(BuildContext context, ResourceOwner existing) {
+  void _editOwner(ResourceOwner existing) {
     final allowedScopesField = formField(
       title: 'Allowed Scopes (comma-separated, optional)',
       controller: TextEditingController(text: existing.allowedScopes.join(',')),
@@ -232,7 +232,9 @@ class _OwnersState extends State<Owners> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to update resource owner: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
             )
           ],
@@ -241,7 +243,7 @@ class _OwnersState extends State<Owners> {
     );
   }
 
-  void _editOwnerCredentials(BuildContext context, ResourceOwner existing) {
+  void _editOwnerCredentials(ResourceOwner existing) {
     final rawPasswordField = formField(
       title: 'Password',
       secret: true,
@@ -297,7 +299,9 @@ class _OwnersState extends State<Owners> {
                   onError: (e) {
                     messenger.showSnackBar(SnackBar(content: Text('Failed to generate authentication password: [$e]')));
                   },
-                ).whenComplete(() => Navigator.pop(context));
+                ).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
             )
           ],
@@ -306,7 +310,7 @@ class _OwnersState extends State<Owners> {
     );
   }
 
-  void _removeOwner(BuildContext context, String id) {
+  void _removeOwner(String id) {
     showDialog(
       context: context,
       builder: (context) {
@@ -328,7 +332,9 @@ class _OwnersState extends State<Owners> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to remove resource owner: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
               child: const Text('Remove'),
             ),

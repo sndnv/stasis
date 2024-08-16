@@ -12,14 +12,14 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
-  freezed_annotation: ^2.4.1
+  freezed_annotation: ^2.4.4
   json_annotation: ^4.9.0
-  http: ^1.2.1
+  http: ^1.2.2
   oauth2: ^2.0.2
-  url_launcher: ^6.2.6
+  url_launcher: ^6.3.0
   fluro: ^2.0.5
-  url_strategy: ^0.2.0
-  shared_preferences: ^2.2.3
+  url_strategy: ^0.3.0
+  shared_preferences: ^2.3.2
   flutter_svg: ^2.0.10+1
   flutter_dotenv: ^5.1.0
   cryptography: ^2.7.0
@@ -29,8 +29,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints: ^3.0.2
-  build_runner: ^2.4.9
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.12
   freezed: ^2.4.5
   json_serializable: ^6.8.0
   mockito: ^5.4.4

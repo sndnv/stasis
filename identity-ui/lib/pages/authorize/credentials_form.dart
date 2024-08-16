@@ -226,7 +226,7 @@ class _CredentialsFormState extends State<CredentialsForm> {
           js.context.callMethod('sendAuthorization', [uri.toString(), authorization, js.allowInterop(callback)]);
         },
         onError: (e) {
-          _showSnackBar(context, message: 'Failed to generate authentication password: [$e]');
+          _showSnackBar(message: 'Failed to generate authentication password: [$e]');
           _processing(false);
         },
       );
@@ -253,7 +253,7 @@ class _CredentialsFormState extends State<CredentialsForm> {
     });
   }
 
-  void _showSnackBar(BuildContext context, {required String message}) {
+  void _showSnackBar({required String message}) {
     final messenger = ScaffoldMessenger.of(context);
     messenger.showSnackBar(SnackBar(content: Text(message)));
   }
