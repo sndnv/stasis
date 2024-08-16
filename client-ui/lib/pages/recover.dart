@@ -34,7 +34,6 @@ class _RecoverState extends State<Recover> {
       of: () => widget.client.getDatasetDefinitions(),
       builder: (context, definitions) {
         final definitionCard = card(
-          context,
           child: DropdownButtonFormField<String>(
             items: definitions
                 .map((d) =>
@@ -102,7 +101,9 @@ class _RecoverState extends State<Recover> {
               setState(() {});
             }).onError((e, stackTrace) {
               messenger.showSnackBar(SnackBar(content: Text('Failed to start recovery: [$e]')));
-            }).whenComplete(() => Navigator.pop(context));
+            }).whenComplete(() {
+              if (context.mounted) Navigator.pop(context);
+            });
           },
         );
 
@@ -119,7 +120,6 @@ class _RecoverState extends State<Recover> {
           );
 
           final entryCard = card(
-            context,
             child: entryField,
             title: 'Data Source',
             hint:
@@ -127,7 +127,6 @@ class _RecoverState extends State<Recover> {
           );
 
           final queryCard = card(
-            context,
             child: queryField,
             title: 'File/path query to use for limiting recovery',
             hint: 'Only files and directories that match the provided (partial) query will be recovered.',
@@ -157,7 +156,7 @@ class _RecoverState extends State<Recover> {
     );
   }
 
-  Widget card(BuildContext context, {required Widget child, required String title, String? hint}) {
+  Widget card({required Widget child, required String title, String? hint}) {
     final theme = Theme.of(context);
 
     final titleWidget = Text(title, style: theme.textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic));

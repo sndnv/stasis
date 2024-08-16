@@ -26,6 +26,8 @@ class Settings extends StatelessWidget {
       of: () => Future.delayed(
         const Duration(milliseconds: 200),
         () {
+          if (!context.mounted) return JsonView.map(const {});
+
           final theme = Theme.of(context);
           final mainStyle = theme.textTheme.bodyMedium!;
 
