@@ -70,6 +70,15 @@ CLIENT_UPDATED_TEST_FILE="${CLIENT_CONTAINER_HOME}/backup/0/d"
 
 declare -A CLIENT_TEST_FILE_SHA_SUMS
 
+function container_executable() {
+  if command -v podman &> /dev/null
+  then
+    podman "$@"
+  else
+    docker "$@"
+  fi
+}
+
 function now() {
   timestamp="$(date +"%Y-%m-%dT%H:%M:%SZ")"
   echo "${timestamp}"
@@ -194,7 +203,7 @@ else
 fi
 
 echo -n "[$(now)] Looking up PRIMARY client container [${PRIMARY_CLIENT_CONTAINER_NAME}]..."
-PRIMARY_CLIENT_CONTAINER_ID=$(docker ps --filter "name=${PRIMARY_CLIENT_CONTAINER_NAME}" --quiet)
+PRIMARY_CLIENT_CONTAINER_ID=$(container_executable ps --filter "name=${PRIMARY_CLIENT_CONTAINER_NAME}" --quiet)
 if [ "${PRIMARY_CLIENT_CONTAINER_ID}" != "" ]
 then
   echo "found [${PRIMARY_CLIENT_CONTAINER_ID}] (OK)"
@@ -204,7 +213,7 @@ else
 fi
 
 echo -n "[$(now)] Looking up SECONDARY client container [${SECONDARY_CLIENT_CONTAINER_NAME}]..."
-SECONDARY_CLIENT_CONTAINER_ID=$(docker ps --filter "name=${SECONDARY_CLIENT_CONTAINER_NAME}" --quiet)
+SECONDARY_CLIENT_CONTAINER_ID=$(container_executable ps --filter "name=${SECONDARY_CLIENT_CONTAINER_NAME}" --quiet)
 if [ "${SECONDARY_CLIENT_CONTAINER_ID}" != "" ]
 then
   echo "found [${SECONDARY_CLIENT_CONTAINER_ID}] (OK)"
@@ -215,7 +224,7 @@ fi
 
 echo -n "[$(now)] (PRIMARY) Starting client service..."
 CLIENT_SERVICE_START_COMMAND="stasis-client-cli --json service start --username ${USER_ID} --password ${USER_PASSWORD}"
-CLIENT_SERVICE_START_RESULT=$(docker exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_SERVICE_START_COMMAND})
+CLIENT_SERVICE_START_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_SERVICE_START_COMMAND})
 CLIENT_SERVICE_START_SUCCESSFUL="$(echo "${CLIENT_SERVICE_START_RESULT}" | jq '.successful')"
 CLIENT_SERVICE_START_FAILURE="$(echo "${CLIENT_SERVICE_START_RESULT}" | jq -r '.failure')"
 CLIENT_SERVICE_ALREADY_ACTIVE="Background service is already active"
@@ -229,7 +238,7 @@ fi
 
 echo -n "[$(now)] (PRIMARY) Checking user status..."
 CLIENT_STATUS_USER_COMMAND="stasis-client-cli --json service status user"
-CLIENT_STATUS_USER_RESULT=$(docker exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_STATUS_USER_COMMAND})
+CLIENT_STATUS_USER_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_STATUS_USER_COMMAND})
 if [ "$(echo "${CLIENT_STATUS_USER_RESULT}" | jq '.active')" = "true" ]
 then
   echo "OK"
@@ -240,7 +249,7 @@ fi
 
 echo -n "[$(now)] (PRIMARY) Checking device status..."
 CLIENT_STATUS_DEVICE_COMMAND="stasis-client-cli --json service status device"
-CLIENT_STATUS_DEVICE_RESULT=$(docker exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_STATUS_DEVICE_COMMAND})
+CLIENT_STATUS_DEVICE_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_STATUS_DEVICE_COMMAND})
 if [ "$(echo "${CLIENT_STATUS_DEVICE_RESULT}" | jq '.active')" = "true" ]
 then
   echo "OK"
@@ -251,7 +260,7 @@ fi
 
 echo -n "[$(now)] (PRIMARY) Looking up backup definition..."
 CLIENT_BACKUP_SHOW_DEFINITIONS_COMMAND="stasis-client-cli --json backup show definitions"
-CLIENT_BACKUP_SHOW_DEFINITIONS_RESULT=$(docker exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_BACKUP_SHOW_DEFINITIONS_COMMAND})
+CLIENT_BACKUP_SHOW_DEFINITIONS_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_BACKUP_SHOW_DEFINITIONS_COMMAND})
 CLIENT_BACKUP_DEFINITION=$(echo "${CLIENT_BACKUP_SHOW_DEFINITIONS_RESULT}" | jq -r '.[0] | .definition')
 if [ "${CLIENT_BACKUP_DEFINITION}" != "null" ]
 then
@@ -270,7 +279,7 @@ function start_backup() {
 
   echo -n "[$(now)] (${CONTAINER_TYPE}) Running backup [${BACKUP_NAME}]..."
   BACKUP_START_COMMAND="stasis-client-cli --json backup start ${DEFINITION} --follow"
-  BACKUP_START_RESULT=$(docker exec "${CONTAINER_ID}" ${BACKUP_START_COMMAND})
+  BACKUP_START_RESULT=$(container_executable exec "${CONTAINER_ID}" ${BACKUP_START_COMMAND})
   if [ $? = 0 ]
   then
     echo "OK"
@@ -285,7 +294,7 @@ start_backup "${PRIMARY_CLIENT_CONTAINER_ID}" "${CLIENT_BACKUP_DEFINITION}" "bas
 echo -n "[$(now)] (PRIMARY) Creating [${CLIENT_BACKUP_DIRS_COUNT}] backup directories..."
 for TEST_DIR in "${CLIENT_BACKUP_DIRS[@]}"
 do
-  MKDIR_RESULT=$(docker exec "${PRIMARY_CLIENT_CONTAINER_ID}" mkdir -p ${TEST_DIR} 2>&1)
+  MKDIR_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" mkdir -p ${TEST_DIR} 2>&1)
   if [ $? != 0 ]
   then
     echo "failed creating backup directory [${TEST_DIR}]: [${MKDIR_RESULT}]"
@@ -297,14 +306,14 @@ echo "OK"
 echo -n "[$(now)] (PRIMARY) Creating [${CLIENT_TEST_FILES_COUNT}] test files..."
 for i in "${!CLIENT_TEST_FILES[@]}"
 do
-  DD_RESULT=$(docker exec "${PRIMARY_CLIENT_CONTAINER_ID}" dd if=/dev/urandom of=${CLIENT_TEST_FILES[$i]} bs=1M count=$((i + 1)) 2>&1)
+  DD_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" dd if=/dev/urandom of=${CLIENT_TEST_FILES[$i]} bs=1M count=$((i + 1)) 2>&1)
   if [ $? != 0 ]
   then
     echo "failed creating test file [${CLIENT_TEST_FILES[$i]}]: [${DD_RESULT}]"
     exit 1
   fi
 
-  SHA_RESULT=$(docker exec "${PRIMARY_CLIENT_CONTAINER_ID}" sha256sum ${CLIENT_TEST_FILES[$i]} 2>&1)
+  SHA_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" sha256sum ${CLIENT_TEST_FILES[$i]} 2>&1)
   if [ $? != 0 ]
   then
     echo "failed creating checksum for file [${CLIENT_TEST_FILES[$i]}]: [${SHA_RESULT}]"
@@ -319,14 +328,14 @@ echo "OK"
 start_backup "${PRIMARY_CLIENT_CONTAINER_ID}" "${CLIENT_BACKUP_DEFINITION}" "primary"
 
 echo -n "[$(now)] (PRIMARY) Updating test files..."
-CLIENT_UPDATED_TEST_FILE_DD_RESULT=$(docker exec "${PRIMARY_CLIENT_CONTAINER_ID}" dd if=/dev/urandom of=${CLIENT_UPDATED_TEST_FILE} bs=1M count=10 2>&1)
+CLIENT_UPDATED_TEST_FILE_DD_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" dd if=/dev/urandom of=${CLIENT_UPDATED_TEST_FILE} bs=1M count=10 2>&1)
 if [ $? != 0 ]
 then
   echo "failed updating test file [${CLIENT_UPDATED_TEST_FILE}]: [${CLIENT_UPDATED_TEST_FILE_DD_RESULT}]"
   exit 1
 fi
 
-CLIENT_UPDATED_TEST_FILE_SHA_RESULT=$(docker exec "${PRIMARY_CLIENT_CONTAINER_ID}" sha256sum ${CLIENT_UPDATED_TEST_FILE} 2>&1)
+CLIENT_UPDATED_TEST_FILE_SHA_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" sha256sum ${CLIENT_UPDATED_TEST_FILE} 2>&1)
 if [ $? != 0 ]
 then
   echo "failed creating updated checksum for file [${CLIENT_UPDATED_TEST_FILE}]: [${CLIENT_UPDATED_TEST_FILE_SHA_RESULT}]"
@@ -348,7 +357,7 @@ start_backup "${PRIMARY_CLIENT_CONTAINER_ID}" "${CLIENT_BACKUP_DEFINITION}" "emp
 
 echo -n "[$(now)] (PRIMARY) Looking up primary backup entry..."
 CLIENT_BACKUP_ENTRY_PRIMARY_COMMAND="stasis-client-cli --json backup show entries -f crates==${CLIENT_TEST_FILES_COUNT} -o created --ordering DESC"
-CLIENT_BACKUP_ENTRY_PRIMARY_RESULT=$(docker exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_BACKUP_ENTRY_PRIMARY_COMMAND})
+CLIENT_BACKUP_ENTRY_PRIMARY_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_BACKUP_ENTRY_PRIMARY_COMMAND})
 CLIENT_BACKUP_ENTRY_PRIMARY=$(echo "${CLIENT_BACKUP_ENTRY_PRIMARY_RESULT}" | jq -r '.[0] | .entry')
 if [ "${CLIENT_BACKUP_ENTRY_PRIMARY}" != "null" ] && [ "${CLIENT_BACKUP_ENTRY_PRIMARY}" != "" ]
 then
@@ -360,7 +369,7 @@ fi
 
 echo -n "[$(now)] (PRIMARY) Looking up updated backup entry..."
 CLIENT_BACKUP_ENTRY_SECONDARY_COMMAND="stasis-client-cli --json backup show entries -f crates==1 -o created --ordering DESC"
-CLIENT_BACKUP_ENTRY_SECONDARY_RESULT=$(docker exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_BACKUP_ENTRY_SECONDARY_COMMAND})
+CLIENT_BACKUP_ENTRY_SECONDARY_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_BACKUP_ENTRY_SECONDARY_COMMAND})
 CLIENT_BACKUP_ENTRY_SECONDARY=$(echo "${CLIENT_BACKUP_ENTRY_SECONDARY_RESULT}" | jq -r '.[0] | .entry')
 if [ "${CLIENT_BACKUP_ENTRY_SECONDARY}" != "null" ] && [ "${CLIENT_BACKUP_ENTRY_SECONDARY}" != "" ]
 then
@@ -372,7 +381,7 @@ fi
 
 echo -n "[$(now)] (PRIMARY) Looking up empty backup entry..."
 CLIENT_BACKUP_ENTRY_EMPTY_COMMAND="stasis-client-cli --json backup show entries -f crates==0 -o created --ordering DESC"
-CLIENT_BACKUP_ENTRY_EMPTY_RESULT=$(docker exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_BACKUP_ENTRY_EMPTY_COMMAND})
+CLIENT_BACKUP_ENTRY_EMPTY_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_BACKUP_ENTRY_EMPTY_COMMAND})
 CLIENT_BACKUP_ENTRY_EMPTY=$(echo "${CLIENT_BACKUP_ENTRY_EMPTY_RESULT}" | jq -r '.[0] | .entry')
 if [ "${CLIENT_BACKUP_ENTRY_EMPTY}" != "null" ] && [ "${CLIENT_BACKUP_ENTRY_EMPTY}" != "" ]
 then
@@ -386,7 +395,7 @@ echo -n "[$(now)] (PRIMARY) Checking metadata of [${CLIENT_TEST_FILES_COUNT}] te
 for i in "${!CLIENT_TEST_FILES[@]}"
 do
   BACKUP_FILE_METADATA_COMMAND="stasis-client-cli --json backup show metadata ${CLIENT_BACKUP_ENTRY_PRIMARY} -f entity==${CLIENT_TEST_FILES[$i]}"
-  BACKUP_FILE_METADATA_RESULT=$(docker exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${BACKUP_FILE_METADATA_COMMAND})
+  BACKUP_FILE_METADATA_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${BACKUP_FILE_METADATA_COMMAND})
 
   BACKUP_FILE_METADATA_ACTUAL_ENTITY=$(echo "${BACKUP_FILE_METADATA_RESULT}" | jq -r '.[0] | .entity')
   BACKUP_FILE_METADATA_EXPECTED_ENTITY="${CLIENT_TEST_FILES[$i]}"
@@ -416,7 +425,7 @@ echo "OK"
 
 echo -n "[$(now)] (PRIMARY) Checking metadata of updated test file..."
 CLIENT_UPDATED_BACKUP_FILE_METADATA_COMMAND="stasis-client-cli --json backup show metadata ${CLIENT_BACKUP_ENTRY_SECONDARY} -f entity==${CLIENT_UPDATED_TEST_FILE}"
-CLIENT_UPDATED_BACKUP_FILE_METADATA_RESULT=$(docker exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_UPDATED_BACKUP_FILE_METADATA_COMMAND})
+CLIENT_UPDATED_BACKUP_FILE_METADATA_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_UPDATED_BACKUP_FILE_METADATA_COMMAND})
 
 CLIENT_UPDATED_BACKUP_FILE_METADATA_ACTUAL_SIZE=$(echo "${CLIENT_UPDATED_BACKUP_FILE_METADATA_RESULT}" | jq -r '.[0] | .size')
 CLIENT_UPDATED_BACKUP_FILE_METADATA_EXPECTED_SIZE="10 MB"
@@ -429,7 +438,7 @@ echo "OK"
 
 echo -n "[$(now)] (PRIMARY) Searching for file [.*/d]..."
 CLIENT_BACKUP_SEARCH_COMMAND="stasis-client-cli --json backup search .*/d"
-CLIENT_BACKUP_SEARCH_RESULT=$(docker exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_BACKUP_SEARCH_COMMAND})
+CLIENT_BACKUP_SEARCH_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_BACKUP_SEARCH_COMMAND})
 
 CLIENT_BACKUP_SEARCH_ACTUAL_ENTRY=$(echo "${CLIENT_BACKUP_SEARCH_RESULT}" | jq -r '.[0] | .entry')
 CLIENT_BACKUP_SEARCH_ACTUAL_STATE=$(echo "${CLIENT_BACKUP_SEARCH_RESULT}" | jq -r '.[0] | .state')
@@ -458,7 +467,7 @@ fi
 echo "OK"
 
 echo -n "[$(now)] (PRIMARY) Removing recovery directory..."
-CLIENT_RECOVERY_DIR_RM_RESULT=$(docker exec "${PRIMARY_CLIENT_CONTAINER_ID}" rm -rf ${CLIENT_RECOVERY_DIR} 2>&1)
+CLIENT_RECOVERY_DIR_RM_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" rm -rf ${CLIENT_RECOVERY_DIR} 2>&1)
 if [ $? = 0 ]
 then
   echo "OK"
@@ -468,7 +477,7 @@ else
 fi
 
 echo -n "[$(now)] (PRIMARY) Creating recovery directory..."
-CLIENT_RECOVERY_DIR_MKDIR_RESULT=$(docker exec "${PRIMARY_CLIENT_CONTAINER_ID}" mkdir -p ${CLIENT_RECOVERY_DIR} 2>&1)
+CLIENT_RECOVERY_DIR_MKDIR_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" mkdir -p ${CLIENT_RECOVERY_DIR} 2>&1)
 if [ $? = 0 ]
 then
   echo "OK"
@@ -479,7 +488,7 @@ fi
 
 echo -n "[$(now)] (PRIMARY) Recovering from entry [${CLIENT_BACKUP_ENTRY_PRIMARY}]..."
 CLIENT_RECOVER_FROM_ENTRY_COMMAND="stasis-client-cli --json recover from ${CLIENT_BACKUP_DEFINITION} ${CLIENT_BACKUP_ENTRY_PRIMARY} --follow --destination ${CLIENT_RECOVERY_DIR}"
-CLIENT_RECOVER_FROM_ENTRY_RESULT=$(docker exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_RECOVER_FROM_ENTRY_COMMAND})
+CLIENT_RECOVER_FROM_ENTRY_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_RECOVER_FROM_ENTRY_COMMAND})
 
 if [ $? = 0 ]
 then
@@ -496,7 +505,7 @@ do
   RECOVERED_FILE="${CLIENT_RECOVERY_DIR}${ORIGINAL_FILE}"
 
   ORIGINAL_SHA_RESULT="${CLIENT_TEST_FILE_SHA_SUMS["${ORIGINAL_FILE}"]}"
-  RECOVERED_SHA_RESULT=$(docker exec "${PRIMARY_CLIENT_CONTAINER_ID}" sha256sum ${RECOVERED_FILE} 2>&1)
+  RECOVERED_SHA_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" sha256sum ${RECOVERED_FILE} 2>&1)
   if [ $? != 0 ]
   then
     echo "failed creating checksum for recovered file [${RECOVERED_FILE}]: [${RECOVERED_SHA_RESULT}]"
@@ -514,7 +523,7 @@ echo "OK"
 
 echo -n "[$(now)] (PRIMARY) Stopping client service..."
 CLIENT_SERVICE_STOP_COMMAND="stasis-client-cli --json service stop --confirm"
-CLIENT_SERVICE_STOP_RESULT=$(docker exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_SERVICE_STOP_COMMAND})
+CLIENT_SERVICE_STOP_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_SERVICE_STOP_COMMAND})
 CLIENT_SERVICE_STOP_SUCCESSFUL="$(echo "${CLIENT_SERVICE_STOP_RESULT}" | jq '.successful')"
 if [ "${CLIENT_SERVICE_STOP_SUCCESSFUL}" = "true" ]
 then
@@ -526,7 +535,7 @@ fi
 
 echo -n "[$(now)] (SECONDARY) Ensuring client service is stopped..."
 CLIENT_SERVICE_STOP_COMMAND="stasis-client-cli --json service stop --confirm"
-CLIENT_SERVICE_STOP_RESULT=$(docker exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${CLIENT_SERVICE_STOP_COMMAND} 2>&1)
+CLIENT_SERVICE_STOP_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${CLIENT_SERVICE_STOP_COMMAND} 2>&1)
 CLIENT_SERVICE_STOP_SUCCESSFUL="$(echo "${CLIENT_SERVICE_STOP_RESULT}" | jq '.successful' 2>&1)"
 CLIENT_SERVICE_STOP_FAILURE="$(echo "${CLIENT_SERVICE_STOP_RESULT}" | jq -r '.failure' 2>&1)"
 CLIENT_SERVICE_NOT_ACTIVE="Background service is not active"
@@ -541,7 +550,7 @@ fi
 echo -n "[$(now)] (SECONDARY) Ensuring client config is not available..."
 for CONFIG_FILE in "${CLIENT_CONFIG_FILES[@]}"
 do
-  RM_RESULT=$(docker exec "${SECONDARY_CLIENT_CONTAINER_ID}" rm -rf ${CONFIG_FILE} 2>&1)
+  RM_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" rm -rf ${CONFIG_FILE} 2>&1)
   if [ $? != 0 ]
   then
     echo "failed removing config file [${CONFIG_FILE}]: [${RM_RESULT}]"
@@ -552,7 +561,7 @@ echo "OK"
 
 echo -n "[$(now)] (SECONDARY) Checking user status..."
 CLIENT_STATUS_USER_COMMAND="stasis-client-cli --json service status user"
-CLIENT_STATUS_USER_RESULT=$(docker exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${CLIENT_STATUS_USER_COMMAND} 2>&1)
+CLIENT_STATUS_USER_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${CLIENT_STATUS_USER_COMMAND} 2>&1)
 if [[ "${CLIENT_STATUS_USER_RESULT}" == *"client not configured"* ]]
 then
   echo "not configured (OK)"
@@ -575,7 +584,7 @@ fi
 
 echo -n "[$(now)] (SECONDARY) Executing device bootstrap..."
 DEVICE_BOOTSTRAP_COMMAND="stasis-client bootstrap --server ${SERVER_BOOTSTRAP_URL_INTERNAL} --code ${DEVICE_BOOTSTRAP_CODE} --accept-self-signed --user-name ${USER_ID} --user-password ${USER_PASSWORD}"
-DEVICE_BOOTSTRAP_RESULT=$(docker exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${DEVICE_BOOTSTRAP_COMMAND} 2>&1)
+DEVICE_BOOTSTRAP_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${DEVICE_BOOTSTRAP_COMMAND} 2>&1)
 if [ $? = 0 ]
 then
   echo "OK"
@@ -586,7 +595,7 @@ fi
 
 echo -n "[$(now)] (SECONDARY) Starting client service..."
 CLIENT_SERVICE_START_COMMAND="stasis-client-cli --json service start --username ${USER_ID} --password ${USER_PASSWORD}"
-CLIENT_SERVICE_START_RESULT=$(docker exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${CLIENT_SERVICE_START_COMMAND})
+CLIENT_SERVICE_START_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${CLIENT_SERVICE_START_COMMAND})
 CLIENT_SERVICE_START_SUCCESSFUL="$(echo "${CLIENT_SERVICE_START_RESULT}" | jq '.successful')"
 CLIENT_SERVICE_START_FAILURE="$(echo "${CLIENT_SERVICE_START_RESULT}" | jq -r '.failure')"
 CLIENT_SERVICE_ALREADY_ACTIVE="Background service is already active"
@@ -600,7 +609,7 @@ fi
 
 echo -n "[$(now)] (SECONDARY) Checking user status..."
 CLIENT_STATUS_USER_COMMAND="stasis-client-cli --json service status user"
-CLIENT_STATUS_USER_RESULT=$(docker exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${CLIENT_STATUS_USER_COMMAND})
+CLIENT_STATUS_USER_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${CLIENT_STATUS_USER_COMMAND})
 if [ "$(echo "${CLIENT_STATUS_USER_RESULT}" | jq '.active')" = "true" ]
 then
   echo "OK"
@@ -611,7 +620,7 @@ fi
 
 echo -n "[$(now)] (SECONDARY) Checking device status..."
 CLIENT_STATUS_DEVICE_COMMAND="stasis-client-cli --json service status device"
-CLIENT_STATUS_DEVICE_RESULT=$(docker exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${CLIENT_STATUS_DEVICE_COMMAND})
+CLIENT_STATUS_DEVICE_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${CLIENT_STATUS_DEVICE_COMMAND})
 if [ "$(echo "${CLIENT_STATUS_DEVICE_RESULT}" | jq '.active')" = "true" ]
 then
   echo "OK"
@@ -622,7 +631,7 @@ fi
 
 echo -n "[$(now)] (SECONDARY) Stopping client service..."
 CLIENT_SERVICE_STOP_COMMAND="stasis-client-cli --json service stop --confirm"
-CLIENT_SERVICE_STOP_RESULT=$(docker exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${CLIENT_SERVICE_STOP_COMMAND})
+CLIENT_SERVICE_STOP_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${CLIENT_SERVICE_STOP_COMMAND})
 CLIENT_SERVICE_STOP_SUCCESSFUL="$(echo "${CLIENT_SERVICE_STOP_RESULT}" | jq '.successful')"
 if [ "${CLIENT_SERVICE_STOP_SUCCESSFUL}" = "true" ]
 then
@@ -633,8 +642,8 @@ else
 fi
 
 echo -n "[$(now)] (SECONDARY) Pushing device key..."
-DEVICE_KEY_PUSH_COMMAND="stasis-client maintenance --secret push --current-user-name ${USER_ID} --current-user-password ${USER_PASSWORD}"
-DEVICE_KEY_PUSH_RESULT=$(docker exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${DEVICE_KEY_PUSH_COMMAND} 2>&1)
+DEVICE_KEY_PUSH_COMMAND="stasis-client maintenance secret push --current-user-name ${USER_ID} --current-user-password ${USER_PASSWORD}"
+DEVICE_KEY_PUSH_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${DEVICE_KEY_PUSH_COMMAND} 2>&1)
 if [ $? = 0 ]
 then
   echo "OK"

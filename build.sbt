@@ -205,8 +205,27 @@ lazy val commonSettings = Seq(
 lazy val dockerSettings = Seq(
   packageName          := s"$projectName-${name.value}",
   executableScriptName := s"$projectName-${name.value}",
-  dockerRepository     := Some(dockerRegistry)
+  dockerRepository     := Some(dockerRegistry),
+  dockerExecCommand    := Seq(findDockerExecCommand())
 )
+
+def findDockerExecCommand(): String = {
+  import scala.util.Try
+  import java.io.File
+
+  val pathEntries = Try(Option(System.getenv("PATH"))).toOption.flatten
+    .getOrElse("")
+    .split(File.pathSeparator)
+    .map(_.trim)
+    .filter(_.nonEmpty)
+    .toSeq
+
+  def exists(command: String): Boolean = pathEntries.exists { path =>
+    new File(path, command).isFile
+  }
+
+  Seq("podman").find(exists).getOrElse("docker")
+}
 
 lazy val buildInfoSettings = Seq(
   buildInfoKeys    := Seq[BuildInfoKey](

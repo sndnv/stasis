@@ -20,6 +20,7 @@ def main():
     parser.add_argument('-v', '--validity', type=int, default=365, help='Certificate validity, in days')
     parser.add_argument('-k', '--key-size', type=int, default=4096, help='Private key size, in bits')
     parser.add_argument('-p', '--output-path', type=str, default='.', help='Path to use for generated files')
+    parser.add_argument('-e', '--extra-name', type=str, default=None, help='Alternative server name')
 
     args = parser.parse_args()
 
@@ -34,6 +35,7 @@ def main():
     location = args.location
     organization = args.organization
     common_name = args.common_name
+    extra_name = args.extra_name
     output_path = args.output_path
 
     private_key_size = args.key_size
@@ -56,6 +58,7 @@ def main():
                 'Private Key:\t{}'.format(private_key_path),
                 'Certificate:\t{}'.format(x509_cert_path),
                 'PKCS12 File:\t{}'.format(pkcs12_path),
+                'Extra Name:\t{}'.format(extra_name),
             ]
         )
     )
@@ -71,11 +74,13 @@ def main():
                     '[req]',
                     'distinguished_name=dn',
                     '[EXT]',
-                    'subjectAltName=DNS:{}'.format(common_name),
+                    'subjectAltName = @alt_names',
                     'keyUsage=digitalSignature',
                     'extendedKeyUsage=serverAuth',
-                    'basicConstraints=CA:TRUE,pathlen:0'
-                ]
+                    'basicConstraints=CA:TRUE,pathlen:0',
+                    '[alt_names]',
+                    'DNS.1 = {}'.format(common_name),
+                ] + (['DNS.2 = {}'.format(extra_name)] if extra_name else [])
             )
         )
 

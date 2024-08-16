@@ -41,13 +41,14 @@ CERTS_DIR="$(dirname "${SCRIPTS_DIR}")/secrets"
 IDENTITY_NAME=${4:-identity}
 SERVER_NAME=${5:-server}
 CLIENT_NAME=${6:-localhost}
+EXTRA_NAME="10.0.2.2"
 
-"${SCRIPTS_DIR}/generate_self_signed_cert.py" -c "${COUNTRY}" -l "${LOCATION}" -o "${ORGANIZATION}" -p "${CERTS_DIR}" "${IDENTITY_NAME}"
-"${SCRIPTS_DIR}/generate_self_signed_cert.py" -c "${COUNTRY}" -l "${LOCATION}" -o "${ORGANIZATION}" -p "${CERTS_DIR}" "${SERVER_NAME}"
+"${SCRIPTS_DIR}/generate_self_signed_cert.py" -c "${COUNTRY}" -l "${LOCATION}" -o "${ORGANIZATION}" -p "${CERTS_DIR}" -e "${EXTRA_NAME}" "${IDENTITY_NAME}"
+"${SCRIPTS_DIR}/generate_self_signed_cert.py" -c "${COUNTRY}" -l "${LOCATION}" -o "${ORGANIZATION}" -p "${CERTS_DIR}" -e "${EXTRA_NAME}" "${SERVER_NAME}"
 "${SCRIPTS_DIR}/generate_self_signed_cert.py" -c "${COUNTRY}" -l "${LOCATION}" -o "${ORGANIZATION}" -p "${CERTS_DIR}" "${CLIENT_NAME}"
 
 chmod 644 ${CERTS_DIR}/${IDENTITY_NAME}.*
 chmod 644 ${CERTS_DIR}/${SERVER_NAME}.*
 chmod 644 ${CERTS_DIR}/${CLIENT_NAME}.*
 
-"${SCRIPTS_DIR}/generate_artifacts.py"
+#"${SCRIPTS_DIR}/generate_artifacts.py"

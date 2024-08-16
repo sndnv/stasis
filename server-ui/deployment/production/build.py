@@ -11,6 +11,14 @@ dockerfile_path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(server_ui_path)
 
 
+def container_executable():
+    try:
+        subprocess.call(['podman', '-v'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return 'podman'
+    except:
+        return 'docker'
+
+
 def get_version():
     pubspec_file = 'pubspec.yaml'
     with open(pubspec_file) as f:
@@ -52,7 +60,7 @@ run_command(
 
 run_command(
     command=[
-        'docker',
+        container_executable(),
         'build',
         '-t', server_ui_image,
         '-f', '{}/Dockerfile'.format(dockerfile_path),
