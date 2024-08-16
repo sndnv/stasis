@@ -18,6 +18,14 @@ DOCKER_IMAGE_REGEX_D = r'naming to (.+):(.+) .*done'
 DOCKER_IMAGE_TARGET_TAG = 'dev-latest'
 
 
+def container_executable():
+    try:
+        subprocess.call(['podman', '-v'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return 'podman'
+    except:
+        return 'docker'
+
+
 def build_docker_image(project_name, with_command):
     logging.info('Generating docker image for [{}]...'.format(project_name))
 
@@ -50,7 +58,7 @@ def build_docker_image(project_name, with_command):
         logging.info('Re-tagging [{}:{}] as [{}:{}]...'.format(image, tag, image, DOCKER_IMAGE_TARGET_TAG))
 
         tag_result = subprocess.run(
-            ['docker', 'tag', '{}:{}'.format(image, tag), '{}:{}'.format(image, DOCKER_IMAGE_TARGET_TAG)]
+            [container_executable(), 'tag', '{}:{}'.format(image, tag), '{}:{}'.format(image, DOCKER_IMAGE_TARGET_TAG)]
         ).returncode
 
         if tag_result == 0:
@@ -101,7 +109,7 @@ def build_docker_image_with_dockerfile(project_name, paths):
 
     build_result = subprocess.run(
         [
-            'docker',
+            container_executable(),
             'build',
             '-t', '{}'.format(target_image),
             '.',
