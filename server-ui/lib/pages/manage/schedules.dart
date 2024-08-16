@@ -39,7 +39,7 @@ class _SchedulesState extends State<Schedules> {
               ? [
                   IconButton(
                     tooltip: 'Create New Schedule',
-                    onPressed: () => _createSchedule(context),
+                    onPressed: () => _createSchedule(),
                     icon: const Icon(Icons.add),
                   ),
                 ]
@@ -76,12 +76,12 @@ class _SchedulesState extends State<Schedules> {
                       ? [
                           IconButton(
                             tooltip: 'Update Schedule',
-                            onPressed: () => _updateSchedule(context, schedule),
+                            onPressed: () => _updateSchedule(schedule),
                             icon: const Icon(Icons.edit),
                           ),
                           IconButton(
                             tooltip: 'Remove Schedule',
-                            onPressed: () => _removeSchedule(context, schedule.id),
+                            onPressed: () => _removeSchedule(schedule.id),
                             icon: const Icon(Icons.delete),
                           ),
                         ]
@@ -101,7 +101,7 @@ class _SchedulesState extends State<Schedules> {
     );
   }
 
-  void _createSchedule(BuildContext context) async {
+  void _createSchedule() async {
     final infoField = formField(
       title: 'Info',
       errorMessage: 'Info cannot be empty',
@@ -131,7 +131,7 @@ class _SchedulesState extends State<Schedules> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) {
+      builder: (context) {
         return SimpleDialog(
           title: const Text('Create New Schedule'),
           contentPadding: const EdgeInsets.all(16),
@@ -154,7 +154,9 @@ class _SchedulesState extends State<Schedules> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to create schedule: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
             )
           ],
@@ -163,7 +165,7 @@ class _SchedulesState extends State<Schedules> {
     );
   }
 
-  void _updateSchedule(BuildContext context, Schedule existing) async {
+  void _updateSchedule(Schedule existing) async {
     final infoField = formField(
       title: 'Info',
       errorMessage: 'Info cannot be empty',
@@ -188,7 +190,7 @@ class _SchedulesState extends State<Schedules> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) {
+      builder: (context) {
         return SimpleDialog(
           title: Text('Update Schedule [${existing.id.toMinimizedString()}]'),
           contentPadding: const EdgeInsets.all(16),
@@ -210,7 +212,9 @@ class _SchedulesState extends State<Schedules> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to update schedule: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
             )
           ],
@@ -219,7 +223,7 @@ class _SchedulesState extends State<Schedules> {
     );
   }
 
-  void _removeSchedule(BuildContext context, String id) {
+  void _removeSchedule(String id) {
     showDialog(
       context: context,
       builder: (context) {
@@ -241,7 +245,9 @@ class _SchedulesState extends State<Schedules> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to remove schedule: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
               child: const Text('Remove'),
             ),

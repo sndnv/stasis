@@ -65,7 +65,7 @@ class _DatasetEntriesState extends State<DatasetEntries> {
                         .map(
                           (crate) => ListTile(
                             title: widget.privileged
-                                ? crate.withInfo(() => _showCrateManifest(context, crate))
+                                ? crate.withInfo(() => _showCrateManifest(crate))
                                 : crate.withCopyButton(),
                             leading: const Icon(Icons.data_usage),
                           ),
@@ -82,7 +82,7 @@ class _DatasetEntriesState extends State<DatasetEntries> {
                   children: [
                     IconButton(
                       tooltip: 'Remove Dataset Entry',
-                      onPressed: () => _removeDatasetEntry(context, entry.id),
+                      onPressed: () => _removeDatasetEntry(entry.id),
                       icon: const Icon(Icons.delete),
                     ),
                   ],
@@ -95,7 +95,7 @@ class _DatasetEntriesState extends State<DatasetEntries> {
     );
   }
 
-  void _removeDatasetEntry(BuildContext context, String id) {
+  void _removeDatasetEntry(String id) {
     showDialog(
       context: context,
       builder: (context) {
@@ -112,7 +112,9 @@ class _DatasetEntriesState extends State<DatasetEntries> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to remove dataset entry: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
               child: const Text('Remove'),
             ),
@@ -122,93 +124,98 @@ class _DatasetEntriesState extends State<DatasetEntries> {
     );
   }
 
-  void _showCrateManifest(BuildContext context, String crate) {
-    widget.manifestsClient.getManifest(crate: crate).then((manifest) => showDialog(
-          context: context,
-          builder: (BuildContext context) => SimpleDialog(
-            title: Text('Manifest for Crate [${crate.toMinimizedString()}]'),
-            children: [
-              ListTile(
-                title: const Text('Crate'),
-                leading: const Icon(Icons.data_usage),
-                trailing: FittedBox(child: manifest.crate.asShortId()),
+  void _showCrateManifest(String crate) {
+    widget.manifestsClient.getManifest(crate: crate).then((manifest) {
+      final ctx = context;
+      if (!ctx.mounted) return;
+
+      showDialog(
+        context: ctx,
+        builder: (BuildContext context) => SimpleDialog(
+          title: Text('Manifest for Crate [${crate.toMinimizedString()}]'),
+          children: [
+            ListTile(
+              title: const Text('Crate'),
+              leading: const Icon(Icons.data_usage),
+              trailing: FittedBox(child: manifest.crate.asShortId()),
+            ),
+            ListTile(
+              title: const Text('Size'),
+              leading: const Icon(Icons.sd_storage),
+              trailing: Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: Text(
+                  manifest.size.renderFileSize(),
+                ),
               ),
-              ListTile(
-                title: const Text('Size'),
-                leading: const Icon(Icons.sd_storage),
-                trailing: Padding(
-                  padding: const EdgeInsets.only(right: 16.0),
-                  child: Text(
-                    manifest.size.renderFileSize(),
+            ),
+            ListTile(
+              title: const Text('Copies'),
+              leading: const Icon(Icons.copy_all),
+              trailing: Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: Text(manifest.copies.toString()),
+              ),
+            ),
+            ListTile(
+              title: const Text('Origin'),
+              leading: const Icon(Icons.device_hub),
+              trailing: FittedBox(
+                child: manifest.origin.asShortId(
+                  link: Link(
+                    buildContext: context,
+                    destination: PageRouterDestination.nodes,
+                    withFilter: manifest.origin,
                   ),
                 ),
               ),
-              ListTile(
-                title: const Text('Copies'),
-                leading: const Icon(Icons.copy_all),
-                trailing: Padding(
-                  padding: const EdgeInsets.only(right: 16.0),
-                  child: Text(manifest.copies.toString()),
-                ),
-              ),
-              ListTile(
-                title: const Text('Origin'),
-                leading: const Icon(Icons.device_hub),
-                trailing: FittedBox(
-                  child: manifest.origin.asShortId(
-                    link: Link(
-                      buildContext: context,
-                      destination: PageRouterDestination.nodes,
-                      withFilter: manifest.origin,
-                    ),
+            ),
+            ListTile(
+              title: const Text('Source'),
+              leading: const Icon(Icons.device_hub),
+              trailing: FittedBox(
+                child: manifest.source.asShortId(
+                  link: Link(
+                    buildContext: context,
+                    destination: PageRouterDestination.nodes,
+                    withFilter: manifest.source,
                   ),
                 ),
               ),
-              ListTile(
-                title: const Text('Source'),
-                leading: const Icon(Icons.device_hub),
-                trailing: FittedBox(
-                  child: manifest.source.asShortId(
-                    link: Link(
-                      buildContext: context,
-                      destination: PageRouterDestination.nodes,
-                      withFilter: manifest.source,
-                    ),
-                  ),
+            ),
+            ListTile(
+              title: const Text('Destinations'),
+              leading: const Icon(Icons.hub),
+              trailing: Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: Text(
+                  manifest.destinations.length.toString(),
                 ),
               ),
-              ListTile(
-                title: const Text('Destinations'),
-                leading: const Icon(Icons.hub),
-                trailing: Padding(
-                  padding: const EdgeInsets.only(right: 16.0),
-                  child: Text(
-                    manifest.destinations.length.toString(),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 8.0),
-                child: SizedBox(
-                  width: 448.0,
-                  child: Wrap(
-                    alignment: WrapAlignment.center,
-                    children: manifest.destinations
-                        .map(
-                          (e) => e.asShortId(
-                            link: Link(
-                              buildContext: context,
-                              destination: PageRouterDestination.nodes,
-                              withFilter: e,
-                            ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: SizedBox(
+                width: 448.0,
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  children: manifest.destinations
+                      .map(
+                        (e) => e.asShortId(
+                          link: Link(
+                            buildContext: context,
+                            destination: PageRouterDestination.nodes,
+                            withFilter: e,
                           ),
-                        )
-                        .toList(),
-                  ),
+                        ),
+                      )
+                      .toList(),
                 ),
               ),
-            ],
-          ),
-        ));
+            ),
+          ],
+        ),
+      );
+    });
   }
 }

@@ -70,7 +70,7 @@ class _DeviceKeysState extends State<DeviceKeys> {
                   children: [
                     IconButton(
                       tooltip: 'Remove Device Key',
-                      onPressed: () => _removeDeviceKey(context, key.device),
+                      onPressed: () => _removeDeviceKey(key.device),
                       icon: const Icon(Icons.delete),
                     ),
                   ],
@@ -83,7 +83,7 @@ class _DeviceKeysState extends State<DeviceKeys> {
     );
   }
 
-  void _removeDeviceKey(BuildContext context, String forDevice) {
+  void _removeDeviceKey(String forDevice) {
     showDialog(
       context: context,
       builder: (context) {
@@ -103,7 +103,9 @@ class _DeviceKeysState extends State<DeviceKeys> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to remove device key: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
               child: const Text('Remove'),
             ),

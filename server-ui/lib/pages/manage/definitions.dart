@@ -47,7 +47,7 @@ class _DatasetDefinitionsState extends State<DatasetDefinitions> {
           actions: [
             IconButton(
               tooltip: 'Create New Dataset Definition',
-              onPressed: () async => _createDatasetDefinition(context),
+              onPressed: () async => _createDatasetDefinition(),
               icon: const Icon(Icons.add),
             ),
           ],
@@ -90,17 +90,17 @@ class _DatasetDefinitionsState extends State<DatasetDefinitions> {
                   children: [
                     IconButton(
                       tooltip: 'Show Dataset Entries',
-                      onPressed: () => _showDatasetEntries(context, definition.id),
+                      onPressed: () => _showDatasetEntries(definition.id),
                       icon: const Icon(Icons.list_alt),
                     ),
                     IconButton(
                       tooltip: 'Update Dataset Definition',
-                      onPressed: () => _updateDatasetDefinition(context, definition),
+                      onPressed: () => _updateDatasetDefinition(definition),
                       icon: const Icon(Icons.edit),
                     ),
                     IconButton(
                       tooltip: 'Remove Dataset Definition',
-                      onPressed: () => _removeDatasetDefinition(context, definition.id),
+                      onPressed: () => _removeDatasetDefinition(definition.id),
                       icon: const Icon(Icons.delete),
                     ),
                   ],
@@ -113,7 +113,7 @@ class _DatasetDefinitionsState extends State<DatasetDefinitions> {
     );
   }
 
-  void _createDatasetDefinition(BuildContext context) {
+  void _createDatasetDefinition() {
     widget.devicesClient.getDevices(privileged: widget.privileged).then((devices) {
       final infoField = formField(
         title: 'Info',
@@ -148,10 +148,13 @@ class _DatasetDefinitionsState extends State<DatasetDefinitions> {
         onChange: (updated) => removedVersions = updated,
       );
 
+      final ctx = context;
+      if (!ctx.mounted) return;
+
       showDialog(
-        context: context,
+        context: ctx,
         barrierDismissible: false,
-        builder: (_) {
+        builder: (context) {
           return SimpleDialog(
             title: const Text('Create New Dataset Definition'),
             contentPadding: const EdgeInsets.all(16),
@@ -177,7 +180,9 @@ class _DatasetDefinitionsState extends State<DatasetDefinitions> {
                     setState(() {});
                   }).onError((e, stackTrace) {
                     messenger.showSnackBar(SnackBar(content: Text('Failed to create dataset definition: [$e]')));
-                  }).whenComplete(() => Navigator.pop(context));
+                  }).whenComplete(() {
+                    if (context.mounted) Navigator.pop(context);
+                  });
                 },
               )
             ],
@@ -187,7 +192,7 @@ class _DatasetDefinitionsState extends State<DatasetDefinitions> {
     });
   }
 
-  void _showDatasetEntries(BuildContext context, String definition) {
+  void _showDatasetEntries(String definition) {
     showDialog(
       context: context,
       builder: (BuildContext context) => AlertDialog(
@@ -213,7 +218,7 @@ class _DatasetDefinitionsState extends State<DatasetDefinitions> {
     );
   }
 
-  void _updateDatasetDefinition(BuildContext context, DatasetDefinition existing) {
+  void _updateDatasetDefinition(DatasetDefinition existing) {
     final infoField = formField(
       title: 'Info',
       errorMessage: 'Info cannot be empty',
@@ -244,7 +249,7 @@ class _DatasetDefinitionsState extends State<DatasetDefinitions> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) {
+      builder: (context) {
         return SimpleDialog(
           title: Text('Update Dataset Definition [${existing.id.toMinimizedString()}]'),
           contentPadding: const EdgeInsets.all(16),
@@ -269,7 +274,9 @@ class _DatasetDefinitionsState extends State<DatasetDefinitions> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to update dataset definition: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
             )
           ],
@@ -278,7 +285,7 @@ class _DatasetDefinitionsState extends State<DatasetDefinitions> {
     );
   }
 
-  void _removeDatasetDefinition(BuildContext context, String id) {
+  void _removeDatasetDefinition(String id) {
     showDialog(
       context: context,
       builder: (context) {
@@ -298,7 +305,9 @@ class _DatasetDefinitionsState extends State<DatasetDefinitions> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to remove dataset definition: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
               child: const Text('Remove'),
             ),

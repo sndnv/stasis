@@ -73,7 +73,7 @@ class _BootstrapCodesState extends State<BootstrapCodes> {
                   children: [
                     IconButton(
                       tooltip: 'Remove Device Bootstrap Code',
-                      onPressed: () => _removeDeviceBootstrapCode(context, code.device),
+                      onPressed: () => _removeDeviceBootstrapCode(code.device),
                       icon: const Icon(Icons.delete),
                     ),
                   ],
@@ -86,7 +86,7 @@ class _BootstrapCodesState extends State<BootstrapCodes> {
     );
   }
 
-  void _removeDeviceBootstrapCode(BuildContext context, String device) {
+  void _removeDeviceBootstrapCode(String device) {
     showDialog(
       context: context,
       builder: (context) {
@@ -106,7 +106,9 @@ class _BootstrapCodesState extends State<BootstrapCodes> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to remove bootstrap code: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
               child: const Text('Remove'),
             ),
