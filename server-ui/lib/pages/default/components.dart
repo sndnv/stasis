@@ -50,7 +50,9 @@ Widget buildPage<T>({
       if (snapshot.data != null && snapshot.connectionState == ConnectionState.done) {
         return builder(context, snapshot.data as T);
       } else if (snapshot.error is AuthenticationFailure) {
-        OAuth.discardCredentials().then((_) => PageRouter.navigateTo(context, destination: PageRouterDestination.home));
+        OAuth.discardCredentials().then((_) {
+          if (context.mounted) PageRouter.navigateTo(context, destination: PageRouterDestination.home);
+        });
         return centerContent(
           content: [
             createBasicCard(

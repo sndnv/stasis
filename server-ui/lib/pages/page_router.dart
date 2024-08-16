@@ -280,8 +280,9 @@ class PageRouter {
                   if (snapshot.error == null || snapshot.error.runtimeType == RedirectPending) {
                     return const Scaffold(body: Center(child: CircularProgressIndicator()));
                   } else if (snapshot.error is AuthenticationFailure) {
-                    OAuth.discardCredentials()
-                        .then((_) => navigateTo(buildContext, destination: PageRouterDestination.home));
+                    OAuth.discardCredentials().then((_) {
+                      if (buildContext.mounted) navigateTo(buildContext, destination: PageRouterDestination.home);
+                    });
 
                     return centerContent(
                       content: [
@@ -353,7 +354,7 @@ class PageRouter {
 
   static final Handler _deviceKeysHandler = _pageHandler(
     PageRouterDestination.deviceKeys,
-        (_, routerContext) => DeviceKeys(
+    (_, routerContext) => DeviceKeys(
       client: routerContext.apiClient,
       privileged: routerContext.usePrivilegedApis.enabled(),
     ),

@@ -165,7 +165,7 @@ class Home extends StatelessWidget {
                   ],
                 ),
               ),
-              ButtonBar(
+              OverflowBar(
                 alignment: MainAxisAlignment.end,
                 children: [
                   IconButton(
@@ -260,7 +260,7 @@ class Home extends StatelessWidget {
                         ),
                       )
                       .then(
-                        (_) => passwordDerivationConfig.enabled
+                        (_) => passwordDerivationConfig.enabled && context.mounted
                             ? _showUpdatedSalt(context, response.salt)
                             : Future.value(),
                       );
@@ -268,7 +268,9 @@ class Home extends StatelessWidget {
                   messenger.showSnackBar(const SnackBar(content: Text('User password updated...')));
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to update user password: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
             )
           ],
@@ -301,7 +303,9 @@ class Home extends StatelessWidget {
                   messenger.showSnackBar(const SnackBar(content: Text('User deactivated...')));
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to deactivate user: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
               child: const Text('Deactivate'),
             ),

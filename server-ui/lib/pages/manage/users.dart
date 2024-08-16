@@ -42,7 +42,7 @@ class _UsersState extends State<Users> {
           actions: [
             IconButton(
               tooltip: 'Create New User',
-              onPressed: () => _createUser(context),
+              onPressed: () => _createUser(),
               icon: const Icon(Icons.add),
             ),
           ],
@@ -157,27 +157,27 @@ class _UsersState extends State<Users> {
                       ? [
                           IconButton(
                             tooltip: 'Update User State',
-                            onPressed: () => _updateUserState(context, user),
+                            onPressed: () => _updateUserState(user),
                             icon: const Icon(Icons.power_settings_new),
                           ),
                           IconButton(
                             tooltip: 'Update User Limits',
-                            onPressed: () => _updateUserLimits(context, user),
+                            onPressed: () => _updateUserLimits(user),
                             icon: const Icon(Icons.data_usage),
                           ),
                           IconButton(
                             tooltip: 'Update User Permissions',
-                            onPressed: () => _updateUserPermissions(context, user),
+                            onPressed: () => _updateUserPermissions(user),
                             icon: const Icon(Icons.security),
                           ),
                           IconButton(
                             tooltip: 'Update User Password',
-                            onPressed: () => _updateUserPassword(context, user),
+                            onPressed: () => _updateUserPassword(user),
                             icon: const Icon(Icons.lock_reset),
                           ),
                           IconButton(
                             tooltip: 'Remove User',
-                            onPressed: () => _removeUser(context, user.id),
+                            onPressed: () => _removeUser(user.id),
                             icon: const Icon(Icons.delete),
                           ),
                         ]
@@ -197,7 +197,7 @@ class _UsersState extends State<Users> {
     );
   }
 
-  void _createUser(BuildContext context) async {
+  void _createUser() async {
     final usernameField = formField(
       title: 'Username',
       errorMessage: 'Username cannot be empty',
@@ -226,7 +226,7 @@ class _UsersState extends State<Users> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) {
+      builder: (context) {
         return SimpleDialog(
           title: const Text('Create New User'),
           contentPadding: const EdgeInsets.all(16),
@@ -249,7 +249,9 @@ class _UsersState extends State<Users> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to create user: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
             )
           ],
@@ -258,7 +260,7 @@ class _UsersState extends State<Users> {
     );
   }
 
-  void _updateUserState(BuildContext context, User existing) {
+  void _updateUserState(User existing) {
     bool currentActiveState = existing.active;
     final activeField = stateField(
       title: 'State',
@@ -287,7 +289,9 @@ class _UsersState extends State<Users> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to update user: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
             )
           ],
@@ -296,7 +300,7 @@ class _UsersState extends State<Users> {
     );
   }
 
-  void _updateUserLimits(BuildContext context, User existing) async {
+  void _updateUserLimits(User existing) async {
     UserLimits? limits;
     final limitsField = userLimitsField(
       title: 'User Limits',
@@ -307,7 +311,7 @@ class _UsersState extends State<Users> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) {
+      builder: (context) {
         return SimpleDialog(
           title: Text('Update Limits for User [${existing.id.toMinimizedString()}]'),
           contentPadding: const EdgeInsets.all(16),
@@ -325,7 +329,9 @@ class _UsersState extends State<Users> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to update user: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
             )
           ],
@@ -334,7 +340,7 @@ class _UsersState extends State<Users> {
     );
   }
 
-  void _updateUserPermissions(BuildContext context, User existing) async {
+  void _updateUserPermissions(User existing) async {
     List<UserPermission>? permissions;
     final permissionsField = userPermissionsField(
       title: 'Permissions',
@@ -346,7 +352,7 @@ class _UsersState extends State<Users> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) {
+      builder: (context) {
         return SimpleDialog(
           title: Text('Update Permissions for User [${existing.id.toMinimizedString()}]'),
           contentPadding: const EdgeInsets.all(16),
@@ -364,7 +370,9 @@ class _UsersState extends State<Users> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to update user: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
             )
           ],
@@ -373,7 +381,7 @@ class _UsersState extends State<Users> {
     );
   }
 
-  void _updateUserPassword(BuildContext context, User existing) async {
+  void _updateUserPassword(User existing) async {
     String? password;
     final passwordField = userPasswordField(
       title: 'Password',
@@ -383,7 +391,7 @@ class _UsersState extends State<Users> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) {
+      builder: (context) {
         return SimpleDialog(
           title: Text('Update Password for User [${existing.id.toMinimizedString()}]'),
           contentPadding: const EdgeInsets.all(16),
@@ -401,7 +409,9 @@ class _UsersState extends State<Users> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to update user: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
             )
           ],
@@ -410,7 +420,7 @@ class _UsersState extends State<Users> {
     );
   }
 
-  void _removeUser(BuildContext context, String id) {
+  void _removeUser(String id) {
     showDialog(
       context: context,
       builder: (context) {
@@ -432,7 +442,9 @@ class _UsersState extends State<Users> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to remove user: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
               child: const Text('Remove'),
             ),

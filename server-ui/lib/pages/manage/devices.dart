@@ -49,7 +49,7 @@ class _DevicesState extends State<Devices> {
           actions: [
             IconButton(
               tooltip: 'Create New Device',
-              onPressed: () => widget.privileged ? _createDevicePrivileged(context) : _createOwnDevice(context),
+              onPressed: () => widget.privileged ? _createDevicePrivileged() : _createOwnDevice(),
               icon: const Icon(Icons.add),
             ),
           ],
@@ -154,22 +154,22 @@ class _DevicesState extends State<Devices> {
                       tooltip: widget.privileged
                           ? 'Cannot generate device bootstrap codes while server management is enabled'
                           : 'Generate bootstrap code',
-                      onPressed: widget.privileged ? null : () => _generateDeviceBootstrapCode(context, device.id),
+                      onPressed: widget.privileged ? null : () => _generateDeviceBootstrapCode(device.id),
                       icon: const Icon(Icons.qr_code),
                     ),
                     IconButton(
                       tooltip: 'Update Device State',
-                      onPressed: () => _updateDeviceState(context, device),
+                      onPressed: () => _updateDeviceState(device),
                       icon: const Icon(Icons.power_settings_new),
                     ),
                     IconButton(
                       tooltip: 'Update Device Limits',
-                      onPressed: () => _updateDeviceLimits(context, device),
+                      onPressed: () => _updateDeviceLimits(device),
                       icon: const Icon(Icons.data_usage),
                     ),
                     IconButton(
                       tooltip: 'Remove Device',
-                      onPressed: () => _removeDevice(context, device.id),
+                      onPressed: () => _removeDevice(device.id),
                       icon: const Icon(Icons.delete),
                     ),
                   ],
@@ -182,7 +182,7 @@ class _DevicesState extends State<Devices> {
     );
   }
 
-  void _createOwnDevice(BuildContext context) async {
+  void _createOwnDevice() async {
     final nameField = formField(
       title: 'Name',
       errorMessage: 'Name cannot be empty',
@@ -198,7 +198,7 @@ class _DevicesState extends State<Devices> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) {
+      builder: (context) {
         return SimpleDialog(
           title: const Text('Create New Device'),
           contentPadding: const EdgeInsets.all(16),
@@ -219,7 +219,9 @@ class _DevicesState extends State<Devices> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to create device: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
             )
           ],
@@ -228,7 +230,7 @@ class _DevicesState extends State<Devices> {
     );
   }
 
-  void _createDevicePrivileged(BuildContext context) {
+  void _createDevicePrivileged() {
     widget.nodesClient
         .getNodes()
         .then((nodes) => widget.usersClient.getUsers().then((users) => Pair(nodes, users)))
@@ -261,10 +263,13 @@ class _DevicesState extends State<Devices> {
         onChange: (updated) => limits = updated,
       );
 
+      final ctx = context;
+      if (!ctx.mounted) return;
+
       showDialog(
-        context: context,
+        context: ctx,
         barrierDismissible: false,
-        builder: (_) {
+        builder: (context) {
           return SimpleDialog(
             title: const Text('Create New Device'),
             contentPadding: const EdgeInsets.all(16),
@@ -287,7 +292,9 @@ class _DevicesState extends State<Devices> {
                     setState(() {});
                   }).onError((e, stackTrace) {
                     messenger.showSnackBar(SnackBar(content: Text('Failed to create device: [$e]')));
-                  }).whenComplete(() => Navigator.pop(context));
+                  }).whenComplete(() {
+                    if (context.mounted) Navigator.pop(context);
+                  });
                 },
               )
             ],
@@ -297,7 +304,7 @@ class _DevicesState extends State<Devices> {
     });
   }
 
-  void _generateDeviceBootstrapCode(BuildContext context, String id) {
+  void _generateDeviceBootstrapCode(String id) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -314,6 +321,7 @@ class _DevicesState extends State<Devices> {
                 final messenger = ScaffoldMessenger.of(context);
 
                 widget.bootstrapClient.generateBootstrapCode(forDevice: id).then((code) {
+                  if (!context.mounted) return Future.value();
                   Navigator.pop(context);
 
                   return showDialog(
@@ -366,7 +374,7 @@ class _DevicesState extends State<Devices> {
                   );
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to generate bootstrap code for device: [$e]')));
-                  Navigator.pop(context);
+                  if (context.mounted) Navigator.pop(context);
                 });
               },
               child: const Text('Generate'),
@@ -377,7 +385,7 @@ class _DevicesState extends State<Devices> {
     );
   }
 
-  void _updateDeviceState(BuildContext context, Device existing) {
+  void _updateDeviceState(Device existing) {
     bool currentActiveState = existing.active;
     final activeField = stateField(
       title: 'State',
@@ -408,7 +416,9 @@ class _DevicesState extends State<Devices> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to update device: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
             )
           ],
@@ -417,7 +427,7 @@ class _DevicesState extends State<Devices> {
     );
   }
 
-  void _updateDeviceLimits(BuildContext context, Device existing) async {
+  void _updateDeviceLimits(Device existing) async {
     DeviceLimits? limits;
     final limitsField = deviceLimitsField(
       title: 'Device Limits',
@@ -428,7 +438,7 @@ class _DevicesState extends State<Devices> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) {
+      builder: (context) {
         return SimpleDialog(
           title: Text('Update Device [${existing.id.toMinimizedString()}]'),
           contentPadding: const EdgeInsets.all(16),
@@ -448,7 +458,9 @@ class _DevicesState extends State<Devices> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to update device: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
             )
           ],
@@ -457,7 +469,7 @@ class _DevicesState extends State<Devices> {
     );
   }
 
-  void _removeDevice(BuildContext context, String id) {
+  void _removeDevice(String id) {
     showDialog(
       context: context,
       builder: (context) {
@@ -479,7 +491,9 @@ class _DevicesState extends State<Devices> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to remove device: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
               child: const Text('Remove'),
             ),

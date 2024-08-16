@@ -33,7 +33,7 @@ class _NodesState extends State<Nodes> {
           actions: [
             IconButton(
               tooltip: 'Create New Node',
-              onPressed: () => _createNode(context),
+              onPressed: () => _createNode(),
               icon: const Icon(Icons.add),
             ),
           ],
@@ -65,12 +65,12 @@ class _NodesState extends State<Nodes> {
                   children: [
                     IconButton(
                       tooltip: 'Update Node',
-                      onPressed: () => _updateNode(context, node),
+                      onPressed: () => _updateNode(node),
                       icon: const Icon(Icons.edit),
                     ),
                     IconButton(
                       tooltip: 'Remove Node',
-                      onPressed: () => _removeNode(context, node.id()),
+                      onPressed: () => _removeNode(node.id()),
                       icon: const Icon(Icons.delete),
                     ),
                   ],
@@ -83,14 +83,14 @@ class _NodesState extends State<Nodes> {
     );
   }
 
-  void _createNode(BuildContext context) async {
+  void _createNode() async {
     CreateNode? request;
     final createNodeField = CreateNodeField(onChange: (updated) => request = updated);
 
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) {
+      builder: (context) {
         return SimpleDialog(
           title: const Text('Create New Node'),
           contentPadding: const EdgeInsets.all(16),
@@ -106,7 +106,9 @@ class _NodesState extends State<Nodes> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to create node: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
             )
           ],
@@ -115,7 +117,7 @@ class _NodesState extends State<Nodes> {
     );
   }
 
-  void _updateNode(BuildContext context, Node existing) async {
+  void _updateNode(Node existing) async {
     final id = existing.id();
 
     UpdateNode request = _updateNodeFromExistingNode(existing);
@@ -128,7 +130,7 @@ class _NodesState extends State<Nodes> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) {
+      builder: (context) {
         return SimpleDialog(
           title: Text('Update Node [${id.toMinimizedString()}]'),
           contentPadding: const EdgeInsets.all(16),
@@ -144,7 +146,9 @@ class _NodesState extends State<Nodes> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to update node: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
             )
           ],
@@ -153,7 +157,7 @@ class _NodesState extends State<Nodes> {
     );
   }
 
-  void _removeNode(BuildContext context, String id) {
+  void _removeNode(String id) {
     showDialog(
       context: context,
       builder: (context) {
@@ -175,7 +179,9 @@ class _NodesState extends State<Nodes> {
                   setState(() {});
                 }).onError((e, stackTrace) {
                   messenger.showSnackBar(SnackBar(content: Text('Failed to remove node: [$e]')));
-                }).whenComplete(() => Navigator.pop(context));
+                }).whenComplete(() {
+                  if (context.mounted) Navigator.pop(context);
+                });
               },
               child: const Text('Remove'),
             ),
