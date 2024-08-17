@@ -24,7 +24,7 @@ class MetricsExporterSpec extends AsyncUnitSpec {
     exporter.meter.counter(name = "counter_2").inc(AttributeKey.stringKey("a") -> "b")
 
     for {
-      metrics <- getMetrics(metricsUrl = s"http://localhost:$port")
+      metrics <- getMetrics(metricsUrl = s"http://localhost:$port/metrics")
     } yield {
       val _ = exporter.shutdown()
       metrics.filter(_.contains("counter")).sorted.toList match {
@@ -64,7 +64,7 @@ class MetricsExporterSpec extends AsyncUnitSpec {
     exporter.meter.counter(name = "counter_4").inc(AttributeKey.stringKey("c") -> "d")
 
     for {
-      metrics <- getMetrics(metricsUrl = s"http://localhost:$port")
+      metrics <- getMetrics(metricsUrl = s"http://localhost:$port/metrics")
     } yield {
       val _ = exporter.shutdown()
 
