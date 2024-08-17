@@ -9,9 +9,9 @@ install_requires = [
     'click==8.1.7',
     'pyparsing==3.1.2',
     'psutil==5.9.8',
-    'cryptography==42.0.8',
+    'cryptography==43.0.0',
     'sseclient-py==1.8.0',
-    'tqdm==4.66.4',
+    'tqdm==4.66.5',
 ]
 
 tests_require = []
