@@ -18,7 +18,7 @@ dependencies {
     implementation("com.squareup.moshi:moshi-adapters:1.15.1")
     implementation("at.favre.lib:hkdf:2.0.0")
     implementation("org.bitbucket.b_c:jose4j:0.9.6")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.20")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.23")
     ksp("com.squareup.moshi:moshi-kotlin-codegen:1.15.1")
 
     testImplementation("io.kotest:kotest-runner-junit5-jvm:5.8.1")
