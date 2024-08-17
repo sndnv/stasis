@@ -71,7 +71,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     val coreUrl = s"https://$interface:$corePort"
 
     val metricsPort = 59999
-    val metricsUrl = s"http://$interface:$metricsPort"
+    val metricsUrl = s"http://$interface:$metricsPort/metrics"
 
     val (serverPersistence, corePersistence) = eventually[(ServerPersistence, CorePersistence)] {
       service.state match {

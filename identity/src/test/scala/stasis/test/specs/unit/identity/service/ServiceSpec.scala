@@ -41,7 +41,7 @@ class ServiceSpec extends RouteTest with Eventually {
     val serviceUrl = s"https://$serviceInterface:$servicePort"
 
     val metricsPort = 29999
-    val metricsUrl = s"http://$serviceInterface:$metricsPort"
+    val metricsUrl = s"http://$serviceInterface:$metricsPort/metrics"
 
     val persistence = eventually[Persistence] {
       service.state match {

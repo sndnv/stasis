@@ -91,7 +91,7 @@ class BaseSpec extends AsyncUnitSpec with ResourceHelpers {
         }
 
     for {
-      metrics <- getMetrics(metricsUrl = s"http://localhost:19092")
+      metrics <- getMetrics(metricsUrl = s"http://localhost:19092/metrics")
       _ = typedSystem.terminate()
     } yield {
       metrics.filter(_.startsWith(Base.Telemetry.Instrumentation)) should not be empty
