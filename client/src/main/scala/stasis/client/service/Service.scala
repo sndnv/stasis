@@ -46,6 +46,7 @@ trait Service { _: Service.Arguments =>
       implicit val log: Logger = LoggerFactory.getLogger("stasis.client.bootstrap")
 
       for {
+        _ <- ApplicationRuntimeRequirements.validate()
         base <- components.bootstrap.Base(modeArguments = mode, applicationDirectory = applicationDirectory)
         init <- components.bootstrap.Init(base, console)
         bootstrap <- components.bootstrap.Bootstrap(base, init)
@@ -61,6 +62,7 @@ trait Service { _: Service.Arguments =>
       implicit val log: Logger = LoggerFactory.getLogger("stasis.client.service")
 
       for {
+        _ <- ApplicationRuntimeRequirements.validate()
         base <- components.Base(applicationDirectory = applicationDirectory, applicationTray = applicationTray, terminate = stop)
         tracking <- components.Tracking(base)
         init <- components.Init(base, startup = startupPromise.future, console = console)
@@ -78,6 +80,7 @@ trait Service { _: Service.Arguments =>
       implicit val log: Logger = LoggerFactory.getLogger("stasis.client.maintenance")
 
       for {
+        _ <- ApplicationRuntimeRequirements.validate()
         base <- components.maintenance.Base(modeArguments = mode, applicationDirectory = applicationDirectory)
         init <- components.maintenance.Init(base, console = console)
         mode <- init.retrieveCredentials()
