@@ -3,11 +3,15 @@ package stasis.test.specs.unit.client.api.clients.internal
 import java.security.cert.X509Certificate
 
 import javax.net.ssl.TrustManagerFactory
+
+import scala.util.Failure
+import scala.util.Success
+
 import org.mockito.scalatest.MockitoSugar
 import stasis.client.api.clients.internal.InsecureX509TrustManager
+import stasis.client.service.components.bootstrap.internal.SelfSignedCertificateGenerator
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.mocks.MockX509TrustManager
-import sun.security.x509.X509CertImpl
 
 class InsecureX509TrustManagerSpec extends UnitSpec with MockitoSugar {
   "An InsecureX509TrustManager" should "delegate client trust checks to underlying trust manager" in {
@@ -76,5 +80,8 @@ class InsecureX509TrustManagerSpec extends UnitSpec with MockitoSugar {
     createCert()
   )
 
-  private def createCert(): X509Certificate = new X509CertImpl()
+  private def createCert(): X509Certificate = SelfSignedCertificateGenerator.generate("localhost") match {
+    case Success((_, cert)) => cert
+    case Failure(e)         => fail(e)
+  }
 }
