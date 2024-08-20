@@ -1,25 +1,32 @@
 package stasis.client.service.components.bootstrap.internal
 
+import java.security.KeyPairGenerator
+import java.security.PrivateKey
 import java.security.cert.X509Certificate
-import java.security.{KeyPairGenerator, PrivateKey}
 import java.time.Instant
 import java.util.Date
 import java.util.concurrent.ThreadLocalRandom
 
-import sun.security.x509._
-
 import scala.concurrent.duration._
 import scala.util.Try
+
+import org.bouncycastle.asn1.x500.X500Name
+import org.bouncycastle.asn1.x509.BasicConstraints
+import org.bouncycastle.asn1.x509.Extension
+import org.bouncycastle.asn1.x509.GeneralName
+import org.bouncycastle.asn1.x509.GeneralNames
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo
+import org.bouncycastle.cert.X509v3CertificateBuilder
+import org.bouncycastle.cert.bc.BcX509ExtensionUtils
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder
 
 object SelfSignedCertificateGenerator {
   def generate(name: String): Try[(PrivateKey, X509Certificate)] =
     generate(name, Config.default)
 
-  @SuppressWarnings(Array("org.wartremover.warts.Null"))
-  def generate(
-    name: String,
-    config: Config
-  ): Try[(PrivateKey, X509Certificate)] =
+  def generate(name: String, config: Config): Try[(PrivateKey, X509Certificate)] =
     Try {
       val rnd = ThreadLocalRandom.current()
 
@@ -28,6 +35,8 @@ object SelfSignedCertificateGenerator {
       val keyPair = keyPairGenerator.generateKeyPair()
       val privateKey = keyPair.getPrivate
       val publicKey = keyPair.getPublic
+      val encodedPublicKey = publicKey.getEncoded
+      val publicKeyInfo = SubjectPublicKeyInfo.getInstance(encodedPublicKey)
 
       val owner = new X500Name(s"CN=$name")
 
@@ -37,35 +46,29 @@ object SelfSignedCertificateGenerator {
       val serialNumberRange = 128
       val serialNumber = BigInt(serialNumberRange, rnd)
 
-      val version = CertificateVersion.V3
-
       val algorithm = "SHA256WithRSA"
 
-      val names = new GeneralNames().add(new GeneralName(new DNSName(name)))
+      val subjectKeyIdentifier = new BcX509ExtensionUtils().createSubjectKeyIdentifier(publicKeyInfo)
+      val subjectAlternativeName = new GeneralNames(new GeneralName(GeneralName.dNSName, name))
 
-      val extensions = new CertificateExtensions()
-      extensions.set(SubjectAlternativeNameExtension.NAME, new SubjectAlternativeNameExtension(names))
+      val builder = new X509v3CertificateBuilder(
+        owner, // issuer
+        serialNumber.bigInteger, // serial
+        Date.from(validFrom), // notBefore
+        Date.from(validTo), // notAfter
+        owner, // subject
+        publicKeyInfo // publicKeyInfo
+      )
 
-      val info = new X509CertInfo()
-      info.set(X509CertInfo.VERSION, new CertificateVersion(version))
-      info.set(X509CertInfo.VALIDITY, new CertificateValidity(Date.from(validFrom), Date.from(validTo)))
-      info.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(serialNumber.bigInteger))
-      info.set(s"${X509CertInfo.SUBJECT}.${X509CertInfo.DN_NAME}", owner)
-      info.set(s"${X509CertInfo.ISSUER}.${X509CertInfo.DN_NAME}", owner)
-      info.set(X509CertInfo.EXTENSIONS, extensions)
-      info.set(X509CertInfo.KEY, new CertificateX509Key(publicKey))
-      info.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(AlgorithmId.get(algorithm)))
+      val holder = builder
+        .addExtension(Extension.basicConstraints, true, new BasicConstraints(true))
+        .addExtension(Extension.subjectKeyIdentifier, false, subjectKeyIdentifier)
+        .addExtension(Extension.subjectAlternativeName, false, subjectAlternativeName)
+        .build(new JcaContentSignerBuilder(algorithm).build(privateKey))
 
-      {
-        val certificate = new X509CertImpl(info)
-        certificate.sign(privateKey, algorithm, None.orNull)
-
-        val algorithmId = certificate.get(X509CertImpl.SIG_ALG)
-        info.set(s"${CertificateAlgorithmId.NAME}.${CertificateAlgorithmId.ALGORITHM}", algorithmId)
-      }
-
-      val certificate = new X509CertImpl(info)
-      certificate.sign(privateKey, algorithm, None.orNull)
+      val certificate = new JcaX509CertificateConverter()
+        .setProvider(new BouncyCastleProvider)
+        .getCertificate(holder)
 
       (privateKey, certificate)
     }

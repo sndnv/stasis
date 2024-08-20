@@ -37,16 +37,17 @@ lazy val versions = new {
   val jimfs         = "1.3.0"
 
   // misc
-  val playJson   = "2.10.6"
-  val jose4j     = "0.9.6"
-  val hkdf       = "2.0.0"
-  val appdirs    = "1.2.2"
-  val scopt      = "4.1.0"
-  val logback    = "1.5.7"
-  val systemTray = "4.4"
+  val playJson     = "2.10.6"
+  val jose4j       = "0.9.6"
+  val hkdf         = "2.0.0"
+  val appdirs      = "1.2.2"
+  val scopt        = "4.1.0"
+  val logback      = "1.5.7"
+  val systemTray   = "4.4"
+  val bouncycastle = "1.78.1"
 }
 
-lazy val jdkDockerImage = "openjdk:17-slim-bullseye"
+lazy val jdkDockerImage = "eclipse-temurin:21-noble"
 lazy val dockerRegistry = "ghcr.io/sndnv/stasis"
 
 lazy val server = (project in file("./server"))
@@ -82,10 +83,11 @@ lazy val client = (project in file("./client"))
       "io.opentelemetry"  % "opentelemetry-sdk"                 % versions.openTelemetry,
       "io.opentelemetry"  % "opentelemetry-exporter-prometheus" % versions.openTelemetryPrometheus,
       "io.prometheus"     % "simpleclient_hotspot"              % versions.prometheus,
-      "com.dorkbox"       % "SystemTray"                        % versions.systemTray
+      "com.dorkbox"       % "SystemTray"                        % versions.systemTray,
+      "org.bouncycastle"  % "bcprov-jdk18on"                    % versions.bouncycastle,
+      "org.bouncycastle"  % "bcpkix-jdk18on"                    % versions.bouncycastle
     ),
     dockerBaseImage          := jdkDockerImage,
-    Universal / javaOptions ++= Seq("-J--add-opens=java.base/sun.security.x509=ALL-UNNAMED"),
     Compile / PB.targets     := Seq(
       scalapb.gen(singleLineToProtoString = true) -> (Compile / sourceManaged).value
     ),
