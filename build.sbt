@@ -18,9 +18,9 @@ lazy val versions = new {
   // persistence
   val geode    = "1.15.1"
   val slick    = "3.5.1"
-  val postgres = "42.7.3"
+  val postgres = "42.7.4"
   val mariadb  = "3.4.1"
-  val sqlite   = "3.46.0.1"
+  val sqlite   = "3.46.1.0"
   val h2       = "2.3.232"
 
   // telemetry
