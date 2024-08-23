@@ -684,7 +684,7 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
 
             val apiClient = createClient(api.url("/").toString())
 
-            api.enqueue(MockResponse().setResponseCode(500))
+            api.enqueue(MockResponse().setResponseCode(505))
 
             shouldThrow<EndpointFailure> { apiClient.deviceKeyExists().get() }
 

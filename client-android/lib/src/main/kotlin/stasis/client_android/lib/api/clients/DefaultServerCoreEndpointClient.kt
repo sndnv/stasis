@@ -9,6 +9,7 @@ import stasis.client_android.lib.model.core.CrateStorageReservation
 import stasis.client_android.lib.model.core.Manifest
 import stasis.client_android.lib.model.core.NodeId
 import stasis.client_android.lib.security.HttpCredentials
+import stasis.client_android.lib.utils.AsyncOps
 
 class DefaultServerCoreEndpointClient(
     serverCoreUrl: String,
@@ -16,6 +17,8 @@ class DefaultServerCoreEndpointClient(
     override val self: NodeId
 ) : ServerCoreEndpointClient, ClientExtensions() {
     override val server: String = serverCoreUrl.trimEnd { it == '/' }
+
+    override val retryConfig: AsyncOps.RetryConfig = AsyncOps.RetryConfig.Default
 
     override suspend fun push(manifest: Manifest, content: Source) {
         val reservation = reserveStorage(manifest)

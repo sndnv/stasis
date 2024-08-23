@@ -9,7 +9,8 @@ import stasis.client_android.lib.api.clients.internal.ClientExtensions
 import stasis.client_android.lib.model.server.devices.DeviceBootstrapParameters
 import stasis.client_android.lib.security.HttpCredentials
 import stasis.client_android.lib.security.HttpCredentials.Companion.withCredentials
-import stasis.client_android.lib.utils.AsyncOps.async
+import stasis.client_android.lib.utils.AsyncOps
+import stasis.client_android.lib.utils.AsyncOps.asyncRetryWith
 import stasis.client_android.lib.utils.NonFatal.nonFatal
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Failure
@@ -22,6 +23,8 @@ class DefaultServerBootstrapEndpointClient(
 
     override val credentials: suspend () -> HttpCredentials = { HttpCredentials.None }
 
+    override val retryConfig: AsyncOps.RetryConfig = AsyncOps.RetryConfig.Default
+
     override suspend fun execute(bootstrapCode: String): Try<DeviceBootstrapParameters> {
         val request = Request.Builder()
             .url("$server/v1/devices/execute")
@@ -30,7 +33,7 @@ class DefaultServerBootstrapEndpointClient(
             .build()
 
         return try {
-            val response = client.newCall(request).async()
+            val response = client.newCall(request).asyncRetryWith(retryConfig)
             when {
                 response.isSuccessful -> Success(response.toRequiredModel())
                 response.code == StatusUnauthorized -> Failure(InvalidBootstrapCodeFailure())

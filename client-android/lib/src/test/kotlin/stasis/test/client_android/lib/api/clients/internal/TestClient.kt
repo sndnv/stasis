@@ -10,9 +10,15 @@ import okio.Buffer
 import okio.Source
 import stasis.client_android.lib.api.clients.internal.ClientExtensions
 import stasis.client_android.lib.security.HttpCredentials
+import stasis.client_android.lib.utils.AsyncOps
 
-class TestClient(providedCredentials: HttpCredentials = HttpCredentials.None) : ClientExtensions() {
+class TestClient(
+    providedCredentials: HttpCredentials = HttpCredentials.None,
+    config: AsyncOps.RetryConfig = AsyncOps.RetryConfig.Default
+) : ClientExtensions() {
     override val credentials: suspend () -> HttpCredentials = { providedCredentials }
+
+    override val retryConfig: AsyncOps.RetryConfig = config
 
     fun write(data: TestDataClass, to: Buffer) {
         data.toBody().writeTo(to)

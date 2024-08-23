@@ -12,7 +12,6 @@ import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
-import okio.Buffer
 import okio.BufferedSink
 import okio.Source
 import stasis.client_android.lib.api.clients.exceptions.AccessDeniedFailure
@@ -20,7 +19,8 @@ import stasis.client_android.lib.api.clients.exceptions.EndpointFailure
 import stasis.client_android.lib.api.clients.exceptions.ResourceMissingFailure
 import stasis.client_android.lib.security.HttpCredentials
 import stasis.client_android.lib.security.HttpCredentials.Companion.withCredentials
-import stasis.client_android.lib.utils.AsyncOps.async
+import stasis.client_android.lib.utils.AsyncOps
+import stasis.client_android.lib.utils.AsyncOps.asyncRetryWith
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Companion.foreach
 import stasis.client_android.lib.utils.Try.Failure
@@ -28,6 +28,8 @@ import stasis.client_android.lib.utils.Try.Success
 
 abstract class ClientExtensions {
     abstract val credentials: suspend () -> HttpCredentials
+
+    abstract val retryConfig: AsyncOps.RetryConfig
 
     val client: OkHttpClient = OkHttpClient()
 
@@ -88,7 +90,9 @@ abstract class ClientExtensions {
 
     protected suspend inline fun request(block: (Request.Builder) -> Request.Builder): Response {
         val request = block(Request.Builder().withCredentials(credentials())).build()
-        return client.newCall(request).async()
+        return client.newCall(request).asyncRetryWith(
+            config = retryConfig
+        )
     }
 
     protected fun Response.successful(): Response {
@@ -97,6 +101,7 @@ abstract class ClientExtensions {
             this.code == StatusUnauthorized || this.code == StatusForbidden -> Failure(
                 AccessDeniedFailure()
             )
+
             this.code == StatusNotFound -> Failure(ResourceMissingFailure())
             else -> Failure(
                 EndpointFailure(
