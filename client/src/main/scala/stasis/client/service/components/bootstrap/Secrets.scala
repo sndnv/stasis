@@ -17,6 +17,7 @@ import stasis.client.security.DefaultCredentialsProvider
 import stasis.client.service.components.Files
 import stasis.client.service.components.exceptions.ServiceStartupFailure
 import stasis.client.service.components.internal.ConfigOverride
+import stasis.core.api.PoolClient
 import stasis.core.security.oauth.{DefaultOAuthClient, OAuthClient}
 import stasis.core.security.tls.EndpointContext
 import stasis.shared.secrets.SecretsConfig
@@ -101,7 +102,13 @@ object Secrets {
                 decryption = DefaultServerApiEndpointClient.DecryptionContext.Disabled,
                 self = device,
                 context = EndpointContext(rawConfig.getConfig("server.api.context")),
-                requestBufferSize = rawConfig.getInt("server.api.request-buffer-size")
+                config = PoolClient.Config(
+                  minBackoff = rawConfig.getDuration("server.api.retry.min-backoff").toMillis.millis,
+                  maxBackoff = rawConfig.getDuration("server.api.retry.max-backoff").toMillis.millis,
+                  randomFactor = rawConfig.getDouble("server.api.retry.random-factor"),
+                  maxRetries = rawConfig.getInt("server.api.retry.max-retries"),
+                  requestBufferSize = rawConfig.getInt("server.api.request-buffer-size")
+                )
               ).future
               keyResponse <- apiClient.pullDeviceKey().transformFailureTo(ServiceStartupFailure.api)
               decryptedDeviceSecret <- keyResponse match {

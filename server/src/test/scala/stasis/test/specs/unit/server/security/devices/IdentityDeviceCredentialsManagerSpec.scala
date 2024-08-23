@@ -10,11 +10,12 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.security.mocks.MockIdentityDeviceManageEndpoint
 import stasis.test.specs.unit.server.security.mocks.MockIdentityDeviceManageEndpoint.{CreationResult, SearchResult, UpdateResult}
 import stasis.test.specs.unit.shared.model.Generators
-
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
+
+import stasis.core.api.PoolClient
 
 class IdentityDeviceCredentialsManagerSpec extends AsyncUnitSpec {
   "An IdentityDeviceCredentialsManager" should "set client secrets for new devices" in {
@@ -134,7 +135,7 @@ class IdentityDeviceCredentialsManagerSpec extends AsyncUnitSpec {
 
         endpoint.created should be(0)
         endpoint.updated should be(0)
-        endpoint.searched should be(1)
+        endpoint.searched should be(3) // first attempt + 2 retries
       }
   }
 
@@ -160,7 +161,7 @@ class IdentityDeviceCredentialsManagerSpec extends AsyncUnitSpec {
 
         e.getMessage should startWith("Identity request failed with [500 Internal Server Error]")
 
-        endpoint.created should be(1)
+        endpoint.created should be(3) // first attempt + 2 retries
         endpoint.updated should be(0)
         endpoint.searched should be(1)
       }
@@ -189,7 +190,7 @@ class IdentityDeviceCredentialsManagerSpec extends AsyncUnitSpec {
         e.getMessage should startWith("Identity request failed with [500 Internal Server Error]")
 
         endpoint.created should be(0)
-        endpoint.updated should be(1)
+        endpoint.updated should be(3) // first attempt + 2 retries
         endpoint.searched should be(1)
       }
   }
@@ -203,9 +204,14 @@ class IdentityDeviceCredentialsManagerSpec extends AsyncUnitSpec {
       identityCredentials = () => Future.successful(credentials),
       redirectUri = "http://localhost:1234/redirect",
       tokenExpiration = 1.hour,
-      context = context,
-      requestBufferSize = 100
-    )
+      context = context
+    ) {
+      override protected def config: PoolClient.Config = PoolClient.Config.Default.copy(
+        minBackoff = 10.millis,
+        maxBackoff = 20.milli,
+        maxRetries = 2
+      )
+    }
 
   private val device: Device = Generators.generateDevice
 

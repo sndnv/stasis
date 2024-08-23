@@ -1,29 +1,40 @@
 package stasis.test.specs.unit.core.networking.http
 
+import scala.collection.mutable
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.control.NonFatal
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.Behavior
+import org.apache.pekko.actor.typed.SpawnProtocol
 import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
-import stasis.core.networking.http.{HttpEndpoint, HttpEndpointAddress, HttpEndpointClient}
-import stasis.core.packaging.{Crate, Manifest}
+import stasis.core.api.PoolClient
+import stasis.core.networking.http.HttpEndpoint
+import stasis.core.networking.http.HttpEndpointAddress
+import stasis.core.networking.http.HttpEndpointClient
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
 import stasis.core.routing.Node
 import stasis.core.security.NodeAuthenticator
 import stasis.core.security.tls.EndpointContext
 import stasis.core.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.MockHttpNodeCredentialsProvider
-import stasis.test.specs.unit.core.persistence.mocks.{MockCrateStore, MockReservationStore}
+import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
+import stasis.test.specs.unit.core.persistence.mocks.MockReservationStore
 import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockHttpAuthenticator
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-
-import scala.collection.mutable
-import scala.concurrent.duration._
-import scala.util.control.NonFatal
 
 class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
   "An HTTP Endpoint Client" should "successfully push crates" in {
@@ -34,8 +45,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
+      maxChunkSize = maxChunkSize,
+      config = PoolClient.Config.Default
     )
 
     client.push(endpointAddress, testManifest, Source.single(ByteString(crateContent))).flatMap { _ =>
@@ -54,8 +65,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(Map.empty),
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
+      maxChunkSize = maxChunkSize,
+      config = PoolClient.Config.Default
     )
 
     client
@@ -79,8 +90,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
+      maxChunkSize = maxChunkSize,
+      config = PoolClient.Config.Default
     )
 
     client.push(endpointAddress, testManifest).flatMap { sink =>
@@ -104,8 +115,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
+      maxChunkSize = maxChunkSize,
+      config = PoolClient.Config.Default
     )
 
     client
@@ -131,8 +142,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
+      maxChunkSize = maxChunkSize,
+      config = PoolClient.Config.Default
     )
 
     client
@@ -167,8 +178,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
+      maxChunkSize = maxChunkSize,
+      config = PoolClient.Config.Default.copy(minBackoff = 10.millis, maxBackoff = 100.millis, maxRetries = 2)
     )
 
     client
@@ -183,7 +194,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
             s"with unexpected status: [500 Internal Server Error]"
         )
         endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
-        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(1)
+        endpoint.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(3)
       }
   }
 
@@ -195,8 +206,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
+      maxChunkSize = maxChunkSize,
+      config = PoolClient.Config.Default
     )
 
     client
@@ -232,8 +243,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
+      maxChunkSize = maxChunkSize,
+      config = PoolClient.Config.Default
     )
 
     client.pull(endpointAddress, Crate.generateId()).map { response =>
@@ -249,8 +260,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, "invalid-user", testPassword),
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
+      maxChunkSize = maxChunkSize,
+      config = PoolClient.Config.Default
     )
 
     val crate = Crate.generateId()
@@ -296,15 +307,17 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
           secondaryEndpointAddress -> (secondaryEndpointUser, secondaryEndpointPassword)
         )
       ),
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
+      maxChunkSize = maxChunkSize,
+      config = PoolClient.Config.Default
     )
 
+    def pushWith(address: HttpEndpointAddress, ec: ExecutionContext): Future[Done] = client
+      .push(address, testManifest)
+      .flatMap(Source.single(ByteString(crateContent)).runWith(_))(ec)
+
     for {
-      primarySink <- client.push(primaryEndpointAddress, testManifest)
-      secondarySink <- client.push(secondaryEndpointAddress, testManifest)
-      _ <- Source.single(ByteString(crateContent)).runWith(primarySink)
-      _ <- Source.single(ByteString(crateContent)).runWith(secondarySink)
+      _ <- pushWith(primaryEndpointAddress, typedSystem.executionContext)
+      _ <- pushWith(secondaryEndpointAddress, typedSystem.executionContext)
     } yield {
       succeed
     }
@@ -318,8 +331,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(Map.empty),
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
+      maxChunkSize = maxChunkSize,
+      config = PoolClient.Config.Default
     )
 
     client
@@ -343,8 +356,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(Map.empty),
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
+      maxChunkSize = maxChunkSize,
+      config = PoolClient.Config.Default
     )
 
     val crateId = Crate.generateId()
@@ -370,8 +383,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
+      maxChunkSize = maxChunkSize,
+      config = PoolClient.Config.Default
     )
 
     client
@@ -396,8 +409,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(Map.empty),
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
+      maxChunkSize = maxChunkSize,
+      config = PoolClient.Config.Default
     )
 
     val crateId = Crate.generateId()
@@ -423,8 +436,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
+      maxChunkSize = maxChunkSize,
+      config = PoolClient.Config.Default
     )
 
     client.discard(endpointAddress, Crate.generateId()).map { result =>
@@ -440,8 +453,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, "invalid-user", testPassword),
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
+      maxChunkSize = maxChunkSize,
+      config = PoolClient.Config.Default
     )
 
     val crate = Crate.generateId()
@@ -478,8 +491,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val client = HttpEndpointClient(
       credentials = new MockHttpNodeCredentialsProvider(endpointAddress, testUser, testPassword),
       context = clientContext,
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
+      maxChunkSize = maxChunkSize,
+      config = PoolClient.Config.Default
     )
 
     client
@@ -553,6 +566,5 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
   private val ports: mutable.Queue[Int] = (19000 to 19100).to(mutable.Queue)
 
-  private val requestBufferSize = 100
   private val maxChunkSize = 100
 }

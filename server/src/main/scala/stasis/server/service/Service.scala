@@ -29,13 +29,15 @@ import stasis.server.security.users.{IdentityUserCredentialsManager, UserCredent
 import stasis.server.service.Service.Config.BootstrapApiConfig
 import stasis.shared.model.devices.DeviceBootstrapParameters
 import stasis.shared.secrets.SecretsConfig
-
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
+
+import stasis.core.api.PoolClient
 
 trait Service {
   import Service._
@@ -137,8 +139,7 @@ trait Service {
         scope = identityCredentialsManagerConfig.managementUserScope,
         underlying = identityCredentialsManagerJwtProvider
       ),
-      context = EndpointContext(identityCredentialsManagerConfig.contextConfig),
-      requestBufferSize = identityCredentialsManagerConfig.requestBufferSize
+      context = EndpointContext(identityCredentialsManagerConfig.contextConfig)
     )
 
     val deviceBootstrapConfig = Config.DeviceBootstrap.config(rawConfig.getConfig("bootstrap.devices"))
@@ -166,8 +167,7 @@ trait Service {
         ),
         redirectUri = deviceBootstrapConfig.credentialsManager.clientRedirectUri,
         tokenExpiration = deviceBootstrapConfig.credentialsManager.clientTokenExpiration,
-        context = EndpointContext(identityCredentialsManagerConfig.contextConfig),
-        requestBufferSize = identityCredentialsManagerConfig.requestBufferSize
+        context = EndpointContext(identityCredentialsManagerConfig.contextConfig)
       )
 
       Some(
@@ -213,8 +213,14 @@ trait Service {
         underlying = clientJwtProvider
       ),
       context = clientEndpointContext,
-      requestBufferSize = rawConfig.getInt("clients.core.request-buffer-size"),
-      maxChunkSize = rawConfig.getInt("clients.core.max-chunk-size")
+      maxChunkSize = rawConfig.getInt("clients.core.max-chunk-size"),
+      config = PoolClient.Config(
+        minBackoff = rawConfig.getDuration("clients.core.retry.min-backoff").toMillis.millis,
+        maxBackoff = rawConfig.getDuration("clients.core.retry.max-backoff").toMillis.millis,
+        randomFactor = rawConfig.getDouble("clients.core.retry.random-factor"),
+        maxRetries = rawConfig.getInt("clients.core.retry.max-retries"),
+        requestBufferSize = rawConfig.getInt("clients.core.request-buffer-size")
+      )
     )
 
     val coreGrpcEndpointClient = GrpcEndpointClient(
@@ -333,7 +339,6 @@ trait Service {
          |  credentials-managers:
          |    identity:
          |      url:                  ${identityCredentialsManagerConfig.url}
-         |      request-buffer-size:  ${identityCredentialsManagerConfig.requestBufferSize.toString}
          |      management:
          |        user:               ${identityCredentialsManagerConfig.managementUser}
          |        password-provided:  ${identityCredentialsManagerConfig.managementUserPassword.nonEmpty.toString}
@@ -553,8 +558,7 @@ object Service {
       managementUser: String,
       managementUserPassword: String,
       managementUserScope: String,
-      contextConfig: typesafe.Config,
-      requestBufferSize: Int
+      contextConfig: typesafe.Config
     )
 
     object IdentityCredentialsManager {
@@ -564,8 +568,7 @@ object Service {
           managementUser = config.getString("management.user"),
           managementUserPassword = config.getString("management.user-password"),
           managementUserScope = config.getString("management.scope"),
-          contextConfig = config.getConfig("context"),
-          requestBufferSize = config.getInt("request-buffer-size")
+          contextConfig = config.getConfig("context")
         )
     }
 

@@ -14,6 +14,8 @@ import org.apache.pekko.http.scaladsl.model._
 import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import org.apache.pekko.util.ByteString
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.encryption.Decoder
 import stasis.client.encryption.secrets.DeviceSecret
@@ -22,13 +24,13 @@ import stasis.core.api.PoolClient
 import stasis.core.networking.exceptions.ClientFailure
 import stasis.core.security.tls.EndpointContext
 import stasis.core.streaming.Operators.ExtendedSource
-import stasis.shared.api.requests.ResetUserPassword
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
-import stasis.shared.api.responses.UpdatedUserSalt
+import stasis.shared.api.requests.ResetUserPassword
 import stasis.shared.api.responses.CreatedDatasetDefinition
 import stasis.shared.api.responses.CreatedDatasetEntry
 import stasis.shared.api.responses.Ping
+import stasis.shared.api.responses.UpdatedUserSalt
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
@@ -41,12 +43,14 @@ class DefaultServerApiEndpointClient(
   decryption: DefaultServerApiEndpointClient.DecryptionContext,
   override val self: Device.Id,
   override protected val context: Option[EndpointContext],
-  override protected val requestBufferSize: Int
+  override protected val config: PoolClient.Config
 )(implicit override protected val system: ActorSystem[SpawnProtocol.Command])
     extends ServerApiEndpointClient
     with PoolClient {
   import DefaultServerApiEndpointClient._
   import stasis.shared.api.Formats._
+
+  override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   private implicit val ec: ExecutionContext = system.executionContext
 
@@ -369,7 +373,7 @@ object DefaultServerApiEndpointClient {
     decryption: DefaultServerApiEndpointClient.DecryptionContext,
     self: Device.Id,
     context: Option[EndpointContext],
-    requestBufferSize: Int
+    config: PoolClient.Config
   )(implicit system: ActorSystem[SpawnProtocol.Command]): DefaultServerApiEndpointClient =
     new DefaultServerApiEndpointClient(
       apiUrl = apiUrl,
@@ -377,7 +381,7 @@ object DefaultServerApiEndpointClient {
       decryption = decryption,
       self = self,
       context = context,
-      requestBufferSize = requestBufferSize
+      config = config
     )
 
   sealed trait DecryptionContext

@@ -1,20 +1,26 @@
 package stasis.test.specs.unit.server.security.users
 
+import scala.collection.mutable
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.control.NonFatal
+
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.http.scaladsl.model.{HttpResponse, StatusCodes}
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.Behavior
+import org.apache.pekko.actor.typed.SpawnProtocol
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+import org.apache.pekko.http.scaladsl.model.HttpResponse
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import stasis.core.api.PoolClient
 import stasis.core.security.tls.EndpointContext
-import stasis.server.security.users.{IdentityUserCredentialsManager, UserCredentialsManager}
+import stasis.server.security.users.IdentityUserCredentialsManager
+import stasis.server.security.users.UserCredentialsManager
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.server.security.mocks.MockIdentityUserManageEndpoint
 import stasis.test.specs.unit.server.security.mocks.MockIdentityUserManageEndpoint._
 import stasis.test.specs.unit.shared.model.Generators
-
-import scala.collection.mutable
-import scala.concurrent.Future
-import scala.util.control.NonFatal
 
 class IdentityUserCredentialsManagerSpec extends AsyncUnitSpec {
   "An IdentityUserCredentialsManager" should "provide its ID" in {
@@ -89,7 +95,7 @@ class IdentityUserCredentialsManagerSpec extends AsyncUnitSpec {
 
         e.getMessage should be("Identity request failed with [500 Internal Server Error]: []")
 
-        endpoint.created should be(1)
+        endpoint.created should be(3) // first attempt + 2 retries
         endpoint.activated should be(0)
         endpoint.deactivated should be(0)
         endpoint.passwordUpdated should be(0)
@@ -139,7 +145,7 @@ class IdentityUserCredentialsManagerSpec extends AsyncUnitSpec {
         e.getMessage should be("Identity request failed with [500 Internal Server Error]: []")
 
         endpoint.created should be(0)
-        endpoint.activated should be(1)
+        endpoint.activated should be(3) // first attempt + 2 retries
         endpoint.deactivated should be(0)
         endpoint.passwordUpdated should be(0)
       }
@@ -189,7 +195,7 @@ class IdentityUserCredentialsManagerSpec extends AsyncUnitSpec {
 
         endpoint.created should be(0)
         endpoint.activated should be(0)
-        endpoint.deactivated should be(1)
+        endpoint.deactivated should be(3) // first attempt + 2 retries
         endpoint.passwordUpdated should be(0)
       }
   }
@@ -241,7 +247,7 @@ class IdentityUserCredentialsManagerSpec extends AsyncUnitSpec {
         endpoint.created should be(0)
         endpoint.activated should be(0)
         endpoint.deactivated should be(0)
-        endpoint.passwordUpdated should be(1)
+        endpoint.passwordUpdated should be(3) // first attempt + 2 retries
       }
   }
 
@@ -252,9 +258,15 @@ class IdentityUserCredentialsManagerSpec extends AsyncUnitSpec {
     new IdentityUserCredentialsManager(
       identityUrl = identityUrl,
       identityCredentials = () => Future.successful(credentials),
-      context = context,
-      requestBufferSize = 100
-    )
+      context = context
+    ) {
+
+      override protected def config: PoolClient.Config = PoolClient.Config.Default.copy(
+        minBackoff = 10.millis,
+        maxBackoff = 20.milli,
+        maxRetries = 2
+      )
+    }
 
   private val credentials = OAuth2BearerToken(token = "test-token")
 
