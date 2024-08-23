@@ -34,6 +34,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
+import stasis.core.api.PoolClient
 import stasis.shared.api.requests.ResetUserPassword
 
 class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
@@ -643,7 +644,7 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
       self = self,
       decryption = decryption,
       context = context,
-      requestBufferSize = 100
+      config = PoolClient.Config.Default
     )
 
     if (waitForSuccess) {

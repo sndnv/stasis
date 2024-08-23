@@ -1,32 +1,43 @@
 package stasis.core.networking.http
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.control.NonFatal
+
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.SpawnProtocol
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
 import org.apache.pekko.http.scaladsl.model._
 import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
-import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
+import org.apache.pekko.stream.scaladsl.Keep
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import org.apache.pekko.{Done, NotUsed}
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import stasis.core.api.PoolClient
 import stasis.core.networking.EndpointClient
-import stasis.core.networking.exceptions.{CredentialsFailure, EndpointFailure, ReservationFailure}
-import stasis.core.packaging.{Crate, Manifest}
-import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
+import stasis.core.networking.exceptions.CredentialsFailure
+import stasis.core.networking.exceptions.EndpointFailure
+import stasis.core.networking.exceptions.ReservationFailure
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
+import stasis.core.persistence.CrateStorageRequest
+import stasis.core.persistence.CrateStorageReservation
 import stasis.core.security.NodeCredentialsProvider
 import stasis.core.security.tls.EndpointContext
-import stasis.core.streaming.Operators.{ExtendedByteStringSource, ExtendedSource}
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
+import stasis.core.streaming.Operators.ExtendedByteStringSource
+import stasis.core.streaming.Operators.ExtendedSource
 
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
 class HttpEndpointClient(
   override protected val credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
   override protected val context: Option[EndpointContext],
-  override protected val requestBufferSize: Int,
+  override protected val config: PoolClient.Config,
   private val maxChunkSize: Int
 )(implicit override protected val system: ActorSystem[SpawnProtocol.Command])
     extends EndpointClient[HttpEndpointAddress, HttpCredentials]
@@ -37,7 +48,7 @@ class HttpEndpointClient(
 
   private implicit val ec: ExecutionContext = system.executionContext
 
-  private val log = LoggerFactory.getLogger(this.getClass.getName)
+  override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   override def push(address: HttpEndpointAddress, manifest: Manifest, content: Source[ByteString, NotUsed]): Future[Done] = {
     log.debugN("Pushing content for endpoint [{}] with manifest [{}]", address.uri, manifest)
@@ -82,7 +93,7 @@ class HttpEndpointClient(
         reserveStorage(address, manifest, endpointCredentials).map { reservation =>
           val (sink, content) = Source
             .asSubscriber[ByteString]
-            .toMat(Sink.asPublisher[ByteString](fanout = false))(Keep.both)
+            .toMat(Sink.asPublisher[ByteString](fanout = true))(Keep.both)
             .mapMaterializedValue { case (subscriber, publisher) =>
               (Sink.fromSubscriber(subscriber), Source.fromPublisher(publisher))
             }
@@ -284,38 +295,38 @@ object HttpEndpointClient {
   def apply(
     credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
     context: Option[EndpointContext],
-    requestBufferSize: Int,
-    maxChunkSize: Int
+    maxChunkSize: Int,
+    config: PoolClient.Config
   )(implicit system: ActorSystem[SpawnProtocol.Command]): HttpEndpointClient =
     new HttpEndpointClient(
       credentials = credentials,
       context = context,
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
+      maxChunkSize = maxChunkSize,
+      config = config
     )
 
   def apply(
     credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
-    requestBufferSize: Int,
-    maxChunkSize: Int
+    maxChunkSize: Int,
+    config: PoolClient.Config
   )(implicit system: ActorSystem[SpawnProtocol.Command]): HttpEndpointClient =
     HttpEndpointClient(
       credentials = credentials,
       context = None,
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
+      maxChunkSize = maxChunkSize,
+      config = config
     )
 
   def apply(
     credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
     context: EndpointContext,
-    requestBufferSize: Int,
-    maxChunkSize: Int
+    maxChunkSize: Int,
+    config: PoolClient.Config
   )(implicit system: ActorSystem[SpawnProtocol.Command]): HttpEndpointClient =
     HttpEndpointClient(
       credentials = credentials,
       context = Some(context),
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
+      maxChunkSize = maxChunkSize,
+      config = config
     )
 }

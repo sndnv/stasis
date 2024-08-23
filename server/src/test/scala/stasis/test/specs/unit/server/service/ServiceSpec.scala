@@ -26,12 +26,15 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.security.mocks.MockJwtGenerators
 import stasis.test.specs.unit.server.security.mocks._
 import stasis.test.specs.unit.shared.model.Generators
-
 import java.util.UUID
+
 import javax.net.ssl.TrustManagerFactory
+
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
+
+import stasis.core.api.PoolClient
 
 class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually {
 
@@ -100,8 +103,8 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
         case address       => Future.failed(new IllegalArgumentException(s"Unexpected address provided: [$address]"))
       },
       context = trustedContext,
-      requestBufferSize = 100,
-      maxChunkSize = 100
+      maxChunkSize = 100,
+      config = PoolClient.Config.Default
     )
 
     for {

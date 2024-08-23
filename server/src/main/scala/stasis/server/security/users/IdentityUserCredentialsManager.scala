@@ -1,12 +1,22 @@
 package stasis.server.security.users
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.SpawnProtocol
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
-import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, RequestEntity, StatusCodes}
+import org.apache.pekko.http.scaladsl.model.HttpMethods
+import org.apache.pekko.http.scaladsl.model.HttpRequest
+import org.apache.pekko.http.scaladsl.model.HttpResponse
+import org.apache.pekko.http.scaladsl.model.RequestEntity
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import play.api.libs.json.{Format, Json}
+import play.api.libs.json.Format
+import play.api.libs.json.Json
 import stasis.core.api.PoolClient
 import stasis.core.security.tls.EndpointContext
 import stasis.server.security.CredentialsProvider
@@ -14,13 +24,10 @@ import stasis.server.security.exceptions.CredentialsManagementFailure
 import stasis.server.security.users.UserCredentialsManager.Result
 import stasis.shared.model.users.User
 
-import scala.concurrent.{ExecutionContext, Future}
-
 class IdentityUserCredentialsManager(
   identityUrl: String,
   identityCredentials: CredentialsProvider,
-  override protected val context: Option[EndpointContext],
-  override protected val requestBufferSize: Int
+  override protected val context: Option[EndpointContext]
 )(implicit override protected val system: ActorSystem[SpawnProtocol.Command])
     extends UserCredentialsManager
     with PoolClient {
@@ -28,7 +35,7 @@ class IdentityUserCredentialsManager(
 
   private implicit val ec: ExecutionContext = system.executionContext
 
-  private val log = LoggerFactory.getLogger(this.getClass.getName)
+  override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   override val id: String = identityUrl
 
@@ -136,14 +143,12 @@ object IdentityUserCredentialsManager {
   def apply(
     identityUrl: String,
     identityCredentials: CredentialsProvider,
-    context: Option[EndpointContext],
-    requestBufferSize: Int
+    context: Option[EndpointContext]
   )(implicit system: ActorSystem[SpawnProtocol.Command]): IdentityUserCredentialsManager =
     new IdentityUserCredentialsManager(
       identityUrl = identityUrl,
       identityCredentials = identityCredentials,
-      context = context,
-      requestBufferSize = requestBufferSize
+      context = context
     )
 
   implicit class ExtendedHttpResponse(response: HttpResponse) {

@@ -1,12 +1,20 @@
 package stasis.server.security.devices
 
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.control.NonFatal
+
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.SpawnProtocol
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
 import org.apache.pekko.http.scaladsl.model._
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import play.api.libs.json.{Format, Json}
+import play.api.libs.json.Format
+import play.api.libs.json.Json
 import stasis.core.api.PoolClient
 import stasis.core.security.tls.EndpointContext
 import stasis.core.streaming.Operators.ExtendedSource
@@ -14,17 +22,12 @@ import stasis.server.security.CredentialsProvider
 import stasis.server.security.exceptions.CredentialsManagementFailure
 import stasis.shared.model.devices.Device
 
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
-
 class IdentityDeviceCredentialsManager(
   identityUrl: String,
   identityCredentials: CredentialsProvider,
   redirectUri: String,
   tokenExpiration: FiniteDuration,
-  override protected val context: Option[EndpointContext],
-  override protected val requestBufferSize: Int
+  override protected val context: Option[EndpointContext]
 )(implicit override protected val system: ActorSystem[SpawnProtocol.Command])
     extends DeviceCredentialsManager
     with PoolClient {
@@ -32,7 +35,7 @@ class IdentityDeviceCredentialsManager(
 
   private implicit val ec: ExecutionContext = system.executionContext
 
-  private val log = LoggerFactory.getLogger(this.getClass.getName)
+  override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   override def setClientSecret(device: Device, clientSecret: String): Future[String] =
     findClient(device).flatMap {
@@ -200,15 +203,13 @@ object IdentityDeviceCredentialsManager {
     identityCredentials: CredentialsProvider,
     redirectUri: String,
     tokenExpiration: FiniteDuration,
-    context: Option[EndpointContext],
-    requestBufferSize: Int
+    context: Option[EndpointContext]
   )(implicit system: ActorSystem[SpawnProtocol.Command]): IdentityDeviceCredentialsManager =
     new IdentityDeviceCredentialsManager(
       identityUrl = identityUrl,
       identityCredentials = identityCredentials,
       redirectUri = redirectUri,
       tokenExpiration = tokenExpiration,
-      context = context,
-      requestBufferSize = requestBufferSize
+      context = context
     )
 }

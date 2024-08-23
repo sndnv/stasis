@@ -5,10 +5,11 @@ import java.util.UUID
 import stasis.client.api.clients._
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.security.tls.EndpointContext
-
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Try
+
+import stasis.core.api.PoolClient
 
 trait ApiClients {
   def clients: Clients
@@ -26,8 +27,14 @@ object ApiClients {
           credentials = credentialsProvider.core,
           self = UUID.fromString(rawConfig.getString("server.core.node-id")),
           context = EndpointContext(rawConfig.getConfig("server.core.context")),
-          requestBufferSize = rawConfig.getInt("server.core.request-buffer-size"),
-          maxChunkSize = rawConfig.getInt("server.core.max-chunk-size")
+          maxChunkSize = rawConfig.getInt("server.core.max-chunk-size"),
+          config = PoolClient.Config(
+            minBackoff = rawConfig.getDuration("server.core.retry.min-backoff").toMillis.millis,
+            maxBackoff = rawConfig.getDuration("server.core.retry.max-backoff").toMillis.millis,
+            randomFactor = rawConfig.getDouble("server.core.retry.random-factor"),
+            maxRetries = rawConfig.getInt("server.core.retry.max-retries"),
+            requestBufferSize = rawConfig.getInt("server.core.request-buffer-size")
+          )
         )
 
         val apiClient: ServerApiEndpointClient = DefaultServerApiEndpointClient(
@@ -40,7 +47,13 @@ object ApiClients {
           ),
           self = deviceSecret.device,
           context = EndpointContext(rawConfig.getConfig("server.api.context")),
-          requestBufferSize = rawConfig.getInt("server.api.request-buffer-size")
+          config = PoolClient.Config(
+            minBackoff = rawConfig.getDuration("server.api.retry.min-backoff").toMillis.millis,
+            maxBackoff = rawConfig.getDuration("server.api.retry.max-backoff").toMillis.millis,
+            randomFactor = rawConfig.getDouble("server.api.retry.random-factor"),
+            maxRetries = rawConfig.getInt("server.api.retry.max-retries"),
+            requestBufferSize = rawConfig.getInt("server.api.request-buffer-size")
+          )
         )
 
         val cachedApiClient = CachedServerApiEndpointClient(

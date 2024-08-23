@@ -8,10 +8,12 @@ import stasis.core.networking.http.{HttpEndpointAddress, HttpEndpointClient}
 import stasis.core.packaging.{Crate, Manifest}
 import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.telemetry.TelemetryContext
-
 import java.util.concurrent.atomic.AtomicInteger
+
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+
+import stasis.core.api.PoolClient
 
 class MockHttpEndpointClient(
   pushFailureAddresses: Map[HttpEndpointAddress, Exception] = Map.empty,
@@ -22,8 +24,8 @@ class MockHttpEndpointClient(
     extends HttpEndpointClient(
       (_: HttpEndpointAddress) => Future.failed(new RuntimeException("No credentials available")),
       context = None,
-      requestBufferSize = 100,
-      maxChunkSize = 100
+      maxChunkSize = 100,
+      config = PoolClient.Config.Default
     ) {
 
   import MockHttpEndpointClient._

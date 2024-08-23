@@ -17,10 +17,11 @@ import stasis.core.security.tls.EndpointContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks.MockServerCoreEndpoint
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
+
+import stasis.core.api.PoolClient
 
 class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec with Eventually {
   "A DefaultServerCoreEndpointClient" should "push crates" in {
@@ -34,8 +35,8 @@ class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec with Eventually 
       credentials = Future.successful(coreCredentials),
       self = Node.generateId(),
       context = None,
-      requestBufferSize = 100,
-      maxChunkSize = 100
+      maxChunkSize = 100,
+      config = PoolClient.Config.Default
     )
 
     val crateId = Crate.generateId()
@@ -70,8 +71,8 @@ class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec with Eventually 
       credentials = Future.successful(coreCredentials),
       self = Node.generateId(),
       context = None,
-      requestBufferSize = 100,
-      maxChunkSize = 100
+      maxChunkSize = 100,
+      config = PoolClient.Config.Default
     )
 
     val crateId = Crate.generateId()
@@ -119,8 +120,8 @@ class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec with Eventually 
       credentials = Future.successful(coreCredentials),
       self = Node.generateId(),
       context = Some(clientContext),
-      requestBufferSize = 100,
-      maxChunkSize = 100
+      maxChunkSize = 100,
+      config = PoolClient.Config.Default
     )
 
     core.start(port = corePort, context = Some(endpointContext))

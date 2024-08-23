@@ -9,24 +9,25 @@ import stasis.core.networking.http.{HttpEndpointAddress, HttpEndpointClient}
 import stasis.core.packaging
 import stasis.core.routing.Node
 import stasis.core.security.tls.EndpointContext
-
 import scala.concurrent.Future
+
+import stasis.core.api.PoolClient
 
 class DefaultServerCoreEndpointClient(
   address: HttpEndpointAddress,
   credentials: => Future[HttpCredentials],
   override val self: Node.Id,
   context: Option[EndpointContext],
-  requestBufferSize: Int,
-  maxChunkSize: Int
+  maxChunkSize: Int,
+  config: PoolClient.Config
 )(implicit system: ActorSystem[SpawnProtocol.Command])
     extends ServerCoreEndpointClient {
 
   private val client: HttpEndpointClient = HttpEndpointClient(
     credentials = (_: HttpEndpointAddress) => credentials,
     context = context,
-    requestBufferSize = requestBufferSize,
-    maxChunkSize = maxChunkSize
+    maxChunkSize = maxChunkSize,
+    config = config
   )
 
   override val server: String = address.uri.toString
@@ -44,15 +45,15 @@ object DefaultServerCoreEndpointClient {
     credentials: => Future[HttpCredentials],
     self: Node.Id,
     context: Option[EndpointContext],
-    requestBufferSize: Int,
-    maxChunkSize: Int
+    maxChunkSize: Int,
+    config: PoolClient.Config
   )(implicit system: ActorSystem[SpawnProtocol.Command]): DefaultServerCoreEndpointClient =
     new DefaultServerCoreEndpointClient(
       address = address,
       credentials = credentials,
       self = self,
       context = context,
-      requestBufferSize = requestBufferSize,
-      maxChunkSize = maxChunkSize
+      maxChunkSize = maxChunkSize,
+      config = config
     )
 }
