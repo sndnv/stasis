@@ -118,13 +118,13 @@ class DefaultServerCoreEndpointClientSpec : WordSpec({
                 self = UUID.randomUUID()
             )
 
-            core.enqueue(MockResponse().setResponseCode(500))
+            core.enqueue(MockResponse().setResponseCode(505))
 
             val e = shouldThrow<EndpointFailure> {
                 coreClient.push(manifest = manifest, content = crateContent.copy())
             }
 
-            e.message shouldContain ("responded to storage request with unexpected status: [500]")
+            e.message shouldContain ("responded to storage request with unexpected status: [505]")
 
             val reservationRequest = core.takeRequest()
             reservationRequest.method shouldBe ("PUT")
@@ -151,13 +151,13 @@ class DefaultServerCoreEndpointClientSpec : WordSpec({
                     )
             )
 
-            core.enqueue(MockResponse().setResponseCode(500))
+            core.enqueue(MockResponse().setResponseCode(505))
 
             val e = shouldThrow<EndpointFailure> {
                 coreClient.push(manifest = manifest, content = crateContent.copy())
             }
 
-            e.message shouldContain ("responded to push for crate [${manifest.crate}] with unexpected status: [500]")
+            e.message shouldContain ("responded to push for crate [${manifest.crate}] with unexpected status: [505]")
 
             val reservationRequest = core.takeRequest()
             reservationRequest.method shouldBe ("PUT")
@@ -224,13 +224,13 @@ class DefaultServerCoreEndpointClientSpec : WordSpec({
                 self = UUID.randomUUID()
             )
 
-            core.enqueue(MockResponse().setResponseCode(500))
+            core.enqueue(MockResponse().setResponseCode(505))
 
             val e = shouldThrow<EndpointFailure> {
                 coreClient.pull(crate = crateId)
             }
 
-            e.message shouldContain ("responded to pull for crate [$crateId] with unexpected status: [500]")
+            e.message shouldContain ("responded to pull for crate [$crateId] with unexpected status: [505]")
 
             val pullRequest = core.takeRequest()
             pullRequest.method shouldBe ("GET")

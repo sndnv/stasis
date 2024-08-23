@@ -26,6 +26,7 @@ import stasis.client_android.lib.model.server.schedules.Schedule
 import stasis.client_android.lib.model.server.schedules.ScheduleId
 import stasis.client_android.lib.model.server.users.User
 import stasis.client_android.lib.security.HttpCredentials
+import stasis.client_android.lib.utils.AsyncOps
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Companion.map
 import stasis.client_android.lib.utils.Try.Companion.recoverWith
@@ -41,6 +42,8 @@ class DefaultServerApiEndpointClient(
     override val self: DeviceId
 ) : ServerApiEndpointClient, ClientExtensions() {
     override val server: String = serverApiUrl.trimEnd { it == '/' }
+
+    override val retryConfig: AsyncOps.RetryConfig = AsyncOps.RetryConfig.Default
 
     override suspend fun datasetDefinitions(): Try<List<DatasetDefinition>> =
         jsonListRequest<DatasetDefinition> { builder ->

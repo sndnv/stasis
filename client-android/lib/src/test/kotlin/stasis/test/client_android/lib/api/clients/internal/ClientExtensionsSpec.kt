@@ -12,6 +12,7 @@ import stasis.client_android.lib.api.clients.exceptions.EndpointFailure
 import stasis.client_android.lib.api.clients.exceptions.ResourceMissingFailure
 import stasis.client_android.lib.api.clients.internal.ClientExtensions
 import stasis.client_android.lib.security.HttpCredentials
+import stasis.client_android.lib.utils.AsyncOps
 
 class ClientExtensionsSpec : WordSpec({
     "ClientExtensions" should {
@@ -158,7 +159,10 @@ class ClientExtensionsSpec : WordSpec({
         }
 
         "support handling response failures" {
-            val client = TestClient(providedCredentials = HttpCredentials.None)
+            val client = TestClient(
+                providedCredentials = HttpCredentials.None,
+                config = AsyncOps.RetryConfig.Default.copy(minBackoff = 10, maxBackoff = 10)
+            )
 
             val server = MockWebServer()
             server.start()
@@ -166,6 +170,11 @@ class ClientExtensionsSpec : WordSpec({
             server.enqueue(MockResponse().setResponseCode(ClientExtensions.StatusUnauthorized))
             server.enqueue(MockResponse().setResponseCode(ClientExtensions.StatusForbidden))
             server.enqueue(MockResponse().setResponseCode(ClientExtensions.StatusNotFound))
+            server.enqueue(MockResponse().setResponseCode(500))
+            server.enqueue(MockResponse().setResponseCode(500))
+            server.enqueue(MockResponse().setResponseCode(500))
+            server.enqueue(MockResponse().setResponseCode(500))
+            server.enqueue(MockResponse().setResponseCode(500))
             server.enqueue(MockResponse().setResponseCode(500))
 
             shouldThrow<AccessDeniedFailure> {

@@ -118,7 +118,7 @@ class DefaultServerBootstrapEndpointClientSpec : WordSpec({
 
         "handle boostrap request failures (server failures)" {
             val server = MockWebServer()
-            server.enqueue(MockResponse().setResponseCode(500))
+            server.enqueue(MockResponse().setResponseCode(505))
             server.start()
 
             val endpointClient = DefaultServerBootstrapEndpointClient(
@@ -129,7 +129,7 @@ class DefaultServerBootstrapEndpointClientSpec : WordSpec({
                 is Success -> fail("Unexpected successful result received: [$result]")
                 is Failure -> {
                     result.exception should beInstanceOf<EndpointFailure>()
-                    result.exception.message shouldContain ("responded with [500 - Server Error]")
+                    result.exception.message shouldContain ("responded with [505 - Server Error]")
                 }
             }
 
