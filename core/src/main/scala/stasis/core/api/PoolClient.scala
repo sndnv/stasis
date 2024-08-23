@@ -58,7 +58,7 @@ trait PoolClient {
         flow = pool
       ) {
         case ((request, promise), (Success(response), _)) if PoolClient.canRetry(response.status) =>
-          response.entity.dataBytes.cancelled()
+          val _ = response.entity.dataBytes.cancelled()
 
           log.warnN(
             "Retrying request for [{}:{}]; received unexpected response: [{}]",
