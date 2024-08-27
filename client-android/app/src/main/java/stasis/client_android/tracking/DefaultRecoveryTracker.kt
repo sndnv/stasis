@@ -1,6 +1,7 @@
 package stasis.client_android.tracking
 
 import android.content.Context
+import android.media.MediaScannerConnection
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
@@ -140,7 +141,8 @@ class DefaultRecoveryTracker(
         }
     }
 
-    private inner class TrackingHandler(context: Context, looper: Looper) : Handler(looper) {
+    private inner class TrackingHandler(private val context: Context, looper: Looper) :
+        Handler(looper) {
         private var _state: Map<OperationId, RecoveryState> = emptyMap()
         private var updates: Int = 0
         private var persistScheduled: Boolean = false
@@ -149,6 +151,14 @@ class DefaultRecoveryTracker(
             target = File(context.filesDir, "state/recoveries").toPath(),
             serdes = RecoveryStateSerdes
         )
+
+        private fun scanMediaFiles(paths: Set<Path>) =
+            MediaScannerConnection.scanFile(
+                context,
+                paths.map { it.toAbsolutePath().toString() }.toTypedArray(),
+                null,
+                null
+            )
 
         init {
             obtainMessage().let { msg ->
@@ -175,24 +185,50 @@ class DefaultRecoveryTracker(
                     }
 
                     val updated = when (event) {
-                        is RecoveryEvent.EntityExamined -> existing.entityExamined(event.entity)
-                        is RecoveryEvent.EntityCollected -> existing.entityCollected(event.entity)
-                        is RecoveryEvent.EntityProcessingStarted -> existing.entityProcessingStarted(
-                            event.entity,
-                            event.expectedParts
+                        is RecoveryEvent.EntityExamined -> existing.entityExamined(
+                            entity = event.entity
                         )
-                        is RecoveryEvent.EntityPartProcessed -> existing.entityPartProcessed(event.entity)
-                        is RecoveryEvent.EntityProcessed -> existing.entityProcessed(event.entity)
-                        is RecoveryEvent.EntityMetadataApplied -> existing.entityMetadataApplied(event.entity)
-                        is RecoveryEvent.EntityFailed -> existing.entityFailed(event.entity, event.reason)
-                        is RecoveryEvent.FailureEncountered -> existing.failureEncountered(event.reason)
+
+                        is RecoveryEvent.EntityCollected -> existing.entityCollected(
+                            entity = event.entity
+                        )
+
+                        is RecoveryEvent.EntityProcessingStarted -> existing.entityProcessingStarted(
+                            entity = event.entity,
+                            expectedParts = event.expectedParts
+                        )
+
+                        is RecoveryEvent.EntityPartProcessed -> existing.entityPartProcessed(
+                            entity = event.entity
+                        )
+
+                        is RecoveryEvent.EntityProcessed -> existing.entityProcessed(
+                            entity = event.entity
+                        )
+
+                        is RecoveryEvent.EntityMetadataApplied -> existing.entityMetadataApplied(
+                            entity = event.entity
+                        )
+
+                        is RecoveryEvent.EntityFailed -> existing.entityFailed(
+                            entity = event.entity,
+                            reason = event.reason
+                        )
+
+                        is RecoveryEvent.FailureEncountered -> {
+                            scanMediaFiles(paths = existing.entities.metadataApplied)
+                            existing.failureEncountered(failure = event.reason)
+                        }
+
                         is RecoveryEvent.Completed -> {
                             obtainMessage().let { message ->
                                 message.obj = TrackerEvent.PersistState
                                 sendMessage(message)
                             }
+                            scanMediaFiles(existing.entities.metadataApplied)
                             existing.recoveryCompleted()
                         }
+
                         else -> existing
                     }
 
@@ -214,7 +250,9 @@ class DefaultRecoveryTracker(
                     }
 
                     val now = Instant.now()
-                    val filtered = _state.filterValues { it.started.plusMillis(MaxRetention.toMillis()).isAfter(now) }
+                    val filtered = _state.filterValues {
+                        it.started.plusMillis(MaxRetention.toMillis()).isAfter(now)
+                    }
 
                     _state = filtered + (event.operation to updated)
                     trackedState.postValue(_state)
