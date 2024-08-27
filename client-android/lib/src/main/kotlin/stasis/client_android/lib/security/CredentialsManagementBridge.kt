@@ -25,7 +25,7 @@ interface CredentialsManagementBridge {
         remotePassword: CharArray?
     ): Try<DeviceSecret>
 
-    fun initDigestedUserPassword(digestedUserPassword: String)
+    fun initDigestedUserPassword(digestedUserPassword: String?)
 
     fun verifyUserPassword(userPassword: CharArray): Boolean
 
