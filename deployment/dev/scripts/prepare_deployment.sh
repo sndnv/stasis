@@ -51,4 +51,4 @@ chmod 644 ${CERTS_DIR}/${IDENTITY_NAME}.*
 chmod 644 ${CERTS_DIR}/${SERVER_NAME}.*
 chmod 644 ${CERTS_DIR}/${CLIENT_NAME}.*
 
-#"${SCRIPTS_DIR}/generate_artifacts.py"
+"${SCRIPTS_DIR}/generate_artifacts.py"

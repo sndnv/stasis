@@ -44,8 +44,17 @@ identity_ui_version = sys.argv[1] if len(sys.argv) > 1 else get_version()
 server_ui_image = 'ghcr.io/sndnv/stasis/stasis-server-ui:{}'.format(identity_ui_version)
 
 run_command(
+    command=['flutter', 'upgrade'],
+    description='Upgrading flutter'
+)
+run_command(
     command=['flutter', 'pub', 'get'],
     description='Getting packages'
+)
+
+run_command(
+    command=['flutter', 'pub', 'upgrade'],
+    description='Upgrading flutter packages'
 )
 
 run_command(
