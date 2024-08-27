@@ -325,6 +325,52 @@ class ReferenceSpec : WordSpec({
             createCount.get() shouldBe (1)
             destroyCount.get() shouldBe (0)
         }
+
+        "recreate itself when the configuration changes" {
+            val retrieveConfigCount = AtomicInteger(0)
+            val createCount = AtomicInteger(0)
+            val destroyCount = AtomicInteger(0)
+
+            val expectedConfig = Config(size = 42)
+            val otherConfig = Config(size = 21)
+
+            val ref = Reference.Singleton(
+                retrieveConfig = {
+                    val currentCount = retrieveConfigCount.incrementAndGet()
+                    if (currentCount > 3) {
+                        otherConfig
+                    } else {
+                        expectedConfig
+                    }
+                },
+                create = { actualConfig ->
+                    createCount.incrementAndGet()
+                    Singleton(content = List(actualConfig.size) { it.toChar() }.joinToString(separator = ""))
+                },
+                destroy = {
+                    destroyCount.incrementAndGet()
+                }
+            )
+
+            ref.isEmpty() shouldBe (true)
+            ref.isNotEmpty() shouldBe (false)
+
+            ref.provided()?.content?.length shouldBe (expectedConfig.size)
+            retrieveConfigCount.get() shouldBe (1)
+            createCount.get() shouldBe (1)
+            destroyCount.get() shouldBe (0)
+
+            ref.provided()?.content?.length shouldBe (expectedConfig.size)
+            ref.provided()?.content?.length shouldBe (expectedConfig.size)
+            ref.provided()?.content?.length shouldBe (otherConfig.size)
+
+            retrieveConfigCount.get() shouldBe (4)
+            createCount.get() shouldBe (2)
+            destroyCount.get() shouldBe (1)
+
+            ref.isEmpty() shouldBe (false)
+            ref.isNotEmpty() shouldBe (true)
+        }
     }
 
     "An Empty Reference" should {
@@ -377,9 +423,9 @@ class ReferenceSpec : WordSpec({
             ref.isEmpty() shouldBe (true)
             ref.isNotEmpty() shouldBe (false)
 
-            ref.required().content shouldBe(expectedContent)
-            ref.required().content shouldBe(expectedContent)
-            ref.required().content shouldBe(expectedContent)
+            ref.required().content shouldBe (expectedContent)
+            ref.required().content shouldBe (expectedContent)
+            ref.required().content shouldBe (expectedContent)
 
             retrieveConfigCount.get() shouldBe (3)
             createCount.get() shouldBe (1)
