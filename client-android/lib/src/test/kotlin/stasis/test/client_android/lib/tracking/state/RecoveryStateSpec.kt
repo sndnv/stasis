@@ -108,6 +108,7 @@ class RecoveryStateSpec : WordSpec({
 
             recovery.asProgress() shouldBe (
                     Operation.Progress(
+                        started = recovery.started,
                         total = 1,
                         processed = 1,
                         failures = 2,

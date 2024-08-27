@@ -12,7 +12,7 @@ import java.time.Instant
 
 data class RecoveryState(
     val operation: OperationId,
-    val started: Instant,
+    override val started: Instant,
     val entities: Entities,
     val failures: List<String>,
     override val completed: Instant?
@@ -76,6 +76,7 @@ data class RecoveryState(
         copy(completed = Instant.now())
 
     override fun asProgress(): Operation.Progress = Operation.Progress(
+        started = started,
         total = entities.examined.size,
         processed = entities.processed.size,
         failures = entities.failed.size + failures.size,

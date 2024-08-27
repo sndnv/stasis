@@ -39,6 +39,7 @@ interface Operation {
     }
 
     data class Progress(
+        val started: Instant,
         val total: Int,
         val processed: Int,
         val failures: Int,

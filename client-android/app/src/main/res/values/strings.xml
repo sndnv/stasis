@@ -395,8 +395,8 @@
     <string name="operation_type_garbage_collection">Garbage Collection</string>
     <string name="operation_type_garbage_unknown">Unknown</string>
     <string name="operation_field_content_info">%1$s (%2$s)</string>
-    <string name="operation_field_content_details">Processed: %1$s of %2$s</string>
-    <string name="operation_field_content_details_with_failures">Processed: %1$s of %2$s, Errors: %3$s</string>
+    <string name="operation_field_content_details">Started: %1$s\nProcessed: %2$s of %3$s</string>
+    <string name="operation_field_content_details_with_failures">Started: %1$s\nProcessed: %2$s of %3$s, Errors: %4$s</string>
     <string name="operation_field_content_completed">Completed: %1$s</string>
     <string name="operation_field_content_completed_progress">Completed: %1$s%</string>
     <string name="operation_field_content_stage_info">%1$s (steps: %2$s)</string>

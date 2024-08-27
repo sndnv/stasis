@@ -55,7 +55,7 @@
                     android:id="@+id/dataset_entry_details_title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:maxLines="1"
+                    android:maxLines="2"
                     android:textAppearance="?attr/textAppearanceSubtitle1" />
 
                 <TextView
@@ -119,7 +119,7 @@
                     android:id="@+id/operation_info"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:maxLines="1"
+                    android:maxLines="2"
                     android:textAppearance="?attr/textAppearanceSubtitle1" />
 
                 <TextView
@@ -127,7 +127,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
-                    android:maxLines="1"
+                    android:maxLines="2"
                     android:paddingStart="4dp"
                     android:paddingEnd="4dp"
                     android:textAppearance="?attr/textAppearanceBody2" />
@@ -137,7 +137,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
-                    android:maxLines="1"
+                    android:maxLines="2"
                     android:paddingStart="4dp"
                     android:paddingEnd="4dp"
                     android:textAppearance="?attr/textAppearanceBody2" />
