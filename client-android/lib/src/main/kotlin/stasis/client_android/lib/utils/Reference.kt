@@ -38,6 +38,7 @@ interface Reference<O> {
         val destroy: (O?) -> Unit
     ) : Reference<O> {
         private val singletonRef: AtomicReference<O?> = AtomicReference(null)
+        private val configRef: AtomicReference<C?> = AtomicReference(null)
 
         override fun isEmpty(): Boolean = singletonRef.get() == null
         override fun isNotEmpty(): Boolean = !isEmpty()
@@ -46,6 +47,7 @@ interface Reference<O> {
             when (val config = retrieveConfig()) {
                 null -> {
                     destroy(singletonRef.getAndSet(null))
+                    configRef.set(null)
                     null
                 }
 
@@ -78,11 +80,19 @@ interface Reference<O> {
 
         private fun updateAndGetRef(config: C): O {
             val singleton = singletonRef.updateAndGet { existingSingleton ->
+                val existingConfig = configRef.get()
                 when (existingSingleton) {
                     null -> create(config)
-                    else -> existingSingleton
+                    else -> if (existingConfig != config) {
+                        destroy(existingSingleton)
+                        create(config)
+                    } else {
+                        existingSingleton
+                    }
                 }
             }
+
+            configRef.set(config)
 
             require(singleton != null) { "Expected an object but none was provided" }
 
