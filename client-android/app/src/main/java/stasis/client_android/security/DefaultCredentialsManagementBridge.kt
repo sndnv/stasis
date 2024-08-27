@@ -80,7 +80,7 @@ class DefaultCredentialsManagementBridge(
     )
 
     override fun initDigestedUserPassword(
-        digestedUserPassword: String
+        digestedUserPassword: String?
     ) = digestedUserPasswordRef.set(digestedUserPassword)
 
     override fun verifyUserPassword(

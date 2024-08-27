@@ -36,7 +36,7 @@ open class MockCredentialsManagementBridge(
     ): Try<DeviceSecret> =
         Success(deviceSecret)
 
-    override fun initDigestedUserPassword(digestedUserPassword: String) =
+    override fun initDigestedUserPassword(digestedUserPassword: String?) =
         Unit
 
     override fun verifyUserPassword(userPassword: CharArray): Boolean =

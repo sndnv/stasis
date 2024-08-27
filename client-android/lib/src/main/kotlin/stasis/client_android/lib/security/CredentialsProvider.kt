@@ -139,7 +139,8 @@ class CredentialsProvider(
         coroutineScope.launch {
             when (val deviceSecretResult = bridge.loadDeviceSecret(password.toCharArray())) {
                 is Success -> {
-                    val authenticationPassword = bridge.getAuthenticationPassword(password.toCharArray())
+                    val authenticationPassword =
+                        bridge.getAuthenticationPassword(password.toCharArray())
 
                     val coreTokenResponse = oAuthClient.token(
                         scope = config.coreScope,
@@ -154,12 +155,15 @@ class CredentialsProvider(
                         )
                     )
 
+                    val digestedUserPassword = authenticationPassword.digested()
+
                     coreTokenManager.scheduleWithClientCredentials(coreTokenResponse)
                     apiTokenManager.scheduleWithRefreshToken(apiTokenResponse)
                     latestDeviceSecret.set(deviceSecretResult)
+                    bridge.initDigestedUserPassword(digestedUserPassword)
 
                     f(coreTokenResponse.flatMap { apiTokenResponse }
-                        .flatMap { deviceSecretResult.map { Pair(it, authenticationPassword.digested()) } })
+                        .flatMap { deviceSecretResult.map { Pair(it, digestedUserPassword) } })
                 }
 
                 is Failure -> {
@@ -174,6 +178,7 @@ class CredentialsProvider(
         coreTokenManager.reset()
         apiTokenManager.reset()
         latestDeviceSecret.set(Failure(MissingDeviceSecret()))
+        bridge.initDigestedUserPassword(null)
     }
 
     fun verifyUserPassword(password: String, f: (Boolean) -> Unit) {
@@ -211,7 +216,8 @@ class CredentialsProvider(
         f: (Try<DeviceSecret>) -> Unit
     ) {
         coroutineScope.launch {
-            val deviceSecretResult = bridge.storeDeviceSecret(plaintextDeviceSecret, password.toCharArray())
+            val deviceSecretResult =
+                bridge.storeDeviceSecret(plaintextDeviceSecret, password.toCharArray())
             latestDeviceSecret.set(deviceSecretResult)
             f(deviceSecretResult)
         }
