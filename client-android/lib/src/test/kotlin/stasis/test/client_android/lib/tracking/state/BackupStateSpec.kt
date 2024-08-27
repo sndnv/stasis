@@ -170,6 +170,7 @@ class BackupStateSpec : WordSpec({
 
             backup.asProgress() shouldBe (
                     Operation.Progress(
+                        started = backup.started,
                         total = 3,
                         processed = 2,
                         failures = 2,

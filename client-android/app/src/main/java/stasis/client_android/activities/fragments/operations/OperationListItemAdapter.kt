@@ -82,16 +82,21 @@ class OperationListItemAdapter(
             ).renderAsSpannable(
                 StyledString(
                     placeholder = "%1\$s",
-                    content = progress.processed.toString(),
+                    content = progress.started.formatAsFullDateTime(context),
                     style = StyleSpan(Typeface.BOLD)
                 ),
                 StyledString(
                     placeholder = "%2\$s",
-                    content = progress.total.toString(),
+                    content = progress.processed.toString(),
                     style = StyleSpan(Typeface.BOLD)
                 ),
                 StyledString(
                     placeholder = "%3\$s",
+                    content = progress.total.toString(),
+                    style = StyleSpan(Typeface.BOLD)
+                ),
+                StyledString(
+                    placeholder = "%4\$s",
                     content = progress.failures.toString(),
                     style = StyleSpan(Typeface.BOLD)
                 )
@@ -108,6 +113,7 @@ class OperationListItemAdapter(
                     binding.operationProgress.max = expectedSteps
                     binding.operationProgress.progress = actualSteps
                 }
+
                 else -> {
                     binding.operationCompleted.isVisible = true
                     binding.operationProgress.isVisible = false
@@ -222,7 +228,10 @@ class OperationListItemAdapter(
             }
             .partition { it.second.first.completed == null }
 
-        this.operations = pending + completed.sortedByDescending { it.second.first.completed }
+        // first show the pending operations, ordered by start date
+        // then show the completed operations, ordered by completion date
+        this.operations =
+            pending.sortedByDescending { it.second.first.started } + completed.sortedByDescending { it.second.first.completed }
 
         notifyDataSetChanged()
     }

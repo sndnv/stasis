@@ -18,7 +18,7 @@ import java.util.UUID
 data class BackupState(
     val operation: OperationId,
     val definition: DatasetDefinitionId,
-    val started: Instant,
+    override val started: Instant,
     val entities: Entities,
     val metadataCollected: Instant?,
     val metadataPushed: Instant?,
@@ -124,6 +124,7 @@ data class BackupState(
     }
 
     override fun asProgress(): Operation.Progress = Operation.Progress(
+        started = started,
         total = entities.discovered.size,
         processed = entities.skipped.size + entities.processed.size,
         failures = entities.failed.size + failures.size,

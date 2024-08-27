@@ -5,6 +5,7 @@ import java.time.Instant
 
 interface OperationState {
     val type: Operation.Type
+    val started: Instant
     val completed: Instant?
     fun asProgress(): Operation.Progress
 }
