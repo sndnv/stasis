@@ -15,8 +15,17 @@ def run_command(command, description):
 
 
 run_command(
+    command=['flutter', 'upgrade'],
+    description='Upgrading flutter'
+)
+run_command(
     command=['flutter', 'pub', 'get'],
     description='Getting packages'
+)
+
+run_command(
+    command=['flutter', 'pub', 'upgrade'],
+    description='Upgrading flutter packages'
 )
 
 run_command(
