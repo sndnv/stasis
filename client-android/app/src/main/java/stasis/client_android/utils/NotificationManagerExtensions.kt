@@ -182,7 +182,10 @@ object NotificationManagerExtensions {
         } else {
             val icon = R.drawable.ic_close
             val title = context.getString(R.string.notification_operation_failed_title, operation)
-            val text = context.getString(R.string.notification_operation_failed_text, failure.message)
+            val text = context.getString(
+                R.string.notification_operation_failed_text,
+                failure.message ?: failure.javaClass.simpleName
+            )
 
             Triple(icon, title, text)
         }
