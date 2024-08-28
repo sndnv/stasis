@@ -65,7 +65,7 @@ android {
 
         applicationId = "stasis.client.android"
         versionCode = 1
-        versionName = "1.1.0"
+        versionName = "1.1.1-SNAPSHOT"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
