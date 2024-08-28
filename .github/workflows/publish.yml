@@ -44,7 +44,7 @@ jobs:
           mv client/target/universal/stasis-client-*.zip client/target/universal/stasis-client-${{ github.ref_name }}.zip
 
       - name: Upload client artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: client
           path: client/target/universal/stasis-client-${{ github.ref_name }}.zip
@@ -137,7 +137,7 @@ jobs:
           mv *.AppImage stasis-client-ui-linux-${{ github.ref_name }}.AppImage
 
       - name: Upload client-ui Linux artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: client-ui-linux
           path: client-ui/stasis-client-ui-linux-${{ github.ref_name }}.AppImage
@@ -166,7 +166,7 @@ jobs:
             "stasis-client-ui-macos-${{ github.ref_name }}.dmg" "build/macos/Build/Products/Release/stasis.app/"
 
       - name: Upload client-ui MacOS artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: client-ui-macos
           path: client-ui/stasis-client-ui-macos-${{ github.ref_name }}.dmg
@@ -204,7 +204,7 @@ jobs:
           mv app/build/outputs/apk/release/*.apk app/build/outputs/apk/release/stasis-client-android-${{ github.ref_name }}.apk
 
       - name: Upload client-android artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: client-android
           path: client-android/app/build/outputs/apk/release/stasis-client-android-${{ github.ref_name }}.apk
