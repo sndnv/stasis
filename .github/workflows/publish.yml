@@ -98,13 +98,13 @@ jobs:
         run: |
           cd identity-ui
           IDENTITY_UI_IMAGE=$(./deployment/production/build.py | tail -1)
-          docker push $IDENTITY_UI_IMAGE
+          podman push $IDENTITY_UI_IMAGE
 
       - name: Build and publish server-ui
         run: |
           cd server-ui
           SERVER_UI_IMAGE=$(./deployment/production/build.py | tail -1)
-          docker push $SERVER_UI_IMAGE
+          podman push $SERVER_UI_IMAGE
 
   flutter-linux:
     runs-on: ubuntu-latest
