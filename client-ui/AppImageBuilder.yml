@@ -17,7 +17,7 @@ AppDir:
     id: com.github.sndnv.stasis.client_ui
     name: stasis
     icon: stasis.logo.512
-    version: 1.1.2-SNAPSHOT
+    version: 1.1.2
     exec: stasis_client_ui
     exec_args: $@
   apt:
