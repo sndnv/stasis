@@ -17,7 +17,7 @@ from client_cli.render.json_writer import JsonWriter
 @click.option('-v', '--verbose', is_flag=True, help='Enable verbose logging.')
 @click.option('--insecure', is_flag=True, help='Enable insecure TLS connections to client API.')
 @click.option('--json', is_flag=True, help='Output all responses as JSON.')
-@click.option('--timeout', type=int, default=5, help='API request timeout')
+@click.option('--timeout', type=int, default=30, help='API request timeout')
 def cli(ctx, verbose, insecure, json, timeout):
     """Stasis command-line client."""
     logging.basicConfig(
