@@ -115,6 +115,45 @@ def apply_next_version(version_files, current_version, next_version):
         )
 
 
+def apply_extra_actions(actions):
+    for target_file, action in actions.items():
+        action(target_file)
+
+
+def action_android_increment_version_code(target_file):
+    version_code_regex = "\\s*versionCode = (\\d+)$"
+
+    with open(target_file, 'r') as f:
+        content = f.readlines()
+        pattern = re.compile(version_code_regex)
+        match = next(filter(lambda m: m is not None, map(lambda line: pattern.match(line), content)), None)
+        if match:
+            current_version_code = int(match.group(1))
+            next_version_code = current_version_code + 1
+
+            logging.debug(
+                'Loaded current version code [{}] from file [{}] with regex [{}]; next version code is [{}]'.format(
+                    current_version_code,
+                    target_file,
+                    version_code_regex,
+                    next_version_code
+                )
+            )
+
+            updated = list(
+                map(
+                    lambda line: line.replace(str(current_version_code), str(next_version_code)) if pattern.match(line) else line,
+                    content
+                )
+            )
+
+            with open(target_file, 'w') as f:
+                f.write(''.join(updated))
+        else:
+            logging.error('Release failed - could not find version code in [{}]'.format(target_file))
+            sys.exit(1)
+
+
 def exec_git_command(command):
     if subprocess.run(command).returncode == 0:
         logging.debug('Executed git command [{}]'.format(' '.join(command)))
@@ -147,6 +186,14 @@ def main():
         'server-ui/pubspec.yaml': '^version: ({})$'.format(version_regex),
     }
 
+    release_actions = {
+        'client-android/app/build.gradle.kts': action_android_increment_version_code,
+    }
+
+    snapshot_actions = {
+        # no actions
+    }
+
     parser = argparse.ArgumentParser(description=DESCRIPTION)
 
     parser.add_argument(
@@ -175,6 +222,7 @@ def main():
     next_version = get_next_version(current_version=current_version, next_version=args.next)
 
     apply_next_version(version_files=version_files, current_version=current_version, next_version=next_version)
+    apply_extra_actions(release_actions)
 
     updated_version = get_current_version(version_files=version_files)
 
@@ -185,6 +233,7 @@ def main():
 
     next_snapshot_version = '{}-SNAPSHOT'.format(get_next_version(current_version=next_version, next_version='patch'))
     apply_next_version(version_files=version_files, current_version=next_version, next_version=next_snapshot_version)
+    apply_extra_actions(snapshot_actions)
 
     updated_snapshot_version = get_current_version(version_files=version_files)
 
