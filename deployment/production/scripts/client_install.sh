@@ -287,10 +287,10 @@ log_debug "Installing [stasis-client-ui]..."
 
 if [[ "${OSTYPE}" == "linux"* ]]; then
   cp ${CLIENT_UI_BINARY} ${CLIENT_UI_PATH}/ || failed
-  chmod u+x ${CLIENT_UI_BINARY}
-  ln -s ${CLIENT_UI_BINARY} "${TARGET_BIN_PATH}/stasis-ui"
+  chmod u+x "${CLIENT_UI_PATH}/stasis-client-ui-${CLIENT_UI_TARGET}-${ACTUAL_VERSION}.${CLIENT_UI_EXT}"
+  ln -s "${CLIENT_UI_PATH}/stasis-client-ui-${CLIENT_UI_TARGET}-${ACTUAL_VERSION}.${CLIENT_UI_EXT}" "${TARGET_BIN_PATH}/stasis-ui"
 elif [[ "${OSTYPE}" == "darwin"* ]]; then
-  open ${CLIENT_UI_BINARY}
+  open "${CLIENT_UI_PATH}/stasis-client-ui-${CLIENT_UI_TARGET}-${ACTUAL_VERSION}.${CLIENT_UI_EXT}"
   log_info "You can now install the stasis UI by opening Finder and dragging the app to your Applications folder"
 else
   log_error "Operating system [${OSTYPE}] is not supported."
