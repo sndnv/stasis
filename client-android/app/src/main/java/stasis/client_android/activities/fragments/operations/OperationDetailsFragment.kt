@@ -80,7 +80,7 @@ class OperationDetailsFragment : Fragment() {
             is Operation.Type.Backup -> providerContext.trackers.backup.updates(operation)
             is Operation.Type.Recovery -> providerContext.trackers.recovery.updates(operation)
             else -> null
-        }?.minimize(interval = Duration.ofMillis(500), lifecycleScope)
+        }?.minimize(interval = Duration.ofMillis(1500), lifecycleScope)
 
         updates?.observe(viewLifecycleOwner) { state ->
             val progress = state.asProgress()
