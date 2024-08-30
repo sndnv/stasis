@@ -32,7 +32,12 @@ class DefaultClientApi extends ApiClient implements ClientApi {
     required String apiToken,
   }) : super(token: apiToken);
 
-  static DefaultClientApi fromConfig({required Config config, required String apiToken, bool insecure = false}) {
+  static DefaultClientApi fromConfig({
+    required Config config,
+    required String apiToken,
+    required Duration timeout,
+    bool insecure = false,
+  }) {
     final apiType = config.getString('type');
     if (apiType != 'http') {
       throw Exception('Expected [http] API but [$apiType] found');
@@ -57,7 +62,8 @@ class DefaultClientApi extends ApiClient implements ClientApi {
       HttpClient(context: context.get())
         ..badCertificateCallback = (X509Certificate cert, String actualHost, int actualPort) {
           return actualHost == interface && actualPort == port && cert.subject == '/CN=$interface';
-        },
+        }
+        ..connectionTimeout = timeout,
     );
 
     return DefaultClientApi(server: apiUrl, underlying: underlying, apiToken: apiToken);

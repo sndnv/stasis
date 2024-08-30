@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:stasis_client_ui/api/api_client.dart';
 import 'package:stasis_client_ui/api/app_processes.dart';
@@ -75,12 +77,15 @@ class _ClientAppState extends State<ClientApp> {
 
       final files = AppFiles.load(configDir: configDir);
       final apiConfig = files.config.getConfig('stasis.client.api');
+      final apiTimeout = Duration(
+        seconds: int.tryParse(Platform.environment['STASIS_CLIENT_UI_API_TIMEOUT'] ?? '') ?? 30,
+      );
 
-      InitApi init = DefaultInitApi.fromConfig(config: apiConfig);
+      InitApi init = DefaultInitApi.fromConfig(config: apiConfig, timeout: apiTimeout);
 
       final apiToken = files.apiToken;
       if (apiToken != null) {
-        ClientApi api = DefaultClientApi.fromConfig(config: apiConfig, apiToken: apiToken);
+        ClientApi api = DefaultClientApi.fromConfig(config: apiConfig, apiToken: apiToken, timeout: apiTimeout);
 
         return FutureBuilder<bool>(
           future: api.isActive(),

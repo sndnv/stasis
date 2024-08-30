@@ -12,7 +12,7 @@ class DefaultInitApi extends ApiClient implements InitApi {
     required super.underlying,
   });
 
-  static DefaultInitApi fromConfig({required Config config, bool insecure = false}) {
+  static DefaultInitApi fromConfig({required Config config, required Duration timeout, bool insecure = false}) {
     final apiConfig = config.getConfig('init');
 
     final contextEnabled = apiConfig.getBoolean('context.enabled');
@@ -32,7 +32,8 @@ class DefaultInitApi extends ApiClient implements InitApi {
       HttpClient(context: context.get())
         ..badCertificateCallback = (X509Certificate cert, String actualHost, int actualPort) {
           return actualHost == interface && actualPort == port && cert.subject == '/CN=$interface';
-        },
+        }
+        ..connectionTimeout = timeout,
     );
 
     return DefaultInitApi(server: apiUrl, underlying: underlying);

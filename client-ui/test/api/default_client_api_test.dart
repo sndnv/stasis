@@ -57,7 +57,8 @@ void main() {
         },
       );
 
-      final client = DefaultClientApi.fromConfig(config: config, apiToken: apiToken);
+      final client =
+          DefaultClientApi.fromConfig(config: config, apiToken: apiToken, timeout: const Duration(seconds: 5));
 
       expect(client.server, 'https://abc:1234');
     });
@@ -70,7 +71,7 @@ void main() {
       );
 
       expect(
-        () => DefaultClientApi.fromConfig(config: config, apiToken: apiToken),
+        () => DefaultClientApi.fromConfig(config: config, apiToken: apiToken, timeout: const Duration(seconds: 5)),
         throwsA((e) => e.toString().contains('Expected [http] API but [other] found')),
       );
     });
@@ -432,7 +433,7 @@ void main() {
       const request = UpdateUserPassword(currentPassword: 'old-password', newPassword: 'new-password');
 
       when(underlying.put(Uri.parse('$server/user/password'),
-          headers: {...applicationJson, ...authorization}, body: jsonEncode(request)))
+              headers: {...applicationJson, ...authorization}, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.updateOwnPassword(request: request), returnsNormally);
@@ -445,7 +446,7 @@ void main() {
       const request = UpdateUserSalt(currentPassword: 'test-password', newSalt: 'new-salt');
 
       when(underlying.put(Uri.parse('$server/user/salt'),
-          headers: {...applicationJson, ...authorization}, body: jsonEncode(request)))
+              headers: {...applicationJson, ...authorization}, body: jsonEncode(request)))
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.updateOwnSalt(request: request), returnsNormally);

@@ -32,7 +32,7 @@ void main() {
         },
       );
 
-      final client = DefaultInitApi.fromConfig(config: config);
+      final client = DefaultInitApi.fromConfig(config: config, timeout: const Duration(seconds: 5));
 
       expect(client.server, 'https://abc:1234');
     });
