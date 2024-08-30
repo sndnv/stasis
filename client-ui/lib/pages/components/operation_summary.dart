@@ -41,7 +41,11 @@ class OperationSummary {
       child: RichText(
         text: TextSpan(
           children: [
-                TextSpan(text: 'Processed: ', style: theme.textTheme.bodySmall),
+                TextSpan(text: 'Started: ', style: theme.textTheme.bodyMedium),
+                TextSpan(text: operation.progress.started.render(), style: mediumBold),
+              ] +
+              [
+                TextSpan(text: '\nProcessed: ', style: theme.textTheme.bodySmall),
                 TextSpan(text: operation.progress.processed.toString(), style: smallBold),
                 TextSpan(text: ' of ', style: theme.textTheme.bodySmall),
                 TextSpan(text: operation.progress.total.toString(), style: smallBold),

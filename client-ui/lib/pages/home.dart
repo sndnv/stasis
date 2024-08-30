@@ -173,7 +173,11 @@ class Home extends StatelessWidget {
       final subtitle = RichText(
         text: TextSpan(
           children: [
-                TextSpan(text: 'Processed: ', style: theme.textTheme.bodyMedium),
+                TextSpan(text: 'Started: ', style: theme.textTheme.bodyMedium),
+                TextSpan(text: operation.progress.started.render(), style: mediumBold),
+              ] +
+              [
+                TextSpan(text: '\nProcessed: ', style: theme.textTheme.bodyMedium),
                 TextSpan(text: operation.progress.processed.toString(), style: mediumBold),
                 TextSpan(text: ' of ', style: theme.textTheme.bodyMedium),
                 TextSpan(text: operation.progress.total.toString(), style: mediumBold),
