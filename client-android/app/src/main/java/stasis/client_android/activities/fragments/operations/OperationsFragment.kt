@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.core.view.doOnPreDraw
 import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
@@ -15,7 +14,6 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import stasis.client_android.R
@@ -26,7 +24,9 @@ import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.providers.ProviderContext
 import stasis.client_android.utils.LiveDataExtensions.and
 import stasis.client_android.utils.LiveDataExtensions.liveData
+import stasis.client_android.utils.LiveDataExtensions.minimize
 import stasis.client_android.utils.NotificationManagerExtensions.putOperationCompletedNotification
+import java.time.Duration
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -111,6 +111,7 @@ class OperationsFragment : Fragment() {
             (providerContext.trackers.backup.state
                     and providerContext.trackers.recovery.state
                     and liveData { providerContext.executor.active() })
+                .minimize(interval = Duration.ofMillis(1500), lifecycleScope)
                 .observe(viewLifecycleOwner) { (state, active) ->
                     val (backups, recoveries) = state
                     val operations = (backups + recoveries).map { (k, v) ->
