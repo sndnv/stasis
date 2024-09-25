@@ -49,6 +49,7 @@ class PoolClientSpec extends AsyncUnitSpec {
     PoolClient.canRetry(status = StatusCodes.MethodNotAllowed) should be(false)
     PoolClient.canRetry(status = StatusCodes.NotAcceptable) should be(false)
     PoolClient.canRetry(status = StatusCodes.RequestTimeout) should be(true)
+    PoolClient.canRetry(status = StatusCodes.FailedDependency) should be(true)
     PoolClient.canRetry(status = StatusCodes.TooEarly) should be(true)
     PoolClient.canRetry(status = StatusCodes.TooManyRequests) should be(true)
 
