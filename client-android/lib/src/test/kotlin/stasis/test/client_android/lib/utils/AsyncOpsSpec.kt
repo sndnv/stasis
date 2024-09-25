@@ -83,6 +83,7 @@ class AsyncOpsSpec : WordSpec({
             AsyncOps.canRetry(status = 405 /* MethodNotAllowed */) shouldBe (false)
             AsyncOps.canRetry(status = 406 /* NotAcceptable */) shouldBe (false)
             AsyncOps.canRetry(status = 408 /* RequestTimeout */) shouldBe (true)
+            AsyncOps.canRetry(status = 424 /* FailedDependency */) shouldBe (true)
             AsyncOps.canRetry(status = 425 /* TooEarly */) shouldBe (true)
             AsyncOps.canRetry(status = 429 /* TooManyRequests */) shouldBe (true)
 

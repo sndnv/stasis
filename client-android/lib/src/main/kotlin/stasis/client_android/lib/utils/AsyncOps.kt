@@ -43,6 +43,7 @@ object AsyncOps {
     fun canRetry(status: Int): Boolean =
         when (status) {
             408 /* RequestTimeout */ -> true
+            424 /* FailedDependency */ -> true
             425 /* TooEarly */ -> true
             429 /* TooManyRequests */ -> true
 
