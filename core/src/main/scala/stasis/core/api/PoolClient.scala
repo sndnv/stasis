@@ -108,9 +108,10 @@ object PoolClient {
   def canRetry(status: StatusCode): Boolean =
     status match {
       // 4xx
-      case StatusCodes.RequestTimeout  => true
-      case StatusCodes.TooEarly        => true
-      case StatusCodes.TooManyRequests => true
+      case StatusCodes.RequestTimeout   => true
+      case StatusCodes.FailedDependency => true
+      case StatusCodes.TooEarly         => true
+      case StatusCodes.TooManyRequests  => true
 
       // 5xx
       case StatusCodes.InternalServerError    => true
