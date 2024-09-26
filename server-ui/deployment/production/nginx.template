@@ -21,6 +21,10 @@ http {
     ${NGINX_SERVER_SSL_PROTOCOLS_LINE}
     ${NGINX_SERVER_SSL_CIPHERS_LINE}
 
+    if ($request_uri ~ "//") {
+        return 301 $uri;
+    }
+
     location / {
       if ($request_method = OPTIONS ) {
         add_header 'Access-Control-Allow-Origin' '${NGINX_CORS_ALLOWED_ORIGIN}' always;
