@@ -1,6 +1,6 @@
-addSbtPlugin("org.scoverage"    % "sbt-scoverage"         % "2.1.0")
+addSbtPlugin("org.scoverage"    % "sbt-scoverage"         % "2.2.1")
 addSbtPlugin("org.scalameta"    % "sbt-scalafmt"          % "2.5.2")
-addSbtPlugin("org.wartremover"  % "sbt-wartremover"       % "3.1.6")
+addSbtPlugin("org.wartremover"  % "sbt-wartremover"       % "3.2.1")
 addSbtPlugin("org.apache.pekko" % "pekko-grpc-sbt-plugin" % "1.0.2")
 addSbtPlugin("com.github.sbt"   % "sbt-native-packager"   % "1.10.4")
 addSbtPlugin("com.timushev.sbt" % "sbt-updates"           % "0.6.3")
