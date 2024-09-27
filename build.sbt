@@ -6,30 +6,30 @@ name     := projectName
 licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
 homepage := Some(url("https://github.com/sndnv/stasis"))
 
-ThisBuild / scalaVersion := "2.13.14"
+ThisBuild / scalaVersion := "2.13.15"
 
 lazy val versions = new {
   // pekko
   val pekko         = "1.0.2"
   val pekkoHttp     = "1.0.1"
   val pekkoHttpCors = "1.0.1"
-  val pekkoJson     = "2.6.0"
+  val pekkoJson     = "2.7.0"
 
   // persistence
   val geode    = "1.15.1"
   val slick    = "3.5.1"
   val postgres = "42.7.4"
   val mariadb  = "3.4.1"
-  val sqlite   = "3.46.1.0"
+  val sqlite   = "3.46.1.3"
   val h2       = "2.3.232"
 
   // telemetry
-  val openTelemetry           = "1.41.0"
-  val openTelemetryPrometheus = "1.41.0-alpha"
+  val openTelemetry           = "1.42.1"
+  val openTelemetryPrometheus = "1.42.1-alpha"
   val prometheus              = "0.16.0"
 
   // testing
-  val scalaCheck    = "1.18.0"
+  val scalaCheck    = "1.18.1"
   val scalaTest     = "3.2.19"
   val wiremock      = "3.0.1"
   val mockito       = "1.17.37"
@@ -42,7 +42,7 @@ lazy val versions = new {
   val hkdf         = "2.0.0"
   val appdirs      = "1.2.2"
   val scopt        = "4.1.0"
-  val logback      = "1.5.7"
+  val logback      = "1.5.8"
   val systemTray   = "4.4"
   val bouncycastle = "1.78.1"
 }
