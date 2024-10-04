@@ -1,52 +1,58 @@
 package stasis.core.persistence.backends.geode
 
-import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.{ActorSystem, DispatcherSelector, SpawnProtocol}
-import org.apache.pekko.util.ByteString
-import org.apache.geode.cache.Region
-import stasis.core.persistence.Metrics
-import stasis.core.persistence.backends.KeyValueBackend
-import stasis.core.telemetry.TelemetryContext
-
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
+
+import org.apache.geode.cache.Region
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.DispatcherSelector
+import org.apache.pekko.util.ByteString
+
+import stasis.core.persistence.backends.KeyValueBackend
+import stasis.layers.persistence.KeyValueStore
+import stasis.layers.persistence.Metrics
+import stasis.layers.persistence.migration.Migration
+import stasis.layers.telemetry.TelemetryContext
 
 class GeodeBackend[K, V](
   protected val region: Region[String, Array[Byte]],
   protected val serdes: KeyValueBackend.Serdes[K, V]
-)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext)
-    extends KeyValueBackend[K, V] {
+)(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext)
+    extends KeyValueStore[K, V] {
   import serdes._
+
+  override val name: String = region.getName
+
+  override val migrations: Seq[Migration] = Seq.empty
 
   private val regionPath = region.getFullPath
 
-  private val metrics = telemetry.metrics[Metrics.KeyValueBackend]
+  private val metrics = telemetry.metrics[Metrics.Store]
 
   private implicit val ec: ExecutionContext = system.dispatchers.lookup(DispatcherSelector.blocking())
 
-  override def init(): Future[Done] = {
-    metrics.recordInit(backend = regionPath)
+  override def init(): Future[Done] =
     Future.successful(Done)
-  }
 
   override def drop(): Future[Done] =
     Future {
       region.clear()
-      metrics.recordDrop(backend = regionPath)
       Done
     }
 
   override def put(key: K, value: V): Future[Done] =
     Future {
       val _ = region.put(key.asGeodeKey, value.asGeodeValue)
-      metrics.recordPut(backend = regionPath)
+      metrics.recordPut(store = regionPath)
       Done
     }
 
   override def delete(key: K): Future[Boolean] =
     Future {
       val result = Option(region.remove(key.asGeodeKey)).isDefined
-      metrics.recordDelete(backend = regionPath)
+      metrics.recordDelete(store = regionPath)
       result
     }
 
@@ -54,7 +60,7 @@ class GeodeBackend[K, V](
     Future {
       Option(region.get(key.asGeodeKey)).map { result =>
         val value = ByteString.fromArray(result): V
-        metrics.recordGet(backend = regionPath)
+        metrics.recordGet(store = regionPath)
         value
       }
     }
@@ -69,7 +75,7 @@ class GeodeBackend[K, V](
         .asScala
         .toMap
         .map { case (k, v) =>
-          metrics.recordGet(backend = regionPath)
+          metrics.recordGet(store = regionPath)
           (k: K) -> (ByteString.fromArray(v): V)
         }
     }

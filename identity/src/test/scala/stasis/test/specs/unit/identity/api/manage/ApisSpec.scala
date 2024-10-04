@@ -1,14 +1,16 @@
 package stasis.test.specs.unit.identity.api.manage
 
+import scala.concurrent.Future
+
 import org.apache.pekko.http.scaladsl.model.StatusCodes
+
 import stasis.identity.api.Formats._
 import stasis.identity.api.manage.Apis
 import stasis.identity.api.manage.requests.CreateApi
 import stasis.identity.model.apis.Api
+import stasis.layers
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
-
-import scala.concurrent.Future
 
 class ApisSpec extends RouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -17,7 +19,7 @@ class ApisSpec extends RouteTest {
     val store = createApiStore()
     val apis = new Apis(store)
 
-    val expectedApis = stasis.test.Generators
+    val expectedApis = layers.Generators
       .generateSeq(min = 2, g = Generators.generateApi)
 
     Future.sequence(expectedApis.map(store.put)).await
@@ -35,7 +37,7 @@ class ApisSpec extends RouteTest {
 
     Post().withEntity(request) ~> apis.routes(user) ~> check {
       status should be(StatusCodes.OK)
-      store.get(request.id).await should be(Some(request.toApi))
+      store.get(request.id).await.truncated() should be(Some(request.toApi.truncated()))
     }
   }
 
@@ -47,11 +49,11 @@ class ApisSpec extends RouteTest {
 
     Post().withEntity(request) ~> apis.routes(user) ~> check {
       status should be(StatusCodes.OK)
-      store.apis.await.size should be(1)
+      store.all.await.size should be(1)
 
       Post().withEntity(request) ~> apis.routes(user) ~> check {
         status should be(StatusCodes.Conflict)
-        store.apis.await.size should be(1)
+        store.all.await.size should be(1)
       }
     }
   }
@@ -76,9 +78,11 @@ class ApisSpec extends RouteTest {
     val api = Generators.generateApi
 
     store.put(api).await
+    store.all.await.size should be(1)
+
     Delete(s"/${api.id}") ~> apis.routes(user) ~> check {
       status should be(StatusCodes.OK)
-      store.apis.await should be(Map.empty)
+      store.all.await.size should be(0)
     }
   }
 

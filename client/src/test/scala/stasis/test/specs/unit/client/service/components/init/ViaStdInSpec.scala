@@ -1,10 +1,11 @@
 package stasis.test.specs.unit.client.service.components.init
 
+import scala.util.control.NonFatal
+
 import org.mockito.scalatest.AsyncMockitoSugar
+
 import stasis.client.service.components.init.ViaStdIn
 import stasis.test.specs.unit.AsyncUnitSpec
-
-import scala.util.control.NonFatal
 
 class ViaStdInSpec extends AsyncUnitSpec with AsyncMockitoSugar {
   "An Init via StdIn" should "support retrieving credentials" in {

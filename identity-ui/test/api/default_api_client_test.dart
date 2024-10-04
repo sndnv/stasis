@@ -24,17 +24,26 @@ import 'default_api_client_test.mocks.dart';
 void main() {
   const server = 'http://localhost:1234';
   const applicationJson = {'Content-Type': 'application/json'};
+  final now = DateTime.now();
 
   group('A DefaultApiClient should', () {
     test('get APIs', () async {
       final underlying = MockClient();
       final client = DefaultApiClient(server: server, underlying: underlying);
 
-      const response = '[{"id":"api-1"},{"id":"api-2"},{"id":"3"}]';
+      final response =
+          '[{"id":"api-1","created":"$now","updated":"$now"},{"id":"api-2","created":"$now","updated":"$now"},{"id":"3","created":"$now","updated":"$now"}]';
 
       when(underlying.get(Uri.parse('$server/manage/apis'))).thenAnswer((_) async => http.Response(response, 200));
 
-      expect(await client.getApis(), const [Api(id: 'api-1'), Api(id: 'api-2'), Api(id: '3')]);
+      expect(
+        await client.getApis(),
+        [
+          Api(id: 'api-1', created: now, updated: now),
+          Api(id: 'api-2', created: now, updated: now),
+          Api(id: '3', created: now, updated: now),
+        ],
+      );
     });
 
     test('post APIs', () async {
@@ -63,12 +72,25 @@ void main() {
       final underlying = MockClient();
       final client = DefaultApiClient(server: server, underlying: underlying);
 
-      const response = '[{"id":"id-1","redirect_uri":"uri-1","token_expiration":1,"active":true,"subject":"sub-1"}]';
+      final response =
+          '[{"id":"id-1","redirect_uri":"uri-1","token_expiration":1,"active":true,"subject":"sub-1","created":"$now","updated":"$now"}]';
 
       when(underlying.get(Uri.parse('$server/manage/clients'))).thenAnswer((_) async => http.Response(response, 200));
 
-      expect(await client.getClients(),
-          const [Client(id: 'id-1', redirectUri: 'uri-1', tokenExpiration: 1, active: true, subject: 'sub-1')]);
+      expect(
+        await client.getClients(),
+        [
+          Client(
+            id: 'id-1',
+            redirectUri: 'uri-1',
+            tokenExpiration: 1,
+            active: true,
+            subject: 'sub-1',
+            created: now,
+            updated: now,
+          )
+        ],
+      );
     });
 
     test('post clients', () async {
@@ -125,13 +147,24 @@ void main() {
       final underlying = MockClient();
       final client = DefaultApiClient(server: server, underlying: underlying);
 
-      const response = '[{"username":"user-1","allowed_scopes":["scope-1","scope-2"],"active":true,"subject":"sub-1"}]';
+      final response =
+          '[{"username":"user-1","allowed_scopes":["scope-1","scope-2"],"active":true,"subject":"sub-1","created":"$now","updated":"$now"}]';
 
       when(underlying.get(Uri.parse('$server/manage/owners'))).thenAnswer((_) async => http.Response(response, 200));
 
-      expect(await client.getOwners(), const [
-        ResourceOwner(username: 'user-1', allowedScopes: ['scope-1', 'scope-2'], active: true, subject: 'sub-1')
-      ]);
+      expect(
+        await client.getOwners(),
+        [
+          ResourceOwner(
+            username: 'user-1',
+            allowedScopes: ['scope-1', 'scope-2'],
+            active: true,
+            subject: 'sub-1',
+            created: now,
+            updated: now,
+          )
+        ],
+      );
     });
 
     test('post owners', () async {
@@ -190,12 +223,21 @@ void main() {
       final underlying = MockClient();
       final client = DefaultApiClient(server: server, underlying: underlying);
 
-      const response = '[{"code":"code-1","client":"client-1","owner":"owner-1"}]';
+      final response = '[{"code":"code-1","client":"client-1","owner":"owner-1","created":"$now"}]';
 
       when(underlying.get(Uri.parse('$server/manage/codes'))).thenAnswer((_) async => http.Response(response, 200));
 
-      expect(await client.getCodes(),
-          const [StoredAuthorizationCode(code: 'code-1', client: 'client-1', owner: 'owner-1')]);
+      expect(
+        await client.getCodes(),
+        [
+          StoredAuthorizationCode(
+            code: 'code-1',
+            client: 'client-1',
+            owner: 'owner-1',
+            created: now,
+          )
+        ],
+      );
     });
 
     test('delete codes', () async {
@@ -212,13 +254,24 @@ void main() {
       final underlying = MockClient();
       final client = DefaultApiClient(server: server, underlying: underlying);
 
-      const response = '[{"token":"token-1","client":"client-1","owner":"owner-1","scope":"scope-1","expiration":"1"}]';
+      final response =
+          '[{"token":"token-1","client":"client-1","owner":"owner-1","scope":"scope-1","expiration":"$now","created":"$now"}]';
 
       when(underlying.get(Uri.parse('$server/manage/tokens'))).thenAnswer((_) async => http.Response(response, 200));
 
-      expect(await client.getTokens(), const [
-        StoredRefreshToken(token: 'token-1', client: 'client-1', owner: 'owner-1', scope: 'scope-1', expiration: '1')
-      ]);
+      expect(
+        await client.getTokens(),
+        [
+          StoredRefreshToken(
+            token: 'token-1',
+            client: 'client-1',
+            owner: 'owner-1',
+            scope: 'scope-1',
+            expiration: now,
+            created: now,
+          )
+        ],
+      );
     });
 
     test('delete tokens', () async {

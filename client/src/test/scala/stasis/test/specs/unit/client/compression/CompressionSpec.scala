@@ -1,11 +1,15 @@
 package stasis.test.specs.unit.client.compression
 
-import stasis.client.compression.{Compression, Deflate, Gzip, Identity}
-import stasis.client.model.{SourceEntity, TargetEntity}
+import java.nio.file.Paths
+
+import stasis.client.compression.Compression
+import stasis.client.compression.Deflate
+import stasis.client.compression.Gzip
+import stasis.client.compression.Identity
+import stasis.client.model.SourceEntity
+import stasis.client.model.TargetEntity
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.Fixtures
-
-import java.nio.file.Paths
 
 class CompressionSpec extends UnitSpec {
   "Compression" should "provide new instances based on config" in {

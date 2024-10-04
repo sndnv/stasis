@@ -1,17 +1,20 @@
 package stasis.client.tracking.trackers
 
+import java.time.Instant
+
+import scala.concurrent.Future
+
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.stream.scaladsl.Source
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import stasis.client.tracking.ServerTracker
 import stasis.client.tracking.ServerTracker.ServerState
 import stasis.core.persistence.backends.EventLogBackend
 import stasis.core.persistence.events.EventLog
-import stasis.core.streaming.Operators.ExtendedSource
-
-import java.time.Instant
-import scala.concurrent.Future
+import stasis.layers.streaming.Operators.ExtendedSource
 
 class DefaultServerTracker(
   backend: EventLogBackend[DefaultServerTracker.ServerEvent, Map[String, ServerState]]

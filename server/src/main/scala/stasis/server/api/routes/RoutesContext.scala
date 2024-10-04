@@ -1,9 +1,10 @@
 package stasis.server.api.routes
 
-import org.slf4j.Logger
-import stasis.server.security.ResourceProvider
-
 import scala.concurrent.ExecutionContext
+
+import org.slf4j.Logger
+
+import stasis.server.security.ResourceProvider
 
 final case class RoutesContext(
   resourceProvider: ResourceProvider,

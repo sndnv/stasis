@@ -1,16 +1,18 @@
 package stasis.identity.authentication.manage
 
-import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
-import org.jose4j.jwt.JwtClaims
-import stasis.core.security.exceptions.AuthenticationFailure
-import stasis.core.security.jwt.JwtAuthenticator
-import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStoreView}
-
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.Try
 
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+import org.jose4j.jwt.JwtClaims
+import stasis.identity.model.owners.ResourceOwner
+import stasis.identity.persistence.owners.ResourceOwnerStore
+import stasis.layers.security.exceptions.AuthenticationFailure
+import stasis.layers.security.jwt.JwtAuthenticator
+
 class DefaultResourceOwnerAuthenticator(
-  store: ResourceOwnerStoreView,
+  store: ResourceOwnerStore.View,
   underlying: JwtAuthenticator
 )(implicit ec: ExecutionContext)
     extends ResourceOwnerAuthenticator {
@@ -38,7 +40,7 @@ class DefaultResourceOwnerAuthenticator(
 
 object DefaultResourceOwnerAuthenticator {
   def apply(
-    store: ResourceOwnerStoreView,
+    store: ResourceOwnerStore.View,
     underlying: JwtAuthenticator
   )(implicit ec: ExecutionContext): DefaultResourceOwnerAuthenticator =
     new DefaultResourceOwnerAuthenticator(

@@ -1,18 +1,20 @@
 package stasis.test.specs.unit.server.model.schedules
 
 import java.time.LocalDateTime
+
+import scala.concurrent.duration._
+import scala.util.control.NonFatal
+
 import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import stasis.core.telemetry.TelemetryContext
+
+import stasis.layers.telemetry.TelemetryContext
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.model.mocks.MockScheduleStore
-
-import scala.concurrent.duration._
-import scala.util.control.NonFatal
 
 class ScheduleStoreSpec extends AsyncUnitSpec {
   "A ScheduleStore" should "provide a view resource (service)" in {
@@ -146,8 +148,8 @@ class ScheduleStoreSpec extends AsyncUnitSpec {
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "ScheduleStoreSpec"
   )
 

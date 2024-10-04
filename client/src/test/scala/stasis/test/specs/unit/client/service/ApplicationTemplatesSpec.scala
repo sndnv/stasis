@@ -1,16 +1,22 @@
 package stasis.test.specs.unit.client.service
 
+import java.util.UUID
+
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+
+import com.typesafe.{config => typesafe}
 import play.api.libs.json.Json
-import stasis.client.service.{components, ApplicationTemplates}
+
+import stasis.client.service.ApplicationTemplates
+import stasis.client.service.components
 import stasis.core.routing.Node
-import stasis.shared.model.devices.{Device, DeviceBootstrapParameters}
+import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.DeviceBootstrapParameters
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.UnitSpec
-import com.typesafe.{config => typesafe}
 import stasis.test.specs.unit.client.Fixtures
-
-import java.util.UUID
-import scala.util.{Failure, Success, Try}
 
 class ApplicationTemplatesSpec extends UnitSpec {
   "ApplicationTemplates" should "support loading templates" in {

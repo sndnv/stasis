@@ -1,33 +1,43 @@
 package stasis.server.service
 
-import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import org.apache.pekko.util.Timeout
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
 import com.typesafe.{config => typesafe}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.util.Timeout
 import slick.jdbc.JdbcProfile
-import stasis.core.packaging.{Crate, Manifest}
-import stasis.core.persistence.backends.slick.{SlickBackend, SlickProfile}
+
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
+import stasis.core.persistence.CrateStorageReservation
+import stasis.core.persistence.StoreInitializationResult
+import stasis.core.persistence.backends.slick.SlickBackend
+import stasis.core.persistence.backends.slick.SlickProfile
 import stasis.core.persistence.crates.CrateStore
-import stasis.core.persistence.manifests.{ManifestStore, ManifestStoreSerdes}
-import stasis.core.persistence.nodes.{NodeStore, NodeStoreSerdes}
-import stasis.core.persistence.reservations.{ReservationStore, ReservationStoreSerdes}
+import stasis.core.persistence.manifests.ManifestStore
+import stasis.core.persistence.manifests.ManifestStoreSerdes
+import stasis.core.persistence.nodes.NodeStore
+import stasis.core.persistence.nodes.NodeStoreSerdes
+import stasis.core.persistence.reservations.ReservationStore
+import stasis.core.persistence.reservations.ReservationStoreSerdes
 import stasis.core.persistence.staging.StagingStore
-import stasis.core.persistence.{CrateStorageReservation, StoreInitializationResult}
 import stasis.core.routing.Node
-import stasis.core.telemetry.TelemetryContext
+import stasis.layers.persistence.migration.MigrationExecutor
+import stasis.layers.persistence.migration.MigrationResult
+import stasis.layers.telemetry.TelemetryContext
 import stasis.server.model.manifests.ServerManifestStore
 import stasis.server.model.nodes.ServerNodeStore
 import stasis.server.model.reservations.ServerReservationStore
 import stasis.server.model.staging.ServerStagingStore
 import stasis.server.security.Resource
 
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
-
 class CorePersistence(
   persistenceConfig: typesafe.Config
 )(implicit
-  system: ActorSystem[SpawnProtocol.Command],
+  system: ActorSystem[Nothing],
   telemetry: TelemetryContext,
   timeout: Timeout
 ) { persistence =>
@@ -64,6 +74,8 @@ class CorePersistence(
     keepAliveConnection = databaseKeepAlive
   )
 
+  private val migrationExecutor: MigrationExecutor = MigrationExecutor()
+
   private val StoreInitializationResult(nodeStore, nodeStoreInit) = NodeStore(
     backend = backends.nodes,
     cachingEnabled = nodeCachingEnabled
@@ -93,6 +105,15 @@ class CorePersistence(
       _ <- reservationStoreInit()
     } yield {
       Done
+    }
+
+  def migrate(): Future[MigrationResult] =
+    for {
+      manifestsMigration <- migrationExecutor.execute(forStore = backends.manifests)
+      nodesMigration <- migrationExecutor.execute(forStore = backends.nodes)
+      reservationsMigration <- migrationExecutor.execute(forStore = backends.reservations)
+    } yield {
+      manifestsMigration + nodesMigration + reservationsMigration
     }
 
   def init(): Future[Done] =
@@ -133,21 +154,21 @@ class CorePersistence(
 
   private object backends {
     val manifests: SlickBackend[Crate.Id, Manifest] = SlickBackend(
-      tableName = "MANIFESTS",
+      name = "MANIFESTS",
       profile = profile,
       database = database,
       serdes = ManifestStoreSerdes
     )
 
     val nodes: SlickBackend[Node.Id, Node] = SlickBackend(
-      tableName = "NODES",
+      name = "NODES",
       profile = profile,
       database = database,
       serdes = NodeStoreSerdes
     )
 
     val reservations: SlickBackend[CrateStorageReservation.Id, CrateStorageReservation] = SlickBackend(
-      tableName = "RESERVATIONS",
+      name = "RESERVATIONS",
       profile = profile,
       database = database,
       serdes = ReservationStoreSerdes
@@ -158,6 +179,6 @@ class CorePersistence(
 object CorePersistence {
   def apply(
     persistenceConfig: typesafe.Config
-  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, timeout: Timeout): CorePersistence =
+  )(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext, timeout: Timeout): CorePersistence =
     new CorePersistence(persistenceConfig)
 }

@@ -1,8 +1,10 @@
 package stasis.test.specs.unit.client.service.components.maintenance
 
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import stasis.client.service.ApplicationArguments
 import stasis.client.service.components.maintenance.Base
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -20,9 +22,9 @@ class BaseSpec extends AsyncUnitSpec with ResourceHelpers {
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
-    s"BaseSpec_${java.util.UUID.randomUUID().toString}"
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    guardianBehavior = Behaviors.ignore,
+    name = s"BaseSpec_${java.util.UUID.randomUUID().toString}"
   )
 
   private implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)

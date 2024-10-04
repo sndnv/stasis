@@ -4,23 +4,22 @@ import scala.collection.mutable
 import scala.concurrent.Future
 
 import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.ActorSystem
-import org.apache.pekko.actor.typed.Behavior
-import org.apache.pekko.actor.typed.SpawnProtocol
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.Http
-import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
 import org.apache.pekko.http.scaladsl.model.HttpMethods
 import org.apache.pekko.http.scaladsl.model.HttpRequest
 import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import org.slf4j.LoggerFactory
-import stasis.client.api.clients.exceptions.ServerApiFailure
+
 import stasis.client.api.Context
+import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.api.http.HttpApiEndpoint
 import stasis.client.model.DatasetMetadata
-import stasis.core.api.MessageResponse
+import stasis.layers.api.MessageResponse
 import stasis.shared.api.responses.Ping
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
@@ -35,6 +34,7 @@ import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.client.api.http.Formats._
   import stasis.shared.api.Formats._
 
@@ -146,7 +146,6 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
   it should "handle server API failures reported by routes" in withRetry {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
-    import stasis.core.api.Formats.messageResponseFormat
 
     val expectedStatus = StatusCodes.Forbidden
     val expectedMessage = "test failure"
@@ -182,7 +181,6 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
   it should "handle generic failures reported by routes" in withRetry {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
-    import stasis.core.api.Formats.messageResponseFormat
 
     val mockApiClient = new MockServerApiEndpointClient(self = Device.generateId()) {
       override def user(): Future[User] = Future.failed(new RuntimeException("test failure"))
@@ -240,8 +238,8 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     )
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "HttpApiEndpointSpec"
   )
 

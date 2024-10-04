@@ -1,11 +1,14 @@
 package stasis.test.specs.unit.client.service.components.bootstrap
 
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.mockito.scalatest.AsyncMockitoSugar
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import stasis.client.service.ApplicationArguments
-import stasis.client.service.components.bootstrap.{Base, Init}
+import stasis.client.service.components.bootstrap.Base
+import stasis.client.service.components.bootstrap.Init
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 
@@ -103,8 +106,8 @@ class InitSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockitoSugar
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "InitSpec"
   )
 

@@ -9,15 +9,14 @@ import scala.util.control.NonFatal
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.ActorSystem
-import org.apache.pekko.actor.typed.Behavior
-import org.apache.pekko.actor.typed.SpawnProtocol
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
+
 import stasis.core.api.PoolClient
 import stasis.core.networking.http.HttpEndpoint
 import stasis.core.networking.http.HttpEndpointAddress
@@ -26,8 +25,8 @@ import stasis.core.packaging.Crate
 import stasis.core.packaging.Manifest
 import stasis.core.routing.Node
 import stasis.core.security.NodeAuthenticator
-import stasis.core.security.tls.EndpointContext
-import stasis.core.telemetry.TelemetryContext
+import stasis.layers.security.tls.EndpointContext
+import stasis.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.MockHttpNodeCredentialsProvider
 import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
@@ -508,8 +507,8 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "HttpEndpointClientSpec_Typed"
   )
 

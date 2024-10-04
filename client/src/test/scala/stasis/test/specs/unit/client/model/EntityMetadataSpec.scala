@@ -1,10 +1,11 @@
 package stasis.test.specs.unit.client.model
 
+import scala.util.Failure
+import scala.util.Success
+
 import stasis.client.model.EntityMetadata
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.Fixtures
-
-import scala.util.{Failure, Success}
 
 class EntityMetadataSpec extends UnitSpec {
   "A EntityMetadata" should "be serializable to protobuf data" in {

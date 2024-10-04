@@ -3,6 +3,7 @@ package stasis.test.specs.unit.identity.api.manage.directives
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives
 import org.slf4j.Logger
+
 import stasis.identity.api.manage.directives.UserAuthorization
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators

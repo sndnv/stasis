@@ -1,19 +1,20 @@
 package stasis.test.specs.unit.core.persistence.events
 
+import scala.collection.immutable.Queue
+import scala.concurrent.duration._
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.stream.scaladsl.Sink
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
+
 import stasis.core.persistence.backends.EventLogBackend
 import stasis.core.persistence.backends.memory.EventLogMemoryBackend
 import stasis.core.persistence.events.EventLog
-import stasis.core.telemetry.TelemetryContext
+import stasis.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-
-import scala.collection.immutable.Queue
-import scala.concurrent.duration._
 
 class EventLogSpec extends AsyncUnitSpec with Eventually {
   "An EventLog" should "store events" in {
@@ -32,7 +33,7 @@ class EventLogSpec extends AsyncUnitSpec with Eventually {
       stateBefore should be(Queue.empty)
       stateAfter should be(Queue(testEvent))
 
-      telemetry.persistence.eventLog.event should be(1)
+      telemetry.core.persistence.eventLog.event should be(1)
     }
   }
 
@@ -52,7 +53,7 @@ class EventLogSpec extends AsyncUnitSpec with Eventually {
       stateBefore should be(Queue.empty)
       stateAfter should be(Queue(testEvent))
 
-      telemetry.persistence.eventLog.event should be(1)
+      telemetry.core.persistence.eventLog.event should be(1)
     }
   }
 
@@ -85,7 +86,7 @@ class EventLogSpec extends AsyncUnitSpec with Eventually {
           second should be(Queue(testEvent1, testEvent2))
           third should be(Queue(testEvent1, testEvent2, testEvent3))
 
-          telemetry.persistence.eventLog.event should be(3)
+          telemetry.core.persistence.eventLog.event should be(3)
 
         case other =>
           fail(s"Received unexpected result: [$other]")
@@ -114,7 +115,7 @@ class EventLogSpec extends AsyncUnitSpec with Eventually {
       updates should be(Seq(Queue(testEvent)))
       stateAfter should be(Queue(testEvent))
 
-      telemetry.persistence.eventLog.event should be(1)
+      telemetry.core.persistence.eventLog.event should be(1)
 
       a[ClassCastException] should be thrownBy { val _ = storeView.asInstanceOf[EventLog[_, _]] }
     }
@@ -126,8 +127,8 @@ class EventLogSpec extends AsyncUnitSpec with Eventually {
       initialState = Queue.empty[String]
     )
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    guardianBehavior = Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    guardianBehavior = Behaviors.ignore,
     name = "EventLogSpec"
   )
 

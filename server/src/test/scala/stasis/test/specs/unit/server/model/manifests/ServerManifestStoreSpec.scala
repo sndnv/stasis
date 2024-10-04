@@ -1,8 +1,9 @@
 package stasis.test.specs.unit.server.model.manifests
 
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import stasis.core.telemetry.TelemetryContext
+
+import stasis.layers.telemetry.TelemetryContext
 import stasis.server.model.manifests.ServerManifestStore
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -53,8 +54,8 @@ class ServerManifestStoreSpec extends AsyncUnitSpec {
     }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "ServerManifestStoreSpec"
   )
 

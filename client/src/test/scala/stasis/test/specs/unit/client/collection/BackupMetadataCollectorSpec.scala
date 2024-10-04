@@ -1,12 +1,14 @@
 package stasis.test.specs.unit.client.collection
 
 import org.apache.pekko.actor.ActorSystem
+
 import stasis.client.analysis.Checksum
 import stasis.client.collection.BackupMetadataCollector
 import stasis.client.model.EntityMetadata
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.client.mocks.MockCompression
-import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 
 class BackupMetadataCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
   "A BackupMetadataCollector" should "collect file metadata (backup)" in {

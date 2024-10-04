@@ -2,9 +2,10 @@ package stasis.client.ops.search
 
 import java.time.Instant
 
-import stasis.client.api.clients.ServerApiEndpointClient
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
-import scala.concurrent.{ExecutionContext, Future}
+import stasis.client.api.clients.ServerApiEndpointClient
 
 class DefaultSearch(
   api: ServerApiEndpointClient

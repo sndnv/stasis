@@ -1,36 +1,47 @@
 package stasis.test.specs.unit.identity.service
 
+import java.security.SecureRandom
+
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManagerFactory
+
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.jdk.CollectionConverters._
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.ConnectionContext
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.HttpsConnectionContext
 import org.apache.pekko.http.scaladsl.model._
-import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
-import org.apache.pekko.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
 import org.apache.pekko.util.ByteString
-import com.typesafe.config.{Config, ConfigFactory}
-import org.jose4j.jwk.{JsonWebKey, JsonWebKeySet}
+import org.jose4j.jwk.JsonWebKey
+import org.jose4j.jwk.JsonWebKeySet
 import org.jose4j.jws.JsonWebSignature
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 import play.api.libs.json._
-import stasis.core.security.tls.EndpointContext
-import stasis.identity.api.manage.requests.{CreateApi, CreateOwner}
+import stasis.identity.api.manage.requests.CreateApi
+import stasis.identity.api.manage.requests.CreateOwner
 import stasis.identity.model.apis.Api
-import stasis.identity.service.{Persistence, Service}
+import stasis.identity.service.Persistence
+import stasis.identity.service.Service
+import stasis.layers.security.tls.EndpointContext
 import stasis.test.specs.unit.identity.RouteTest
-
-import java.security.SecureRandom
-import javax.net.ssl.{SSLContext, TrustManagerFactory}
-import scala.concurrent.Future
-import scala.concurrent.duration._
-import scala.jdk.CollectionConverters._
 
 class ServiceSpec extends RouteTest with Eventually {
   import ServiceSpec._
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
-  "Identity Service" should "authenticate and authorize actions, and provide metrics" in {
+  "Identity Service" should "authenticate and authorize actions, and provide metrics" in withRetry {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
     import stasis.identity.api.Formats._
 
     implicit val clientContext: HttpsConnectionContext = createTrustedContext()
@@ -57,7 +68,7 @@ class ServiceSpec extends RouteTest with Eventually {
     )
 
     val client = ClientCredentials(
-      username = getEntity(persistence.clients.clients).id.toString,
+      username = getEntity(persistence.clients.all).id.toString,
       password = "existing-client-secret"
     )
 
@@ -94,9 +105,9 @@ class ServiceSpec extends RouteTest with Eventually {
         owner = ResourceOwnerCredentials(username = newUser, password = newUserPassword, scope = newUserScope),
         client = client
       )
-      apis <- persistence.apis.apis
-      owners <- persistence.resourceOwners.owners
-      clients <- persistence.clients.clients
+      apis <- persistence.apis.all
+      owners <- persistence.resourceOwners.all
+      clients <- persistence.clients.all
       signatureKey <- getJwk(serviceUrl)
       metrics <- getMetrics(metricsUrl)
       _ <- persistence.drop()
@@ -118,7 +129,7 @@ class ServiceSpec extends RouteTest with Eventually {
     }
   }
 
-  it should "handle bootstrap failures" in {
+  it should "handle bootstrap failures" in withRetry {
     val service = new Service {
       override protected def systemConfig: Config = ConfigFactory.load("application-invalid-bootstrap")
     }
@@ -128,7 +139,7 @@ class ServiceSpec extends RouteTest with Eventually {
     }
   }
 
-  it should "handle startup failures" in {
+  it should "handle startup failures" in withRetry {
     val service = new Service {
       override protected def systemConfig: Config = ConfigFactory.load("application-invalid-config")
     }
@@ -201,8 +212,8 @@ class ServiceSpec extends RouteTest with Eventually {
       }
     }
 
-  private def getEntity[T](list: => Future[Map[_, T]]): T =
-    list.await.values.headOption match {
+  private def getEntity[T](list: => Future[Seq[T]]): T =
+    list.await.headOption match {
       case Some(entity) => entity
       case None         => fail("Existing entity expected but none was found")
     }

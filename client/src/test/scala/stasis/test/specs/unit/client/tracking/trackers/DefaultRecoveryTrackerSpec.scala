@@ -1,11 +1,15 @@
 package stasis.test.specs.unit.client.tracking.trackers
 
+import scala.concurrent.duration._
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.util.Timeout
-import org.scalatest.{Assertion, BeforeAndAfterAll}
+import org.scalatest.Assertion
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
+
 import stasis.client.model.TargetEntity
 import stasis.client.tracking.state.RecoveryState
 import stasis.client.tracking.state.RecoveryState.ProcessedTargetEntity
@@ -15,8 +19,6 @@ import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-
-import scala.concurrent.duration._
 
 class DefaultRecoveryTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAfterAll {
   "A DefaultRecoveryTracker" should "track recovery events" in withRetry {
@@ -232,8 +234,8 @@ class DefaultRecoveryTrackerSpec extends AsyncUnitSpec with Eventually with Befo
 
   override implicit val timeout: Timeout = 7.seconds
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "DefaultRecoveryTrackerSpec"
   )
 

@@ -1,15 +1,18 @@
 package stasis.identity.model.tokens.generators
 
+import scala.concurrent.duration._
+
 import org.jose4j.jwk._
 import org.jose4j.jws.JsonWebSignature
-import org.jose4j.jwt.{JwtClaims, NumericDate}
+import org.jose4j.jwt.JwtClaims
+import org.jose4j.jwt.NumericDate
+
 import stasis.identity.model.Seconds
 import stasis.identity.model.apis.Api
 import stasis.identity.model.clients.Client
 import stasis.identity.model.owners.ResourceOwner
-import stasis.identity.model.tokens.{AccessToken, AccessTokenWithExpiration}
-
-import scala.concurrent.duration._
+import stasis.identity.model.tokens.AccessToken
+import stasis.identity.model.tokens.AccessTokenWithExpiration
 
 class JwtBearerAccessTokenGenerator(
   issuer: String,

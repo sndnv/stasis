@@ -1,12 +1,13 @@
 package stasis.test.specs.unit.core.persistence.nodes
 
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.StoreInitializationResult
-import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
+import stasis.layers.persistence.memory.MemoryStore
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
@@ -76,8 +77,8 @@ class NodeStoreSpec extends AsyncUnitSpec {
     }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "NodeStoreSpec"
   )
 
@@ -85,7 +86,7 @@ class NodeStoreSpec extends AsyncUnitSpec {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val StoreInitializationResult(store, init) = NodeStore(
-      MemoryBackend[Node.Id, Node](name = s"node-store-${java.util.UUID.randomUUID()}"),
+      MemoryStore[Node.Id, Node](name = s"node-store-${java.util.UUID.randomUUID()}"),
       cachingEnabled = cachingEnabled
     )
 

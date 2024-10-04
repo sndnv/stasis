@@ -1,19 +1,23 @@
 package stasis.test.specs.unit.client.service.components.init
 
+import scala.concurrent.Future
+import scala.concurrent.Promise
+
 import org.apache.pekko.Done
-import org.apache.pekko.http.scaladsl.model.{FormData, StatusCodes}
+import org.apache.pekko.http.scaladsl.model.FormData
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+
 import stasis.client.service.components.exceptions.ServiceStartupFailure
 import stasis.client.service.components.init.ViaApi
 import stasis.client.service.components.init.ViaApi.InitState
 import stasis.test.specs.unit.AsyncUnitSpec
 
-import scala.concurrent.{Future, Promise}
-
 class ViaApiSpec extends AsyncUnitSpec with ScalatestRouteTest {
   "An Init via API" should "convert init state to/from JSON" in {
-    import ViaApi.initStateFormat
     import play.api.libs.json.Json
+
+    import ViaApi.initStateFormat
 
     val states = Map(
       InitState.Pending -> """{"startup":"pending"}""",

@@ -1,33 +1,40 @@
 package stasis.test.specs.unit.core.routing
 
+import java.util.UUID
+
+import scala.concurrent.Future
+
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import org.apache.pekko.{Done, NotUsed}
+
+import stasis.core.networking.EndpointAddress
+import stasis.core.networking.EndpointClient
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
-import stasis.core.networking.{EndpointAddress, EndpointClient}
 import stasis.core.packaging
 import stasis.core.packaging.Crate
 import stasis.core.persistence.backends.memory.StreamingMemoryBackend
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.exceptions.PersistenceFailure
-import stasis.core.routing.{Node, NodeProxy}
+import stasis.core.routing.Node
+import stasis.core.routing.NodeProxy
 import stasis.core.security.NodeCredentialsProvider
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.Generators
 import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
-import stasis.test.specs.unit.core.routing.NodeProxySpec.{ExpectedFailure, FailingEndpointClient}
+import stasis.test.specs.unit.core.routing.NodeProxySpec.ExpectedFailure
+import stasis.test.specs.unit.core.routing.NodeProxySpec.FailingEndpointClient
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-
-import java.util.UUID
-import scala.concurrent.Future
 
 class NodeProxySpec extends AsyncUnitSpec {
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "NodeProxySpec"
   )
 

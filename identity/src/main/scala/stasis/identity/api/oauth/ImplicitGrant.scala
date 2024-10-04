@@ -1,28 +1,35 @@
 package stasis.identity.api.oauth
 
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-
 import scala.concurrent.ExecutionContext
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
-import org.apache.pekko.http.scaladsl.model.{StatusCodes, Uri}
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.AuthDirectives
-import stasis.identity.api.oauth.setup.{Config, Providers}
+import stasis.identity.api.oauth.setup.Config
+import stasis.identity.api.oauth.setup.Providers
+import stasis.identity.model.ResponseType
+import stasis.identity.model.Seconds
 import stasis.identity.model.clients.Client
 import stasis.identity.model.errors.AuthorizationError
-import stasis.identity.model.tokens.{AccessToken, TokenType}
-import stasis.identity.model.{ResponseType, Seconds}
+import stasis.identity.model.tokens.AccessToken
+import stasis.identity.model.tokens.TokenType
 
 class ImplicitGrant(
   override val config: Config,
   override val providers: Providers
-)(implicit system: ActorSystem[SpawnProtocol.Command])
+)(implicit system: ActorSystem[Nothing])
     extends AuthDirectives {
-  import ImplicitGrant._
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
+  import ImplicitGrant._
 
   override implicit protected def ec: ExecutionContext = system.executionContext
   override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
@@ -94,12 +101,13 @@ class ImplicitGrant(
 }
 
 object ImplicitGrant {
-  import play.api.libs.json.{Format, Json}
+  import play.api.libs.json.Format
+  import play.api.libs.json.Json
 
   def apply(
     config: Config,
     providers: Providers
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): ImplicitGrant =
+  )(implicit system: ActorSystem[Nothing]): ImplicitGrant =
     new ImplicitGrant(
       config = config,
       providers = providers

@@ -1,23 +1,32 @@
 package stasis.client.api.http
 
-import stasis.client.collection.rules.{Rule, Specification}
-import stasis.client.model.{DatasetMetadata, EntityMetadata, FilesystemMetadata}
+import java.nio.file.Path
+import java.nio.file.Paths
+
+import stasis.client.collection.rules.Rule
+import stasis.client.collection.rules.Specification
+import stasis.client.model.DatasetMetadata
+import stasis.client.model.EntityMetadata
+import stasis.client.model.FilesystemMetadata
 import stasis.client.ops.exceptions.ScheduleRetrievalFailure
 import stasis.client.ops.scheduling.OperationScheduleAssignment
 import stasis.client.ops.scheduling.OperationScheduler.ActiveSchedule
 import stasis.client.ops.search.Search
 import stasis.client.tracking.ServerTracker.ServerState
-import stasis.client.tracking.state.BackupState.{PendingSourceEntity, ProcessedSourceEntity}
-import stasis.client.tracking.state.RecoveryState.{PendingTargetEntity, ProcessedTargetEntity}
-import stasis.client.tracking.state.{BackupState, RecoveryState}
+import stasis.client.tracking.state.BackupState
+import stasis.client.tracking.state.BackupState.PendingSourceEntity
+import stasis.client.tracking.state.BackupState.ProcessedSourceEntity
+import stasis.client.tracking.state.RecoveryState
+import stasis.client.tracking.state.RecoveryState.PendingTargetEntity
+import stasis.client.tracking.state.RecoveryState.ProcessedTargetEntity
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.schedules.Schedule
 
-import java.nio.file.{Path, Paths}
-
 object Formats {
   import play.api.libs.json._
-  import stasis.core.api.Formats.{optionFormat, uuidMapFormat}
+
+  import stasis.layers.api.Formats.optionFormat
+  import stasis.layers.api.Formats.uuidMapFormat
   import stasis.shared.api.Formats.scheduleFormat
 
   implicit val jsonConfig: JsonConfiguration = JsonConfiguration(JsonNaming.SnakeCase)

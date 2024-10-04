@@ -1,11 +1,15 @@
 package stasis.identity.service
 
-import com.typesafe.{config => typesafe}
-import org.jose4j.jwk.{EllipticCurveJsonWebKey, JsonWebKey, OctetSequenceJsonWebKey, RsaJsonWebKey}
-import stasis.core.security.keys.Generators
-
 import scala.io.Source
 import scala.util.Try
+
+import com.typesafe.{config => typesafe}
+import org.jose4j.jwk.EllipticCurveJsonWebKey
+import org.jose4j.jwk.JsonWebKey
+import org.jose4j.jwk.OctetSequenceJsonWebKey
+import org.jose4j.jwk.RsaJsonWebKey
+
+import stasis.layers.security.keys.Generators
 
 object SignatureKey {
   def fromConfig(signatureKeyConfig: typesafe.Config): JsonWebKey =

@@ -1,7 +1,9 @@
 package stasis.shared.api.requests
 
 import org.apache.pekko.util.ByteString
-import stasis.shared.model.devices.{Device, DeviceKey}
+
+import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.DeviceKey
 import stasis.shared.model.users.User
 
 object UpdateDeviceKey {

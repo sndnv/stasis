@@ -2,14 +2,16 @@ package stasis.test.specs.unit.client.mocks
 
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.concurrent.Future
+
 import org.apache.pekko.Done
-import stasis.client.ops.scheduling.{OperationScheduleAssignment, OperationScheduler}
+
+import stasis.client.ops.scheduling.OperationScheduleAssignment
+import stasis.client.ops.scheduling.OperationScheduler
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.schedules.Schedule
 import stasis.test.specs.unit.client.mocks.MockOperationScheduler.Statistic
 import stasis.test.specs.unit.shared.model.Generators
-
-import scala.concurrent.Future
 
 class MockOperationScheduler extends OperationScheduler {
   private val stats: Map[Statistic, AtomicInteger] = Map(

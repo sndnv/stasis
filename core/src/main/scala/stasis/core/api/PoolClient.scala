@@ -7,7 +7,6 @@ import scala.concurrent.duration._
 import scala.util.Success
 
 import org.apache.pekko.actor.typed.ActorSystem
-import org.apache.pekko.actor.typed.SpawnProtocol
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.HttpsConnectionContext
@@ -21,12 +20,13 @@ import org.apache.pekko.stream.scaladsl.RetryFlow
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.stream.scaladsl.Source
 import org.slf4j.Logger
+
 import stasis.core.networking.exceptions.ClientFailure
-import stasis.core.security.tls.EndpointContext
-import stasis.core.streaming.Operators.ExtendedSource
+import stasis.layers.security.tls.EndpointContext
+import stasis.layers.streaming.Operators.ExtendedSource
 
 trait PoolClient {
-  protected implicit def system: ActorSystem[SpawnProtocol.Command]
+  protected implicit def system: ActorSystem[Nothing]
   protected def log: Logger
 
   protected def context: Option[EndpointContext]

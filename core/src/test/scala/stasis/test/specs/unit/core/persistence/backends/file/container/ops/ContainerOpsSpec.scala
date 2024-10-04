@@ -1,24 +1,29 @@
 package stasis.test.specs.unit.core.persistence.backends.file.container.ops
 
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.util.ByteString
-import org.scalatest.BeforeAndAfter
-import stasis.core.persistence.backends.file.container._
-import stasis.core.persistence.backends.file.container.headers.{ChunkHeader, ContainerHeader}
-import stasis.core.persistence.backends.file.container.ops.{AutoCloseSupport, ContainerOps, ConversionOps}
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.persistence.backends.file.container.TestOps
-
 import java.nio.ByteOrder
 import java.nio.file.Paths
 import java.util.UUID
+
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
 
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.util.ByteString
+import org.scalatest.BeforeAndAfter
+
+import stasis.core.persistence.backends.file.container._
+import stasis.core.persistence.backends.file.container.headers.ChunkHeader
+import stasis.core.persistence.backends.file.container.headers.ContainerHeader
+import stasis.core.persistence.backends.file.container.ops.AutoCloseSupport
+import stasis.core.persistence.backends.file.container.ops.ContainerOps
+import stasis.core.persistence.backends.file.container.ops.ConversionOps
+import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.persistence.backends.file.container.TestOps
+
 class ContainerOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoCloseSupport {
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "ContainerOpsSpec"
   )
 

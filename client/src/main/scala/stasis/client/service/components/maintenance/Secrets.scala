@@ -10,16 +10,20 @@ import scala.util.Try
 import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.util.ByteString
-import stasis.client.api.clients.{DefaultServerApiEndpointClient, ServerApiEndpointClient}
+
+import stasis.client.api.clients.DefaultServerApiEndpointClient
+import stasis.client.api.clients.ServerApiEndpointClient
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.UserPassword
-import stasis.client.security.{CredentialsProvider, DefaultCredentialsProvider}
+import stasis.client.security.CredentialsProvider
+import stasis.client.security.DefaultCredentialsProvider
 import stasis.client.service.ApplicationArguments
 import stasis.client.service.components.Files
 import stasis.client.service.components.exceptions.ServiceStartupFailure
 import stasis.core.api.PoolClient
-import stasis.core.security.oauth.{DefaultOAuthClient, OAuthClient}
-import stasis.core.security.tls.EndpointContext
+import stasis.layers.security.oauth.DefaultOAuthClient
+import stasis.layers.security.oauth.OAuthClient
+import stasis.layers.security.tls.EndpointContext
 import stasis.shared.secrets.SecretsConfig
 
 trait Secrets {

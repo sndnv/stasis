@@ -1,9 +1,10 @@
 package stasis.shared.ops
 
-import org.apache.pekko.Done
-
 import java.time.Instant
+
 import scala.concurrent.Future
+
+import org.apache.pekko.Done
 
 trait Operation {
   def id: Operation.Id

@@ -1,17 +1,21 @@
 package stasis.test.specs.unit.client.mocks
 
+import java.util.concurrent.atomic.AtomicInteger
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import org.apache.pekko.{Done, NotUsed}
+
 import stasis.client.api.clients.ServerCoreEndpointClient
 import stasis.core.packaging
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
 import stasis.test.specs.unit.client.mocks.MockServerCoreEndpointClient.Statistic
-
-import java.util.concurrent.atomic.AtomicInteger
-import scala.concurrent.{ExecutionContext, Future}
 
 class MockServerCoreEndpointClient(
   override val self: Node.Id,

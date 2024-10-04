@@ -9,6 +9,7 @@ import scala.concurrent.Future
 import com.typesafe.{config => typesafe}
 import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+
 import stasis.client.service.ApplicationArguments
 import stasis.client.service.components
 

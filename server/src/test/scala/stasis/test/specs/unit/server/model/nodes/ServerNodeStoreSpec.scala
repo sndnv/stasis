@@ -1,10 +1,13 @@
 package stasis.test.specs.unit.server.model.nodes
 
+import scala.util.control.NonFatal
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.routing.Node
-import stasis.core.telemetry.TelemetryContext
+import stasis.layers.telemetry.TelemetryContext
 import stasis.server.model.nodes.ServerNodeStore
 import stasis.server.security.CurrentUser
 import stasis.shared.model.devices.Device
@@ -14,8 +17,6 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.Generators
 import stasis.test.specs.unit.core.persistence.mocks.MockNodeStore
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-
-import scala.util.control.NonFatal
 
 class ServerNodeStoreSpec extends AsyncUnitSpec {
   "A ServerNodeStore" should "provide a view resource (service)" in {
@@ -193,8 +194,8 @@ class ServerNodeStoreSpec extends AsyncUnitSpec {
       }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "ServerNodeStoreSpec"
   )
 

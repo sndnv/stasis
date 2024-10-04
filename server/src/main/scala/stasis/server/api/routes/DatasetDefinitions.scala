@@ -1,19 +1,23 @@
 package stasis.server.api.routes
 
+import scala.concurrent.Future
+
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
+
 import stasis.server.model.datasets.DatasetDefinitionStore
 import stasis.server.model.devices.DeviceStore
 import stasis.server.security.CurrentUser
-import stasis.shared.api.requests.{CreateDatasetDefinition, UpdateDatasetDefinition}
-import stasis.shared.api.responses.{CreatedDatasetDefinition, DeletedDatasetDefinition}
-
-import scala.concurrent.Future
+import stasis.shared.api.requests.CreateDatasetDefinition
+import stasis.shared.api.requests.UpdateDatasetDefinition
+import stasis.shared.api.responses.CreatedDatasetDefinition
+import stasis.shared.api.responses.DeletedDatasetDefinition
 
 class DatasetDefinitions()(implicit ctx: RoutesContext) extends ApiRoutes {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.shared.api.Formats._
 
   def routes(implicit currentUser: CurrentUser): Route =

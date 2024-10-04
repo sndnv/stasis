@@ -1,10 +1,11 @@
 package stasis.client.encryption.secrets
 
+import java.util.concurrent.atomic.AtomicBoolean
+
 import org.apache.pekko.util.ByteString
+
 import stasis.shared.model.users.User
 import stasis.shared.secrets.DerivedPasswords
-
-import java.util.concurrent.atomic.AtomicBoolean
 
 // doc - sent to auth provider
 sealed trait UserAuthenticationPassword extends Secret {

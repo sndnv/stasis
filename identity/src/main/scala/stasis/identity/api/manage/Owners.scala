@@ -1,20 +1,28 @@
 package stasis.identity.api.manage
 
+import java.time.Instant
+
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server._
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.core.api.directives.EntityDiscardingDirectives
-import stasis.identity.api.manage.requests.{CreateOwner, UpdateOwner, UpdateOwnerCredentials}
-import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+import stasis.identity.api.manage.requests.CreateOwner
+import stasis.identity.api.manage.requests.UpdateOwner
+import stasis.identity.api.manage.requests.UpdateOwnerCredentials
+import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.secrets.Secret
+import stasis.identity.persistence.owners.ResourceOwnerStore
+import stasis.layers.api.directives.EntityDiscardingDirectives
 
 class Owners(
   store: ResourceOwnerStore,
   ownerSecretConfig: Secret.ResourceOwnerConfig
 ) extends EntityDiscardingDirectives {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.identity.api.Formats._
 
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
@@ -26,9 +34,9 @@ class Owners(
       pathEndOrSingleSlash {
         concat(
           get {
-            onSuccess(store.owners) { owners =>
+            onSuccess(store.all) { owners =>
               log.debugN("User [{}] successfully retrieved [{}] resource owners", user, owners.size)
-              discardEntity & complete(owners.values)
+              discardEntity & complete(owners)
             }
           },
           post {
@@ -55,8 +63,8 @@ class Owners(
       },
       pathPrefix("by-subject") {
         pathPrefix(Segment) { ownerSubject =>
-          onSuccess(store.owners) { owners =>
-            owners.values.filter(_.subject.contains(ownerSubject)).toList match {
+          onSuccess(store.all) { owners =>
+            owners.filter(_.subject.contains(ownerSubject)).toList match {
               case owner :: Nil =>
                 concat(
                   pathEndOrSingleSlash {
@@ -72,7 +80,7 @@ class Owners(
                   },
                   path("activate") {
                     put {
-                      onSuccess(store.put(owner.copy(active = true))) { _ =>
+                      onSuccess(store.put(owner.copy(active = true, updated = Instant.now()))) { _ =>
                         log.debugN(
                           "User [{}] successfully activated resource owner [{}] with subject [{}]",
                           user,
@@ -85,7 +93,7 @@ class Owners(
                   },
                   path("deactivate") {
                     put {
-                      onSuccess(store.put(owner.copy(active = false))) { _ =>
+                      onSuccess(store.put(owner.copy(active = false, updated = Instant.now()))) { _ =>
                         log.debugN(
                           "User [{}] successfully deactivated resource owner [{}] with subject [{}]",
                           user,
@@ -101,7 +109,7 @@ class Owners(
                       entity(as[UpdateOwnerCredentials]) { request =>
                         val (secret, salt) = request.toSecret()
 
-                        onSuccess(store.put(owner.copy(password = secret, salt = salt))) { _ =>
+                        onSuccess(store.put(owner.copy(password = secret, salt = salt, updated = Instant.now()))) { _ =>
                           log.debugN(
                             "User [{}] successfully updated credentials for resource owner [{}] with subject [{}]",
                             user,
@@ -146,7 +154,7 @@ class Owners(
                   entity(as[UpdateOwnerCredentials]) { request =>
                     val (secret, salt) = request.toSecret()
 
-                    onSuccess(store.put(owner.copy(password = secret, salt = salt))) { _ =>
+                    onSuccess(store.put(owner.copy(password = secret, salt = salt, updated = Instant.now()))) { _ =>
                       log.debugN(
                         "User [{}] successfully updated credentials for resource owner [{}]",
                         user,
@@ -173,7 +181,8 @@ class Owners(
                         store.put(
                           owner.copy(
                             allowedScopes = request.allowedScopes,
-                            active = request.active
+                            active = request.active,
+                            updated = Instant.now()
                           )
                         )
                       ) { _ =>

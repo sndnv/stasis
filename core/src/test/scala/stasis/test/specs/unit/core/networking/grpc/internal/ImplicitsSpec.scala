@@ -3,6 +3,7 @@ package stasis.test.specs.unit.core.networking.grpc.internal
 import java.util.UUID
 
 import org.apache.pekko.util.ByteString
+
 import stasis.core.networking.exceptions.EndpointFailure
 import stasis.core.networking.grpc.internal.Implicits
 import stasis.core.networking.grpc.proto

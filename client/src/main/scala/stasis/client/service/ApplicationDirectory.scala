@@ -4,10 +4,11 @@ import java.io.FileNotFoundException
 import java.nio.file._
 import java.nio.file.attribute.PosixFilePermissions
 
-import org.apache.pekko.util.ByteString
-import net.harawata.appdirs.AppDirsFactory
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
-import scala.concurrent.{ExecutionContext, Future}
+import net.harawata.appdirs.AppDirsFactory
+import org.apache.pekko.util.ByteString
 
 trait ApplicationDirectory {
   def findFile(file: String): Option[Path]

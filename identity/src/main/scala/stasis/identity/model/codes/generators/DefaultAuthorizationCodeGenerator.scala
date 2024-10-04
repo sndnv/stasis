@@ -2,9 +2,9 @@ package stasis.identity.model.codes.generators
 
 import java.security.SecureRandom
 
-import stasis.identity.model.codes.AuthorizationCode
-
 import scala.util.Random
+
+import stasis.identity.model.codes.AuthorizationCode
 
 class DefaultAuthorizationCodeGenerator(codeSize: Int) extends AuthorizationCodeGenerator {
   override def generate(): AuthorizationCode = {

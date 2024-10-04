@@ -1,20 +1,24 @@
 package stasis.test.specs.unit.identity.api.manage
 
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.util.ByteString
+
 import stasis.identity.api.Formats._
 import stasis.identity.api.manage.Clients
-import stasis.identity.api.manage.requests.{CreateClient, UpdateClient, UpdateClientCredentials}
+import stasis.identity.api.manage.requests.CreateClient
+import stasis.identity.api.manage.requests.UpdateClient
+import stasis.identity.api.manage.requests.UpdateClientCredentials
 import stasis.identity.api.manage.responses.CreatedClient
 import stasis.identity.model.Seconds
 import stasis.identity.model.clients.Client
 import stasis.identity.model.secrets.Secret
+import stasis.layers
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.api.manage.ClientsSpec.PartialClient
 import stasis.test.specs.unit.identity.model.Generators
-
-import scala.concurrent.Future
-import scala.concurrent.duration._
 
 class ClientsSpec extends RouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -26,14 +30,16 @@ class ClientsSpec extends RouteTest {
     val secret = Secret(ByteString("some-secret"))
     val salt = "some-salt"
 
-    val expectedClients = stasis.test.Generators
+    val expectedClients = layers.Generators
       .generateSeq(min = 2, g = Generators.generateClient)
-      .map(_.copy(secret = secret, salt = salt))
+      .map(_.copy(secret = secret, salt = salt).truncated())
 
     Future.sequence(expectedClients.map(store.put)).await
     Get() ~> clients.routes(user) ~> check {
       status should be(StatusCodes.OK)
-      responseAs[Seq[PartialClient]].map(_.toClient(secret, salt)).sortBy(_.id) should be(expectedClients.sortBy(_.id))
+      responseAs[Seq[PartialClient]].map(_.toClient(secret, salt).truncated()).sortBy(_.id) should be(
+        expectedClients.sortBy(_.id)
+      )
     }
   }
 
@@ -50,7 +56,7 @@ class ClientsSpec extends RouteTest {
 
     Post().withEntity(request) ~> clients.routes(user) ~> check {
       status should be(StatusCodes.OK)
-      val expectedClient = store.clients.await.values.toList match {
+      val expectedClient = store.all.await.toList match {
         case client :: Nil => client
         case other         => fail(s"Unexpected response received: [$other]")
       }
@@ -130,7 +136,7 @@ class ClientsSpec extends RouteTest {
     store.put(expectedClient).await
     Get(s"/${expectedClient.id}") ~> clients.routes(user) ~> check {
       status should be(StatusCodes.OK)
-      responseAs[PartialClient].toClient(secret, salt) should be(expectedClient)
+      responseAs[PartialClient].toClient(secret, salt).truncated() should be(expectedClient.truncated())
     }
   }
 
@@ -147,12 +153,14 @@ class ClientsSpec extends RouteTest {
     store.put(client).await
     Put(s"/${client.id}").withEntity(request) ~> clients.routes(user) ~> check {
       status should be(StatusCodes.OK)
-      store.get(client.id).await should be(
+      store.get(client.id).await.truncated() should be(
         Some(
-          client.copy(
-            tokenExpiration = request.tokenExpiration,
-            active = request.active
-          )
+          client
+            .copy(
+              tokenExpiration = request.tokenExpiration,
+              active = request.active
+            )
+            .truncated()
         )
       )
     }
@@ -168,9 +176,12 @@ class ClientsSpec extends RouteTest {
     val client = Generators.generateClient.copy(secret = secret, salt = salt)
 
     store.put(client).await
+    store.all.await.size should be(1)
+    store.all.await.size should be(1)
+
     Delete(s"/${client.id}") ~> clients.routes(user) ~> check {
       status should be(StatusCodes.OK)
-      store.clients.await should be(Map.empty)
+      store.all.await.size should be(0)
     }
   }
 
@@ -207,7 +218,7 @@ object ClientsSpec {
     subject: Option[String]
   ) {
     def toClient(secret: Secret, salt: String): Client =
-      Client(
+      Client.create(
         id = id,
         redirectUri = redirectUri,
         tokenExpiration = tokenExpiration,

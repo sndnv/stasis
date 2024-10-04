@@ -1,12 +1,13 @@
 package stasis.client.tracking.state.serdes
 
+import java.util.UUID
+
+import scala.util.Try
+
 import stasis.client.model.proto
 import stasis.client.tracking.state.RecoveryState
 import stasis.core.persistence.backends.file.state.StateStore
 import stasis.shared.ops.Operation
-
-import java.util.UUID
-import scala.util.Try
 
 object RecoveryStateSerdes {
   implicit val recoverySerdes: StateStore.Serdes[Map[Operation.Id, RecoveryState]] =

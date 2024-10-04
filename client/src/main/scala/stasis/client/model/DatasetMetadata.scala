@@ -1,18 +1,25 @@
 package stasis.client.model
 
+import java.nio.file.Path
+import java.nio.file.Paths
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Try
+
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import stasis.client.api.clients.ServerApiEndpointClient
-import stasis.client.compression.{Decoder => CompressionDecoder, Encoder => CompressionEncoder, Gzip}
-import stasis.client.encryption.secrets.DeviceMetadataSecret
-import stasis.client.encryption.{Decoder => EncryptionDecoder, Encoder => EncryptionEncoder}
-import stasis.core.packaging.Crate
 
-import java.nio.file.{Path, Paths}
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import stasis.client.api.clients.ServerApiEndpointClient
+import stasis.client.compression.Gzip
+import stasis.client.compression.{Encoder => CompressionEncoder}
+import stasis.client.compression.{Decoder => CompressionDecoder}
+import stasis.client.encryption.secrets.DeviceMetadataSecret
+import stasis.client.encryption.{Encoder => EncryptionEncoder}
+import stasis.client.encryption.{Decoder => EncryptionDecoder}
+import stasis.core.packaging.Crate
 
 final case class DatasetMetadata(
   contentChanged: Map[Path, EntityMetadata],

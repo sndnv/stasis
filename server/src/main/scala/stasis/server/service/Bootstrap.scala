@@ -4,10 +4,18 @@ import java.io.File
 import java.time.LocalDateTime
 import java.util.UUID
 
-import org.apache.pekko.Done
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
+import scala.util.Try
+import scala.util.control.NonFatal
+
 import com.typesafe.config.ConfigFactory
 import com.typesafe.{config => typesafe}
+import org.apache.pekko.Done
 import org.slf4j.Logger
+
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.crates.CrateStore
@@ -17,12 +25,6 @@ import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
-
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters._
-import scala.util.Try
-import scala.util.control.NonFatal
 
 object Bootstrap {
   final case class Entities(
@@ -64,12 +66,24 @@ object Bootstrap {
 
       for {
         _ <- run(entities, serverPersistence, corePersistence)
+        coreMigrationResult <- corePersistence.migrate()
+        serverMigrationResult <- serverPersistence.migrate()
         _ <- corePersistence.startup()
       } yield {
+        log.debug("Executed [{}] out of [{}] core migrations", coreMigrationResult.executed, coreMigrationResult.found)
+        log.debug("Executed [{}] out of [{}] server migrations", serverMigrationResult.executed, serverMigrationResult.found)
         Done
       }
     } else {
-      corePersistence.startup()
+      for {
+        coreMigrationResult <- corePersistence.migrate()
+        serverMigrationResult <- serverPersistence.migrate()
+        _ <- corePersistence.startup()
+      } yield {
+        log.debug("Executed [{}] out of [{}] core migrations", coreMigrationResult.executed, coreMigrationResult.found)
+        log.debug("Executed [{}] out of [{}] server migrations", serverMigrationResult.executed, serverMigrationResult.found)
+        Done
+      }
     }
   }
 

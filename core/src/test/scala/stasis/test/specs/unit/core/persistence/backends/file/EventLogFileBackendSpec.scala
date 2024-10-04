@@ -1,29 +1,31 @@
 package stasis.test.specs.unit.core.persistence.backends.file
 
+import java.nio.file.Files
+
+import scala.collection.immutable.Queue
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.Try
+
 import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.util.Timeout
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
+
 import stasis.core.persistence.backends.file.EventLogFileBackend
 import stasis.core.persistence.backends.file.state.StateStore
-import stasis.core.telemetry.TelemetryContext
+import stasis.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.FileSystemHelpers
 import stasis.test.specs.unit.core.FileSystemHelpers.FileSystemSetup
 import stasis.test.specs.unit.core.persistence.backends.EventLogBackendBehaviour
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
-import java.nio.file.Files
-import scala.collection.immutable.Queue
-import scala.concurrent.Future
-import scala.concurrent.duration._
-import scala.util.Try
-
 class EventLogFileBackendSpec extends AsyncUnitSpec with EventLogBackendBehaviour with Eventually with FileSystemHelpers {
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    guardianBehavior = Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    guardianBehavior = Behaviors.ignore,
     name = "EventLogFileBackendSpec"
   )
 

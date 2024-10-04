@@ -1,12 +1,16 @@
 package stasis.test.specs.unit.client.api.http.routes
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
+import org.apache.pekko.Done
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
-import org.apache.pekko.http.scaladsl.model.{RequestEntity, StatusCodes}
+import org.apache.pekko.http.scaladsl.model.RequestEntity
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.LoggerFactory
+
 import stasis.client.api.Context
 import stasis.client.api.http.routes.DatasetDefinitions
 import stasis.shared.api.requests.CreateDatasetDefinition
@@ -14,14 +18,12 @@ import stasis.shared.api.responses.CreatedDatasetDefinition
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.devices.Device
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.mocks._
-import scala.concurrent.duration._
-
-import org.apache.pekko.Done
 import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.mocks._
 
 class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.shared.api.Formats._
 
   "DatasetDefinitions routes" should "respond with all definitions" in withRetry {

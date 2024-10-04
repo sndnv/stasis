@@ -1,10 +1,13 @@
 package stasis.client.model
 
-import stasis.core.packaging.Crate
-
-import java.nio.file.{Path, Paths}
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.Instant
-import scala.util.{Failure, Try}
+
+import scala.util.Failure
+import scala.util.Try
+
+import stasis.core.packaging.Crate
 
 sealed trait EntityMetadata {
   def path: Path

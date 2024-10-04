@@ -1,39 +1,49 @@
 package stasis.identity.service
 
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.util.Timeout
+import java.time.Instant
+import java.util.concurrent.atomic.AtomicReference
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+
 import com.typesafe.{config => typesafe}
 import io.prometheus.client.hotspot.DefaultExports
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.util.Timeout
 import org.jose4j.jwk.JsonWebKey
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.core
-import stasis.core.security.jwt.DefaultJwtAuthenticator
-import stasis.core.security.keys.LocalKeyProvider
-import stasis.core.security.tls.EndpointContext
-import stasis.core.telemetry.metrics.MetricsExporter
-import stasis.core.telemetry.{DefaultTelemetryContext, TelemetryContext}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import stasis.identity.BuildInfo
-import stasis.identity.api.{manage => manageApi, oauth => oauthApi, IdentityEndpoint}
-import stasis.identity.authentication.{manage, oauth}
+import stasis.identity.api.IdentityEndpoint
+import stasis.identity.api.{manage => manageApi}
+import stasis.identity.api.{oauth => oauthApi}
+import stasis.identity.authentication.manage
+import stasis.identity.authentication.oauth
 import stasis.identity.model.apis.Api
 import stasis.identity.model.codes.generators.DefaultAuthorizationCodeGenerator
 import stasis.identity.model.secrets.Secret
-import stasis.identity.model.tokens.generators.{JwtBearerAccessTokenGenerator, RandomRefreshTokenGenerator}
-
-import java.time.Instant
-import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
-import scala.util.{Failure, Success, Try}
+import stasis.identity.model.tokens.generators.JwtBearerAccessTokenGenerator
+import stasis.identity.model.tokens.generators.RandomRefreshTokenGenerator
+import stasis.layers
+import stasis.layers.security.jwt.DefaultJwtAuthenticator
+import stasis.layers.security.keys.LocalKeyProvider
+import stasis.layers.security.tls.EndpointContext
+import stasis.layers.telemetry.DefaultTelemetryContext
+import stasis.layers.telemetry.TelemetryContext
+import stasis.layers.telemetry.metrics.MetricsExporter
 
 trait Service {
   import Service._
 
   private val serviceState: AtomicReference[State] = new AtomicReference[State](State.Starting)
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    guardianBehavior = Behaviors.ignore,
     name = "stasis-identity-service"
   )
 
@@ -63,9 +73,9 @@ trait Service {
 
     implicit val telemetry: TelemetryContext = DefaultTelemetryContext(
       metricsProviders = Set(
-        core.security.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation),
-        core.api.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation),
-        core.persistence.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation)
+        layers.security.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation),
+        layers.api.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation),
+        layers.persistence.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation)
       ).flatten
     )
 
@@ -81,6 +91,7 @@ trait Service {
     val oauthProviders = oauthApi.setup.Providers(
       apiStore = persistence.apis.view,
       clientStore = persistence.clients.view,
+      resourceOwnerStore = persistence.resourceOwners.view,
       refreshTokenStore = persistence.refreshTokens,
       authorizationCodeStore = persistence.authorizationCodes,
       accessTokenGenerator = JwtBearerAccessTokenGenerator(

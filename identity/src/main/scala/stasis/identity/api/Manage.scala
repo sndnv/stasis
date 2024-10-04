@@ -2,10 +2,14 @@ package stasis.identity.api
 
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server._
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import stasis.identity.api.manage._
-import stasis.identity.api.manage.directives.{UserAuthentication, UserAuthorization}
-import stasis.identity.api.manage.setup.{Config, Providers}
+import stasis.identity.api.manage.directives.UserAuthentication
+import stasis.identity.api.manage.directives.UserAuthorization
+import stasis.identity.api.manage.setup.Config
+import stasis.identity.api.manage.setup.Providers
 import stasis.identity.authentication.manage.ResourceOwnerAuthenticator
 
 class Manage(

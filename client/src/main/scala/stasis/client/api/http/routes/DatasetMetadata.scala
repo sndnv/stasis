@@ -6,14 +6,15 @@ import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
+
 import stasis.client.api.Context
 import stasis.client.ops.search.Search
 
 class DatasetMetadata()(implicit context: Context) extends ApiRoutes {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
-  import stasis.client.api.http.Formats._
-  import stasis.core.api.Matchers._
+
   import DatasetMetadata._
+  import stasis.client.api.http.Formats._
 
   def routes(): Route =
     concat(

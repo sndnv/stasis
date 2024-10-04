@@ -1,19 +1,21 @@
 package stasis.test.specs.unit.core.persistence.reservations
 
-import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import stasis.core.packaging.Crate
-import stasis.core.persistence.backends.memory.MemoryBackend
-import stasis.core.persistence.reservations.ReservationStore
-import stasis.core.persistence.{CrateStorageReservation, StoreInitializationResult}
-import stasis.core.routing.Node
-import stasis.core.telemetry.TelemetryContext
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-
 import scala.concurrent.Future
 import scala.concurrent.duration._
+
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+
+import stasis.core.packaging.Crate
+import stasis.core.persistence.reservations.ReservationStore
+import stasis.core.persistence.CrateStorageReservation
+import stasis.core.persistence.StoreInitializationResult
+import stasis.core.routing.Node
+import stasis.layers.persistence.memory.MemoryStore
+import stasis.layers.telemetry.TelemetryContext
+import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class ReservationStoreSpec extends AsyncUnitSpec {
   "A ReservationStore" should "add, retrieve and delete reservations" in {
@@ -43,7 +45,7 @@ class ReservationStoreSpec extends AsyncUnitSpec {
       missingReservation should be(None)
       noReservations should be(Map.empty)
 
-      telemetry.persistence.reservation.reservation should be(1)
+      telemetry.core.persistence.reservation.reservation should be(1)
     }
   }
 
@@ -71,7 +73,7 @@ class ReservationStoreSpec extends AsyncUnitSpec {
       reservationMissingTarget should be(false)
       reservationMissingCrate should be(false)
 
-      telemetry.persistence.reservation.reservation should be(1)
+      telemetry.core.persistence.reservation.reservation should be(1)
     }
   }
 
@@ -99,7 +101,7 @@ class ReservationStoreSpec extends AsyncUnitSpec {
       actualReservation should be(Some(expectedReservation))
       missingReservation should be(None)
 
-      telemetry.persistence.reservation.reservation should be(1)
+      telemetry.core.persistence.reservation.reservation should be(1)
     }
   }
 
@@ -135,14 +137,14 @@ class ReservationStoreSpec extends AsyncUnitSpec {
       reservationExists should be(true)
       reservationMissing should be(false)
 
-      telemetry.persistence.reservation.reservation should be(1)
+      telemetry.core.persistence.reservation.reservation should be(1)
 
       a[ClassCastException] should be thrownBy { val _ = storeView.asInstanceOf[ReservationStore] }
     }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "ReservationStoreSpec"
   )
 
@@ -151,7 +153,7 @@ class ReservationStoreSpec extends AsyncUnitSpec {
   )(implicit telemetry: TelemetryContext): ReservationStore = {
     val StoreInitializationResult(store, init) = ReservationStore(
       expiration = reservationExpiration,
-      backend = MemoryBackend[CrateStorageReservation.Id, CrateStorageReservation](
+      backend = MemoryStore[CrateStorageReservation.Id, CrateStorageReservation](
         name = s"reservation-store-${java.util.UUID.randomUUID()}"
       )
     )

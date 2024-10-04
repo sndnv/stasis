@@ -2,7 +2,8 @@ package stasis.server.security.devices
 
 import java.util.concurrent.ThreadLocalRandom
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.Random
 
 trait DeviceClientSecretGenerator { generator =>

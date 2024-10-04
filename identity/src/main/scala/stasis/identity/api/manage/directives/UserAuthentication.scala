@@ -1,16 +1,21 @@
 package stasis.identity.api.manage.directives
 
-import scala.util.{Failure, Success}
+import scala.util.Failure
+import scala.util.Success
 
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
-import org.apache.pekko.http.scaladsl.model.headers.{HttpChallenges, OAuth2BearerToken}
-import org.apache.pekko.http.scaladsl.model.{headers, StatusCodes}
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.headers
+import org.apache.pekko.http.scaladsl.model.headers.HttpChallenges
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+import org.apache.pekko.http.scaladsl.server.Directive
+import org.apache.pekko.http.scaladsl.server.Directive1
 import org.apache.pekko.http.scaladsl.server.Directives._
-import org.apache.pekko.http.scaladsl.server.{Directive, Directive1}
 import org.slf4j.Logger
-import stasis.core.api.directives.EntityDiscardingDirectives
+
 import stasis.identity.authentication.manage.ResourceOwnerAuthenticator
 import stasis.identity.model.owners.ResourceOwner
+import stasis.layers.api.directives.EntityDiscardingDirectives
 
 trait UserAuthentication extends EntityDiscardingDirectives {
 

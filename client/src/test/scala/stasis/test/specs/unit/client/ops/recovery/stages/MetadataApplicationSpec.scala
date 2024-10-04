@@ -1,14 +1,22 @@
 package stasis.test.specs.unit.client.ops.recovery.stages
 
+import java.nio.file.Files
+import java.nio.file.LinkOption
+import java.nio.file.Paths
 import java.nio.file.attribute.PosixFileAttributes
-import java.nio.file.{Files, LinkOption, Paths}
 import java.time.Instant
 
+import scala.concurrent.ExecutionContext
+
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
-import stasis.client.analysis.{Checksum, Metadata}
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+
+import stasis.client.analysis.Checksum
+import stasis.client.analysis.Metadata
 import stasis.client.api.clients.Clients
-import stasis.client.model.{EntityMetadata, TargetEntity}
+import stasis.client.model.EntityMetadata
+import stasis.client.model.TargetEntity
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.recovery.Providers
 import stasis.client.ops.recovery.stages.MetadataApplication
@@ -16,8 +24,6 @@ import stasis.core.packaging.Crate
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks._
-
-import scala.concurrent.ExecutionContext
 
 class MetadataApplicationSpec extends AsyncUnitSpec { spec =>
   "A Recovery MetadataApplication stage" should "apply metadata to files" in {
@@ -92,11 +98,11 @@ class MetadataApplicationSpec extends AsyncUnitSpec { spec =>
       mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
       mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(0)
 
-      mockTelemetry.ops.recovery.entityExamined should be(0)
-      mockTelemetry.ops.recovery.entityCollected should be(0)
-      mockTelemetry.ops.recovery.entityChunkProcessed should be(0)
-      mockTelemetry.ops.recovery.entityProcessed should be(0)
-      mockTelemetry.ops.recovery.metadataApplied should be(1)
+      mockTelemetry.client.ops.recovery.entityExamined should be(0)
+      mockTelemetry.client.ops.recovery.entityCollected should be(0)
+      mockTelemetry.client.ops.recovery.entityChunkProcessed should be(0)
+      mockTelemetry.client.ops.recovery.entityProcessed should be(0)
+      mockTelemetry.client.ops.recovery.metadataApplied should be(1)
     }
   }
 

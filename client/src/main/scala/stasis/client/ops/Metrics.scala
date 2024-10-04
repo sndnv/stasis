@@ -2,9 +2,12 @@ package stasis.client.ops
 
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.metrics.Meter
-import stasis.client.model.{EntityMetadata, SourceEntity, TargetEntity}
-import stasis.core.telemetry.metrics.MeterExtensions.ExtendedMeter
-import stasis.core.telemetry.metrics.MetricsProvider
+
+import stasis.client.model.EntityMetadata
+import stasis.client.model.SourceEntity
+import stasis.client.model.TargetEntity
+import stasis.layers.telemetry.metrics.MeterExtensions.ExtendedMeter
+import stasis.layers.telemetry.metrics.MetricsProvider
 
 object Metrics {
   def noop(): Set[MetricsProvider] = Set(

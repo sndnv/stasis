@@ -1,16 +1,20 @@
 package stasis.test.specs.unit.core.networking.mocks
 
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import scala.concurrent.Future
+
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import org.apache.pekko.{Done, NotUsed}
-import stasis.core.networking.grpc.{GrpcEndpointAddress, GrpcEndpointClient}
+
+import stasis.core.networking.grpc.GrpcEndpointAddress
+import stasis.core.networking.grpc.GrpcEndpointClient
 import stasis.core.packaging
 import stasis.core.packaging.Crate
 
-import scala.concurrent.Future
-
-class MockGrpcEndpointClient()(implicit system: ActorSystem[SpawnProtocol.Command])
+class MockGrpcEndpointClient()(implicit system: ActorSystem[Nothing])
     extends GrpcEndpointClient(
       (_: GrpcEndpointAddress) => Future.failed(new RuntimeException("No credentials available")),
       context = None,

@@ -1,26 +1,30 @@
 package stasis.test.specs.unit.server.security.authenticators
 
 import java.security.Key
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
-import org.jose4j.jws.AlgorithmIdentifiers
-import stasis.core.persistence.backends.memory.MemoryBackend
-import stasis.core.security.exceptions.AuthenticationFailure
-import stasis.core.security.jwt.DefaultJwtAuthenticator
-import stasis.core.security.keys.KeyProvider
-import stasis.core.telemetry.TelemetryContext
-import stasis.server.model.users.UserStore
-import stasis.server.security.authenticators.DefaultUserAuthenticator
-import stasis.shared.model.users.User
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.security.mocks.{MockJwksGenerators, MockJwtGenerators}
-import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-import stasis.test.specs.unit.shared.model.Generators
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
+
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+import org.jose4j.jws.AlgorithmIdentifiers
+
+import stasis.layers.persistence.memory.MemoryStore
+import stasis.layers.security.exceptions.AuthenticationFailure
+import stasis.layers.security.jwt.DefaultJwtAuthenticator
+import stasis.layers.security.keys.KeyProvider
+import stasis.layers.security.mocks.MockJwksGenerators
+import stasis.layers.security.mocks.MockJwtGenerators
+import stasis.layers.telemetry.TelemetryContext
+import stasis.server.model.users.UserStore
+import stasis.server.security.authenticators.DefaultUserAuthenticator
+import stasis.shared.model.users.User
+import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
+import stasis.test.specs.unit.shared.model.Generators
 
 class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
   "A DefaultUserAuthenticator" should "authenticate users with valid JWTs" in {
@@ -206,8 +210,8 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
       }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "DefaultUserAuthenticatorSpec"
   )
 
@@ -240,6 +244,6 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
   private def createStore() =
     UserStore(
       userSaltSize = 8,
-      backend = MemoryBackend[User.Id, User](name = s"user-store-${java.util.UUID.randomUUID()}")
+      backend = MemoryStore[User.Id, User](name = s"user-store-${java.util.UUID.randomUUID()}")
     )
 }

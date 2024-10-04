@@ -4,16 +4,20 @@ import java.nio.ByteOrder
 import java.nio.file.Paths
 import java.util.UUID
 
-import org.apache.pekko.actor.ActorSystem
-import org.scalatest.BeforeAndAfter
-import stasis.core.persistence.backends.file.container.Container
-import stasis.core.persistence.backends.file.container.headers.{ContainerHeader, ContainerLogHeader}
-import stasis.core.persistence.backends.file.container.ops.{AutoCloseSupport, ContainerLogOps, ConversionOps}
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.persistence.backends.file.container.TestOps
-
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
+
+import org.apache.pekko.actor.ActorSystem
+import org.scalatest.BeforeAndAfter
+
+import stasis.core.persistence.backends.file.container.Container
+import stasis.core.persistence.backends.file.container.headers.ContainerHeader
+import stasis.core.persistence.backends.file.container.headers.ContainerLogHeader
+import stasis.core.persistence.backends.file.container.ops.AutoCloseSupport
+import stasis.core.persistence.backends.file.container.ops.ContainerLogOps
+import stasis.core.persistence.backends.file.container.ops.ConversionOps
+import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.persistence.backends.file.container.TestOps
 
 class ContainerLogOpsSpec extends AsyncUnitSpec with BeforeAndAfter with AutoCloseSupport {
   private implicit val system: ActorSystem = ActorSystem(name = "ContainerLogOpsSpec")

@@ -1,13 +1,17 @@
 package stasis.identity.api.oauth.directives
 
-import stasis.identity.api.oauth.setup.{Config, Providers}
-import stasis.identity.authentication.oauth.{ClientAuthenticator, ResourceOwnerAuthenticator}
-import stasis.identity.model.apis.ApiStoreView
-import stasis.identity.model.clients.ClientStoreView
-import stasis.identity.model.codes.AuthorizationCodeStore
+import stasis.identity.api.oauth.setup.Config
+import stasis.identity.api.oauth.setup.Providers
+import stasis.identity.authentication.oauth.ClientAuthenticator
+import stasis.identity.authentication.oauth.ResourceOwnerAuthenticator
 import stasis.identity.model.codes.generators.AuthorizationCodeGenerator
-import stasis.identity.model.tokens.RefreshTokenStore
-import stasis.identity.model.tokens.generators.{AccessTokenGenerator, RefreshTokenGenerator}
+import stasis.identity.model.tokens.generators.AccessTokenGenerator
+import stasis.identity.model.tokens.generators.RefreshTokenGenerator
+import stasis.identity.persistence.apis.ApiStore
+import stasis.identity.persistence.clients.ClientStore
+import stasis.identity.persistence.codes.AuthorizationCodeStore
+import stasis.identity.persistence.owners.ResourceOwnerStore
+import stasis.identity.persistence.tokens.RefreshTokenStore
 
 trait AuthDirectives
     extends AccessTokenGeneration
@@ -26,8 +30,9 @@ trait AuthDirectives
   override protected def realm: String = config.realm
   override protected def refreshTokensAllowed: Boolean = config.refreshTokensAllowed
 
-  override protected def apiStore: ApiStoreView = providers.apiStore
-  override protected def clientStore: ClientStoreView = providers.clientStore
+  override protected def apiStore: ApiStore.View = providers.apiStore
+  override protected def clientStore: ClientStore.View = providers.clientStore
+  override protected def resourceOwnerStore: ResourceOwnerStore.View = providers.resourceOwnerStore
   override protected def refreshTokenStore: RefreshTokenStore = providers.refreshTokenStore
   override protected def authorizationCodeStore: AuthorizationCodeStore = providers.authorizationCodeStore
 

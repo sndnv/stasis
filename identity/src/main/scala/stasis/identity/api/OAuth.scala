@@ -1,19 +1,22 @@
 package stasis.identity.api
 
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server._
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.core.api.directives.EntityDiscardingDirectives
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import stasis.identity.api.oauth._
-import stasis.identity.api.oauth.setup.{Config, Providers}
+import stasis.identity.api.oauth.setup.Config
+import stasis.identity.api.oauth.setup.Providers
+import stasis.layers.api.directives.EntityDiscardingDirectives
 
 class OAuth(
   config: Config,
   providers: Providers
-)(implicit system: ActorSystem[SpawnProtocol.Command])
+)(implicit system: ActorSystem[Nothing])
     extends EntityDiscardingDirectives {
 
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
@@ -78,7 +81,7 @@ object OAuth {
   def apply(
     config: Config,
     providers: Providers
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): OAuth =
+  )(implicit system: ActorSystem[Nothing]): OAuth =
     new OAuth(
       config = config,
       providers = providers

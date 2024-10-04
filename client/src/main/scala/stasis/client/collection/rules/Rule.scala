@@ -1,9 +1,11 @@
 package stasis.client.collection.rules
 
-import stasis.client.collection.rules.exceptions.RuleParsingFailure
-
 import scala.util.matching.Regex
-import scala.util.{Failure, Success, Try}
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+
+import stasis.client.collection.rules.exceptions.RuleParsingFailure
 
 final case class Rule(
   operation: Rule.Operation,

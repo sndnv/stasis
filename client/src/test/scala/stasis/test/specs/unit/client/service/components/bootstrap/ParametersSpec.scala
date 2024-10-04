@@ -1,26 +1,37 @@
 package stasis.test.specs.unit.client.service.components.bootstrap
 
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.attribute.PosixFilePermissions
+import java.util.UUID
+
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+
 import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.util.ByteString
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import play.api.libs.json.Json
-import stasis.client.service.components.bootstrap.{Base, Bootstrap, Parameters}
-import stasis.client.service.{components, ApplicationArguments, ApplicationDirectory}
+
+import stasis.client.service.ApplicationArguments
+import stasis.client.service.ApplicationDirectory
+import stasis.client.service.components
+import stasis.client.service.components.bootstrap.Base
+import stasis.client.service.components.bootstrap.Bootstrap
+import stasis.client.service.components.bootstrap.Parameters
 import stasis.core.routing.Node
-import stasis.core.security.tls.EndpointContext
-import stasis.shared.model.devices.{Device, DeviceBootstrapParameters}
+import stasis.layers.security.tls.EndpointContext
+import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.DeviceBootstrapParameters
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
+import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.core.FileSystemHelpers.FileSystemSetup
-
-import java.nio.file.attribute.PosixFilePermissions
-import java.nio.file.{Files, Path}
-import java.util.UUID
-import scala.concurrent.Future
-import scala.util.{Failure, Success}
 
 class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
   "A Parameters component" should "support applying bootstrap parameters" in {
@@ -351,8 +362,8 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
     additionalConfig = Json.obj()
   )
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "ParametersSpec"
   )
 

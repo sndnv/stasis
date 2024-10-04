@@ -1,12 +1,12 @@
 package stasis.server.model.staging
 
+import scala.concurrent.Future
+
 import stasis.core.packaging.Crate
 import stasis.core.persistence.staging.StagingStore
 import stasis.core.persistence.staging.StagingStore.PendingDestaging
 import stasis.server.security.Resource
 import stasis.shared.security.Permission
-
-import scala.concurrent.Future
 
 trait ServerStagingStore { store =>
   protected def list(): Future[Map[Crate.Id, PendingDestaging]]

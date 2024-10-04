@@ -1,20 +1,24 @@
 package stasis.identity.api.oauth.directives
 
-import scala.util.{Failure, Success}
+import scala.util.Failure
+import scala.util.Success
 
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directive
+import org.apache.pekko.http.scaladsl.server.Directive1
 import org.apache.pekko.http.scaladsl.server.Directives._
-import org.apache.pekko.http.scaladsl.server.{Directive, Directive1}
 import org.slf4j.Logger
-import stasis.core.api.directives.EntityDiscardingDirectives
-import stasis.identity.model.clients.{Client, ClientStoreView}
+
+import stasis.identity.model.clients.Client
+import stasis.identity.persistence.clients.ClientStore
+import stasis.layers.api.directives.EntityDiscardingDirectives
 
 trait ClientRetrieval extends EntityDiscardingDirectives {
 
   protected def log: Logger
 
-  protected def clientStore: ClientStoreView
+  protected def clientStore: ClientStore.View
 
   def retrieveClient(clientId: Client.Id): Directive1[Client] =
     Directive { inner =>

@@ -1,6 +1,8 @@
 package stasis.test.specs.unit.client.encryption.secrets
 
-import stasis.client.encryption.secrets.{UserHashedEncryptionPassword, UserKeyStoreEncryptionSecret, UserLocalEncryptionSecret}
+import stasis.client.encryption.secrets.UserHashedEncryptionPassword
+import stasis.client.encryption.secrets.UserKeyStoreEncryptionSecret
+import stasis.client.encryption.secrets.UserLocalEncryptionSecret
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.EncodingHelpers
 

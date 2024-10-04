@@ -1,12 +1,15 @@
 package stasis.client.api.clients
 
+import scala.concurrent.Future
+
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import org.apache.pekko.{Done, NotUsed}
-import stasis.core.packaging.{Crate, Manifest}
-import stasis.core.routing.Node
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
 
-import scala.concurrent.Future
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
+import stasis.core.routing.Node
 
 trait ServerCoreEndpointClient {
   def self: Node.Id

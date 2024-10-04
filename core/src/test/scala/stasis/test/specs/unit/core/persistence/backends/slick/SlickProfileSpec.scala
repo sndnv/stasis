@@ -1,6 +1,7 @@
 package stasis.test.specs.unit.core.persistence.backends.slick
 
 import slick.jdbc._
+
 import stasis.core.persistence.backends.slick.SlickProfile
 import stasis.test.specs.unit.UnitSpec
 

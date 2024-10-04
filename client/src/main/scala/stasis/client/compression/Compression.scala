@@ -1,8 +1,10 @@
 package stasis.client.compression
 
-import stasis.client.model.{EntityMetadata, SourceEntity, TargetEntity}
-
 import java.nio.file.Path
+
+import stasis.client.model.EntityMetadata
+import stasis.client.model.SourceEntity
+import stasis.client.model.TargetEntity
 
 trait Compression {
   def defaultCompression: Encoder with Decoder

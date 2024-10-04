@@ -5,36 +5,40 @@ import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.ThreadLocalRandom
 
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.Failure
+import scala.util.Success
+import scala.util.control.NonFatal
+
 import org.apache.pekko.Done
 import org.apache.pekko.actor.typed._
 import org.apache.pekko.actor.typed.scaladsl.AskPattern._
-import org.apache.pekko.actor.typed.scaladsl.{Behaviors, LoggerOps, TimerScheduler}
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.actor.typed.scaladsl.TimerScheduler
 import org.apache.pekko.util.Timeout
+
 import stasis.client.api.clients.ServerApiEndpointClient
 import stasis.client.ops.exceptions.ScheduleRetrievalFailure
 import stasis.client.ops.scheduling.OperationScheduler.ActiveSchedule
 
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
-import scala.util.{Failure, Success}
-
 class DefaultOperationScheduler private (
-  schedulerRef: Future[ActorRef[DefaultOperationScheduler.Message]]
-)(implicit scheduler: Scheduler, ec: ExecutionContext, timeout: Timeout)
+  schedulerRef: ActorRef[DefaultOperationScheduler.Message]
+)(implicit scheduler: Scheduler, timeout: Timeout)
     extends OperationScheduler {
   import DefaultOperationScheduler._
 
   locally { val _ = refresh() }
 
   override def schedules: Future[Seq[ActiveSchedule]] =
-    schedulerRef.flatMap(_ ? (ref => GetSchedules(ref)))
+    schedulerRef ? (ref => GetSchedules(ref))
 
   override def refresh(): Future[Done] =
-    schedulerRef.flatMap(_ ? (ref => RefreshSchedules(ref)))
+    schedulerRef ? (ref => RefreshSchedules(ref))
 
   override def stop(): Future[Done] =
-    schedulerRef.flatMap(_ ? (ref => StopScheduler(ref)))
+    schedulerRef ? (ref => StopScheduler(ref))
 }
 
 object DefaultOperationScheduler {
@@ -48,8 +52,7 @@ object DefaultOperationScheduler {
     config: Config,
     api: ServerApiEndpointClient,
     executor: OperationExecutor
-  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): DefaultOperationScheduler = {
-    implicit val executionContext: ExecutionContext = system.executionContext
+  )(implicit system: ActorSystem[Nothing], timeout: Timeout): DefaultOperationScheduler = {
     implicit val schedulerConfig: Config = config
     implicit val apiClient: ServerApiEndpointClient = api
     implicit val operationExecutor: OperationExecutor = executor
@@ -64,7 +67,7 @@ object DefaultOperationScheduler {
     }
 
     new DefaultOperationScheduler(
-      schedulerRef = system ? (SpawnProtocol.Spawn(behaviour, name = "operation-scheduler", props = Props.empty, _))
+      schedulerRef = system.systemActorOf(behaviour, name = s"operation-scheduler-${java.util.UUID.randomUUID().toString}")
     )
   }
 
@@ -86,7 +89,6 @@ object DefaultOperationScheduler {
     activeSchedules: Seq[ActiveSchedule],
     activeOperations: Set[OperationScheduleAssignment]
   )(implicit
-    ec: ExecutionContext,
     timers: TimerScheduler[DefaultOperationScheduler.Message],
     config: Config,
     api: ServerApiEndpointClient,
@@ -100,6 +102,8 @@ object DefaultOperationScheduler {
           Behaviors.same
 
         case RefreshSchedules(replyTo) =>
+          import ctx.executionContext
+
           val log = ctx.log
           val self = ctx.self
           log.debugN("Refreshing schedules from [{}]", config.schedulesFile.toAbsolutePath)
@@ -183,6 +187,8 @@ object DefaultOperationScheduler {
           Behaviors.same
 
         case ExecuteSchedule(assignment) =>
+          import ctx.executionContext
+
           val log = ctx.log
           val self = ctx.self
 

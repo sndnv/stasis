@@ -1,28 +1,38 @@
 package stasis.test.specs.unit.core.persistence.backends.geode
 
-import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.util.ByteString
-import org.apache.geode.cache.Region
-import org.apache.geode.cache.client.{ClientCache, ClientCacheFactory, ClientRegionShortcut}
-import org.apache.geode.distributed.{ConfigurationProperties, ServerLauncher}
-import stasis.core.persistence.backends.KeyValueBackend
-import stasis.core.persistence.backends.geode.GeodeBackend
-import stasis.core.telemetry.TelemetryContext
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.persistence.backends.KeyValueBackendBehaviour
-
 import scala.concurrent.Future
 
-class GeodeBackendSpec extends AsyncUnitSpec with KeyValueBackendBehaviour {
-  "A GeodeBackend" should behave like keyValueBackend[TestGeodeBackend](
-    createBackend = telemetry => new TestGeodeBackend()(telemetry),
+import org.apache.geode.cache.Region
+import org.apache.geode.cache.client.ClientCache
+import org.apache.geode.cache.client.ClientCacheFactory
+import org.apache.geode.cache.client.ClientRegionShortcut
+import org.apache.geode.distributed.ConfigurationProperties
+import org.apache.geode.distributed.ServerLauncher
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.util.ByteString
+
+import stasis.core.persistence.backends.KeyValueBackend
+import stasis.core.persistence.backends.geode.GeodeBackend
+import stasis.layers.UnitSpec
+import stasis.layers.persistence.KeyValueStore
+import stasis.layers.persistence.KeyValueStoreBehaviour
+import stasis.layers.persistence.migration.Migration
+import stasis.layers.telemetry.TelemetryContext
+
+class GeodeBackendSpec extends UnitSpec with KeyValueStoreBehaviour {
+  "A GeodeBackend" should behave like keyValueStore[TestGeodeBackend](
+    createStore = telemetry => new TestGeodeBackend()(telemetry),
     before = _.init(),
     after = _.close()
   )
 
-  private class TestGeodeBackend(implicit telemetry: TelemetryContext) extends KeyValueBackend[String, Int] {
+  private class TestGeodeBackend(implicit telemetry: TelemetryContext) extends KeyValueStore[String, Int] {
+
+    override val name: String = "GeodeBackendSpec"
+
+    override val migrations: Seq[Migration] = Seq.empty
 
     private val serverLauncher: ServerLauncher =
       new ServerLauncher.Builder()
@@ -77,8 +87,8 @@ class GeodeBackendSpec extends AsyncUnitSpec with KeyValueBackendBehaviour {
       }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    guardianBehavior = Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    guardianBehavior = Behaviors.ignore,
     name = "GeodeBackendSpec"
   )
 }

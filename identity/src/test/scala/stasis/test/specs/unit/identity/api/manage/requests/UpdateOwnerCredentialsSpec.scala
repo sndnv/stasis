@@ -1,10 +1,10 @@
 package stasis.test.specs.unit.identity.api.manage.requests
 
+import scala.concurrent.duration._
+
 import stasis.identity.api.manage.requests.UpdateOwnerCredentials
 import stasis.identity.model.secrets.Secret
-import stasis.test.specs.unit.UnitSpec
-
-import scala.concurrent.duration._
+import stasis.layers.UnitSpec
 
 class UpdateOwnerCredentialsSpec extends UnitSpec {
   private val request = UpdateOwnerCredentials(

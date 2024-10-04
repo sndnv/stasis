@@ -4,8 +4,10 @@ import java.nio.charset.StandardCharsets
 
 import org.apache.pekko.util.ByteString
 import play.api.libs.json._
+
 import stasis.core.persistence.backends.KeyValueBackend
-import stasis.shared.model.devices.{Device, DeviceKey}
+import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.DeviceKey
 
 object DeviceKeyStoreSerdes extends KeyValueBackend.Serdes[Device.Id, DeviceKey] {
   import stasis.core.api.Formats.jsonConfig

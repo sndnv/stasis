@@ -5,6 +5,7 @@ import 'package:identity_ui/model/requests/create_api.dart';
 import 'package:identity_ui/pages/default/components.dart';
 import 'package:identity_ui/pages/manage/components/entity_form.dart';
 import 'package:identity_ui/pages/manage/components/entity_table.dart';
+import 'package:identity_ui/pages/manage/components/rendering.dart';
 
 class Apis extends StatefulWidget {
   const Apis({super.key, required this.client});
@@ -38,11 +39,16 @@ class _ApisState extends State<Apis> {
               header: const Text('APIs'),
               columns: const [
                 DataColumn(label: Text('ID')),
+                DataColumn(label: Text('Created')),
+                DataColumn(label: Text('Updated')),
                 DataColumn(label: Text('')),
               ],
-              entityToRow: (api) {
+              entityToRow: (e) {
+                Api api = e;
                 return [
                   DataCell(Text(api.id)),
+                  DataCell(Text(api.created.render())),
+                  DataCell(Text(api.updated.render())),
                   DataCell(
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,

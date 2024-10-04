@@ -4,8 +4,10 @@ import scala.concurrent.Future
 
 import org.apache.pekko.Done
 import org.slf4j.Logger
+
 import stasis.client.api.clients.ServerApiEndpointClient
-import stasis.client.ops.scheduling.{OperationExecutor, OperationScheduler}
+import stasis.client.ops.scheduling.OperationExecutor
+import stasis.client.ops.scheduling.OperationScheduler
 import stasis.client.ops.search.Search
 import stasis.client.tracking.TrackerViews
 import stasis.shared.secrets.SecretsConfig

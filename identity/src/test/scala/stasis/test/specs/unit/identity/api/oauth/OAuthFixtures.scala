@@ -1,21 +1,27 @@
 package stasis.test.specs.unit.identity.api.oauth
 
-import org.jose4j.jwk.JsonWebKey
-import stasis.identity.api.oauth.setup.{Config, Providers}
-import stasis.identity.authentication.oauth.{DefaultClientAuthenticator, DefaultResourceOwnerAuthenticator}
-import stasis.identity.model.apis.ApiStore
-import stasis.identity.model.clients.ClientStore
-import stasis.identity.model.codes.AuthorizationCodeStore
-import stasis.identity.model.codes.generators.DefaultAuthorizationCodeGenerator
-import stasis.identity.model.owners.ResourceOwnerStore
-import stasis.identity.model.secrets.Secret
-import stasis.identity.model.tokens.RefreshTokenStore
-import stasis.identity.model.tokens.generators.{JwtBearerAccessTokenGenerator, RandomRefreshTokenGenerator}
-import stasis.test.specs.unit.core.security.mocks.MockJwksGenerators
-import stasis.test.specs.unit.identity.RouteTest
-import stasis.test.specs.unit.identity.api.oauth.OAuthFixtures.{TestSecretConfig, TestStores}
-
 import scala.concurrent.duration._
+
+import org.jose4j.jwk.JsonWebKey
+
+import stasis.identity.api.oauth.setup.Config
+import stasis.identity.api.oauth.setup.Providers
+import stasis.identity.authentication.oauth.DefaultClientAuthenticator
+import stasis.identity.authentication.oauth.DefaultResourceOwnerAuthenticator
+import stasis.identity.model.codes.generators.DefaultAuthorizationCodeGenerator
+import stasis.identity.model.secrets.Secret
+import stasis.identity.model.tokens.generators.JwtBearerAccessTokenGenerator
+import stasis.identity.model.tokens.generators.RandomRefreshTokenGenerator
+import stasis.identity.persistence.apis.ApiStore
+import stasis.identity.persistence.clients.ClientStore
+import stasis.identity.persistence.codes.AuthorizationCodeStore
+import stasis.identity.persistence.owners.ResourceOwnerStore
+import stasis.identity.persistence.tokens.RefreshTokenStore
+import stasis.layers.Generators
+import stasis.layers.security.mocks.MockJwksGenerators
+import stasis.test.specs.unit.identity.RouteTest
+import stasis.test.specs.unit.identity.api.oauth.OAuthFixtures.TestSecretConfig
+import stasis.test.specs.unit.identity.api.oauth.OAuthFixtures.TestStores
 
 trait OAuthFixtures { _: RouteTest =>
   def createOAuthFixtures(
@@ -27,7 +33,7 @@ trait OAuthFixtures { _: RouteTest =>
       owners = createOwnerStore()
     ),
     jwk: JsonWebKey = MockJwksGenerators.generateRandomRsaKey(
-      keyId = Some(stasis.test.Generators.generateString(withSize = 16))
+      keyId = Some(Generators.generateString(withSize = 16))
     ),
     testSecretConfig: TestSecretConfig = TestSecretConfig(),
     withRefreshTokens: Boolean = true
@@ -42,6 +48,7 @@ trait OAuthFixtures { _: RouteTest =>
       Providers(
         apiStore = stores.apis.view,
         clientStore = stores.clients.view,
+        resourceOwnerStore = stores.owners.view,
         refreshTokenStore = stores.tokens,
         authorizationCodeStore = stores.codes,
         accessTokenGenerator = new JwtBearerAccessTokenGenerator(

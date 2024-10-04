@@ -4,11 +4,13 @@ import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
+
 import stasis.server.security.CurrentUser
 import stasis.shared.api.responses.Ping
 
 class Service()(implicit ctx: RoutesContext) extends ApiRoutes {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.shared.api.Formats._
 
   def routes(implicit currentUser: CurrentUser): Route =

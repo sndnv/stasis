@@ -1,14 +1,19 @@
 package stasis.test.specs.unit.core.networking.grpc.internal
 
 import java.nio.charset.StandardCharsets
+import java.util.Base64
+
+import scala.util.control.NonFatal
+
 import org.apache.pekko.http.scaladsl.model.HttpRequest
-import org.apache.pekko.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials, CustomHeader, OAuth2BearerToken}
+import org.apache.pekko.http.scaladsl.model.headers.Authorization
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.CustomHeader
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+
 import stasis.core.networking.exceptions.CredentialsFailure
 import stasis.core.networking.grpc.internal.Credentials
 import stasis.test.specs.unit.AsyncUnitSpec
-
-import java.util.Base64
-import scala.util.control.NonFatal
 
 class CredentialsSpec extends AsyncUnitSpec {
   it should "successfully marshal credentials" in {

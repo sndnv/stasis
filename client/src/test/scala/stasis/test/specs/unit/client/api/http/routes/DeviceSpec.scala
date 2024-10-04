@@ -1,27 +1,30 @@
 package stasis.test.specs.unit.client.api.http.routes
 
-import org.apache.pekko.http.scaladsl.model.{RequestEntity, StatusCodes}
+import java.time.Instant
+import java.util.concurrent.atomic.AtomicBoolean
+
+import scala.concurrent.Future
+
+import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.marshalling.Marshal
+import org.apache.pekko.http.scaladsl.model.RequestEntity
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.LoggerFactory
+
 import stasis.client.api.Context
 import stasis.client.api.http.routes.Device
 import stasis.client.tracking.ServerTracker
+import stasis.shared.api.requests.ReEncryptDeviceSecret
 import stasis.shared.model
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.mocks._
-
-import java.time.Instant
-import scala.concurrent.Future
-import org.apache.pekko.Done
-import org.apache.pekko.http.scaladsl.marshalling.Marshal
-import stasis.shared.api.requests.ReEncryptDeviceSecret
 import stasis.test.specs.unit.client.Fixtures
-
-import java.util.concurrent.atomic.AtomicBoolean
+import stasis.test.specs.unit.client.mocks._
 
 class DeviceSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.client.api.http.Formats._
   import stasis.shared.api.Formats._
 

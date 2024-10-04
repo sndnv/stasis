@@ -1,15 +1,16 @@
 package stasis.client.service.components
 
+import scala.concurrent.Future
+
 import org.apache.pekko.http.scaladsl.Http.ServerBinding
 import org.apache.pekko.util.ByteString
 import org.slf4j.LoggerFactory
+
 import stasis.client.api.Context
 import stasis.client.api.http.HttpApiEndpoint
 import stasis.client.security.DefaultFrontendAuthenticator
 import stasis.client.service.components.exceptions.ServiceStartupFailure
-import stasis.core.security.tls.EndpointContext
-
-import scala.concurrent.Future
+import stasis.layers.security.tls.EndpointContext
 
 trait ApiEndpoint {
   def context: Context

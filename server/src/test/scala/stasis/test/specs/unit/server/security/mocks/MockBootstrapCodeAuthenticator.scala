@@ -1,12 +1,14 @@
 package stasis.test.specs.unit.server.security.mocks
 
-import org.apache.pekko.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
+import scala.concurrent.Future
+
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+
 import stasis.core.networking.exceptions.CredentialsFailure
 import stasis.server.security.CurrentUser
 import stasis.server.security.authenticators.BootstrapCodeAuthenticator
 import stasis.shared.model.devices.DeviceBootstrapCode
-
-import scala.concurrent.Future
 
 class MockBootstrapCodeAuthenticator(expectedBootstrapCode: DeviceBootstrapCode) extends BootstrapCodeAuthenticator {
   override def authenticate(credentials: HttpCredentials): Future[(DeviceBootstrapCode, CurrentUser)] =

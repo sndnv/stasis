@@ -2,11 +2,13 @@ package stasis.core.persistence.backends
 
 import java.util.UUID
 
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
-import org.apache.pekko.util.ByteString
-import org.apache.pekko.{Done, NotUsed}
-
 import scala.concurrent.Future
+
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 
 trait StreamingBackend {
   def info: String

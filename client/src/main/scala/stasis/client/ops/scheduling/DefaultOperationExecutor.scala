@@ -1,30 +1,38 @@
 package stasis.client.ops.scheduling
 
-import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.scaladsl.LoggerOps
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import org.apache.pekko.util.Timeout
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.client.collection.rules.Specification
-import stasis.client.encryption.secrets.DeviceSecret
-import stasis.client.ops.exceptions.{OperationExecutionFailure, OperationStopped}
-import stasis.client.ops.{backup, recovery, ParallelismConfig}
-import stasis.client.tracking.state.OperationState
-import stasis.core.persistence.backends.memory.MemoryBackend
-import stasis.core.telemetry.TelemetryContext
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
-import stasis.shared.ops.Operation
-
 import java.nio.file.Path
 import java.time.Instant
-import scala.concurrent.{ExecutionContext, Future}
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.control.NonFatal
+
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.util.Timeout
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+import stasis.client.collection.rules.Specification
+import stasis.client.encryption.secrets.DeviceSecret
+import stasis.client.ops.ParallelismConfig
+import stasis.client.ops.backup
+import stasis.client.ops.exceptions.OperationExecutionFailure
+import stasis.client.ops.exceptions.OperationStopped
+import stasis.client.ops.recovery
+import stasis.client.tracking.state.OperationState
+import stasis.layers.persistence.memory.MemoryStore
+import stasis.layers.telemetry.TelemetryContext
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
+import stasis.shared.ops.Operation
 
 class DefaultOperationExecutor(
   config: DefaultOperationExecutor.Config,
   secret: DeviceSecret
 )(implicit
-  system: ActorSystem[SpawnProtocol.Command],
+  system: ActorSystem[Nothing],
   telemetry: TelemetryContext,
   parallelismConfig: ParallelismConfig,
   timeout: Timeout,
@@ -36,11 +44,11 @@ class DefaultOperationExecutor(
 
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
-  private val activeOperations: MemoryBackend[Operation.Id, Operation] =
-    MemoryBackend(name = "executor-active-operations-store")
+  private val activeOperations: MemoryStore[Operation.Id, Operation] =
+    MemoryStore(name = "executor-active-operations-store")
 
-  private val completedOperations: MemoryBackend[Operation.Id, Operation.Type] =
-    MemoryBackend(name = "executor-completed-operations-store")
+  private val completedOperations: MemoryStore[Operation.Id, Operation.Type] =
+    MemoryStore(name = "executor-completed-operations-store")
 
   override def active: Future[Map[Operation.Id, Operation.Type]] =
     activeOperations.entries.map(_.map { case (id, operation) => (id, operation.`type`) })

@@ -1,17 +1,20 @@
 package stasis.test.specs.unit.identity.api.manage.directives
 
+import scala.concurrent.Future
+
 import org.apache.pekko.http.scaladsl.model
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, HttpChallenges, OAuth2BearerToken}
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.HttpChallenges
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.apache.pekko.http.scaladsl.server.Directives
 import org.slf4j.Logger
+
 import stasis.identity.api.manage.directives.UserAuthentication
 import stasis.identity.authentication.manage.ResourceOwnerAuthenticator
 import stasis.identity.model.owners.ResourceOwner
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
-
-import scala.concurrent.Future
 
 class UserAuthenticationSpec extends RouteTest {
   "A UserAuthentication directive" should "authenticate users with valid bearer tokens" in withRetry {

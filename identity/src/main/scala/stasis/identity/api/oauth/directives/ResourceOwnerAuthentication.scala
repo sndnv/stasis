@@ -1,18 +1,23 @@
 package stasis.identity.api.oauth.directives
 
+import scala.util.Failure
+import scala.util.Success
+
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
-import org.apache.pekko.http.scaladsl.model.{StatusCodes, Uri}
+import org.apache.pekko.http.scaladsl.server.Directive
+import org.apache.pekko.http.scaladsl.server.Directive1
 import org.apache.pekko.http.scaladsl.server.Directives._
-import org.apache.pekko.http.scaladsl.server.{Directive, Directive1, StandardRoute}
-import stasis.core.api.directives.EntityDiscardingDirectives
+import org.apache.pekko.http.scaladsl.server.StandardRoute
+import org.slf4j.Logger
+
 import stasis.identity.api.Formats._
 import stasis.identity.authentication.oauth.ResourceOwnerAuthenticator
 import stasis.identity.model.errors.AuthorizationError
 import stasis.identity.model.owners.ResourceOwner
-import scala.util.{Failure, Success}
-
-import org.apache.pekko.actor.typed.scaladsl.LoggerOps
-import org.slf4j.Logger
+import stasis.layers.api.directives.EntityDiscardingDirectives
 
 trait ResourceOwnerAuthentication extends EntityDiscardingDirectives {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._

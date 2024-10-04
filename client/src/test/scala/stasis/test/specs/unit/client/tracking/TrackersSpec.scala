@@ -2,7 +2,9 @@ package stasis.test.specs.unit.client.tracking
 
 import stasis.client.tracking.Trackers
 import stasis.test.specs.unit.UnitSpec
-import stasis.test.specs.unit.client.mocks.{MockBackupTracker, MockRecoveryTracker, MockServerTracker}
+import stasis.test.specs.unit.client.mocks.MockBackupTracker
+import stasis.test.specs.unit.client.mocks.MockRecoveryTracker
+import stasis.test.specs.unit.client.mocks.MockServerTracker
 
 class TrackersSpec extends UnitSpec {
   "Trackers" should "provide tracker views" in {

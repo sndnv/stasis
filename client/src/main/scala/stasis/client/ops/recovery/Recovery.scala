@@ -1,28 +1,42 @@
 package stasis.client.ops.recovery
 
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import org.apache.pekko.stream._
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
-import org.apache.pekko.{Done, NotUsed}
-import stasis.client.collection.{RecoveryCollector, RecoveryMetadataCollector}
-import stasis.client.encryption.secrets.DeviceSecret
-import stasis.client.model.{DatasetMetadata, TargetEntity}
-import stasis.client.ops.ParallelismConfig
-import stasis.client.ops.exceptions.{EntityProcessingFailure, OperationStopped}
-import stasis.client.ops.recovery.stages.{EntityCollection, EntityProcessing, MetadataApplication}
-import stasis.client.tracking.RecoveryTracker
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
-import stasis.shared.ops.Operation
-
-import java.nio.file.{FileSystem, FileSystems, Path}
+import java.nio.file.FileSystem
+import java.nio.file.FileSystems
+import java.nio.file.Path
 import java.time.Instant
-import scala.concurrent.{ExecutionContext, Future}
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
 import scala.util.matching.Regex
-import scala.util.{Failure, Success}
+
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.stream._
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+
+import stasis.client.collection.RecoveryCollector
+import stasis.client.collection.RecoveryMetadataCollector
+import stasis.client.encryption.secrets.DeviceSecret
+import stasis.client.model.DatasetMetadata
+import stasis.client.model.TargetEntity
+import stasis.client.ops.ParallelismConfig
+import stasis.client.ops.exceptions.EntityProcessingFailure
+import stasis.client.ops.exceptions.OperationStopped
+import stasis.client.ops.recovery.stages.EntityCollection
+import stasis.client.ops.recovery.stages.EntityProcessing
+import stasis.client.ops.recovery.stages.MetadataApplication
+import stasis.client.tracking.RecoveryTracker
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
+import stasis.shared.ops.Operation
 
 class Recovery(
   descriptor: Recovery.Descriptor
-)(implicit system: ActorSystem[SpawnProtocol.Command], parallelism: ParallelismConfig, providers: Providers)
+)(implicit system: ActorSystem[Nothing], parallelism: ParallelismConfig, providers: Providers)
     extends Operation { parent =>
   import Recovery._
 
@@ -83,7 +97,7 @@ class Recovery(
 object Recovery {
   def apply(
     descriptor: Recovery.Descriptor
-  )(implicit system: ActorSystem[SpawnProtocol.Command], parallelism: ParallelismConfig, providers: Providers): Recovery =
+  )(implicit system: ActorSystem[Nothing], parallelism: ParallelismConfig, providers: Providers): Recovery =
     new Recovery(descriptor)
 
   final case class Descriptor(

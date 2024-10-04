@@ -1,18 +1,24 @@
 package stasis.client.ops.backup.stages
 
+import java.nio.file.Files
+import java.nio.file.Path
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
-import stasis.client.collection.rules.{Rule, Specification}
-import stasis.client.collection.{BackupCollector, BackupMetadataCollector}
+
+import stasis.client.collection.rules.Rule
+import stasis.client.collection.rules.Specification
+import stasis.client.collection.BackupCollector
+import stasis.client.collection.BackupMetadataCollector
 import stasis.client.model.DatasetMetadata
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.backup.Providers
 import stasis.client.tracking.state.BackupState
 import stasis.shared.ops.Operation
-
-import java.nio.file.{Files, Path}
-import scala.concurrent.{ExecutionContext, Future}
 
 trait EntityDiscovery {
   protected def collector: EntityDiscovery.Collector

@@ -1,13 +1,18 @@
 package stasis.test.specs.unit.identity.api.oauth
 
 import org.apache.pekko.http.scaladsl.model
-import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, CacheDirectives}
-import org.apache.pekko.http.scaladsl.model.{FormData, StatusCodes}
+import org.apache.pekko.http.scaladsl.model.FormData
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.CacheDirectives
+
 import stasis.identity.api.oauth.ClientCredentialsGrant
-import stasis.identity.api.oauth.ClientCredentialsGrant.{AccessTokenRequest, AccessTokenResponse}
+import stasis.identity.api.oauth.ClientCredentialsGrant.AccessTokenRequest
+import stasis.identity.api.oauth.ClientCredentialsGrant.AccessTokenResponse
 import stasis.identity.model.GrantType
 import stasis.identity.model.secrets.Secret
 import stasis.identity.model.tokens.TokenType
+import stasis.layers
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
 
@@ -29,7 +34,7 @@ class ClientCredentialsGrantSpec extends RouteTest with OAuthFixtures {
     val grant = new ClientCredentialsGrant(config, providers)
 
     val rawPassword = "some-password"
-    val salt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
+    val salt = layers.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
@@ -63,7 +68,7 @@ class ClientCredentialsGrantSpec extends RouteTest with OAuthFixtures {
     val grant = new ClientCredentialsGrant(config, providers)
 
     val rawPassword = "some-password"
-    val salt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
+    val salt = layers.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt

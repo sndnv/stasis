@@ -1,13 +1,17 @@
 package stasis.core.networking.grpc.internal
 
 import java.nio.charset.StandardCharsets
-import org.apache.pekko.http.scaladsl.model.HttpRequest
-import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials, OAuth2BearerToken}
-import stasis.core.networking.exceptions.CredentialsFailure
-
 import java.util.Base64
+
 import scala.concurrent.Future
 import scala.util.matching.Regex
+
+import org.apache.pekko.http.scaladsl.model.HttpRequest
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+
+import stasis.core.networking.exceptions.CredentialsFailure
 
 object Credentials {
   final val HEADER: String = "authorization"

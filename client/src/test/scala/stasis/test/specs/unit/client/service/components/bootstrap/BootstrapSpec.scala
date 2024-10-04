@@ -4,23 +4,22 @@ import java.util.UUID
 
 import scala.collection.mutable
 
+import com.typesafe.config.Config
 import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.ActorSystem
-import org.apache.pekko.actor.typed.Behavior
-import org.apache.pekko.actor.typed.SpawnProtocol
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
-import com.typesafe.config.Config
-import org.mockito.scalatest.AsyncMockitoSugar
 import org.mockito.Strictness
+import org.mockito.scalatest.AsyncMockitoSugar
 import org.slf4j.Logger
 import play.api.libs.json.Json
+
 import stasis.client.service.ApplicationArguments
 import stasis.client.service.components.bootstrap.Base
 import stasis.client.service.components.bootstrap.Bootstrap
 import stasis.client.service.components.bootstrap.Init
 import stasis.core.routing.Node
-import stasis.core.security.tls.EndpointContext
+import stasis.layers.security.tls.EndpointContext
 import stasis.shared.model.devices.Device
 import stasis.shared.model.devices.DeviceBootstrapParameters
 import stasis.shared.model.users.User
@@ -143,8 +142,8 @@ class BootstrapSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockito
     additionalConfig = Json.obj()
   )
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "BootstrapSpec"
   )
 

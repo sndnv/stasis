@@ -1,20 +1,23 @@
 package stasis.test.specs.unit.server.model.datasets
 
 import java.time.Instant
+
+import scala.concurrent.duration._
+import scala.util.control.NonFatal
+
 import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+
 import stasis.core.packaging.Crate
-import stasis.core.telemetry.TelemetryContext
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.layers.telemetry.TelemetryContext
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.model.mocks.MockDatasetEntryStore
-
-import scala.concurrent.duration._
-import scala.util.control.NonFatal
 
 class DatasetEntryStoreSpec extends AsyncUnitSpec {
   "A DatasetEntryStore" should "provide a view resource (privileged)" in {
@@ -328,8 +331,8 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "DatasetEntryStoreSpec"
   )
 

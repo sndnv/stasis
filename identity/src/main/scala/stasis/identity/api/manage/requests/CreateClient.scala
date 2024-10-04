@@ -18,7 +18,7 @@ final case class CreateClient(
   def toClient(implicit config: Secret.ClientConfig): Client = {
     val salt = Secret.generateSalt()
 
-    Client(
+    Client.create(
       id = Client.generateId(),
       redirectUri = redirectUri,
       tokenExpiration = tokenExpiration,

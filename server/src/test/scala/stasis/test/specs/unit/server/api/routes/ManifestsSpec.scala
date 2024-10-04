@@ -1,17 +1,22 @@
 package stasis.test.specs.unit.server.api.routes
 
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.core.packaging.{Crate, Manifest}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
 import stasis.core.persistence.manifests.ManifestStore
-import stasis.core.telemetry.TelemetryContext
-import stasis.server.api.routes.{Manifests, RoutesContext}
+import stasis.layers.telemetry.TelemetryContext
+import stasis.server.api.routes.Manifests
+import stasis.server.api.routes.RoutesContext
 import stasis.server.model.manifests.ServerManifestStore
-import stasis.server.security.{CurrentUser, ResourceProvider}
+import stasis.server.security.CurrentUser
+import stasis.server.security.ResourceProvider
 import stasis.shared.api.responses.DeletedManifest
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -22,6 +27,7 @@ import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
 
 class ManifestsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.core.api.Formats._
   import stasis.shared.api.Formats._
 
@@ -64,8 +70,8 @@ class ManifestsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "ManifestsSpec"
   )
 

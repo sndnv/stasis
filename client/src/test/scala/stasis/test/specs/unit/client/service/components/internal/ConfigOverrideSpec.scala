@@ -3,6 +3,7 @@ package stasis.test.specs.unit.client.service.components.internal
 import java.io.FileNotFoundException
 
 import com.typesafe.{config => typesafe}
+
 import stasis.client.service.components.Files
 import stasis.client.service.components.internal.ConfigOverride
 import stasis.test.specs.unit.AsyncUnitSpec

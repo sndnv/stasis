@@ -1,10 +1,11 @@
 package stasis.test.specs.unit.identity.api.manage
 
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import stasis.identity.api.Formats._
+
 import stasis.identity.api.manage.Tokens
 import stasis.identity.model.clients.Client
 import stasis.identity.model.tokens.RefreshToken
+import stasis.layers
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.api.manage.TokensSpec.PartialStoredRefreshToken
 import stasis.test.specs.unit.identity.model.Generators
@@ -17,7 +18,7 @@ class TokensSpec extends RouteTest {
     val tokens = new Tokens(store)
 
     val owner = Generators.generateResourceOwner
-    val expectedTokens = stasis.test.Generators
+    val expectedTokens = layers.Generators
       .generateSeq(min = 2, g = Generators.generateRefreshToken)
       .map(token => PartialStoredRefreshToken(token.value, Client.generateId(), owner.username, scope = None))
 
@@ -69,7 +70,7 @@ class TokensSpec extends RouteTest {
     store.put(client, token, owner, scope = None).await
     Delete(s"/${token.value}") ~> tokens.routes(user) ~> check {
       status should be(StatusCodes.OK)
-      store.tokens.await should be(Map.empty)
+      store.all.await.size should be(0)
     }
   }
 

@@ -1,17 +1,21 @@
 package stasis.identity.api.oauth.directives
 
-import scala.util.{Failure, Success}
+import scala.util.Failure
+import scala.util.Success
 
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directive
+import org.apache.pekko.http.scaladsl.server.Directive1
 import org.apache.pekko.http.scaladsl.server.Directives._
-import org.apache.pekko.http.scaladsl.server.{Directive, Directive1}
 import org.slf4j.Logger
-import stasis.core.api.directives.EntityDiscardingDirectives
+
 import stasis.identity.model.clients.Client
 import stasis.identity.model.owners.ResourceOwner
+import stasis.identity.model.tokens.RefreshToken
 import stasis.identity.model.tokens.generators.RefreshTokenGenerator
-import stasis.identity.model.tokens.{RefreshToken, RefreshTokenStore}
+import stasis.identity.persistence.tokens.RefreshTokenStore
+import stasis.layers.api.directives.EntityDiscardingDirectives
 
 trait RefreshTokenGeneration extends EntityDiscardingDirectives {
 

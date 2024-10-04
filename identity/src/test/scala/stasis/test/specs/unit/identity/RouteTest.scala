@@ -1,31 +1,50 @@
 package stasis.test.specs.unit.identity
 
+import java.time.temporal.ChronoUnit
+
 import scala.concurrent.Future
 import scala.concurrent.duration._
+
 import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.http.scaladsl.marshalling.{Marshal, Marshaller}
+import org.apache.pekko.http.scaladsl.marshalling.Marshal
+import org.apache.pekko.http.scaladsl.marshalling.Marshaller
 import org.apache.pekko.http.scaladsl.model.RequestEntity
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.apache.pekko.util.Timeout
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.core.persistence.backends.KeyValueBackend
-import stasis.core.persistence.backends.memory.MemoryBackend
-import stasis.identity.model.apis.{Api, ApiStore}
-import stasis.identity.model.clients.{Client, ClientStore}
-import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, StoredAuthorizationCode}
-import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore}
-import stasis.identity.model.tokens.{RefreshToken, RefreshTokenStore, StoredRefreshToken}
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-import stasis.test.specs.unit.identity.RouteTest.FailingMemoryBackend
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
-trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
+import stasis.identity.model.apis.Api
+import stasis.identity.model.clients.Client
+import stasis.identity.model.codes.AuthorizationCode
+import stasis.identity.model.codes.StoredAuthorizationCode
+import stasis.identity.model.owners.ResourceOwner
+import stasis.identity.model.tokens.RefreshToken
+import stasis.identity.model.tokens.StoredRefreshToken
+import stasis.identity.persistence.apis.ApiStore
+import stasis.identity.persistence.clients.ClientStore
+import stasis.identity.persistence.codes.AuthorizationCodeStore
+import stasis.identity.persistence.owners.ResourceOwnerStore
+import stasis.identity.persistence.tokens.RefreshTokenStore
+import stasis.layers.UnitSpec
+import stasis.layers.persistence.KeyValueStore
+import stasis.layers.persistence.memory.MemoryStore
+import stasis.layers.persistence.migration.Migration
+import stasis.layers.telemetry.MockTelemetryContext
+import stasis.test.specs.unit.identity.RouteTest.FailingMemoryStore
+import stasis.test.specs.unit.identity.persistence.mocks.MockApiStore
+import stasis.test.specs.unit.identity.persistence.mocks.MockAuthorizationCodeStore
+import stasis.test.specs.unit.identity.persistence.mocks.MockClientStore
+import stasis.test.specs.unit.identity.persistence.mocks.MockRefreshTokenStore
+import stasis.test.specs.unit.identity.persistence.mocks.MockResourceOwnerStore
+
+trait RouteTest extends UnitSpec with ScalatestRouteTest {
   import scala.language.implicitConversions
 
-  implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    guardianBehavior = Behaviors.ignore,
     name = this.getClass.getSimpleName + "_typed"
   )
 
@@ -36,33 +55,15 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
 
   def createLogger(): Logger = LoggerFactory.getLogger(this.getClass.getName)
 
-  def createApiStore(): ApiStore =
-    ApiStore(
-      MemoryBackend[Api.Id, Api](name = s"api-store-${java.util.UUID.randomUUID()}")
-    )
+  def createApiStore(): ApiStore = MockApiStore()
 
-  def createClientStore(): ClientStore =
-    ClientStore(
-      MemoryBackend[Client.Id, Client](name = s"client-store-${java.util.UUID.randomUUID()}")
-    )
+  def createClientStore(): ClientStore = MockClientStore()
 
-  def createCodeStore(expiration: FiniteDuration = 3.seconds): AuthorizationCodeStore =
-    AuthorizationCodeStore(
-      expiration = expiration,
-      MemoryBackend[AuthorizationCode, StoredAuthorizationCode](name = s"code-store-${java.util.UUID.randomUUID()}")
-    )
+  def createCodeStore(): AuthorizationCodeStore = MockAuthorizationCodeStore()
 
-  def createOwnerStore(): ResourceOwnerStore =
-    ResourceOwnerStore(
-      MemoryBackend[ResourceOwner.Id, ResourceOwner](name = s"owner-store-${java.util.UUID.randomUUID()}")
-    )
+  def createOwnerStore(): ResourceOwnerStore = MockResourceOwnerStore()
 
-  def createTokenStore(expiration: FiniteDuration = 3.seconds): RefreshTokenStore =
-    RefreshTokenStore(
-      expiration = expiration,
-      MemoryBackend[RefreshToken, StoredRefreshToken](name = s"token-store-${java.util.UUID.randomUUID()}"),
-      MemoryBackend[(Client.Id, ResourceOwner.Id), RefreshToken](name = s"token-directory-${java.util.UUID.randomUUID()}")
-    )
+  def createTokenStore(): RefreshTokenStore = MockRefreshTokenStore()
 
   def createFailingApiStore(
     failingPut: Boolean = false,
@@ -71,10 +72,10 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
     failingEntries: Boolean = false,
     failingContains: Boolean = false
   ): ApiStore =
-    ApiStore(
-      new FailingMemoryBackend[Api.Id, Api] {
+    new MockApiStore(
+      underlying = new FailingMemoryStore[Api.Id, Api] {
         override implicit def telemetry: MockTelemetryContext = telemetryContext
-        override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
+        override def system: ActorSystem[Nothing] = typedSystem
         override def storeName: String = s"api-store-${java.util.UUID.randomUUID()}"
         override def putFails: Boolean = failingPut
         override def deleteFails: Boolean = failingDelete
@@ -91,10 +92,10 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
     failingEntries: Boolean = false,
     failingContains: Boolean = false
   ): ClientStore =
-    ClientStore(
-      new FailingMemoryBackend[Client.Id, Client] {
+    new MockClientStore(
+      new FailingMemoryStore[Client.Id, Client] {
         override implicit def telemetry: MockTelemetryContext = telemetryContext
-        override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
+        override def system: ActorSystem[Nothing] = typedSystem
         override def storeName: String = s"client-store-${java.util.UUID.randomUUID()}"
         override def putFails: Boolean = failingPut
         override def deleteFails: Boolean = failingDelete
@@ -105,18 +106,16 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
     )
 
   def createFailingCodeStore(
-    expiration: FiniteDuration = 3.second,
     failingPut: Boolean = false,
     failingDelete: Boolean = false,
     failingGet: Boolean = false,
     failingEntries: Boolean = false,
     failingContains: Boolean = false
   ): AuthorizationCodeStore =
-    AuthorizationCodeStore(
-      expiration = expiration,
-      new FailingMemoryBackend[AuthorizationCode, StoredAuthorizationCode] {
+    new MockAuthorizationCodeStore(
+      new FailingMemoryStore[AuthorizationCode, StoredAuthorizationCode] {
         override implicit def telemetry: MockTelemetryContext = telemetryContext
-        override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
+        override def system: ActorSystem[Nothing] = typedSystem
         override def storeName: String = s"code-store-${java.util.UUID.randomUUID()}"
         override def putFails: Boolean = failingPut
         override def deleteFails: Boolean = failingDelete
@@ -133,10 +132,10 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
     failingEntries: Boolean = false,
     failingContains: Boolean = false
   ): ResourceOwnerStore =
-    ResourceOwnerStore(
-      new FailingMemoryBackend[ResourceOwner.Id, ResourceOwner] {
+    new MockResourceOwnerStore(
+      new FailingMemoryStore[ResourceOwner.Id, ResourceOwner] {
         override implicit def telemetry: MockTelemetryContext = telemetryContext
-        override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
+        override def system: ActorSystem[Nothing] = typedSystem
         override def storeName: String = s"owner-store-${java.util.UUID.randomUUID()}"
         override def putFails: Boolean = failingPut
         override def deleteFails: Boolean = failingDelete
@@ -147,36 +146,73 @@ trait RouteTest extends AsyncUnitSpec with ScalatestRouteTest {
     )
 
   def createFailingTokenStore(
-    expiration: FiniteDuration = 3.seconds,
     failingPut: Boolean = false,
     failingDelete: Boolean = false,
     failingGet: Boolean = false,
     failingEntries: Boolean = false,
     failingContains: Boolean = false
   ): RefreshTokenStore =
-    RefreshTokenStore(
-      expiration = expiration,
-      new FailingMemoryBackend[RefreshToken, StoredRefreshToken] {
+    new MockRefreshTokenStore(
+      new FailingMemoryStore[RefreshToken, StoredRefreshToken] {
         override implicit def telemetry: MockTelemetryContext = telemetryContext
-        override def system: ActorSystem[SpawnProtocol.Command] = typedSystem
+        override def system: ActorSystem[Nothing] = typedSystem
         override def storeName: String = s"token-store-${java.util.UUID.randomUUID()}"
         override def putFails: Boolean = failingPut
         override def deleteFails: Boolean = failingDelete
         override def getFails: Boolean = failingGet
         override def entriesFails: Boolean = failingEntries
         override def containsFails: Boolean = failingContains
-      },
-      MemoryBackend[(Client.Id, ResourceOwner.Id), RefreshToken](name = s"token-directory-${java.util.UUID.randomUUID()}")
+      }
     )
+
+  implicit class ExtendedApi(api: Api) {
+    def truncated(): Api =
+      api.copy(
+        created = api.created.truncatedTo(ChronoUnit.SECONDS),
+        updated = api.updated.truncatedTo(ChronoUnit.SECONDS)
+      )
+  }
+
+  implicit class ExtendedClient(client: Client) {
+    def truncated(): Client =
+      client.copy(
+        created = client.created.truncatedTo(ChronoUnit.SECONDS),
+        updated = client.updated.truncatedTo(ChronoUnit.SECONDS)
+      )
+  }
+
+  implicit class ExtendedResourceOwner(owner: ResourceOwner) {
+    def truncated(): ResourceOwner =
+      owner.copy(
+        created = owner.created.truncatedTo(ChronoUnit.SECONDS),
+        updated = owner.updated.truncatedTo(ChronoUnit.SECONDS)
+      )
+  }
+
+  implicit class ExtendedOptionalApi(api: Option[Api]) {
+    def truncated(): Option[Api] = api.map(_.truncated())
+  }
+
+  implicit class ExtendedOptionalClient(client: Option[Client]) {
+    def truncated(): Option[Client] = client.map(_.truncated())
+  }
+
+  implicit class ExtendedOptionalResourceOwner(owner: Option[ResourceOwner]) {
+    def truncated(): Option[ResourceOwner] = owner.map(_.truncated())
+  }
 }
 
 object RouteTest {
-  trait FailingMemoryBackend[K, V] extends KeyValueBackend[K, V] {
-    private val underlying = MemoryBackend[K, V](storeName)
+  trait FailingMemoryStore[K, V] extends KeyValueStore[K, V] {
+    private val underlying = MemoryStore[K, V](storeName)
 
     implicit def telemetry: MockTelemetryContext
-    implicit def system: ActorSystem[SpawnProtocol.Command]
+    implicit def system: ActorSystem[Nothing]
     implicit def timeout: Timeout = 3.seconds
+
+    override def name(): String = storeName
+
+    override def migrations(): Seq[Migration] = Seq.empty
 
     def storeName: String
     def putFails: Boolean

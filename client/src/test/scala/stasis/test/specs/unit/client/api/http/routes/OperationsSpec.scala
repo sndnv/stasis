@@ -1,24 +1,5 @@
 package stasis.test.specs.unit.client.api.http.routes
 
-import org.apache.pekko.{Done, NotUsed}
-import org.apache.pekko.http.scaladsl.model.sse.ServerSentEvent
-import org.apache.pekko.http.scaladsl.model.{MediaTypes, StatusCodes, Uri}
-import org.apache.pekko.http.scaladsl.server.Directives._
-import org.apache.pekko.http.scaladsl.server.{Directives, Route}
-import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
-import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
-import org.slf4j.LoggerFactory
-import stasis.client.api.Context
-import stasis.client.api.http.routes.Operations
-import stasis.client.ops.recovery.Recovery.PathQuery
-import stasis.client.tracking.state.{BackupState, RecoveryState}
-import stasis.client.tracking.{BackupTracker, RecoveryTracker}
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
-import stasis.shared.ops.Operation
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.api.http.routes.OperationsSpec.{PartialBackupState, PartialRecoveryState}
-import stasis.test.specs.unit.client.mocks._
 import java.nio.file.Paths
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
@@ -26,12 +7,42 @@ import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.http.scaladsl.model.MediaTypes
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.model.sse.ServerSentEvent
+import org.apache.pekko.http.scaladsl.server.Directives
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+import org.slf4j.LoggerFactory
+
+import stasis.client.api.Context
+import stasis.client.api.http.routes.Operations
+import stasis.client.ops.recovery.Recovery.PathQuery
+import stasis.client.tracking.BackupTracker
+import stasis.client.tracking.RecoveryTracker
+import stasis.client.tracking.state.BackupState
+import stasis.client.tracking.state.RecoveryState
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
+import stasis.shared.ops.Operation
+import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.api.http.routes.OperationsSpec.PartialBackupState
+import stasis.test.specs.unit.client.api.http.routes.OperationsSpec.PartialRecoveryState
+import stasis.test.specs.unit.client.mocks._
 
 class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   "Operations routes" should "provide current operations state (default / active)" in withRetry {
-    import Operations._
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
+    import Operations._
 
     val operations: Map[Operation.Id, Operation.Type] = Map(
       Operation.generateId() -> Operation.Type.Backup,
@@ -83,8 +94,9 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   they should "provide current operations state (completed)" in withRetry {
-    import Operations._
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
+    import Operations._
 
     val operations: Map[Operation.Id, Operation.Type] = Map(
       Operation.generateId() -> Operation.Type.Backup,
@@ -133,8 +145,9 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   they should "provide current operations state (all)" in withRetry {
-    import Operations._
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
+    import Operations._
 
     val operations: Map[Operation.Id, Operation.Type] = Map(
       Operation.generateId() -> Operation.Type.Backup,
@@ -183,8 +196,9 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   they should "provide current backup rules" in withRetry {
-    import Operations._
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
+    import Operations._
 
     val mockExecutor = MockOperationExecutor()
     val routes = createRoutes(executor = mockExecutor)
@@ -310,8 +324,9 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   they should "support retrieving progress of specific operations (backup)" in withRetry {
-    import OperationsSpec._
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
+    import OperationsSpec._
 
     val operation = Operation.generateId()
 
@@ -353,8 +368,9 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   }
 
   they should "support retrieving progress of specific operations (recovery)" in withRetry {
-    import OperationsSpec._
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
+    import OperationsSpec._
 
     val operation = Operation.generateId()
     val mockTrackers = new MockTrackerViews() {

@@ -1,13 +1,16 @@
 package stasis.client.collection.rules
 
+import java.nio.file._
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.control.NonFatal
+
 import stasis.client.collection.rules.exceptions.RuleMatchingFailure
-import stasis.client.collection.rules.internal.{FilesWalker, IndexedRule}
+import stasis.client.collection.rules.internal.FilesWalker
+import stasis.client.collection.rules.internal.IndexedRule
 import stasis.client.tracking.BackupTracker
 import stasis.shared.ops.Operation
-
-import java.nio.file._
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
 
 final case class Specification(
   entries: Map[Path, Specification.Entry],

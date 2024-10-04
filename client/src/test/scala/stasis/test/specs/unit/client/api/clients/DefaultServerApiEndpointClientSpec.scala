@@ -1,32 +1,5 @@
 package stasis.test.specs.unit.client.api.clients
 
-import org.apache.pekko.NotUsed
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
-import org.apache.pekko.http.scaladsl.model.{HttpResponse, StatusCodes}
-import org.apache.pekko.stream.scaladsl.{Flow, Source}
-import org.apache.pekko.util.ByteString
-import com.typesafe.config.Config
-import org.scalatest.concurrent.Eventually
-import stasis.client.api.clients.DefaultServerApiEndpointClient
-import stasis.client.api.clients.exceptions.ServerApiFailure
-import stasis.client.encryption.secrets.DeviceMetadataSecret
-import stasis.client.model.DatasetMetadata
-import stasis.core.networking.exceptions.ClientFailure
-import stasis.core.packaging.Crate
-import stasis.core.routing.Node
-import stasis.core.security.tls.EndpointContext
-import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}
-import stasis.shared.api.responses.CreatedDatasetDefinition
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
-import stasis.shared.model.devices.Device
-import stasis.shared.model.schedules.Schedule
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.Fixtures
-import stasis.test.specs.unit.client.mocks.{MockEncryption, MockServerApiEndpoint, MockServerCoreEndpointClient}
-import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-import stasis.test.specs.unit.shared.model.Generators
 import java.time.Instant
 
 import scala.collection.mutable
@@ -34,8 +7,42 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
+import com.typesafe.config.Config
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.http.scaladsl.model.HttpResponse
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
+import org.scalatest.concurrent.Eventually
+
+import stasis.client.api.clients.DefaultServerApiEndpointClient
+import stasis.client.api.clients.exceptions.ServerApiFailure
+import stasis.client.encryption.secrets.DeviceMetadataSecret
+import stasis.client.model.DatasetMetadata
 import stasis.core.api.PoolClient
+import stasis.core.networking.exceptions.ClientFailure
+import stasis.core.packaging.Crate
+import stasis.core.routing.Node
+import stasis.layers.security.tls.EndpointContext
+import stasis.shared.api.requests.CreateDatasetDefinition
+import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.requests.ResetUserPassword
+import stasis.shared.api.responses.CreatedDatasetDefinition
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
+import stasis.shared.model.devices.Device
+import stasis.shared.model.schedules.Schedule
+import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.mocks.MockEncryption
+import stasis.test.specs.unit.client.mocks.MockServerApiEndpoint
+import stasis.test.specs.unit.client.mocks.MockServerCoreEndpointClient
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
+import stasis.test.specs.unit.shared.model.Generators
 
 class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
   "A DefaultServerApiEndpointClient" should "create dataset definitions" in {
@@ -670,8 +677,8 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
     )
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "DefaultServerApiEndpointClientSpec"
   )
 

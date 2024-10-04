@@ -1,13 +1,15 @@
 package stasis.server.model.datasets
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import org.apache.pekko.Done
-import stasis.core.persistence.backends.KeyValueBackend
+
+import stasis.layers.persistence.KeyValueStore
 import stasis.server.security.Resource
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.devices.Device
 import stasis.shared.security.Permission
-
-import scala.concurrent.{ExecutionContext, Future}
 
 trait DatasetDefinitionStore { store =>
   protected implicit def ec: ExecutionContext
@@ -138,7 +140,7 @@ object DatasetDefinitionStore {
   }
 
   def apply(
-    backend: KeyValueBackend[DatasetDefinition.Id, DatasetDefinition]
+    backend: KeyValueStore[DatasetDefinition.Id, DatasetDefinition]
   )(implicit ctx: ExecutionContext): DatasetDefinitionStore =
     new DatasetDefinitionStore {
       override implicit protected def ec: ExecutionContext = ctx

@@ -2,11 +2,12 @@ package stasis.client.ops.scheduling
 
 import java.nio.file.Path
 
-import stasis.client.collection.rules.Rule
-
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.io.Source
 import scala.util.Try
+
+import stasis.client.collection.rules.Rule
 
 object SchedulingConfig {
   object Comment {

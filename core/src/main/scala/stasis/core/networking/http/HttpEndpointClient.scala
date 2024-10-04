@@ -7,7 +7,6 @@ import scala.util.control.NonFatal
 import org.apache.pekko.Done
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.typed.ActorSystem
-import org.apache.pekko.actor.typed.SpawnProtocol
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
 import org.apache.pekko.http.scaladsl.model._
@@ -19,6 +18,7 @@ import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+
 import stasis.core.api.PoolClient
 import stasis.core.networking.EndpointClient
 import stasis.core.networking.exceptions.CredentialsFailure
@@ -29,9 +29,9 @@ import stasis.core.packaging.Manifest
 import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.CrateStorageReservation
 import stasis.core.security.NodeCredentialsProvider
-import stasis.core.security.tls.EndpointContext
-import stasis.core.streaming.Operators.ExtendedByteStringSource
-import stasis.core.streaming.Operators.ExtendedSource
+import stasis.layers.security.tls.EndpointContext
+import stasis.layers.streaming.Operators.ExtendedByteStringSource
+import stasis.layers.streaming.Operators.ExtendedSource
 
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
 class HttpEndpointClient(
@@ -39,11 +39,12 @@ class HttpEndpointClient(
   override protected val context: Option[EndpointContext],
   override protected val config: PoolClient.Config,
   private val maxChunkSize: Int
-)(implicit override protected val system: ActorSystem[SpawnProtocol.Command])
+)(implicit override protected val system: ActorSystem[Nothing])
     extends EndpointClient[HttpEndpointAddress, HttpCredentials]
     with PoolClient {
 
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.core.api.Formats._
 
   private implicit val ec: ExecutionContext = system.executionContext
@@ -297,7 +298,7 @@ object HttpEndpointClient {
     context: Option[EndpointContext],
     maxChunkSize: Int,
     config: PoolClient.Config
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): HttpEndpointClient =
+  )(implicit system: ActorSystem[Nothing]): HttpEndpointClient =
     new HttpEndpointClient(
       credentials = credentials,
       context = context,
@@ -309,7 +310,7 @@ object HttpEndpointClient {
     credentials: NodeCredentialsProvider[HttpEndpointAddress, HttpCredentials],
     maxChunkSize: Int,
     config: PoolClient.Config
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): HttpEndpointClient =
+  )(implicit system: ActorSystem[Nothing]): HttpEndpointClient =
     HttpEndpointClient(
       credentials = credentials,
       context = None,
@@ -322,7 +323,7 @@ object HttpEndpointClient {
     context: EndpointContext,
     maxChunkSize: Int,
     config: PoolClient.Config
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): HttpEndpointClient =
+  )(implicit system: ActorSystem[Nothing]): HttpEndpointClient =
     HttpEndpointClient(
       credentials = credentials,
       context = Some(context),

@@ -1,19 +1,30 @@
 package stasis.test.specs.unit.server.api.routes
 
 import java.time.LocalDateTime
+
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
-import org.apache.pekko.http.scaladsl.model.{RequestEntity, StatusCodes}
+import org.apache.pekko.http.scaladsl.model.RequestEntity
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.core.telemetry.TelemetryContext
-import stasis.server.api.routes.{RoutesContext, Schedules}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+import stasis.layers.telemetry.TelemetryContext
+import stasis.server.api.routes.RoutesContext
+import stasis.server.api.routes.Schedules
 import stasis.server.model.schedules.ScheduleStore
-import stasis.server.security.{CurrentUser, ResourceProvider}
-import stasis.shared.api.requests.{CreateSchedule, UpdateSchedule}
-import stasis.shared.api.responses.{CreatedSchedule, DeletedSchedule}
+import stasis.server.security.CurrentUser
+import stasis.server.security.ResourceProvider
+import stasis.shared.api.requests.CreateSchedule
+import stasis.shared.api.requests.UpdateSchedule
+import stasis.shared.api.responses.CreatedSchedule
+import stasis.shared.api.responses.DeletedSchedule
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -21,11 +32,9 @@ import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.model.mocks.MockScheduleStore
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
 
-import scala.concurrent.Future
-import scala.concurrent.duration._
-
 class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.shared.api.Formats._
 
   "Schedules routes" should "respond with all schedules" in withRetry {
@@ -146,8 +155,8 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "SchedulesSpec"
   )
 

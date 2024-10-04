@@ -1,9 +1,11 @@
 package stasis.client.ops.recovery.stages.internal
 
 import java.nio.file.Path
+
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
+
 import stasis.client.encryption.secrets.DeviceFileSecret
 import stasis.client.ops.Metrics
 import stasis.client.ops.recovery.Providers

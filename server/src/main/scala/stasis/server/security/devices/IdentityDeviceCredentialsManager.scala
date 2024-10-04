@@ -1,13 +1,12 @@
 package stasis.server.security.devices
 
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 import scala.util.control.NonFatal
 
-import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.actor.typed.ActorSystem
-import org.apache.pekko.actor.typed.SpawnProtocol
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
 import org.apache.pekko.http.scaladsl.model._
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
@@ -15,9 +14,10 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import play.api.libs.json.Format
 import play.api.libs.json.Json
+
 import stasis.core.api.PoolClient
-import stasis.core.security.tls.EndpointContext
-import stasis.core.streaming.Operators.ExtendedSource
+import stasis.layers.security.tls.EndpointContext
+import stasis.layers.streaming.Operators.ExtendedSource
 import stasis.server.security.CredentialsProvider
 import stasis.server.security.exceptions.CredentialsManagementFailure
 import stasis.shared.model.devices.Device
@@ -28,7 +28,7 @@ class IdentityDeviceCredentialsManager(
   redirectUri: String,
   tokenExpiration: FiniteDuration,
   override protected val context: Option[EndpointContext]
-)(implicit override protected val system: ActorSystem[SpawnProtocol.Command])
+)(implicit override protected val system: ActorSystem[Nothing])
     extends DeviceCredentialsManager
     with PoolClient {
   import IdentityDeviceCredentialsManager._
@@ -204,7 +204,7 @@ object IdentityDeviceCredentialsManager {
     redirectUri: String,
     tokenExpiration: FiniteDuration,
     context: Option[EndpointContext]
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): IdentityDeviceCredentialsManager =
+  )(implicit system: ActorSystem[Nothing]): IdentityDeviceCredentialsManager =
     new IdentityDeviceCredentialsManager(
       identityUrl = identityUrl,
       identityCredentials = identityCredentials,

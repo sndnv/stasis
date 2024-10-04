@@ -1,6 +1,7 @@
 package stasis.core.networking.http
 
 import org.apache.pekko.http.scaladsl.model.Uri
+
 import stasis.core.networking.EndpointAddress
 
 final case class HttpEndpointAddress(uri: Uri) extends EndpointAddress

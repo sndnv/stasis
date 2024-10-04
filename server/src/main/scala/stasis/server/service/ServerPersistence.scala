@@ -1,34 +1,43 @@
 package stasis.server.service
 
-import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import org.apache.pekko.util.Timeout
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import com.typesafe.{config => typesafe}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.util.Timeout
 import slick.jdbc.JdbcProfile
-import stasis.core.persistence.backends.memory.MemoryBackend
-import stasis.core.persistence.backends.slick.{SlickBackend, SlickProfile}
-import stasis.core.telemetry.TelemetryContext
+
+import stasis.core.persistence.backends.slick.SlickBackend
+import stasis.core.persistence.backends.slick.SlickProfile
+import stasis.layers.persistence.memory.MemoryStore
+import stasis.layers.persistence.migration.MigrationExecutor
+import stasis.layers.persistence.migration.MigrationResult
+import stasis.layers.telemetry.TelemetryContext
 import stasis.server.model.datasets._
-import stasis.server.model.devices.{
-  DeviceBootstrapCodeStore,
-  DeviceKeyStore,
-  DeviceKeyStoreSerdes,
-  DeviceStore,
-  DeviceStoreSerdes
-}
-import stasis.server.model.schedules.{ScheduleStore, ScheduleStoreSerdes}
-import stasis.server.model.users.{UserStore, UserStoreSerdes}
+import stasis.server.model.devices.DeviceBootstrapCodeStore
+import stasis.server.model.devices.DeviceKeyStore
+import stasis.server.model.devices.DeviceKeyStoreSerdes
+import stasis.server.model.devices.DeviceStore
+import stasis.server.model.devices.DeviceStoreSerdes
+import stasis.server.model.schedules.ScheduleStore
+import stasis.server.model.schedules.ScheduleStoreSerdes
+import stasis.server.model.users.UserStore
+import stasis.server.model.users.UserStoreSerdes
 import stasis.server.security.Resource
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
-import stasis.shared.model.devices.{Device, DeviceBootstrapCode, DeviceKey}
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
+import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.DeviceBootstrapCode
+import stasis.shared.model.devices.DeviceKey
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
-import scala.concurrent.{ExecutionContext, Future}
 
 class ServerPersistence(
   persistenceConfig: typesafe.Config
 )(implicit
-  system: ActorSystem[SpawnProtocol.Command],
+  system: ActorSystem[Nothing],
   telemetry: TelemetryContext,
   timeout: Timeout
 ) {
@@ -50,6 +59,8 @@ class ServerPersistence(
     keepAliveConnection = databaseKeepAlive
   )
 
+  private val migrationExecutor: MigrationExecutor = MigrationExecutor()
+
   val datasetDefinitions: DatasetDefinitionStore = DatasetDefinitionStore(backend = backends.definitions)
 
   val datasetEntries: DatasetEntryStore = DatasetEntryStore(backend = backends.entries)
@@ -66,6 +77,25 @@ class ServerPersistence(
     userSaltSize = userSaltSize,
     backend = backends.users
   )
+
+  def migrate(): Future[MigrationResult] =
+    for {
+      definitionsMigration <- migrationExecutor.execute(forStore = backends.definitions)
+      entriesMigration <- migrationExecutor.execute(forStore = backends.entries)
+      deviceBootstrapCodesMigration <- migrationExecutor.execute(forStore = backends.deviceBootstrapCodes)
+      devicesMigration <- migrationExecutor.execute(forStore = backends.devices)
+      deviceKeysMigration <- migrationExecutor.execute(forStore = backends.deviceKeys)
+      schedulesMigration <- migrationExecutor.execute(forStore = backends.schedules)
+      usersMigration <- migrationExecutor.execute(forStore = backends.users)
+    } yield {
+      (definitionsMigration
+        + entriesMigration
+        + deviceBootstrapCodesMigration
+        + devicesMigration
+        + deviceKeysMigration
+        + schedulesMigration
+        + usersMigration)
+    }
 
   def init(): Future[Done] =
     for {
@@ -126,46 +156,45 @@ class ServerPersistence(
 
   private object backends {
     val definitions: SlickBackend[DatasetDefinition.Id, DatasetDefinition] = SlickBackend(
-      tableName = "DATASET_DEFINITIONS",
+      name = "DATASET_DEFINITIONS",
       profile = profile,
       database = database,
       serdes = DatasetDefinitionStoreSerdes
     )
 
     val entries: SlickBackend[DatasetEntry.Id, DatasetEntry] = SlickBackend(
-      tableName = "DATASET_ENTRIES",
+      name = "DATASET_ENTRIES",
       profile = profile,
       database = database,
       serdes = DatasetEntryStoreSerdes
     )
 
-    val deviceBootstrapCodes: MemoryBackend[String, DeviceBootstrapCode] = MemoryBackend(
-      name = s"device-bootstrap-code-store-${java.util.UUID.randomUUID().toString}"
-    )
+    val deviceBootstrapCodes: MemoryStore[String, DeviceBootstrapCode] =
+      MemoryStore(name = "device-bootstrap-code-store")
 
     val devices: SlickBackend[Device.Id, Device] = SlickBackend(
-      tableName = "DEVICES",
+      name = "DEVICES",
       profile = profile,
       database = database,
       serdes = DeviceStoreSerdes
     )
 
     val deviceKeys: SlickBackend[Device.Id, DeviceKey] = SlickBackend(
-      tableName = "DEVICE_KEYS",
+      name = "DEVICE_KEYS",
       profile = profile,
       database = database,
       serdes = DeviceKeyStoreSerdes
     )
 
     val schedules: SlickBackend[Schedule.Id, Schedule] = SlickBackend(
-      tableName = "SCHEDULES",
+      name = "SCHEDULES",
       profile = profile,
       database = database,
       serdes = ScheduleStoreSerdes
     )
 
     val users: SlickBackend[User.Id, User] = SlickBackend(
-      tableName = "USERS",
+      name = "USERS",
       profile = profile,
       database = database,
       serdes = UserStoreSerdes
@@ -176,6 +205,6 @@ class ServerPersistence(
 object ServerPersistence {
   def apply(
     persistenceConfig: typesafe.Config
-  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, timeout: Timeout): ServerPersistence =
+  )(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext, timeout: Timeout): ServerPersistence =
     new ServerPersistence(persistenceConfig)
 }

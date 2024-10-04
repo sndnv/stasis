@@ -4,19 +4,20 @@ import java.nio.ByteOrder
 import java.nio.file._
 import java.util.UUID
 
+import scala.concurrent.ExecutionContext
+import scala.util.control.NonFatal
+
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import org.scalatest.BeforeAndAfter
+
 import stasis.core.persistence.backends.file.container.CrateChunk
 import stasis.core.persistence.backends.file.container.headers.ChunkHeader
 import stasis.core.persistence.backends.file.container.ops.ConversionOps
 import stasis.core.persistence.backends.file.container.stream.CrateChunkSink
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.backends.file.container.TestOps
-
-import scala.concurrent.ExecutionContext
-import scala.util.control.NonFatal
 
 class CrateChunkSinkSpec extends AsyncUnitSpec with BeforeAndAfter {
   private implicit val system: ActorSystem = ActorSystem(name = "CrateChunkSinkSpec")

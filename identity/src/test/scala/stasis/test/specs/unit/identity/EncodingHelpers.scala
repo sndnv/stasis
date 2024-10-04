@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.identity
 
-import org.apache.pekko.util.ByteString
-
 import java.util.Base64
+
+import org.apache.pekko.util.ByteString
 
 trait EncodingHelpers {
   implicit class ByteStringToBase64(raw: ByteString) {

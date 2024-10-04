@@ -1,7 +1,8 @@
 package stasis.test.specs.unit.core.networking.http
 
+import scala.collection.mutable
+
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{Behavior, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
 import org.apache.pekko.http.scaladsl.model._
@@ -10,20 +11,21 @@ import org.apache.pekko.http.scaladsl.server.MissingQueryParamRejection
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import org.apache.pekko.util.ByteString
+
 import stasis.core.api.Formats._
-import stasis.core.api.MessageResponse
 import stasis.core.networking.http.HttpEndpoint
 import stasis.core.packaging.Crate
-import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
+import stasis.core.persistence.CrateStorageRequest
+import stasis.core.persistence.CrateStorageReservation
 import stasis.core.routing.Node
-import stasis.core.telemetry.TelemetryContext
+import stasis.layers.api.MessageResponse
+import stasis.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.persistence.mocks.{MockCrateStore, MockReservationStore}
+import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
+import stasis.test.specs.unit.core.persistence.mocks.MockReservationStore
 import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockHttpAuthenticator
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-
-import scala.collection.mutable
 
 class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   "An HTTP Endpoint" should "successfully authenticate a client" in {
@@ -215,7 +217,6 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
   it should "handle generic failures reported by routes" in {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
-    import stasis.core.api.Formats.messageResponseFormat
 
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
@@ -244,7 +245,6 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
   it should "reject requests with invalid query parameters" in {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
-    import stasis.core.api.Formats.messageResponseFormat
 
     val endpoint = createTestHttpEndpoint()
     val endpointPort = ports.dequeue()
@@ -268,7 +268,6 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
   it should "reject requests with invalid entities" in {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
-    import stasis.core.api.Formats.messageResponseFormat
 
     val endpoint = createTestHttpEndpoint()
     val endpointPort = ports.dequeue()
@@ -290,9 +289,9 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  private implicit val typedSystem: org.apache.pekko.actor.typed.ActorSystem[SpawnProtocol.Command] =
+  private implicit val typedSystem: org.apache.pekko.actor.typed.ActorSystem[Nothing] =
     org.apache.pekko.actor.typed.ActorSystem(
-      Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+      Behaviors.ignore,
       "HttpEndpointSpec_Untyped"
     )
 

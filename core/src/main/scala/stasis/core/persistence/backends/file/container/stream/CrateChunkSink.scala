@@ -1,20 +1,26 @@
 package stasis.core.persistence.backends.file.container.stream
 
 import java.nio.channels.FileChannel
-import java.nio.file.{Path, StandardOpenOption}
-import java.nio.{ByteBuffer, ByteOrder}
+import java.nio.file.Path
+import java.nio.file.StandardOpenOption
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.UUID
+
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.util.control.NonFatal
 
 import org.apache.pekko.Done
 import org.apache.pekko.stream._
 import org.apache.pekko.stream.scaladsl.Sink
-import org.apache.pekko.stream.stage.{GraphStageLogic, GraphStageWithMaterializedValue, InHandler}
+import org.apache.pekko.stream.stage.GraphStageLogic
+import org.apache.pekko.stream.stage.GraphStageWithMaterializedValue
+import org.apache.pekko.stream.stage.InHandler
+
 import stasis.core.persistence.backends.file.container.CrateChunk
 import stasis.core.persistence.backends.file.container.exceptions.ContainerSinkFailure
 import stasis.core.persistence.backends.file.container.headers.ChunkHeader
-
-import scala.concurrent.{Future, Promise}
-import scala.util.control.NonFatal
 
 @SuppressWarnings(
   Array(

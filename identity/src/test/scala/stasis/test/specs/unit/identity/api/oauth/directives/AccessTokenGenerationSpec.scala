@@ -2,13 +2,15 @@ package stasis.test.specs.unit.identity.api.oauth.directives
 
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives
+
 import stasis.identity.api.oauth.directives.AccessTokenGeneration
 import stasis.identity.model.Seconds
 import stasis.identity.model.apis.Api
 import stasis.identity.model.clients.Client
 import stasis.identity.model.owners.ResourceOwner
+import stasis.identity.model.tokens.AccessToken
+import stasis.identity.model.tokens.AccessTokenWithExpiration
 import stasis.identity.model.tokens.generators.AccessTokenGenerator
-import stasis.identity.model.tokens.{AccessToken, AccessTokenWithExpiration}
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
 

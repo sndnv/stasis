@@ -1,18 +1,22 @@
 package stasis.server.api.routes
 
+import scala.concurrent.Future
+
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
+
 import stasis.server.model.schedules.ScheduleStore
 import stasis.server.security.CurrentUser
-import stasis.shared.api.requests.{CreateSchedule, UpdateSchedule}
-import stasis.shared.api.responses.{CreatedSchedule, DeletedSchedule}
-
-import scala.concurrent.Future
+import stasis.shared.api.requests.CreateSchedule
+import stasis.shared.api.requests.UpdateSchedule
+import stasis.shared.api.responses.CreatedSchedule
+import stasis.shared.api.responses.DeletedSchedule
 
 class Schedules()(implicit ctx: RoutesContext) extends ApiRoutes {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.shared.api.Formats._
 
   def routes(implicit currentUser: CurrentUser): Route =

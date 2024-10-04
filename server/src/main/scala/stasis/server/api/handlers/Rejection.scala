@@ -3,10 +3,11 @@ package stasis.server.api.handlers
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
-import org.apache.pekko.http.scaladsl.server.{RejectionHandler, ValidationRejection}
+import org.apache.pekko.http.scaladsl.server.RejectionHandler
+import org.apache.pekko.http.scaladsl.server.ValidationRejection
 import org.slf4j.Logger
-import stasis.core.api.MessageResponse
-import stasis.core.streaming.Operators.ExtendedSource
+import stasis.layers.api.MessageResponse
+import stasis.layers.streaming.Operators.ExtendedSource
 
 object Rejection {
   def create(log: Logger): RejectionHandler =
@@ -14,7 +15,6 @@ object Rejection {
       .newBuilder()
       .handle { case ValidationRejection(rejectionMessage, _) =>
         import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
-        import stasis.core.api.Formats.messageResponseFormat
 
         extractRequest { request =>
           extractActorSystem { implicit system =>

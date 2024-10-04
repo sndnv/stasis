@@ -1,27 +1,33 @@
 package stasis.core.persistence.backends.memory
 
+import scala.collection.immutable.Queue
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.reflect.ClassTag
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.typed._
 import org.apache.pekko.actor.typed.scaladsl.AskPattern._
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.stream.CompletionStrategy
+import org.apache.pekko.stream.OverflowStrategy
 import org.apache.pekko.stream.scaladsl.Source
-import org.apache.pekko.stream.{CompletionStrategy, OverflowStrategy}
 import org.apache.pekko.util.Timeout
-import org.apache.pekko.{Done, NotUsed}
+
 import stasis.core.persistence.Metrics
 import stasis.core.persistence.backends.EventLogBackend
-import stasis.core.telemetry.TelemetryContext
-
-import scala.collection.immutable.Queue
-import scala.concurrent.{ExecutionContext, Future}
-import scala.reflect.ClassTag
-import scala.util.{Failure, Success, Try}
+import stasis.layers.telemetry.TelemetryContext
 
 class EventLogMemoryBackend[E, S] private (
   name: String,
-  storeRef: Future[ActorRef[EventLogMemoryBackend.Message[E, S]]],
+  storeRef: ActorRef[EventLogMemoryBackend.Message[E, S]],
   stateStreamBufferSize: Int
 )(implicit
-  system: ActorSystem[SpawnProtocol.Command],
+  system: ActorSystem[Nothing],
   telemetry: TelemetryContext,
   timeout: Timeout,
   tag: ClassTag[S]
@@ -33,7 +39,7 @@ class EventLogMemoryBackend[E, S] private (
   private val metrics = telemetry.metrics[Metrics.EventLogBackend]
 
   override def getState: Future[S] =
-    storeRef.flatMap(_ ? ((ref: ActorRef[S]) => GetState(ref)))
+    storeRef ? ((ref: ActorRef[S]) => GetState(ref))
 
   override def getStateStream: Source[S, NotUsed] = {
     val (actor, source) = Source
@@ -51,18 +57,15 @@ class EventLogMemoryBackend[E, S] private (
   }
 
   override def storeEventAndUpdateState(event: E, update: (E, S) => S): Future[Done] =
-    storeRef
-      .flatMap { messageRef =>
-        (messageRef ? ((responseRef: ActorRef[Try[Done]]) => StoreEventAndUpdateState(event, update, responseRef))).flatMap {
-          case Success(result) =>
-            metrics.recordEvent(backend = name)
-            Future.successful(result)
+    (storeRef ? ((responseRef: ActorRef[Try[Done]]) => StoreEventAndUpdateState(event, update, responseRef))).flatMap {
+      case Success(result) =>
+        metrics.recordEvent(backend = name)
+        Future.successful(result)
 
-          case Failure(e) =>
-            metrics.recordEventFailure(backend = name)
-            Future.failed(e)
-        }
-      }
+      case Failure(e) =>
+        metrics.recordEventFailure(backend = name)
+        Future.failed(e)
+    }
 }
 
 object EventLogMemoryBackend {
@@ -72,7 +75,7 @@ object EventLogMemoryBackend {
     name: String,
     initialState: => S
   )(implicit
-    system: ActorSystem[SpawnProtocol.Command],
+    system: ActorSystem[Nothing],
     telemetry: TelemetryContext,
     timeout: Timeout
   ): EventLogMemoryBackend[E, S] =
@@ -87,7 +90,7 @@ object EventLogMemoryBackend {
     stateStreamBufferSize: Int,
     initialState: => S
   )(implicit
-    system: ActorSystem[SpawnProtocol.Command],
+    system: ActorSystem[Nothing],
     telemetry: TelemetryContext,
     timeout: Timeout
   ): EventLogMemoryBackend[E, S] = {
@@ -95,7 +98,7 @@ object EventLogMemoryBackend {
 
     new EventLogMemoryBackend[E, S](
       name = name,
-      storeRef = system ? (SpawnProtocol.Spawn(behaviour, name, Props.empty, _)),
+      storeRef = system.systemActorOf(behavior = behaviour, name = s"$name-${java.util.UUID.randomUUID().toString}"),
       stateStreamBufferSize = stateStreamBufferSize
     )
   }

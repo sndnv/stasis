@@ -1,17 +1,23 @@
 package stasis.test.specs.unit.client.service.components.maintenance
 
+import java.nio.file.Files
+import java.nio.file.Path
+
 import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.util.ByteString
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.client.service.components.maintenance.{Base, Certificates}
-import stasis.client.service.{components, ApplicationArguments, ApplicationDirectory}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+import stasis.client.service.ApplicationArguments
+import stasis.client.service.ApplicationDirectory
+import stasis.client.service.components
+import stasis.client.service.components.maintenance.Base
+import stasis.client.service.components.maintenance.Certificates
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.core.FileSystemHelpers.FileSystemSetup
-
-import java.nio.file.{Files, Path}
 
 class CertificatesSpec extends AsyncUnitSpec with ResourceHelpers {
   "A Certificates component" should "support regenerating client API certificates" in {
@@ -106,8 +112,8 @@ class CertificatesSpec extends AsyncUnitSpec with ResourceHelpers {
       }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "CertificatesSpec"
   )
 

@@ -1,17 +1,20 @@
 package stasis.test.specs.unit.client.ops.monitoring
 
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.scalatest.Assertion
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{Assertion, BeforeAndAfterAll}
+
 import stasis.client.ops.monitoring.DefaultServerMonitor
 import stasis.shared.api.responses.Ping
 import stasis.shared.model.devices.Device
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.mocks.{MockServerApiEndpointClient, MockServerTracker}
-
-import scala.concurrent.Future
-import scala.concurrent.duration._
+import stasis.test.specs.unit.client.mocks.MockServerApiEndpointClient
+import stasis.test.specs.unit.client.mocks.MockServerTracker
 
 class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with BeforeAndAfterAll {
   "A DefaultServerMonitor" should "support pinging servers periodically" in {
@@ -169,8 +172,8 @@ class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with Before
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(7.seconds, 300.milliseconds)
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "DefaultServerMonitorSpec"
   )
 

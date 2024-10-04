@@ -1,25 +1,40 @@
 package stasis.core.persistence.backends.file.container
 
-import org.apache.pekko.actor.typed.{ActorSystem, DispatcherSelector, SpawnProtocol}
-import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
-import org.apache.pekko.util.ByteString
-import org.apache.pekko.{Done, NotUsed}
-import stasis.core.persistence.backends.file.container.exceptions.{ContainerFailure, ConversionFailure}
-import stasis.core.persistence.backends.file.container.headers.ContainerHeader
-import stasis.core.persistence.backends.file.container.ops.{ContainerLogOps, ContainerOps, ConversionOps}
-import stasis.core.persistence.backends.file.container.stream.transform.{ChunksToCrate, CrateToChunks}
-import stasis.core.persistence.backends.file.container.stream.{CrateChunkSink, CrateChunkSource}
-
 import java.nio.ByteOrder
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.UUID
-import scala.concurrent.{ExecutionContext, Future}
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.DispatcherSelector
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.stream.scaladsl.Keep
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
+
+import stasis.core.persistence.backends.file.container.exceptions.ContainerFailure
+import stasis.core.persistence.backends.file.container.exceptions.ConversionFailure
+import stasis.core.persistence.backends.file.container.headers.ContainerHeader
+import stasis.core.persistence.backends.file.container.ops.ContainerLogOps
+import stasis.core.persistence.backends.file.container.ops.ContainerOps
+import stasis.core.persistence.backends.file.container.ops.ConversionOps
+import stasis.core.persistence.backends.file.container.stream.CrateChunkSink
+import stasis.core.persistence.backends.file.container.stream.CrateChunkSource
+import stasis.core.persistence.backends.file.container.stream.transform.ChunksToCrate
+import stasis.core.persistence.backends.file.container.stream.transform.CrateToChunks
 
 class Container(
   path: String,
   val maxChunkSize: Int,
   val maxChunks: Int
-)(implicit system: ActorSystem[SpawnProtocol.Command], byteOrder: ByteOrder) {
+)(implicit system: ActorSystem[Nothing], byteOrder: ByteOrder) {
   val containerPath: Path = Paths.get(path)
   val containerLogPath: Path = Paths.get(s"${path}_log")
 

@@ -1,9 +1,10 @@
 package stasis.test.specs.unit.client.collection.rules
 
+import scala.util.Failure
+import scala.util.Success
+
 import stasis.client.collection.rules.Rule
 import stasis.test.specs.unit.UnitSpec
-
-import scala.util.{Failure, Success}
 
 class RuleSpec extends UnitSpec {
   "A Rule" should "support rendering itself as a string" in {

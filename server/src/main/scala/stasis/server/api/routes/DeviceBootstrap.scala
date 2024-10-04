@@ -1,23 +1,29 @@
 package stasis.server.api.routes
 
+import scala.concurrent.Future
+import scala.util.control.NonFatal
+
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
-import stasis.server.model.devices.{DeviceBootstrapCodeStore, DeviceStore}
+
+import stasis.server.model.devices.DeviceBootstrapCodeStore
+import stasis.server.model.devices.DeviceStore
 import stasis.server.model.users.UserStore
 import stasis.server.security.CurrentUser
-import stasis.server.security.devices.{DeviceBootstrapCodeGenerator, DeviceClientSecretGenerator, DeviceCredentialsManager}
-import stasis.shared.model.devices.{DeviceBootstrapCode, DeviceBootstrapParameters}
-
-import scala.concurrent.Future
-import scala.util.control.NonFatal
+import stasis.server.security.devices.DeviceBootstrapCodeGenerator
+import stasis.server.security.devices.DeviceClientSecretGenerator
+import stasis.server.security.devices.DeviceCredentialsManager
+import stasis.shared.model.devices.DeviceBootstrapCode
+import stasis.shared.model.devices.DeviceBootstrapParameters
 
 class DeviceBootstrap(
   context: DeviceBootstrap.BootstrapContext
 )(implicit ctx: RoutesContext)
     extends ApiRoutes {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.shared.api.Formats._
 
   def codes(implicit currentUser: CurrentUser): Route =

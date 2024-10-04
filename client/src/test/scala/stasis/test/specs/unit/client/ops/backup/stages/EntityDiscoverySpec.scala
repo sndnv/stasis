@@ -1,24 +1,29 @@
 package stasis.test.specs.unit.client.ops.backup.stages
 
+import java.nio.file.Paths
+
+import scala.concurrent.ExecutionContext
+
 import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.SystemMaterializer
 import org.apache.pekko.stream.scaladsl.Sink
-import org.apache.pekko.stream.{Materializer, SystemMaterializer}
+
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.collection.BackupCollector
 import stasis.client.collection.rules.Rule
-import stasis.client.model.{DatasetMetadata, FilesystemMetadata}
+import stasis.client.model.DatasetMetadata
+import stasis.client.model.FilesystemMetadata
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.backup.stages.EntityDiscovery
 import stasis.client.tracking.state.BackupState.ProcessedSourceEntity
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.client.mocks._
-import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
-
-import java.nio.file.Paths
-import scala.concurrent.ExecutionContext
 
 class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
   "A Backup EntityDiscovery stage" should "discover files (based on rules)" in {

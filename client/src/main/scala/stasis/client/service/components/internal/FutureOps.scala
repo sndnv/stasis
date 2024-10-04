@@ -1,6 +1,7 @@
 package stasis.client.service.components.internal
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.Try
 import scala.util.control.NonFatal
 

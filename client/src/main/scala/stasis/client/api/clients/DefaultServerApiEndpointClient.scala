@@ -8,7 +8,6 @@ import scala.util.control.NonFatal
 
 import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.ActorSystem
-import org.apache.pekko.actor.typed.SpawnProtocol
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
 import org.apache.pekko.http.scaladsl.model._
 import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
@@ -16,14 +15,15 @@ import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import org.apache.pekko.util.ByteString
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+
 import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.encryption.Decoder
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.DatasetMetadata
 import stasis.core.api.PoolClient
 import stasis.core.networking.exceptions.ClientFailure
-import stasis.core.security.tls.EndpointContext
-import stasis.core.streaming.Operators.ExtendedSource
+import stasis.layers.security.tls.EndpointContext
+import stasis.layers.streaming.Operators.ExtendedSource
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.requests.ResetUserPassword
@@ -44,7 +44,7 @@ class DefaultServerApiEndpointClient(
   override val self: Device.Id,
   override protected val context: Option[EndpointContext],
   override protected val config: PoolClient.Config
-)(implicit override protected val system: ActorSystem[SpawnProtocol.Command])
+)(implicit override protected val system: ActorSystem[Nothing])
     extends ServerApiEndpointClient
     with PoolClient {
   import DefaultServerApiEndpointClient._
@@ -374,7 +374,7 @@ object DefaultServerApiEndpointClient {
     self: Device.Id,
     context: Option[EndpointContext],
     config: PoolClient.Config
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): DefaultServerApiEndpointClient =
+  )(implicit system: ActorSystem[Nothing]): DefaultServerApiEndpointClient =
     new DefaultServerApiEndpointClient(
       apiUrl = apiUrl,
       credentials = credentials,
@@ -407,7 +407,7 @@ object DefaultServerApiEndpointClient {
   }
 
   implicit class ExtendedResponseEntity(response: HttpResponse) {
-    def processed[T](f: () => Future[T])(implicit system: ActorSystem[SpawnProtocol.Command]): Future[T] = {
+    def processed[T](f: () => Future[T])(implicit system: ActorSystem[Nothing]): Future[T] = {
       import system.executionContext
 
       if (response.status.isSuccess()) {
@@ -427,21 +427,21 @@ object DefaultServerApiEndpointClient {
       }
     }
 
-    def processed()(implicit system: ActorSystem[SpawnProtocol.Command]): Future[Done] =
+    def processed()(implicit system: ActorSystem[Nothing]): Future[Done] =
       processed[Done](f = () => Future.successful(Done))
 
-    def to[M](implicit format: Format[M], ec: ExecutionContext, system: ActorSystem[SpawnProtocol.Command]): Future[M] =
+    def to[M](implicit format: Format[M], ec: ExecutionContext, system: ActorSystem[Nothing]): Future[M] =
       processed[M] { () =>
         import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
         Unmarshal(response).to[M]
       }
 
-    def toByteString(implicit ec: ExecutionContext, system: ActorSystem[SpawnProtocol.Command]): Future[ByteString] =
+    def toByteString(implicit ec: ExecutionContext, system: ActorSystem[Nothing]): Future[ByteString] =
       processed[ByteString] { () =>
         Unmarshal(response).to[ByteString]
       }
 
-    def asFailure[T](implicit system: ActorSystem[SpawnProtocol.Command]): Future[T] = {
+    def asFailure[T](implicit system: ActorSystem[Nothing]): Future[T] = {
       import system.executionContext
 
       Unmarshal(response)

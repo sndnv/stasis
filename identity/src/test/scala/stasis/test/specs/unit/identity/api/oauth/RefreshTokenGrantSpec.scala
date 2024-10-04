@@ -1,13 +1,19 @@
 package stasis.test.specs.unit.identity.api.oauth
 
 import org.apache.pekko.http.scaladsl.model
-import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, CacheDirectives}
-import org.apache.pekko.http.scaladsl.model.{FormData, StatusCodes}
+import org.apache.pekko.http.scaladsl.model.FormData
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.CacheDirectives
+
 import stasis.identity.api.oauth.RefreshTokenGrant
-import stasis.identity.api.oauth.RefreshTokenGrant.{AccessTokenRequest, AccessTokenResponse}
+import stasis.identity.api.oauth.RefreshTokenGrant.AccessTokenRequest
+import stasis.identity.api.oauth.RefreshTokenGrant.AccessTokenResponse
 import stasis.identity.model.GrantType
 import stasis.identity.model.secrets.Secret
-import stasis.identity.model.tokens.{RefreshToken, TokenType}
+import stasis.identity.model.tokens.RefreshToken
+import stasis.identity.model.tokens.TokenType
+import stasis.layers
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
 
@@ -34,7 +40,7 @@ class RefreshTokenGrantSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
+    val salt = layers.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
@@ -70,7 +76,7 @@ class RefreshTokenGrantSpec extends RouteTest with OAuthFixtures {
       actualResponse.refresh_token.exists(_.value.nonEmpty) should be(true)
       actualResponse.scope should be(request.scope)
 
-      val newTokenGenerated = stores.tokens.tokens.await.headOption.exists(_._2.token != token)
+      val newTokenGenerated = stores.tokens.all.await.headOption.exists(_.token != token)
       newTokenGenerated should be(true)
     }
   }
@@ -83,7 +89,7 @@ class RefreshTokenGrantSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
+    val salt = layers.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
@@ -121,7 +127,7 @@ class RefreshTokenGrantSpec extends RouteTest with OAuthFixtures {
       actualResponse.refresh_token.exists(_.value.nonEmpty) should be(true)
       actualResponse.scope should be(request.scope)
 
-      val newTokenGenerated = stores.tokens.tokens.await.headOption.exists(_._2.token != token)
+      val newTokenGenerated = stores.tokens.all.await.headOption.exists(_.token != token)
       newTokenGenerated should be(true)
     }
   }
@@ -134,7 +140,7 @@ class RefreshTokenGrantSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
+    val salt = layers.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
@@ -170,7 +176,7 @@ class RefreshTokenGrantSpec extends RouteTest with OAuthFixtures {
       actualResponse.refresh_token should be(None)
       actualResponse.scope should be(request.scope)
 
-      stores.tokens.tokens.await should be(Map.empty)
+      stores.tokens.all.await should be(Seq.empty)
     }
   }
 }

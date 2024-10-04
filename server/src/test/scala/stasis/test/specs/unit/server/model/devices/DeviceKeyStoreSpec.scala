@@ -3,12 +3,14 @@ package stasis.test.specs.unit.server.model.devices
 import scala.util.control.NonFatal
 
 import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.util.ByteString
+
 import stasis.core.routing.Node
-import stasis.core.telemetry.TelemetryContext
-import stasis.shared.model.devices.{Device, DeviceKey}
+import stasis.layers.telemetry.TelemetryContext
+import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.DeviceKey
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -217,8 +219,8 @@ class DeviceKeyStoreSpec extends AsyncUnitSpec {
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "DeviceKeyStoreSpec"
   )
 

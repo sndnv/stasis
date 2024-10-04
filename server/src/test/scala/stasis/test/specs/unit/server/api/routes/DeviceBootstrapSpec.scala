@@ -1,20 +1,31 @@
 package stasis.test.specs.unit.server.api.routes
 
+import java.time.Instant
+
+import scala.concurrent.Future
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import play.api.libs.json.Json
+
 import stasis.core.routing.Node
-import stasis.core.telemetry.TelemetryContext
-import stasis.server.api.routes.{DeviceBootstrap, RoutesContext}
-import stasis.server.model.devices.{DeviceBootstrapCodeStore, DeviceStore}
+import stasis.layers.telemetry.TelemetryContext
+import stasis.server.api.routes.DeviceBootstrap
+import stasis.server.api.routes.RoutesContext
+import stasis.server.model.devices.DeviceBootstrapCodeStore
+import stasis.server.model.devices.DeviceStore
 import stasis.server.model.users.UserStore
-import stasis.server.security.{CurrentUser, ResourceProvider}
-import stasis.shared.model.devices.{Device, DeviceBootstrapCode, DeviceBootstrapParameters}
+import stasis.server.security.CurrentUser
+import stasis.server.security.ResourceProvider
+import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.DeviceBootstrapCode
+import stasis.shared.model.devices.DeviceBootstrapParameters
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
@@ -23,12 +34,10 @@ import stasis.test.specs.unit.server.model.mocks._
 import stasis.test.specs.unit.server.security.mocks._
 import stasis.test.specs.unit.shared.model.Generators
 
-import java.time.Instant
-import scala.concurrent.Future
-
 class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
   "DeviceBootstrap routes (full permissions)" should "respond with all device bootstrap codes" in withRetry {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
     import stasis.shared.api.Formats._
 
     val fixtures = new TestFixtures {}
@@ -72,6 +81,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
 
   "DeviceBootstrap routes (self permissions)" should "respond with all device bootstrap codes" in withRetry {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
     import stasis.shared.api.Formats._
 
     val fixtures = new TestFixtures {}
@@ -93,6 +103,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
 
   they should "crate new device bootstrap codes" in withRetry {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
     import stasis.shared.api.Formats._
 
     val fixtures = new TestFixtures {}
@@ -138,6 +149,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
 
   they should "successfully execute device bootstrap" in withRetry {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
     import stasis.shared.api.Formats._
 
     val fixtures = new TestFixtures {}
@@ -188,8 +200,8 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "DeviceBootstrapSpec"
   )
 

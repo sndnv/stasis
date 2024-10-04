@@ -1,22 +1,31 @@
 package stasis.test.specs.unit.client
 
+import java.nio.file.Paths
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+
+import scala.concurrent.duration._
+
 import org.apache.pekko.util.ByteString
+
 import stasis.client.encryption.secrets.DeviceSecret
-import stasis.client.model.{proto, EntityMetadata, SourceEntity, TargetEntity}
-import stasis.client.tracking.state.{BackupState, RecoveryState}
-import stasis.client.tracking.state.BackupState.{PendingSourceEntity, ProcessedSourceEntity}
-import stasis.client.tracking.state.RecoveryState.{PendingTargetEntity, ProcessedTargetEntity}
+import stasis.client.model.EntityMetadata
+import stasis.client.model.SourceEntity
+import stasis.client.model.TargetEntity
+import stasis.client.model.proto
+import stasis.client.tracking.state.BackupState
+import stasis.client.tracking.state.BackupState.PendingSourceEntity
+import stasis.client.tracking.state.BackupState.ProcessedSourceEntity
+import stasis.client.tracking.state.RecoveryState
+import stasis.client.tracking.state.RecoveryState.PendingTargetEntity
+import stasis.client.tracking.state.RecoveryState.ProcessedTargetEntity
 import stasis.core.packaging.Crate
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
 import stasis.shared.ops.Operation
 import stasis.shared.secrets.SecretsConfig
-
-import java.nio.file.Paths
-import java.time.Instant
-import java.time.temporal.ChronoUnit
-import scala.concurrent.duration._
 
 object Fixtures {
   object Metadata {

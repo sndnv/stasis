@@ -1,31 +1,8 @@
 package stasis.test.specs.unit.client.service
 
 import java.io.Console
-import java.util.concurrent.ThreadLocalRandom
-
-import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.http.scaladsl.Http
-import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
-import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
-import org.apache.pekko.util.ByteString
-import com.typesafe.config.Config
-import org.mockito.scalatest.AsyncMockitoSugar
-import org.scalatest.Assertion
-import org.scalatest.concurrent.Eventually
-import play.api.libs.json.Json
-import stasis.client.service.components.Files
-import stasis.client.service.components.exceptions.ServiceStartupFailure
-import stasis.client.service.{ApplicationArguments, ApplicationDirectory, ApplicationTray, Service}
-import stasis.core.routing.Node
-import stasis.core.security.tls.EndpointContext
-import stasis.shared.model.devices.{Device, DeviceBootstrapParameters}
-import stasis.shared.model.users.User
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.mocks.{MockServerBootstrapEndpoint, MockTokenEndpoint}
-import stasis.test.specs.unit.client.{EncodingHelpers, Fixtures, ResourceHelpers}
 import java.util.UUID
+import java.util.concurrent.ThreadLocalRandom
 
 import scala.collection.mutable
 import scala.concurrent.Future
@@ -33,7 +10,39 @@ import scala.concurrent.duration._
 import scala.util.Random
 import scala.util.control.NonFatal
 
+import com.typesafe.config.Config
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.HttpMethods
+import org.apache.pekko.http.scaladsl.model.HttpRequest
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+import org.apache.pekko.util.ByteString
+import org.mockito.scalatest.AsyncMockitoSugar
+import org.scalatest.Assertion
+import org.scalatest.concurrent.Eventually
+import play.api.libs.json.Json
+
+import stasis.client.service.ApplicationArguments
+import stasis.client.service.ApplicationDirectory
+import stasis.client.service.ApplicationTray
+import stasis.client.service.Service
+import stasis.client.service.components.Files
+import stasis.client.service.components.exceptions.ServiceStartupFailure
+import stasis.core.routing.Node
+import stasis.layers.security.tls.EndpointContext
+import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.DeviceBootstrapParameters
+import stasis.shared.model.users.User
+import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.client.EncodingHelpers
+import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.client.mocks.MockServerApiEndpoint
+import stasis.test.specs.unit.client.mocks.MockServerBootstrapEndpoint
+import stasis.test.specs.unit.client.mocks.MockTokenEndpoint
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelpers with Eventually with AsyncMockitoSugar {
@@ -504,8 +513,8 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     additionalConfig = Json.obj()
   )
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "ServiceSpec"
   )
 

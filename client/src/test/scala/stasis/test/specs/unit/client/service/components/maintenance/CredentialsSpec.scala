@@ -7,13 +7,12 @@ import scala.util.control.NonFatal
 
 import com.google.common.jimfs.Jimfs
 import org.apache.pekko.actor.typed.ActorSystem
-import org.apache.pekko.actor.typed.Behavior
-import org.apache.pekko.actor.typed.SpawnProtocol
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.util.ByteString
 import org.apache.pekko.util.Timeout
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+
 import stasis.client.service.ApplicationArguments
 import stasis.client.service.ApplicationDirectory
 import stasis.client.service.components.Files
@@ -122,8 +121,8 @@ class CredentialsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHe
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "MaintenanceCredentialsSpec"
   )
 

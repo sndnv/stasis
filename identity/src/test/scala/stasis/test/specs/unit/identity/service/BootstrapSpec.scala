@@ -1,26 +1,30 @@
 package stasis.test.specs.unit.identity.service
 
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import scala.concurrent.duration._
+
 import com.typesafe.config.Config
-import org.slf4j.{Logger, LoggerFactory}
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import stasis.identity.model.Seconds
 import stasis.identity.model.apis.Api
 import stasis.identity.model.secrets.Secret
+import stasis.identity.service.Bootstrap
 import stasis.identity.service.Bootstrap.Entities
-import stasis.identity.service.{Bootstrap, Persistence}
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
+import stasis.identity.service.Persistence
+import stasis.layers
+import stasis.layers.UnitSpec
+import stasis.layers.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.identity.model.Generators
 
-import scala.concurrent.duration._
-
-class BootstrapSpec extends AsyncUnitSpec {
+class BootstrapSpec extends UnitSpec {
   "Bootstrap" should "setup the service with provided entities" in {
     val expectedEntities = Entities(
-      apis = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateApi),
-      clients = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateClient),
-      owners = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateResourceOwner)
+      apis = layers.Generators.generateSeq(min = 1, g = Generators.generateApi),
+      clients = layers.Generators.generateSeq(min = 1, g = Generators.generateClient),
+      owners = layers.Generators.generateSeq(min = 1, g = Generators.generateResourceOwner)
     )
 
     val persistence = new Persistence(
@@ -36,16 +40,17 @@ class BootstrapSpec extends AsyncUnitSpec {
       )
       .flatMap { _ =>
         for {
-          actualApis <- persistence.apis.apis
-          actualClients <- persistence.clients.clients
-          actualOwners <- persistence.resourceOwners.owners
+          actualApis <- persistence.apis.all
+          actualClients <- persistence.clients.all
+          actualOwners <- persistence.resourceOwners.all
           _ <- persistence.drop()
         } yield {
-          val identityApi = Api(id = Api.ManageIdentity)
+          actualApis.exists(_.id == Api.ManageIdentity) should be(true)
+          actualApis.filterNot(_.id == Api.ManageIdentity).sortBy(_.id) should be(expectedEntities.apis.sortBy(_.id))
 
-          actualApis.values.toSeq.sortBy(_.id) should be((expectedEntities.apis :+ identityApi).sortBy(_.id))
-          actualClients.values.toSeq.sortBy(_.id) should be(expectedEntities.clients.sortBy(_.id))
-          actualOwners.values.toSeq.sortBy(_.username) should be(expectedEntities.owners.sortBy(_.username))
+          actualClients.sortBy(_.id) should be(expectedEntities.clients.sortBy(_.id))
+
+          actualOwners.sortBy(_.username) should be(expectedEntities.owners.sortBy(_.username))
         }
       }
   }
@@ -57,11 +62,6 @@ class BootstrapSpec extends AsyncUnitSpec {
       refreshTokenExpiration = 3.seconds
     )
 
-    val expectedApis = Seq(
-      Api(id = Api.ManageIdentity),
-      Api(id = "example-api")
-    )
-
     Bootstrap
       .run(
         bootstrapConfig = config.getConfig("bootstrap-enabled"),
@@ -69,14 +69,21 @@ class BootstrapSpec extends AsyncUnitSpec {
       )
       .flatMap { _ =>
         for {
-          actualApis <- persistence.apis.apis
-          actualClients <- persistence.clients.clients
-          actualOwners <- persistence.resourceOwners.owners
+          actualApis <- persistence.apis.all
+          actualClients <- persistence.clients.all
+          actualOwners <- persistence.resourceOwners.all
           _ <- persistence.drop()
         } yield {
-          actualApis.values.toSeq.sortBy(_.id) should be(expectedApis.sortBy(_.id))
+          actualApis.toList.sortBy(_.id) match {
+            case api1 :: api2 :: Nil =>
+              api1.id should be("example-api")
+              api2.id should be(Api.ManageIdentity)
 
-          actualClients.values.toList.sortBy(_.redirectUri) match {
+            case unexpectedResult =>
+              fail(s"Unexpected result received: [$unexpectedResult]")
+          }
+
+          actualClients.toList.sortBy(_.redirectUri) match {
             case client1 :: client2 :: client3 :: Nil =>
               client1.redirectUri should be("http://localhost:8080/example/uri1")
               client1.tokenExpiration should be(Seconds(90 * 60))
@@ -98,7 +105,7 @@ class BootstrapSpec extends AsyncUnitSpec {
               fail(s"Unexpected result received: [$unexpectedResult]")
           }
 
-          actualOwners.values.toList match {
+          actualOwners.toList match {
             case owner :: Nil =>
               owner.username should be("example-user")
               owner.allowedScopes should be(Seq("example-scope-a", "example-scope-b", "example-scope-c"))
@@ -116,7 +123,7 @@ class BootstrapSpec extends AsyncUnitSpec {
       }
   }
 
-  it should "not run if not enabled" in {
+  it should "only run migrations if not enabled" in {
     val persistence = new Persistence(
       persistenceConfig = config.getConfig("persistence"),
       authorizationCodeExpiration = 3.seconds,
@@ -131,20 +138,20 @@ class BootstrapSpec extends AsyncUnitSpec {
       .flatMap { _ =>
         for {
           _ <- persistence.init()
-          actualApis <- persistence.apis.apis
-          actualClients <- persistence.clients.clients
-          actualOwners <- persistence.resourceOwners.owners
+          actualApis <- persistence.apis.all
+          actualClients <- persistence.clients.all
+          actualOwners <- persistence.resourceOwners.all
           _ <- persistence.drop()
         } yield {
-          actualApis should be(Map.empty)
-          actualClients should be(Map.empty)
-          actualOwners should be(Map.empty)
+          actualApis should be(Seq.empty)
+          actualClients should be(Seq.empty)
+          actualOwners should be(Seq.empty)
         }
       }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    guardianBehavior = Behaviors.ignore,
     "BootstrapSpec"
   )
 

@@ -3,11 +3,12 @@ package stasis.test.specs.unit.client.mocks
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.concurrent.Future
+
 import org.apache.pekko.stream.Materializer
+
 import stasis.client.analysis.Checksum
 import stasis.test.specs.unit.client.mocks.MockChecksum.Statistic
-
-import scala.concurrent.Future
 
 class MockChecksum(checksums: Map[Path, BigInt]) extends Checksum {
   private val stats: Map[Statistic, AtomicInteger] = Map(

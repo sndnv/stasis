@@ -1,28 +1,36 @@
 package stasis.identity.api.oauth.directives
 
-import java.nio.charset.{Charset, StandardCharsets}
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.util.Base64
 
 import scala.concurrent.ExecutionContext
-import scala.util.{Failure, Success, Try}
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directive
 import org.apache.pekko.http.scaladsl.server.Directives._
-import org.apache.pekko.http.scaladsl.server.{Directive, Route}
+import org.apache.pekko.http.scaladsl.server.Route
 import org.slf4j.Logger
-import stasis.core.api.directives.EntityDiscardingDirectives
+
 import stasis.identity.api.Formats._
 import stasis.identity.model.ChallengeMethod
 import stasis.identity.model.clients.Client
-import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, StoredAuthorizationCode}
+import stasis.identity.model.codes.AuthorizationCode
+import stasis.identity.model.codes.StoredAuthorizationCode
 import stasis.identity.model.errors.TokenError
 import stasis.identity.model.owners.ResourceOwner
+import stasis.identity.persistence.codes.AuthorizationCodeStore
+import stasis.layers.api.directives.EntityDiscardingDirectives
 
 trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
-  import AuthorizationCodeConsumption._
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
+  import AuthorizationCodeConsumption._
 
   protected implicit def ec: ExecutionContext
   protected def log: Logger
@@ -37,10 +45,10 @@ trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
       client,
       providedCode,
       handler = inner => {
-        case Success(Some(StoredAuthorizationCode(`providedCode`, `client`, owner, scope, None))) =>
+        case Success(Some(StoredAuthorizationCode(`providedCode`, `client`, owner, scope, None, _))) =>
           inner(Tuple2(owner, scope))
 
-        case Success(Some(StoredAuthorizationCode(`providedCode`, `client`, owner, _, Some(_)))) =>
+        case Success(Some(StoredAuthorizationCode(`providedCode`, `client`, owner, _, Some(_), _))) =>
           log.warnN(
             "Authorization code for client [{}] and owner [{}] has challenge but none was expected",
             client,
@@ -65,7 +73,7 @@ trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
       client,
       providedCode,
       handler = inner => {
-        case Success(Some(StoredAuthorizationCode(`providedCode`, `client`, owner, scope, Some(challenge)))) =>
+        case Success(Some(StoredAuthorizationCode(`providedCode`, `client`, owner, scope, Some(challenge), _))) =>
           val verifierMatchesChallenge = challenge.method match {
             case Some(ChallengeMethod.S256) =>
               val hashedVerifier =
@@ -107,7 +115,7 @@ trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
             }
           }
 
-        case Success(Some(StoredAuthorizationCode(`providedCode`, `client`, owner, _, None))) =>
+        case Success(Some(StoredAuthorizationCode(`providedCode`, `client`, owner, _, None, _))) =>
           log.warnN(
             "Authorization code for client [{}] and owner [{}] has no challenge but one was expected",
             client,
@@ -140,7 +148,7 @@ trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
         }
       ) {
         handler(inner).orElse {
-          case Success(Some(StoredAuthorizationCode(storedCode, storedClient, owner, _, _))) =>
+          case Success(Some(StoredAuthorizationCode(storedCode, storedClient, owner, _, _, _))) =>
             log.warnN(
               "Authorization code [{}] stored for client [{}] and owner [{}] did not have expected client [{}]",
               storedCode.value,

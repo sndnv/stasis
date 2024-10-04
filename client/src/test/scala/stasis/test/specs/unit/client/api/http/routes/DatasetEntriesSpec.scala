@@ -2,23 +2,26 @@ package stasis.test.specs.unit.client.api.http.routes
 
 import java.time.Instant
 
+import scala.concurrent.Future
+
+import org.apache.pekko.Done
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.LoggerFactory
+
 import stasis.client.api.Context
 import stasis.client.api.http.routes.DatasetEntries
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.mocks._
-import scala.concurrent.Future
-
-import org.apache.pekko.Done
 import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.mocks._
 
 class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.shared.api.Formats._
 
   "DatasetEntries routes" should "respond with all entries" in withRetry {

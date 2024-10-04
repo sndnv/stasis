@@ -1,16 +1,21 @@
 package stasis.test.specs.unit.shared.model
 
-import java.time.{Instant, LocalDateTime}
+import java.time.Instant
+import java.time.LocalDateTime
 import java.util.concurrent.ThreadLocalRandom
 
 import org.apache.pekko.util.ByteString
+
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
-import stasis.shared.model.devices.{Device, DeviceBootstrapCode, DeviceKey}
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
+import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.DeviceBootstrapCode
+import stasis.shared.model.devices.DeviceKey
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
-import stasis.test.Generators._
+import stasis.layers.Generators._
 
 object Generators {
   def generateUser(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): User =

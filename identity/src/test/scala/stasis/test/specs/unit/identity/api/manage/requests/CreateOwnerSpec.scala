@@ -1,11 +1,11 @@
 package stasis.test.specs.unit.identity.api.manage.requests
 
+import scala.concurrent.duration._
+
 import stasis.identity.api.manage.requests.CreateOwner
 import stasis.identity.model.secrets.Secret
-import stasis.test.specs.unit.UnitSpec
+import stasis.layers.UnitSpec
 import stasis.test.specs.unit.identity.model.Generators
-
-import scala.concurrent.duration._
 
 class CreateOwnerSpec extends UnitSpec {
   private val request = CreateOwner(
@@ -36,7 +36,7 @@ class CreateOwnerSpec extends UnitSpec {
       subject = request.subject
     )
 
-    val actualOwner = request.toResourceOwner
+    val actualOwner = request.toResourceOwner.copy(created = expectedOwner.created, updated = expectedOwner.updated)
 
     actualOwner should be(expectedOwner.copy(password = actualOwner.password, salt = actualOwner.salt))
   }

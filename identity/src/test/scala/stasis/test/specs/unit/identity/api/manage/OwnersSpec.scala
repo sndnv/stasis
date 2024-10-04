@@ -1,18 +1,22 @@
 package stasis.test.specs.unit.identity.api.manage
 
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.util.ByteString
+
 import stasis.identity.api.Formats._
 import stasis.identity.api.manage.Owners
-import stasis.identity.api.manage.requests.{CreateOwner, UpdateOwner, UpdateOwnerCredentials}
+import stasis.identity.api.manage.requests.CreateOwner
+import stasis.identity.api.manage.requests.UpdateOwner
+import stasis.identity.api.manage.requests.UpdateOwnerCredentials
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.secrets.Secret
+import stasis.layers
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.api.manage.OwnersSpec.PartialResourceOwner
 import stasis.test.specs.unit.identity.model.Generators
-
-import scala.concurrent.Future
-import scala.concurrent.duration._
 
 class OwnersSpec extends RouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -24,14 +28,14 @@ class OwnersSpec extends RouteTest {
     val secret = Secret(ByteString("some-secret"))
     val salt = "some-salt"
 
-    val expectedOwners = stasis.test.Generators
+    val expectedOwners = layers.Generators
       .generateSeq(min = 2, g = Generators.generateResourceOwner)
-      .map(_.copy(password = secret, salt = salt))
+      .map(_.copy(password = secret, salt = salt).truncated())
 
     Future.sequence(expectedOwners.map(store.put)).await
     Get() ~> owners.routes(user) ~> check {
       status should be(StatusCodes.OK)
-      responseAs[Seq[PartialResourceOwner]].map(_.toOwner(secret, salt)).sortBy(_.username) should be(
+      responseAs[Seq[PartialResourceOwner]].map(_.toOwner(secret, salt).truncated()).sortBy(_.username) should be(
         expectedOwners.sortBy(_.username)
       )
     }
@@ -50,7 +54,7 @@ class OwnersSpec extends RouteTest {
 
     Post().withEntity(request) ~> owners.routes(user) ~> check {
       status should be(StatusCodes.OK)
-      val createdOwner = store.owners.await.values.toList match {
+      val createdOwner = store.all.await.toList match {
         case owner :: Nil => owner
         case other        => fail(s"Unexpected response received; [$other]")
       }
@@ -72,11 +76,11 @@ class OwnersSpec extends RouteTest {
 
     Post().withEntity(request) ~> owners.routes(user) ~> check {
       status should be(StatusCodes.OK)
-      store.owners.await.size should be(1)
+      store.all.await.size should be(1)
 
       Post().withEntity(request) ~> owners.routes(user) ~> check {
         status should be(StatusCodes.Conflict)
-        store.owners.await.size should be(1)
+        store.all.await.size should be(1)
       }
     }
   }
@@ -88,7 +92,7 @@ class OwnersSpec extends RouteTest {
     val secret = Secret(ByteString("some-secret"))
     val salt = "some-salt"
 
-    val expectedOwners = stasis.test.Generators
+    val expectedOwners = layers.Generators
       .generateSeq(min = 3, g = Generators.generateResourceOwner)
       .map(_.copy(password = secret, salt = salt))
       .zipWithIndex
@@ -188,7 +192,7 @@ class OwnersSpec extends RouteTest {
 
     val ownersSubject = "test-subject"
 
-    val expectedOwners = stasis.test.Generators
+    val expectedOwners = layers.Generators
       .generateSeq(min = 3, g = Generators.generateResourceOwner)
       .map(_.copy(password = secret, salt = salt, subject = Some(ownersSubject)))
 
@@ -230,7 +234,7 @@ class OwnersSpec extends RouteTest {
     store.put(expectedOwner).await
     Get(s"/${expectedOwner.username}") ~> owners.routes(user) ~> check {
       status should be(StatusCodes.OK)
-      responseAs[PartialResourceOwner].toOwner(secret, salt) should be(expectedOwner)
+      responseAs[PartialResourceOwner].toOwner(secret, salt).truncated() should be(expectedOwner.truncated())
     }
   }
 
@@ -247,12 +251,14 @@ class OwnersSpec extends RouteTest {
     store.put(owner).await
     Put(s"/${owner.username}").withEntity(request) ~> owners.routes(user) ~> check {
       status should be(StatusCodes.OK)
-      store.get(owner.username).await should be(
+      store.get(owner.username).await.truncated() should be(
         Some(
-          owner.copy(
-            allowedScopes = request.allowedScopes,
-            active = request.active
-          )
+          owner
+            .copy(
+              allowedScopes = request.allowedScopes,
+              active = request.active
+            )
+            .truncated()
         )
       )
     }
@@ -265,9 +271,11 @@ class OwnersSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
 
     store.put(owner).await
+    store.all.await.size should be(1)
+
     Delete(s"/${owner.username}") ~> owners.routes(user) ~> check {
       status should be(StatusCodes.OK)
-      store.owners.await should be(Map.empty)
+      store.all.await.size should be(0)
     }
   }
 
@@ -303,7 +311,7 @@ object OwnersSpec {
     subject: Option[String]
   ) {
     def toOwner(secret: Secret, salt: String): ResourceOwner =
-      ResourceOwner(
+      ResourceOwner.create(
         username = username,
         password = secret,
         salt = salt,

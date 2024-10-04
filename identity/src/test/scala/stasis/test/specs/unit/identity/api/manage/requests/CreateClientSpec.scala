@@ -1,11 +1,11 @@
 package stasis.test.specs.unit.identity.api.manage.requests
 
+import scala.concurrent.duration._
+
 import stasis.identity.api.manage.requests.CreateClient
 import stasis.identity.model.secrets.Secret
-import stasis.test.specs.unit.UnitSpec
+import stasis.layers.UnitSpec
 import stasis.test.specs.unit.identity.model.Generators
-
-import scala.concurrent.duration._
 
 class CreateClientSpec extends UnitSpec {
   private val request = CreateClient(
@@ -37,7 +37,7 @@ class CreateClientSpec extends UnitSpec {
       subject = request.subject
     )
 
-    val actualClient = request.toClient
+    val actualClient = request.toClient.copy(created = expectedClient.created, updated = expectedClient.updated)
 
     actualClient should be(
       expectedClient.copy(id = actualClient.id, secret = actualClient.secret, salt = actualClient.salt)

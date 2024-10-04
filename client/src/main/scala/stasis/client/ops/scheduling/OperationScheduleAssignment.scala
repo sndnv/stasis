@@ -1,14 +1,17 @@
 package stasis.client.ops.scheduling
 
-import java.nio.file.{Path, Paths}
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.UUID
+
+import scala.util.matching.Regex
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 import stasis.client.ops.exceptions.ScheduleAssignmentParsingFailure
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.schedules.Schedule
-
-import scala.util.matching.Regex
-import scala.util.{Failure, Success, Try}
 
 sealed trait OperationScheduleAssignment {
   def schedule: Schedule.Id

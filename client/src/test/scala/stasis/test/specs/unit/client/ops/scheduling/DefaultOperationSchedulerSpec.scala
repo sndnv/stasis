@@ -2,23 +2,27 @@ package stasis.test.specs.unit.client.ops.scheduling
 
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.control.NonFatal
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+import org.scalatest.Assertion
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{Assertion, BeforeAndAfterAll}
+
 import stasis.client.ops.exceptions.ScheduleRetrievalFailure
-import stasis.client.ops.scheduling.{DefaultOperationScheduler, OperationScheduleAssignment}
+import stasis.client.ops.scheduling.DefaultOperationScheduler
+import stasis.client.ops.scheduling.OperationScheduleAssignment
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
-import stasis.test.specs.unit.client.mocks.{MockOperationExecutor, MockServerApiEndpointClient}
-
-import scala.concurrent.Future
-import scala.concurrent.duration._
-import scala.util.control.NonFatal
+import stasis.test.specs.unit.client.mocks.MockOperationExecutor
+import stasis.test.specs.unit.client.mocks.MockServerApiEndpointClient
 
 class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with BeforeAndAfterAll {
   "A DefaultOperationScheduler" should "provide a list of active schedules" in {
@@ -604,8 +608,8 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
       val _ = scheduler.stop().await
     }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "DefaultOperationSchedulerSpec"
   )
 

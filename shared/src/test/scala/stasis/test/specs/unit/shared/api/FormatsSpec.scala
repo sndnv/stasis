@@ -1,28 +1,35 @@
 package stasis.test.specs.unit.shared.api
 
 import java.time.temporal.ChronoUnit
-import java.time.{Instant, LocalDateTime}
+import java.time.Instant
+import java.time.LocalDateTime
+
+import scala.concurrent.duration._
 
 import org.apache.pekko.actor.Cancellable
 import org.apache.pekko.util.ByteString
 import play.api.libs.json.Json
+
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.packaging.Crate
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.staging.StagingStore.PendingDestaging
 import stasis.shared.api.Formats._
-import stasis.shared.api.requests.CreateNode.{CreateLocalNode, CreateRemoteGrpcNode, CreateRemoteHttpNode}
-import stasis.shared.api.requests.UpdateNode.{UpdateLocalNode, UpdateRemoteGrpcNode, UpdateRemoteHttpNode}
+import stasis.shared.api.requests.CreateNode.CreateLocalNode
+import stasis.shared.api.requests.CreateNode.CreateRemoteGrpcNode
+import stasis.shared.api.requests.CreateNode.CreateRemoteHttpNode
+import stasis.shared.api.requests.UpdateNode.UpdateLocalNode
+import stasis.shared.api.requests.UpdateNode.UpdateRemoteGrpcNode
+import stasis.shared.api.requests.UpdateNode.UpdateRemoteHttpNode
 import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.DeviceKey
+import stasis.shared.model.users.User
 import stasis.shared.ops.Operation
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.shared.model.Generators
-import scala.concurrent.duration._
-
-import stasis.shared.model.devices.{Device, DeviceKey}
-import stasis.shared.model.users.User
 
 class FormatsSpec extends UnitSpec {
   "Formats" should "convert permissions to/from JSON" in {
@@ -86,7 +93,7 @@ class FormatsSpec extends UnitSpec {
     }
   }
 
-  they should "convert schedules to/from JSON with 'next_invocation' field" in {
+  they should "convert schedules to/from JSON with 'next_invocation' field" in withRetry {
     val schedule = Generators.generateSchedule.copy(
       start = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS),
       interval = 30.seconds

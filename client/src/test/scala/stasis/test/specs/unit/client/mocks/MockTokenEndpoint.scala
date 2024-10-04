@@ -3,7 +3,8 @@ package stasis.test.specs.unit.client.mocks
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
-import stasis.core.security.oauth.OAuthClient.GrantType
+
+import stasis.layers.security.oauth.OAuthClient.GrantType
 
 class MockTokenEndpoint(port: Int, token: String, allowedGrants: Seq[String]) {
   private val wireMockServer = new WireMockServer(new WireMockConfiguration().port(port))

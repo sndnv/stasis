@@ -1,14 +1,17 @@
 package stasis.test.specs.unit.client.ops.recovery.stages.internal
 
-import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
-import org.apache.pekko.util.ByteString
-import stasis.client.ops.recovery.stages.internal.MergedCrates
-import stasis.test.specs.unit.AsyncUnitSpec
-
 import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicInteger
+
 import scala.util.control.NonFatal
+
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
+
+import stasis.client.ops.recovery.stages.internal.MergedCrates
+import stasis.test.specs.unit.AsyncUnitSpec
 
 class MergedCratesSpec extends AsyncUnitSpec {
   "MergedCrates" should "support data stream merging (single crate)" in {

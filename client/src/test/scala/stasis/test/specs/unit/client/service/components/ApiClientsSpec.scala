@@ -1,18 +1,19 @@
 package stasis.test.specs.unit.client.service.components
 
 import java.util.UUID
+
 import scala.concurrent.Future
+
 import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.ActorSystem
-import org.apache.pekko.actor.typed.Behavior
-import org.apache.pekko.actor.typed.SpawnProtocol
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.apache.pekko.stream.StreamTcpException
 import org.apache.pekko.util.ByteString
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+
 import stasis.client.api.clients.ServerApiEndpointClient
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.DeviceSecret
@@ -85,8 +86,8 @@ class ApiClientsSpec extends AsyncUnitSpec with ResourceHelpers {
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "ApiClientsSpec"
   )
 

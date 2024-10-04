@@ -1,18 +1,20 @@
 package stasis.test.specs.unit.shared.model.devices
 
-import org.apache.pekko.util.ByteString
+import java.io.ByteArrayOutputStream
+import java.util.UUID
+
+import scala.jdk.CollectionConverters._
+
 import com.typesafe.{config => typesafe}
+import org.apache.pekko.util.ByteString
 import play.api.libs.json.Json
+
 import stasis.core.routing.Node
-import stasis.core.security.tls.EndpointContext
+import stasis.layers.security.tls.EndpointContext
 import stasis.shared.model.devices.DeviceBootstrapParameters
 import stasis.shared.secrets.SecretsConfig
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.shared.model.Generators
-
-import java.io.ByteArrayOutputStream
-import java.util.UUID
-import scala.jdk.CollectionConverters._
 
 class DeviceBootstrapParametersSpec extends UnitSpec {
   "DeviceBootstrapParameters" should "support updating device info" in {

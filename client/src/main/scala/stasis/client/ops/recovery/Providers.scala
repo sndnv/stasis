@@ -6,7 +6,7 @@ import stasis.client.compression.Compression
 import stasis.client.encryption
 import stasis.client.staging.FileStaging
 import stasis.client.tracking.RecoveryTracker
-import stasis.core.telemetry.TelemetryContext
+import stasis.layers.telemetry.TelemetryContext
 
 final case class Providers(
   checksum: Checksum,

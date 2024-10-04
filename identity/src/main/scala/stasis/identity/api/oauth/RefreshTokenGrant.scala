@@ -1,27 +1,33 @@
 package stasis.identity.api.oauth
 
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import scala.concurrent.ExecutionContext
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model._
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
-import org.slf4j.{Logger, LoggerFactory}
-import play.api.libs.json.{Format, Json}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import play.api.libs.json.Format
+import play.api.libs.json.Json
+
 import stasis.identity.api.Formats._
 import stasis.identity.api.oauth.directives.AuthDirectives
-import stasis.identity.api.oauth.setup.{Config, Providers}
+import stasis.identity.api.oauth.setup.Config
+import stasis.identity.api.oauth.setup.Providers
+import stasis.identity.model.GrantType
+import stasis.identity.model.Seconds
 import stasis.identity.model.tokens._
-import stasis.identity.model.{GrantType, Seconds}
-
-import scala.concurrent.ExecutionContext
 
 class RefreshTokenGrant(
   override val config: Config,
   override val providers: Providers
-)(implicit system: ActorSystem[SpawnProtocol.Command])
+)(implicit system: ActorSystem[Nothing])
     extends AuthDirectives {
-  import RefreshTokenGrant._
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
+  import RefreshTokenGrant._
 
   override implicit protected def ec: ExecutionContext = system.executionContext
   override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
@@ -84,7 +90,7 @@ object RefreshTokenGrant {
   def apply(
     config: Config,
     providers: Providers
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): RefreshTokenGrant =
+  )(implicit system: ActorSystem[Nothing]): RefreshTokenGrant =
     new RefreshTokenGrant(
       config = config,
       providers = providers

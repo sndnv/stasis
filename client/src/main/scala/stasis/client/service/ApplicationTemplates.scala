@@ -1,11 +1,15 @@
 package stasis.client.service
 
+import java.io.FileNotFoundException
+
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+
 import com.typesafe.{config => typesafe}
 import play.api.libs.json.JsObject
-import stasis.shared.model.devices.DeviceBootstrapParameters
 
-import java.io.FileNotFoundException
-import scala.util.{Failure, Success, Try}
+import stasis.shared.model.devices.DeviceBootstrapParameters
 
 final case class ApplicationTemplates(
   config: ApplicationTemplates.ConfigTemplate,

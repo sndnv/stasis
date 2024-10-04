@@ -5,12 +5,15 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server._
 import org.jose4j.jwk.JsonWebKey
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.core.api.directives.EntityDiscardingDirectives
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+import stasis.layers.api.directives.EntityDiscardingDirectives
 
 class Jwks(keys: Seq[JsonWebKey]) extends EntityDiscardingDirectives {
-  import Jwks._
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
+  import Jwks._
 
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 

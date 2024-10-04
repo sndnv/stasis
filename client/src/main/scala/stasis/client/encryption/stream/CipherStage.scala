@@ -3,10 +3,17 @@ package stasis.client.encryption.stream
 import java.security.Key
 import java.security.spec.AlgorithmParameterSpec
 
-import org.apache.pekko.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
-import org.apache.pekko.stream.{Attributes, FlowShape, Inlet, Outlet}
-import org.apache.pekko.util.ByteString
 import javax.crypto.Cipher
+
+import org.apache.pekko.stream.stage.GraphStage
+import org.apache.pekko.stream.stage.GraphStageLogic
+import org.apache.pekko.stream.stage.InHandler
+import org.apache.pekko.stream.stage.OutHandler
+import org.apache.pekko.stream.Attributes
+import org.apache.pekko.stream.FlowShape
+import org.apache.pekko.stream.Inlet
+import org.apache.pekko.stream.Outlet
+import org.apache.pekko.util.ByteString
 
 class CipherStage(
   algorithm: String,

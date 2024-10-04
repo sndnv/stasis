@@ -1,19 +1,23 @@
 package stasis.test.specs.unit.identity.api.oauth.directives
 
+import scala.concurrent.duration._
+
 import org.apache.pekko.http.scaladsl.model
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, HttpChallenges, OAuth2BearerToken}
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.HttpChallenges
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.apache.pekko.http.scaladsl.server.Directives
 import org.slf4j.Logger
 import play.api.libs.json._
+
 import stasis.identity.api.oauth.directives.ClientAuthentication
-import stasis.identity.authentication.oauth.{ClientAuthenticator, DefaultClientAuthenticator}
-import stasis.identity.model.clients.ClientStore
+import stasis.identity.authentication.oauth.ClientAuthenticator
+import stasis.identity.authentication.oauth.DefaultClientAuthenticator
 import stasis.identity.model.secrets.Secret
+import stasis.identity.persistence.clients.ClientStore
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
-
-import scala.concurrent.duration._
 
 class ClientAuthenticationSpec extends RouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._

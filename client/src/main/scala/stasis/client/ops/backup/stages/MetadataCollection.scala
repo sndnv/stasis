@@ -1,12 +1,17 @@
 package stasis.client.ops.backup.stages
 
 import java.nio.file.Path
+
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Flow
-import stasis.client.model.{DatasetMetadata, EntityMetadata, FilesystemMetadata}
+
+import stasis.client.model.DatasetMetadata
+import stasis.client.model.EntityMetadata
+import stasis.client.model.FilesystemMetadata
 import stasis.client.ops.backup.Providers
 import stasis.client.tracking.state.BackupState
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation
 
 trait MetadataCollection {

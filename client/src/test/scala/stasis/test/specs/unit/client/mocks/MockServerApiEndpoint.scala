@@ -1,55 +1,67 @@
 package stasis.test.specs.unit.client.mocks
 
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+
 import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.Http
-import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
+import org.apache.pekko.http.scaladsl.model.ContentTypes
+import org.apache.pekko.http.scaladsl.model.HttpEntity
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.stream.scaladsl.Source
-import org.apache.pekko.util.{ByteString, Timeout}
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.core.persistence.backends.memory.MemoryBackend
-import stasis.core.security.tls.EndpointContext
-import stasis.core.telemetry.TelemetryContext
-import stasis.shared.api.requests.{CreateDatasetDefinition, CreateDatasetEntry}
-import stasis.shared.api.responses.{CreatedDatasetDefinition, CreatedDatasetEntry, Ping}
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
-import stasis.shared.model.devices.{Device, DeviceKey}
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.util.Timeout
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+import stasis.layers.persistence.memory.MemoryStore
+import stasis.layers.security.tls.EndpointContext
+import stasis.layers.telemetry.TelemetryContext
+import stasis.shared.api.requests.CreateDatasetDefinition
+import stasis.shared.api.requests.CreateDatasetEntry
+import stasis.shared.api.responses.CreatedDatasetDefinition
+import stasis.shared.api.responses.CreatedDatasetEntry
+import stasis.shared.api.responses.Ping
+import stasis.shared.api.responses.UpdatedUserSalt
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
+import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.DeviceKey
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.shared.model.Generators
-import scala.concurrent.Future
-import scala.util.{Failure, Success}
-
-import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
-import stasis.shared.api.responses.UpdatedUserSalt
 
 class MockServerApiEndpoint(
   expectedCredentials: HttpCredentials,
   expectedDeviceKey: Option[ByteString] = None,
   definitionsWithoutEntries: Seq[DatasetDefinition.Id] = Seq.empty,
   withDefinitions: Option[Seq[DatasetDefinition]] = None
-)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, timeout: Timeout) {
+)(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext, timeout: Timeout) {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
-  import stasis.shared.api.Formats._
   import system.executionContext
+
+  import stasis.shared.api.Formats._
 
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
-  private val entriesStore: MemoryBackend[DatasetEntry.Id, DatasetEntry] =
-    MemoryBackend[DatasetDefinition.Id, DatasetEntry](
+  private val entriesStore: MemoryStore[DatasetEntry.Id, DatasetEntry] =
+    MemoryStore[DatasetDefinition.Id, DatasetEntry](
       s"mock-server-api-entries-store-${java.util.UUID.randomUUID()}"
     )
 
-  private val definitionsStore: MemoryBackend[DatasetDefinition.Id, DatasetDefinition] =
-    MemoryBackend[DatasetDefinition.Id, DatasetDefinition](
+  private val definitionsStore: MemoryStore[DatasetDefinition.Id, DatasetDefinition] =
+    MemoryStore[DatasetDefinition.Id, DatasetDefinition](
       s"mock-server-api-definitions-store-${java.util.UUID.randomUUID()}"
     )
 
-  private val keyStore: MemoryBackend[Device.Id, DeviceKey] =
-    MemoryBackend[Device.Id, DeviceKey](
+  private val keyStore: MemoryStore[Device.Id, DeviceKey] =
+    MemoryStore[Device.Id, DeviceKey](
       s"mock-server-api-device-key-store-${java.util.UUID.randomUUID()}"
     )
 

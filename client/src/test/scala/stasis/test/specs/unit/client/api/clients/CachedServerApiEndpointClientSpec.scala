@@ -5,10 +5,9 @@ import java.time.Instant
 import scala.concurrent.duration._
 
 import org.apache.pekko.actor.typed.ActorSystem
-import org.apache.pekko.actor.typed.Behavior
-import org.apache.pekko.actor.typed.SpawnProtocol
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.util.ByteString
+
 import stasis.client.api.clients.CachedServerApiEndpointClient
 import stasis.core.packaging.Crate
 import stasis.shared.api.requests.CreateDatasetDefinition
@@ -334,8 +333,8 @@ class CachedServerApiEndpointClientSpec extends AsyncUnitSpec {
       underlying = underlying
     )
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "CachedServerApiEndpointClientSpec"
   )
 }

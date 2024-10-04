@@ -1,43 +1,19 @@
 package stasis.core.api
 
-import java.util.UUID
-
-import org.apache.pekko.http.scaladsl.model.Uri
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.packaging.Manifest
+import stasis.core.persistence.CrateStorageRequest
+import stasis.core.persistence.CrateStorageReservation
 import stasis.core.persistence.crates.CrateStore
-import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
 import stasis.core.routing.Node
-
-import scala.concurrent.duration._
 
 object Formats {
   import play.api.libs.json._
 
+  import stasis.layers.api.Formats.uriFormat
+
   implicit val jsonConfig: JsonConfiguration = JsonConfiguration(JsonNaming.SnakeCase)
-
-  implicit val finiteDurationFormat: Format[FiniteDuration] = Format(
-    fjs = js => js.validate[Long].map(seconds => seconds.seconds),
-    tjs = duration => Json.toJson(duration.toSeconds)
-  )
-
-  implicit def uuidMapFormat[V](implicit format: Format[V]): Format[Map[UUID, V]] =
-    Format(
-      fjs = _.validate[Map[String, V]].map(_.map { case (k, v) => UUID.fromString(k) -> v }),
-      tjs = map => Json.toJson(map.map { case (k, v) => k.toString -> format.writes(v) })
-    )
-
-  implicit def optionFormat[V](implicit format: Format[V]): Format[Option[V]] =
-    Format(
-      fjs = _.validateOpt[V],
-      tjs = _.map(Json.toJson(_)).getOrElse(JsNull)
-    )
-
-  implicit val uriFormat: Format[Uri] = Format(
-    fjs = _.validate[String].map(Uri.apply),
-    tjs = uri => Json.toJson(uri.toString)
-  )
 
   implicit val httpEndpointAddressFormat: Format[HttpEndpointAddress] =
     Json.format[HttpEndpointAddress]
@@ -151,6 +127,4 @@ object Formats {
   implicit val crateStorageRequestFormat: Format[CrateStorageRequest] = Json.format[CrateStorageRequest]
 
   implicit val crateStorageReservationFormat: Format[CrateStorageReservation] = Json.format[CrateStorageReservation]
-
-  implicit val messageResponseFormat: Format[MessageResponse] = Json.format[MessageResponse]
 }

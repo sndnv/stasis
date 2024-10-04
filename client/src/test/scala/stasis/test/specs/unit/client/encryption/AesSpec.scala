@@ -1,13 +1,19 @@
 package stasis.test.specs.unit.client.encryption
 
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.scaladsl.{FileIO, Source}
+import org.apache.pekko.stream.scaladsl.FileIO
+import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
+
 import stasis.client.encryption.Aes
-import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceMetadataSecret}
-import stasis.client.model.{DatasetMetadata, FilesystemMetadata}
+import stasis.client.encryption.secrets.DeviceFileSecret
+import stasis.client.encryption.secrets.DeviceMetadataSecret
+import stasis.client.model.DatasetMetadata
+import stasis.client.model.FilesystemMetadata
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.{EncodingHelpers, Fixtures, ResourceHelpers}
+import stasis.test.specs.unit.client.EncodingHelpers
+import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers
 
 class AesSpec extends AsyncUnitSpec with EncodingHelpers with ResourceHelpers {
   "An AES encoder/decoder implementation" should "encrypt files" in {

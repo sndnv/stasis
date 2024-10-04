@@ -2,12 +2,14 @@ package stasis.client.security
 
 import java.util.concurrent.ThreadLocalRandom
 
-import org.apache.pekko.Done
-import org.apache.pekko.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
-import stasis.core.security.exceptions.AuthenticationFailure
-
 import scala.concurrent.Future
 import scala.util.Random
+
+import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+
+import stasis.layers.security.exceptions.AuthenticationFailure
 
 class DefaultFrontendAuthenticator(val token: String) extends FrontendAuthenticator {
   override def authenticate(credentials: HttpCredentials): Future[Done] =

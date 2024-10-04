@@ -2,8 +2,9 @@ package stasis.core.routing
 
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.metrics.Meter
-import stasis.core.telemetry.metrics.MeterExtensions._
-import stasis.core.telemetry.metrics.MetricsProvider
+
+import stasis.layers.telemetry.metrics.MeterExtensions._
+import stasis.layers.telemetry.metrics.MetricsProvider
 
 object Metrics {
   def noop(): Set[MetricsProvider] = Set(

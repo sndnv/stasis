@@ -1,11 +1,13 @@
 package stasis.test.specs.unit.client.security
 
-import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
-import stasis.client.security.DefaultFrontendAuthenticator
-import stasis.core.security.exceptions.AuthenticationFailure
-import stasis.test.specs.unit.AsyncUnitSpec
-
 import scala.util.control.NonFatal
+
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+
+import stasis.client.security.DefaultFrontendAuthenticator
+import stasis.layers.security.exceptions.AuthenticationFailure
+import stasis.test.specs.unit.AsyncUnitSpec
 
 class DefaultFrontendAuthenticatorSpec extends AsyncUnitSpec { test =>
   "A DefaultFrontendAuthenticator" should "successfully authenticate frontend requests" in {

@@ -1,31 +1,44 @@
 package stasis.core.routing
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+import scala.util.control.NonFatal
+
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
 import org.apache.pekko.stream.ClosedShape
-import org.apache.pekko.stream.scaladsl.{Broadcast, GraphDSL, RunnableGraph, Source}
+import org.apache.pekko.stream.scaladsl.Broadcast
+import org.apache.pekko.stream.scaladsl.GraphDSL
+import org.apache.pekko.stream.scaladsl.RunnableGraph
+import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import org.apache.pekko.{Done, NotUsed}
 import org.slf4j.LoggerFactory
-import stasis.core.packaging.{Crate, Manifest}
+
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
+import stasis.core.persistence.CrateStorageRequest
+import stasis.core.persistence.CrateStorageReservation
 import stasis.core.persistence.exceptions.ReservationFailure
 import stasis.core.persistence.manifests.ManifestStore
 import stasis.core.persistence.nodes.NodeStoreView
 import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.persistence.staging.StagingStore
-import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
-import stasis.core.routing.exceptions.{DiscardFailure, DistributionFailure, PullFailure, PushFailure}
-import stasis.core.telemetry.TelemetryContext
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
-import scala.util.{Failure, Success, Try}
+import stasis.core.routing.exceptions.DiscardFailure
+import stasis.core.routing.exceptions.DistributionFailure
+import stasis.core.routing.exceptions.PullFailure
+import stasis.core.routing.exceptions.PushFailure
+import stasis.layers.telemetry.TelemetryContext
 
 class DefaultRouter(
   routerId: Node.Id,
   persistence: DefaultRouter.Persistence,
   nodeProxy: NodeProxy
-)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext)
+)(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext)
     extends Router {
 
   private implicit val ec: ExecutionContext = system.executionContext
@@ -484,7 +497,7 @@ object DefaultRouter {
     routerId: Node.Id,
     persistence: DefaultRouter.Persistence,
     nodeProxy: NodeProxy
-  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext): DefaultRouter =
+  )(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext): DefaultRouter =
     new DefaultRouter(
       routerId = routerId,
       persistence = persistence,

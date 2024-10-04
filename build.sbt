@@ -1,4 +1,4 @@
-import sbt.Keys._
+import sbt.Keys.*
 
 lazy val projectName = "stasis"
 
@@ -121,6 +121,39 @@ lazy val shared = (project in file("./shared"))
   .settings(commonSettings)
   .dependsOn(core % "compile->compile;test->test")
 
+lazy val layers = (project in file("./layers"))
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.apache.pekko"      %% "pekko-actor"                       % versions.pekko                   % Provided,
+      "org.apache.pekko"      %% "pekko-actor-typed"                 % versions.pekko                   % Provided,
+      "org.apache.pekko"      %% "pekko-stream"                      % versions.pekko                   % Provided,
+      "org.apache.pekko"      %% "pekko-discovery"                   % versions.pekko                   % Provided,
+      "org.apache.pekko"      %% "pekko-slf4j"                       % versions.pekko                   % Provided,
+      "org.apache.pekko"      %% "pekko-http"                        % versions.pekkoHttp               % Provided,
+      "org.apache.pekko"      %% "pekko-http-core"                   % versions.pekkoHttp               % Provided,
+      "com.typesafe.play"     %% "play-json"                         % versions.playJson                % Provided,
+      "com.github.pjfanning"  %% "pekko-http-play-json"              % versions.pekkoJson               % Provided,
+      "org.bitbucket.b_c"      % "jose4j"                            % versions.jose4j                  % Provided,
+      "io.opentelemetry"       % "opentelemetry-api"                 % versions.openTelemetry           % Provided,
+      "ch.qos.logback"         % "logback-classic"                   % versions.logback                 % Provided,
+      "io.opentelemetry"       % "opentelemetry-sdk"                 % versions.openTelemetry           % Provided,
+      "io.opentelemetry"       % "opentelemetry-exporter-prometheus" % versions.openTelemetryPrometheus % Provided,
+      "io.prometheus"          % "simpleclient"                      % versions.prometheus              % Provided,
+      "com.typesafe.slick"    %% "slick"                             % versions.slick                   % Test,
+      "com.h2database"         % "h2"                                % versions.h2                      % Test,
+      "org.scalacheck"        %% "scalacheck"                        % versions.scalaCheck              % Test,
+      "org.scalatest"         %% "scalatest"                         % versions.scalaTest               % Test,
+      "org.apache.pekko"      %% "pekko-testkit"                     % versions.pekko                   % Test,
+      "org.apache.pekko"      %% "pekko-stream-testkit"              % versions.pekko                   % Test,
+      "org.apache.pekko"      %% "pekko-http-testkit"                % versions.pekkoHttp               % Test,
+      "com.github.tomakehurst" % "wiremock-jre8"                     % versions.wiremock                % Test,
+      "org.mockito"           %% "mockito-scala"                     % versions.mockito                 % Test,
+      "org.mockito"           %% "mockito-scala-scalatest"           % versions.mockito                 % Test,
+      "org.mockito"            % "mockito-inline"                    % versions.mockitoInline           % Test
+    )
+  )
+
 lazy val core = (project in file("./core"))
   .settings(commonSettings)
   .settings(
@@ -155,7 +188,7 @@ lazy val core = (project in file("./core"))
       "com.google.jimfs"       % "jimfs"                             % versions.jimfs                   % Test
     )
   )
-  .dependsOn(proto)
+  .dependsOn(proto, layers % "compile->compile;test->test")
 
 lazy val proto = (project in file("./proto"))
   .settings(
@@ -200,8 +233,7 @@ lazy val commonSettings = Seq(
     "-Xlint:inaccessible",
     "-Xlint:infer-any",
     s"-P:wartremover:excluded:${(Compile / sourceManaged).value}"
-  ),
-  dependencyUpdatesFilter -= moduleFilter(organization = "org.apache.pekko")
+  )
 )
 
 lazy val dockerSettings = Seq(
@@ -212,8 +244,9 @@ lazy val dockerSettings = Seq(
 )
 
 def findDockerExecCommand(): String = {
-  import scala.util.Try
   import java.io.File
+
+  import scala.util.Try
 
   val pathEntries = Try(Option(System.getenv("PATH"))).toOption.flatten
     .getOrElse("")

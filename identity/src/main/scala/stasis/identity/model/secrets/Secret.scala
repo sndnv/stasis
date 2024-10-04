@@ -3,13 +3,14 @@ package stasis.identity.model.secrets
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
 
-import org.apache.pekko.util.ByteString
-import com.typesafe.{config => typesafe}
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 
 import scala.concurrent.duration._
 import scala.util.Random
+
+import com.typesafe.{config => typesafe}
+import org.apache.pekko.util.ByteString
 
 final case class Secret(value: ByteString) {
   override def toString: String = "Secret"

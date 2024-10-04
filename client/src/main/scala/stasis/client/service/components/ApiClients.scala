@@ -2,14 +2,14 @@ package stasis.client.service.components
 
 import java.util.UUID
 
-import stasis.client.api.clients._
-import stasis.core.networking.http.HttpEndpointAddress
-import stasis.core.security.tls.EndpointContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Try
 
+import stasis.client.api.clients._
 import stasis.core.api.PoolClient
+import stasis.core.networking.http.HttpEndpointAddress
+import stasis.layers.security.tls.EndpointContext
 
 trait ApiClients {
   def clients: Clients

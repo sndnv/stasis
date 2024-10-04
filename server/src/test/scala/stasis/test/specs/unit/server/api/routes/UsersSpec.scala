@@ -1,33 +1,42 @@
 package stasis.test.specs.unit.server.api.routes
 
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.Success
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
-import org.apache.pekko.http.scaladsl.model.{RequestEntity, StatusCodes}
+import org.apache.pekko.http.scaladsl.model.RequestEntity
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.core.telemetry.TelemetryContext
-import stasis.server.api.routes.{RoutesContext, Users}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+import stasis.layers.telemetry.TelemetryContext
+import stasis.server.api.routes.RoutesContext
+import stasis.server.api.routes.Users
 import stasis.server.model.users.UserStore
+import stasis.server.security.CurrentUser
+import stasis.server.security.ResourceProvider
 import stasis.server.security.users.UserCredentialsManager
-import stasis.server.security.{CurrentUser, ResourceProvider}
 import stasis.shared.api.requests._
-import stasis.shared.api.responses.{CreatedUser, DeletedUser, UpdatedUserSalt}
+import stasis.shared.api.responses.CreatedUser
+import stasis.shared.api.responses.DeletedUser
+import stasis.shared.api.responses.UpdatedUserSalt
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.Secrets
 import stasis.test.specs.unit.server.model.mocks.MockUserStore
-import stasis.test.specs.unit.server.security.mocks.{MockResourceProvider, MockUserCredentialsManager}
-
-import scala.concurrent.Future
-import scala.concurrent.duration._
-import scala.util.Success
+import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
+import stasis.test.specs.unit.server.security.mocks.MockUserCredentialsManager
 
 class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.shared.api.Formats._
 
   "Users routes (full permissions)" should "respond with all users" in withRetry {
@@ -755,8 +764,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "UsersSpec"
   )
 

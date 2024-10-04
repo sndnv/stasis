@@ -1,19 +1,27 @@
 package stasis.identity.api.oauth.directives
 
-import scala.util.{Failure, Success}
+import java.time.Instant
+
+import scala.util.Failure
+import scala.util.Success
 
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
-import org.apache.pekko.http.scaladsl.model.{StatusCodes, Uri}
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.server.Directive
+import org.apache.pekko.http.scaladsl.server.Directive1
 import org.apache.pekko.http.scaladsl.server.Directives._
-import org.apache.pekko.http.scaladsl.server.{Directive, Directive1}
 import org.slf4j.Logger
-import stasis.core.api.directives.EntityDiscardingDirectives
+
 import stasis.identity.model.ChallengeMethod
 import stasis.identity.model.clients.Client
+import stasis.identity.model.codes.AuthorizationCode
+import stasis.identity.model.codes.StoredAuthorizationCode
 import stasis.identity.model.codes.generators.AuthorizationCodeGenerator
-import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, StoredAuthorizationCode}
 import stasis.identity.model.errors.AuthorizationError
 import stasis.identity.model.owners.ResourceOwner
+import stasis.identity.persistence.codes.AuthorizationCodeStore
+import stasis.layers.api.directives.EntityDiscardingDirectives
 
 trait AuthorizationCodeGeneration extends EntityDiscardingDirectives {
 
@@ -56,7 +64,7 @@ trait AuthorizationCodeGeneration extends EntityDiscardingDirectives {
     Directive { inner =>
       val code = authorizationCodeGenerator.generate()
       val codeChallenge = StoredAuthorizationCode.Challenge(challenge, challengeMethod)
-      val storedCode = StoredAuthorizationCode(code, client, owner, scope, Some(codeChallenge))
+      val storedCode = StoredAuthorizationCode(code, client, owner, scope, Some(codeChallenge), created = Instant.now())
 
       storeCode(
         client = client,

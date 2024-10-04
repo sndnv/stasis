@@ -2,15 +2,24 @@ package stasis.identity.api
 
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
 import play.api.libs.json._
+
 import stasis.identity.api.manage.requests._
 import stasis.identity.api.manage.responses.CreatedClient
+import stasis.identity.model.ChallengeMethod
+import stasis.identity.model.GrantType
+import stasis.identity.model.ResponseType
+import stasis.identity.model.Seconds
 import stasis.identity.model.apis.Api
 import stasis.identity.model.clients.Client
-import stasis.identity.model.codes.{AuthorizationCode, StoredAuthorizationCode}
-import stasis.identity.model.errors.{AuthorizationError, TokenError}
+import stasis.identity.model.codes.AuthorizationCode
+import stasis.identity.model.codes.StoredAuthorizationCode
+import stasis.identity.model.errors.AuthorizationError
+import stasis.identity.model.errors.TokenError
 import stasis.identity.model.owners.ResourceOwner
-import stasis.identity.model.tokens.{AccessToken, RefreshToken, StoredRefreshToken, TokenType}
-import stasis.identity.model.{ChallengeMethod, GrantType, ResponseType, Seconds}
+import stasis.identity.model.tokens.AccessToken
+import stasis.identity.model.tokens.RefreshToken
+import stasis.identity.model.tokens.StoredRefreshToken
+import stasis.identity.model.tokens.TokenType
 
 object Formats {
   implicit val jsonConfig: JsonConfiguration = JsonConfiguration(JsonNaming.SnakeCase)
@@ -86,7 +95,9 @@ object Formats {
         "redirect_uri" -> Json.toJson(client.redirectUri),
         "token_expiration" -> Json.toJson(client.tokenExpiration),
         "active" -> Json.toJson(client.active),
-        "subject" -> Json.toJson(client.subject)
+        "subject" -> Json.toJson(client.subject),
+        "created" -> Json.toJson(client.created),
+        "updated" -> Json.toJson(client.updated)
       )
     )
 
@@ -97,7 +108,8 @@ object Formats {
         "client" -> Json.toJson(code.client),
         "owner" -> Json.toJson(code.owner.username),
         "scope" -> Json.toJson(code.scope),
-        "challenge" -> Json.toJson(code.challenge)
+        "challenge" -> Json.toJson(code.challenge),
+        "created" -> Json.toJson(code.created)
       )
     )
 
@@ -107,7 +119,9 @@ object Formats {
         "username" -> Json.toJson(owner.username),
         "allowed_scopes" -> Json.toJson(owner.allowedScopes),
         "active" -> Json.toJson(owner.active),
-        "subject" -> Json.toJson(owner.subject)
+        "subject" -> Json.toJson(owner.subject),
+        "created" -> Json.toJson(owner.created),
+        "updated" -> Json.toJson(owner.updated)
       )
     )
 
@@ -116,9 +130,10 @@ object Formats {
       Json.obj(
         "token" -> Json.toJson(token.token),
         "client" -> Json.toJson(token.client),
-        "owner" -> Json.toJson(token.owner.username),
+        "owner" -> Json.toJson(token.owner),
         "scope" -> Json.toJson(token.scope),
-        "expiration" -> Json.toJson(token.expiration)
+        "expiration" -> Json.toJson(token.expiration),
+        "created" -> Json.toJson(token.created)
       )
     )
 

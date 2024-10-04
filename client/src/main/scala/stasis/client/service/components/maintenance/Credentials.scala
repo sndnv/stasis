@@ -6,6 +6,7 @@ import scala.concurrent.Future
 
 import org.apache.pekko.Done
 import org.apache.pekko.util.ByteString
+
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.UserPassword
 import stasis.client.service.ApplicationArguments

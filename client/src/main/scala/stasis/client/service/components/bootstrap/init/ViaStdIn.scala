@@ -2,10 +2,11 @@ package stasis.client.service.components.bootstrap.init
 
 import java.io.Console
 
-import stasis.client.service.ApplicationArguments
-
 import scala.concurrent.Future
-import scala.util.{Success, Try}
+import scala.util.Success
+import scala.util.Try
+
+import stasis.client.service.ApplicationArguments
 
 object ViaStdIn {
   def retrieveArguments(

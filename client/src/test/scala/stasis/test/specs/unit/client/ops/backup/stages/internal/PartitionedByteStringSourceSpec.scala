@@ -3,15 +3,18 @@ package stasis.test.specs.unit.client.ops.backup.stages.internal
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
-import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.IOResult
-import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
-import org.apache.pekko.util.ByteString
-import stasis.client.ops.backup.stages.internal.PartitionedByteStringSource
-import stasis.test.specs.unit.AsyncUnitSpec
-
 import scala.concurrent.Future
 import scala.util.control.NonFatal
+
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.IOResult
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
+
+import stasis.client.ops.backup.stages.internal.PartitionedByteStringSource
+import stasis.test.specs.unit.AsyncUnitSpec
 
 class PartitionedByteStringSourceSpec extends AsyncUnitSpec {
   "A PartitionedByteStringSource" should "support data stream partitioning" in {

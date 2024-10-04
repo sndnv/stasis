@@ -1,26 +1,30 @@
 package stasis.test.specs.unit.core.networking.grpc
 
+import scala.concurrent.Future
+import scala.util.control.NonFatal
+
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{Behavior, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.model._
 import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import stasis.core.networking.grpc.internal.{Implicits, Requests}
-import stasis.core.networking.grpc.{proto, GrpcEndpoint}
+
+import stasis.core.networking.grpc.internal.Implicits
+import stasis.core.networking.grpc.internal.Requests
+import stasis.core.networking.grpc.GrpcEndpoint
+import stasis.core.networking.grpc.proto
 import stasis.core.packaging.Crate
-import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
+import stasis.core.persistence.CrateStorageRequest
+import stasis.core.persistence.CrateStorageReservation
 import stasis.core.routing.Node
-import stasis.core.telemetry.TelemetryContext
+import stasis.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.persistence.mocks.{MockCrateStore, MockReservationStore}
+import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
+import stasis.test.specs.unit.core.persistence.mocks.MockReservationStore
 import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockGrpcAuthenticator
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-
-import scala.concurrent.Future
-import scala.util.control.NonFatal
 
 class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import Implicits._
@@ -82,8 +86,8 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       .map { response =>
         response.status should be(StatusCodes.OK)
 
-        telemetry.api.endpoint.request should be(1)
-        telemetry.api.endpoint.response should be(1)
+        telemetry.layers.api.endpoint.request should be(1)
+        telemetry.layers.api.endpoint.response should be(1)
       }
   }
 
@@ -102,8 +106,8 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       .map { response =>
         response.status should be(StatusCodes.MethodNotAllowed)
 
-        telemetry.api.endpoint.request should be(1)
-        telemetry.api.endpoint.response should be(1)
+        telemetry.layers.api.endpoint.request should be(1)
+        telemetry.layers.api.endpoint.response should be(1)
       }
   }
 
@@ -122,8 +126,8 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       .map { response =>
         response.status should be(StatusCodes.UnsupportedMediaType)
 
-        telemetry.api.endpoint.request should be(1)
-        telemetry.api.endpoint.response should be(1)
+        telemetry.layers.api.endpoint.request should be(1)
+        telemetry.layers.api.endpoint.response should be(1)
       }
   }
 
@@ -140,8 +144,8 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       .map { response =>
         response.status should be(StatusCodes.NotFound)
 
-        telemetry.api.endpoint.request should be(1)
-        telemetry.api.endpoint.response should be(1)
+        telemetry.layers.api.endpoint.request should be(1)
+        telemetry.layers.api.endpoint.response should be(1)
       }
   }
 
@@ -500,9 +504,9 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       }
   }
 
-  private implicit val typedSystem: org.apache.pekko.actor.typed.ActorSystem[SpawnProtocol.Command] =
+  private implicit val typedSystem: org.apache.pekko.actor.typed.ActorSystem[Nothing] =
     org.apache.pekko.actor.typed.ActorSystem(
-      Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+      Behaviors.ignore,
       "GrpcEndpointSpec"
     )
 

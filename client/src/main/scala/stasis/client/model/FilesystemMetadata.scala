@@ -1,11 +1,14 @@
 package stasis.client.model
 
-import java.nio.file.{Path, Paths}
+import java.nio.file.Path
+import java.nio.file.Paths
+
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 import stasis.client.model.FilesystemMetadata.EntityState
 import stasis.shared.model.datasets.DatasetEntry
-
-import scala.util.{Failure, Success, Try}
 
 final case class FilesystemMetadata(
   entities: Map[Path, EntityState]

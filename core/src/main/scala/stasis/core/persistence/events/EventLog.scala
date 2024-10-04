@@ -1,10 +1,12 @@
 package stasis.core.persistence.events
 
-import org.apache.pekko.stream.scaladsl.Source
-import org.apache.pekko.{Done, NotUsed}
-import stasis.core.persistence.backends.EventLogBackend
-
 import scala.concurrent.Future
+
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+
+import stasis.core.persistence.backends.EventLogBackend
 
 trait EventLog[E, S] { log =>
   def store(event: E): Future[Done]

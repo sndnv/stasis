@@ -1,11 +1,15 @@
 package stasis.test.specs.unit.server.security.mocks
 
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
+
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+
 import stasis.server.security.users.UserCredentialsManager
 import stasis.shared.model.users.User
-
-import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
-import scala.concurrent.Future
-import scala.util.{Failure, Success, Try}
 
 class MockUserCredentialsManager(withResult: Try[UserCredentialsManager.Result]) extends UserCredentialsManager {
   private val resourceOwnersCreatedRef: AtomicInteger = new AtomicInteger(0)

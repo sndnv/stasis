@@ -1,21 +1,24 @@
 package stasis.test.specs.unit.server.security.devices
 
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
-import stasis.core.security.tls.EndpointContext
-import stasis.server.security.devices.IdentityDeviceCredentialsManager
-import stasis.shared.model.devices.Device
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.server.security.mocks.MockIdentityDeviceManageEndpoint
-import stasis.test.specs.unit.server.security.mocks.MockIdentityDeviceManageEndpoint.{CreationResult, SearchResult, UpdateResult}
-import stasis.test.specs.unit.shared.model.Generators
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+
 import stasis.core.api.PoolClient
+import stasis.layers.security.tls.EndpointContext
+import stasis.server.security.devices.IdentityDeviceCredentialsManager
+import stasis.shared.model.devices.Device
+import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.server.security.mocks.MockIdentityDeviceManageEndpoint
+import stasis.test.specs.unit.server.security.mocks.MockIdentityDeviceManageEndpoint.CreationResult
+import stasis.test.specs.unit.server.security.mocks.MockIdentityDeviceManageEndpoint.SearchResult
+import stasis.test.specs.unit.server.security.mocks.MockIdentityDeviceManageEndpoint.UpdateResult
+import stasis.test.specs.unit.shared.model.Generators
 
 class IdentityDeviceCredentialsManagerSpec extends AsyncUnitSpec {
   "An IdentityDeviceCredentialsManager" should "set client secrets for new devices" in {
@@ -219,8 +222,8 @@ class IdentityDeviceCredentialsManagerSpec extends AsyncUnitSpec {
 
   private val credentials = OAuth2BearerToken(token = "test-token")
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "IdentityDeviceCredentialsManagerSpec"
   )
 

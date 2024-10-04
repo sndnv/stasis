@@ -7,15 +7,16 @@ import scala.concurrent.Future
 
 import org.apache.pekko.Done
 import org.apache.pekko.util.ByteString
+
 import stasis.client.api.clients.ServerApiEndpointClient
 import stasis.client.model.DatasetMetadata
-import stasis.shared.api.requests.ResetUserPassword
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
-import stasis.shared.api.responses.UpdatedUserSalt
+import stasis.shared.api.requests.ResetUserPassword
 import stasis.shared.api.responses.CreatedDatasetDefinition
 import stasis.shared.api.responses.CreatedDatasetEntry
 import stasis.shared.api.responses.Ping
+import stasis.shared.api.responses.UpdatedUserSalt
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device

@@ -1,9 +1,12 @@
 package stasis.server.security
 
-import org.apache.pekko.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
-import stasis.core.security.jwt.JwtProvider
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
-import scala.concurrent.{ExecutionContext, Future}
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+
+import stasis.layers.security.jwt.JwtProvider
 
 trait CredentialsProvider {
   def provide(): Future[HttpCredentials]

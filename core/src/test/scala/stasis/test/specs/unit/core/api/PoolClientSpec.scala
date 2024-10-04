@@ -9,8 +9,6 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.ActorSystem
-import org.apache.pekko.actor.typed.Behavior
-import org.apache.pekko.actor.typed.SpawnProtocol
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.HttpMethods
 import org.apache.pekko.http.scaladsl.model.HttpRequest
@@ -19,11 +17,12 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.stream.QueueOfferResult
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+
 import stasis.core.api.PoolClient
-import stasis.core.security.tls.EndpointContext
+import stasis.layers.security.mocks.MockJwksEndpoint
+import stasis.layers.security.tls.EndpointContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.api.PoolClientSpec.TestClient
-import stasis.test.specs.unit.core.security.mocks.MockJwksEndpoint
 
 class PoolClientSpec extends AsyncUnitSpec {
   "A PoolClient" should "support checking for retryable requests/responses" in {
@@ -165,10 +164,7 @@ class PoolClientSpec extends AsyncUnitSpec {
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
-    "PoolClientSpec"
-  )
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(Behaviors.ignore, "PoolClientSpec")
 
   private val ports: mutable.Queue[Int] = (36000 to 36100).to(mutable.Queue)
 }
@@ -176,7 +172,7 @@ class PoolClientSpec extends AsyncUnitSpec {
 object PoolClientSpec {
   class TestClient(
     override protected val context: Option[EndpointContext]
-  )(implicit override protected val system: ActorSystem[SpawnProtocol.Command])
+  )(implicit override protected val system: ActorSystem[Nothing])
       extends PoolClient {
     override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 

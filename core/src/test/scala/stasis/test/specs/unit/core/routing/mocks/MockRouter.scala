@@ -1,17 +1,23 @@
 package stasis.test.specs.unit.core.routing.mocks
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import org.apache.pekko.{Done, NotUsed}
-import stasis.core.packaging.{Crate, Manifest}
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.exceptions.ReservationFailure
 import stasis.core.persistence.reservations.ReservationStore
-import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
+import stasis.core.persistence.CrateStorageRequest
+import stasis.core.persistence.CrateStorageReservation
 import stasis.core.routing.exceptions.DiscardFailure
-import stasis.core.routing.{Node, Router}
-
-import scala.concurrent.{ExecutionContext, Future}
+import stasis.core.routing.Node
+import stasis.core.routing.Router
 
 class MockRouter(
   store: CrateStore,

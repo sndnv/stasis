@@ -1,10 +1,11 @@
 package stasis.test.specs.unit.server.security.mocks
 
-import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
-import stasis.core.security.tls.EndpointContext
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+
+import stasis.layers.security.tls.EndpointContext
 import stasis.test.specs.unit.server.security.mocks.MockIdentityUserManageEndpoint._
 
 class MockIdentityUserManageEndpoint(

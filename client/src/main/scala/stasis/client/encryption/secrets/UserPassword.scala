@@ -1,10 +1,12 @@
 package stasis.client.encryption.secrets
 
-import org.apache.pekko.util.ByteString
-import stasis.shared.model.users.User
-import stasis.shared.secrets.{DerivedPasswords, SecretsConfig}
-
 import java.nio.charset.StandardCharsets
+
+import org.apache.pekko.util.ByteString
+
+import stasis.shared.model.users.User
+import stasis.shared.secrets.DerivedPasswords
+import stasis.shared.secrets.SecretsConfig
 
 final case class UserPassword(
   user: User.Id,

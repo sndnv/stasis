@@ -1,10 +1,11 @@
 package stasis.server.security
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.reflect.ClassTag
+
 import stasis.server.model.users.UserStore
 import stasis.server.security.exceptions.AuthorizationFailure
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.reflect.ClassTag
 
 class DefaultResourceProvider(
   resources: Set[Resource],

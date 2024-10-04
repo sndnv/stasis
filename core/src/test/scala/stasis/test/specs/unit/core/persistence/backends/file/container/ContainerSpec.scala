@@ -5,18 +5,24 @@ import java.nio.file.Paths
 import java.util.UUID
 import java.util.concurrent.Executors
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.Future
+import scala.util.control.NonFatal
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import org.scalatest.BeforeAndAfter
-import stasis.core.persistence.backends.file.container.Container
-import stasis.core.persistence.backends.file.container.headers.{ChunkHeader, ContainerLogHeader}
-import stasis.core.persistence.backends.file.container.ops.{ContainerLogOps, ContainerOps, ConversionOps}
-import stasis.test.specs.unit.AsyncUnitSpec
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
-import scala.util.control.NonFatal
+import stasis.core.persistence.backends.file.container.Container
+import stasis.core.persistence.backends.file.container.headers.ChunkHeader
+import stasis.core.persistence.backends.file.container.headers.ContainerLogHeader
+import stasis.core.persistence.backends.file.container.ops.ContainerLogOps
+import stasis.core.persistence.backends.file.container.ops.ContainerOps
+import stasis.core.persistence.backends.file.container.ops.ConversionOps
+import stasis.test.specs.unit.AsyncUnitSpec
 
 class ContainerSpec extends AsyncUnitSpec with BeforeAndAfter {
   "A Container" should "create new containers" in {
@@ -407,8 +413,8 @@ class ContainerSpec extends AsyncUnitSpec with BeforeAndAfter {
     }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    guardianBehavior = Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    guardianBehavior = Behaviors.ignore,
     name = "ContainerSpec"
   )
 

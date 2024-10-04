@@ -1,12 +1,15 @@
 package stasis.client.ops.recovery.stages.internal
 
-import org.apache.pekko.NotUsed
-import org.apache.pekko.stream.scaladsl.{Concat, Source}
-import org.apache.pekko.util.ByteString
-import stasis.client.ops.exceptions.EntityMergeFailure
-
 import java.nio.file.Path
+
 import scala.concurrent.ExecutionContext
+
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Concat
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
+
+import stasis.client.ops.exceptions.EntityMergeFailure
 
 class MergedCrates(crates: Iterable[(Int, Path, Source[ByteString, NotUsed])]) {
   def merge(onPartProcessed: () => Unit)(implicit ec: ExecutionContext): Source[ByteString, NotUsed] =

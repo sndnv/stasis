@@ -1,20 +1,29 @@
 package stasis.core.persistence.backends.file
 
-import org.apache.pekko.actor.typed.{ActorSystem, DispatcherSelector, SpawnProtocol}
-import org.apache.pekko.stream.scaladsl.{FileIO, Sink, Source}
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.util.UUID
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.DispatcherSelector
+import org.apache.pekko.stream.scaladsl.FileIO
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import org.apache.pekko.{Done, NotUsed}
+
 import stasis.core.persistence.Metrics
 import stasis.core.persistence.backends.StreamingBackend
-import stasis.core.telemetry.TelemetryContext
-
-import java.nio.file.{Files, Path, Paths}
-import java.util.UUID
-import scala.concurrent.{ExecutionContext, Future}
+import stasis.layers.telemetry.TelemetryContext
 
 class FileBackend(
   val parentDirectory: String
-)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext)
+)(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext)
     extends StreamingBackend {
   private implicit val ec: ExecutionContext = system.dispatchers.lookup(DispatcherSelector.blocking())
 
@@ -99,7 +108,7 @@ class FileBackend(
 
 object FileBackend {
   def apply(parentDirectory: String)(implicit
-    system: ActorSystem[SpawnProtocol.Command],
+    system: ActorSystem[Nothing],
     telemetry: TelemetryContext
   ): FileBackend = new FileBackend(parentDirectory = parentDirectory)
 }

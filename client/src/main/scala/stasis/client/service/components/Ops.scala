@@ -1,13 +1,15 @@
 package stasis.client.service.components
 
-import stasis.client.ops
-import stasis.client.ops.ParallelismConfig
-import stasis.client.ops.monitoring.{DefaultServerMonitor, ServerMonitor}
-import stasis.client.ops.scheduling._
-import stasis.client.ops.search.{DefaultSearch, Search}
-
 import scala.concurrent.Future
 import scala.concurrent.duration._
+
+import stasis.client.ops
+import stasis.client.ops.ParallelismConfig
+import stasis.client.ops.monitoring.DefaultServerMonitor
+import stasis.client.ops.monitoring.ServerMonitor
+import stasis.client.ops.scheduling._
+import stasis.client.ops.search.DefaultSearch
+import stasis.client.ops.search.Search
 
 trait Ops {
   def executor: OperationExecutor

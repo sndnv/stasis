@@ -1,15 +1,16 @@
 package stasis.identity.authentication.oauth
 
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
-import stasis.core.security.exceptions.AuthenticationFailure
-import stasis.identity.model.secrets.Secret
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
-import scala.concurrent.{ExecutionContext, Future}
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import stasis.identity.model.secrets.Secret
+import stasis.layers.security.exceptions.AuthenticationFailure
 
 trait EntityAuthenticator[T] {
 
-  protected implicit def system: ActorSystem[SpawnProtocol.Command]
+  protected implicit def system: ActorSystem[Nothing]
   protected implicit def config: Secret.Config
 
   protected implicit val ec: ExecutionContext = system.executionContext

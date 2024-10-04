@@ -1,13 +1,16 @@
 package stasis.core.security
 
-import org.apache.pekko.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+
 import stasis.core.networking.EndpointAddress
 import stasis.core.persistence.nodes.NodeStoreView
 import stasis.core.routing.Node
-import stasis.core.security.exceptions.ProviderFailure
-import stasis.core.security.jwt.JwtProvider
-
-import scala.concurrent.{ExecutionContext, Future}
+import stasis.layers.security.exceptions.ProviderFailure
+import stasis.layers.security.jwt.JwtProvider
 
 class JwtNodeCredentialsProvider[A <: EndpointAddress](
   nodeStore: NodeStoreView,

@@ -1,21 +1,23 @@
 package stasis.test.specs.unit.core.persistence.mocks
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
 import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.util.Timeout
+
 import stasis.core.persistence.CrateStorageReservation
-import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.routing.Node
-import stasis.core.telemetry.TelemetryContext
-
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import stasis.layers.persistence.memory.MemoryStore
+import stasis.layers.telemetry.TelemetryContext
 
 class MockReservationStore(
   missingReservations: Seq[CrateStorageReservation] = Seq.empty,
   ignoreMissingReservations: Boolean = true
-)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext)
+)(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext)
     extends ReservationStore {
   private type StoreKey = CrateStorageReservation.Id
   private type StoreValue = CrateStorageReservation
@@ -23,7 +25,7 @@ class MockReservationStore(
   private implicit val timeout: Timeout = 3.seconds
   private implicit val ec: ExecutionContext = system.executionContext
 
-  private val store = MemoryBackend[StoreKey, StoreValue](name = s"mock-reservation-store-${java.util.UUID.randomUUID()}")
+  private val store = MemoryStore[StoreKey, StoreValue](name = s"mock-reservation-store-${java.util.UUID.randomUUID()}")
 
   override def put(reservation: StoreValue): Future[Done] = store.put(reservation.id, reservation)
 

@@ -1,48 +1,32 @@
 package stasis.test.specs.unit.identity.api.manage
 
+import scala.concurrent.Future
+
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
-import stasis.core.persistence.backends.memory.MemoryBackend
+
 import stasis.identity.api.manage.setup.Providers
-import stasis.identity.model.apis.{Api, ApiStore}
-import stasis.identity.model.clients.{Client, ClientStore}
-import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, StoredAuthorizationCode}
-import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore}
-import stasis.identity.model.tokens.{RefreshToken, RefreshTokenStore, StoredRefreshToken}
+import stasis.layers
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
-
-import scala.concurrent.Future
-import scala.concurrent.duration._
+import stasis.test.specs.unit.identity.persistence.mocks.MockApiStore
+import stasis.test.specs.unit.identity.persistence.mocks.MockAuthorizationCodeStore
+import stasis.test.specs.unit.identity.persistence.mocks.MockClientStore
+import stasis.test.specs.unit.identity.persistence.mocks.MockRefreshTokenStore
+import stasis.test.specs.unit.identity.persistence.mocks.MockResourceOwnerStore
 
 trait ManageFixtures { _: RouteTest =>
   def createManageProviders(
-    expiration: FiniteDuration = 3.seconds,
-    withOwnerScopes: Seq[String] =
-      stasis.test.Generators.generateSeq(min = 1, g = stasis.test.Generators.generateString(withSize = 10))
+    withOwnerScopes: Seq[String] = layers.Generators.generateSeq(
+      min = 1,
+      g = layers.Generators.generateString(withSize = 10)
+    )
   ): Providers =
     Providers(
-      apiStore = ApiStore(
-        MemoryBackend[Api.Id, Api](name = s"api-store-${java.util.UUID.randomUUID()}")
-      ),
-      clientStore = ClientStore(
-        MemoryBackend[Client.Id, Client](name = s"client-store-${java.util.UUID.randomUUID()}")
-      ),
-      codeStore = AuthorizationCodeStore(
-        expiration = expiration,
-        MemoryBackend[AuthorizationCode, StoredAuthorizationCode](name = s"code-store-${java.util.UUID.randomUUID()}")
-      ),
-      ownerStore = ResourceOwnerStore(
-        MemoryBackend[ResourceOwner.Id, ResourceOwner](name = s"owner-store-${java.util.UUID.randomUUID()}")
-      ),
-      tokenStore = RefreshTokenStore(
-        expiration = expiration,
-        MemoryBackend[RefreshToken, StoredRefreshToken](
-          name = s"token-store-${java.util.UUID.randomUUID()}"
-        ),
-        MemoryBackend[(Client.Id, ResourceOwner.Id), RefreshToken](
-          name = s"token-directory-${java.util.UUID.randomUUID()}"
-        )
-      ),
+      apiStore = MockApiStore(),
+      clientStore = MockClientStore(),
+      codeStore = MockAuthorizationCodeStore(),
+      ownerStore = MockResourceOwnerStore(),
+      tokenStore = MockRefreshTokenStore(),
       ownerAuthenticator =
         (_: OAuth2BearerToken) => Future.successful(Generators.generateResourceOwner.copy(allowedScopes = withOwnerScopes))
     )

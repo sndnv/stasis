@@ -3,12 +3,13 @@ package stasis.test.specs.unit.client.ops.scheduling
 import java.nio.file.Paths
 import java.util.UUID
 
+import scala.util.Success
+
 import stasis.client.collection.rules.Rule
-import stasis.client.ops.scheduling.{OperationScheduleAssignment, SchedulingConfig}
+import stasis.client.ops.scheduling.OperationScheduleAssignment
+import stasis.client.ops.scheduling.SchedulingConfig
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
-
-import scala.util.Success
 
 class SchedulingConfigSpec extends AsyncUnitSpec with ResourceHelpers {
   "SchedulingConfig" should "only keep non-empty, non-comment lines" in {

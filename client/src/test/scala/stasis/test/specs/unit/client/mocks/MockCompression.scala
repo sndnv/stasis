@@ -1,14 +1,18 @@
 package stasis.test.specs.unit.client.mocks
 
+import java.nio.file.Path
+import java.util.concurrent.atomic.AtomicInteger
+
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.util.ByteString
-import stasis.client.compression.{Compression, Decoder, Encoder}
-import stasis.client.model.{SourceEntity, TargetEntity}
-import stasis.test.specs.unit.client.mocks.MockCompression.Statistic
 
-import java.nio.file.Path
-import java.util.concurrent.atomic.AtomicInteger
+import stasis.client.compression.Compression
+import stasis.client.compression.Decoder
+import stasis.client.compression.Encoder
+import stasis.client.model.SourceEntity
+import stasis.client.model.TargetEntity
+import stasis.test.specs.unit.client.mocks.MockCompression.Statistic
 
 class MockCompression() extends Compression with Encoder with Decoder {
   override val name: String = "mock"

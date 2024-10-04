@@ -2,14 +2,15 @@ package stasis.test.specs.unit.server.security.mocks
 
 import java.security.PublicKey
 
+import scala.jdk.CollectionConverters._
+
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.jose4j.jwk.JsonWebKeySet
-import stasis.core.security.tls.EndpointContext
-import stasis.test.specs.unit.core.security.mocks.MockJwksGenerators
 
-import scala.jdk.CollectionConverters._
+import stasis.layers.security.mocks.MockJwksGenerators
+import stasis.layers.security.tls.EndpointContext
 
 class MockSimpleJwtEndpoint(
   port: Int,

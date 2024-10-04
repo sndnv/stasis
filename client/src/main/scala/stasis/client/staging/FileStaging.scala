@@ -2,9 +2,9 @@ package stasis.client.staging
 
 import java.nio.file.Path
 
-import org.apache.pekko.Done
-
 import scala.concurrent.Future
+
+import org.apache.pekko.Done
 
 trait FileStaging {
   def temporary(): Future[Path]

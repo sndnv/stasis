@@ -2,17 +2,20 @@ package stasis.core.security
 
 import java.util.UUID
 
-import stasis.core.persistence.backends.KeyValueBackend
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+
 import stasis.core.persistence.nodes.NodeStoreView
 import stasis.core.routing.Node
-import stasis.core.security.exceptions.AuthenticationFailure
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import stasis.layers.persistence.KeyValueStore
+import stasis.layers.security.exceptions.AuthenticationFailure
 
 class PreSharedKeyNodeAuthenticator(
   nodeStore: NodeStoreView,
-  backend: KeyValueBackend[String, String]
+  backend: KeyValueStore[String, String]
 )(implicit ec: ExecutionContext)
     extends NodeAuthenticator[(String, String)] {
   override def authenticate(credentials: (String, String)): Future[Node.Id] = {

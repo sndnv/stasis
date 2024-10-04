@@ -1,29 +1,31 @@
 package stasis.test.specs.unit.client.service.components
 
 import java.util.UUID
+
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.util.control.NonFatal
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
+
 import org.apache.pekko.actor.typed.ActorSystem
-import org.apache.pekko.actor.typed.Behavior
-import org.apache.pekko.actor.typed.SpawnProtocol
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.util.ByteString
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import stasis.client.service.components.exceptions.ServiceStartupFailure
-import stasis.client.service.components.internal.ConfigOverride
+
+import stasis.client.service.ApplicationDirectory
+import stasis.client.service.ApplicationTray
 import stasis.client.service.components.Base
 import stasis.client.service.components.Files
 import stasis.client.service.components.Init
 import stasis.client.service.components.Secrets
-import stasis.client.service.ApplicationDirectory
-import stasis.client.service.ApplicationTray
+import stasis.client.service.components.exceptions.ServiceStartupFailure
+import stasis.client.service.components.internal.ConfigOverride
 import stasis.shared.model.devices.Device
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.mocks.{MockServerApiEndpointClient, MockTokenEndpoint}
 import stasis.test.specs.unit.client.EncodingHelpers
 import stasis.test.specs.unit.client.ResourceHelpers
+import stasis.test.specs.unit.client.mocks.MockServerApiEndpointClient
+import stasis.test.specs.unit.client.mocks.MockTokenEndpoint
 
 class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelpers {
   "A Secrets component" should "create itself from config" in {
@@ -343,8 +345,8 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       }
     )
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "ServiceSecretsSpec"
   )
 

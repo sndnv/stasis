@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.identity.model.codes.generators
 
 import stasis.identity.model.codes.generators.DefaultAuthorizationCodeGenerator
-import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.layers.UnitSpec
 
-class DefaultAuthorizationCodeGeneratorSpec extends AsyncUnitSpec {
+class DefaultAuthorizationCodeGeneratorSpec extends UnitSpec {
   "A DefaultAuthorizationCodeGenerator" should "generate random authorization codes" in {
     val codeSize = 32
     val generator = new DefaultAuthorizationCodeGenerator(codeSize)

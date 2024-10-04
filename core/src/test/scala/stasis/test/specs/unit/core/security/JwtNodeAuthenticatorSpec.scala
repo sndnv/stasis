@@ -1,23 +1,27 @@
 package stasis.test.specs.unit.core.security
 
+import scala.concurrent.duration._
+import scala.util.control.NonFatal
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.jose4j.jwk.JsonWebKey
+
 import stasis.core.networking.http.HttpEndpointAddress
-import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
 import stasis.core.security.JwtNodeAuthenticator
-import stasis.core.security.exceptions.AuthenticationFailure
-import stasis.core.security.jwt.DefaultJwtAuthenticator
-import stasis.core.telemetry.TelemetryContext
+import stasis.layers.persistence.memory.MemoryStore
+import stasis.layers.security.exceptions.AuthenticationFailure
+import stasis.layers.security.jwt.DefaultJwtAuthenticator
+import stasis.layers.security.mocks.MockJwkProvider
+import stasis.layers.security.mocks.MockJwksGenerators
+import stasis.layers.security.mocks.MockJwtGenerators
+import stasis.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.security.mocks.{MockJwkProvider, MockJwksGenerators, MockJwtGenerators}
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-
-import scala.concurrent.duration._
-import scala.util.control.NonFatal
 
 class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
   "A JwtNodeAuthenticator" should "successfully authenticate nodes with valid tokens" in {
@@ -44,7 +48,7 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
       .authenticate(credentials = OAuth2BearerToken(nodeToken))
       .map { actualNode =>
         actualNode should be(node.id)
-        telemetry.security.authenticator.authentication should be(1)
+        telemetry.layers.security.authenticator.authentication should be(1)
       }
   }
 
@@ -73,7 +77,7 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
       }
       .recover { case NonFatal(e) =>
         e should be(AuthenticationFailure(s"Node [${node.id}] not found"))
-        telemetry.security.authenticator.authentication should be(1)
+        telemetry.layers.security.authenticator.authentication should be(1)
       }
   }
 
@@ -105,7 +109,7 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
       }
       .recover { case NonFatal(e) =>
         e.getMessage should be(s"Invalid node ID encountered: [$otherNode]")
-        telemetry.security.authenticator.authentication should be(1)
+        telemetry.layers.security.authenticator.authentication should be(1)
       }
   }
 
@@ -129,13 +133,13 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
       }
       .recover { case NonFatal(e) =>
         e.getMessage should be("Unsupported node credentials provided: [Basic]")
-        telemetry.security.authenticator.authentication should be(0)
+        telemetry.layers.security.authenticator.authentication should be(0)
       }
   }
 
   private def createAuthenticator()(implicit telemetry: TelemetryContext): (JwtNodeAuthenticator, NodeStore) = {
     val storeInit = NodeStore(
-      backend = MemoryBackend[Node.Id, Node](name = s"node-store-${java.util.UUID.randomUUID()}"),
+      backend = MemoryStore[Node.Id, Node](name = s"node-store-${java.util.UUID.randomUUID()}"),
       cachingEnabled = false
     )
 
@@ -154,8 +158,8 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
     (authenticator, storeInit.store)
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "JwtNodeAuthenticatorSpec"
   )
 

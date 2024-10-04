@@ -4,14 +4,17 @@ import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server._
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.core.api.directives.EntityDiscardingDirectives
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import stasis.identity.api.manage.requests.CreateApi
-import stasis.identity.model.apis.ApiStore
 import stasis.identity.model.owners.ResourceOwner
+import stasis.identity.persistence.apis.ApiStore
+import stasis.layers.api.directives.EntityDiscardingDirectives
 
 class Apis(store: ApiStore) extends EntityDiscardingDirectives {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.identity.api.Formats._
 
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
@@ -21,9 +24,9 @@ class Apis(store: ApiStore) extends EntityDiscardingDirectives {
       pathEndOrSingleSlash {
         concat(
           get {
-            onSuccess(store.apis) { apis =>
+            onSuccess(store.all) { apis =>
               log.debugN("User [{}] successfully retrieved [{}] APIs", user, apis.size)
-              discardEntity & complete(apis.values)
+              discardEntity & complete(apis)
             }
           },
           post {

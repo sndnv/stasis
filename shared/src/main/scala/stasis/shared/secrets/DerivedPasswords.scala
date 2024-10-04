@@ -1,12 +1,14 @@
 package stasis.shared.secrets
 
-import org.apache.pekko.util.ByteString
-import java.nio.charset.{Charset, StandardCharsets}
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.util.Base64
 
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
+
+import org.apache.pekko.util.ByteString
 
 object DerivedPasswords {
   object Defaults {

@@ -4,11 +4,13 @@ import java.util.concurrent.ThreadLocalRandom
 
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
-import stasis.core.packaging.{Crate, Manifest}
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
 import stasis.core.persistence.crates.CrateStore
-import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
+import stasis.core.persistence.CrateStorageRequest
+import stasis.core.persistence.CrateStorageReservation
 import stasis.core.routing.Node
-import stasis.test.Generators._
+import stasis.layers.Generators._
 
 object Generators {
   def generateManifest(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Manifest =

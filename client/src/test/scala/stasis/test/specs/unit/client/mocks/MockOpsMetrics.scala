@@ -1,9 +1,11 @@
 package stasis.test.specs.unit.client.mocks
 
-import stasis.client.model.{EntityMetadata, SourceEntity, TargetEntity}
-import stasis.client.ops.Metrics
-
 import java.util.concurrent.atomic.AtomicInteger
+
+import stasis.client.model.EntityMetadata
+import stasis.client.model.SourceEntity
+import stasis.client.model.TargetEntity
+import stasis.client.ops.Metrics
 
 object MockOpsMetrics {
   class BackupOperation extends Metrics.BackupOperation {

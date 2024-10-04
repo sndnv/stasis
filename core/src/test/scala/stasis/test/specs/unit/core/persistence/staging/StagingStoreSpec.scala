@@ -1,25 +1,30 @@
 package stasis.test.specs.unit.core.persistence.staging
 
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.stream.scaladsl.Source
-import org.apache.pekko.util.ByteString
-import org.scalatest.{Assertion, BeforeAndAfterAll}
-import org.scalatest.concurrent.Eventually
-import stasis.core.networking.http.HttpEndpointAddress
-import stasis.core.packaging.{Crate, Manifest}
-import stasis.core.persistence.crates.CrateStore
-import stasis.core.persistence.staging.StagingStore
-import stasis.core.routing.{Node, NodeProxy}
-import stasis.core.telemetry.TelemetryContext
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.networking.mocks.{MockGrpcEndpointClient, MockHttpEndpointClient}
-import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
-import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
+
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
+import org.scalatest.concurrent.Eventually
+import org.scalatest.Assertion
+import org.scalatest.BeforeAndAfterAll
+
+import stasis.core.networking.http.HttpEndpointAddress
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
+import stasis.core.persistence.crates.CrateStore
+import stasis.core.persistence.staging.StagingStore
+import stasis.core.routing.Node
+import stasis.core.routing.NodeProxy
+import stasis.layers.telemetry.TelemetryContext
+import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.networking.mocks.MockGrpcEndpointClient
+import stasis.test.specs.unit.core.networking.mocks.MockHttpEndpointClient
+import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfterAll {
   "A StagingStore" should "stage crates to temporary storage" in {
@@ -232,8 +237,8 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
     }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "StagingStoreSpec"
   )
 

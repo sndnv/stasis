@@ -1,19 +1,26 @@
 package stasis.client.service.components.bootstrap
 
 import java.nio.charset.StandardCharsets
+import java.nio.file.attribute.PosixFilePermissions
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.concurrent.ThreadLocalRandom
+
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Random
+import scala.util.Success
+import scala.util.Try
 
 import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.slf4j.Logger
-import stasis.client.service.components.bootstrap.internal.SelfSignedCertificateGenerator
-import stasis.client.service.{components, ApplicationDirectory, ApplicationTemplates}
-import stasis.shared.model.devices.DeviceBootstrapParameters
-import java.nio.file.attribute.PosixFilePermissions
-import java.nio.file.{Files, Path}
-import java.util.concurrent.ThreadLocalRandom
 
-import scala.concurrent.Future
-import scala.util.{Failure, Random, Success, Try}
+import stasis.client.service.components.bootstrap.internal.SelfSignedCertificateGenerator
+import stasis.client.service.ApplicationDirectory
+import stasis.client.service.ApplicationTemplates
+import stasis.client.service.components
+import stasis.shared.model.devices.DeviceBootstrapParameters
 
 trait Parameters {
   def apply(): Future[Done]

@@ -1,23 +1,30 @@
 package stasis.test.specs.unit.server.api.routes
 
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
-import org.apache.pekko.http.scaladsl.model.{RequestEntity, StatusCodes}
+import org.apache.pekko.http.scaladsl.model.RequestEntity
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
-import stasis.core.telemetry.TelemetryContext
-import stasis.server.api.routes.{Nodes, RoutesContext}
+import stasis.layers.telemetry.TelemetryContext
+import stasis.server.api.routes.Nodes
+import stasis.server.api.routes.RoutesContext
 import stasis.server.model.nodes.ServerNodeStore
-import stasis.server.security.{CurrentUser, ResourceProvider}
+import stasis.server.security.CurrentUser
+import stasis.server.security.ResourceProvider
+import stasis.shared.api.requests.CreateNode
 import stasis.shared.api.requests.CreateNode.CreateLocalNode
+import stasis.shared.api.requests.UpdateNode
 import stasis.shared.api.requests.UpdateNode.UpdateLocalNode
-import stasis.shared.api.requests.{CreateNode, UpdateNode}
-import stasis.shared.api.responses.{CreatedNode, DeletedNode}
+import stasis.shared.api.responses.CreatedNode
+import stasis.shared.api.responses.DeletedNode
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.Generators
@@ -27,6 +34,7 @@ import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
 
 class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.core.api.Formats._
   import stasis.shared.api.Formats._
 
@@ -121,8 +129,8 @@ class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "NodesSpec"
   )
 

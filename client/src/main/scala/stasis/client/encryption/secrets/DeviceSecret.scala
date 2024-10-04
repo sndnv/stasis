@@ -2,17 +2,20 @@ package stasis.client.encryption.secrets
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import at.favre.lib.hkdf.HKDF
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import at.favre.lib.hkdf.HKDF
+
 import stasis.client.encryption.stream.CipherStage
 import stasis.core.packaging.Crate
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
 import stasis.shared.secrets.SecretsConfig
-
-import scala.concurrent.{ExecutionContext, Future}
 
 final case class DeviceSecret(
   user: User.Id,

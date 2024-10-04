@@ -1,8 +1,15 @@
 package stasis.core.persistence.backends.file.container.stream.transform
 
-import org.apache.pekko.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
-import org.apache.pekko.stream.{Attributes, FlowShape, Inlet, Outlet}
+import org.apache.pekko.stream.stage.GraphStage
+import org.apache.pekko.stream.stage.GraphStageLogic
+import org.apache.pekko.stream.stage.InHandler
+import org.apache.pekko.stream.stage.OutHandler
+import org.apache.pekko.stream.Attributes
+import org.apache.pekko.stream.FlowShape
+import org.apache.pekko.stream.Inlet
+import org.apache.pekko.stream.Outlet
 import org.apache.pekko.util.ByteString
+
 import stasis.core.persistence.backends.file.container.CrateChunk
 
 class ChunksToCrate() extends GraphStage[FlowShape[CrateChunk, ByteString]] {

@@ -1,16 +1,21 @@
 package stasis.test.specs.unit.client
 
+import java.nio.file._
+
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext
+
+import com.google.common.jimfs.Configuration
+import com.google.common.jimfs.Jimfs
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.Timeout
-import com.google.common.jimfs.{Configuration, Jimfs}
-import stasis.client.analysis.{Checksum, Metadata}
+
+import stasis.client.analysis.Checksum
+import stasis.client.analysis.Metadata
 import stasis.client.model.EntityMetadata
 import stasis.client.service.ApplicationDirectory
 import stasis.core.packaging.Crate
 import stasis.test.specs.unit.core.FileSystemHelpers
-
-import java.nio.file._
-import scala.concurrent.{Await, ExecutionContext}
 
 trait ResourceHelpers extends FileSystemHelpers {
   implicit class PathWithMetadataExtraction(resourcePath: Path) {

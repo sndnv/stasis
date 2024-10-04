@@ -3,7 +3,9 @@ package stasis.client.encryption
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.util.ByteString
-import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceMetadataSecret}
+
+import stasis.client.encryption.secrets.DeviceFileSecret
+import stasis.client.encryption.secrets.DeviceMetadataSecret
 
 trait Decoder {
   def decrypt(fileSecret: DeviceFileSecret): Flow[ByteString, ByteString, NotUsed]

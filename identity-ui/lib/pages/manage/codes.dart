@@ -3,6 +3,7 @@ import 'package:identity_ui/api/api_client.dart';
 import 'package:identity_ui/model/stored_authorization_code.dart';
 import 'package:identity_ui/pages/default/components.dart';
 import 'package:identity_ui/pages/manage/components/entity_table.dart';
+import 'package:identity_ui/pages/manage/components/rendering.dart';
 
 class Codes extends StatefulWidget {
   const Codes({super.key, required this.client});
@@ -33,26 +34,31 @@ class _CodesState extends State<Codes> {
                 DataColumn(label: Text('Client')),
                 DataColumn(label: Text('Resource Owner')),
                 DataColumn(label: Text('Scope')),
+                DataColumn(label: Text('Created')),
                 DataColumn(label: Text('')),
               ],
-              entityToRow: (code) => [
-                DataCell(Text(code.code)),
-                DataCell(Text(code.client)),
-                DataCell(Text(code.owner)),
-                DataCell(Text(code.scope ?? '-')),
-                DataCell(
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      IconButton(
-                        tooltip: 'Remote Authorization Code',
-                        onPressed: () => _removeCode(code.code),
-                        icon: const Icon(Icons.delete),
-                      ),
-                    ],
+              entityToRow: (e) {
+                StoredAuthorizationCode code = e;
+                return [
+                  DataCell(Text(code.code)),
+                  DataCell(Text(code.client)),
+                  DataCell(Text(code.owner)),
+                  DataCell(Text(code.scope ?? '-')),
+                  DataCell(Text(code.created.render())),
+                  DataCell(
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          tooltip: 'Remote Authorization Code',
+                          onPressed: () => _removeCode(code.code),
+                          icon: const Icon(Icons.delete),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ];
+              },
             ),
           ],
         );

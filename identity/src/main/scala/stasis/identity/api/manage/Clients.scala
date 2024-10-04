@@ -1,17 +1,23 @@
 package stasis.identity.api.manage
 
+import java.time.Instant
+
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server._
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.core.api.directives.EntityDiscardingDirectives
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import stasis.identity.api.Formats._
-import stasis.identity.api.manage.requests.{CreateClient, UpdateClient, UpdateClientCredentials}
+import stasis.identity.api.manage.requests.CreateClient
+import stasis.identity.api.manage.requests.UpdateClient
+import stasis.identity.api.manage.requests.UpdateClientCredentials
 import stasis.identity.api.manage.responses.CreatedClient
-import stasis.identity.model.clients.ClientStore
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.secrets.Secret
+import stasis.identity.persistence.clients.ClientStore
+import stasis.layers.api.directives.EntityDiscardingDirectives
 
 class Clients(
   store: ClientStore,
@@ -28,9 +34,9 @@ class Clients(
       pathEndOrSingleSlash {
         concat(
           get {
-            onSuccess(store.clients) { clients =>
+            onSuccess(store.all) { clients =>
               log.debugN("User [{}] successfully retrieved [{}] clients", user, clients.size)
-              discardEntity & complete(clients.values)
+              discardEntity & complete(clients)
             }
           },
           post {
@@ -47,8 +53,8 @@ class Clients(
       pathPrefix("search") {
         path("by-subject" / Segment) { subject =>
           get {
-            onSuccess(store.clients) { clients =>
-              val matchingClients = clients.values.filter { client =>
+            onSuccess(store.all) { clients =>
+              val matchingClients = clients.filter { client =>
                 client.subject.contains(subject) || client.id.toString == subject
               }
 
@@ -67,7 +73,7 @@ class Clients(
                   entity(as[UpdateClientCredentials]) { request =>
                     val (secret, salt) = request.toSecret()
 
-                    onSuccess(store.put(client.copy(secret = secret, salt = salt))) { _ =>
+                    onSuccess(store.put(client.copy(secret = secret, salt = salt, updated = Instant.now()))) { _ =>
                       log.debugN("User [{}] successfully updated credentials for client [{}]", user, clientId)
                       complete(StatusCodes.OK)
                     }
@@ -86,7 +92,8 @@ class Clients(
                         store.put(
                           client.copy(
                             tokenExpiration = request.tokenExpiration,
-                            active = request.active
+                            active = request.active,
+                            updated = Instant.now()
                           )
                         )
                       ) { _ =>

@@ -1,18 +1,21 @@
 package stasis.test.specs.unit.server.security
 
+import scala.reflect.ClassTag
+import scala.util.control.NonFatal
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import stasis.core.persistence.backends.memory.MemoryBackend
-import stasis.core.telemetry.TelemetryContext
+
+import stasis.layers.persistence.memory.MemoryStore
+import stasis.layers.telemetry.TelemetryContext
 import stasis.server.model.users.UserStore
-import stasis.server.security.{CurrentUser, DefaultResourceProvider, Resource}
+import stasis.server.security.CurrentUser
+import stasis.server.security.DefaultResourceProvider
+import stasis.server.security.Resource
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-
-import scala.reflect.ClassTag
-import scala.util.control.NonFatal
 
 class DefaultResourceProviderSpec extends AsyncUnitSpec {
   import DefaultResourceProviderSpec._
@@ -62,8 +65,8 @@ class DefaultResourceProviderSpec extends AsyncUnitSpec {
       }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "DefaultResourceProviderSpec"
   )
 
@@ -71,7 +74,7 @@ class DefaultResourceProviderSpec extends AsyncUnitSpec {
 
   private val userStore: UserStore = UserStore(
     userSaltSize = 8,
-    backend = MemoryBackend[User.Id, User](s"mock-user-store-${java.util.UUID.randomUUID()}")
+    backend = MemoryStore[User.Id, User](s"mock-user-store-${java.util.UUID.randomUUID()}")
   )
 
   private val manageSelfResource = new ManageSelfResource

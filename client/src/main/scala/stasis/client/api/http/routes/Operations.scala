@@ -1,5 +1,10 @@
 package stasis.client.api.http.routes
 
+import java.nio.file.Path
+
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
@@ -9,24 +14,27 @@ import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
 import org.apache.pekko.stream.OverflowStrategy
 import org.apache.pekko.stream.scaladsl.Source
-import play.api.libs.json.{Format, Json, Writes}
+import play.api.libs.json.Format
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
+
 import stasis.client.api.Context
 import stasis.client.api.http.Formats._
-import stasis.client.collection.rules.{Rule, Specification}
+import stasis.client.collection.rules.Rule
+import stasis.client.collection.rules.Specification
 import stasis.client.ops.recovery.Recovery
-import stasis.client.tracking.state.{BackupState, OperationState, RecoveryState}
+import stasis.client.tracking.state.BackupState
+import stasis.client.tracking.state.OperationState
+import stasis.client.tracking.state.RecoveryState
 import stasis.shared.api.Formats._
 import stasis.shared.ops.Operation
 
-import java.nio.file.Path
-import scala.concurrent.Future
-import scala.concurrent.duration._
-
 class Operations()(implicit context: Context) extends ApiRoutes {
-  import Operations._
-  import org.apache.pekko.http.scaladsl.marshalling.sse.EventStreamMarshalling._
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
-  import stasis.core.api.Matchers._
+  import org.apache.pekko.http.scaladsl.marshalling.sse.EventStreamMarshalling._
+
+  import Operations._
+  import stasis.layers.api.Matchers._
 
   def routes(): Route =
     concat(
@@ -266,7 +274,8 @@ class Operations()(implicit context: Context) extends ApiRoutes {
 }
 
 object Operations {
-  import org.apache.pekko.http.scaladsl.server.{Directive, Directive1}
+  import org.apache.pekko.http.scaladsl.server.Directive
+  import org.apache.pekko.http.scaladsl.server.Directive1
 
   def apply()(implicit context: Context): Operations =
     new Operations()

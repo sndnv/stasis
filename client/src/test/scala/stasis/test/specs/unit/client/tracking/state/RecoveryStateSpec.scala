@@ -1,13 +1,16 @@
 package stasis.test.specs.unit.client.tracking.state
 
-import stasis.client.model.{proto, TargetEntity}
+import scala.util.Failure
+import scala.util.Success
+
+import stasis.client.model.TargetEntity
+import stasis.client.model.proto
 import stasis.client.tracking.state.RecoveryState
-import stasis.client.tracking.state.RecoveryState.{PendingTargetEntity, ProcessedTargetEntity}
+import stasis.client.tracking.state.RecoveryState.PendingTargetEntity
+import stasis.client.tracking.state.RecoveryState.ProcessedTargetEntity
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.Fixtures
-
-import scala.util.{Failure, Success}
 
 class RecoveryStateSpec extends UnitSpec {
   "A RecoveryState" should "provide its type and state" in {

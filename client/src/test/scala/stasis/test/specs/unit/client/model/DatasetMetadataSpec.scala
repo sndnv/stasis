@@ -1,22 +1,26 @@
 package stasis.test.specs.unit.client.model
 
+import java.util.UUID
+import java.util.zip.ZipException
+
+import scala.concurrent.Future
+import scala.util.control.NonFatal
+
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
+
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.DeviceSecret
-import stasis.client.model.{DatasetMetadata, FilesystemMetadata}
+import stasis.client.model.DatasetMetadata
+import stasis.client.model.FilesystemMetadata
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
 import stasis.shared.secrets.SecretsConfig
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.client.EncodingHelpers
+import stasis.test.specs.unit.client.Fixtures
 import stasis.test.specs.unit.client.mocks.MockServerApiEndpointClient
-import stasis.test.specs.unit.client.{EncodingHelpers, Fixtures}
-
-import java.util.UUID
-import java.util.zip.ZipException
-import scala.concurrent.Future
-import scala.util.control.NonFatal
 
 class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
   "A DatasetMetadata" should "retrieve metadata for individual files (new and updated)" in {

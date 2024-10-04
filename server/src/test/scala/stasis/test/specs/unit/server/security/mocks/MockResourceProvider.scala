@@ -1,10 +1,12 @@
 package stasis.test.specs.unit.server.security.mocks
 
-import stasis.server.security.exceptions.AuthorizationFailure
-import stasis.server.security.{CurrentUser, Resource, ResourceProvider}
-
 import scala.concurrent.Future
 import scala.reflect.ClassTag
+
+import stasis.server.security.CurrentUser
+import stasis.server.security.Resource
+import stasis.server.security.ResourceProvider
+import stasis.server.security.exceptions.AuthorizationFailure
 
 class MockResourceProvider(resources: Set[Resource]) extends ResourceProvider {
   override def provide[R <: Resource](implicit user: CurrentUser, tag: ClassTag[R]): Future[R] =

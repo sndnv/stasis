@@ -1,9 +1,13 @@
 package stasis.test.specs.unit.client.staging
 
-import java.nio.file.attribute.{PosixFileAttributes, PosixFilePermissions}
-import java.nio.file.{Files, LinkOption, Paths}
+import java.nio.file.Files
+import java.nio.file.LinkOption
+import java.nio.file.Paths
+import java.nio.file.attribute.PosixFileAttributes
+import java.nio.file.attribute.PosixFilePermissions
 
 import org.apache.pekko.actor.ActorSystem
+
 import stasis.client.staging.DefaultFileStaging
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers

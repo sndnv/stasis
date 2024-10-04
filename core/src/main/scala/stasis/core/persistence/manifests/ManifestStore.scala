@@ -1,12 +1,15 @@
 package stasis.core.persistence.manifests
 
-import org.apache.pekko.Done
-import stasis.core.packaging.{Crate, Manifest}
-import stasis.core.persistence.Metrics
-import stasis.core.persistence.backends.KeyValueBackend
-import stasis.core.telemetry.TelemetryContext
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
-import scala.concurrent.{ExecutionContext, Future}
+import org.apache.pekko.Done
+
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
+import stasis.core.persistence.Metrics
+import stasis.layers.persistence.KeyValueStore
+import stasis.layers.telemetry.TelemetryContext
 
 trait ManifestStore { store =>
   def put(manifest: Manifest): Future[Done]
@@ -21,7 +24,7 @@ trait ManifestStore { store =>
 
 object ManifestStore {
   def apply(
-    backend: KeyValueBackend[Crate.Id, Manifest]
+    backend: KeyValueStore[Crate.Id, Manifest]
   )(implicit ec: ExecutionContext, telemetry: TelemetryContext): ManifestStore =
     new ManifestStore {
       private val metrics = telemetry.metrics[Metrics.ManifestStore]

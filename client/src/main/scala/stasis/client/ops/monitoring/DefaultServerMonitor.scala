@@ -1,24 +1,27 @@
 package stasis.client.ops.monitoring
 
+import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
+import scala.util.Failure
+import scala.util.Success
+
 import org.apache.pekko.Done
 import org.apache.pekko.actor.typed._
 import org.apache.pekko.actor.typed.scaladsl.AskPattern._
-import org.apache.pekko.actor.typed.scaladsl.{Behaviors, LoggerOps}
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.util.Timeout
+
 import stasis.client.api.clients.ServerApiEndpointClient
 import stasis.client.tracking.ServerTracker
 import stasis.shared.api.responses.Ping
 
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
-
 class DefaultServerMonitor private (
-  monitorRef: Future[ActorRef[DefaultServerMonitor.Message]]
-)(implicit scheduler: Scheduler, ec: ExecutionContext, timeout: Timeout)
+  monitorRef: ActorRef[DefaultServerMonitor.Message]
+)(implicit scheduler: Scheduler, timeout: Timeout)
     extends ServerMonitor {
   override def stop(): Future[Done] =
-    monitorRef.flatMap(_ ? (ref => DefaultServerMonitor.Stop(ref)))
+    monitorRef ? (ref => DefaultServerMonitor.Stop(ref))
 }
 
 object DefaultServerMonitor {
@@ -27,9 +30,7 @@ object DefaultServerMonitor {
     interval: FiniteDuration,
     api: ServerApiEndpointClient,
     tracker: ServerTracker
-  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): DefaultServerMonitor = {
-    implicit val ec: ExecutionContext = system.executionContext
-
+  )(implicit system: ActorSystem[Nothing], timeout: Timeout): DefaultServerMonitor = {
     val behaviour = monitor(
       initialDelay = initialDelay,
       interval = interval,
@@ -38,7 +39,7 @@ object DefaultServerMonitor {
     )
 
     new DefaultServerMonitor(
-      monitorRef = system ? (SpawnProtocol.Spawn(behaviour, name = "server-monitor", props = Props.empty, _))
+      monitorRef = system.systemActorOf(behaviour, name = s"server-monitor-${java.util.UUID.randomUUID().toString}")
     )
   }
 

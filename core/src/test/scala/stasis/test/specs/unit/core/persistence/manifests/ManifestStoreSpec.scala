@@ -1,12 +1,14 @@
 package stasis.test.specs.unit.core.persistence.manifests
 
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import stasis.core.packaging.{Crate, Manifest}
-import stasis.core.persistence.backends.memory.MemoryBackend
+
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
 import stasis.core.persistence.manifests.ManifestStore
 import stasis.core.routing.Node
-import stasis.core.telemetry.TelemetryContext
+import stasis.layers.persistence.memory.MemoryStore
+import stasis.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
@@ -33,7 +35,7 @@ class ManifestStoreSpec extends AsyncUnitSpec {
       actualManifest should be(Some(expectedManifest))
       missingManifest should be(None)
 
-      telemetry.persistence.manifest.manifest should be(1)
+      telemetry.core.persistence.manifest.manifest should be(1)
     }
   }
 
@@ -60,19 +62,19 @@ class ManifestStoreSpec extends AsyncUnitSpec {
       actualManifest should be(Some(expectedManifest))
       missingManifest should be(None)
 
-      telemetry.persistence.manifest.manifest should be(1)
+      telemetry.core.persistence.manifest.manifest should be(1)
 
       a[ClassCastException] should be thrownBy { val _ = storeView.asInstanceOf[ManifestStore] }
     }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "ManifestStoreSpec"
   )
 
   private def createStore()(implicit telemetry: TelemetryContext): ManifestStore =
     ManifestStore(
-      MemoryBackend[Crate.Id, Manifest](name = s"manifest-store-${java.util.UUID.randomUUID()}")
+      MemoryStore[Crate.Id, Manifest](name = s"manifest-store-${java.util.UUID.randomUUID()}")
     )
 }

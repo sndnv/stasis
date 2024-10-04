@@ -1,37 +1,48 @@
 package stasis.core.networking.grpc
 
+import java.util.UUID
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.control.NonFatal
+
 import org.apache.pekko.NotUsed
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
-import org.apache.pekko.grpc.scaladsl.{GrpcExceptionHandler, GrpcMarshalling}
+import org.apache.pekko.grpc.scaladsl.GrpcExceptionHandler
+import org.apache.pekko.grpc.scaladsl.GrpcMarshalling
 import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.HttpRequest
+import org.apache.pekko.http.scaladsl.model.HttpResponse
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.model.Uri.Path
 import org.apache.pekko.http.scaladsl.model.Uri.Path.Segment
 import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
-import org.apache.pekko.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
-import org.apache.pekko.stream.{Materializer, SystemMaterializer}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.SystemMaterializer
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
 import org.slf4j.LoggerFactory
-import stasis.core.api.Metrics
+
 import stasis.core.networking.Endpoint
-import stasis.core.networking.exceptions.{CredentialsFailure, EndpointFailure, ReservationFailure}
+import stasis.core.networking.exceptions.CredentialsFailure
+import stasis.core.networking.exceptions.EndpointFailure
+import stasis.core.networking.exceptions.ReservationFailure
 import stasis.core.packaging.Manifest
 import stasis.core.persistence.reservations.ReservationStoreView
-import stasis.core.routing.{Node, Router}
+import stasis.core.routing.Node
+import stasis.core.routing.Router
 import stasis.core.security.NodeAuthenticator
-import stasis.core.security.tls.EndpointContext
-import stasis.core.security.tls.EndpointContext.RichServerBuilder
-import stasis.core.telemetry.TelemetryContext
-
-import java.util.UUID
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
+import stasis.layers.api.Metrics
+import stasis.layers.security.tls.EndpointContext
+import stasis.layers.security.tls.EndpointContext.RichServerBuilder
+import stasis.layers.telemetry.TelemetryContext
 
 class GrpcEndpoint(
   router: Router,
   reservationStore: ReservationStoreView,
   override protected val authenticator: NodeAuthenticator[HttpCredentials]
-)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext)
+)(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext)
     extends Endpoint[HttpCredentials] {
 
   import internal.Implicits._

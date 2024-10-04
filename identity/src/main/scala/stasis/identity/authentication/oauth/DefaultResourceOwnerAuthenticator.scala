@@ -1,16 +1,17 @@
 package stasis.identity.authentication.oauth
 
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import stasis.core.security.exceptions.AuthenticationFailure
-import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStoreView}
-import stasis.identity.model.secrets.Secret
-
 import scala.concurrent.Future
 
+import org.apache.pekko.actor.typed.ActorSystem
+import stasis.identity.model.owners.ResourceOwner
+import stasis.identity.model.secrets.Secret
+import stasis.identity.persistence.owners.ResourceOwnerStore
+import stasis.layers.security.exceptions.AuthenticationFailure
+
 class DefaultResourceOwnerAuthenticator(
-  store: ResourceOwnerStoreView,
+  store: ResourceOwnerStore.View,
   secretConfig: Secret.ResourceOwnerConfig
-)(implicit val system: ActorSystem[SpawnProtocol.Command])
+)(implicit val system: ActorSystem[Nothing])
     extends ResourceOwnerAuthenticator {
 
   override implicit protected def config: Secret.Config = secretConfig
@@ -33,9 +34,9 @@ class DefaultResourceOwnerAuthenticator(
 
 object DefaultResourceOwnerAuthenticator {
   def apply(
-    store: ResourceOwnerStoreView,
+    store: ResourceOwnerStore.View,
     secretConfig: Secret.ResourceOwnerConfig
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): DefaultResourceOwnerAuthenticator =
+  )(implicit system: ActorSystem[Nothing]): DefaultResourceOwnerAuthenticator =
     new DefaultResourceOwnerAuthenticator(
       store = store,
       secretConfig = secretConfig

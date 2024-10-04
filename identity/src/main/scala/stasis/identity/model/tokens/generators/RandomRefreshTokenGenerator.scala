@@ -2,9 +2,9 @@ package stasis.identity.model.tokens.generators
 
 import java.security.SecureRandom
 
-import stasis.identity.model.tokens.RefreshToken
-
 import scala.util.Random
+
+import stasis.identity.model.tokens.RefreshToken
 
 class RandomRefreshTokenGenerator(tokenSize: Int) extends RefreshTokenGenerator {
   override def generate(): RefreshToken = {

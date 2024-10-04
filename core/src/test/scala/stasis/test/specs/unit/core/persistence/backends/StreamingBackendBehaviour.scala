@@ -1,20 +1,22 @@
 package stasis.test.specs.unit.core.persistence.backends
 
+import scala.concurrent.Future
+
 import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
+
 import stasis.core.persistence.backends.StreamingBackend
-import stasis.core.telemetry.TelemetryContext
+import stasis.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
-import scala.concurrent.Future
-
 trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
-  protected implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    guardianBehavior = Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  protected implicit val system: ActorSystem[Nothing] = ActorSystem(
+    guardianBehavior = Behaviors.ignore,
     name = "StreamingBackendBehaviour"
   )
 
@@ -47,11 +49,11 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
       } yield {
         result should be(testContent)
 
-        telemetry.persistence.streaming.init should be(1)
-        telemetry.persistence.streaming.drop should be(1)
-        telemetry.persistence.streaming.write should be(1)
-        telemetry.persistence.streaming.read should be(1)
-        telemetry.persistence.streaming.discard should be(0)
+        telemetry.core.persistence.streaming.init should be(1)
+        telemetry.core.persistence.streaming.drop should be(1)
+        telemetry.core.persistence.streaming.write should be(1)
+        telemetry.core.persistence.streaming.read should be(1)
+        telemetry.core.persistence.streaming.discard should be(0)
       }
     }
 
@@ -67,11 +69,11 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
       } yield {
         source should be(None)
 
-        telemetry.persistence.streaming.init should be(1)
-        telemetry.persistence.streaming.drop should be(1)
-        telemetry.persistence.streaming.write should be(0)
-        telemetry.persistence.streaming.read should be(0)
-        telemetry.persistence.streaming.discard should be(0)
+        telemetry.core.persistence.streaming.init should be(1)
+        telemetry.core.persistence.streaming.drop should be(1)
+        telemetry.core.persistence.streaming.write should be(0)
+        telemetry.core.persistence.streaming.read should be(0)
+        telemetry.core.persistence.streaming.discard should be(0)
       }
     }
 
@@ -93,11 +95,11 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
         deleteResult should be(true)
         missingSource.isDefined should be(false)
 
-        telemetry.persistence.streaming.init should be(1)
-        telemetry.persistence.streaming.drop should be(1)
-        telemetry.persistence.streaming.write should be(1)
-        telemetry.persistence.streaming.read should be(1)
-        telemetry.persistence.streaming.discard should be(1)
+        telemetry.core.persistence.streaming.init should be(1)
+        telemetry.core.persistence.streaming.drop should be(1)
+        telemetry.core.persistence.streaming.write should be(1)
+        telemetry.core.persistence.streaming.read should be(1)
+        telemetry.core.persistence.streaming.discard should be(1)
       }
     }
 
@@ -120,11 +122,11 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
         existsAfterPush should be(true)
         existsAfterDelete should be(false)
 
-        telemetry.persistence.streaming.init should be(1)
-        telemetry.persistence.streaming.drop should be(1)
-        telemetry.persistence.streaming.write should be(1)
-        telemetry.persistence.streaming.read should be(0)
-        telemetry.persistence.streaming.discard should be(1)
+        telemetry.core.persistence.streaming.init should be(1)
+        telemetry.core.persistence.streaming.drop should be(1)
+        telemetry.core.persistence.streaming.write should be(1)
+        telemetry.core.persistence.streaming.read should be(0)
+        telemetry.core.persistence.streaming.discard should be(1)
       }
     }
 
@@ -144,11 +146,11 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
         canStore should be(true)
         cantStore should be(false)
 
-        telemetry.persistence.streaming.init should be(1)
-        telemetry.persistence.streaming.drop should be(1)
-        telemetry.persistence.streaming.write should be(1)
-        telemetry.persistence.streaming.read should be(0)
-        telemetry.persistence.streaming.discard should be(0)
+        telemetry.core.persistence.streaming.init should be(1)
+        telemetry.core.persistence.streaming.drop should be(1)
+        telemetry.core.persistence.streaming.write should be(1)
+        telemetry.core.persistence.streaming.read should be(0)
+        telemetry.core.persistence.streaming.discard should be(0)
       }
     }
 
@@ -173,11 +175,11 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
         existsAfterReset should be(false)
         availableAfterDrop should be(alwaysAvailable) // either the backend is always available or should have been dropped
 
-        telemetry.persistence.streaming.init should be(1)
-        telemetry.persistence.streaming.drop should be(2)
-        telemetry.persistence.streaming.write should be(1)
-        telemetry.persistence.streaming.read should be(0)
-        telemetry.persistence.streaming.discard should be(0)
+        telemetry.core.persistence.streaming.init should be(1)
+        telemetry.core.persistence.streaming.drop should be(2)
+        telemetry.core.persistence.streaming.write should be(1)
+        telemetry.core.persistence.streaming.read should be(0)
+        telemetry.core.persistence.streaming.discard should be(0)
       }
     }
   }

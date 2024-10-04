@@ -3,9 +3,8 @@ package stasis.server.security.users
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.actor.typed.ActorSystem
-import org.apache.pekko.actor.typed.SpawnProtocol
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
 import org.apache.pekko.http.scaladsl.model.HttpMethods
 import org.apache.pekko.http.scaladsl.model.HttpRequest
@@ -17,8 +16,9 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import play.api.libs.json.Format
 import play.api.libs.json.Json
+
 import stasis.core.api.PoolClient
-import stasis.core.security.tls.EndpointContext
+import stasis.layers.security.tls.EndpointContext
 import stasis.server.security.CredentialsProvider
 import stasis.server.security.exceptions.CredentialsManagementFailure
 import stasis.server.security.users.UserCredentialsManager.Result
@@ -28,7 +28,7 @@ class IdentityUserCredentialsManager(
   identityUrl: String,
   identityCredentials: CredentialsProvider,
   override protected val context: Option[EndpointContext]
-)(implicit override protected val system: ActorSystem[SpawnProtocol.Command])
+)(implicit override protected val system: ActorSystem[Nothing])
     extends UserCredentialsManager
     with PoolClient {
   import IdentityUserCredentialsManager._
@@ -144,7 +144,7 @@ object IdentityUserCredentialsManager {
     identityUrl: String,
     identityCredentials: CredentialsProvider,
     context: Option[EndpointContext]
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): IdentityUserCredentialsManager =
+  )(implicit system: ActorSystem[Nothing]): IdentityUserCredentialsManager =
     new IdentityUserCredentialsManager(
       identityUrl = identityUrl,
       identityCredentials = identityCredentials,
@@ -152,7 +152,7 @@ object IdentityUserCredentialsManager {
     )
 
   implicit class ExtendedHttpResponse(response: HttpResponse) {
-    def asResult(implicit system: ActorSystem[SpawnProtocol.Command]): Future[Result] = {
+    def asResult(implicit system: ActorSystem[Nothing]): Future[Result] = {
       import system.executionContext
 
       response match {
@@ -165,13 +165,13 @@ object IdentityUserCredentialsManager {
 
     private def unmarshalResponseAsString(
       response: HttpResponse
-    )(implicit system: ActorSystem[SpawnProtocol.Command]): Future[String] =
+    )(implicit system: ActorSystem[Nothing]): Future[String] =
       Unmarshal(response)
         .to[String]
 
     private def unmarshalResponseFailure[T](
       response: HttpResponse
-    )(implicit system: ActorSystem[SpawnProtocol.Command]): Future[T] = {
+    )(implicit system: ActorSystem[Nothing]): Future[T] = {
       import system.executionContext
 
       unmarshalResponseAsString(response)

@@ -1,21 +1,38 @@
 package stasis.client.ops.backup.stages
 
-import org.apache.pekko.stream.scaladsl.{FileIO, Flow, Sink, Source, SubFlow}
-import org.apache.pekko.stream.{IOResult, Materializer, SharedKillSwitch}
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.control.NonFatal
+
+import org.apache.pekko.stream.scaladsl.FileIO
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.stream.scaladsl.SubFlow
+import org.apache.pekko.stream.IOResult
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.SharedKillSwitch
 import org.apache.pekko.util.ByteString
-import org.apache.pekko.{Done, NotUsed}
-import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceSecret}
-import stasis.client.model.{EntityMetadata, SourceEntity}
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+
+import stasis.client.encryption.secrets.DeviceFileSecret
+import stasis.client.encryption.secrets.DeviceSecret
+import stasis.client.model.EntityMetadata
+import stasis.client.model.SourceEntity
 import stasis.client.ops.backup.Providers
-import stasis.client.ops.exceptions.{EntityProcessingFailure, OperationStopped}
-import stasis.client.ops.{Metrics, ParallelismConfig}
-import stasis.core.packaging.{Crate, Manifest}
+import stasis.client.ops.exceptions.EntityProcessingFailure
+import stasis.client.ops.exceptions.OperationStopped
+import stasis.client.ops.Metrics
+import stasis.client.ops.ParallelismConfig
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.ops.Operation
-
-import java.nio.file.{Files, Path, Paths}
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
 
 trait EntityProcessing {
   protected def targetDataset: DatasetDefinition

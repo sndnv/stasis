@@ -1,17 +1,23 @@
 package stasis.core.persistence.backends.file.state
 
-import org.apache.pekko.Done
-import org.apache.pekko.stream.Materializer
-import org.apache.pekko.stream.scaladsl.{FileIO, Sink, Source}
-import org.apache.pekko.util.ByteString
-import org.slf4j.{Logger, LoggerFactory}
-
-import java.nio.file.{FileSystem, Files, Path}
+import java.nio.file.FileSystem
+import java.nio.file.Files
+import java.nio.file.Path
 import java.time.Instant
+
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 import scala.util.control.NonFatal
+
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.FileIO
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class StateStore[S](
   directory: String,

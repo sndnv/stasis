@@ -1,21 +1,25 @@
 package stasis.client.tracking.trackers
 
+import java.nio.file.Path
+import java.time.Instant
+
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.stream.scaladsl.Source
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import stasis.client.model.TargetEntity
 import stasis.client.tracking.RecoveryTracker
 import stasis.client.tracking.state.RecoveryState
 import stasis.core.persistence.backends.EventLogBackend
 import stasis.core.persistence.events.EventLog
-import stasis.core.streaming.Operators.ExtendedSource
+import stasis.layers.streaming.Operators.ExtendedSource
 import stasis.shared.ops.Operation
-import java.nio.file.Path
-import java.time.Instant
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration.FiniteDuration
 
 class DefaultRecoveryTracker(
   maxRetention: FiniteDuration,

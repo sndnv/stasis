@@ -1,12 +1,16 @@
 package stasis.core.networking
 
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
-import org.apache.pekko.util.ByteString
-import org.apache.pekko.{Done, NotUsed}
-import stasis.core.packaging.{Crate, Manifest}
-import stasis.core.security.NodeCredentialsProvider
-
 import scala.concurrent.Future
+
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
+import stasis.core.security.NodeCredentialsProvider
 
 trait EndpointClient[A <: EndpointAddress, C] {
 

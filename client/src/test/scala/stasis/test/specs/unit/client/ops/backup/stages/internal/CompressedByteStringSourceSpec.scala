@@ -1,14 +1,16 @@
 package stasis.test.specs.unit.client.ops.backup.stages.internal
 
+import scala.concurrent.Future
+
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.IOResult
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
+
 import stasis.client.ops.backup.stages.internal.CompressedByteStringSource
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks._
-
-import scala.concurrent.Future
 
 class CompressedByteStringSourceSpec extends AsyncUnitSpec {
   "A CompressedByteStringSource" should "support data stream compression" in {
