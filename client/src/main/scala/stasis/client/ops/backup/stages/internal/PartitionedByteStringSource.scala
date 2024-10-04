@@ -1,10 +1,13 @@
 package stasis.client.ops.backup.stages.internal
 
-import org.apache.pekko.stream.scaladsl.{Source, SubFlow}
-import org.apache.pekko.stream.{ActorAttributes, IOResult, Supervision}
-import org.apache.pekko.util.ByteString
-
 import scala.concurrent.Future
+
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.stream.scaladsl.SubFlow
+import org.apache.pekko.stream.ActorAttributes
+import org.apache.pekko.stream.IOResult
+import org.apache.pekko.stream.Supervision
+import org.apache.pekko.util.ByteString
 
 class PartitionedByteStringSource(val source: Source[ByteString, Future[IOResult]]) {
   def partition(withMaximumPartSize: Long): SubFlow[ByteString, Future[IOResult], source.Repr, source.Closed] =

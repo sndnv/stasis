@@ -1,6 +1,7 @@
 package stasis.core.persistence
 
-import stasis.core.packaging.{Crate, Manifest}
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
 import stasis.core.routing.Node
 
 final case class CrateStorageRequest(

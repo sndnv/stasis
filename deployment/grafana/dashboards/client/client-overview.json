@@ -243,7 +243,7 @@
             "uid": "prom"
           },
           "editorMode": "code",
-          "expr": "sum(rate(stasis_client_persistence_kv_put_operations_total[$__rate_interval])) by (backend)",
+          "expr": "sum(rate(stasis_client_persistence_store_put_operations_total[$__rate_interval])) by (backend)",
           "legendFormat": "Put [{{backend}}]",
           "range": true,
           "refId": "A"
@@ -254,7 +254,7 @@
             "uid": "prom"
           },
           "editorMode": "code",
-          "expr": "sum(rate(stasis_client_persistence_kv_get_operations_total[$__rate_interval])) by (backend)",
+          "expr": "sum(rate(stasis_client_persistence_store_get_operations_total[$__rate_interval])) by (backend)",
           "hide": false,
           "legendFormat": "Get [{{backend}}]",
           "range": true,
@@ -266,7 +266,7 @@
             "uid": "prom"
           },
           "editorMode": "code",
-          "expr": "sum(rate(stasis_client_persistence_kv_delete_operations_total[$__rate_interval])) by (backend)",
+          "expr": "sum(rate(stasis_client_persistence_store_delete_operations_total[$__rate_interval])) by (backend)",
           "hide": false,
           "legendFormat": "Delete [{{backend}}]",
           "range": true,

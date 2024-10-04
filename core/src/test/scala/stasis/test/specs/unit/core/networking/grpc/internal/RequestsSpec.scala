@@ -1,6 +1,7 @@
 package stasis.test.specs.unit.core.networking.grpc.internal
 
-import stasis.core.networking.grpc.internal.{Implicits, Requests}
+import stasis.core.networking.grpc.internal.Implicits
+import stasis.core.networking.grpc.internal.Requests
 import stasis.core.networking.grpc.proto
 import stasis.core.packaging.Crate
 import stasis.core.persistence.CrateStorageRequest

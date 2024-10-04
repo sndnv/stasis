@@ -1,18 +1,19 @@
 package stasis.test.specs.unit.identity.authentication.oauth
 
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
-import stasis.core.security.exceptions.AuthenticationFailure
-import stasis.identity.authentication.oauth.EntityAuthenticator
-import stasis.identity.model.secrets.Secret
-import stasis.test.specs.unit.AsyncUnitSpec
-
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
-class EntityAuthenticatorSpec extends AsyncUnitSpec {
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+
+import stasis.identity.authentication.oauth.EntityAuthenticator
+import stasis.identity.model.secrets.Secret
+import stasis.layers.UnitSpec
+import stasis.layers.security.exceptions.AuthenticationFailure
+
+class EntityAuthenticatorSpec extends UnitSpec {
   "An EntityAuthenticator" should "successfully authenticate entities" in {
     val authenticator = new MockEntityAuthenticator(secretConfig)
 
@@ -85,8 +86,8 @@ class EntityAuthenticatorSpec extends AsyncUnitSpec {
       }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    guardianBehavior = Behaviors.ignore,
     "EntityAuthenticatorSpec"
   )
 
@@ -99,7 +100,7 @@ class EntityAuthenticatorSpec extends AsyncUnitSpec {
   )
 
   private class MockEntityAuthenticator(secretConfig: Secret.Config, failingGet: Boolean = false)(implicit
-    protected val system: ActorSystem[SpawnProtocol.Command]
+    protected val system: ActorSystem[Nothing]
   ) extends EntityAuthenticator[String] {
 
     override implicit protected def config: Secret.Config = secretConfig

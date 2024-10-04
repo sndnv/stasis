@@ -1,25 +1,22 @@
 package stasis.test.specs.unit.identity.authentication.oauth
 
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
-import stasis.core.persistence.backends.memory.MemoryBackend
-import stasis.core.security.exceptions.AuthenticationFailure
-import stasis.identity.authentication.oauth.DefaultResourceOwnerAuthenticator
-import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore}
-import stasis.identity.model.secrets.Secret
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-import stasis.test.specs.unit.identity.model.Generators
-
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
-class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec {
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+
+import stasis.identity.authentication.oauth.DefaultResourceOwnerAuthenticator
+import stasis.identity.model.secrets.Secret
+import stasis.layers.UnitSpec
+import stasis.layers.security.exceptions.AuthenticationFailure
+import stasis.test.specs.unit.identity.model.Generators
+import stasis.test.specs.unit.identity.persistence.mocks.MockResourceOwnerStore
+
+class DefaultResourceOwnerAuthenticatorSpec extends UnitSpec {
   "A DefaultResourceOwnerAuthenticator" should "successfully authenticate resource owners" in {
-    val store = ResourceOwnerStore(
-      MemoryBackend[ResourceOwner.Id, ResourceOwner](name = s"owner-store-${java.util.UUID.randomUUID()}")
-    )
+    val store = MockResourceOwnerStore()
 
     val expectedOwner = Generators.generateResourceOwner.copy(
       password = ownerSecret,
@@ -40,9 +37,7 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec {
   }
 
   it should "fail to authenticate inactive resource owners" in {
-    val store = ResourceOwnerStore(
-      MemoryBackend[ResourceOwner.Id, ResourceOwner](name = s"owner-store-${java.util.UUID.randomUUID()}")
-    )
+    val store = MockResourceOwnerStore()
 
     val expectedOwner = Generators.generateResourceOwner.copy(
       password = ownerSecret,
@@ -68,9 +63,7 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec {
   }
 
   it should "fail to authenticate missing resource owners" in {
-    val store = ResourceOwnerStore(
-      MemoryBackend[ResourceOwner.Id, ResourceOwner](name = s"owner-store-${java.util.UUID.randomUUID()}")
-    )
+    val store = MockResourceOwnerStore()
 
     val expectedOwner = Generators.generateResourceOwner.copy(
       password = ownerSecret,
@@ -91,12 +84,10 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec {
       }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    guardianBehavior = Behaviors.ignore,
     "DefaultResourceOwnerAuthenticatorSpec-oauth"
   )
-
-  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   private implicit val secretConfig: Secret.ResourceOwnerConfig = Secret.ResourceOwnerConfig(
     algorithm = "PBKDF2WithHmacSHA512",

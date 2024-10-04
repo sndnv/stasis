@@ -1,8 +1,8 @@
 package stasis.core.persistence.nodes
 
-import stasis.core.routing.Node
-
 import scala.concurrent.Future
+
+import stasis.core.routing.Node
 
 trait NodeStoreView {
   def get(node: Node.Id): Future[Option[Node]]

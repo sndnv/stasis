@@ -1,11 +1,12 @@
 package stasis.server.model.manifests
 
-import stasis.core.packaging.{Crate, Manifest}
+import scala.concurrent.Future
+
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
 import stasis.core.persistence.manifests.ManifestStore
 import stasis.server.security.Resource
 import stasis.shared.security.Permission
-
-import scala.concurrent.Future
 
 trait ServerManifestStore { store =>
   protected def get(crate: Crate.Id): Future[Option[Manifest]]

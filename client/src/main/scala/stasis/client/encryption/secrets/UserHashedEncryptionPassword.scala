@@ -1,7 +1,8 @@
 package stasis.client.encryption.secrets
 
-import org.apache.pekko.util.ByteString
 import at.favre.lib.hkdf.HKDF
+import org.apache.pekko.util.ByteString
+
 import stasis.shared.model.users.User
 import stasis.shared.secrets.SecretsConfig
 

@@ -1,33 +1,42 @@
 package stasis.test.specs.unit.server.api.routes
 
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
-import org.apache.pekko.http.scaladsl.model.{RequestEntity, StatusCodes}
+import org.apache.pekko.http.scaladsl.model.RequestEntity
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import stasis.core.routing.Node
-import stasis.core.telemetry.TelemetryContext
-import stasis.server.api.routes.{DatasetDefinitions, RoutesContext}
+import stasis.layers.telemetry.TelemetryContext
+import stasis.server.api.routes.DatasetDefinitions
+import stasis.server.api.routes.RoutesContext
 import stasis.server.model.datasets.DatasetDefinitionStore
 import stasis.server.model.devices.DeviceStore
-import stasis.server.security.{CurrentUser, ResourceProvider}
-import stasis.shared.api.requests.{CreateDatasetDefinition, UpdateDatasetDefinition}
-import stasis.shared.api.responses.{CreatedDatasetDefinition, DeletedDatasetDefinition}
+import stasis.server.security.CurrentUser
+import stasis.server.security.ResourceProvider
+import stasis.shared.api.requests.CreateDatasetDefinition
+import stasis.shared.api.requests.UpdateDatasetDefinition
+import stasis.shared.api.responses.CreatedDatasetDefinition
+import stasis.shared.api.responses.DeletedDatasetDefinition
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-import stasis.test.specs.unit.server.model.mocks.{MockDatasetDefinitionStore, MockDeviceStore}
+import stasis.test.specs.unit.server.model.mocks.MockDatasetDefinitionStore
+import stasis.test.specs.unit.server.model.mocks.MockDeviceStore
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
-
-import scala.concurrent.Future
-import scala.concurrent.duration._
 
 class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.shared.api.Formats._
 
   "DatasetDefinitions routes (full permissions)" should "respond with all definitions" in withRetry {
@@ -210,8 +219,8 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "DatasetDefinitionsSpec"
   )
 

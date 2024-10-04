@@ -1,18 +1,23 @@
 package stasis.test.specs.unit.client.mocks
 
-import java.nio.file.{Path, Paths}
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
-import org.apache.pekko.Done
-import stasis.client.collection.rules.internal.IndexedRule
-import stasis.client.collection.rules.{Rule, Specification}
-import stasis.client.ops.recovery.Recovery
-import stasis.client.ops.scheduling.OperationExecutor
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
-import stasis.shared.ops.Operation
-import stasis.test.specs.unit.client.mocks.MockOperationExecutor.Statistic
 
 import scala.concurrent.Future
+
+import org.apache.pekko.Done
+
+import stasis.client.collection.rules.Rule
+import stasis.client.collection.rules.Specification
+import stasis.client.collection.rules.internal.IndexedRule
+import stasis.client.ops.recovery.Recovery
+import stasis.client.ops.scheduling.OperationExecutor
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
+import stasis.shared.ops.Operation
+import stasis.test.specs.unit.client.mocks.MockOperationExecutor.Statistic
 
 class MockOperationExecutor() extends OperationExecutor {
   private val stats: Map[Statistic, AtomicInteger] = Map(

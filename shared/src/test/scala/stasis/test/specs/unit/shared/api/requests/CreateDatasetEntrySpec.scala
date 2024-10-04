@@ -4,7 +4,8 @@ import java.time.Instant
 
 import stasis.core.packaging.Crate
 import stasis.shared.api.requests.CreateDatasetEntry
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
 import stasis.test.specs.unit.UnitSpec
 

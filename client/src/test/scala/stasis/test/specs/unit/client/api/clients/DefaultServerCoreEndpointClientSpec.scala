@@ -1,27 +1,31 @@
 package stasis.test.specs.unit.client.api.clients
 
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
-import org.apache.pekko.stream.scaladsl.Source
-import org.apache.pekko.util.{ByteString, Timeout}
-import com.typesafe.config.{Config, ConfigFactory}
-import org.scalatest.Assertion
-import org.scalatest.concurrent.Eventually
-import stasis.client.api.clients.DefaultServerCoreEndpointClient
-import stasis.core.networking.http.HttpEndpointAddress
-import stasis.core.packaging.{Crate, Manifest}
-import stasis.core.routing.Node
-import stasis.core.routing.exceptions.PullFailure
-import stasis.core.security.tls.EndpointContext
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.mocks.MockServerCoreEndpoint
-import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.util.Timeout
+import org.scalatest.Assertion
+import org.scalatest.concurrent.Eventually
+
+import stasis.client.api.clients.DefaultServerCoreEndpointClient
 import stasis.core.api.PoolClient
+import stasis.core.networking.http.HttpEndpointAddress
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
+import stasis.core.routing.Node
+import stasis.core.routing.exceptions.PullFailure
+import stasis.layers.security.tls.EndpointContext
+import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.client.mocks.MockServerCoreEndpoint
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec with Eventually {
   "A DefaultServerCoreEndpointClient" should "push crates" in {
@@ -147,8 +151,8 @@ class DefaultServerCoreEndpointClientSpec extends AsyncUnitSpec with Eventually 
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "DefaultServerCoreEndpointClientSpec"
   )
 

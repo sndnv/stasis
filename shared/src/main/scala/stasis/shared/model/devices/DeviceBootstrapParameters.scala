@@ -1,16 +1,18 @@
 package stasis.shared.model.devices
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.security.KeyStore
 import java.util.concurrent.ThreadLocalRandom
-import org.apache.pekko.util.ByteString
-import com.typesafe.{config => typesafe}
-import play.api.libs.json.JsObject
-import stasis.core.security.tls.EndpointContext
-import stasis.shared.secrets.SecretsConfig
 
 import scala.jdk.CollectionConverters._
 import scala.util.Random
+
+import com.typesafe.{config => typesafe}
+import org.apache.pekko.util.ByteString
+import play.api.libs.json.JsObject
+import stasis.layers.security.tls.EndpointContext
+import stasis.shared.secrets.SecretsConfig
 
 final case class DeviceBootstrapParameters(
   authentication: DeviceBootstrapParameters.Authentication,

@@ -1,16 +1,17 @@
 package stasis.test.specs.unit.core.security
 
+import scala.util.control.NonFatal
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+
 import stasis.core.networking.http.HttpEndpointAddress
-import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
 import stasis.core.security.PreSharedKeyNodeAuthenticator
+import stasis.layers.persistence.memory.MemoryStore
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-
-import scala.util.control.NonFatal
 
 class PreSharedKeyNodeAuthenticatorSpec extends AsyncUnitSpec {
   "A PreSharedKeyNodeAuthenticator" should "authenticate nodes with valid secrets" in {
@@ -128,11 +129,11 @@ class PreSharedKeyNodeAuthenticatorSpec extends AsyncUnitSpec {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val storeInit = NodeStore(
-      backend = MemoryBackend[Node.Id, Node](name = s"node-store-${java.util.UUID.randomUUID()}"),
+      backend = MemoryStore[Node.Id, Node](name = s"node-store-${java.util.UUID.randomUUID()}"),
       cachingEnabled = false
     )
 
-    val backend = MemoryBackend[String, String](s"psk-authenticator-store-${java.util.UUID.randomUUID()}")
+    val backend = MemoryStore[String, String](s"psk-authenticator-store-${java.util.UUID.randomUUID()}")
 
     val authenticator = new PreSharedKeyNodeAuthenticator(
       nodeStore = storeInit.store.view,
@@ -144,8 +145,8 @@ class PreSharedKeyNodeAuthenticatorSpec extends AsyncUnitSpec {
     (authenticator, storeInit.store)
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "PreSharedKeyNodeAuthenticatorSpec"
   )
 }

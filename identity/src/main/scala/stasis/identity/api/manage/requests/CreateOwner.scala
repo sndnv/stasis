@@ -16,7 +16,7 @@ final case class CreateOwner(
   def toResourceOwner(implicit config: Secret.ResourceOwnerConfig): ResourceOwner = {
     val salt = Secret.generateSalt()
 
-    ResourceOwner(
+    ResourceOwner.create(
       username = username,
       password = Secret.derive(rawSecret = rawPassword, salt = salt),
       salt = salt,

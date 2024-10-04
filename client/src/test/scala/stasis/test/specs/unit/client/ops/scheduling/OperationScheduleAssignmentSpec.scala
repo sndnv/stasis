@@ -3,10 +3,11 @@ package stasis.test.specs.unit.client.ops.scheduling
 import java.nio.file.Paths
 import java.util.UUID
 
+import scala.util.Failure
+import scala.util.Success
+
 import stasis.client.ops.scheduling.OperationScheduleAssignment
 import stasis.test.specs.unit.UnitSpec
-
-import scala.util.{Failure, Success}
 
 class OperationScheduleAssignmentSpec extends UnitSpec {
   "An OperationScheduleAssignment" should "support extracting UUIDs from a raw assignment string" in {

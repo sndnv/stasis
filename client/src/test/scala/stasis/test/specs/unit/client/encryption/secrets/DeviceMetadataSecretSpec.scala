@@ -3,6 +3,7 @@ package stasis.test.specs.unit.client.encryption.secrets
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
+
 import stasis.client.encryption.secrets.DeviceMetadataSecret
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.EncodingHelpers

@@ -11,6 +11,7 @@ class StoredAuthorizationCode with _$StoredAuthorizationCode {
     required String client,
     required String owner,
     String? scope,
+    required DateTime created,
   }) = _StoredAuthorizationCode;
 
   factory StoredAuthorizationCode.fromJson(Map<String, Object?> json) => _$StoredAuthorizationCodeFromJson(json);

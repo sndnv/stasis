@@ -1,12 +1,14 @@
 package stasis.server.security.authenticators
 
-import org.apache.pekko.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
-import stasis.core.security.exceptions.AuthenticationFailure
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+import stasis.layers.security.exceptions.AuthenticationFailure
 import stasis.server.model.devices.DeviceBootstrapCodeStore
 import stasis.server.security.CurrentUser
 import stasis.shared.model.devices.DeviceBootstrapCode
-
-import scala.concurrent.{ExecutionContext, Future}
 
 class DefaultBootstrapCodeAuthenticator(
   store: DeviceBootstrapCodeStore.Manage.Privileged

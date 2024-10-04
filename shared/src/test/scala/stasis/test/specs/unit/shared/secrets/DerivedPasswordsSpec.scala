@@ -1,6 +1,7 @@
 package stasis.test.specs.unit.shared.secrets
 
 import org.apache.pekko.util.ByteString
+
 import stasis.shared.secrets.DerivedPasswords
 import stasis.test.specs.unit.UnitSpec
 

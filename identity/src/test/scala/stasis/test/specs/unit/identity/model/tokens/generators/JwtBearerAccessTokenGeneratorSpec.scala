@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.identity.model.tokens.generators
 
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.security.mocks.MockJwksGenerators
+import stasis.layers.UnitSpec
+import stasis.layers.security.mocks.MockJwksGenerators
 
-class JwtBearerAccessTokenGeneratorSpec extends AsyncUnitSpec with JwtBearerAccessTokenGeneratorBehaviour {
+class JwtBearerAccessTokenGeneratorSpec extends UnitSpec with JwtBearerAccessTokenGeneratorBehaviour {
   "A JwtBearerAccessTokenGenerator" should behave like jwtBearerAccessTokenGenerator(
     withKeyType = "RSA",
     withJwk = MockJwksGenerators.generateRandomRsaKey(Some("rsa-0"))

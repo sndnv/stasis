@@ -1,16 +1,18 @@
 package stasis.test.specs.unit.identity.model.tokens.generators
 
+import scala.concurrent.duration._
+
 import org.jose4j.jwk.JsonWebKey
 import org.jose4j.jws.JsonWebSignature
 import play.api.libs.json._
+
 import stasis.identity.model.Seconds
 import stasis.identity.model.tokens.generators.JwtBearerAccessTokenGenerator
-import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.layers
+import stasis.layers.UnitSpec
 import stasis.test.specs.unit.identity.model.Generators
 
-import scala.concurrent.duration._
-
-trait JwtBearerAccessTokenGeneratorBehaviour { _: AsyncUnitSpec =>
+trait JwtBearerAccessTokenGeneratorBehaviour { _: UnitSpec =>
   def jwtBearerAccessTokenGenerator(withKeyType: String, withJwk: JsonWebKey): Unit = {
     val issuer = "some-issuer"
     val jwtExpiration = 30.seconds
@@ -22,7 +24,7 @@ trait JwtBearerAccessTokenGeneratorBehaviour { _: AsyncUnitSpec =>
         subject = Some("some-subject"),
         tokenExpiration = clientTokenExpiration
       )
-      val audience = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateClient)
+      val audience = layers.Generators.generateSeq(min = 1, g = Generators.generateClient)
       val accessToken = generator.generate(client, audience)
 
       accessToken.expiration should be(clientTokenExpiration: Seconds)
@@ -50,7 +52,7 @@ trait JwtBearerAccessTokenGeneratorBehaviour { _: AsyncUnitSpec =>
         subject = None,
         tokenExpiration = clientTokenExpiration
       )
-      val audience = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateClient)
+      val audience = layers.Generators.generateSeq(min = 1, g = Generators.generateClient)
       val accessToken = generator.generate(client, audience)
 
       accessToken.expiration should be(clientTokenExpiration: Seconds)
@@ -75,7 +77,7 @@ trait JwtBearerAccessTokenGeneratorBehaviour { _: AsyncUnitSpec =>
 
     it should s"generate JWTs for resource owners with custom subject ($withKeyType)" in {
       val owner = Generators.generateResourceOwner.copy(subject = Some("some-subject"))
-      val audience = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateApi)
+      val audience = layers.Generators.generateSeq(min = 1, g = Generators.generateApi)
       val accessToken = generator.generate(owner, audience)
 
       accessToken.expiration should be(jwtExpiration: Seconds)
@@ -100,7 +102,7 @@ trait JwtBearerAccessTokenGeneratorBehaviour { _: AsyncUnitSpec =>
 
     it should s"generate JWTs for resource owners without custom subject ($withKeyType)" in {
       val owner = Generators.generateResourceOwner.copy(subject = None)
-      val audience = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateApi)
+      val audience = layers.Generators.generateSeq(min = 1, g = Generators.generateApi)
       val accessToken = generator.generate(owner, audience)
 
       val jws = new JsonWebSignature()

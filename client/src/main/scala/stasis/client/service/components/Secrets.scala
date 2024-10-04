@@ -1,22 +1,27 @@
 package stasis.client.service.components
 
-import org.apache.pekko.Done
-import org.apache.pekko.util.ByteString
-import stasis.client.api.clients.ServerApiEndpointClient
-import stasis.client.encryption.Aes
-import stasis.client.encryption.secrets.{DeviceSecret, UserPassword}
-import stasis.client.security.{CredentialsProvider, DefaultCredentialsProvider}
-import stasis.client.service.components.exceptions.ServiceStartupFailure
-import stasis.client.service.components.internal.ConfigOverride
-import stasis.core.security.oauth.{DefaultOAuthClient, OAuthClient}
-import stasis.core.security.tls.EndpointContext
-import stasis.shared.secrets.SecretsConfig
-
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
+
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Try
+
+import org.apache.pekko.Done
+import org.apache.pekko.util.ByteString
+
+import stasis.client.api.clients.ServerApiEndpointClient
+import stasis.client.encryption.Aes
+import stasis.client.encryption.secrets.DeviceSecret
+import stasis.client.encryption.secrets.UserPassword
+import stasis.client.security.CredentialsProvider
+import stasis.client.security.DefaultCredentialsProvider
+import stasis.client.service.components.exceptions.ServiceStartupFailure
+import stasis.client.service.components.internal.ConfigOverride
+import stasis.layers.security.oauth.DefaultOAuthClient
+import stasis.layers.security.oauth.OAuthClient
+import stasis.layers.security.tls.EndpointContext
+import stasis.shared.secrets.SecretsConfig
 
 trait Secrets {
   def deviceSecret: DeviceSecret

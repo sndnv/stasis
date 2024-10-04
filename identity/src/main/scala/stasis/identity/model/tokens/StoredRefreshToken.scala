@@ -8,7 +8,8 @@ import stasis.identity.model.owners.ResourceOwner
 final case class StoredRefreshToken(
   token: RefreshToken,
   client: Client.Id,
-  owner: ResourceOwner,
+  owner: ResourceOwner.Id,
   scope: Option[String],
-  expiration: Instant
+  expiration: Instant,
+  created: Instant
 )

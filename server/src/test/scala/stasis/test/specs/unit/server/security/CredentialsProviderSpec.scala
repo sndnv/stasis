@@ -1,10 +1,10 @@
 package stasis.test.specs.unit.server.security
 
-import stasis.core.security.jwt.JwtProvider
+import scala.concurrent.Future
+
+import stasis.layers.security.jwt.JwtProvider
 import stasis.server.security.CredentialsProvider
 import stasis.test.specs.unit.AsyncUnitSpec
-
-import scala.concurrent.Future
 
 class CredentialsProviderSpec extends AsyncUnitSpec {
   "A Default CredentialsProvider" should "provide credentials" in {

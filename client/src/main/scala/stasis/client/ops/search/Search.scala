@@ -4,10 +4,12 @@ import java.nio.file.Path
 import java.time.Instant
 import java.util.regex.Pattern
 
-import stasis.client.model.FilesystemMetadata
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
 import scala.concurrent.Future
 import scala.util.Try
+
+import stasis.client.model.FilesystemMetadata
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
 
 trait Search {
   def search(query: Search.Query, until: Option[Instant]): Future[Search.Result]

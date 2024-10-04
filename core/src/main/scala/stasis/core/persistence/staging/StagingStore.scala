@@ -1,38 +1,47 @@
 package stasis.core.persistence.staging
 
+import java.time.Instant
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
+import scala.util.control.NonFatal
+
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.Cancellable
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import org.apache.pekko.stream.scaladsl.{Broadcast, Sink, Source}
-import org.apache.pekko.util.{ByteString, Timeout}
-import org.apache.pekko.{Done, NotUsed}
+import org.apache.pekko.stream.scaladsl.Broadcast
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.util.Timeout
 import org.slf4j.LoggerFactory
-import stasis.core.packaging.{Crate, Manifest}
+
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
 import stasis.core.persistence.CrateStorageRequest
-import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.exceptions.StagingFailure
 import stasis.core.persistence.staging.StagingStore.PendingDestaging
-import stasis.core.routing.{Node, NodeProxy}
-import stasis.core.telemetry.TelemetryContext
-
-import java.time.Instant
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
+import stasis.core.routing.Node
+import stasis.core.routing.NodeProxy
+import stasis.layers.persistence.memory.MemoryStore
+import stasis.layers.telemetry.TelemetryContext
 
 class StagingStore(
   crateStore: CrateStore,
   destagingDelay: FiniteDuration
 )(implicit
-  system: ActorSystem[SpawnProtocol.Command],
+  system: ActorSystem[Nothing],
   telemetry: TelemetryContext,
   timeout: Timeout
 ) {
   private implicit val ec: ExecutionContext = system.executionContext
 
-  private val pendingDestagingStore: MemoryBackend[Crate.Id, PendingDestaging] =
-    MemoryBackend[Crate.Id, PendingDestaging](name = "pending-destaging-store")
+  private val pendingDestagingStore: MemoryStore[Crate.Id, PendingDestaging] =
+    MemoryStore[Crate.Id, PendingDestaging](name = "pending-destaging-store")
 
   private val log = LoggerFactory.getLogger(this.getClass.getName)
 
@@ -180,7 +189,7 @@ object StagingStore {
     crateStore: CrateStore,
     destagingDelay: FiniteDuration
   )(implicit
-    system: ActorSystem[SpawnProtocol.Command],
+    system: ActorSystem[Nothing],
     telemetry: TelemetryContext,
     timeout: Timeout
   ): StagingStore =

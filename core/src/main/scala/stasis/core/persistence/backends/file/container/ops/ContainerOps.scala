@@ -1,20 +1,30 @@
 package stasis.core.persistence.backends.file.container.ops
 
-import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import org.apache.pekko.util.ByteString
-import stasis.core.persistence.backends.file.container.Container.Index.{ChunkEntryNumber, IndexingFailure}
-import stasis.core.persistence.backends.file.container.exceptions.ContainerFailure
-import stasis.core.persistence.backends.file.container.headers.{ChunkHeader, ContainerHeader}
-import stasis.core.persistence.backends.file.container.stream.{CrateChunkSink, CrateChunkSource}
-import stasis.core.persistence.backends.file.container.{Container, CrateChunkDescriptor}
-
 import java.io.RandomAccessFile
-import java.nio.file.{Files, Path, StandardOpenOption}
-import java.nio.{ByteBuffer, ByteOrder}
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardOpenOption
 import java.util.UUID
-import scala.concurrent.{ExecutionContext, Future}
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.control.NonFatal
+
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.util.ByteString
+
+import stasis.core.persistence.backends.file.container.Container
+import stasis.core.persistence.backends.file.container.Container.Index.ChunkEntryNumber
+import stasis.core.persistence.backends.file.container.Container.Index.IndexingFailure
+import stasis.core.persistence.backends.file.container.CrateChunkDescriptor
+import stasis.core.persistence.backends.file.container.exceptions.ContainerFailure
+import stasis.core.persistence.backends.file.container.headers.ChunkHeader
+import stasis.core.persistence.backends.file.container.headers.ContainerHeader
+import stasis.core.persistence.backends.file.container.stream.CrateChunkSink
+import stasis.core.persistence.backends.file.container.stream.CrateChunkSource
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 object ContainerOps extends AutoCloseSupport {
@@ -162,7 +172,7 @@ object ContainerOps extends AutoCloseSupport {
     source: Path,
     target: Path,
     p: ChunkHeader => Boolean
-  )(implicit system: ActorSystem[SpawnProtocol.Command], byteOrder: ByteOrder): Future[Done] = {
+  )(implicit system: ActorSystem[Nothing], byteOrder: ByteOrder): Future[Done] = {
     implicit val ec: ExecutionContext = system.executionContext
 
     index(source)

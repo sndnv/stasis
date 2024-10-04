@@ -1,25 +1,22 @@
 package stasis.test.specs.unit.identity.authentication.oauth
 
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
-import stasis.core.persistence.backends.memory.MemoryBackend
-import stasis.core.security.exceptions.AuthenticationFailure
-import stasis.identity.authentication.oauth.DefaultClientAuthenticator
-import stasis.identity.model.clients.{Client, ClientStore}
-import stasis.identity.model.secrets.Secret
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-import stasis.test.specs.unit.identity.model.Generators
-
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
-class DefaultClientAuthenticatorSpec extends AsyncUnitSpec {
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+
+import stasis.identity.authentication.oauth.DefaultClientAuthenticator
+import stasis.identity.model.secrets.Secret
+import stasis.layers.UnitSpec
+import stasis.layers.security.exceptions.AuthenticationFailure
+import stasis.test.specs.unit.identity.model.Generators
+import stasis.test.specs.unit.identity.persistence.mocks.MockClientStore
+
+class DefaultClientAuthenticatorSpec extends UnitSpec {
   "A DefaultClientAuthenticator" should "successfully authenticate clients" in {
-    val store = ClientStore(
-      MemoryBackend[Client.Id, Client](name = s"client-store-${java.util.UUID.randomUUID()}")
-    )
+    val store = MockClientStore()
 
     val expectedClient = Generators.generateClient.copy(
       secret = clientSecret,
@@ -40,9 +37,7 @@ class DefaultClientAuthenticatorSpec extends AsyncUnitSpec {
   }
 
   it should "fail to authenticate inactive clients" in {
-    val store = ClientStore(
-      MemoryBackend[Client.Id, Client](name = s"client-store-${java.util.UUID.randomUUID()}")
-    )
+    val store = MockClientStore()
 
     val expectedClient = Generators.generateClient.copy(
       secret = clientSecret,
@@ -68,9 +63,7 @@ class DefaultClientAuthenticatorSpec extends AsyncUnitSpec {
   }
 
   it should "fail to authenticate missing clients" in {
-    val store = ClientStore(
-      MemoryBackend[Client.Id, Client](name = s"client-store-${java.util.UUID.randomUUID()}")
-    )
+    val store = MockClientStore()
 
     val expectedClient = Generators.generateClient.copy(
       secret = clientSecret,
@@ -92,9 +85,7 @@ class DefaultClientAuthenticatorSpec extends AsyncUnitSpec {
   }
 
   it should "fail to authenticate clients with invalid IDs" in {
-    val store = ClientStore(
-      MemoryBackend[Client.Id, Client](name = s"client-store-${java.util.UUID.randomUUID()}")
-    )
+    val store = MockClientStore()
 
     val clientId = "some-client"
 
@@ -112,12 +103,10 @@ class DefaultClientAuthenticatorSpec extends AsyncUnitSpec {
       }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    guardianBehavior = Behaviors.ignore,
     "DefaultClientAuthenticatorSpec"
   )
-
-  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   private implicit val secretConfig: Secret.ClientConfig = Secret.ClientConfig(
     algorithm = "PBKDF2WithHmacSHA512",

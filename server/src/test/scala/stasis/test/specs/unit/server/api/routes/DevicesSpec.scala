@@ -1,37 +1,50 @@
 package stasis.test.specs.unit.server.api.routes
 
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
+import org.apache.pekko.http.scaladsl.model.ContentTypes
+import org.apache.pekko.http.scaladsl.model.RequestEntity
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.model.headers.`Content-Type`
-import org.apache.pekko.http.scaladsl.model.{ContentTypes, RequestEntity, StatusCodes}
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.apache.pekko.util.ByteString
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
-import stasis.core.telemetry.TelemetryContext
-import stasis.server.api.routes.{Devices, RoutesContext}
-import stasis.server.model.devices.{DeviceKeyStore, DeviceStore}
+import stasis.layers.telemetry.TelemetryContext
+import stasis.server.api.routes.Devices
+import stasis.server.api.routes.RoutesContext
+import stasis.server.model.devices.DeviceKeyStore
+import stasis.server.model.devices.DeviceStore
 import stasis.server.model.nodes.ServerNodeStore
 import stasis.server.model.users.UserStore
-import stasis.server.security.{CurrentUser, ResourceProvider}
+import stasis.server.security.CurrentUser
+import stasis.server.security.ResourceProvider
 import stasis.shared.api.requests._
-import stasis.shared.api.responses.{CreatedDevice, DeletedDevice, DeletedDeviceKey}
-import stasis.shared.model.devices.{Device, DeviceKey}
+import stasis.shared.api.responses.CreatedDevice
+import stasis.shared.api.responses.DeletedDevice
+import stasis.shared.api.responses.DeletedDeviceKey
+import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.DeviceKey
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.mocks.MockNodeStore
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-import stasis.test.specs.unit.server.model.mocks.{MockDeviceKeyStore, MockDeviceStore, MockUserStore}
+import stasis.test.specs.unit.server.model.mocks.MockDeviceKeyStore
+import stasis.test.specs.unit.server.model.mocks.MockDeviceStore
+import stasis.test.specs.unit.server.model.mocks.MockUserStore
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
-
-import scala.concurrent.Future
-import scala.concurrent.duration._
 
 class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.shared.api.Formats._
 
   "Devices routes (full permissions)" should "respond with all devices" in withRetry {
@@ -549,8 +562,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "DevicesSpec"
   )
 

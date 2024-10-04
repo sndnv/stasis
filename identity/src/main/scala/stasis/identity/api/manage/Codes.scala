@@ -4,13 +4,17 @@ import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server._
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.core.api.directives.EntityDiscardingDirectives
-import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+import stasis.identity.model.codes.AuthorizationCode
 import stasis.identity.model.owners.ResourceOwner
+import stasis.identity.persistence.codes.AuthorizationCodeStore
+import stasis.layers.api.directives.EntityDiscardingDirectives
 
 class Codes(store: AuthorizationCodeStore) extends EntityDiscardingDirectives {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.identity.api.Formats._
 
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
@@ -19,9 +23,9 @@ class Codes(store: AuthorizationCodeStore) extends EntityDiscardingDirectives {
     concat(
       pathEndOrSingleSlash {
         get {
-          onSuccess(store.codes) { codes =>
+          onSuccess(store.all) { codes =>
             log.debug("User [{}] successfully retrieved [{}] authorization codes", user, codes.size)
-            discardEntity & complete(codes.values)
+            discardEntity & complete(codes)
           }
         }
       },

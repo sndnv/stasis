@@ -1,20 +1,29 @@
 package stasis.client.ops.backup.stages.internal
 
-import org.apache.pekko.stream.scaladsl.{FileIO, Flow, Keep, Source, SubFlow}
-import org.apache.pekko.stream.{IOResult, Materializer}
+import java.nio.file.Path
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicInteger
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
+import scala.util.control.NonFatal
+
+import org.apache.pekko.stream.scaladsl.FileIO
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.stream.scaladsl.Keep
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.stream.scaladsl.SubFlow
+import org.apache.pekko.stream.IOResult
+import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
-import org.apache.pekko.{Done, NotUsed}
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+
 import stasis.client.encryption.secrets.DeviceFileSecret
 import stasis.client.ops.Metrics
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.exceptions.EntityDiscardFailure
-
-import java.nio.file.Path
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.AtomicInteger
-import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters._
-import scala.util.control.NonFatal
 
 class StagedSubFlow(
   subFlow: SubFlow[

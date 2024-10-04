@@ -1,19 +1,20 @@
 package stasis.test.specs.unit.core.persistence.backends.memory
 
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.scalatest.concurrent.Eventually
-import stasis.core.persistence.backends.memory.EventLogMemoryBackend
-import stasis.core.telemetry.TelemetryContext
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.persistence.backends.EventLogBackendBehaviour
-
 import scala.collection.immutable.Queue
 import scala.concurrent.duration._
 
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.scalatest.concurrent.Eventually
+
+import stasis.core.persistence.backends.memory.EventLogMemoryBackend
+import stasis.layers.telemetry.TelemetryContext
+import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.persistence.backends.EventLogBackendBehaviour
+
 class EventLogMemoryBackendSpec extends AsyncUnitSpec with EventLogBackendBehaviour with Eventually {
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    guardianBehavior = Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    guardianBehavior = Behaviors.ignore,
     name = "EventLogMemoryBackendSpec"
   )
 

@@ -1,14 +1,17 @@
 package stasis.client.ops.recovery.stages
 
+import scala.concurrent.ExecutionContext
+
 import org.apache.pekko.stream.scaladsl.Flow
-import org.apache.pekko.{Done, NotUsed}
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+
 import stasis.client.analysis.Metadata
 import stasis.client.model.TargetEntity
-import stasis.client.ops.{Metrics, ParallelismConfig}
 import stasis.client.ops.recovery.Providers
+import stasis.client.ops.Metrics
+import stasis.client.ops.ParallelismConfig
 import stasis.shared.ops.Operation
-
-import scala.concurrent.ExecutionContext
 
 trait MetadataApplication {
   protected def parallelism: ParallelismConfig

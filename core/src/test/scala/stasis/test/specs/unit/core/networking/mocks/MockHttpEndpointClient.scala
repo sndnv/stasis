@@ -1,26 +1,35 @@
 package stasis.test.specs.unit.core.networking.mocks
 
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
-import org.apache.pekko.util.{ByteString, Timeout}
-import org.apache.pekko.{Done, NotUsed}
-import stasis.core.networking.http.{HttpEndpointAddress, HttpEndpointClient}
-import stasis.core.packaging.{Crate, Manifest}
-import stasis.core.persistence.backends.memory.MemoryBackend
-import stasis.core.telemetry.TelemetryContext
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.stream.scaladsl.Keep
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.util.Timeout
 
 import stasis.core.api.PoolClient
+import stasis.core.networking.http.HttpEndpointAddress
+import stasis.core.networking.http.HttpEndpointClient
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
+import stasis.layers.persistence.memory.MemoryStore
+import stasis.layers.telemetry.TelemetryContext
 
 class MockHttpEndpointClient(
   pushFailureAddresses: Map[HttpEndpointAddress, Exception] = Map.empty,
   pullFailureAddresses: Map[HttpEndpointAddress, Exception] = Map.empty,
   discardFailureAddresses: Map[HttpEndpointAddress, Exception] = Map.empty,
   pullEmptyAddresses: Seq[HttpEndpointAddress] = Seq.empty
-)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext)
+)(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext)
     extends HttpEndpointClient(
       (_: HttpEndpointAddress) => Future.failed(new RuntimeException("No credentials available")),
       context = None,
@@ -33,7 +42,7 @@ class MockHttpEndpointClient(
   private implicit val timeout: Timeout = 3.seconds
   private implicit val ec: ExecutionContext = system.executionContext
 
-  private val store = MemoryBackend[StoreKey, StoreValue](name = s"mock-endpoint-store-${java.util.UUID.randomUUID()}")
+  private val store = MemoryStore[StoreKey, StoreValue](name = s"mock-endpoint-store-${java.util.UUID.randomUUID()}")
 
   private val stats: Map[Statistic, AtomicInteger] = Map(
     Statistic.PushCompleted -> new AtomicInteger(0),

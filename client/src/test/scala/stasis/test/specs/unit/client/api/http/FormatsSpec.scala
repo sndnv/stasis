@@ -1,22 +1,33 @@
 package stasis.test.specs.unit.client.api.http
 
-import java.nio.file.{Path, Paths}
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+
 import play.api.libs.json._
+
 import stasis.client.api.http.Formats._
 import stasis.client.collection.rules.Rule
-import stasis.client.model.{EntityMetadata, FilesystemMetadata, SourceEntity, TargetEntity}
+import stasis.client.model.EntityMetadata
+import stasis.client.model.FilesystemMetadata
+import stasis.client.model.SourceEntity
+import stasis.client.model.TargetEntity
 import stasis.client.ops.exceptions.ScheduleRetrievalFailure
 import stasis.client.ops.scheduling.OperationScheduleAssignment
-import stasis.client.tracking.state.{BackupState, RecoveryState}
-import stasis.client.tracking.state.BackupState.{PendingSourceEntity, ProcessedSourceEntity}
-import stasis.client.tracking.state.RecoveryState.{PendingTargetEntity, ProcessedTargetEntity}
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.client.tracking.state.BackupState
+import stasis.client.tracking.state.BackupState.PendingSourceEntity
+import stasis.client.tracking.state.BackupState.ProcessedSourceEntity
+import stasis.client.tracking.state.RecoveryState
+import stasis.client.tracking.state.RecoveryState.PendingTargetEntity
+import stasis.client.tracking.state.RecoveryState.ProcessedTargetEntity
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.UnitSpec
-import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
+import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.shared.model.Generators
 
 class FormatsSpec extends UnitSpec with ResourceHelpers {

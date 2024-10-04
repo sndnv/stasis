@@ -1,20 +1,29 @@
 package stasis.test.specs.unit.core.persistence.mocks
 
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
-import org.apache.pekko.util.{ByteString, Timeout}
-import org.apache.pekko.{Done, NotUsed}
-import stasis.core.packaging.{Crate, Manifest}
+import java.util.concurrent.atomic.AtomicInteger
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.stream.scaladsl.Keep
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.util.Timeout
+
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
 import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.backends.StreamingBackend
-import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.exceptions.PersistenceFailure
-import stasis.core.telemetry.TelemetryContext
-
-import java.util.concurrent.atomic.AtomicInteger
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import stasis.layers.persistence.memory.MemoryStore
+import stasis.layers.telemetry.TelemetryContext
 
 class MockCrateStore(
   maxStorageSize: Option[Long] = None,
@@ -23,7 +32,7 @@ class MockCrateStore(
   retrieveDisabled: Boolean = false,
   retrieveEmpty: Boolean = false,
   discardDisabled: Boolean = false
-)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext)
+)(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext)
     extends CrateStore(backend = null /* not needed here; backend is overridden in this class */ ) {
 
   import MockCrateStore._
@@ -34,7 +43,7 @@ class MockCrateStore(
   private implicit val timeout: Timeout = 3.seconds
   private implicit val ec: ExecutionContext = system.executionContext
 
-  private val store = MemoryBackend[StoreKey, StoreValue](name = s"mock-crate-store-${java.util.UUID.randomUUID()}")
+  private val store = MemoryStore[StoreKey, StoreValue](name = s"mock-crate-store-${java.util.UUID.randomUUID()}")
 
   private val stats: Map[Statistic, AtomicInteger] = Map(
     Statistic.PersistCompleted -> new AtomicInteger(0),

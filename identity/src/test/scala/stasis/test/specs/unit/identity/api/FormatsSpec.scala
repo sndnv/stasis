@@ -3,18 +3,27 @@ package stasis.test.specs.unit.identity.api
 import java.time.Instant
 
 import play.api.libs.json._
+
 import stasis.identity.api.Formats._
+import stasis.identity.model.ChallengeMethod
+import stasis.identity.model.GrantType
+import stasis.identity.model.ResponseType
+import stasis.identity.model.Seconds
 import stasis.identity.model.clients.Client
 import stasis.identity.model.codes.StoredAuthorizationCode
-import stasis.identity.model.errors.{AuthorizationError, TokenError}
-import stasis.identity.model.tokens.{AccessToken, RefreshToken, StoredRefreshToken, TokenType}
-import stasis.identity.model.{ChallengeMethod, GrantType, ResponseType, Seconds}
-import stasis.test.specs.unit.UnitSpec
+import stasis.identity.model.errors.AuthorizationError
+import stasis.identity.model.errors.TokenError
+import stasis.identity.model.tokens.AccessToken
+import stasis.identity.model.tokens.RefreshToken
+import stasis.identity.model.tokens.StoredRefreshToken
+import stasis.identity.model.tokens.TokenType
+import stasis.layers
+import stasis.layers.UnitSpec
 import stasis.test.specs.unit.identity.model.Generators
 
 class FormatsSpec extends UnitSpec {
   "Formats" should "convert authorization errors to JSON" in withRetry {
-    val error = AuthorizationError.InvalidScope(withState = stasis.test.Generators.generateString(withSize = 16))
+    val error = AuthorizationError.InvalidScope(withState = layers.Generators.generateString(withSize = 16))
     val json = authorizationErrorWrites.writes(error).toString
     val parsedFields = Json.parse(json).as[JsObject].fields
 
@@ -84,7 +93,7 @@ class FormatsSpec extends UnitSpec {
   }
 
   they should "convert access tokens to/from JSON" in withRetry {
-    val token = AccessToken(value = stasis.test.Generators.generateString(withSize = 16))
+    val token = AccessToken(value = layers.Generators.generateString(withSize = 16))
     val json = s"""\"${token.value}\""""
 
     accessTokenFormat.writes(token).toString should be(json)
@@ -92,7 +101,7 @@ class FormatsSpec extends UnitSpec {
   }
 
   they should "convert refresh tokens to/from JSON" in withRetry {
-    val token = RefreshToken(value = stasis.test.Generators.generateString(withSize = 16))
+    val token = RefreshToken(value = layers.Generators.generateString(withSize = 16))
     val json = s"""\"${token.value}\""""
 
     refreshTokenFormat.writes(token).toString should be(json)
@@ -117,7 +126,7 @@ class FormatsSpec extends UnitSpec {
 
   they should "convert code challenges to/from JSON" in withRetry {
     val codeChallenge = StoredAuthorizationCode.Challenge(
-      value = stasis.test.Generators.generateString(withSize = 16),
+      value = layers.Generators.generateString(withSize = 16),
       method = Some(ChallengeMethod.S256)
     )
     val json = codeChallengeFormat.writes(codeChallenge).toString
@@ -133,6 +142,8 @@ class FormatsSpec extends UnitSpec {
     val parsedFields = Json.parse(json).as[JsObject].fields
 
     parsedFields should contain("id" -> Json.toJson(api.id))
+    parsedFields should contain("created" -> Json.toJson(api.created))
+    parsedFields should contain("updated" -> Json.toJson(api.updated))
 
     apiFormat.reads(Json.parse(json).as[JsObject]).asOpt should be(Some(api))
   }
@@ -147,6 +158,8 @@ class FormatsSpec extends UnitSpec {
     parsedFields should contain("redirect_uri" -> Json.toJson(client.redirectUri))
     parsedFields should contain("token_expiration" -> Json.toJson(client.tokenExpiration.value))
     parsedFields should contain("active" -> Json.toJson(client.active))
+    parsedFields should contain("created" -> Json.toJson(client.created))
+    parsedFields should contain("updated" -> Json.toJson(client.updated))
     parsedKeys should not contain "secret"
     parsedKeys should not contain "salt"
   }
@@ -156,13 +169,14 @@ class FormatsSpec extends UnitSpec {
       code = Generators.generateAuthorizationCode,
       client = Client.generateId(),
       owner = Generators.generateResourceOwner,
-      scope = Some(stasis.test.Generators.generateString(withSize = 16)),
+      scope = Some(layers.Generators.generateString(withSize = 16)),
       challenge = Some(
         StoredAuthorizationCode.Challenge(
-          value = stasis.test.Generators.generateString(withSize = 16),
+          value = layers.Generators.generateString(withSize = 16),
           method = Some(ChallengeMethod.S256)
         )
-      )
+      ),
+      created = Instant.now()
     )
     val json = storedAuthorizationCodeWrites.writes(code).toString
     val parsedFields = Json.parse(json).as[JsObject].fields
@@ -171,6 +185,7 @@ class FormatsSpec extends UnitSpec {
     parsedFields should contain("code" -> Json.toJson(code.code.value))
     parsedFields should contain("client" -> Json.toJson(code.client.toString))
     parsedFields should contain("scope" -> Json.toJson(code.scope.getOrElse("invalid-scope")))
+    parsedFields should contain("created" -> Json.toJson(code.created))
     parsedKeys should contain("owner")
     parsedKeys should contain("challenge")
   }
@@ -184,6 +199,8 @@ class FormatsSpec extends UnitSpec {
     parsedFields should contain("username" -> Json.toJson(owner.username))
     parsedFields should contain("allowed_scopes" -> Json.toJson(owner.allowedScopes.map(Json.toJson(_: String))))
     parsedFields should contain("active" -> Json.toJson(owner.active))
+    parsedFields should contain("created" -> Json.toJson(owner.created))
+    parsedFields should contain("updated" -> Json.toJson(owner.updated))
     parsedKeys should not contain "secret"
     parsedKeys should not contain "salt"
   }
@@ -192,9 +209,10 @@ class FormatsSpec extends UnitSpec {
     val token = StoredRefreshToken(
       token = Generators.generateRefreshToken,
       client = Client.generateId(),
-      owner = Generators.generateResourceOwner,
-      scope = Some(stasis.test.Generators.generateString(withSize = 16)),
-      expiration = Instant.now()
+      owner = Generators.generateResourceOwner.username,
+      scope = Some(layers.Generators.generateString(withSize = 16)),
+      expiration = Instant.now(),
+      created = Instant.now()
     )
     val json = storedRefreshTokenWrites.writes(token).toString
     val parsedFields = Json.parse(json).as[JsObject].fields
@@ -203,6 +221,7 @@ class FormatsSpec extends UnitSpec {
     parsedFields should contain("token" -> Json.toJson(token.token.value))
     parsedFields should contain("client" -> Json.toJson(token.client.toString))
     parsedFields should contain("scope" -> Json.toJson(token.scope.getOrElse("invalid-scope")))
+    parsedFields should contain("created" -> Json.toJson(token.created))
     parsedKeys should contain("owner")
     parsedKeys should contain("expiration")
   }

@@ -2,14 +2,14 @@ package stasis.core.persistence
 
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.metrics.Meter
+
 import stasis.core.packaging.Manifest
-import stasis.core.telemetry.metrics.MeterExtensions._
-import stasis.core.telemetry.metrics.MetricsProvider
+import stasis.layers.telemetry.metrics.MeterExtensions._
+import stasis.layers.telemetry.metrics.MetricsProvider
 
 object Metrics {
   def noop(): Set[MetricsProvider] = Set(
     StreamingBackend.NoOp,
-    KeyValueBackend.NoOp,
     EventLogBackend.NoOp,
     ManifestStore.NoOp,
     ReservationStore.NoOp
@@ -17,7 +17,6 @@ object Metrics {
 
   def default(meter: Meter, namespace: String): Set[MetricsProvider] = Set(
     new StreamingBackend.Default(meter, namespace),
-    new KeyValueBackend.Default(meter, namespace),
     new EventLogBackend.Default(meter, namespace),
     new ManifestStore.Default(meter, namespace),
     new ReservationStore.Default(meter, namespace)
@@ -69,54 +68,6 @@ object Metrics {
 
       override def recordDiscard(backend: String): Unit =
         discardOperations.inc(Labels.Backend -> backend)
-    }
-  }
-
-  trait KeyValueBackend extends MetricsProvider {
-    def recordInit(backend: String): Unit
-    def recordDrop(backend: String): Unit
-    def recordPut(backend: String): Unit
-    def recordGet(backend: String): Unit
-    def recordGet(backend: String, entries: Int): Unit
-    def recordDelete(backend: String): Unit
-  }
-
-  object KeyValueBackend {
-    object NoOp extends KeyValueBackend {
-      override def recordInit(backend: String): Unit = ()
-      override def recordDrop(backend: String): Unit = ()
-      override def recordPut(backend: String): Unit = ()
-      override def recordGet(backend: String): Unit = ()
-      override def recordGet(backend: String, entries: Int): Unit = ()
-      override def recordDelete(backend: String): Unit = ()
-    }
-
-    class Default(meter: Meter, namespace: String) extends KeyValueBackend {
-      private val subsystem: String = "persistence_kv"
-
-      private val initOperations = meter.counter(name = s"${namespace}_${subsystem}_init_operations")
-      private val dropOperations = meter.counter(name = s"${namespace}_${subsystem}_drop_operations")
-      private val putOperations = meter.counter(name = s"${namespace}_${subsystem}_put_operations")
-      private val getOperations = meter.counter(name = s"${namespace}_${subsystem}_get_operations")
-      private val deleteOperations = meter.counter(name = s"${namespace}_${subsystem}_delete_operations")
-
-      override def recordInit(backend: String): Unit =
-        initOperations.inc(Labels.Backend -> backend)
-
-      override def recordDrop(backend: String): Unit =
-        dropOperations.inc(Labels.Backend -> backend)
-
-      override def recordPut(backend: String): Unit =
-        putOperations.inc(Labels.Backend -> backend)
-
-      override def recordGet(backend: String): Unit =
-        getOperations.inc(Labels.Backend -> backend)
-
-      override def recordGet(backend: String, entries: Int): Unit =
-        getOperations.add(value = entries.toLong, Labels.Backend -> backend)
-
-      override def recordDelete(backend: String): Unit =
-        deleteOperations.inc(Labels.Backend -> backend)
     }
   }
 

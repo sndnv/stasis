@@ -1,30 +1,39 @@
 package stasis.core.networking.grpc
 
 import java.util.UUID
-import org.apache.pekko.actor.typed.scaladsl.LoggerOps
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
-import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
-import org.apache.pekko.util.ByteString
-import org.apache.pekko.{Done, NotUsed}
-import org.slf4j.LoggerFactory
-import stasis.core.networking.EndpointClient
-import stasis.core.networking.exceptions.{CredentialsFailure, EndpointFailure}
-import stasis.core.networking.grpc.internal.Client
-import stasis.core.packaging.{Crate, Manifest}
-import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
-import stasis.core.security.NodeCredentialsProvider
-import stasis.core.security.tls.EndpointContext
-import stasis.core.streaming.Operators.ExtendedByteStringSource
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.control.NonFatal
+
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
+import org.apache.pekko.stream.scaladsl.Keep
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
+import org.slf4j.LoggerFactory
+
+import stasis.core.networking.EndpointClient
+import stasis.core.networking.exceptions.CredentialsFailure
+import stasis.core.networking.exceptions.EndpointFailure
+import stasis.core.networking.grpc.internal.Client
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
+import stasis.core.persistence.CrateStorageRequest
+import stasis.core.persistence.CrateStorageReservation
+import stasis.core.security.NodeCredentialsProvider
+import stasis.layers.security.tls.EndpointContext
+import stasis.layers.streaming.Operators.ExtendedByteStringSource
 
 class GrpcEndpointClient(
   override protected val credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials],
   context: Option[EndpointContext],
   maxChunkSize: Int
-)(implicit system: ActorSystem[SpawnProtocol.Command])
+)(implicit system: ActorSystem[Nothing])
     extends EndpointClient[GrpcEndpointAddress, HttpCredentials] {
 
   import internal.Implicits._
@@ -261,7 +270,7 @@ object GrpcEndpointClient {
     credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials],
     context: Option[EndpointContext],
     maxChunkSize: Int
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): GrpcEndpointClient =
+  )(implicit system: ActorSystem[Nothing]): GrpcEndpointClient =
     new GrpcEndpointClient(
       credentials = credentials,
       context = context,
@@ -271,7 +280,7 @@ object GrpcEndpointClient {
   def apply(
     credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials],
     maxChunkSize: Int
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): GrpcEndpointClient =
+  )(implicit system: ActorSystem[Nothing]): GrpcEndpointClient =
     GrpcEndpointClient(
       credentials = credentials,
       context = None,
@@ -282,7 +291,7 @@ object GrpcEndpointClient {
     credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials],
     context: EndpointContext,
     maxChunkSize: Int
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): GrpcEndpointClient =
+  )(implicit system: ActorSystem[Nothing]): GrpcEndpointClient =
     GrpcEndpointClient(
       credentials = credentials,
       context = Some(context),

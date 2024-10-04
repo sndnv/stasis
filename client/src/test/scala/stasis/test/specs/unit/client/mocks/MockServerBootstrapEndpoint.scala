@@ -2,24 +2,27 @@ package stasis.test.specs.unit.client.mocks
 
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.concurrent.Future
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.core.security.tls.EndpointContext
-import stasis.shared.model.devices.DeviceBootstrapParameters
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
-import scala.concurrent.Future
+import stasis.layers.security.tls.EndpointContext
+import stasis.shared.model.devices.DeviceBootstrapParameters
 
 class MockServerBootstrapEndpoint(
   expectedCode: String,
   providedParams: DeviceBootstrapParameters
-)(implicit system: ActorSystem[SpawnProtocol.Command]) {
+)(implicit system: ActorSystem[Nothing]) {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.shared.api.Formats._
 
   private val bootstrapExecuted: AtomicInteger = new AtomicInteger(0)

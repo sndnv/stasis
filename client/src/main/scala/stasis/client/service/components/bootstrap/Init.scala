@@ -2,10 +2,10 @@ package stasis.client.service.components.bootstrap
 
 import java.io.Console
 
+import scala.concurrent.Future
+
 import stasis.client.service.ApplicationArguments
 import stasis.client.service.components.bootstrap
-
-import scala.concurrent.Future
 
 trait Init {
   def arguments(): Future[ApplicationArguments.Mode.Bootstrap]

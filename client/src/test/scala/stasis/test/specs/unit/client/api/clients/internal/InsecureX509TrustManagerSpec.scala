@@ -8,6 +8,7 @@ import scala.util.Failure
 import scala.util.Success
 
 import org.mockito.scalatest.MockitoSugar
+
 import stasis.client.api.clients.internal.InsecureX509TrustManager
 import stasis.client.service.components.bootstrap.internal.SelfSignedCertificateGenerator
 import stasis.test.specs.unit.UnitSpec

@@ -1,14 +1,16 @@
 package stasis.server.model.nodes
 
+import scala.concurrent.Future
+
 import org.apache.pekko.Done
+
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
 import stasis.server.model.nodes.ServerNodeStore.Manage
-import stasis.server.security.{CurrentUser, Resource}
+import stasis.server.security.CurrentUser
+import stasis.server.security.Resource
 import stasis.shared.model.devices.Device
 import stasis.shared.security.Permission
-
-import scala.concurrent.Future
 
 trait ServerNodeStore { store =>
   protected def create(node: Node): Future[Done]

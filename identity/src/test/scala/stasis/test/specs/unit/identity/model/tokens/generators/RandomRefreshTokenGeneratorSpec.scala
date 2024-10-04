@@ -1,9 +1,9 @@
 package stasis.test.specs.unit.identity.model.tokens.generators
 
 import stasis.identity.model.tokens.generators.RandomRefreshTokenGenerator
-import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.layers.UnitSpec
 
-class RandomRefreshTokenGeneratorSpec extends AsyncUnitSpec {
+class RandomRefreshTokenGeneratorSpec extends UnitSpec {
   "A RandomRefreshTokenGenerator" should "generate random refresh tokens" in {
     val tokenSize = 32
     val generator = new RandomRefreshTokenGenerator(tokenSize)

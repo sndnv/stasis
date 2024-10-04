@@ -1,19 +1,21 @@
 package stasis.test.specs.unit.core.security
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.control.NonFatal
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+
 import stasis.core.networking.http.HttpEndpointAddress
-import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
 import stasis.core.security.JwtNodeCredentialsProvider
-import stasis.core.security.exceptions.ProviderFailure
+import stasis.layers.persistence.memory.MemoryStore
+import stasis.layers.security.exceptions.ProviderFailure
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
 
 class JwtNodeCredentialsProviderSpec extends AsyncUnitSpec {
   "A JwtNodeCredentialsProvider" should "provide node credentials" in {
@@ -60,7 +62,7 @@ class JwtNodeCredentialsProviderSpec extends AsyncUnitSpec {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val storeInit = NodeStore(
-      backend = MemoryBackend[Node.Id, Node](name = s"node-store-${java.util.UUID.randomUUID()}"),
+      backend = MemoryStore[Node.Id, Node](name = s"node-store-${java.util.UUID.randomUUID()}"),
       cachingEnabled = false
     )
 
@@ -72,8 +74,8 @@ class JwtNodeCredentialsProviderSpec extends AsyncUnitSpec {
     (provider, storeInit.store)
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "JwtNodeCredentialsProviderSpec"
   )
 

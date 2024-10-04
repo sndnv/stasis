@@ -1,9 +1,11 @@
 package stasis.test.specs.unit.client.ops.recovery.stages.internal
 
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import org.scalatest.concurrent.Eventually
+
 import stasis.client.ops.recovery.stages.internal.DecompressedByteStringSource
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks._

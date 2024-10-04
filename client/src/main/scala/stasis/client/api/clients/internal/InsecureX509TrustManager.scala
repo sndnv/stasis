@@ -3,8 +3,11 @@ package stasis.client.api.clients.internal
 import java.security.KeyStore
 import java.security.cert.X509Certificate
 
-import javax.net.ssl.{TrustManagerFactory, X509TrustManager}
-import org.slf4j.{Logger, LoggerFactory}
+import javax.net.ssl.TrustManagerFactory
+import javax.net.ssl.X509TrustManager
+
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class InsecureX509TrustManager(underlying: X509TrustManager) extends X509TrustManager {
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)

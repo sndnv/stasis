@@ -1,20 +1,25 @@
 package stasis.test.specs.unit.identity.api.oauth.directives
 
+import scala.concurrent.duration._
+
 import org.apache.pekko.http.scaladsl.model
-import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
-import org.apache.pekko.http.scaladsl.model.{StatusCodes, Uri}
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.apache.pekko.http.scaladsl.server.Directives
 import org.slf4j.Logger
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.JsObject
+import play.api.libs.json.Json
+
 import stasis.identity.api.oauth.directives.ResourceOwnerAuthentication
-import stasis.identity.authentication.oauth.{DefaultResourceOwnerAuthenticator, ResourceOwnerAuthenticator}
+import stasis.identity.authentication.oauth.DefaultResourceOwnerAuthenticator
+import stasis.identity.authentication.oauth.ResourceOwnerAuthenticator
 import stasis.identity.model.errors.AuthorizationError
-import stasis.identity.model.owners.ResourceOwnerStore
 import stasis.identity.model.secrets.Secret
+import stasis.identity.persistence.owners.ResourceOwnerStore
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
-
-import scala.concurrent.duration._
 
 class ResourceOwnerAuthenticationSpec extends RouteTest {
   "A ResourceOwnerAuthentication directive" should "authenticate resource owners with provided credentials" in withRetry {

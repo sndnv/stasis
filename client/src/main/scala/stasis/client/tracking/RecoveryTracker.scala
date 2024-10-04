@@ -1,13 +1,15 @@
 package stasis.client.tracking
 
+import java.nio.file.Path
+
+import scala.concurrent.Future
+
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
+
 import stasis.client.model.TargetEntity
 import stasis.client.tracking.state.RecoveryState
 import stasis.shared.ops.Operation
-
-import java.nio.file.Path
-import scala.concurrent.Future
 
 trait RecoveryTracker extends RecoveryTracker.View with RecoveryTracker.Manage {
   def entityExamined(entity: Path, metadataChanged: Boolean, contentChanged: Boolean)(implicit operation: Operation.Id): Unit

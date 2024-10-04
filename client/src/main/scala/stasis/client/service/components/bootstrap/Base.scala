@@ -1,20 +1,26 @@
 package stasis.client.service.components.bootstrap
 
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import org.slf4j.Logger
-import stasis.client.service.ApplicationArguments.Mode
-import stasis.client.service.components.internal.FutureOps
-import stasis.client.service.{ApplicationArguments, ApplicationDirectory, ApplicationTemplates}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.util.Timeout
+import org.slf4j.Logger
+
 import stasis.client.ops
-import stasis.core.{api, persistence, security}
-import stasis.core.telemetry.{DefaultTelemetryContext, TelemetryContext}
+import stasis.client.service.ApplicationArguments
+import stasis.client.service.ApplicationArguments.Mode
+import stasis.client.service.ApplicationDirectory
+import stasis.client.service.ApplicationTemplates
+import stasis.client.service.components.internal.FutureOps
+import stasis.core
+import stasis.layers
+import stasis.layers.telemetry.DefaultTelemetryContext
+import stasis.layers.telemetry.TelemetryContext
 
 trait Base extends FutureOps {
-  implicit def system: ActorSystem[SpawnProtocol.Command]
+  implicit def system: ActorSystem[Nothing]
   implicit def ec: ExecutionContext
   implicit def log: Logger
   implicit def telemetry: TelemetryContext
@@ -32,7 +38,7 @@ object Base {
     modeArguments: ApplicationArguments.Mode.Bootstrap,
     applicationDirectory: ApplicationDirectory
   )(implicit
-    typedSystem: ActorSystem[SpawnProtocol.Command],
+    typedSystem: ActorSystem[Nothing],
     logger: Logger
   ): Future[Base] =
     Future.fromTry(
@@ -40,15 +46,16 @@ object Base {
         applicationTemplates <- ApplicationTemplates()
       } yield {
         new Base {
-          override implicit val system: ActorSystem[SpawnProtocol.Command] = typedSystem
+          override implicit val system: ActorSystem[Nothing] = typedSystem
           override implicit val ec: ExecutionContext = typedSystem.executionContext
           override implicit val log: Logger = logger
 
           override implicit val telemetry: TelemetryContext = DefaultTelemetryContext(
             metricsProviders = Set(
-              security.Metrics.noop(),
-              api.Metrics.noop(),
-              persistence.Metrics.noop(),
+              layers.security.Metrics.noop(),
+              layers.api.Metrics.noop(),
+              layers.persistence.Metrics.noop(),
+              core.persistence.Metrics.noop(),
               ops.Metrics.noop()
             ).flatten
           )

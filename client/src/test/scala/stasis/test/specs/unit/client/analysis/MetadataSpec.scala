@@ -1,19 +1,26 @@
 package stasis.test.specs.unit.client.analysis
 
+import java.nio.file.Files
+import java.nio.file.LinkOption
+import java.nio.file.Paths
 import java.nio.file.attribute.PosixFileAttributes
-import java.nio.file.{Files, LinkOption, Paths}
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import org.apache.pekko.actor.ActorSystem
-import stasis.client.analysis.{Checksum, Metadata}
-import stasis.client.model.{EntityMetadata, TargetEntity}
-import stasis.core.packaging.Crate
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.mocks.MockCompression
-import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
+
+import org.apache.pekko.actor.ActorSystem
+
+import stasis.client.analysis.Checksum
+import stasis.client.analysis.Metadata
+import stasis.client.model.EntityMetadata
+import stasis.client.model.TargetEntity
+import stasis.core.packaging.Crate
+import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers
+import stasis.test.specs.unit.client.mocks.MockCompression
 
 class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
   "A Metadata implementation" should "extract base metadata from a file" in {

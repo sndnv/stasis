@@ -1,39 +1,48 @@
 package stasis.test.specs.unit.client.ops.recovery
 
+import java.nio.file.Paths
+import java.time.Instant
+
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.control.NonFatal
+import scala.util.matching.Regex
+
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.util.ByteString
-import org.apache.pekko.{Done, NotUsed}
+import org.scalatest.Assertion
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{Assertion, BeforeAndAfterAll}
+
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.collection.RecoveryCollector
-import stasis.client.encryption.secrets.{DeviceMetadataSecret, DeviceSecret}
-import stasis.client.model.{DatasetMetadata, FilesystemMetadata}
+import stasis.client.encryption.secrets.DeviceMetadataSecret
+import stasis.client.encryption.secrets.DeviceSecret
+import stasis.client.model.DatasetMetadata
+import stasis.client.model.FilesystemMetadata
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.exceptions.OperationStopped
+import stasis.client.ops.recovery.Providers
+import stasis.client.ops.recovery.Recovery
 import stasis.client.ops.recovery.Recovery.PathQuery
-import stasis.client.ops.recovery.{Providers, Recovery}
 import stasis.client.staging.DefaultFileStaging
 import stasis.core.routing.Node
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
 import stasis.shared.ops.Operation
 import stasis.shared.secrets.SecretsConfig
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.client.mocks._
-import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 import stasis.test.specs.unit.core.FileSystemHelpers.FileSystemSetup
-
-import java.nio.file.Paths
-import java.time.Instant
-import scala.concurrent.Future
-import scala.concurrent.duration._
-import scala.util.control.NonFatal
-import scala.util.matching.Regex
 
 class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually with BeforeAndAfterAll {
   "A Recovery operation" should "process recovery of files" in {
@@ -615,8 +624,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "RecoverySpec"
   )
 

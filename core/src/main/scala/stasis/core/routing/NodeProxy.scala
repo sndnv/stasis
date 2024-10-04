@@ -1,26 +1,32 @@
 package stasis.core.routing
 
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
-import org.apache.pekko.util.{ByteString, Timeout}
-import org.apache.pekko.{Done, NotUsed}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.util.Timeout
 import org.slf4j.LoggerFactory
+
 import stasis.core.networking.EndpointClient
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
-import stasis.core.packaging.{Crate, Manifest}
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
 import stasis.core.persistence.CrateStorageRequest
-import stasis.core.persistence.backends.memory.MemoryBackend
 import stasis.core.persistence.crates.CrateStore
-import stasis.core.telemetry.TelemetryContext
-
-import scala.concurrent.{ExecutionContext, Future}
+import stasis.layers.persistence.memory.MemoryStore
+import stasis.layers.telemetry.TelemetryContext
 
 class NodeProxy(
   val httpClient: EndpointClient[HttpEndpointAddress, _],
   val grpcClient: EndpointClient[GrpcEndpointAddress, _]
 )(implicit
-  system: ActorSystem[SpawnProtocol.Command],
+  system: ActorSystem[Nothing],
   telemetry: TelemetryContext,
   timeout: Timeout
 ) {
@@ -28,9 +34,8 @@ class NodeProxy(
 
   private val log = LoggerFactory.getLogger(this.getClass.getName)
 
-  private val cache: MemoryBackend[Node.Id, CrateStore] = MemoryBackend[Node.Id, CrateStore](
-    name = s"crate-store-cache-${java.util.UUID.randomUUID().toString}"
-  )
+  private val cache: MemoryStore[Node.Id, CrateStore] =
+    MemoryStore[Node.Id, CrateStore](name = "crate-store-cache")
 
   def push(node: Node, manifest: Manifest): Future[Sink[ByteString, Future[Done]]] =
     node match {
@@ -98,7 +103,7 @@ object NodeProxy {
   def apply(
     httpClient: EndpointClient[HttpEndpointAddress, _],
     grpcClient: EndpointClient[GrpcEndpointAddress, _]
-  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, timeout: Timeout): NodeProxy =
+  )(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext, timeout: Timeout): NodeProxy =
     new NodeProxy(
       httpClient = httpClient,
       grpcClient = grpcClient

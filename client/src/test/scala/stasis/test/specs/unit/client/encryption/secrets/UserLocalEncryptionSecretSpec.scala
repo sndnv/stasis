@@ -1,7 +1,9 @@
 package stasis.test.specs.unit.client.encryption.secrets
 
 import org.apache.pekko.actor.ActorSystem
-import stasis.client.encryption.secrets.{DeviceSecret, UserLocalEncryptionSecret}
+
+import stasis.client.encryption.secrets.DeviceSecret
+import stasis.client.encryption.secrets.UserLocalEncryptionSecret
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.EncodingHelpers
 

@@ -1,7 +1,14 @@
 package stasis.test.specs.unit.server.api
 
+import java.time.Instant
+import java.time.LocalDateTime
+import java.util.UUID
+
+import scala.collection.mutable
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{Behavior, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model._
 import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
@@ -10,19 +17,23 @@ import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import play.api.libs.json.JsArray
-import stasis.core.api.MessageResponse
+
 import stasis.core.networking.http.HttpEndpointAddress
-import stasis.core.packaging.{Crate, Manifest}
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
 import stasis.core.persistence.CrateStorageReservation
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.manifests.ManifestStore
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.persistence.staging.StagingStore
-import stasis.core.routing.{Node, NodeProxy}
-import stasis.core.telemetry.TelemetryContext
+import stasis.core.routing.Node
+import stasis.core.routing.NodeProxy
+import stasis.layers.api.MessageResponse
+import stasis.layers.telemetry.TelemetryContext
 import stasis.server.api.ApiEndpoint
-import stasis.server.model.datasets.{DatasetDefinitionStore, DatasetEntryStore}
+import stasis.server.model.datasets.DatasetDefinitionStore
+import stasis.server.model.datasets.DatasetEntryStore
 import stasis.server.model.devices.DeviceStore
 import stasis.server.model.manifests.ServerManifestStore
 import stasis.server.model.nodes.ServerNodeStore
@@ -33,24 +44,25 @@ import stasis.server.model.users.UserStore
 import stasis.server.security.ResourceProvider
 import stasis.server.security.authenticators.UserAuthenticator
 import stasis.shared.api.responses.Ping
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.networking.mocks.{MockGrpcEndpointClient, MockHttpEndpointClient}
+import stasis.test.specs.unit.core.networking.mocks.MockGrpcEndpointClient
+import stasis.test.specs.unit.core.networking.mocks.MockHttpEndpointClient
 import stasis.test.specs.unit.core.persistence.Generators
-import stasis.test.specs.unit.core.persistence.mocks.{MockCrateStore, MockManifestStore, MockNodeStore, MockReservationStore}
+import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
+import stasis.test.specs.unit.core.persistence.mocks.MockManifestStore
+import stasis.test.specs.unit.core.persistence.mocks.MockNodeStore
+import stasis.test.specs.unit.core.persistence.mocks.MockReservationStore
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.Secrets
 import stasis.test.specs.unit.server.model.mocks._
-import stasis.test.specs.unit.server.security.mocks.{MockResourceProvider, MockUserAuthenticator, MockUserCredentialsManager}
-
-import java.time.{Instant, LocalDateTime}
-import java.util.UUID
-import scala.collection.mutable
-import scala.concurrent.Future
-import scala.concurrent.duration._
+import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
+import stasis.test.specs.unit.server.security.mocks.MockUserAuthenticator
+import stasis.test.specs.unit.server.security.mocks.MockUserCredentialsManager
 
 class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
   import stasis.core.api.Formats._
@@ -351,7 +363,6 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
 
   it should "handle generic failures reported by routes" in withRetry {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
-    import stasis.core.api.Formats.messageResponseFormat
 
     val userStore: UserStore = MockUserStore()
 
@@ -386,7 +397,6 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
 
   it should "reject requests with invalid entities" in withRetry {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
-    import stasis.core.api.Formats.messageResponseFormat
 
     val userStore: UserStore = MockUserStore()
 
@@ -420,9 +430,9 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
       }
   }
 
-  private implicit val typedSystem: org.apache.pekko.actor.typed.ActorSystem[SpawnProtocol.Command] =
+  private implicit val typedSystem: org.apache.pekko.actor.typed.ActorSystem[Nothing] =
     org.apache.pekko.actor.typed.ActorSystem(
-      Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+      Behaviors.ignore,
       "ApiEndpointSpec_Typed"
     )
 

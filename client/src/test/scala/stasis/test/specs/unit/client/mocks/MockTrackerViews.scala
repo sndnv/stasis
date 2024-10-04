@@ -1,14 +1,20 @@
 package stasis.test.specs.unit.client.mocks
 
+import java.util.concurrent.atomic.AtomicInteger
+
+import scala.concurrent.Future
+
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
-import stasis.client.tracking.state.{BackupState, RecoveryState}
-import stasis.client.tracking.{BackupTracker, RecoveryTracker, ServerTracker, TrackerViews}
+
+import stasis.client.tracking.BackupTracker
+import stasis.client.tracking.RecoveryTracker
+import stasis.client.tracking.ServerTracker
+import stasis.client.tracking.TrackerViews
+import stasis.client.tracking.state.BackupState
+import stasis.client.tracking.state.RecoveryState
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.client.mocks.MockTrackerViews.Statistic
-
-import java.util.concurrent.atomic.AtomicInteger
-import scala.concurrent.Future
 
 class MockTrackerViews extends TrackerViews {
   private val stats: Map[Statistic, AtomicInteger] = Map(

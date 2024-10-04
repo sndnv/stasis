@@ -136,7 +136,7 @@
             "uid": "prom"
           },
           "editorMode": "code",
-          "expr": "sum(rate(stasis_identity_persistence_kv_put_operations_total{backend=~\"$backend\"}[$__rate_interval])) by (backend)",
+          "expr": "sum(rate(stasis_identity_persistence_store_put_operations_total{backend=~\"$backend\"}[$__rate_interval])) by (backend)",
           "legendFormat": "{{backend}}",
           "range": true,
           "refId": "A"
@@ -231,7 +231,7 @@
             "uid": "prom"
           },
           "editorMode": "code",
-          "expr": "sum(rate(stasis_identity_persistence_kv_get_operations_total{backend=~\"$backend\"}[$__rate_interval])) by (backend)",
+          "expr": "sum(rate(stasis_identity_persistence_store_get_operations_total{backend=~\"$backend\"}[$__rate_interval])) by (backend)",
           "hide": false,
           "legendFormat": "{{backend}}",
           "range": true,
@@ -327,7 +327,7 @@
             "uid": "prom"
           },
           "editorMode": "code",
-          "expr": "sum(rate(stasis_identity_persistence_kv_delete_operations_total{backend=~\"$backend\"}[$__rate_interval])) by (backend)",
+          "expr": "sum(rate(stasis_identity_persistence_store_delete_operations_total{backend=~\"$backend\"}[$__rate_interval])) by (backend)",
           "legendFormat": "{{backend}}",
           "range": true,
           "refId": "A"
@@ -345,7 +345,7 @@
     "list": [
       {
         "current": {},
-        "definition": "stasis_identity_persistence_kv_put_operations_total",
+        "definition": "stasis_identity_persistence_store_put_operations_total",
         "hide": 0,
         "includeAll": true,
         "label": "Backend",
@@ -353,7 +353,7 @@
         "name": "backend",
         "options": [],
         "query": {
-          "query": "stasis_identity_persistence_kv_put_operations_total",
+          "query": "stasis_identity_persistence_store_put_operations_total",
           "refId": "StandardVariableQuery"
         },
         "refresh": 1,

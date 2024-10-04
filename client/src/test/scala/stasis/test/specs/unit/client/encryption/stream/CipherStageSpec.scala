@@ -1,13 +1,17 @@
 package stasis.test.specs.unit.client.encryption.stream
 
 import java.security.KeyFactory
-import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
+import java.security.spec.PKCS8EncodedKeySpec
+import java.security.spec.X509EncodedKeySpec
+
+import javax.crypto.Cipher
+import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.SecretKeySpec
+
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 
-import javax.crypto.Cipher
-import javax.crypto.spec.{GCMParameterSpec, SecretKeySpec}
 import stasis.client.encryption.Aes.TagSize
 import stasis.client.encryption.stream.CipherStage
 import stasis.test.specs.unit.AsyncUnitSpec

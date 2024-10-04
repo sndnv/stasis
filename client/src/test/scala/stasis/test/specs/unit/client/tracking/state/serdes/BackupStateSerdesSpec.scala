@@ -1,11 +1,11 @@
 package stasis.test.specs.unit.client.tracking.state.serdes
 
+import scala.util.Success
+
 import stasis.client.model.proto
 import stasis.client.tracking.state.serdes.BackupStateSerdes
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.Fixtures
-
-import scala.util.Success
 
 class BackupStateSerdesSpec extends UnitSpec {
   "BackupStateSerdes" should "serialize backup state to protobuf" in {

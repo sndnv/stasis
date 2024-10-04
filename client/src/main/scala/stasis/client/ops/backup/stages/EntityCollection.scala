@@ -2,6 +2,7 @@ package stasis.client.ops.backup.stages
 
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Flow
+
 import stasis.client.collection.BackupCollector
 import stasis.client.model.SourceEntity
 import stasis.client.ops.Metrics

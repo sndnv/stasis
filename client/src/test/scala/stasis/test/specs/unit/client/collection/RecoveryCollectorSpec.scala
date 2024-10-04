@@ -3,16 +3,22 @@ package stasis.test.specs.unit.client.collection
 import java.nio.file.Paths
 import java.time.Instant
 
+import scala.concurrent.Future
+
 import org.apache.pekko.actor.ActorSystem
+
 import stasis.client.collection.RecoveryCollector
-import stasis.client.model.{DatasetMetadata, EntityMetadata, FilesystemMetadata, TargetEntity}
+import stasis.client.model.DatasetMetadata
+import stasis.client.model.EntityMetadata
+import stasis.client.model.FilesystemMetadata
+import stasis.client.model.TargetEntity
 import stasis.client.ops.ParallelismConfig
 import stasis.core.packaging.Crate
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.mocks.{MockRecoveryMetadataCollector, MockServerApiEndpointClient}
-import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
-
-import scala.concurrent.Future
+import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers
+import stasis.test.specs.unit.client.mocks.MockRecoveryMetadataCollector
+import stasis.test.specs.unit.client.mocks.MockServerApiEndpointClient
 
 class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
   "A default RecoveryCollector" should "collect recovery files based on dataset metadata" in {

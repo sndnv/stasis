@@ -1,16 +1,19 @@
 package stasis.test.specs.unit.identity.api.oauth.directives
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives
 import org.slf4j.Logger
 import play.api.libs.json._
+
 import stasis.identity.api.oauth.directives.AudienceExtraction
-import stasis.identity.model.apis.{ApiStore, ApiStoreView}
-import stasis.identity.model.clients.{ClientStore, ClientStoreView}
+import stasis.identity.persistence.apis.ApiStore
+import stasis.identity.persistence.clients.ClientStore
+import stasis.layers
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
-
-import scala.concurrent.{ExecutionContext, Future}
 
 class AudienceExtractionSpec extends RouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -18,7 +21,7 @@ class AudienceExtractionSpec extends RouteTest {
   "An AudienceExtraction directive" should "convert client audience to scopes" in withRetry {
     val directive = createDirective(clients = createClientStore(), apis = createApiStore())
 
-    val clients = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateClient)
+    val clients = layers.Generators.generateSeq(min = 1, g = Generators.generateClient)
     val validScope = directive.clientAudienceToScope(clients)
     val missingScope = directive.clientAudienceToScope(audience = Seq.empty)
 
@@ -37,7 +40,7 @@ class AudienceExtractionSpec extends RouteTest {
   it should "convert API audience to scopes" in withRetry {
     val directive = createDirective(clients = createClientStore(), apis = createApiStore())
 
-    val apis = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateApi)
+    val apis = layers.Generators.generateSeq(min = 1, g = Generators.generateApi)
     val validScope = directive.apiAudienceToScope(apis)
     val missingScope = directive.apiAudienceToScope(audience = Seq.empty)
 
@@ -57,7 +60,7 @@ class AudienceExtractionSpec extends RouteTest {
     val apiStore = createApiStore()
     val directive = createDirective(clients = clientStore, apis = apiStore)
 
-    val clients = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateClient)
+    val clients = layers.Generators.generateSeq(min = 1, g = Generators.generateClient)
     val scope = directive.clientAudienceToScope(clients)
 
     val routes = directive.extractClientAudience(scopeOpt = scope) { clients =>
@@ -93,7 +96,7 @@ class AudienceExtractionSpec extends RouteTest {
     val apiStore = createApiStore()
     val directive = createDirective(clients = clientStore, apis = apiStore)
 
-    val apis = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateApi)
+    val apis = layers.Generators.generateSeq(min = 1, g = Generators.generateApi)
     val scope = directive.apiAudienceToScope(apis)
 
     val routes = directive.extractApiAudience(scopeOpt = scope) { apis =>
@@ -128,7 +131,7 @@ class AudienceExtractionSpec extends RouteTest {
     val apiStore = createApiStore()
     val directive = createDirective(clients = clientStore, apis = apiStore)
 
-    val clients = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateClient)
+    val clients = layers.Generators.generateSeq(min = 1, g = Generators.generateClient)
 
     val routes = directive.extractClientAudience(scopeOpt = Some("invalid-scope")) { clients =>
       Directives.complete(StatusCodes.OK, clients.map(_.id.toString).mkString(","))
@@ -146,7 +149,7 @@ class AudienceExtractionSpec extends RouteTest {
     val apiStore = createApiStore()
     val directive = createDirective(clients = clientStore, apis = apiStore)
 
-    val clients = stasis.test.Generators.generateSeq(min = 1, g = Generators.generateClient)
+    val clients = layers.Generators.generateSeq(min = 1, g = Generators.generateClient)
     val scope = directive.clientAudienceToScope(clients)
 
     val routes = directive.extractClientAudience(scopeOpt = scope) { clients =>
@@ -166,7 +169,7 @@ class AudienceExtractionSpec extends RouteTest {
     new AudienceExtraction {
       override implicit protected def ec: ExecutionContext = system.dispatcher
       override protected def log: Logger = createLogger()
-      override protected def clientStore: ClientStoreView = clients.view
-      override protected def apiStore: ApiStoreView = apis.view
+      override protected def clientStore: ClientStore.View = clients.view
+      override protected def apiStore: ApiStore.View = apis.view
     }
 }

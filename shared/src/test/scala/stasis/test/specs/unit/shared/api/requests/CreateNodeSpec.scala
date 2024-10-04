@@ -4,7 +4,9 @@ import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.routing.Node
-import stasis.shared.api.requests.CreateNode.{CreateLocalNode, CreateRemoteGrpcNode, CreateRemoteHttpNode}
+import stasis.shared.api.requests.CreateNode.CreateLocalNode
+import stasis.shared.api.requests.CreateNode.CreateRemoteGrpcNode
+import stasis.shared.api.requests.CreateNode.CreateRemoteHttpNode
 import stasis.test.specs.unit.UnitSpec
 
 class CreateNodeSpec extends UnitSpec {

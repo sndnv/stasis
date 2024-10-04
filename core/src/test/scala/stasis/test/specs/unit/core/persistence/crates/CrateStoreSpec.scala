@@ -1,19 +1,31 @@
 package stasis.test.specs.unit.core.persistence.crates
 
-import org.apache.pekko.actor.typed.scaladsl.{Behaviors, LoggerOps}
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
-import org.apache.pekko.util.ByteString
-import org.apache.pekko.{Done, NotUsed}
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
+
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
 import com.typesafe.config.ConfigFactory
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import org.mockito.captor.ArgCaptor
 import org.mockito.scalatest.AsyncMockitoSugar
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 import org.slf4j.Logger
-import stasis.core.packaging.{Crate, Manifest}
+
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
 import stasis.core.persistence.backends.StreamingBackend
-import stasis.core.persistence.backends.file.{ContainerBackend, FileBackend}
+import stasis.core.persistence.backends.file.ContainerBackend
+import stasis.core.persistence.backends.file.FileBackend
 import stasis.core.persistence.backends.memory.StreamingMemoryBackend
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.routing.Node
@@ -21,11 +33,6 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.Generators
 import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-
-import java.util.UUID
-import java.util.concurrent.atomic.AtomicBoolean
-import scala.concurrent.Future
-import scala.concurrent.duration._
 
 class CrateStoreSpec extends AsyncUnitSpec with AsyncMockitoSugar with Eventually {
   "A CrateStore" should "create descriptors from config" in {
@@ -300,8 +307,8 @@ class CrateStoreSpec extends AsyncUnitSpec with AsyncMockitoSugar with Eventuall
     }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "CrateStoreSpec"
   )
 

@@ -4,13 +4,16 @@ import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
+
 import stasis.client.api.Context
 import stasis.shared.api.requests.ReEncryptDeviceSecret
 
 class Device()(implicit context: Context) extends ApiRoutes {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.client.api.http.Formats.serverStateFormat
-  import stasis.shared.api.Formats.{deviceFormat, reEncryptDeviceSecretFormat}
+  import stasis.shared.api.Formats.deviceFormat
+  import stasis.shared.api.Formats.reEncryptDeviceSecretFormat
 
   def routes(): Route =
     concat(

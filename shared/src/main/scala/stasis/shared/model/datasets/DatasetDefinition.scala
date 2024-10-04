@@ -1,8 +1,8 @@
 package stasis.shared.model.datasets
 
-import stasis.shared.model.devices.Device
-
 import scala.concurrent.duration.FiniteDuration
+
+import stasis.shared.model.devices.Device
 
 final case class DatasetDefinition(
   id: DatasetDefinition.Id,

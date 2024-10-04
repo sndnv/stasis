@@ -3,6 +3,7 @@ import 'package:identity_ui/api/api_client.dart';
 import 'package:identity_ui/model/stored_refresh_token.dart';
 import 'package:identity_ui/pages/default/components.dart';
 import 'package:identity_ui/pages/manage/components/entity_table.dart';
+import 'package:identity_ui/pages/manage/components/rendering.dart';
 
 class Tokens extends StatefulWidget {
   const Tokens({super.key, required this.client});
@@ -34,27 +35,32 @@ class _TokensState extends State<Tokens> {
                 DataColumn(label: Text('Resource Owner')),
                 DataColumn(label: Text('Scope')),
                 DataColumn(label: Text('Expiration')),
+                DataColumn(label: Text('Created')),
                 DataColumn(label: Text('')),
               ],
-              entityToRow: (token) => [
-                DataCell(Text(token.token.substring(0, 16))),
-                DataCell(Text(token.client)),
-                DataCell(Text(token.owner)),
-                DataCell(Text(token.scope?.split(':audience:')?.last ?? '-')),
-                DataCell(Text(token.expiration ?? '-')),
-                DataCell(
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      IconButton(
-                        tooltip: 'Remove Refresh Token',
-                        onPressed: () => _removeToken(token.token),
-                        icon: const Icon(Icons.delete),
-                      ),
-                    ],
+              entityToRow: (e) {
+                StoredRefreshToken token = e;
+                return [
+                  DataCell(Text(token.token.substring(0, 16))),
+                  DataCell(Text(token.client)),
+                  DataCell(Text(token.owner)),
+                  DataCell(Text(token.scope?.split(':audience:').last ?? '-')),
+                  DataCell(Text(token.expiration?.render() ?? '-')),
+                  DataCell(Text(token.created.render())),
+                  DataCell(
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          tooltip: 'Remove Refresh Token',
+                          onPressed: () => _removeToken(token.token),
+                          icon: const Icon(Icons.delete),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ];
+              },
             ),
           ],
         );

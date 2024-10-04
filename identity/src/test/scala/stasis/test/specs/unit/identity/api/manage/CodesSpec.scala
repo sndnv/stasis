@@ -1,15 +1,16 @@
 package stasis.test.specs.unit.identity.api.manage
 
+import scala.concurrent.Future
+
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import stasis.identity.api.Formats._
+
 import stasis.identity.api.manage.Codes
 import stasis.identity.model.clients.Client
 import stasis.identity.model.codes.StoredAuthorizationCode
+import stasis.layers
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.api.manage.CodesSpec.PartialStoredAuthorizationCode
 import stasis.test.specs.unit.identity.model.Generators
-
-import scala.concurrent.Future
 
 class CodesSpec extends RouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -19,7 +20,7 @@ class CodesSpec extends RouteTest {
     val codes = new Codes(store)
 
     val owner = Generators.generateResourceOwner
-    val expectedCodes = stasis.test.Generators.generateSeq(min = 2, g = Generators.generateAuthorizationCode)
+    val expectedCodes = layers.Generators.generateSeq(min = 2, g = Generators.generateAuthorizationCode)
 
     Future
       .sequence(
@@ -77,7 +78,7 @@ class CodesSpec extends RouteTest {
     store.put(StoredAuthorizationCode(code, client, owner, scope = None)).await
     Delete(s"/${code.value}") ~> codes.routes(user) ~> check {
       status should be(StatusCodes.OK)
-      store.codes.await should be(Map.empty)
+      store.all.await.size should be(0)
     }
   }
 

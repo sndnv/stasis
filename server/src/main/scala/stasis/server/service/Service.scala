@@ -1,51 +1,70 @@
 package stasis.server.service
 
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
-import org.apache.pekko.util.Timeout
-import com.typesafe.{config => typesafe}
-import io.prometheus.client.hotspot.DefaultExports
-import org.slf4j.{Logger, LoggerFactory}
-import play.api.libs.json.{JsObject, Json}
-import stasis.core.networking.grpc.{GrpcEndpointAddress, GrpcEndpointClient}
-import stasis.core.networking.http.{HttpEndpoint, HttpEndpointAddress, HttpEndpointClient}
-import stasis.core.routing.{DefaultRouter, NodeProxy, Router}
-import stasis.core.security.jwt.{DefaultJwtAuthenticator, DefaultJwtProvider, JwtProvider}
-import stasis.core.security.keys.RemoteKeyProvider
-import stasis.core.security.oauth.{DefaultOAuthClient, OAuthClient}
-import stasis.core.security.tls.EndpointContext
-import stasis.core.security.{JwtNodeAuthenticator, JwtNodeCredentialsProvider, NodeAuthenticator}
-import stasis.core.telemetry.metrics.MetricsExporter
-import stasis.core.telemetry.{DefaultTelemetryContext, TelemetryContext}
-import stasis.core.{api, persistence, routing, security}
-import stasis.server.BuildInfo
-import stasis.server.api.routes.DeviceBootstrap
-import stasis.server.api.{ApiEndpoint, BootstrapEndpoint}
-import stasis.server.security._
-import stasis.server.security.authenticators._
-import stasis.server.security.devices._
-import stasis.server.security.users.{IdentityUserCredentialsManager, UserCredentialsManager}
-import stasis.server.service.Service.Config.BootstrapApiConfig
-import stasis.shared.model.devices.DeviceBootstrapParameters
-import stasis.shared.secrets.SecretsConfig
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.util.{Failure, Success, Try}
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
+import com.typesafe.{config => typesafe}
+import io.prometheus.client.hotspot.DefaultExports
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
+import org.apache.pekko.util.Timeout
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import play.api.libs.json.JsObject
+import play.api.libs.json.Json
+
+import stasis.core
 import stasis.core.api.PoolClient
+import stasis.core.networking.grpc.GrpcEndpointAddress
+import stasis.core.networking.grpc.GrpcEndpointClient
+import stasis.core.networking.http.HttpEndpoint
+import stasis.core.networking.http.HttpEndpointAddress
+import stasis.core.networking.http.HttpEndpointClient
+import stasis.core.routing.DefaultRouter
+import stasis.core.routing.NodeProxy
+import stasis.core.routing.Router
+import stasis.core.security.JwtNodeAuthenticator
+import stasis.core.security.JwtNodeCredentialsProvider
+import stasis.core.security.NodeAuthenticator
+import stasis.layers
+import stasis.layers.security.jwt.DefaultJwtAuthenticator
+import stasis.layers.security.jwt.DefaultJwtProvider
+import stasis.layers.security.jwt.JwtProvider
+import stasis.layers.security.keys.RemoteKeyProvider
+import stasis.layers.security.oauth.DefaultOAuthClient
+import stasis.layers.security.oauth.OAuthClient
+import stasis.layers.security.tls.EndpointContext
+import stasis.layers.telemetry.DefaultTelemetryContext
+import stasis.layers.telemetry.TelemetryContext
+import stasis.layers.telemetry.metrics.MetricsExporter
+import stasis.server.BuildInfo
+import stasis.server.api.ApiEndpoint
+import stasis.server.api.BootstrapEndpoint
+import stasis.server.api.routes.DeviceBootstrap
+import stasis.server.security._
+import stasis.server.security.authenticators._
+import stasis.server.security.devices._
+import stasis.server.security.users.IdentityUserCredentialsManager
+import stasis.server.security.users.UserCredentialsManager
+import stasis.server.service.Service.Config.BootstrapApiConfig
+import stasis.shared.model.devices.DeviceBootstrapParameters
+import stasis.shared.secrets.SecretsConfig
 
 trait Service {
   import Service._
 
   private val serviceState: AtomicReference[State] = new AtomicReference[State](State.Starting)
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    guardianBehavior = Behaviors.ignore,
     name = "stasis-server-service"
   )
 
@@ -72,10 +91,11 @@ trait Service {
 
     implicit val telemetry: TelemetryContext = DefaultTelemetryContext(
       metricsProviders = Set(
-        security.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation),
-        api.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation),
-        persistence.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation),
-        routing.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation)
+        layers.security.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation),
+        layers.api.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation),
+        layers.persistence.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation),
+        core.persistence.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation),
+        core.routing.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation)
       ).flatten
     )
 

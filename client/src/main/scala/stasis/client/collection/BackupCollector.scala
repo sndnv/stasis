@@ -2,13 +2,17 @@ package stasis.client.collection
 
 import java.nio.file.Path
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
-import stasis.client.api.clients.ServerApiEndpointClient
-import stasis.client.model.{DatasetMetadata, EntityMetadata, SourceEntity}
-import stasis.client.ops.ParallelismConfig
 
-import scala.concurrent.{ExecutionContext, Future}
+import stasis.client.api.clients.ServerApiEndpointClient
+import stasis.client.model.DatasetMetadata
+import stasis.client.model.EntityMetadata
+import stasis.client.model.SourceEntity
+import stasis.client.ops.ParallelismConfig
 
 trait BackupCollector {
   def collect(): Source[SourceEntity, NotUsed]

@@ -1,28 +1,36 @@
 package stasis.client.ops.backup
 
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import java.nio.file.Path
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.stream._
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
-import org.apache.pekko.{Done, NotUsed}
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+
 import stasis.client.collection.rules.Rule
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.DatasetMetadata
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.backup.Backup.Descriptor.Collector
 import stasis.client.ops.backup.stages._
-import stasis.client.ops.exceptions.{EntityProcessingFailure, OperationStopped}
+import stasis.client.ops.exceptions.EntityProcessingFailure
+import stasis.client.ops.exceptions.OperationStopped
 import stasis.client.tracking.BackupTracker
 import stasis.client.tracking.state.BackupState
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation
-
-import java.nio.file.Path
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
 class Backup(
   descriptor: Backup.Descriptor
-)(implicit system: ActorSystem[SpawnProtocol.Command], parallelism: ParallelismConfig, providers: Providers)
+)(implicit system: ActorSystem[Nothing], parallelism: ParallelismConfig, providers: Providers)
     extends Operation { parent =>
   import Backup._
 
@@ -101,7 +109,7 @@ class Backup(
 object Backup {
   def apply(
     descriptor: Backup.Descriptor
-  )(implicit system: ActorSystem[SpawnProtocol.Command], parallelism: ParallelismConfig, providers: Providers): Backup =
+  )(implicit system: ActorSystem[Nothing], parallelism: ParallelismConfig, providers: Providers): Backup =
     new Backup(descriptor)
 
   final case class Descriptor(

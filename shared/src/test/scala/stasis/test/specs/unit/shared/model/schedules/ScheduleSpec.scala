@@ -3,10 +3,10 @@ package stasis.test.specs.unit.shared.model.schedules
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
+import scala.concurrent.duration._
+
 import stasis.shared.model.schedules.Schedule
 import stasis.test.specs.unit.UnitSpec
-
-import scala.concurrent.duration._
 
 class ScheduleSpec extends UnitSpec {
   "A Schedule" should "calculate the next invocation date/time" in withRetry {

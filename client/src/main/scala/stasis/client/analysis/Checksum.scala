@@ -4,10 +4,11 @@ import java.nio.file.Path
 import java.security.MessageDigest
 import java.util.zip.CRC32
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.FileIO
-
-import scala.concurrent.{ExecutionContext, Future}
 
 trait Checksum {
   def calculate(file: Path)(implicit mat: Materializer): Future[BigInt]

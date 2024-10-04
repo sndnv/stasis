@@ -1,30 +1,37 @@
 package stasis.test.specs.unit.core.persistence.backends.slick
 
-import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.util.ByteString
-import slick.jdbc.H2Profile
-import stasis.core.persistence.backends.KeyValueBackend
-import stasis.core.persistence.backends.slick.SlickBackend
-import stasis.core.telemetry.TelemetryContext
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.persistence.backends.KeyValueBackendBehaviour
-
 import scala.concurrent.Future
 
-class SlickBackendSpec extends AsyncUnitSpec with KeyValueBackendBehaviour {
-  "A SlickBackend" should behave like keyValueBackend[TestSlickBackend](
-    createBackend = telemetry => new TestSlickBackend()(telemetry),
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.util.ByteString
+import slick.jdbc.H2Profile
+
+import stasis.core.persistence.backends.KeyValueBackend
+import stasis.core.persistence.backends.slick.SlickBackend
+import stasis.layers.UnitSpec
+import stasis.layers.persistence.KeyValueStore
+import stasis.layers.persistence.KeyValueStoreBehaviour
+import stasis.layers.persistence.migration.Migration
+import stasis.layers.telemetry.TelemetryContext
+
+class SlickBackendSpec extends UnitSpec with KeyValueStoreBehaviour {
+  "A SlickBackend" should behave like keyValueStore[TestSlickBackend](
+    createStore = telemetry => new TestSlickBackend()(telemetry),
     before = _.init(),
     after = _.close()
   )
 
-  private class TestSlickBackend(implicit telemetry: TelemetryContext) extends KeyValueBackend[String, Int] {
+  private class TestSlickBackend(implicit telemetry: TelemetryContext) extends KeyValueStore[String, Int] {
     private val h2db = H2Profile.api.Database.forURL(url = "jdbc:h2:mem:SlickBackendSpec", keepAliveConnection = true)
 
+    override val name: String = "SlickBackendSpec"
+
+    override val migrations: Seq[Migration] = Seq.empty
+
     private val slickBackend = new SlickBackend[String, Int](
-      tableName = "SlickBackendSpec",
+      name = name,
       profile = H2Profile,
       database = h2db,
       serdes = new KeyValueBackend.Serdes[String, Int] {
@@ -56,8 +63,8 @@ class SlickBackendSpec extends AsyncUnitSpec with KeyValueBackendBehaviour {
       }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    guardianBehavior = Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    guardianBehavior = Behaviors.ignore,
     name = "SlickBackendSpec"
   )
 }

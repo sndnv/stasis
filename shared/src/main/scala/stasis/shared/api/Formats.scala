@@ -2,37 +2,42 @@ package stasis.shared.api
 
 import java.nio.charset.StandardCharsets
 import java.time.temporal.ChronoUnit
+
 import org.apache.pekko.util.ByteString
+
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.staging.StagingStore.PendingDestaging
-import stasis.shared.api.requests.CreateNode.{CreateLocalNode, CreateRemoteGrpcNode, CreateRemoteHttpNode}
-import stasis.shared.api.requests.UpdateNode.{UpdateLocalNode, UpdateRemoteGrpcNode, UpdateRemoteHttpNode}
+import stasis.shared.api.requests.CreateNode.CreateLocalNode
+import stasis.shared.api.requests.CreateNode.CreateRemoteGrpcNode
+import stasis.shared.api.requests.CreateNode.CreateRemoteHttpNode
+import stasis.shared.api.requests.UpdateNode.UpdateLocalNode
+import stasis.shared.api.requests.UpdateNode.UpdateRemoteGrpcNode
+import stasis.shared.api.requests.UpdateNode.UpdateRemoteHttpNode
 import stasis.shared.api.requests._
 import stasis.shared.api.responses._
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
-import stasis.shared.model.devices.{Device, DeviceBootstrapCode, DeviceBootstrapParameters, DeviceKey}
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
+import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.DeviceBootstrapCode
+import stasis.shared.model.devices.DeviceBootstrapParameters
+import stasis.shared.model.devices.DeviceKey
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 import stasis.shared.ops.Operation
 import stasis.shared.secrets.SecretsConfig
 import stasis.shared.security.Permission
 
-import scala.concurrent.duration._
-
 object Formats {
   import play.api.libs.json._
-  import stasis.core.api.Formats.{
-    crateStoreDescriptorReads,
-    crateStoreDescriptorWrites,
-    grpcEndpointAddressFormat,
-    httpEndpointAddressFormat,
-    jsonConfig
-  }
 
-  implicit val finiteDurationFormat: Format[FiniteDuration] =
-    stasis.core.api.Formats.finiteDurationFormat
+  import stasis.core.api.Formats.crateStoreDescriptorReads
+  import stasis.core.api.Formats.crateStoreDescriptorWrites
+  import stasis.core.api.Formats.grpcEndpointAddressFormat
+  import stasis.core.api.Formats.httpEndpointAddressFormat
+  import stasis.core.api.Formats.jsonConfig
+  import stasis.layers.api.Formats.finiteDurationFormat
 
   implicit val permissionFormat: Format[Permission] = Format(
     fjs = _.validate[String].map(stringToPermission),

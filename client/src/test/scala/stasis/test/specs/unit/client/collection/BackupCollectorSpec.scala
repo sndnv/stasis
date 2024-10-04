@@ -1,15 +1,22 @@
 package stasis.test.specs.unit.client.collection
 
+import scala.concurrent.Future
+
 import org.apache.pekko.actor.ActorSystem
+
 import stasis.client.analysis.Checksum
-import stasis.client.collection.{BackupCollector, BackupMetadataCollector}
-import stasis.client.model.{DatasetMetadata, EntityMetadata, FilesystemMetadata, SourceEntity}
+import stasis.client.collection.BackupCollector
+import stasis.client.collection.BackupMetadataCollector
+import stasis.client.model.DatasetMetadata
+import stasis.client.model.EntityMetadata
+import stasis.client.model.FilesystemMetadata
+import stasis.client.model.SourceEntity
 import stasis.client.ops.ParallelismConfig
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.mocks.{MockCompression, MockServerApiEndpointClient}
-import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
-
-import scala.concurrent.Future
+import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers
+import stasis.test.specs.unit.client.mocks.MockCompression
+import stasis.test.specs.unit.client.mocks.MockServerApiEndpointClient
 
 class BackupCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
   "A default BackupCollector" should "collect backup files based on a files list" in {

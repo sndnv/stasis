@@ -1,14 +1,17 @@
 package stasis.test.specs.unit.client.tracking.state
 
-import stasis.client.model.{proto, SourceEntity}
+import scala.util.Failure
+import scala.util.Success
+
+import stasis.client.model.SourceEntity
+import stasis.client.model.proto
 import stasis.client.tracking.state.BackupState
-import stasis.client.tracking.state.BackupState.{PendingSourceEntity, ProcessedSourceEntity}
+import stasis.client.tracking.state.BackupState.PendingSourceEntity
+import stasis.client.tracking.state.BackupState.ProcessedSourceEntity
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.Fixtures
-
-import scala.util.{Failure, Success}
 
 class BackupStateSpec extends UnitSpec {
   "A BackupState" should "provide its type and state" in {

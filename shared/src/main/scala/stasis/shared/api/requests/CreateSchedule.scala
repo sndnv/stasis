@@ -2,9 +2,9 @@ package stasis.shared.api.requests
 
 import java.time.LocalDateTime
 
-import stasis.shared.model.schedules.Schedule
-
 import scala.concurrent.duration.FiniteDuration
+
+import stasis.shared.model.schedules.Schedule
 
 final case class CreateSchedule(
   info: String,

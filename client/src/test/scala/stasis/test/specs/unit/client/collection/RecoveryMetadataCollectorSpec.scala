@@ -1,11 +1,14 @@
 package stasis.test.specs.unit.client.collection
 
 import org.apache.pekko.actor.ActorSystem
+
 import stasis.client.analysis.Checksum
 import stasis.client.collection.RecoveryMetadataCollector
-import stasis.client.model.{EntityMetadata, TargetEntity}
+import stasis.client.model.EntityMetadata
+import stasis.client.model.TargetEntity
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
+import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers
 
 class RecoveryMetadataCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
   "A RecoveryMetadataCollector" should "collect file metadata (recovery)" in {

@@ -1,14 +1,17 @@
 package stasis.test.specs.unit.client.service.components.bootstrap.internal
 
-import stasis.client.service.components.bootstrap.internal.SelfSignedCertificateGenerator
-import stasis.test.specs.unit.UnitSpec
-
-import java.security.cert.{CertificateExpiredException, CertificateNotYetValidException}
+import java.security.cert.CertificateExpiredException
+import java.security.cert.CertificateNotYetValidException
 import java.time.Instant
 import java.util.Date
+
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
-import scala.util.{Failure, Success}
+import scala.util.Failure
+import scala.util.Success
+
+import stasis.client.service.components.bootstrap.internal.SelfSignedCertificateGenerator
+import stasis.test.specs.unit.UnitSpec
 
 class SelfSignedCertificateGeneratorSpec extends UnitSpec {
   "A SelfSignedCertificateGenerator" should "generate X.509 certificates and related private keys" in {

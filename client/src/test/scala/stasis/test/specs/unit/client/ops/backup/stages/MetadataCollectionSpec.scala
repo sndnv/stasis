@@ -2,14 +2,17 @@ package stasis.test.specs.unit.client.ops.backup.stages
 
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.Source
+
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
-import stasis.client.model.{DatasetMetadata, FilesystemMetadata}
+import stasis.client.model.DatasetMetadata
+import stasis.client.model.FilesystemMetadata
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.backup.stages.MetadataCollection
 import stasis.client.tracking.BackupTracker
 import stasis.client.tracking.state.BackupState
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures

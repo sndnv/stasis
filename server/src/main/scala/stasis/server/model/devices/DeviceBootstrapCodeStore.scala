@@ -2,16 +2,20 @@ package stasis.server.model.devices
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
 import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import stasis.core.persistence.backends.KeyValueBackend
+import org.apache.pekko.actor.typed.ActorSystem
+
+import stasis.layers.persistence.KeyValueStore
 import stasis.server.security.Resource
 import stasis.server.security.exceptions.AuthorizationFailure
-import stasis.shared.model.devices.{Device, DeviceBootstrapCode}
+import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.DeviceBootstrapCode
 import stasis.shared.security.Permission
-
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
 
 trait DeviceBootstrapCodeStore { store =>
   protected implicit def ec: ExecutionContext
@@ -130,8 +134,8 @@ object DeviceBootstrapCodeStore {
   }
 
   def apply(
-    backend: KeyValueBackend[String, DeviceBootstrapCode]
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): DeviceBootstrapCodeStore =
+    backend: KeyValueStore[String, DeviceBootstrapCode]
+  )(implicit system: ActorSystem[Nothing]): DeviceBootstrapCodeStore =
     new DeviceBootstrapCodeStore {
       private val untypedSystem = system.classicSystem
 

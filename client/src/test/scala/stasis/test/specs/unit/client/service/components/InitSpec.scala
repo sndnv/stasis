@@ -1,20 +1,27 @@
 package stasis.test.specs.unit.client.service.components
 
+import scala.concurrent.duration._
+import scala.concurrent.Future
+import scala.concurrent.Promise
+
 import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.Http
-import org.apache.pekko.http.scaladsl.model.{FormData, HttpMethods, HttpRequest, StatusCodes}
+import org.apache.pekko.http.scaladsl.model.FormData
+import org.apache.pekko.http.scaladsl.model.HttpMethods
+import org.apache.pekko.http.scaladsl.model.HttpRequest
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.mockito.scalatest.AsyncMockitoSugar
 import org.scalatest.concurrent.Eventually
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import stasis.client.service.ApplicationTray
-import stasis.client.service.components.{Base, Init}
+import stasis.client.service.components.Base
+import stasis.client.service.components.Init
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
-
-import scala.concurrent.duration._
-import scala.concurrent.{Future, Promise}
 
 class InitSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockitoSugar with Eventually {
   "An Init component" should "support credentials retrieval from StdIn" in {
@@ -78,8 +85,8 @@ class InitSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockitoSugar
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "InitSpec"
   )
 

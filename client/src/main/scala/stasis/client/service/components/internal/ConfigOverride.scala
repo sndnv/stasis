@@ -8,6 +8,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import com.typesafe.{config => typesafe}
+
 import stasis.client.service.ApplicationDirectory
 import stasis.client.service.components.Files
 

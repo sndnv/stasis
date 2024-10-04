@@ -1,34 +1,38 @@
 package stasis.client.security
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.Failure
+import scala.util.Success
+
 import org.apache.pekko.actor.typed._
 import org.apache.pekko.actor.typed.scaladsl.AskPattern._
-import org.apache.pekko.actor.typed.scaladsl.{Behaviors, LoggerOps, TimerScheduler}
-import org.apache.pekko.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.actor.typed.scaladsl.TimerScheduler
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.apache.pekko.util.Timeout
-import stasis.core.security.oauth.OAuthClient
-import stasis.core.security.oauth.OAuthClient.AccessTokenResponse
 
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import stasis.layers.security.oauth.OAuthClient
+import stasis.layers.security.oauth.OAuthClient.AccessTokenResponse
 
 class DefaultCredentialsProvider private (
-  providerRef: Future[ActorRef[DefaultCredentialsProvider.Message]]
-)(implicit scheduler: Scheduler, ec: ExecutionContext, timeout: Timeout)
+  providerRef: ActorRef[DefaultCredentialsProvider.Message]
+)(implicit scheduler: Scheduler, timeout: Timeout)
     extends CredentialsProvider {
   import DefaultCredentialsProvider._
 
-  override def core: Future[HttpCredentials] = providerRef.flatMap(_ ? (ref => GetCoreCredentials(ref)))
-  override def api: Future[HttpCredentials] = providerRef.flatMap(_ ? (ref => GetApiCredentials(ref)))
+  override def core: Future[HttpCredentials] = providerRef ? (ref => GetCoreCredentials(ref))
+  override def api: Future[HttpCredentials] = providerRef ? (ref => GetApiCredentials(ref))
 }
 
 object DefaultCredentialsProvider {
   def apply(
     tokens: Tokens,
     client: OAuthClient
-  )(implicit system: ActorSystem[SpawnProtocol.Command], timeout: Timeout): DefaultCredentialsProvider = {
-    implicit val ec: ExecutionContext = system.executionContext
-
+  )(implicit system: ActorSystem[Nothing], timeout: Timeout): DefaultCredentialsProvider = {
     val behaviour = Behaviors.setup[Message] { ctx =>
       Behaviors.withTimers[Message] { timers =>
         implicit val jwtClient: OAuthClient = client
@@ -61,12 +65,13 @@ object DefaultCredentialsProvider {
           delay = tokens.api.expires_in.seconds - tokens.expirationTolerance
         )
 
+        import ctx.executionContext
         provider(tokens = tokens)
       }
     }
 
     new DefaultCredentialsProvider(
-      providerRef = system ? (SpawnProtocol.Spawn(behaviour, name = "credentials-provider", props = Props.empty, _))
+      providerRef = system.systemActorOf(behaviour, name = s"credentials-provider-${java.util.UUID.randomUUID().toString}")
     )
   }
 

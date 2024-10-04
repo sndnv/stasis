@@ -3,7 +3,8 @@ package stasis.shared.api.requests
 import java.time.Instant
 
 import stasis.core.packaging.Crate
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
 
 final case class CreateDatasetEntry(

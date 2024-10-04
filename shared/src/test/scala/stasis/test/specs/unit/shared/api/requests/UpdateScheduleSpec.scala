@@ -2,11 +2,11 @@ package stasis.test.specs.unit.shared.api.requests
 
 import java.time.LocalDateTime
 
+import scala.concurrent.duration._
+
 import stasis.shared.api.requests.UpdateSchedule
 import stasis.shared.model.schedules.Schedule
 import stasis.test.specs.unit.UnitSpec
-
-import scala.concurrent.duration._
 
 class UpdateScheduleSpec extends UnitSpec {
   it should "convert requests to updated schedules" in {

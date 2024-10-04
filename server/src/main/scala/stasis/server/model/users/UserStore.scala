@@ -2,14 +2,17 @@ package stasis.server.model.users
 
 import java.util.concurrent.ThreadLocalRandom
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Random
+
 import org.apache.pekko.Done
-import stasis.core.persistence.backends.KeyValueBackend
-import stasis.server.security.{CurrentUser, Resource}
+
+import stasis.layers.persistence.KeyValueStore
+import stasis.server.security.CurrentUser
+import stasis.server.security.Resource
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Random
 
 trait UserStore { store =>
   protected implicit def ec: ExecutionContext
@@ -107,7 +110,7 @@ object UserStore {
 
   def apply(
     userSaltSize: Int,
-    backend: KeyValueBackend[User.Id, User]
+    backend: KeyValueStore[User.Id, User]
   )(implicit ctx: ExecutionContext): UserStore =
     new UserStore {
       override implicit protected def ec: ExecutionContext = ctx

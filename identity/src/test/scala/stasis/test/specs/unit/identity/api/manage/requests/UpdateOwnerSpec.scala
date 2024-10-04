@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.identity.api.manage.requests
 
 import stasis.identity.api.manage.requests.UpdateOwner
-import stasis.test.specs.unit.UnitSpec
+import stasis.layers.UnitSpec
 
 class UpdateOwnerSpec extends UnitSpec {
   private val request = UpdateOwner(

@@ -1,11 +1,14 @@
 package stasis.core.persistence.backends.file.container.ops
 
-import java.nio.file.{Files, Path}
-import java.nio.{ByteBuffer, ByteOrder}
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 import org.apache.pekko.Done
-
-import scala.concurrent.{ExecutionContext, Future}
 
 /**
   * Common file-based operations (internal API).

@@ -2,15 +2,16 @@ package stasis.test.specs.unit.client.ops.recovery.stages.internal
 
 import java.nio.file.Paths
 
-import scala.concurrent.duration._
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import org.scalatest.concurrent.Eventually
 import org.scalatest.Assertion
+import org.scalatest.concurrent.Eventually
+
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.encryption.secrets.DeviceFileSecret
@@ -64,11 +65,13 @@ class DecryptedCratesSpec extends AsyncUnitSpec with Eventually {
         crates.headOption should be(Some(ByteString("file-decrypted")))
 
         eventually[Assertion] {
-          mockTelemetry.ops.recovery.entityExamined should be(0)
-          mockTelemetry.ops.recovery.entityCollected should be(0)
-          mockTelemetry.ops.recovery.entityChunkProcessed should be(crates.length * 2) // x2 == once for pull, once for decrypt
-          mockTelemetry.ops.recovery.entityProcessed should be(0)
-          mockTelemetry.ops.recovery.metadataApplied should be(0)
+          mockTelemetry.client.ops.recovery.entityExamined should be(0)
+          mockTelemetry.client.ops.recovery.entityCollected should be(0)
+          mockTelemetry.client.ops.recovery.entityChunkProcessed should be(
+            crates.length * 2
+          ) // x2 == once for pull, once for decrypt
+          mockTelemetry.client.ops.recovery.entityProcessed should be(0)
+          mockTelemetry.client.ops.recovery.metadataApplied should be(0)
         }
       }
   }

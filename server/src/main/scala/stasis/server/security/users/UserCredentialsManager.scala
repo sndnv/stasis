@@ -1,8 +1,8 @@
 package stasis.server.security.users
 
-import stasis.shared.model.users.User
-
 import scala.concurrent.Future
+
+import stasis.shared.model.users.User
 
 trait UserCredentialsManager {
   def id: String

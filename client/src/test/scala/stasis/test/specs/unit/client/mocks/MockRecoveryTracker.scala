@@ -1,17 +1,18 @@
 package stasis.test.specs.unit.client.mocks
 
+import java.nio.file.Path
+import java.util.concurrent.atomic.AtomicInteger
+
+import scala.concurrent.Future
+
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
+
 import stasis.client.model.TargetEntity
 import stasis.client.tracking.RecoveryTracker
 import stasis.client.tracking.state.RecoveryState
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.client.mocks.MockRecoveryTracker.Statistic
-
-import java.nio.file.Path
-import java.util.concurrent.atomic.AtomicInteger
-
-import scala.concurrent.Future
 
 class MockRecoveryTracker extends RecoveryTracker {
   private val stats: Map[Statistic, AtomicInteger] = Map(

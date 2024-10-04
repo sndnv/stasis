@@ -1,15 +1,18 @@
 package stasis.server.model.devices
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.util.ByteString
-import stasis.core.persistence.backends.KeyValueBackend
+
+import stasis.layers.persistence.KeyValueStore
 import stasis.server.security.Resource
 import stasis.server.security.exceptions.AuthorizationFailure
-import stasis.shared.model.devices.{Device, DeviceKey}
+import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.DeviceKey
 import stasis.shared.security.Permission
-
-import scala.concurrent.{ExecutionContext, Future}
 
 trait DeviceKeyStore { store =>
   protected implicit def ec: ExecutionContext
@@ -119,8 +122,8 @@ object DeviceKeyStore {
   }
 
   def apply(
-    backend: KeyValueBackend[Device.Id, DeviceKey]
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): DeviceKeyStore =
+    backend: KeyValueStore[Device.Id, DeviceKey]
+  )(implicit system: ActorSystem[Nothing]): DeviceKeyStore =
     new DeviceKeyStore {
       override protected implicit def ec: ExecutionContext = system.executionContext
 

@@ -1,28 +1,42 @@
 package stasis.identity.service
 
-import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import org.apache.pekko.util.Timeout
-import com.typesafe.{config => typesafe}
-import slick.jdbc.JdbcProfile
-import stasis.core.persistence.backends.KeyValueBackend
-import stasis.core.persistence.backends.memory.MemoryBackend
-import stasis.core.persistence.backends.slick.{SlickBackend, SlickProfile}
-import stasis.core.telemetry.TelemetryContext
-import stasis.identity.model.apis.{Api, ApiStore, ApiStoreSerdes}
-import stasis.identity.model.clients.{Client, ClientStore, ClientStoreSerdes}
-import stasis.identity.model.codes.{AuthorizationCode, AuthorizationCodeStore, StoredAuthorizationCode}
-import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore, ResourceOwnerStoreSerdes}
-import stasis.identity.model.tokens.{RefreshToken, RefreshTokenStore, RefreshTokenStoreSerdes, StoredRefreshToken}
-
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
+
+import com.typesafe.{config => typesafe}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.util.Timeout
+import slick.jdbc.JdbcProfile
+
+import stasis.core.persistence.backends.slick.SlickProfile
+import stasis.identity.model.clients.Client
+import stasis.identity.model.codes.AuthorizationCode
+import stasis.identity.model.codes.StoredAuthorizationCode
+import stasis.identity.model.owners.ResourceOwner
+import stasis.identity.model.tokens.RefreshToken
+import stasis.identity.persistence.apis.ApiStore
+import stasis.identity.persistence.apis.DefaultApiStore
+import stasis.identity.persistence.clients.ClientStore
+import stasis.identity.persistence.clients.DefaultClientStore
+import stasis.identity.persistence.codes.AuthorizationCodeStore
+import stasis.identity.persistence.codes.DefaultAuthorizationCodeStore
+import stasis.identity.persistence.owners.DefaultResourceOwnerStore
+import stasis.identity.persistence.owners.ResourceOwnerStore
+import stasis.identity.persistence.tokens.DefaultRefreshTokenStore
+import stasis.identity.persistence.tokens.RefreshTokenStore
+import stasis.layers.persistence.KeyValueStore
+import stasis.layers.persistence.memory.MemoryStore
+import stasis.layers.persistence.migration.MigrationExecutor
+import stasis.layers.persistence.migration.MigrationResult
+import stasis.layers.telemetry.TelemetryContext
 
 class Persistence(
   persistenceConfig: typesafe.Config,
   authorizationCodeExpiration: FiniteDuration,
   refreshTokenExpiration: FiniteDuration
-)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, timeout: Timeout) {
+)(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext, timeout: Timeout) {
   private implicit val ec: ExecutionContext = system.executionContext
 
   val profile: JdbcProfile = SlickProfile(profile = persistenceConfig.getString("database.profile"))
@@ -39,88 +53,84 @@ class Persistence(
     keepAliveConnection = databaseKeepAlive
   )
 
+  private val migrationExecutor: MigrationExecutor = MigrationExecutor()
+
   val apis: ApiStore =
-    ApiStore(backend = backends.apis)
+    new DefaultApiStore(
+      name = "APIS",
+      profile = profile,
+      database = database
+    )
 
   val clients: ClientStore =
-    ClientStore(backend = backends.clients)
+    new DefaultClientStore(
+      name = "CLIENTS",
+      profile = profile,
+      database = database
+    )
 
   val resourceOwners: ResourceOwnerStore =
-    ResourceOwnerStore(backend = backends.owners)
+    new DefaultResourceOwnerStore(
+      name = "RESOURCE_OWNERS",
+      profile = profile,
+      database = database
+    )
 
   val refreshTokens: RefreshTokenStore =
-    RefreshTokenStore(
+    new DefaultRefreshTokenStore(
+      name = "REFRESH_TOKENS",
+      profile = profile,
+      database = database,
       expiration = refreshTokenExpiration,
-      backend = backends.tokens,
       directory = backends.tokenDirectory
     )
 
   val authorizationCodes: AuthorizationCodeStore =
-    AuthorizationCodeStore(
+    new DefaultAuthorizationCodeStore(
+      name = "AUTHORIZATION_CODES",
       expiration = authorizationCodeExpiration,
       backend = backends.codes
     )
 
+  def migrate(): Future[MigrationResult] =
+    for {
+      apisMigration <- migrationExecutor.execute(forStore = apis)
+      clientsMigration <- migrationExecutor.execute(forStore = clients)
+      resourceOwnersMigration <- migrationExecutor.execute(forStore = resourceOwners)
+      refreshTokensMigration <- migrationExecutor.execute(forStore = refreshTokens)
+      authorizationCodesMigration <- migrationExecutor.execute(forStore = authorizationCodes)
+    } yield {
+      apisMigration + clientsMigration + resourceOwnersMigration + refreshTokensMigration + authorizationCodesMigration
+    }
+
   def init(): Future[Done] =
     for {
-      _ <- backends.apis.init()
-      _ <- backends.clients.init()
-      _ <- backends.owners.init()
-      _ <- backends.tokens.init()
-      _ <- backends.codes.init()
+      _ <- apis.init()
+      _ <- clients.init()
+      _ <- resourceOwners.init()
+      _ <- refreshTokens.init()
+      _ <- authorizationCodes.init()
     } yield {
       Done
     }
 
   def drop(): Future[Done] =
     for {
-      _ <- backends.apis.drop()
-      _ <- backends.clients.drop()
-      _ <- backends.owners.drop()
-      _ <- backends.tokens.drop()
-      _ <- backends.codes.drop()
+      _ <- apis.drop()
+      _ <- clients.drop()
+      _ <- resourceOwners.drop()
+      _ <- refreshTokens.drop()
+      _ <- authorizationCodes.drop()
     } yield {
       Done
     }
 
   private object backends {
-    val apis: SlickBackend[Api.Id, Api] = SlickBackend(
-      tableName = "APIS",
-      profile = profile,
-      database = database,
-      serdes = ApiStoreSerdes
-    )
+    val tokenDirectory: KeyValueStore[(Client.Id, ResourceOwner.Id), RefreshToken] =
+      MemoryStore[(Client.Id, ResourceOwner.Id), RefreshToken](name = "token-directory")
 
-    val clients: KeyValueBackend[Client.Id, Client] = SlickBackend(
-      tableName = "CLIENTS",
-      profile = profile,
-      database = database,
-      serdes = ClientStoreSerdes
-    )
-
-    val owners: KeyValueBackend[ResourceOwner.Id, ResourceOwner] = SlickBackend(
-      tableName = "RESOURCE_OWNERS",
-      profile = profile,
-      database = database,
-      serdes = ResourceOwnerStoreSerdes
-    )
-
-    val tokens: KeyValueBackend[RefreshToken, StoredRefreshToken] = SlickBackend(
-      tableName = "REFRESH_TOKENS",
-      profile = profile,
-      database = database,
-      serdes = RefreshTokenStoreSerdes
-    )
-
-    val tokenDirectory: KeyValueBackend[(Client.Id, ResourceOwner.Id), RefreshToken] =
-      MemoryBackend[(Client.Id, ResourceOwner.Id), RefreshToken](
-        name = s"token-directory-${java.util.UUID.randomUUID().toString}"
-      )
-
-    val codes: KeyValueBackend[AuthorizationCode, StoredAuthorizationCode] =
-      MemoryBackend[AuthorizationCode, StoredAuthorizationCode](
-        name = s"code-store-${java.util.UUID.randomUUID().toString}"
-      )
+    val codes: KeyValueStore[AuthorizationCode, StoredAuthorizationCode] =
+      MemoryStore[AuthorizationCode, StoredAuthorizationCode](name = "code-store")
   }
 }
 
@@ -129,7 +139,7 @@ object Persistence {
     persistenceConfig: typesafe.Config,
     authorizationCodeExpiration: FiniteDuration,
     refreshTokenExpiration: FiniteDuration
-  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, timeout: Timeout): Persistence =
+  )(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext, timeout: Timeout): Persistence =
     new Persistence(
       persistenceConfig = persistenceConfig,
       authorizationCodeExpiration = authorizationCodeExpiration,

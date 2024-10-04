@@ -1,8 +1,10 @@
 package stasis.test.specs.unit.identity.service
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
 import stasis.identity.service.SignatureKey
-import stasis.test.specs.unit.UnitSpec
+import stasis.layers.UnitSpec
 
 class SignatureKeySpec extends UnitSpec {
   "A SignatureKey" should "provide JWK based on config (generated)" in {

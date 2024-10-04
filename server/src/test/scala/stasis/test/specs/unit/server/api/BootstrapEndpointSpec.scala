@@ -1,23 +1,36 @@
 package stasis.test.specs.unit.server.api
 
+import java.time.Instant
+
+import scala.collection.mutable
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.Http
-import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials, OAuth2BearerToken}
-import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
+import org.apache.pekko.http.scaladsl.model.HttpMethods
+import org.apache.pekko.http.scaladsl.model.HttpRequest
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import play.api.libs.json.Json
-import stasis.core.api.MessageResponse
+
 import stasis.core.routing.Node
-import stasis.core.telemetry.TelemetryContext
+import stasis.layers.api.MessageResponse
+import stasis.layers.telemetry.TelemetryContext
 import stasis.server.api.BootstrapEndpoint
 import stasis.server.api.routes.DeviceBootstrap
-import stasis.server.model.devices.{DeviceBootstrapCodeStore, DeviceStore}
+import stasis.server.model.devices.DeviceBootstrapCodeStore
+import stasis.server.model.devices.DeviceStore
 import stasis.server.model.users.UserStore
 import stasis.server.security.ResourceProvider
-import stasis.server.security.authenticators.{BootstrapCodeAuthenticator, UserAuthenticator}
-import stasis.shared.model.devices.{Device, DeviceBootstrapCode, DeviceBootstrapParameters}
+import stasis.server.security.authenticators.BootstrapCodeAuthenticator
+import stasis.server.security.authenticators.UserAuthenticator
+import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.DeviceBootstrapCode
+import stasis.shared.model.devices.DeviceBootstrapParameters
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
@@ -25,12 +38,10 @@ import stasis.test.specs.unit.server.Secrets
 import stasis.test.specs.unit.server.model.mocks._
 import stasis.test.specs.unit.server.security.mocks._
 
-import java.time.Instant
-import scala.collection.mutable
-
 class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
   "A BootstrapEndpoint" should "successfully authenticate requests with user credentials" in withRetry {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
     import stasis.shared.api.Formats._
 
     val fixtures = new TestFixtures {}
@@ -121,7 +132,6 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
 
   it should "handle generic failures reported by routes" in withRetry {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
-    import stasis.core.api.Formats.messageResponseFormat
 
     val fixtures = new TestFixtures {
       override lazy val userAuthenticator: UserAuthenticator =
@@ -150,8 +160,8 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
       }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "BootstrapEndpointSpec"
   )
 

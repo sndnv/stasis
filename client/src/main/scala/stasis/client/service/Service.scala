@@ -1,25 +1,31 @@
 package stasis.client.service
 
-import org.apache.pekko.Done
-import org.apache.pekko.actor.Scheduler
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.client.service.components.exceptions.ServiceStartupFailure
-
 import java.io.Console
 import java.util.concurrent.atomic.AtomicReference
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.Promise
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.{Failure, Success}
+import scala.util.Failure
+import scala.util.Success
+
+import org.apache.pekko.Done
+import org.apache.pekko.actor.Scheduler
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+import stasis.client.service.components.exceptions.ServiceStartupFailure
 
 trait Service { _: Service.Arguments =>
   import Service._
 
   private val clientState: AtomicReference[State] = new AtomicReference[State](State.Starting)
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    guardianBehavior = Behaviors.ignore,
     name = "stasis-client-service"
   )
 
@@ -149,7 +155,7 @@ object Service {
   private def delayed(
     op: => Unit,
     by: FiniteDuration
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): Unit = {
+  )(implicit system: ActorSystem[Nothing]): Unit = {
     val _ = org.apache.pekko.pattern.after(
       duration = by,
       using = system.classicSystem.scheduler
@@ -159,7 +165,7 @@ object Service {
   trait Arguments extends App {
     def raw: Array[String] = args
 
-    def provided(implicit system: ActorSystem[SpawnProtocol.Command]): Future[Array[String]] = {
+    def provided(implicit system: ActorSystem[Nothing]): Future[Array[String]] = {
       implicit val scheduler: Scheduler = system.classicSystem.scheduler
       implicit val ec: ExecutionContext = system.executionContext
 
@@ -176,7 +182,7 @@ object Service {
         )
     }
 
-    def arguments(applicationName: String)(implicit system: ActorSystem[SpawnProtocol.Command]): Future[ApplicationArguments] = {
+    def arguments(applicationName: String)(implicit system: ActorSystem[Nothing]): Future[ApplicationArguments] = {
       import system.executionContext
       provided.flatMap(ApplicationArguments(applicationName, _))
     }

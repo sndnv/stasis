@@ -1,18 +1,21 @@
 package stasis.test.specs.unit.server.model.devices
 
 import java.time.Instant
+
+import scala.util.control.NonFatal
+
 import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import stasis.core.telemetry.TelemetryContext
-import stasis.shared.model.devices.{Device, DeviceBootstrapCode}
+
+import stasis.layers.telemetry.TelemetryContext
+import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.DeviceBootstrapCode
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.model.mocks.MockDeviceBootstrapCodeStore
-
-import scala.util.control.NonFatal
 
 class DeviceBootstrapCodeStoreSpec extends AsyncUnitSpec {
   "A DeviceBootstrapCodeStore" should "provide a view resource (privileged)" in {
@@ -239,8 +242,8 @@ class DeviceBootstrapCodeStoreSpec extends AsyncUnitSpec {
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "DeviceBootstrapCodeStore"
   )
 

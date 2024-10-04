@@ -3,12 +3,13 @@ package stasis.test.specs.unit.client.mocks
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.concurrent.Future
+
 import org.apache.pekko.Done
+
 import stasis.client.staging.FileStaging
 import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.client.mocks.MockFileStaging.Statistic
-
-import scala.concurrent.Future
 
 class MockFileStaging() extends FileStaging with ResourceHelpers {
   private val stats: Map[Statistic, AtomicInteger] = Map(

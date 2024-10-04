@@ -1,12 +1,15 @@
 package stasis.server.model.devices
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import org.apache.pekko.Done
-import stasis.core.persistence.backends.KeyValueBackend
-import stasis.server.security.{CurrentUser, Resource}
+
+import stasis.layers.persistence.KeyValueStore
+import stasis.server.security.CurrentUser
+import stasis.server.security.Resource
 import stasis.shared.model.devices.Device
 import stasis.shared.security.Permission
-
-import scala.concurrent.{ExecutionContext, Future}
 
 trait DeviceStore { store =>
   protected implicit def ec: ExecutionContext
@@ -135,7 +138,7 @@ object DeviceStore {
   }
 
   def apply(
-    backend: KeyValueBackend[Device.Id, Device]
+    backend: KeyValueStore[Device.Id, Device]
   )(implicit ctx: ExecutionContext): DeviceStore =
     new DeviceStore {
       override implicit protected def ec: ExecutionContext = ctx

@@ -1,23 +1,26 @@
 package stasis.test.specs.unit.identity.api
 
+import scala.collection.mutable
+import scala.concurrent.duration._
+
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model._
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import play.api.libs.json._
-import stasis.core.api.MessageResponse
+
+import stasis.identity.api.IdentityEndpoint
+import stasis.identity.api.Manage
 import stasis.identity.api.manage.setup.Config
-import stasis.identity.api.{IdentityEndpoint, Manage}
 import stasis.identity.model.apis.Api
 import stasis.identity.model.secrets.Secret
-import stasis.test.specs.unit.core.security.mocks.MockJwksGenerators
+import stasis.layers
+import stasis.layers.api.MessageResponse
+import stasis.layers.security.mocks.MockJwksGenerators
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.api.manage.ManageFixtures
 import stasis.test.specs.unit.identity.api.oauth.OAuthFixtures
 import stasis.test.specs.unit.identity.model.Generators
-
-import scala.collection.mutable
-import scala.concurrent.duration._
 
 class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtures {
   "An IdentityEndpoint" should "provide OAuth routes" in withRetry {
@@ -27,7 +30,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
     val endpoint = new IdentityEndpoint(
       keys = Seq(
         MockJwksGenerators.generateRandomRsaKey(
-          keyId = Some(stasis.test.Generators.generateString(withSize = 16))
+          keyId = Some(layers.Generators.generateString(withSize = 16))
         )
       ),
       oauthConfig = oauthConfig,
@@ -52,7 +55,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
 
     val keys = Seq(
       MockJwksGenerators.generateRandomRsaKey(
-        keyId = Some(stasis.test.Generators.generateString(withSize = 16))
+        keyId = Some(layers.Generators.generateString(withSize = 16))
       )
     )
 
@@ -74,6 +77,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
 
   it should "provide management routes" in withRetry {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
     import stasis.identity.api.Formats._
 
     val (_, _, oauthConfig, oauthProviders) = createOAuthFixtures()
@@ -84,7 +88,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
     val endpoint = new IdentityEndpoint(
       keys = Seq(
         MockJwksGenerators.generateRandomRsaKey(
-          keyId = Some(stasis.test.Generators.generateString(withSize = 16))
+          keyId = Some(layers.Generators.generateString(withSize = 16))
         )
       ),
       oauthConfig = oauthConfig,
@@ -104,7 +108,6 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
 
   it should "handle parameter rejections reported by routes" in withRetry {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
-    import stasis.core.api.Formats.messageResponseFormat
 
     val endpointPort = ports.dequeue()
 
@@ -114,7 +117,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
     val endpoint = new IdentityEndpoint(
       keys = Seq(
         MockJwksGenerators.generateRandomRsaKey(
-          keyId = Some(stasis.test.Generators.generateString(withSize = 16))
+          keyId = Some(layers.Generators.generateString(withSize = 16))
         )
       ),
       oauthConfig = oauthConfig,
@@ -146,7 +149,6 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
 
   it should "handle generic failures reported by routes" in withRetry {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
-    import stasis.core.api.Formats.messageResponseFormat
 
     val endpointPort = ports.dequeue()
 
@@ -156,7 +158,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
     val endpoint = new IdentityEndpoint(
       keys = Seq(
         MockJwksGenerators.generateRandomRsaKey(
-          keyId = Some(stasis.test.Generators.generateString(withSize = 16))
+          keyId = Some(layers.Generators.generateString(withSize = 16))
         )
       ),
       oauthConfig = oauthConfig,
@@ -190,7 +192,6 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
 
   it should "reject requests with invalid entities" in withRetry {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
-    import stasis.core.api.Formats.messageResponseFormat
 
     val endpointPort = ports.dequeue()
 
@@ -200,7 +201,7 @@ class IdentityEndpointSpec extends RouteTest with OAuthFixtures with ManageFixtu
     val endpoint = new IdentityEndpoint(
       keys = Seq(
         MockJwksGenerators.generateRandomRsaKey(
-          keyId = Some(stasis.test.Generators.generateString(withSize = 16))
+          keyId = Some(layers.Generators.generateString(withSize = 16))
         )
       ),
       oauthConfig = oauthConfig,

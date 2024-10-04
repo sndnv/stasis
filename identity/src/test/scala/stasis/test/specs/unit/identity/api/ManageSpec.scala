@@ -1,8 +1,11 @@
 package stasis.test.specs.unit.identity.api
 
+import scala.concurrent.duration._
+
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import play.api.libs.json._
+
 import stasis.identity.api.Formats._
 import stasis.identity.api.Manage
 import stasis.identity.api.manage.setup.Config
@@ -13,8 +16,6 @@ import stasis.identity.model.secrets.Secret
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.api.manage.ManageFixtures
 import stasis.test.specs.unit.identity.model.Generators
-
-import scala.concurrent.duration._
 
 class ManageSpec extends RouteTest with ManageFixtures {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._

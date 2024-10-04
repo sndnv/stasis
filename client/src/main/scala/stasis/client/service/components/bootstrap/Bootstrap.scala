@@ -1,11 +1,14 @@
 package stasis.client.service.components.bootstrap
 
-import org.apache.pekko.actor.typed.scaladsl.LoggerOps
-import stasis.client.api.clients.{DefaultServerBootstrapEndpointClient, ServerBootstrapEndpointClient}
-import stasis.shared.model.devices.DeviceBootstrapParameters
-
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
+import scala.util.Failure
+import scala.util.Success
+
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+
+import stasis.client.api.clients.DefaultServerBootstrapEndpointClient
+import stasis.client.api.clients.ServerBootstrapEndpointClient
+import stasis.shared.model.devices.DeviceBootstrapParameters
 
 trait Bootstrap {
   def execute(): Future[DeviceBootstrapParameters]

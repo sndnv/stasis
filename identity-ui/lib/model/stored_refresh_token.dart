@@ -11,7 +11,8 @@ class StoredRefreshToken with _$StoredRefreshToken {
     required String client,
     required String owner,
     String? scope,
-    String? expiration,
+    DateTime? expiration,
+    required DateTime created,
   }) = _StoredRefreshToken;
 
   factory StoredRefreshToken.fromJson(Map<String, Object?> json) => _$StoredRefreshTokenFromJson(json);

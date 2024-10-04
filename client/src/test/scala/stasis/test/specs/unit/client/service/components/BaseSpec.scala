@@ -1,11 +1,18 @@
 package stasis.test.specs.unit.client.service.components
 
+import scala.concurrent.Future
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.Http
-import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, StatusCodes}
+import org.apache.pekko.http.scaladsl.model.HttpMethods
+import org.apache.pekko.http.scaladsl.model.HttpRequest
+import org.apache.pekko.http.scaladsl.model.HttpResponse
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import stasis.client.analysis.Checksum
 import stasis.client.compression.Gzip
 import stasis.client.encryption.Aes
@@ -13,17 +20,16 @@ import stasis.client.ops
 import stasis.client.ops.Metrics
 import stasis.client.service.ApplicationTray
 import stasis.client.service.components.Base
-import stasis.core.{api, persistence, security}
+import stasis.core
+import stasis.layers
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 
-import scala.concurrent.Future
-
 class BaseSpec extends AsyncUnitSpec with ResourceHelpers {
   "A Base component" should "create itself from config" in {
-    implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-      Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
-      s"BaseSpec_${java.util.UUID.randomUUID().toString}"
+    implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+      guardianBehavior = Behaviors.ignore,
+      name = s"BaseSpec_${java.util.UUID.randomUUID().toString}"
     )
 
     Base(
@@ -38,9 +44,9 @@ class BaseSpec extends AsyncUnitSpec with ResourceHelpers {
   }
 
   "A Base component telemetry" should "support providing metrics (no-op)" in {
-    implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-      Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
-      s"BaseSpec_${java.util.UUID.randomUUID().toString}"
+    implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+      guardianBehavior = Behaviors.ignore,
+      name = s"BaseSpec_${java.util.UUID.randomUUID().toString}"
     )
 
     val providers = Base.Telemetry.loadMetricsProviders(
@@ -49,18 +55,19 @@ class BaseSpec extends AsyncUnitSpec with ResourceHelpers {
 
     providers should be(
       Set(
-        security.Metrics.noop(),
-        api.Metrics.noop(),
-        persistence.Metrics.noop(),
+        layers.security.Metrics.noop(),
+        layers.api.Metrics.noop(),
+        layers.persistence.Metrics.noop(),
+        core.persistence.Metrics.noop(),
         ops.Metrics.noop()
       ).flatten
     )
   }
 
   it should "support providing metrics (Prometheus)" in {
-    implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-      Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
-      s"BaseSpec_${java.util.UUID.randomUUID().toString}"
+    implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+      guardianBehavior = Behaviors.ignore,
+      name = s"BaseSpec_${java.util.UUID.randomUUID().toString}"
     )
 
     val providers = Base.Telemetry.loadMetricsProviders(

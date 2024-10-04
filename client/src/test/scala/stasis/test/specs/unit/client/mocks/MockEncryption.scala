@@ -1,11 +1,15 @@
 package stasis.test.specs.unit.client.mocks
 
 import java.util.concurrent.atomic.AtomicInteger
+
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.util.ByteString
-import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceMetadataSecret}
-import stasis.client.encryption.{Decoder, Encoder}
+
+import stasis.client.encryption.Decoder
+import stasis.client.encryption.Encoder
+import stasis.client.encryption.secrets.DeviceFileSecret
+import stasis.client.encryption.secrets.DeviceMetadataSecret
 import stasis.test.specs.unit.client.mocks.MockEncryption.Statistic
 
 class MockEncryption() extends Encoder with Decoder {

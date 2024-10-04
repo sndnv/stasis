@@ -2,12 +2,14 @@ package stasis.test.specs.unit.client.model
 
 import java.nio.file.Paths
 
-import stasis.client.model.{proto, FilesystemMetadata}
+import scala.util.Failure
+import scala.util.Success
+
+import stasis.client.model.FilesystemMetadata
+import stasis.client.model.proto
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.Fixtures
-
-import scala.util.{Failure, Success}
 
 class FilesystemMetadataSpec extends UnitSpec {
   "A FilesystemMetadata" should "be serializable to protobuf data" in {

@@ -1,15 +1,20 @@
 package stasis.test.specs.unit.identity.api.oauth.directives
 
 import org.apache.pekko.http.scaladsl.model
-import org.apache.pekko.http.scaladsl.model.{StatusCodes, Uri}
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.http.scaladsl.server.Directives
 import org.slf4j.Logger
+
 import stasis.identity.api.oauth.directives.AuthorizationCodeGeneration
 import stasis.identity.model.ChallengeMethod
 import stasis.identity.model.clients.Client
-import stasis.identity.model.codes.generators.{AuthorizationCodeGenerator, DefaultAuthorizationCodeGenerator}
-import stasis.identity.model.codes.{AuthorizationCodeStore, StoredAuthorizationCode}
+import stasis.identity.model.codes.StoredAuthorizationCode
+import stasis.identity.model.codes.generators.AuthorizationCodeGenerator
+import stasis.identity.model.codes.generators.DefaultAuthorizationCodeGenerator
 import stasis.identity.model.errors.AuthorizationError
+import stasis.identity.persistence.codes.AuthorizationCodeStore
+import stasis.layers
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
 
@@ -37,8 +42,8 @@ class AuthorizationCodeGenerationSpec extends RouteTest {
     Get() ~> routes ~> check {
       status should be(StatusCodes.OK)
 
-      codes.codes.await.headOption match {
-        case Some((_, expectedCode)) =>
+      codes.all.await.headOption match {
+        case Some(expectedCode) =>
           responseAs[String] should be(expectedCode.code.value)
           expectedCode.challenge should be(None)
 
@@ -58,7 +63,7 @@ class AuthorizationCodeGenerationSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
     val scope = "some-scope"
     val expectedChallenge = StoredAuthorizationCode.Challenge(
-      stasis.test.Generators.generateString(withSize = 128),
+      layers.Generators.generateString(withSize = 128),
       Some(ChallengeMethod.S256)
     )
 
@@ -77,8 +82,8 @@ class AuthorizationCodeGenerationSpec extends RouteTest {
     Get() ~> routes ~> check {
       status should be(StatusCodes.OK)
 
-      codes.codes.await.headOption match {
-        case Some((_, expectedCode)) =>
+      codes.all.await.headOption match {
+        case Some(expectedCode) =>
           responseAs[String] should be(expectedCode.code.value)
           expectedCode.challenge should be(Some(expectedChallenge))
 

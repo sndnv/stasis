@@ -1,6 +1,7 @@
 package stasis.test.specs.unit.shared.secrets
 
 import com.typesafe.{config => typesafe}
+
 import stasis.shared.secrets.SecretsConfig
 import stasis.test.specs.unit.UnitSpec
 

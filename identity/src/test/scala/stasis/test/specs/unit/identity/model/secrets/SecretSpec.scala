@@ -1,14 +1,16 @@
 package stasis.test.specs.unit.identity.model.secrets
 
-import com.typesafe.config.{Config, ConfigFactory}
+import scala.concurrent.duration._
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
 import stasis.identity.model.secrets.Secret
-import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.layers.UnitSpec
 import stasis.test.specs.unit.identity.EncodingHelpers
 import stasis.test.specs.unit.identity.model.Generators
 
-import scala.concurrent.duration._
-
-class SecretSpec extends AsyncUnitSpec with EncodingHelpers {
+class SecretSpec extends UnitSpec with EncodingHelpers {
   "A Secret" should "generate random password salt values" in {
     val salt = Secret.generateSalt()
 

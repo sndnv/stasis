@@ -1,11 +1,14 @@
 package stasis.client.staging
 
 import java.nio.file.attribute.PosixFilePermissions
-import java.nio.file.{Files, Path, StandardCopyOption}
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 import org.apache.pekko.Done
-
-import scala.concurrent.{ExecutionContext, Future}
 
 class DefaultFileStaging(
   storeDirectory: Option[Path],

@@ -1,15 +1,17 @@
 package stasis.core.persistence.nodes
 
-import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import org.apache.pekko.util.Timeout
-import stasis.core.persistence.StoreInitializationResult
-import stasis.core.persistence.backends.KeyValueBackend
-import stasis.core.persistence.backends.memory.MemoryBackend
-import stasis.core.routing.Node
-import stasis.core.telemetry.TelemetryContext
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
-import scala.concurrent.{ExecutionContext, Future}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.util.Timeout
+
+import stasis.core.persistence.StoreInitializationResult
+import stasis.core.routing.Node
+import stasis.layers.persistence.KeyValueStore
+import stasis.layers.persistence.memory.MemoryStore
+import stasis.layers.telemetry.TelemetryContext
 
 trait NodeStore { store =>
   def put(node: Node): Future[Done]
@@ -28,18 +30,18 @@ trait NodeStore { store =>
 
 object NodeStore {
   def apply(
-    backend: KeyValueBackend[Node.Id, Node],
+    backend: KeyValueStore[Node.Id, Node],
     cachingEnabled: Boolean
   )(implicit
-    system: ActorSystem[SpawnProtocol.Command],
+    system: ActorSystem[Nothing],
     telemetry: TelemetryContext,
     timeout: Timeout
   ): StoreInitializationResult[NodeStore] = {
     implicit val ec: ExecutionContext = system.executionContext
 
-    val cacheOpt: Option[KeyValueBackend[Node.Id, Node]] =
+    val cacheOpt: Option[KeyValueStore[Node.Id, Node]] =
       if (cachingEnabled) {
-        Some(MemoryBackend[Node.Id, Node](name = s"nodes-cache-${java.util.UUID.randomUUID().toString}"))
+        Some(MemoryStore[Node.Id, Node](name = "nodes-cache"))
       } else {
         None
       }

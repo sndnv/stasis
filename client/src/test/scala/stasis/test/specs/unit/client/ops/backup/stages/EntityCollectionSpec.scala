@@ -2,6 +2,7 @@ package stasis.test.specs.unit.client.ops.backup.stages
 
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.Source
+
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.model.SourceEntity
@@ -78,11 +79,11 @@ class EntityCollectionSpec extends AsyncUnitSpec {
         mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
 
-        mockTelemetry.ops.backup.entityExamined should be(3)
-        mockTelemetry.ops.backup.entitySkipped should be(1)
-        mockTelemetry.ops.backup.entityCollected should be(2)
-        mockTelemetry.ops.backup.entityChunkProcessed should be(0)
-        mockTelemetry.ops.backup.entityProcessed should be(0)
+        mockTelemetry.client.ops.backup.entityExamined should be(3)
+        mockTelemetry.client.ops.backup.entitySkipped should be(1)
+        mockTelemetry.client.ops.backup.entityCollected should be(2)
+        mockTelemetry.client.ops.backup.entityChunkProcessed should be(0)
+        mockTelemetry.client.ops.backup.entityProcessed should be(0)
       }
   }
 

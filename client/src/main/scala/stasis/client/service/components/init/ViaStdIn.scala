@@ -2,10 +2,12 @@ package stasis.client.service.components.init
 
 import java.io.Console
 
-import org.apache.pekko.Done
-
 import scala.concurrent.Future
-import scala.util.{Failure, Success, Try}
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+
+import org.apache.pekko.Done
 
 object ViaStdIn {
   def retrieve(console: Console): Future[(String, Array[Char])] =

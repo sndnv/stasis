@@ -11,6 +11,8 @@ class ResourceOwner with _$ResourceOwner {
     required List<String> allowedScopes,
     required bool active,
     String? subject,
+    required DateTime created,
+    required DateTime updated,
   }) = _ResourceOwner;
 
   factory ResourceOwner.fromJson(Map<String, Object?> json) => _$ResourceOwnerFromJson(json);

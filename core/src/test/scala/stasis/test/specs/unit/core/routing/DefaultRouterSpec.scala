@@ -1,27 +1,38 @@
 package stasis.test.specs.unit.core.routing
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.Failure
+import scala.util.Success
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
+
 import stasis.core.networking.http.HttpEndpointAddress
-import stasis.core.packaging.{Crate, Manifest}
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
+import stasis.core.persistence.CrateStorageRequest
+import stasis.core.persistence.CrateStorageReservation
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.staging.StagingStore
-import stasis.core.persistence.{CrateStorageRequest, CrateStorageReservation}
-import stasis.core.routing.exceptions.{DiscardFailure, DistributionFailure, PullFailure, PushFailure}
-import stasis.core.routing.{DefaultRouter, Node, NodeProxy}
-import stasis.core.telemetry.TelemetryContext
+import stasis.core.routing.DefaultRouter
+import stasis.core.routing.Node
+import stasis.core.routing.NodeProxy
+import stasis.core.routing.exceptions.DiscardFailure
+import stasis.core.routing.exceptions.DistributionFailure
+import stasis.core.routing.exceptions.PullFailure
+import stasis.core.routing.exceptions.PushFailure
+import stasis.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.networking.mocks.{MockGrpcEndpointClient, MockHttpEndpointClient}
+import stasis.test.specs.unit.core.networking.mocks.MockGrpcEndpointClient
+import stasis.test.specs.unit.core.networking.mocks.MockHttpEndpointClient
 import stasis.test.specs.unit.core.persistence.mocks._
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
 class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
   "A DefaultRouter" should "calculate crate copies distribution" in {
@@ -151,15 +162,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(router.fixtures.remoteNodes.size)
       router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
 
-      telemetry.routing.router.push should be(1)
-      telemetry.routing.router.pushFailures should be(0)
-      telemetry.routing.router.pull should be(0)
-      telemetry.routing.router.pullFailures should be(0)
-      telemetry.routing.router.discard should be(0)
-      telemetry.routing.router.discardFailures should be(0)
-      telemetry.routing.router.reserve should be(0)
-      telemetry.routing.router.reserveFailures should be(0)
-      telemetry.routing.router.stage should be(0)
+      telemetry.core.routing.router.push should be(1)
+      telemetry.core.routing.router.pushFailures should be(0)
+      telemetry.core.routing.router.pull should be(0)
+      telemetry.core.routing.router.pullFailures should be(0)
+      telemetry.core.routing.router.discard should be(0)
+      telemetry.core.routing.router.discardFailures should be(0)
+      telemetry.core.routing.router.reserve should be(0)
+      telemetry.core.routing.router.reserveFailures should be(0)
+      telemetry.core.routing.router.stage should be(0)
     }
   }
 
@@ -189,15 +200,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(fixtures.remoteNodes.size)
       testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
 
-      telemetry.routing.router.push should be(0)
-      telemetry.routing.router.pushFailures should be(0)
-      telemetry.routing.router.pull should be(0)
-      telemetry.routing.router.pullFailures should be(0)
-      telemetry.routing.router.discard should be(0)
-      telemetry.routing.router.discardFailures should be(0)
-      telemetry.routing.router.reserve should be(0)
-      telemetry.routing.router.reserveFailures should be(0)
-      telemetry.routing.router.stage should be(1)
+      telemetry.core.routing.router.push should be(0)
+      telemetry.core.routing.router.pushFailures should be(0)
+      telemetry.core.routing.router.pull should be(0)
+      telemetry.core.routing.router.pullFailures should be(0)
+      telemetry.core.routing.router.discard should be(0)
+      telemetry.core.routing.router.discardFailures should be(0)
+      telemetry.core.routing.router.reserve should be(0)
+      telemetry.core.routing.router.reserveFailures should be(0)
+      telemetry.core.routing.router.stage should be(1)
     }
   }
 
@@ -231,15 +242,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
       router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
 
-      telemetry.routing.router.push should be(1)
-      telemetry.routing.router.pushFailures should be(0)
-      telemetry.routing.router.pull should be(0)
-      telemetry.routing.router.pullFailures should be(0)
-      telemetry.routing.router.discard should be(0)
-      telemetry.routing.router.discardFailures should be(0)
-      telemetry.routing.router.reserve should be(2)
-      telemetry.routing.router.reserveFailures should be(0)
-      telemetry.routing.router.stage should be(0)
+      telemetry.core.routing.router.push should be(1)
+      telemetry.core.routing.router.pushFailures should be(0)
+      telemetry.core.routing.router.pull should be(0)
+      telemetry.core.routing.router.pullFailures should be(0)
+      telemetry.core.routing.router.discard should be(0)
+      telemetry.core.routing.router.discardFailures should be(0)
+      telemetry.core.routing.router.reserve should be(2)
+      telemetry.core.routing.router.reserveFailures should be(0)
+      telemetry.core.routing.router.stage should be(0)
     }
   }
 
@@ -269,15 +280,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(0)
         router.fixtures.crateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
 
-        telemetry.routing.router.push should be(0)
-        telemetry.routing.router.pushFailures should be(1)
-        telemetry.routing.router.pull should be(0)
-        telemetry.routing.router.pullFailures should be(0)
-        telemetry.routing.router.discard should be(0)
-        telemetry.routing.router.discardFailures should be(0)
-        telemetry.routing.router.reserve should be(0)
-        telemetry.routing.router.reserveFailures should be(0)
-        telemetry.routing.router.stage should be(0)
+        telemetry.core.routing.router.push should be(0)
+        telemetry.core.routing.router.pushFailures should be(1)
+        telemetry.core.routing.router.pull should be(0)
+        telemetry.core.routing.router.pullFailures should be(0)
+        telemetry.core.routing.router.discard should be(0)
+        telemetry.core.routing.router.discardFailures should be(0)
+        telemetry.core.routing.router.reserve should be(0)
+        telemetry.core.routing.router.reserveFailures should be(0)
+        telemetry.core.routing.router.stage should be(0)
       }
   }
 
@@ -306,15 +317,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
 
-        telemetry.routing.router.push should be(0)
-        telemetry.routing.router.pushFailures should be(1)
-        telemetry.routing.router.pull should be(0)
-        telemetry.routing.router.pullFailures should be(0)
-        telemetry.routing.router.discard should be(0)
-        telemetry.routing.router.discardFailures should be(0)
-        telemetry.routing.router.reserve should be(0)
-        telemetry.routing.router.reserveFailures should be(0)
-        telemetry.routing.router.stage should be(0)
+        telemetry.core.routing.router.push should be(0)
+        telemetry.core.routing.router.pushFailures should be(1)
+        telemetry.core.routing.router.pull should be(0)
+        telemetry.core.routing.router.pullFailures should be(0)
+        telemetry.core.routing.router.discard should be(0)
+        telemetry.core.routing.router.discardFailures should be(0)
+        telemetry.core.routing.router.reserve should be(0)
+        telemetry.core.routing.router.reserveFailures should be(0)
+        telemetry.core.routing.router.stage should be(0)
       }
   }
 
@@ -337,15 +348,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(0)
 
-        telemetry.routing.router.push should be(0)
-        telemetry.routing.router.pushFailures should be(1)
-        telemetry.routing.router.pull should be(0)
-        telemetry.routing.router.pullFailures should be(0)
-        telemetry.routing.router.discard should be(0)
-        telemetry.routing.router.discardFailures should be(0)
-        telemetry.routing.router.reserve should be(0)
-        telemetry.routing.router.reserveFailures should be(0)
-        telemetry.routing.router.stage should be(0)
+        telemetry.core.routing.router.push should be(0)
+        telemetry.core.routing.router.pushFailures should be(1)
+        telemetry.core.routing.router.pull should be(0)
+        telemetry.core.routing.router.pullFailures should be(0)
+        telemetry.core.routing.router.discard should be(0)
+        telemetry.core.routing.router.discardFailures should be(0)
+        telemetry.core.routing.router.reserve should be(0)
+        telemetry.core.routing.router.reserveFailures should be(0)
+        telemetry.core.routing.router.stage should be(0)
       }
   }
 
@@ -381,15 +392,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       )
       router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(failedNodesCount)
 
-      telemetry.routing.router.push should be(1)
-      telemetry.routing.router.pushFailures should be(0)
-      telemetry.routing.router.pull should be(0)
-      telemetry.routing.router.pullFailures should be(0)
-      telemetry.routing.router.discard should be(0)
-      telemetry.routing.router.discardFailures should be(0)
-      telemetry.routing.router.reserve should be(0)
-      telemetry.routing.router.reserveFailures should be(0)
-      telemetry.routing.router.stage should be(0)
+      telemetry.core.routing.router.push should be(1)
+      telemetry.core.routing.router.pushFailures should be(0)
+      telemetry.core.routing.router.pull should be(0)
+      telemetry.core.routing.router.pullFailures should be(0)
+      telemetry.core.routing.router.discard should be(0)
+      telemetry.core.routing.router.discardFailures should be(0)
+      telemetry.core.routing.router.reserve should be(0)
+      telemetry.core.routing.router.reserveFailures should be(0)
+      telemetry.core.routing.router.stage should be(0)
     }
   }
 
@@ -427,15 +438,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PushCompleted) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PushFailed) should be(fixtures.remoteNodes.size)
 
-        telemetry.routing.router.push should be(0)
-        telemetry.routing.router.pushFailures should be(1)
-        telemetry.routing.router.pull should be(0)
-        telemetry.routing.router.pullFailures should be(0)
-        telemetry.routing.router.discard should be(0)
-        telemetry.routing.router.discardFailures should be(0)
-        telemetry.routing.router.reserve should be(0)
-        telemetry.routing.router.reserveFailures should be(0)
-        telemetry.routing.router.stage should be(0)
+        telemetry.core.routing.router.push should be(0)
+        telemetry.core.routing.router.pushFailures should be(1)
+        telemetry.core.routing.router.pull should be(0)
+        telemetry.core.routing.router.pullFailures should be(0)
+        telemetry.core.routing.router.discard should be(0)
+        telemetry.core.routing.router.discardFailures should be(0)
+        telemetry.core.routing.router.reserve should be(0)
+        telemetry.core.routing.router.reserveFailures should be(0)
+        telemetry.core.routing.router.stage should be(0)
       }
   }
 
@@ -474,15 +485,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedEmpty) should be(0)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullFailed) should be(0)
 
-    telemetry.routing.router.push should be(1)
-    telemetry.routing.router.pushFailures should be(0)
-    telemetry.routing.router.pull should be(1)
-    telemetry.routing.router.pullFailures should be(0)
-    telemetry.routing.router.discard should be(0)
-    telemetry.routing.router.discardFailures should be(0)
-    telemetry.routing.router.reserve should be(0)
-    telemetry.routing.router.reserveFailures should be(0)
-    telemetry.routing.router.stage should be(0)
+    telemetry.core.routing.router.push should be(1)
+    telemetry.core.routing.router.pushFailures should be(0)
+    telemetry.core.routing.router.pull should be(1)
+    telemetry.core.routing.router.pullFailures should be(0)
+    telemetry.core.routing.router.discard should be(0)
+    telemetry.core.routing.router.discardFailures should be(0)
+    telemetry.core.routing.router.reserve should be(0)
+    telemetry.core.routing.router.reserveFailures should be(0)
+    telemetry.core.routing.router.stage should be(0)
   }
 
   it should "pull crates from local nodes" in {
@@ -516,15 +527,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedEmpty) should be(0)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullFailed) should be(0)
 
-    telemetry.routing.router.push should be(1)
-    telemetry.routing.router.pushFailures should be(0)
-    telemetry.routing.router.pull should be(1)
-    telemetry.routing.router.pullFailures should be(0)
-    telemetry.routing.router.discard should be(0)
-    telemetry.routing.router.discardFailures should be(0)
-    telemetry.routing.router.reserve should be(0)
-    telemetry.routing.router.reserveFailures should be(0)
-    telemetry.routing.router.stage should be(0)
+    telemetry.core.routing.router.push should be(1)
+    telemetry.core.routing.router.pushFailures should be(0)
+    telemetry.core.routing.router.pull should be(1)
+    telemetry.core.routing.router.pullFailures should be(0)
+    telemetry.core.routing.router.discard should be(0)
+    telemetry.core.routing.router.discardFailures should be(0)
+    telemetry.core.routing.router.reserve should be(0)
+    telemetry.core.routing.router.reserveFailures should be(0)
+    telemetry.core.routing.router.stage should be(0)
   }
 
   it should "fail to pull crates when crate manifest is missing" in {
@@ -545,15 +556,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedEmpty) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PullFailed) should be(0)
 
-        telemetry.routing.router.push should be(0)
-        telemetry.routing.router.pushFailures should be(0)
-        telemetry.routing.router.pull should be(0)
-        telemetry.routing.router.pullFailures should be(1)
-        telemetry.routing.router.discard should be(0)
-        telemetry.routing.router.discardFailures should be(0)
-        telemetry.routing.router.reserve should be(0)
-        telemetry.routing.router.reserveFailures should be(0)
-        telemetry.routing.router.stage should be(0)
+        telemetry.core.routing.router.push should be(0)
+        telemetry.core.routing.router.pushFailures should be(0)
+        telemetry.core.routing.router.pull should be(0)
+        telemetry.core.routing.router.pullFailures should be(1)
+        telemetry.core.routing.router.discard should be(0)
+        telemetry.core.routing.router.discardFailures should be(0)
+        telemetry.core.routing.router.reserve should be(0)
+        telemetry.core.routing.router.reserveFailures should be(0)
+        telemetry.core.routing.router.stage should be(0)
       }
   }
 
@@ -578,15 +589,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedEmpty) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.PullFailed) should be(0)
 
-        telemetry.routing.router.push should be(0)
-        telemetry.routing.router.pushFailures should be(0)
-        telemetry.routing.router.pull should be(0)
-        telemetry.routing.router.pullFailures should be(1)
-        telemetry.routing.router.discard should be(0)
-        telemetry.routing.router.discardFailures should be(0)
-        telemetry.routing.router.reserve should be(0)
-        telemetry.routing.router.reserveFailures should be(0)
-        telemetry.routing.router.stage should be(0)
+        telemetry.core.routing.router.push should be(0)
+        telemetry.core.routing.router.pushFailures should be(0)
+        telemetry.core.routing.router.pull should be(0)
+        telemetry.core.routing.router.pullFailures should be(1)
+        telemetry.core.routing.router.discard should be(0)
+        telemetry.core.routing.router.discardFailures should be(0)
+        telemetry.core.routing.router.reserve should be(0)
+        telemetry.core.routing.router.reserveFailures should be(0)
+        telemetry.core.routing.router.stage should be(0)
       }
   }
 
@@ -624,15 +635,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedEmpty) should be(0)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullFailed) should be(0)
 
-    telemetry.routing.router.push should be(1)
-    telemetry.routing.router.pushFailures should be(0)
-    telemetry.routing.router.pull should be(1)
-    telemetry.routing.router.pullFailures should be(1)
-    telemetry.routing.router.discard should be(0)
-    telemetry.routing.router.discardFailures should be(0)
-    telemetry.routing.router.reserve should be(0)
-    telemetry.routing.router.reserveFailures should be(0)
-    telemetry.routing.router.stage should be(0)
+    telemetry.core.routing.router.push should be(1)
+    telemetry.core.routing.router.pushFailures should be(0)
+    telemetry.core.routing.router.pull should be(1)
+    telemetry.core.routing.router.pullFailures should be(1)
+    telemetry.core.routing.router.discard should be(0)
+    telemetry.core.routing.router.discardFailures should be(0)
+    telemetry.core.routing.router.reserve should be(0)
+    telemetry.core.routing.router.reserveFailures should be(0)
+    telemetry.core.routing.router.stage should be(0)
   }
 
   it should "recover from content not returned by individual nodes" in {
@@ -671,15 +682,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedEmpty) should be(0)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullFailed) should be(0)
 
-    telemetry.routing.router.push should be(1)
-    telemetry.routing.router.pushFailures should be(0)
-    telemetry.routing.router.pull should be(1)
-    telemetry.routing.router.pullFailures should be(1)
-    telemetry.routing.router.discard should be(0)
-    telemetry.routing.router.discardFailures should be(0)
-    telemetry.routing.router.reserve should be(0)
-    telemetry.routing.router.reserveFailures should be(0)
-    telemetry.routing.router.stage should be(0)
+    telemetry.core.routing.router.push should be(1)
+    telemetry.core.routing.router.pushFailures should be(0)
+    telemetry.core.routing.router.pull should be(1)
+    telemetry.core.routing.router.pullFailures should be(1)
+    telemetry.core.routing.router.discard should be(0)
+    telemetry.core.routing.router.discardFailures should be(0)
+    telemetry.core.routing.router.reserve should be(0)
+    telemetry.core.routing.router.reserveFailures should be(0)
+    telemetry.core.routing.router.stage should be(0)
   }
 
   it should "recover from node failure on pull" in {
@@ -718,15 +729,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedEmpty) should be(0)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullFailed) should be(0)
 
-    telemetry.routing.router.push should be(1)
-    telemetry.routing.router.pushFailures should be(0)
-    telemetry.routing.router.pull should be(1)
-    telemetry.routing.router.pullFailures should be(1)
-    telemetry.routing.router.discard should be(0)
-    telemetry.routing.router.discardFailures should be(0)
-    telemetry.routing.router.reserve should be(0)
-    telemetry.routing.router.reserveFailures should be(0)
-    telemetry.routing.router.stage should be(0)
+    telemetry.core.routing.router.push should be(1)
+    telemetry.core.routing.router.pushFailures should be(0)
+    telemetry.core.routing.router.pull should be(1)
+    telemetry.core.routing.router.pullFailures should be(1)
+    telemetry.core.routing.router.discard should be(0)
+    telemetry.core.routing.router.discardFailures should be(0)
+    telemetry.core.routing.router.reserve should be(0)
+    telemetry.core.routing.router.reserveFailures should be(0)
+    telemetry.core.routing.router.stage should be(0)
   }
 
   it should "fail to pull missing crates" in {
@@ -758,15 +769,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullCompletedEmpty) should be(fixtures.testNodes.size)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.PullFailed) should be(0)
 
-    telemetry.routing.router.push should be(1)
-    telemetry.routing.router.pushFailures should be(0)
-    telemetry.routing.router.pull should be(0)
-    telemetry.routing.router.pullFailures should be(expectedFailures)
-    telemetry.routing.router.discard should be(0)
-    telemetry.routing.router.discardFailures should be(0)
-    telemetry.routing.router.reserve should be(0)
-    telemetry.routing.router.reserveFailures should be(0)
-    telemetry.routing.router.stage should be(0)
+    telemetry.core.routing.router.push should be(1)
+    telemetry.core.routing.router.pushFailures should be(0)
+    telemetry.core.routing.router.pull should be(0)
+    telemetry.core.routing.router.pullFailures should be(expectedFailures)
+    telemetry.core.routing.router.discard should be(0)
+    telemetry.core.routing.router.discardFailures should be(0)
+    telemetry.core.routing.router.reserve should be(0)
+    telemetry.core.routing.router.reserveFailures should be(0)
+    telemetry.core.routing.router.stage should be(0)
   }
 
   it should "successfully discard existing crates" in {
@@ -790,15 +801,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(2)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
 
-    telemetry.routing.router.push should be(1)
-    telemetry.routing.router.pushFailures should be(0)
-    telemetry.routing.router.pull should be(0)
-    telemetry.routing.router.pullFailures should be(0)
-    telemetry.routing.router.discard should be(1)
-    telemetry.routing.router.discardFailures should be(0)
-    telemetry.routing.router.reserve should be(0)
-    telemetry.routing.router.reserveFailures should be(0)
-    telemetry.routing.router.stage should be(0)
+    telemetry.core.routing.router.push should be(1)
+    telemetry.core.routing.router.pushFailures should be(0)
+    telemetry.core.routing.router.pull should be(0)
+    telemetry.core.routing.router.pullFailures should be(0)
+    telemetry.core.routing.router.discard should be(1)
+    telemetry.core.routing.router.discardFailures should be(0)
+    telemetry.core.routing.router.reserve should be(0)
+    telemetry.core.routing.router.reserveFailures should be(0)
+    telemetry.core.routing.router.stage should be(0)
   }
 
   it should "successfully discard staged crates" in {
@@ -832,15 +843,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(0)
     router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
 
-    telemetry.routing.router.push should be(0)
-    telemetry.routing.router.pushFailures should be(0)
-    telemetry.routing.router.pull should be(0)
-    telemetry.routing.router.pullFailures should be(0)
-    telemetry.routing.router.discard should be(1)
-    telemetry.routing.router.discardFailures should be(0)
-    telemetry.routing.router.reserve should be(0)
-    telemetry.routing.router.reserveFailures should be(0)
-    telemetry.routing.router.stage should be(1)
+    telemetry.core.routing.router.push should be(0)
+    telemetry.core.routing.router.pushFailures should be(0)
+    telemetry.core.routing.router.pull should be(0)
+    telemetry.core.routing.router.pullFailures should be(0)
+    telemetry.core.routing.router.discard should be(1)
+    telemetry.core.routing.router.discardFailures should be(0)
+    telemetry.core.routing.router.reserve should be(0)
+    telemetry.core.routing.router.reserveFailures should be(0)
+    telemetry.core.routing.router.stage should be(1)
   }
 
   it should "fail to discard crates with no manifest" in {
@@ -865,15 +876,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
 
-        telemetry.routing.router.push should be(0)
-        telemetry.routing.router.pushFailures should be(0)
-        telemetry.routing.router.pull should be(0)
-        telemetry.routing.router.pullFailures should be(0)
-        telemetry.routing.router.discard should be(0)
-        telemetry.routing.router.discardFailures should be(1)
-        telemetry.routing.router.reserve should be(0)
-        telemetry.routing.router.reserveFailures should be(0)
-        telemetry.routing.router.stage should be(0)
+        telemetry.core.routing.router.push should be(0)
+        telemetry.core.routing.router.pushFailures should be(0)
+        telemetry.core.routing.router.pull should be(0)
+        telemetry.core.routing.router.pullFailures should be(0)
+        telemetry.core.routing.router.discard should be(0)
+        telemetry.core.routing.router.discardFailures should be(1)
+        telemetry.core.routing.router.reserve should be(0)
+        telemetry.core.routing.router.reserveFailures should be(0)
+        telemetry.core.routing.router.stage should be(0)
       }
   }
 
@@ -901,15 +912,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
 
-        telemetry.routing.router.push should be(0)
-        telemetry.routing.router.pushFailures should be(0)
-        telemetry.routing.router.pull should be(0)
-        telemetry.routing.router.pullFailures should be(0)
-        telemetry.routing.router.discard should be(0)
-        telemetry.routing.router.discardFailures should be(1)
-        telemetry.routing.router.reserve should be(0)
-        telemetry.routing.router.reserveFailures should be(0)
-        telemetry.routing.router.stage should be(0)
+        telemetry.core.routing.router.push should be(0)
+        telemetry.core.routing.router.pushFailures should be(0)
+        telemetry.core.routing.router.pull should be(0)
+        telemetry.core.routing.router.pullFailures should be(0)
+        telemetry.core.routing.router.discard should be(0)
+        telemetry.core.routing.router.discardFailures should be(1)
+        telemetry.core.routing.router.reserve should be(0)
+        telemetry.core.routing.router.reserveFailures should be(0)
+        telemetry.core.routing.router.stage should be(0)
       }
   }
 
@@ -954,15 +965,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(2)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
 
-        telemetry.routing.router.push should be(1)
-        telemetry.routing.router.pushFailures should be(0)
-        telemetry.routing.router.pull should be(0)
-        telemetry.routing.router.pullFailures should be(0)
-        telemetry.routing.router.discard should be(0)
-        telemetry.routing.router.discardFailures should be(1)
-        telemetry.routing.router.reserve should be(0)
-        telemetry.routing.router.reserveFailures should be(0)
-        telemetry.routing.router.stage should be(0)
+        telemetry.core.routing.router.push should be(1)
+        telemetry.core.routing.router.pushFailures should be(0)
+        telemetry.core.routing.router.pull should be(0)
+        telemetry.core.routing.router.pullFailures should be(0)
+        telemetry.core.routing.router.discard should be(0)
+        telemetry.core.routing.router.discardFailures should be(1)
+        telemetry.core.routing.router.reserve should be(0)
+        telemetry.core.routing.router.reserveFailures should be(0)
+        telemetry.core.routing.router.stage should be(0)
       }
   }
 
@@ -1005,15 +1016,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(0)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
 
-        telemetry.routing.router.push should be(1)
-        telemetry.routing.router.pushFailures should be(0)
-        telemetry.routing.router.pull should be(0)
-        telemetry.routing.router.pullFailures should be(0)
-        telemetry.routing.router.discard should be(0)
-        telemetry.routing.router.discardFailures should be(1)
-        telemetry.routing.router.reserve should be(0)
-        telemetry.routing.router.reserveFailures should be(0)
-        telemetry.routing.router.stage should be(0)
+        telemetry.core.routing.router.push should be(1)
+        telemetry.core.routing.router.pushFailures should be(0)
+        telemetry.core.routing.router.pull should be(0)
+        telemetry.core.routing.router.pullFailures should be(0)
+        telemetry.core.routing.router.discard should be(0)
+        telemetry.core.routing.router.discardFailures should be(1)
+        telemetry.core.routing.router.reserve should be(0)
+        telemetry.core.routing.router.reserveFailures should be(0)
+        telemetry.core.routing.router.stage should be(0)
       }
   }
 
@@ -1061,15 +1072,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
         router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardCompleted) should be(2)
         router.testClient.statistics(MockHttpEndpointClient.Statistic.DiscardFailed) should be(0)
 
-        telemetry.routing.router.push should be(1)
-        telemetry.routing.router.pushFailures should be(0)
-        telemetry.routing.router.pull should be(0)
-        telemetry.routing.router.pullFailures should be(0)
-        telemetry.routing.router.discard should be(0)
-        telemetry.routing.router.discardFailures should be(1)
-        telemetry.routing.router.reserve should be(0)
-        telemetry.routing.router.reserveFailures should be(0)
-        telemetry.routing.router.stage should be(0)
+        telemetry.core.routing.router.push should be(1)
+        telemetry.core.routing.router.pushFailures should be(0)
+        telemetry.core.routing.router.pull should be(0)
+        telemetry.core.routing.router.pullFailures should be(0)
+        telemetry.core.routing.router.discard should be(0)
+        telemetry.core.routing.router.discardFailures should be(1)
+        telemetry.core.routing.router.reserve should be(0)
+        telemetry.core.routing.router.reserveFailures should be(0)
+        telemetry.core.routing.router.stage should be(0)
       }
   }
 
@@ -1106,15 +1117,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
       actualReservation.size should be(expectedReservation.size)
       actualReservation.copies should be(expectedReservation.copies)
 
-      telemetry.routing.router.push should be(0)
-      telemetry.routing.router.pushFailures should be(0)
-      telemetry.routing.router.pull should be(0)
-      telemetry.routing.router.pullFailures should be(0)
-      telemetry.routing.router.discard should be(0)
-      telemetry.routing.router.discardFailures should be(0)
-      telemetry.routing.router.reserve should be(2) // 1 for the node + 1 for the router
-      telemetry.routing.router.reserveFailures should be(0)
-      telemetry.routing.router.stage should be(0)
+      telemetry.core.routing.router.push should be(0)
+      telemetry.core.routing.router.pushFailures should be(0)
+      telemetry.core.routing.router.pull should be(0)
+      telemetry.core.routing.router.pullFailures should be(0)
+      telemetry.core.routing.router.discard should be(0)
+      telemetry.core.routing.router.discardFailures should be(0)
+      telemetry.core.routing.router.reserve should be(2) // 1 for the node + 1 for the router
+      telemetry.core.routing.router.reserveFailures should be(0)
+      telemetry.core.routing.router.stage should be(0)
     }
   }
 
@@ -1140,15 +1151,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.reserve(request).map { result =>
       result should be(None)
 
-      telemetry.routing.router.push should be(0)
-      telemetry.routing.router.pushFailures should be(0)
-      telemetry.routing.router.pull should be(0)
-      telemetry.routing.router.pullFailures should be(0)
-      telemetry.routing.router.discard should be(0)
-      telemetry.routing.router.discardFailures should be(0)
-      telemetry.routing.router.reserve should be(0)
-      telemetry.routing.router.reserveFailures should be(2) // 1 for storage rejection and 1 for reservation rejection
-      telemetry.routing.router.stage should be(0)
+      telemetry.core.routing.router.push should be(0)
+      telemetry.core.routing.router.pushFailures should be(0)
+      telemetry.core.routing.router.pull should be(0)
+      telemetry.core.routing.router.pullFailures should be(0)
+      telemetry.core.routing.router.discard should be(0)
+      telemetry.core.routing.router.discardFailures should be(0)
+      telemetry.core.routing.router.reserve should be(0)
+      telemetry.core.routing.router.reserveFailures should be(2) // 1 for storage rejection and 1 for reservation rejection
+      telemetry.core.routing.router.stage should be(0)
     }
   }
 
@@ -1197,15 +1208,15 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.reserve(request).map { result =>
       result should be(None)
 
-      telemetry.routing.router.push should be(0)
-      telemetry.routing.router.pushFailures should be(0)
-      telemetry.routing.router.pull should be(0)
-      telemetry.routing.router.pullFailures should be(0)
-      telemetry.routing.router.discard should be(0)
-      telemetry.routing.router.discardFailures should be(0)
-      telemetry.routing.router.reserve should be(0)
-      telemetry.routing.router.reserveFailures should be(4) // 4 for storage rejection + 1 for reservation rejection
-      telemetry.routing.router.stage should be(0)
+      telemetry.core.routing.router.push should be(0)
+      telemetry.core.routing.router.pushFailures should be(0)
+      telemetry.core.routing.router.pull should be(0)
+      telemetry.core.routing.router.pullFailures should be(0)
+      telemetry.core.routing.router.discard should be(0)
+      telemetry.core.routing.router.discardFailures should be(0)
+      telemetry.core.routing.router.reserve should be(0)
+      telemetry.core.routing.router.reserveFailures should be(4) // 4 for storage rejection + 1 for reservation rejection
+      telemetry.core.routing.router.stage should be(0)
     }
   }
 
@@ -1244,20 +1255,20 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     router.reserve(request).map { result =>
       result should be(None)
 
-      telemetry.routing.router.push should be(0)
-      telemetry.routing.router.pushFailures should be(0)
-      telemetry.routing.router.pull should be(0)
-      telemetry.routing.router.pullFailures should be(0)
-      telemetry.routing.router.discard should be(0)
-      telemetry.routing.router.discardFailures should be(0)
-      telemetry.routing.router.reserve should be(2) // 1 for the node + 1 for the router (first request)
-      telemetry.routing.router.reserveFailures should be(1)
-      telemetry.routing.router.stage should be(0)
+      telemetry.core.routing.router.push should be(0)
+      telemetry.core.routing.router.pushFailures should be(0)
+      telemetry.core.routing.router.pull should be(0)
+      telemetry.core.routing.router.pullFailures should be(0)
+      telemetry.core.routing.router.discard should be(0)
+      telemetry.core.routing.router.discardFailures should be(0)
+      telemetry.core.routing.router.reserve should be(2) // 1 for the node + 1 for the router (first request)
+      telemetry.core.routing.router.reserveFailures should be(1)
+      telemetry.core.routing.router.stage should be(0)
     }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "DefaultRouterSpec"
   )
 

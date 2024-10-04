@@ -1,23 +1,27 @@
 package stasis.test.specs.unit.client.api.clients
 
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.http.scaladsl.model.{HttpResponse, StatusCodes}
+import java.util.UUID
+
+import scala.collection.mutable
+import scala.util.control.NonFatal
+
 import com.typesafe.config.Config
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.http.scaladsl.model.HttpResponse
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import play.api.libs.json.Json
+
 import stasis.client.api.clients.DefaultServerBootstrapEndpointClient
 import stasis.client.api.clients.exceptions.ServerBootstrapFailure
 import stasis.core.routing.Node
-import stasis.core.security.tls.EndpointContext
-import stasis.shared.model.devices.{Device, DeviceBootstrapParameters}
+import stasis.layers.security.tls.EndpointContext
+import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.DeviceBootstrapParameters
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
 import stasis.test.specs.unit.client.mocks.MockServerBootstrapEndpoint
-
-import java.util.UUID
-import scala.collection.mutable
-import scala.util.control.NonFatal
 
 class DefaultServerBootstrapEndpointClientSpec extends AsyncUnitSpec {
   "A DefaultServerBootstrapEndpointClient" should "execute device bootstrap" in {
@@ -165,8 +169,8 @@ class DefaultServerBootstrapEndpointClientSpec extends AsyncUnitSpec {
       acceptSelfSignedCertificates = acceptSelfSignedCertificates
     )
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "DefaultServerBootstrapEndpointClientSpec"
   )
 

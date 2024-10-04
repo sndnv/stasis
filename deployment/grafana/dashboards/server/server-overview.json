@@ -568,7 +568,7 @@
             "uid": "prom"
           },
           "editorMode": "code",
-          "expr": "sum(rate(stasis_server_persistence_kv_put_operations_total[$__rate_interval])) by (backend)",
+          "expr": "sum(rate(stasis_server_persistence_store_put_operations_total[$__rate_interval])) by (backend)",
           "legendFormat": "[{{backend}}] - Put",
           "range": true,
           "refId": "A"
@@ -579,7 +579,7 @@
             "uid": "prom"
           },
           "editorMode": "code",
-          "expr": "sum(rate(stasis_server_persistence_kv_get_operations_total[$__rate_interval])) by (backend)",
+          "expr": "sum(rate(stasis_server_persistence_store_get_operations_total[$__rate_interval])) by (backend)",
           "hide": false,
           "legendFormat": "[{{backend}}] - Get",
           "range": true,
@@ -591,35 +591,11 @@
             "uid": "prom"
           },
           "editorMode": "code",
-          "expr": "sum(rate(stasis_server_persistence_kv_delete_operations_total[$__rate_interval])) by (backend)",
+          "expr": "sum(rate(stasis_server_persistence_store_delete_operations_total[$__rate_interval])) by (backend)",
           "hide": false,
           "legendFormat": "[{{backend}}] - Delete",
           "range": true,
           "refId": "C"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prom"
-          },
-          "editorMode": "code",
-          "expr": "sum(rate(stasis_server_persistence_kv_init_operations_total[$__rate_interval])) by (backend)",
-          "hide": false,
-          "legendFormat": "[{{backend}}] - Init",
-          "range": true,
-          "refId": "D"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prom"
-          },
-          "editorMode": "code",
-          "expr": "sum(rate(stasis_server_persistence_kv_drop_operations_total[$__rate_interval])) by (backend)",
-          "hide": false,
-          "legendFormat": "[{{backend}}] - Drop",
-          "range": true,
-          "refId": "E"
         }
       ],
       "title": "Operations",

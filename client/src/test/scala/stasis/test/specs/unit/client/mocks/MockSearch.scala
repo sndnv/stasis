@@ -4,12 +4,13 @@ import java.nio.file.Paths
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.concurrent.Future
+
 import stasis.client.model.FilesystemMetadata
 import stasis.client.ops.search.Search
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.test.specs.unit.client.mocks.MockSearch.Statistic
-
-import scala.concurrent.Future
 
 class MockSearch() extends Search {
   private val stats: Map[Statistic, AtomicInteger] = Map(

@@ -1,10 +1,11 @@
 package stasis.test.specs.unit.client.service.components.internal
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Try
+
 import stasis.client.service.components.internal.FutureOps
 import stasis.test.specs.unit.AsyncUnitSpec
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 
 class FutureOpsSpec extends AsyncUnitSpec with FutureOps {
   "FutureOps" should "support wrapping operations into futures" in {

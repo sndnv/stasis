@@ -3,7 +3,8 @@ package stasis.test.specs.unit.core.persistence.backends.file.container.headers
 import java.nio.ByteOrder
 import java.util.UUID
 
-import stasis.core.persistence.backends.file.container.headers.{ContainerHeader, ContainerLogHeader}
+import stasis.core.persistence.backends.file.container.headers.ContainerHeader
+import stasis.core.persistence.backends.file.container.headers.ContainerLogHeader
 import stasis.core.persistence.backends.file.container.ops.ConversionOps
 import stasis.test.specs.unit.UnitSpec
 

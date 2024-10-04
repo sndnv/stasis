@@ -1,32 +1,39 @@
 package stasis.test.specs.unit.client.ops.backup.stages
 
+import java.util.concurrent.atomic.AtomicInteger
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.control.NonFatal
+
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream._
-import org.apache.pekko.stream.scaladsl.{Flow, Source}
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
+
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.encryption.secrets.DeviceSecret
-import stasis.client.model.{EntityMetadata, SourceEntity}
+import stasis.client.model.EntityMetadata
+import stasis.client.model.SourceEntity
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.backup.stages.EntityProcessing
-import stasis.client.ops.exceptions.{EntityProcessingFailure, OperationStopped}
+import stasis.client.ops.exceptions.EntityProcessingFailure
+import stasis.client.ops.exceptions.OperationStopped
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.client.mocks._
-import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
-
-import java.util.concurrent.atomic.AtomicInteger
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
 
 class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Eventually { spec =>
   "A Backup EntityProcessing stage" should "extract and expect file metadata" in {
@@ -222,11 +229,11 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
 
-          mockTelemetry.ops.backup.entityExamined should be(0)
-          mockTelemetry.ops.backup.entitySkipped should be(0)
-          mockTelemetry.ops.backup.entityCollected should be(0)
-          mockTelemetry.ops.backup.entityChunkProcessed should be >= 6
-          mockTelemetry.ops.backup.entityProcessed should be(3)
+          mockTelemetry.client.ops.backup.entityExamined should be(0)
+          mockTelemetry.client.ops.backup.entitySkipped should be(0)
+          mockTelemetry.client.ops.backup.entityCollected should be(0)
+          mockTelemetry.client.ops.backup.entityChunkProcessed should be >= 6
+          mockTelemetry.client.ops.backup.entityProcessed should be(3)
         }
       }
   }
@@ -322,11 +329,11 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
 
-          mockTelemetry.ops.backup.entityExamined should be(0)
-          mockTelemetry.ops.backup.entitySkipped should be(0)
-          mockTelemetry.ops.backup.entityCollected should be(0)
-          mockTelemetry.ops.backup.entityChunkProcessed should be >= (expectedChunks * 3)
-          mockTelemetry.ops.backup.entityProcessed should be(1)
+          mockTelemetry.client.ops.backup.entityExamined should be(0)
+          mockTelemetry.client.ops.backup.entitySkipped should be(0)
+          mockTelemetry.client.ops.backup.entityCollected should be(0)
+          mockTelemetry.client.ops.backup.entityChunkProcessed should be >= (expectedChunks * 3)
+          mockTelemetry.client.ops.backup.entityProcessed should be(1)
         }
       }
   }
@@ -418,11 +425,11 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
 
-          mockTelemetry.ops.backup.entityExamined should be(0)
-          mockTelemetry.ops.backup.entitySkipped should be(0)
-          mockTelemetry.ops.backup.entityCollected should be(0)
-          mockTelemetry.ops.backup.entityChunkProcessed should be(3) // x3 == one for each step before push
-          mockTelemetry.ops.backup.entityProcessed should be(0)
+          mockTelemetry.client.ops.backup.entityExamined should be(0)
+          mockTelemetry.client.ops.backup.entitySkipped should be(0)
+          mockTelemetry.client.ops.backup.entityCollected should be(0)
+          mockTelemetry.client.ops.backup.entityChunkProcessed should be(3) // x3 == one for each step before push
+          mockTelemetry.client.ops.backup.entityProcessed should be(0)
         }
       }
   }
@@ -527,14 +534,14 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
           mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
 
-          mockTelemetry.ops.backup.entityExamined should be(0)
-          mockTelemetry.ops.backup.entitySkipped should be(0)
-          mockTelemetry.ops.backup.entityCollected should be(0)
+          mockTelemetry.client.ops.backup.entityExamined should be(0)
+          mockTelemetry.client.ops.backup.entitySkipped should be(0)
+          mockTelemetry.client.ops.backup.entityCollected should be(0)
           // (expectedParts - 1) == number of successful parts
           // x8 == 2 parts X 4 steps for each part
           // +7 == 1 successful part (+4) and 1 unsuccessful part (+3 steps before push)
-          mockTelemetry.ops.backup.entityChunkProcessed should be((expectedParts - 1) * 8 + 7)
-          mockTelemetry.ops.backup.entityProcessed should be(0)
+          mockTelemetry.client.ops.backup.entityChunkProcessed should be((expectedParts - 1) * 8 + 7)
+          mockTelemetry.client.ops.backup.entityProcessed should be(0)
         }
       }
   }

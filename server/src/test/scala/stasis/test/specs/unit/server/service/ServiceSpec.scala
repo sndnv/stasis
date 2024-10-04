@@ -1,31 +1,5 @@
 package stasis.test.specs.unit.server.service
 
-import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.http.scaladsl.Http
-import org.apache.pekko.http.scaladsl.marshalling.{Marshal, Marshaller}
-import org.apache.pekko.http.scaladsl.model._
-import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
-import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
-import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
-import com.typesafe.config.{Config, ConfigFactory}
-import org.jose4j.jwk.JsonWebKey
-import org.scalatest.Assertion
-import org.scalatest.concurrent.Eventually
-import play.api.libs.json.Json
-import stasis.core.networking.http.{HttpEndpointAddress, HttpEndpointClient}
-import stasis.core.packaging.Crate
-import stasis.core.security.tls.EndpointContext
-import stasis.server.service.{CorePersistence, ServerPersistence, Service}
-import stasis.shared.api.requests.CreateUser
-import stasis.shared.model.devices.{Device, DeviceBootstrapCode, DeviceBootstrapParameters}
-import stasis.shared.model.users.User
-import stasis.shared.security.Permission
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.security.mocks.MockJwtGenerators
-import stasis.test.specs.unit.server.security.mocks._
-import stasis.test.specs.unit.shared.model.Generators
 import java.util.UUID
 
 import javax.net.ssl.TrustManagerFactory
@@ -34,7 +8,41 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.marshalling.Marshal
+import org.apache.pekko.http.scaladsl.marshalling.Marshaller
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
+import org.jose4j.jwk.JsonWebKey
+import org.scalatest.Assertion
+import org.scalatest.concurrent.Eventually
+import play.api.libs.json.Json
+
 import stasis.core.api.PoolClient
+import stasis.core.networking.http.HttpEndpointAddress
+import stasis.core.networking.http.HttpEndpointClient
+import stasis.core.packaging.Crate
+import stasis.layers.security.mocks.MockJwtGenerators
+import stasis.layers.security.tls.EndpointContext
+import stasis.server.service.CorePersistence
+import stasis.server.service.ServerPersistence
+import stasis.server.service.Service
+import stasis.shared.api.requests.CreateUser
+import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.DeviceBootstrapCode
+import stasis.shared.model.devices.DeviceBootstrapParameters
+import stasis.shared.model.users.User
+import stasis.shared.security.Permission
+import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.server.security.mocks._
+import stasis.test.specs.unit.shared.model.Generators
 
 class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually {
 
@@ -67,10 +75,10 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     val service = new Service {}
     val interface = "localhost"
 
-    val servicePort = 29999
+    val servicePort = 39999
     val serviceUrl = s"https://$interface:$servicePort"
 
-    val corePort = 39999
+    val corePort = 49999
     val coreUrl = s"https://$interface:$corePort"
 
     val metricsPort = 59999
@@ -294,13 +302,13 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     params.authentication.scopes.core should be("urn:stasis:identity:audience:stasis-server-test")
     params.authentication.context.enabled should be(true)
     params.authentication.context.protocol should be("TLS")
-    params.serverApi.url should be("https://localhost:29999")
+    params.serverApi.url should be("https://localhost:39999")
     params.serverApi.user shouldBe empty
     params.serverApi.userSalt shouldBe empty
     params.serverApi.device shouldBe empty
     params.serverApi.context.enabled should be(false)
     params.serverApi.context.protocol should be("TLS")
-    params.serverCore.address should be("https://localhost:39999")
+    params.serverCore.address should be("https://localhost:49999")
     params.serverCore.context.enabled should be(false)
     params.serverCore.context.protocol should be("TLS")
     params.additionalConfig should be(Json.parse("{}"))
@@ -328,6 +336,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     jwt: String
   )(implicit trustedContext: EndpointContext): Future[Done] = {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
     import stasis.shared.api.Formats._
 
     Http()
@@ -350,6 +359,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     jwt: String
   )(implicit trustedContext: EndpointContext): Future[Seq[User]] = {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
     import stasis.shared.api.Formats._
 
     Http()
@@ -372,6 +382,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     jwt: String
   )(implicit trustedContext: EndpointContext): Future[DeviceBootstrapCode] = {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
     import stasis.shared.api.Formats._
 
     Http()
@@ -393,6 +404,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     code: String
   )(implicit trustedContext: EndpointContext): Future[DeviceBootstrapParameters] = {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
     import stasis.shared.api.Formats._
 
     Http()
@@ -445,8 +457,8 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
 
   private val defaultConfig: Config = ConfigFactory.load()
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "ServiceSpec"
   )
 

@@ -1,13 +1,15 @@
 package stasis.test.specs.unit.client.collection.rules.internal
 
+import java.nio.file.Path
+
+import scala.collection.mutable
+
 import stasis.client.collection.rules.Rule
-import stasis.client.collection.rules.internal.{FilesWalker, IndexedRule}
+import stasis.client.collection.rules.internal.FilesWalker
+import stasis.client.collection.rules.internal.IndexedRule
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.core.FileSystemHelpers.FileSystemSetup
-
-import java.nio.file.Path
-import scala.collection.mutable
 
 trait FilesWalkerBehaviour { _: UnitSpec with ResourceHelpers =>
   def walker(setup: FileSystemSetup): Unit = {

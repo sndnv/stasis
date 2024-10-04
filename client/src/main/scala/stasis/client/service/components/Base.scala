@@ -1,28 +1,39 @@
 package stasis.client.service.components
 
-import org.apache.pekko.actor.CoordinatedShutdown
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import org.apache.pekko.util.Timeout
-import com.typesafe.{config => typesafe}
-import org.slf4j.Logger
-import stasis.client.analysis.Checksum
-import stasis.client.compression.Compression
-import stasis.client.encryption.{Aes, Decoder => EncryptionDecoder, Encoder => EncryptionEncoder}
-import stasis.client.ops
-import stasis.client.service.{ApplicationDirectory, ApplicationTray}
-import stasis.client.service.components.internal.{ConfigOverride, FutureOps}
-import stasis.client.staging.{DefaultFileStaging, FileStaging}
-import stasis.core.telemetry.metrics.{MetricsExporter, MetricsProvider}
-import stasis.core.telemetry.{DefaultTelemetryContext, TelemetryContext}
-import stasis.core.{api, persistence, security}
-
 import java.nio.file.Paths
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
+import com.typesafe.{config => typesafe}
+import org.apache.pekko.actor.CoordinatedShutdown
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.util.Timeout
+import org.slf4j.Logger
+
+import stasis.client.analysis.Checksum
+import stasis.client.compression.Compression
+import stasis.client.encryption.Aes
+import stasis.client.encryption.{Decoder => EncryptionDecoder}
+import stasis.client.encryption.{Encoder => EncryptionEncoder}
+import stasis.client.ops
+import stasis.client.service.ApplicationDirectory
+import stasis.client.service.ApplicationTray
+import stasis.client.service.components.internal.ConfigOverride
+import stasis.client.service.components.internal.FutureOps
+import stasis.client.staging.DefaultFileStaging
+import stasis.client.staging.FileStaging
+import stasis.core
+import stasis.layers
+import stasis.layers.telemetry.DefaultTelemetryContext
+import stasis.layers.telemetry.TelemetryContext
+import stasis.layers.telemetry.metrics.MetricsExporter
+import stasis.layers.telemetry.metrics.MetricsProvider
+
 trait Base extends FutureOps {
-  implicit def system: ActorSystem[SpawnProtocol.Command]
+  implicit def system: ActorSystem[Nothing]
   implicit def ec: ExecutionContext
   implicit def log: Logger
   implicit def telemetry: TelemetryContext
@@ -50,13 +61,13 @@ object Base {
     applicationTray: ApplicationTray,
     terminate: () => Unit
   )(implicit
-    typedSystem: ActorSystem[SpawnProtocol.Command],
+    typedSystem: ActorSystem[Nothing],
     logger: Logger
   ): Future[Base] =
     Future.fromTry(
       Try {
         new Base {
-          override implicit val system: ActorSystem[SpawnProtocol.Command] = typedSystem
+          override implicit val system: ActorSystem[Nothing] = typedSystem
           override implicit val ec: ExecutionContext = typedSystem.executionContext
           override implicit val log: Logger = logger
 
@@ -113,7 +124,7 @@ object Base {
 
     def loadMetricsProviders(
       metricsConfig: typesafe.Config
-    )(implicit system: ActorSystem[SpawnProtocol.Command]): Set[MetricsProvider] =
+    )(implicit system: ActorSystem[Nothing]): Set[MetricsProvider] =
       if (metricsConfig.getBoolean("enabled")) {
         val exporter = createMetricsExporter(
           interface = metricsConfig.getString("interface"),
@@ -121,22 +132,24 @@ object Base {
         )
 
         Set(
-          security.Metrics.default(meter = exporter.meter, namespace = Instrumentation),
-          api.Metrics.default(meter = exporter.meter, namespace = Instrumentation),
-          persistence.Metrics.default(meter = exporter.meter, namespace = Instrumentation),
+          layers.security.Metrics.default(meter = exporter.meter, namespace = Instrumentation),
+          layers.api.Metrics.default(meter = exporter.meter, namespace = Instrumentation),
+          layers.persistence.Metrics.default(meter = exporter.meter, namespace = Instrumentation),
+          core.persistence.Metrics.default(meter = exporter.meter, namespace = Instrumentation),
           ops.Metrics.default(meter = exporter.meter, namespace = Instrumentation)
         ).flatten
       } else {
         Set(
-          security.Metrics.noop(),
-          api.Metrics.noop(),
-          persistence.Metrics.noop(),
+          layers.security.Metrics.noop(),
+          layers.api.Metrics.noop(),
+          layers.persistence.Metrics.noop(),
+          core.persistence.Metrics.noop(),
           ops.Metrics.noop()
         ).flatten
       }
 
     private def createMetricsExporter(interface: String, port: Int)(implicit
-      system: ActorSystem[SpawnProtocol.Command]
+      system: ActorSystem[Nothing]
     ): MetricsExporter = {
       val exporter = MetricsExporter.Prometheus.apply(
         instrumentation = Instrumentation,

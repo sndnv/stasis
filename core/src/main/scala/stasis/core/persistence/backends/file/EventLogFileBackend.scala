@@ -12,25 +12,26 @@ import scala.util.Try
 import org.apache.pekko.Done
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.typed._
+import org.apache.pekko.actor.typed.scaladsl.AskPattern._
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.scaladsl.TimerScheduler
-import org.apache.pekko.actor.typed.scaladsl.AskPattern._
 import org.apache.pekko.stream.CompletionStrategy
 import org.apache.pekko.stream.OverflowStrategy
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.Timeout
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+
 import stasis.core.persistence.Metrics
 import stasis.core.persistence.backends.EventLogBackend
 import stasis.core.persistence.backends.file.state.StateStore
-import stasis.core.telemetry.TelemetryContext
+import stasis.layers.telemetry.TelemetryContext
 
 class EventLogFileBackend[E, S] private (
   config: EventLogFileBackend.Config,
-  storeRef: Future[ActorRef[EventLogFileBackend.Message[E, S]]]
+  storeRef: ActorRef[EventLogFileBackend.Message[E, S]]
 )(implicit
-  system: ActorSystem[SpawnProtocol.Command],
+  system: ActorSystem[Nothing],
   telemetry: TelemetryContext,
   timeout: Timeout,
   tag: ClassTag[S]
@@ -42,7 +43,7 @@ class EventLogFileBackend[E, S] private (
   private val metrics = telemetry.metrics[Metrics.EventLogBackend]
 
   override def getState: Future[S] =
-    storeRef.flatMap(_ ? ((ref: ActorRef[S]) => GetState(ref)))
+    storeRef ? ((ref: ActorRef[S]) => GetState(ref))
 
   override def getStateStream: Source[S, NotUsed] = {
     val (actor, source) = Source
@@ -60,18 +61,15 @@ class EventLogFileBackend[E, S] private (
   }
 
   override def storeEventAndUpdateState(event: E, update: (E, S) => S): Future[Done] =
-    storeRef
-      .flatMap { messageRef =>
-        (messageRef ? ((responseRef: ActorRef[Try[Done]]) => StoreEventAndUpdateState(event, update, responseRef)))
-          .flatMap {
-            case Success(result) =>
-              metrics.recordEvent(backend = config.name)
-              Future.successful(result)
+    (storeRef ? ((responseRef: ActorRef[Try[Done]]) => StoreEventAndUpdateState(event, update, responseRef)))
+      .flatMap {
+        case Success(result) =>
+          metrics.recordEvent(backend = config.name)
+          Future.successful(result)
 
-            case Failure(e) =>
-              metrics.recordEventFailure(backend = config.name)
-              Future.failed(e)
-          }
+        case Failure(e) =>
+          metrics.recordEventFailure(backend = config.name)
+          Future.failed(e)
       }
 }
 
@@ -85,11 +83,10 @@ object EventLogFileBackend {
     initialState: => S,
     stateStore: StateStore[S]
   )(implicit
-    system: ActorSystem[SpawnProtocol.Command],
+    system: ActorSystem[Nothing],
     telemetry: TelemetryContext,
     timeout: Timeout
   ): EventLogFileBackend[E, S] = {
-    import system.executionContext
 
     val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
@@ -97,10 +94,10 @@ object EventLogFileBackend {
       store(state = initialState, events = Queue.empty[E])(log, config, stateStore, timers)
     }
 
-    val storeRef: Future[ActorRef[EventLogFileBackend.Message[E, S]]] =
-      system ? (SpawnProtocol.Spawn(behaviour, config.name, Props.empty, _))
+    val storeRef: ActorRef[EventLogFileBackend.Message[E, S]] =
+      system.systemActorOf(behavior = behaviour, name = s"${config.name}-${java.util.UUID.randomUUID().toString}")
 
-    storeRef.foreach(_ ! EventLogFileBackend.StartStateRestore())
+    storeRef ! EventLogFileBackend.StartStateRestore()
 
     new EventLogFileBackend[E, S](
       config = config,

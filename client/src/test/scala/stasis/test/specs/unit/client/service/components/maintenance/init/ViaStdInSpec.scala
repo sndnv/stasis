@@ -1,6 +1,7 @@
 package stasis.test.specs.unit.client.service.components.maintenance.init
 
 import org.mockito.scalatest.AsyncMockitoSugar
+
 import stasis.client.service.ApplicationArguments
 import stasis.client.service.components.maintenance.init.ViaStdIn
 import stasis.test.specs.unit.AsyncUnitSpec

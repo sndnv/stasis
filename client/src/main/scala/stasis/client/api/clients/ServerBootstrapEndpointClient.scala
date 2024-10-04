@@ -1,8 +1,8 @@
 package stasis.client.api.clients
 
-import stasis.shared.model.devices.DeviceBootstrapParameters
-
 import scala.concurrent.Future
+
+import stasis.shared.model.devices.DeviceBootstrapParameters
 
 trait ServerBootstrapEndpointClient {
   def server: String

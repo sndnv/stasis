@@ -2,17 +2,17 @@ package stasis.client.api.http.routes
 
 import java.time.Instant
 
+import scala.concurrent.Future
+
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
-import stasis.client.api.Context
 
-import scala.concurrent.Future
+import stasis.client.api.Context
 
 class DatasetEntries()(implicit context: Context) extends ApiRoutes {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
-  import stasis.core.api.Matchers._
   import stasis.shared.api.Formats._
 
   def routes(): Route =

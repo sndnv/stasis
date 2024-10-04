@@ -3,13 +3,15 @@ package stasis.client.ops.scheduling
 import java.nio.file.Path
 import java.time.Instant
 
+import scala.concurrent.Future
+
 import org.apache.pekko.Done
+
 import stasis.client.collection.rules.Specification
 import stasis.client.ops.recovery
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation
-
-import scala.concurrent.Future
 
 trait OperationExecutor {
 

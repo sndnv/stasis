@@ -1,28 +1,37 @@
 package stasis.server.api
 
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.http.cors.scaladsl.CorsDirectives._
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
-import org.apache.pekko.http.scaladsl.server.{ExceptionHandler, RejectionHandler, Route}
-import org.apache.pekko.http.cors.scaladsl.CorsDirectives._
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.core.api.directives.{EntityDiscardingDirectives, LoggingDirectives}
-import stasis.core.security.tls.EndpointContext
-import stasis.core.telemetry.TelemetryContext
-import stasis.server.api.routes.{DeviceBootstrap, RoutesContext}
-import stasis.server.security.ResourceProvider
-import stasis.server.security.authenticators.{BootstrapCodeAuthenticator, UserAuthenticator}
+import org.apache.pekko.http.scaladsl.server.ExceptionHandler
+import org.apache.pekko.http.scaladsl.server.RejectionHandler
+import org.apache.pekko.http.scaladsl.server.Route
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
-import scala.concurrent.{ExecutionContextExecutor, Future}
-import scala.util.{Failure, Success}
+import stasis.layers.api.directives.EntityDiscardingDirectives
+import stasis.layers.api.directives.LoggingDirectives
+import stasis.layers.security.tls.EndpointContext
+import stasis.layers.telemetry.TelemetryContext
+import stasis.server.api.routes.DeviceBootstrap
+import stasis.server.api.routes.RoutesContext
+import stasis.server.security.ResourceProvider
+import stasis.server.security.authenticators.BootstrapCodeAuthenticator
+import stasis.server.security.authenticators.UserAuthenticator
 
 class BootstrapEndpoint(
   resourceProvider: ResourceProvider,
   userAuthenticator: UserAuthenticator,
   bootstrapCodeAuthenticator: BootstrapCodeAuthenticator,
   deviceBootstrapContext: DeviceBootstrap.BootstrapContext
-)(implicit val system: ActorSystem[SpawnProtocol.Command], override val telemetry: TelemetryContext)
+)(implicit val system: ActorSystem[Nothing], override val telemetry: TelemetryContext)
     extends LoggingDirectives
     with EntityDiscardingDirectives {
   private implicit val ec: ExecutionContextExecutor = system.executionContext
@@ -113,7 +122,7 @@ object BootstrapEndpoint {
     userAuthenticator: UserAuthenticator,
     bootstrapCodeAuthenticator: BootstrapCodeAuthenticator,
     deviceBootstrapContext: DeviceBootstrap.BootstrapContext
-  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext): BootstrapEndpoint =
+  )(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext): BootstrapEndpoint =
     new BootstrapEndpoint(
       resourceProvider = resourceProvider,
       userAuthenticator = userAuthenticator,

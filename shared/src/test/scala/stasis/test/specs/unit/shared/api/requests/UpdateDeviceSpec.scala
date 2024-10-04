@@ -1,12 +1,13 @@
 package stasis.test.specs.unit.shared.api.requests
 
+import scala.concurrent.duration._
+
 import stasis.core.routing.Node
-import stasis.shared.api.requests.{UpdateDeviceLimits, UpdateDeviceState}
+import stasis.shared.api.requests.UpdateDeviceLimits
+import stasis.shared.api.requests.UpdateDeviceState
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.UnitSpec
-
-import scala.concurrent.duration._
 
 class UpdateDeviceSpec extends UnitSpec {
   it should "convert requests to updated devices" in {

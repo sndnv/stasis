@@ -1,16 +1,24 @@
 package stasis.test.specs.unit.core.persistence.backends.file.container
 
 import java.io.RandomAccessFile
-import java.nio.file.{Files, Path, StandardOpenOption}
-import java.nio.{ByteBuffer, ByteOrder}
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardOpenOption
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.UUID
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 import org.apache.pekko.Done
 import org.apache.pekko.util.ByteString
-import stasis.core.persistence.backends.file.container.headers.{ChunkHeader, ContainerLogHeader}
-import stasis.core.persistence.backends.file.container.{Container, CrateChunk, CrateChunkDescriptor}
 
-import scala.concurrent.{ExecutionContext, Future}
+import stasis.core.persistence.backends.file.container.headers.ChunkHeader
+import stasis.core.persistence.backends.file.container.headers.ContainerLogHeader
+import stasis.core.persistence.backends.file.container.Container
+import stasis.core.persistence.backends.file.container.CrateChunk
+import stasis.core.persistence.backends.file.container.CrateChunkDescriptor
 
 object TestOps {
   def fileExists(path: Path): Boolean =

@@ -1,18 +1,22 @@
 package stasis.server.api.routes
 
+import scala.concurrent.Future
+
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
+
 import stasis.server.model.users.UserStore
 import stasis.server.security.CurrentUser
 import stasis.server.security.users.UserCredentialsManager
 import stasis.shared.api.requests._
-import stasis.shared.api.responses.{CreatedUser, DeletedUser, UpdatedUserSalt}
+import stasis.shared.api.responses.CreatedUser
+import stasis.shared.api.responses.DeletedUser
+import stasis.shared.api.responses.UpdatedUserSalt
 import stasis.shared.model.users.User
-import stasis.shared.secrets.{DerivedPasswords, SecretsConfig}
-
-import scala.concurrent.Future
+import stasis.shared.secrets.DerivedPasswords
+import stasis.shared.secrets.SecretsConfig
 
 class Users(
   credentialsManager: UserCredentialsManager,
@@ -20,6 +24,7 @@ class Users(
 )(implicit ctx: RoutesContext)
     extends ApiRoutes {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.shared.api.Formats._
 
   def routes(implicit currentUser: CurrentUser): Route =

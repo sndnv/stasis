@@ -1,13 +1,23 @@
 package stasis.test.specs.unit.client.ops.backup.stages.internal
 
-import java.nio.file.{Path, Paths}
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.util.concurrent.atomic.AtomicInteger
+
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.jdk.CollectionConverters._
+import scala.util.control.NonFatal
+
 import org.apache.pekko.Done
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.IOResult
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
+
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.encryption.secrets.DeviceFileSecret
@@ -15,12 +25,6 @@ import stasis.client.ops.backup.Providers
 import stasis.client.ops.backup.stages.internal.StagedSubFlow
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks._
-
-import java.util.concurrent.atomic.AtomicInteger
-import scala.concurrent.Future
-import scala.concurrent.duration._
-import scala.jdk.CollectionConverters._
-import scala.util.control.NonFatal
 
 class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
   "A StagedSubFlow" should "support dynamic creation of staging flows" in {
@@ -67,11 +71,11 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
         mockEncryption.statistics(MockEncryption.Statistic.MetadataEncrypted) should be(0)
         mockEncryption.statistics(MockEncryption.Statistic.MetadataDecrypted) should be(0)
 
-        mockTelemetry.ops.backup.entityExamined should be(0)
-        mockTelemetry.ops.backup.entitySkipped should be(0)
-        mockTelemetry.ops.backup.entityCollected should be(0)
-        mockTelemetry.ops.backup.entityChunkProcessed should be(1)
-        mockTelemetry.ops.backup.entityProcessed should be(0)
+        mockTelemetry.client.ops.backup.entityExamined should be(0)
+        mockTelemetry.client.ops.backup.entitySkipped should be(0)
+        mockTelemetry.client.ops.backup.entityCollected should be(0)
+        mockTelemetry.client.ops.backup.entityChunkProcessed should be(1)
+        mockTelemetry.client.ops.backup.entityProcessed should be(0)
       }
     }
   }
@@ -117,11 +121,11 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
         mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(3)
         mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
 
-        mockTelemetry.ops.backup.entityExamined should be(0)
-        mockTelemetry.ops.backup.entitySkipped should be(0)
-        mockTelemetry.ops.backup.entityCollected should be(0)
-        mockTelemetry.ops.backup.entityChunkProcessed should be(0)
-        mockTelemetry.ops.backup.entityProcessed should be(0)
+        mockTelemetry.client.ops.backup.entityExamined should be(0)
+        mockTelemetry.client.ops.backup.entitySkipped should be(0)
+        mockTelemetry.client.ops.backup.entityCollected should be(0)
+        mockTelemetry.client.ops.backup.entityChunkProcessed should be(0)
+        mockTelemetry.client.ops.backup.entityProcessed should be(0)
       }
   }
 
@@ -166,11 +170,11 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
         mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(0)
         mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
 
-        mockTelemetry.ops.backup.entityExamined should be(0)
-        mockTelemetry.ops.backup.entitySkipped should be(0)
-        mockTelemetry.ops.backup.entityCollected should be(0)
-        mockTelemetry.ops.backup.entityChunkProcessed should be(0)
-        mockTelemetry.ops.backup.entityProcessed should be(0)
+        mockTelemetry.client.ops.backup.entityExamined should be(0)
+        mockTelemetry.client.ops.backup.entitySkipped should be(0)
+        mockTelemetry.client.ops.backup.entityCollected should be(0)
+        mockTelemetry.client.ops.backup.entityChunkProcessed should be(0)
+        mockTelemetry.client.ops.backup.entityProcessed should be(0)
       }
   }
 
@@ -237,11 +241,11 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
           mockEncryption.statistics(MockEncryption.Statistic.MetadataEncrypted) should be(0)
           mockEncryption.statistics(MockEncryption.Statistic.MetadataDecrypted) should be(0)
 
-          mockTelemetry.ops.backup.entityExamined should be(0)
-          mockTelemetry.ops.backup.entitySkipped should be(0)
-          mockTelemetry.ops.backup.entityCollected should be(0)
-          mockTelemetry.ops.backup.entityChunkProcessed should be(2)
-          mockTelemetry.ops.backup.entityProcessed should be(0)
+          mockTelemetry.client.ops.backup.entityExamined should be(0)
+          mockTelemetry.client.ops.backup.entitySkipped should be(0)
+          mockTelemetry.client.ops.backup.entityCollected should be(0)
+          mockTelemetry.client.ops.backup.entityChunkProcessed should be(2)
+          mockTelemetry.client.ops.backup.entityProcessed should be(0)
         }
       }
   }

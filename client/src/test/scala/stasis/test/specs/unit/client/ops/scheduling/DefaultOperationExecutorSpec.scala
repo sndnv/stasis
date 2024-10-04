@@ -1,29 +1,39 @@
 package stasis.test.specs.unit.client.ops.scheduling
 
+import java.util.concurrent.atomic.AtomicBoolean
+
+import scala.concurrent.ExecutionException
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.control.NonFatal
+
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.util.ByteString
-import org.apache.pekko.{Done, NotUsed}
+import org.scalatest.Assertion
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{Assertion, BeforeAndAfterAll}
+
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
-import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceMetadataSecret}
+import stasis.client.encryption.secrets.DeviceFileSecret
+import stasis.client.encryption.secrets.DeviceMetadataSecret
+import stasis.client.ops.ParallelismConfig
+import stasis.client.ops.backup
+import stasis.client.ops.recovery
 import stasis.client.ops.scheduling.DefaultOperationExecutor
-import stasis.client.ops.{backup, recovery, ParallelismConfig}
 import stasis.client.tracking.state.BackupState
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.client.mocks._
-import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-
-import java.util.concurrent.atomic.AtomicBoolean
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionException, Future}
-import scala.util.control.NonFatal
 
 class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with BeforeAndAfterAll {
   "A DefaultOperationExecutor" should "start backups with rules" in withRetry {
@@ -424,8 +434,8 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(7.seconds, 300.milliseconds)
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "DefaultOperationExecutorSpec"
   )
 

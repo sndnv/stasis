@@ -1,11 +1,11 @@
 package stasis.server.model.reservations
 
+import scala.concurrent.Future
+
 import stasis.core.persistence.CrateStorageReservation
 import stasis.core.persistence.reservations.ReservationStore
 import stasis.server.security.Resource
 import stasis.shared.security.Permission
-
-import scala.concurrent.Future
 
 trait ServerReservationStore { store =>
   protected def list(): Future[Map[CrateStorageReservation.Id, CrateStorageReservation]]

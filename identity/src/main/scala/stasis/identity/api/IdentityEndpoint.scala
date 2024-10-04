@@ -1,23 +1,28 @@
 package stasis.identity.api
 
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import scala.concurrent.Future
+import scala.util.control.NonFatal
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.http.cors.scaladsl.CorsDirectives._
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server._
-import org.apache.pekko.http.cors.scaladsl.CorsDirectives._
 import org.jose4j.jwk.JsonWebKey
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.core.api.MessageResponse
-import stasis.core.api.directives._
-import stasis.core.security.tls.EndpointContext
-import stasis.core.telemetry.TelemetryContext
-import stasis.identity.api.manage.setup.{Config => ManageConfig, Providers => ManageProviders}
-import stasis.identity.api.oauth.setup.{Config => OAuthConfig, Providers => OAuthProviders}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
-import scala.concurrent.Future
-import scala.util.control.NonFatal
+import stasis.identity.api.manage.setup.{Config => ManageConfig}
+import stasis.identity.api.manage.setup.{Providers => ManageProviders}
+import stasis.identity.api.oauth.setup.{Config => OAuthConfig}
+import stasis.identity.api.oauth.setup.{Providers => OAuthProviders}
+import stasis.layers.api.MessageResponse
+import stasis.layers.api.directives.EntityDiscardingDirectives
+import stasis.layers.api.directives.LoggingDirectives
+import stasis.layers.security.tls.EndpointContext
+import stasis.layers.telemetry.TelemetryContext
 
 class IdentityEndpoint(
   keys: Seq[JsonWebKey],
@@ -25,11 +30,10 @@ class IdentityEndpoint(
   oauthProviders: OAuthProviders,
   manageConfig: ManageConfig,
   manageProviders: ManageProviders
-)(implicit system: ActorSystem[SpawnProtocol.Command], override val telemetry: TelemetryContext)
+)(implicit system: ActorSystem[Nothing], override val telemetry: TelemetryContext)
     extends LoggingDirectives
     with EntityDiscardingDirectives {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
-  import stasis.core.api.Formats.messageResponseFormat
 
   override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
@@ -48,8 +52,7 @@ class IdentityEndpoint(
           request.uri.path.toString,
           e.getClass.getSimpleName,
           e.getMessage,
-          failureReference,
-          e
+          failureReference
         )
 
         discardEntity & complete(
@@ -134,7 +137,7 @@ object IdentityEndpoint {
     oauthProviders: OAuthProviders,
     manageConfig: ManageConfig,
     manageProviders: ManageProviders
-  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext): IdentityEndpoint =
+  )(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext): IdentityEndpoint =
     new IdentityEndpoint(
       keys = keys,
       oauthConfig = oauthConfig,

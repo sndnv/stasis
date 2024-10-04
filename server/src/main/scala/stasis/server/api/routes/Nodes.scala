@@ -1,18 +1,22 @@
 package stasis.server.api.routes
 
+import scala.concurrent.Future
+
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
+
 import stasis.server.model.nodes.ServerNodeStore
 import stasis.server.security.CurrentUser
-import stasis.shared.api.requests.{CreateNode, UpdateNode}
-import stasis.shared.api.responses.{CreatedNode, DeletedNode}
-
-import scala.concurrent.Future
+import stasis.shared.api.requests.CreateNode
+import stasis.shared.api.requests.UpdateNode
+import stasis.shared.api.responses.CreatedNode
+import stasis.shared.api.responses.DeletedNode
 
 class Nodes()(implicit ctx: RoutesContext) extends ApiRoutes {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.core.api.Formats._
   import stasis.shared.api.Formats._
 

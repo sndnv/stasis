@@ -1,15 +1,20 @@
 package stasis.client.service.components.init
 
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.util.Failure
+import scala.util.Success
+
+import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 import org.apache.pekko.Done
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
-import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
-import play.api.libs.json.{Format, JsObject, Json}
-import stasis.client.service.components.exceptions.ServiceStartupFailure
+import play.api.libs.json.Format
+import play.api.libs.json.JsObject
+import play.api.libs.json.Json
 
-import scala.concurrent.{Future, Promise}
-import scala.util.{Failure, Success}
+import stasis.client.service.components.exceptions.ServiceStartupFailure
 
 object ViaApi {
   sealed trait InitState

@@ -3,13 +3,14 @@ package stasis.test.specs.unit.identity.model
 import java.util.concurrent.ThreadLocalRandom
 
 import org.apache.pekko.util.ByteString
+
 import stasis.identity.model.apis.Api
 import stasis.identity.model.clients.Client
 import stasis.identity.model.codes.AuthorizationCode
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.secrets.Secret
 import stasis.identity.model.tokens.RefreshToken
-import stasis.test.Generators._
+import stasis.layers.Generators._
 
 object Generators {
   object Defaults {
@@ -41,10 +42,10 @@ object Generators {
     generateString(withSize = Defaults.Apis.IdSize)
 
   def generateApi(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Api =
-    Api(id = generateApiId)
+    Api.create(id = generateApiId)
 
   def generateClient(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Client =
-    Client(
+    Client.create(
       id = Client.generateId(),
       redirectUri = generateUri,
       tokenExpiration = generateFiniteDuration,
@@ -58,7 +59,7 @@ object Generators {
     AuthorizationCode(value = generateString(withSize = Defaults.Codes.CodeSize))
 
   def generateResourceOwner(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): ResourceOwner =
-    ResourceOwner(
+    ResourceOwner.create(
       username = generateString(withSize = Defaults.Owners.UsernameSize),
       password = generateSecret(withSize = Defaults.Owners.SecretSize),
       salt = generateString(withSize = Defaults.Owners.SaltSize),

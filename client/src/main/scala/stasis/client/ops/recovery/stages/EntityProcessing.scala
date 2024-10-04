@@ -1,25 +1,34 @@
 package stasis.client.ops.recovery.stages
 
-import org.apache.pekko.NotUsed
-import org.apache.pekko.stream.scaladsl.{Flow, Source}
-import org.apache.pekko.stream.{Materializer, SharedKillSwitch}
-import org.apache.pekko.util.ByteString
-import stasis.client.encryption.secrets.DeviceSecret
-import stasis.client.model.TargetEntity.Destination
-import stasis.client.model.{EntityMetadata, TargetEntity}
-import stasis.client.ops.exceptions.{EntityProcessingFailure, OperationStopped}
-import stasis.client.ops.recovery.Providers
-import stasis.client.ops.{Metrics, ParallelismConfig}
-import stasis.core.packaging.Crate
-import stasis.core.routing.exceptions.PullFailure
-import stasis.shared.ops.Operation
-
 import java.nio.file.attribute.PosixFilePermissions
-import java.nio.file.{Files, Path}
-import scala.concurrent.{ExecutionContext, Future}
+import java.nio.file.Files
+import java.nio.file.Path
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.Try
 import scala.util.control.NonFatal
 import scala.util.matching.Regex
+
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.SharedKillSwitch
+import org.apache.pekko.util.ByteString
+
+import stasis.client.encryption.secrets.DeviceSecret
+import stasis.client.model.TargetEntity.Destination
+import stasis.client.model.EntityMetadata
+import stasis.client.model.TargetEntity
+import stasis.client.ops.exceptions.EntityProcessingFailure
+import stasis.client.ops.exceptions.OperationStopped
+import stasis.client.ops.recovery.Providers
+import stasis.client.ops.Metrics
+import stasis.client.ops.ParallelismConfig
+import stasis.core.packaging.Crate
+import stasis.core.routing.exceptions.PullFailure
+import stasis.shared.ops.Operation
 
 trait EntityProcessing {
   protected def deviceSecret: DeviceSecret

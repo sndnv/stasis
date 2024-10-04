@@ -3,10 +3,12 @@ package stasis.client.api.http.routes
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
+
 import stasis.client.api.Context
 
 class Schedules()(implicit context: Context) extends ApiRoutes {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.client.api.http.Formats._
   import stasis.shared.api.Formats._
 

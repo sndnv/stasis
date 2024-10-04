@@ -1,19 +1,22 @@
 package stasis.test.specs.unit.client.mocks
 
+import java.nio.file.Path
+import java.util.concurrent.atomic.AtomicInteger
+
+import scala.concurrent.Future
+
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
+
 import stasis.client.collection.rules.Rule
-import stasis.client.model.{EntityMetadata, SourceEntity}
+import stasis.client.model.EntityMetadata
+import stasis.client.model.SourceEntity
 import stasis.client.tracking.BackupTracker
 import stasis.client.tracking.state.BackupState
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.client.mocks.MockBackupTracker.Statistic
-import java.nio.file.Path
-import java.util.concurrent.atomic.AtomicInteger
-
-import scala.concurrent.Future
 
 class MockBackupTracker extends BackupTracker {
   private val stats: Map[Statistic, AtomicInteger] = Map(

@@ -1,23 +1,28 @@
 package stasis.core.persistence.backends.slick
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.{ActorSystem, DispatcherSelector, SpawnProtocol}
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.DispatcherSelector
 import org.apache.pekko.util.ByteString
 import slick.jdbc.JdbcProfile
 import slick.lifted.ProvenShape
-import stasis.core.persistence.Metrics
-import stasis.core.persistence.backends.KeyValueBackend
-import stasis.core.telemetry.TelemetryContext
 
-import scala.concurrent.{ExecutionContext, Future}
+import stasis.core.persistence.backends.KeyValueBackend
+import stasis.layers.persistence.KeyValueStore
+import stasis.layers.persistence.Metrics
+import stasis.layers.persistence.migration.Migration
+import stasis.layers.telemetry.TelemetryContext
 
 class SlickBackend[K, V](
-  protected val tableName: String,
+  override val name: String,
   protected val profile: JdbcProfile,
   protected val database: JdbcProfile#Backend#Database,
   protected val serdes: KeyValueBackend.Serdes[K, V]
-)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext)
-    extends KeyValueBackend[K, V] {
+)(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext)
+    extends KeyValueStore[K, V] {
   import profile.api._
   import serdes._
 
@@ -26,9 +31,11 @@ class SlickBackend[K, V](
   // - https://scala-slick.org/doc/3.3.1/database.html#database-thread-pool
   private implicit val ec: ExecutionContext = system.dispatchers.lookup(DispatcherSelector.default())
 
-  private val metrics = telemetry.metrics[Metrics.KeyValueBackend]
+  private val metrics = telemetry.metrics[Metrics.Store]
 
-  private class KeyValueStore(tag: Tag) extends Table[(String, Array[Byte])](tag, tableName) {
+  override val migrations: Seq[Migration] = Seq.empty
+
+  private class KeyValueStore(tag: Tag) extends Table[(String, Array[Byte])](tag, name) {
     def key: Rep[String] = column[String]("KEY", O.PrimaryKey)
     def value: Rep[Array[Byte]] = column[Array[Byte]]("VALUE")
     def * : ProvenShape[(String, Array[Byte])] = (key, value)
@@ -38,13 +45,11 @@ class SlickBackend[K, V](
 
   override def init(): Future[Done] =
     database.run(store.schema.create).map { _ =>
-      metrics.recordInit(backend = tableName)
       Done
     }
 
   override def drop(): Future[Done] =
     database.run(store.schema.drop).map { _ =>
-      metrics.recordDrop(backend = tableName)
       Done
     }
 
@@ -56,7 +61,7 @@ class SlickBackend[K, V](
     database
       .run(action)
       .map { result =>
-        metrics.recordPut(backend = tableName)
+        metrics.recordPut(store = name)
         result
       }
   }
@@ -70,7 +75,7 @@ class SlickBackend[K, V](
     database
       .run(action)
       .map { result =>
-        metrics.recordDelete(backend = tableName)
+        metrics.recordDelete(store = name)
         result
       }
   }
@@ -86,7 +91,7 @@ class SlickBackend[K, V](
     database
       .run(action)
       .map { result =>
-        result.foreach(_ => metrics.recordGet(backend = tableName))
+        result.foreach(_ => metrics.recordGet(store = name))
         result
       }
   }
@@ -104,7 +109,7 @@ class SlickBackend[K, V](
       .run(action)
       .map { result =>
         if (result.nonEmpty) {
-          metrics.recordGet(backend = tableName, entries = result.size)
+          metrics.recordGet(store = name, entries = result.size)
         }
         result
       }
@@ -113,10 +118,10 @@ class SlickBackend[K, V](
 
 object SlickBackend {
   def apply[K, V](
-    tableName: String,
+    name: String,
     profile: JdbcProfile,
     database: JdbcProfile#Backend#Database,
     serdes: KeyValueBackend.Serdes[K, V]
-  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext): SlickBackend[K, V] =
-    new SlickBackend[K, V](tableName, profile, database, serdes)
+  )(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext): SlickBackend[K, V] =
+    new SlickBackend[K, V](name, profile, database, serdes)
 }

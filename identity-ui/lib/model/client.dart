@@ -12,6 +12,8 @@ class Client with _$Client {
     required int tokenExpiration,
     required bool active,
     String? subject,
+    required DateTime created,
+    required DateTime updated,
   }) = _Client;
 
   factory Client.fromJson(Map<String, Object?> json) => _$ClientFromJson(json);

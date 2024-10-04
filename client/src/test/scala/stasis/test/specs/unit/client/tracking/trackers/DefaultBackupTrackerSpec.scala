@@ -1,11 +1,15 @@
 package stasis.test.specs.unit.client.tracking.trackers
 
+import scala.concurrent.duration._
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.util.Timeout
+import org.scalatest.Assertion
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{Assertion, BeforeAndAfterAll}
+
 import stasis.client.collection.rules.Rule
 import stasis.client.model.SourceEntity
 import stasis.client.tracking.state.BackupState
@@ -17,8 +21,6 @@ import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-
-import scala.concurrent.duration._
 
 class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAfterAll {
   "A DefaultBackupTracker" should "track backup events" in withRetry {
@@ -268,8 +270,8 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
 
   override implicit val timeout: Timeout = 7.seconds
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "DefaultBackupTrackerSpec"
   )
 

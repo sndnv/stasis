@@ -1,17 +1,20 @@
 package stasis.client.api.clients
 
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import scala.concurrent.Future
+
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import org.apache.pekko.{Done, NotUsed}
-import stasis.core.networking.http.{HttpEndpointAddress, HttpEndpointClient}
-import stasis.core.packaging
-import stasis.core.routing.Node
-import stasis.core.security.tls.EndpointContext
-import scala.concurrent.Future
 
 import stasis.core.api.PoolClient
+import stasis.core.networking.http.HttpEndpointAddress
+import stasis.core.networking.http.HttpEndpointClient
+import stasis.core.packaging
+import stasis.core.routing.Node
+import stasis.layers.security.tls.EndpointContext
 
 class DefaultServerCoreEndpointClient(
   address: HttpEndpointAddress,
@@ -20,7 +23,7 @@ class DefaultServerCoreEndpointClient(
   context: Option[EndpointContext],
   maxChunkSize: Int,
   config: PoolClient.Config
-)(implicit system: ActorSystem[SpawnProtocol.Command])
+)(implicit system: ActorSystem[Nothing])
     extends ServerCoreEndpointClient {
 
   private val client: HttpEndpointClient = HttpEndpointClient(
@@ -47,7 +50,7 @@ object DefaultServerCoreEndpointClient {
     context: Option[EndpointContext],
     maxChunkSize: Int,
     config: PoolClient.Config
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): DefaultServerCoreEndpointClient =
+  )(implicit system: ActorSystem[Nothing]): DefaultServerCoreEndpointClient =
     new DefaultServerCoreEndpointClient(
       address = address,
       credentials = credentials,

@@ -1,16 +1,17 @@
 package stasis.test.specs.unit.client.security
 
+import scala.concurrent.duration._
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
-import stasis.client.security.DefaultCredentialsProvider
-import stasis.core.security.oauth.OAuthClient.AccessTokenResponse
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.security.mocks.MockOAuthClient
 
-import scala.concurrent.duration._
+import stasis.client.security.DefaultCredentialsProvider
+import stasis.layers.security.mocks.MockOAuthClient
+import stasis.layers.security.oauth.OAuthClient.AccessTokenResponse
+import stasis.test.specs.unit.AsyncUnitSpec
 
 class DefaultCredentialsProviderSpec extends AsyncUnitSpec with Eventually {
   "A DefaultCredentialsProvider" should "provide core credentials" in {
@@ -149,8 +150,8 @@ class DefaultCredentialsProviderSpec extends AsyncUnitSpec with Eventually {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "DefaultCredentialsProviderSpec"
   )
 

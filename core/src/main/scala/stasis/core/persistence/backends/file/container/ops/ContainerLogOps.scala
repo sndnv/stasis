@@ -1,18 +1,24 @@
 package stasis.core.persistence.backends.file.container.ops
 
 import java.io.RandomAccessFile
-import java.nio.file.{Files, Path, StandardOpenOption}
-import java.nio.{ByteBuffer, ByteOrder}
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardOpenOption
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.UUID
 
+import scala.annotation.tailrec
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.control.NonFatal
+
 import org.apache.pekko.Done
+
 import stasis.core.persistence.backends.file.container.Container
 import stasis.core.persistence.backends.file.container.exceptions.ContainerFailure
-import stasis.core.persistence.backends.file.container.headers.{ContainerHeader, ContainerLogHeader}
-
-import scala.annotation.tailrec
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
+import stasis.core.persistence.backends.file.container.headers.ContainerHeader
+import stasis.core.persistence.backends.file.container.headers.ContainerLogHeader
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 object ContainerLogOps extends AutoCloseSupport {

@@ -1,7 +1,10 @@
 package stasis.test.specs.unit.client.encryption.secrets
 
 import org.apache.pekko.util.ByteString
-import stasis.client.encryption.secrets.{UserAuthenticationPassword, UserHashedEncryptionPassword, UserPassword}
+
+import stasis.client.encryption.secrets.UserAuthenticationPassword
+import stasis.client.encryption.secrets.UserHashedEncryptionPassword
+import stasis.client.encryption.secrets.UserPassword
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.EncodingHelpers
 

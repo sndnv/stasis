@@ -1,6 +1,7 @@
 package stasis.test.specs.unit.client.ops.recovery.stages
 
 import org.apache.pekko.actor.ActorSystem
+
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.collection.RecoveryCollector
@@ -70,11 +71,11 @@ class EntityCollectionSpec extends AsyncUnitSpec {
         mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
         mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(0)
 
-        mockTelemetry.ops.recovery.entityExamined should be(3)
-        mockTelemetry.ops.recovery.entityCollected should be(2)
-        mockTelemetry.ops.recovery.entityChunkProcessed should be(0)
-        mockTelemetry.ops.recovery.entityProcessed should be(0)
-        mockTelemetry.ops.recovery.metadataApplied should be(0)
+        mockTelemetry.client.ops.recovery.entityExamined should be(3)
+        mockTelemetry.client.ops.recovery.entityCollected should be(2)
+        mockTelemetry.client.ops.recovery.entityChunkProcessed should be(0)
+        mockTelemetry.client.ops.recovery.entityProcessed should be(0)
+        mockTelemetry.client.ops.recovery.metadataApplied should be(0)
       }
   }
 

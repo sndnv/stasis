@@ -3,12 +3,14 @@ package stasis.server.security.devices
 import java.time.Instant
 import java.util.concurrent.ThreadLocalRandom
 
-import stasis.server.security.CurrentUser
-import stasis.shared.model.devices.{Device, DeviceBootstrapCode}
-
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.Random
+
+import stasis.server.security.CurrentUser
+import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.DeviceBootstrapCode
 
 trait DeviceBootstrapCodeGenerator { generator =>
   def generate(currentUser: CurrentUser, device: Device.Id): Future[DeviceBootstrapCode]

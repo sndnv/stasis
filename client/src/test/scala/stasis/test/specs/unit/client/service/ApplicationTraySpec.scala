@@ -1,15 +1,18 @@
 package stasis.test.specs.unit.client.service
 
-import dorkbox.systemTray.{Menu, MenuItem, SystemTray}
-import org.mockito.ArgumentMatchers.any
-import org.mockito.MockitoSugar
-import org.mockito.captor.ArgCaptor
-import stasis.client.service.ApplicationTray
-import stasis.test.specs.unit.UnitSpec
-
 import java.awt.event.ActionEvent
 import java.net.URL
 import java.util.concurrent.atomic.AtomicBoolean
+
+import dorkbox.systemTray.Menu
+import dorkbox.systemTray.MenuItem
+import dorkbox.systemTray.SystemTray
+import org.mockito.ArgumentMatchers.any
+import org.mockito.MockitoSugar
+import org.mockito.captor.ArgCaptor
+
+import stasis.client.service.ApplicationTray
+import stasis.test.specs.unit.UnitSpec
 
 class ApplicationTraySpec extends UnitSpec with MockitoSugar {
   "An ApplicationTray" should "load the default tray if supported" in {

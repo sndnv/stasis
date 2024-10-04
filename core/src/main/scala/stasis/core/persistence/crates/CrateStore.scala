@@ -1,25 +1,34 @@
 package stasis.core.persistence.crates
 
-import org.apache.pekko.actor.typed.scaladsl.LoggerOps
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
-import org.apache.pekko.util.{ByteString, Timeout}
-import org.apache.pekko.{Done, NotUsed}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+
 import com.typesafe.config.Config
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.core.packaging.{Crate, Manifest}
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.LoggerOps
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.util.Timeout
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
 import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.backends.StreamingBackend
-import stasis.core.persistence.backends.file.{ContainerBackend, FileBackend}
+import stasis.core.persistence.backends.file.ContainerBackend
+import stasis.core.persistence.backends.file.FileBackend
 import stasis.core.persistence.backends.memory.StreamingMemoryBackend
-import stasis.core.telemetry.TelemetryContext
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import stasis.layers.telemetry.TelemetryContext
 
 class CrateStore(
   val backend: StreamingBackend
-)(implicit system: ActorSystem[SpawnProtocol.Command]) { store =>
+)(implicit system: ActorSystem[Nothing]) { store =>
   import CrateStore._
 
   private implicit val ec: ExecutionContext = system.executionContext
@@ -130,7 +139,7 @@ object CrateStore {
 
   def fromDescriptor(
     descriptor: Descriptor
-  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext, timeout: Timeout): CrateStore = {
+  )(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext, timeout: Timeout): CrateStore = {
     val backend = descriptor match {
       case Descriptor.ForStreamingMemoryBackend(maxSize, maxChunkSize, name) =>
         StreamingMemoryBackend(

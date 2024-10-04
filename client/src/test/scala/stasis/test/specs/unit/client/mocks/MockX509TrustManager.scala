@@ -4,6 +4,7 @@ import java.security.cert.X509Certificate
 import java.util.concurrent.atomic.AtomicInteger
 
 import javax.net.ssl.X509TrustManager
+
 import stasis.test.specs.unit.client.mocks.MockX509TrustManager.Statistic
 
 class MockX509TrustManager() extends X509TrustManager {

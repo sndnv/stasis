@@ -1,9 +1,13 @@
 package stasis.test.specs.unit.client.encryption.secrets
 
 import java.nio.file.Paths
+
 import org.apache.pekko.actor.ActorSystem
+
 import stasis.client.encryption.Aes
-import stasis.client.encryption.secrets.{DeviceFileSecret, DeviceMetadataSecret, DeviceSecret}
+import stasis.client.encryption.secrets.DeviceFileSecret
+import stasis.client.encryption.secrets.DeviceMetadataSecret
+import stasis.client.encryption.secrets.DeviceSecret
 import stasis.core.packaging.Crate
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.EncodingHelpers

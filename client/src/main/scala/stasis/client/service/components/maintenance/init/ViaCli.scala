@@ -1,8 +1,9 @@
 package stasis.client.service.components.maintenance.init
 
-import stasis.client.service.ApplicationArguments
 import scala.concurrent.Future
 import scala.util.Try
+
+import stasis.client.service.ApplicationArguments
 
 object ViaCli {
   def retrieveCredentials(

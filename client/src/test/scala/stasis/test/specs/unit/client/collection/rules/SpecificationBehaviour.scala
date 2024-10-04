@@ -1,15 +1,17 @@
 package stasis.test.specs.unit.client.collection.rules
 
+import java.nio.file.NoSuchFileException
+import java.util.concurrent.atomic.AtomicInteger
+
+import scala.concurrent.ExecutionContext
+
+import stasis.client.collection.rules.Rule
+import stasis.client.collection.rules.Specification
 import stasis.client.collection.rules.exceptions.RuleMatchingFailure
 import stasis.client.collection.rules.internal.IndexedRule
-import stasis.client.collection.rules.{Rule, Specification}
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.core.FileSystemHelpers.FileSystemSetup
-
-import java.nio.file.NoSuchFileException
-import java.util.concurrent.atomic.AtomicInteger
-import scala.concurrent.ExecutionContext
 
 trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
   import ResourceHelpers._

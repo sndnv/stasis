@@ -1,9 +1,9 @@
 package stasis.shared.model.devices
 
+import scala.concurrent.duration.FiniteDuration
+
 import stasis.core.routing.Node
 import stasis.shared.model.users.User
-
-import scala.concurrent.duration.FiniteDuration
 
 final case class Device(
   id: Device.Id,

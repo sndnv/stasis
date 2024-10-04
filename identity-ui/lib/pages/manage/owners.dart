@@ -8,6 +8,7 @@ import 'package:identity_ui/pages/authorize/derived_passwords.dart';
 import 'package:identity_ui/pages/default/components.dart';
 import 'package:identity_ui/pages/manage/components/entity_form.dart';
 import 'package:identity_ui/pages/manage/components/entity_table.dart';
+import 'package:identity_ui/pages/manage/components/rendering.dart';
 
 class Owners extends StatefulWidget {
   const Owners({
@@ -49,54 +50,62 @@ class _OwnersState extends State<Owners> {
                 DataColumn(label: Text('Subject')),
                 DataColumn(label: Text('Allowed Scopes')),
                 DataColumn(label: Text('Active')),
+                DataColumn(label: Text('Created')),
+                DataColumn(label: Text('Updated')),
                 DataColumn(label: Text('')),
               ],
-              entityToRow: (owner) => [
-                DataCell(
-                  owner.active
-                      ? Text(owner.username)
-                      : Row(
-                          children: [
-                            Text(owner.username),
-                            const Padding(padding: EdgeInsets.symmetric(horizontal: 4)),
-                            const IconButton(
-                              tooltip: 'Deactivated resource owner',
-                              onPressed: null,
-                              icon: Icon(Icons.warning),
-                            )
-                          ],
-                        ),
-                ),
-                DataCell(Text(owner.subject ?? '-')),
-                DataCell(Text('${owner.allowedScopes.join(', ')}')),
-                DataCell(Text(owner.active ? 'Yes' : 'No')),
-                DataCell(
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      IconButton(
-                        tooltip: widget.client.subject == owner.username
-                            ? 'Cannot update the current resource owner'
-                            : 'Update Resource Owner',
-                        onPressed: widget.client.subject == owner.username ? null : () => _editOwner(owner),
-                        icon: const Icon(Icons.edit),
-                      ),
-                      IconButton(
-                        tooltip: 'Update Resource Owner Credentials',
-                        onPressed: () => _editOwnerCredentials(owner),
-                        icon: const Icon(Icons.lock_reset),
-                      ),
-                      IconButton(
-                        tooltip: widget.client.subject == owner.username
-                            ? 'Cannot remove the current resource owner'
-                            : 'Remove Resource Owner',
-                        onPressed: widget.client.subject == owner.username ? null : () => _removeOwner(owner.username),
-                        icon: const Icon(Icons.delete),
-                      ),
-                    ],
+              entityToRow: (e) {
+                ResourceOwner owner = e;
+                return [
+                  DataCell(
+                    owner.active
+                        ? Text(owner.username)
+                        : Row(
+                            children: [
+                              Text(owner.username),
+                              const Padding(padding: EdgeInsets.symmetric(horizontal: 4)),
+                              const IconButton(
+                                tooltip: 'Deactivated resource owner',
+                                onPressed: null,
+                                icon: Icon(Icons.warning),
+                              )
+                            ],
+                          ),
                   ),
-                ),
-              ],
+                  DataCell(Text(owner.subject ?? '-')),
+                  DataCell(Text(owner.allowedScopes.join(', '))),
+                  DataCell(Text(owner.active ? 'Yes' : 'No')),
+                  DataCell(Text(owner.created.render())),
+                  DataCell(Text(owner.updated.render())),
+                  DataCell(
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          tooltip: widget.client.subject == owner.username
+                              ? 'Cannot update the current resource owner'
+                              : 'Update Resource Owner',
+                          onPressed: widget.client.subject == owner.username ? null : () => _editOwner(owner),
+                          icon: const Icon(Icons.edit),
+                        ),
+                        IconButton(
+                          tooltip: 'Update Resource Owner Credentials',
+                          onPressed: () => _editOwnerCredentials(owner),
+                          icon: const Icon(Icons.lock_reset),
+                        ),
+                        IconButton(
+                          tooltip: widget.client.subject == owner.username
+                              ? 'Cannot remove the current resource owner'
+                              : 'Remove Resource Owner',
+                          onPressed:
+                              widget.client.subject == owner.username ? null : () => _removeOwner(owner.username),
+                          icon: const Icon(Icons.delete),
+                        ),
+                      ],
+                    ),
+                  ),
+                ];
+              },
             ),
           ],
         );

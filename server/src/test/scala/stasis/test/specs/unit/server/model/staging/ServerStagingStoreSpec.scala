@@ -1,24 +1,28 @@
 package stasis.test.specs.unit.server.model.staging
 
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
+
 import stasis.core.networking.http.HttpEndpointAddress
-import stasis.core.packaging.{Crate, Manifest}
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.staging.StagingStore
-import stasis.core.routing.{Node, NodeProxy}
-import stasis.core.telemetry.TelemetryContext
+import stasis.core.routing.Node
+import stasis.core.routing.NodeProxy
+import stasis.layers.telemetry.TelemetryContext
 import stasis.server.model.staging.ServerStagingStore
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.networking.mocks.{MockGrpcEndpointClient, MockHttpEndpointClient}
+import stasis.test.specs.unit.core.networking.mocks.MockGrpcEndpointClient
+import stasis.test.specs.unit.core.networking.mocks.MockHttpEndpointClient
 import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-
-import scala.concurrent.Future
-import scala.concurrent.duration._
 
 class ServerStagingStoreSpec extends AsyncUnitSpec {
   "A ServerStagingStore" should "provide a view resource (service)" in {
@@ -83,8 +87,8 @@ class ServerStagingStoreSpec extends AsyncUnitSpec {
     }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "ServerStagingStoreSpec"
   )
 

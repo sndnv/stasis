@@ -1,19 +1,26 @@
 package stasis.identity.api.oauth.directives
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 import scala.util.matching.Regex
-import scala.util.{Failure, Success, Try}
 
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directive
+import org.apache.pekko.http.scaladsl.server.Directive1
 import org.apache.pekko.http.scaladsl.server.Directives._
-import org.apache.pekko.http.scaladsl.server.{Directive, Directive1}
 import org.slf4j.Logger
-import stasis.core.api.directives.EntityDiscardingDirectives
+
 import stasis.identity.api.Formats._
-import stasis.identity.model.apis.{Api, ApiStoreView}
-import stasis.identity.model.clients.{Client, ClientStoreView}
+import stasis.identity.model.apis.Api
+import stasis.identity.model.clients.Client
 import stasis.identity.model.errors.TokenError
+import stasis.identity.persistence.apis.ApiStore
+import stasis.identity.persistence.clients.ClientStore
+import stasis.layers.api.directives.EntityDiscardingDirectives
 
 trait AudienceExtraction extends EntityDiscardingDirectives {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -21,8 +28,8 @@ trait AudienceExtraction extends EntityDiscardingDirectives {
   protected implicit def ec: ExecutionContext
   protected def log: Logger
 
-  protected def clientStore: ClientStoreView
-  protected def apiStore: ApiStoreView
+  protected def clientStore: ClientStore.View
+  protected def apiStore: ApiStore.View
 
   private val audienceUrn: Regex = s"${AudienceExtraction.UrnPrefix}:(.+)".r
 

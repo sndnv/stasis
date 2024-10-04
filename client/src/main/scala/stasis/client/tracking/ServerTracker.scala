@@ -1,10 +1,11 @@
 package stasis.client.tracking
 
+import java.time.Instant
+
+import scala.concurrent.Future
+
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
-
-import java.time.Instant
-import scala.concurrent.Future
 
 trait ServerTracker extends ServerTracker.View {
   def reachable(server: String): Unit

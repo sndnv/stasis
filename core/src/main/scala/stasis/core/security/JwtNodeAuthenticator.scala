@@ -2,16 +2,20 @@ package stasis.core.security
 
 import java.util.UUID
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Try
+
 import org.apache.pekko.Done
-import org.apache.pekko.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.jose4j.jwt.JwtClaims
+
 import stasis.core.persistence.nodes.NodeStoreView
 import stasis.core.routing.Node
-import stasis.core.security.exceptions.AuthenticationFailure
-import stasis.core.security.jwt.JwtAuthenticator
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Try}
+import stasis.layers.security.exceptions.AuthenticationFailure
+import stasis.layers.security.jwt.JwtAuthenticator
 
 class JwtNodeAuthenticator(
   nodeStore: NodeStoreView,

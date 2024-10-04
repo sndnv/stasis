@@ -1,13 +1,16 @@
 package stasis.server.api.routes
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.reflect.ClassTag
+
 import org.apache.pekko.http.scaladsl.server.Directives.onSuccess
 import org.apache.pekko.http.scaladsl.server.Route
 import org.slf4j.Logger
-import stasis.core.api.directives.EntityDiscardingDirectives
-import stasis.server.security.{CurrentUser, Resource, ResourceProvider}
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.reflect.ClassTag
+import stasis.layers.api.directives.EntityDiscardingDirectives
+import stasis.server.security.CurrentUser
+import stasis.server.security.Resource
+import stasis.server.security.ResourceProvider
 
 trait ApiRoutes extends EntityDiscardingDirectives {
   def resource[R1 <: Resource](f: R1 => Future[Route])(implicit

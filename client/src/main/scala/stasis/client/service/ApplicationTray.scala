@@ -1,8 +1,9 @@
 package stasis.client.service
 
-import dorkbox.systemTray.{MenuItem, SystemTray}
-
 import java.awt.event.ActionEvent
+
+import dorkbox.systemTray.MenuItem
+import dorkbox.systemTray.SystemTray
 
 trait ApplicationTray {
   def init(): Unit

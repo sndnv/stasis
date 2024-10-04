@@ -1,12 +1,14 @@
 package stasis.test.specs.unit.client.service
 
+import java.io.FileNotFoundException
+import java.nio.file.Files
+import java.nio.file.Paths
+
 import org.apache.pekko.util.ByteString
+
 import stasis.client.service.ApplicationDirectory
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
-
-import java.io.FileNotFoundException
-import java.nio.file.{Files, Paths}
 
 class ApplicationDirectorySpec extends AsyncUnitSpec with ResourceHelpers {
   "An ApplicationDirectory" should "find files in any configuration location (config)" in {

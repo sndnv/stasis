@@ -1,11 +1,12 @@
 package stasis.client.ops.scheduling
 
+import scala.concurrent.Future
+
 import org.apache.pekko.Done
+
 import stasis.client.ops.exceptions.ScheduleRetrievalFailure
 import stasis.client.ops.scheduling.OperationScheduler.ActiveSchedule
 import stasis.shared.model.schedules.Schedule
-
-import scala.concurrent.Future
 
 trait OperationScheduler {
   def schedules: Future[Seq[ActiveSchedule]]

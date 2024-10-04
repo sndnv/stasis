@@ -1,11 +1,13 @@
 package stasis.test.specs.unit.core.security.mocks
 
-import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials}
+import scala.concurrent.Future
+
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
+
 import stasis.core.networking.exceptions.CredentialsFailure
 import stasis.core.routing.Node
 import stasis.core.security.NodeAuthenticator
-
-import scala.concurrent.Future
 
 class MockHttpAuthenticator(expectedUser: String, expectedPassword: String) extends NodeAuthenticator[HttpCredentials] {
   override def authenticate(credentials: HttpCredentials): Future[Node.Id] =

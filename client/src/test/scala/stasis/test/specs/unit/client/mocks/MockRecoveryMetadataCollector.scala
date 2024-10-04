@@ -3,11 +3,12 @@ package stasis.test.specs.unit.client.mocks
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 
-import stasis.client.collection.RecoveryMetadataCollector
-import stasis.client.model.{EntityMetadata, TargetEntity}
-import stasis.test.specs.unit.client.mocks.MockRecoveryMetadataCollector.Statistic
-
 import scala.concurrent.Future
+
+import stasis.client.collection.RecoveryMetadataCollector
+import stasis.client.model.EntityMetadata
+import stasis.client.model.TargetEntity
+import stasis.test.specs.unit.client.mocks.MockRecoveryMetadataCollector.Statistic
 
 class MockRecoveryMetadataCollector(metadata: Map[Path, EntityMetadata]) extends RecoveryMetadataCollector {
   private val stats: Map[Statistic, AtomicInteger] = Map(

@@ -1,7 +1,8 @@
 package stasis.test.specs.unit.server.security.devices
 
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+
 import stasis.server.security.devices.DeviceClientSecretGenerator
 import stasis.test.specs.unit.AsyncUnitSpec
 
@@ -24,8 +25,8 @@ class DeviceClientSecretGeneratorSpec extends AsyncUnitSpec {
       secretSize = DeviceClientSecretGenerator.MinSecretSize
     )(typedSystem.executionContext)
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "DeviceClientSecretGeneratorSpec"
   )
 }

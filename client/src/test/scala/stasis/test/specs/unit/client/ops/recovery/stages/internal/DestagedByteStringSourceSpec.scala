@@ -2,17 +2,18 @@ package stasis.test.specs.unit.client.ops.recovery.stages.internal
 
 import java.nio.file.Paths
 
+import scala.util.control.NonFatal
+
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
+
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.ops.recovery.Providers
 import stasis.client.ops.recovery.stages.internal.DestagedByteStringSource
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks._
-
-import scala.util.control.NonFatal
 
 class DestagedByteStringSourceSpec extends AsyncUnitSpec {
   "A DestagedByteStringSource" should "support data stream destaging" in {
@@ -42,11 +43,11 @@ class DestagedByteStringSourceSpec extends AsyncUnitSpec {
         mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(0)
         mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(1)
 
-        mockTelemetry.ops.recovery.entityExamined should be(0)
-        mockTelemetry.ops.recovery.entityCollected should be(0)
-        mockTelemetry.ops.recovery.entityChunkProcessed should be(1)
-        mockTelemetry.ops.recovery.entityProcessed should be(0)
-        mockTelemetry.ops.recovery.metadataApplied should be(0)
+        mockTelemetry.client.ops.recovery.entityExamined should be(0)
+        mockTelemetry.client.ops.recovery.entityCollected should be(0)
+        mockTelemetry.client.ops.recovery.entityChunkProcessed should be(1)
+        mockTelemetry.client.ops.recovery.entityProcessed should be(0)
+        mockTelemetry.client.ops.recovery.metadataApplied should be(0)
       }
   }
 
@@ -80,11 +81,11 @@ class DestagedByteStringSourceSpec extends AsyncUnitSpec {
         mockStaging.statistics(MockFileStaging.Statistic.TemporaryDiscarded) should be(1)
         mockStaging.statistics(MockFileStaging.Statistic.Destaged) should be(0)
 
-        mockTelemetry.ops.recovery.entityExamined should be(0)
-        mockTelemetry.ops.recovery.entityCollected should be(0)
-        mockTelemetry.ops.recovery.entityChunkProcessed should be(0)
-        mockTelemetry.ops.recovery.entityProcessed should be(0)
-        mockTelemetry.ops.recovery.metadataApplied should be(0)
+        mockTelemetry.client.ops.recovery.entityExamined should be(0)
+        mockTelemetry.client.ops.recovery.entityCollected should be(0)
+        mockTelemetry.client.ops.recovery.entityChunkProcessed should be(0)
+        mockTelemetry.client.ops.recovery.entityProcessed should be(0)
+        mockTelemetry.client.ops.recovery.metadataApplied should be(0)
       }
   }
 

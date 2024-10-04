@@ -2,7 +2,7 @@ package stasis.test.specs.unit.identity.api.manage.requests
 
 import stasis.identity.api.manage.requests.CreateApi
 import stasis.identity.model.apis.Api
-import stasis.test.specs.unit.UnitSpec
+import stasis.layers.UnitSpec
 
 class CreateApiSpec extends UnitSpec {
   private val request = CreateApi(id = "some-api")
@@ -12,8 +12,8 @@ class CreateApiSpec extends UnitSpec {
   }
 
   it should "be convertible to Api" in withRetry {
-    val expectedApi = Api(id = request.id)
-    val actualApi = request.toApi
+    val expectedApi = Api.create(id = request.id)
+    val actualApi = request.toApi.copy(created = expectedApi.created, updated = expectedApi.updated)
 
     actualApi should be(expectedApi)
   }

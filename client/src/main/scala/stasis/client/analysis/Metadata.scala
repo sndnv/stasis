@@ -1,16 +1,26 @@
 package stasis.client.analysis
 
-import org.apache.pekko.Done
-import org.apache.pekko.stream.Materializer
-import stasis.client.compression.Compression
-import stasis.client.model.{EntityMetadata, SourceEntity, TargetEntity}
-import stasis.core.packaging.Crate
-
-import java.nio.file.attribute.{FileTime, PosixFileAttributeView, PosixFileAttributes, PosixFilePermissions}
-import java.nio.file.{Files, LinkOption, Path}
+import java.nio.file.attribute.FileTime
+import java.nio.file.attribute.PosixFileAttributeView
+import java.nio.file.attribute.PosixFileAttributes
+import java.nio.file.attribute.PosixFilePermissions
+import java.nio.file.Files
+import java.nio.file.LinkOption
+import java.nio.file.Path
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import scala.concurrent.{ExecutionContext, Future}
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
+
+import stasis.client.compression.Compression
+import stasis.client.model.EntityMetadata
+import stasis.client.model.SourceEntity
+import stasis.client.model.TargetEntity
+import stasis.core.packaging.Crate
 
 object Metadata {
   def collectSource(

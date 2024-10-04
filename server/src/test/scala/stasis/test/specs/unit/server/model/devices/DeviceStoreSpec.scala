@@ -1,10 +1,13 @@
 package stasis.test.specs.unit.server.model.devices
 
+import scala.util.control.NonFatal
+
 import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+
 import stasis.core.routing.Node
-import stasis.core.telemetry.TelemetryContext
+import stasis.layers.telemetry.TelemetryContext
 import stasis.server.security.CurrentUser
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
@@ -12,8 +15,6 @@ import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.model.mocks.MockDeviceStore
-
-import scala.util.control.NonFatal
 
 class DeviceStoreSpec extends AsyncUnitSpec {
   "A DeviceStore" should "provide a view resource (privileged)" in {
@@ -276,8 +277,8 @@ class DeviceStoreSpec extends AsyncUnitSpec {
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "DeviceStoreSpec"
   )
 

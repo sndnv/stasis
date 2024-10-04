@@ -1,20 +1,25 @@
 package stasis.test.specs.unit.identity.api.oauth.directives
 
+import java.security.MessageDigest
+import java.time.Instant
+import java.util.Base64
+
+import scala.concurrent.ExecutionContext
+
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives
 import org.slf4j.Logger
 import play.api.libs.json._
+
 import stasis.identity.api.oauth.directives.AuthorizationCodeConsumption
 import stasis.identity.api.oauth.directives.AuthorizationCodeConsumption.ChallengeVerification
 import stasis.identity.model.ChallengeMethod
 import stasis.identity.model.clients.Client
-import stasis.identity.model.codes.{AuthorizationCodeStore, StoredAuthorizationCode}
+import stasis.identity.model.codes.StoredAuthorizationCode
+import stasis.identity.persistence.codes.AuthorizationCodeStore
+import stasis.layers
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
-
-import java.security.MessageDigest
-import java.util.Base64
-import scala.concurrent.ExecutionContext
 
 class AuthorizationCodeConsumptionSpec extends RouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -44,7 +49,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
       val fields = responseAs[JsObject].fields
       fields should contain("owner" -> Json.toJson(owner.username))
       fields should contain("scope" -> Json.toJson(scope))
-      codes.codes.await should be(Map.empty)
+      codes.all.await should be(Seq.empty)
     }
   }
 
@@ -57,7 +62,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     val code = Generators.generateAuthorizationCode
     val scope = "some-scope"
     val challenge = StoredAuthorizationCode.Challenge(
-      value = stasis.test.Generators.generateString(withSize = 128),
+      value = layers.Generators.generateString(withSize = 128),
       method = None
     )
 
@@ -71,7 +76,18 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
       )
     }
 
-    codes.put(StoredAuthorizationCode(code, client, owner, scope = Some(scope), challenge = Some(challenge))).await
+    codes
+      .put(
+        StoredAuthorizationCode(
+          code = code,
+          client = client,
+          owner = owner,
+          scope = Some(scope),
+          challenge = Some(challenge),
+          created = Instant.now()
+        )
+      )
+      .await
     Get() ~> routes ~> check {
       status should be(StatusCodes.BadRequest)
       responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_grant"))
@@ -86,7 +102,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
     val scope = "some-scope"
-    val verifier = stasis.test.Generators.generateString(withSize = 128)
+    val verifier = layers.Generators.generateString(withSize = 128)
     val challenge = StoredAuthorizationCode.Challenge(value = verifier, method = Some(ChallengeMethod.Plain))
 
     val routes = directive.consumeAuthorizationCode(client, code, verifier) { case (extractedOwner, extractedScope) =>
@@ -99,13 +115,24 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
       )
     }
 
-    codes.put(StoredAuthorizationCode(code, client, owner, scope = Some(scope), challenge = Some(challenge))).await
+    codes
+      .put(
+        StoredAuthorizationCode(
+          code = code,
+          client = client,
+          owner = owner,
+          scope = Some(scope),
+          challenge = Some(challenge),
+          created = Instant.now()
+        )
+      )
+      .await
     Get() ~> routes ~> check {
       status should be(StatusCodes.OK)
       val fields = responseAs[JsObject].fields
       fields should contain("owner" -> Json.toJson(owner.username))
       fields should contain("scope" -> Json.toJson(scope))
-      codes.codes.await should be(Map.empty)
+      codes.all.await should be(Seq.empty)
     }
   }
 
@@ -117,7 +144,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
     val scope = "some-scope"
-    val verifier = stasis.test.Generators.generateString(withSize = 128)
+    val verifier = layers.Generators.generateString(withSize = 128)
 
     val encodedVerifier =
       Base64.getUrlEncoder
@@ -140,13 +167,24 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
       )
     }
 
-    codes.put(StoredAuthorizationCode(code, client, owner, scope = Some(scope), challenge = Some(challenge))).await
+    codes
+      .put(
+        StoredAuthorizationCode(
+          code = code,
+          client = client,
+          owner = owner,
+          scope = Some(scope),
+          challenge = Some(challenge),
+          created = Instant.now()
+        )
+      )
+      .await
     Get() ~> routes ~> check {
       status should be(StatusCodes.OK)
       val fields = responseAs[JsObject].fields
       fields should contain("owner" -> Json.toJson(owner.username))
       fields should contain("scope" -> Json.toJson(scope))
-      codes.codes.await should be(Map.empty)
+      codes.all.await should be(Seq.empty)
     }
   }
 
@@ -159,14 +197,14 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     val code = Generators.generateAuthorizationCode
     val scope = "some-scope"
     val challenge = StoredAuthorizationCode.Challenge(
-      value = stasis.test.Generators.generateString(withSize = 128),
+      value = layers.Generators.generateString(withSize = 128),
       method = None
     )
 
     val routes = directive.consumeAuthorizationCode(
       client = client,
       providedCode = code,
-      stasis.test.Generators.generateString(withSize = 128)
+      layers.Generators.generateString(withSize = 128)
     ) { case (extractedOwner, extractedScope) =>
       Directives.complete(
         StatusCodes.OK,
@@ -177,7 +215,18 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
       )
     }
 
-    codes.put(StoredAuthorizationCode(code, client, owner, scope = Some(scope), challenge = Some(challenge))).await
+    codes
+      .put(
+        StoredAuthorizationCode(
+          code = code,
+          client = client,
+          owner = owner,
+          scope = Some(scope),
+          challenge = Some(challenge),
+          created = Instant.now()
+        )
+      )
+      .await
     Get() ~> routes ~> check {
       status should be(StatusCodes.BadRequest)
       responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_grant"))
@@ -192,7 +241,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
     val scope = "some-scope"
-    val verifier = stasis.test.Generators.generateString(withSize = 128)
+    val verifier = layers.Generators.generateString(withSize = 128)
 
     val routes = directive.consumeAuthorizationCode(client, code, verifier) { case (extractedOwner, extractedScope) =>
       Directives.complete(
@@ -204,7 +253,18 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
       )
     }
 
-    codes.put(StoredAuthorizationCode(code, client, owner, scope = Some(scope), challenge = None)).await
+    codes
+      .put(
+        StoredAuthorizationCode(
+          code = code,
+          client = client,
+          owner = owner,
+          scope = Some(scope),
+          challenge = None,
+          created = Instant.now()
+        )
+      )
+      .await
     Get() ~> routes ~> check {
       status should be(StatusCodes.BadRequest)
       responseAs[JsObject].fields should contain("error" -> Json.toJson("invalid_grant"))

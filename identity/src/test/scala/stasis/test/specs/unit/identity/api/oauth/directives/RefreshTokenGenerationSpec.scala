@@ -3,10 +3,12 @@ package stasis.test.specs.unit.identity.api.oauth.directives
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives
 import org.slf4j.Logger
+
 import stasis.identity.api.oauth.directives.RefreshTokenGeneration
 import stasis.identity.model.clients.Client
-import stasis.identity.model.tokens.RefreshTokenStore
-import stasis.identity.model.tokens.generators.{RandomRefreshTokenGenerator, RefreshTokenGenerator}
+import stasis.identity.model.tokens.generators.RandomRefreshTokenGenerator
+import stasis.identity.model.tokens.generators.RefreshTokenGenerator
+import stasis.identity.persistence.tokens.RefreshTokenStore
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
 
@@ -31,9 +33,9 @@ class RefreshTokenGenerationSpec extends RouteTest {
     }
 
     Get() ~> routes ~> check {
-      val expectedToken = tokens.tokens.await.headOption match {
-        case Some((_, storedToken)) => storedToken.token.value
-        case None                   => fail("Unexpected response received; no token found")
+      val expectedToken = tokens.all.await.headOption match {
+        case Some(storedToken) => storedToken.token.value
+        case None              => fail("Unexpected response received; no token found")
       }
 
       status should be(StatusCodes.OK)
@@ -86,7 +88,7 @@ class RefreshTokenGenerationSpec extends RouteTest {
 
     Get() ~> routes ~> check {
       status should be(StatusCodes.OK)
-      tokens.tokens.await should be(Map.empty)
+      tokens.all.await should be(Seq.empty)
     }
   }
 

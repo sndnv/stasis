@@ -1,11 +1,12 @@
 package stasis.core.persistence.backends.file.container.ops
 
-import java.nio.{ByteBuffer, ByteOrder}
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.zip.CRC32
 
-import stasis.core.persistence.backends.file.container.exceptions.ConversionFailure
-
 import scala.util.Try
+
+import stasis.core.persistence.backends.file.container.exceptions.ConversionFailure
 
 object ConversionOps {
   final val DEFAULT_BYTE_ORDER: ByteOrder = ByteOrder.BIG_ENDIAN

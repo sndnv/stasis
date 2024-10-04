@@ -3,8 +3,9 @@ package stasis.test.specs.unit.identity.api.oauth.directives
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives
 import org.slf4j.Logger
+
 import stasis.identity.api.oauth.directives.ClientRetrieval
-import stasis.identity.model.clients.{ClientStore, ClientStoreView}
+import stasis.identity.persistence.clients.ClientStore
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
 
@@ -82,6 +83,6 @@ class ClientRetrievalSpec extends RouteTest {
   ) =
     new ClientRetrieval {
       override protected def log: Logger = createLogger()
-      override protected def clientStore: ClientStoreView = clients.view
+      override protected def clientStore: ClientStore.View = clients.view
     }
 }

@@ -1,24 +1,29 @@
 package stasis.core.persistence.backends.file
 
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import java.nio.ByteOrder
+import java.util.UUID
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import org.apache.pekko.{Done, NotUsed}
+
 import stasis.core.persistence.Metrics
 import stasis.core.persistence.backends.StreamingBackend
 import stasis.core.persistence.backends.file.container.Container
 import stasis.core.persistence.backends.file.container.ops.ConversionOps
-import stasis.core.telemetry.TelemetryContext
-
-import java.nio.ByteOrder
-import java.util.UUID
-import scala.concurrent.{ExecutionContext, Future}
+import stasis.layers.telemetry.TelemetryContext
 
 class ContainerBackend(
   val path: String,
   val maxChunkSize: Int,
   val maxChunks: Int
-)(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext)
+)(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext)
     extends StreamingBackend {
 
   private implicit val byteOrder: ByteOrder = ConversionOps.DEFAULT_BYTE_ORDER

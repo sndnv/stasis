@@ -1,11 +1,11 @@
 package stasis.identity.api.manage.setup
 
 import stasis.identity.authentication.manage.ResourceOwnerAuthenticator
-import stasis.identity.model.apis.ApiStore
-import stasis.identity.model.clients.ClientStore
-import stasis.identity.model.codes.AuthorizationCodeStore
-import stasis.identity.model.owners.ResourceOwnerStore
-import stasis.identity.model.tokens.RefreshTokenStore
+import stasis.identity.persistence.apis.ApiStore
+import stasis.identity.persistence.clients.ClientStore
+import stasis.identity.persistence.codes.AuthorizationCodeStore
+import stasis.identity.persistence.owners.ResourceOwnerStore
+import stasis.identity.persistence.tokens.RefreshTokenStore
 
 final case class Providers(
   apiStore: ApiStore,

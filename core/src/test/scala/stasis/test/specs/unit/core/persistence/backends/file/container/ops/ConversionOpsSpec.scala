@@ -1,12 +1,14 @@
 package stasis.test.specs.unit.core.persistence.backends.file.container.ops
 
-import java.nio.{ByteBuffer, ByteOrder}
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+
+import scala.util.Failure
+import scala.util.Try
 
 import stasis.core.persistence.backends.file.container.exceptions.ConversionFailure
 import stasis.core.persistence.backends.file.container.ops.ConversionOps
 import stasis.test.specs.unit.UnitSpec
-
-import scala.util.{Failure, Try}
 
 class ConversionOpsSpec extends UnitSpec {
   private implicit val byteOrder: ByteOrder = ConversionOps.DEFAULT_BYTE_ORDER

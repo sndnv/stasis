@@ -1,13 +1,18 @@
 package stasis.test.specs.unit.identity.api.oauth
 
 import org.apache.pekko.http.scaladsl.model
-import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, CacheDirectives}
-import org.apache.pekko.http.scaladsl.model.{FormData, StatusCodes}
+import org.apache.pekko.http.scaladsl.model.FormData
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.CacheDirectives
+
 import stasis.identity.api.oauth.ResourceOwnerPasswordCredentialsGrant
-import stasis.identity.api.oauth.ResourceOwnerPasswordCredentialsGrant.{AccessTokenRequest, AccessTokenResponse}
+import stasis.identity.api.oauth.ResourceOwnerPasswordCredentialsGrant.AccessTokenRequest
+import stasis.identity.api.oauth.ResourceOwnerPasswordCredentialsGrant.AccessTokenResponse
 import stasis.identity.model.GrantType
 import stasis.identity.model.secrets.Secret
 import stasis.identity.model.tokens.TokenType
+import stasis.layers
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
 
@@ -35,7 +40,7 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
     val api = Generators.generateApi
 
     val clientRawPassword = "some-password"
-    val clientSalt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
+    val clientSalt = layers.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(clientRawPassword, clientSalt)(secrets.client),
       salt = clientSalt
@@ -43,7 +48,7 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
     val credentials = BasicHttpCredentials(client.id.toString, clientRawPassword)
 
     val ownerRawPassword = "some-password"
-    val ownerSalt = stasis.test.Generators.generateString(withSize = secrets.owner.saltSize)
+    val ownerSalt = layers.Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
       password = Secret.derive(ownerRawPassword, ownerSalt)(secrets.owner),
       salt = ownerSalt
@@ -77,7 +82,7 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
       actualResponse.refresh_token.exists(_.value.nonEmpty) should be(true)
       actualResponse.scope should be(request.scope)
 
-      val refreshTokenGenerated = stores.tokens.tokens.await.headOption.nonEmpty
+      val refreshTokenGenerated = stores.tokens.all.await.headOption.nonEmpty
       refreshTokenGenerated should be(true)
     }
   }
@@ -89,7 +94,7 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
     val api = Generators.generateApi
 
     val clientRawPassword = "some-password"
-    val clientSalt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
+    val clientSalt = layers.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(clientRawPassword, clientSalt)(secrets.client),
       salt = clientSalt
@@ -97,7 +102,7 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
     val credentials = BasicHttpCredentials(client.id.toString, clientRawPassword)
 
     val ownerRawPassword = "some-password"
-    val ownerSalt = stasis.test.Generators.generateString(withSize = secrets.owner.saltSize)
+    val ownerSalt = layers.Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
       password = Secret.derive(ownerRawPassword, ownerSalt)(secrets.owner),
       salt = ownerSalt
@@ -133,7 +138,7 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
       actualResponse.refresh_token.exists(_.value.nonEmpty) should be(true)
       actualResponse.scope should be(request.scope)
 
-      val refreshTokenGenerated = stores.tokens.tokens.await.headOption.nonEmpty
+      val refreshTokenGenerated = stores.tokens.all.await.headOption.nonEmpty
       refreshTokenGenerated should be(true)
     }
   }
@@ -145,7 +150,7 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
     val api = Generators.generateApi
 
     val clientRawPassword = "some-password"
-    val clientSalt = stasis.test.Generators.generateString(withSize = secrets.client.saltSize)
+    val clientSalt = layers.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(clientRawPassword, clientSalt)(secrets.client),
       salt = clientSalt
@@ -153,7 +158,7 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
     val credentials = BasicHttpCredentials(client.id.toString, clientRawPassword)
 
     val ownerRawPassword = "some-password"
-    val ownerSalt = stasis.test.Generators.generateString(withSize = secrets.owner.saltSize)
+    val ownerSalt = layers.Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
       password = Secret.derive(ownerRawPassword, ownerSalt)(secrets.owner),
       salt = ownerSalt
@@ -187,7 +192,7 @@ class ResourceOwnerPasswordCredentialsGrantSpec extends RouteTest with OAuthFixt
       actualResponse.refresh_token should be(None)
       actualResponse.scope should be(request.scope)
 
-      stores.tokens.tokens.await should be(Map.empty)
+      stores.tokens.all.await should be(Seq.empty)
     }
   }
 }

@@ -1,12 +1,13 @@
 package stasis.test.specs.unit.client.ops
 
-import stasis.client.model.{SourceEntity, TargetEntity}
+import java.nio.file.Paths
+
+import stasis.client.model.SourceEntity
+import stasis.client.model.TargetEntity
 import stasis.client.ops.Metrics
+import stasis.layers.telemetry.mocks.MockMeter
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.Fixtures
-import stasis.test.specs.unit.core.telemetry.mocks.MockMeter
-
-import java.nio.file.Paths
 
 class MetricsSpec extends UnitSpec {
   "Metrics" should "provide a no-op implementation" in {

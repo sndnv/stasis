@@ -1,17 +1,19 @@
 package stasis.test.specs.unit.server.security.authenticators
 
+import scala.util.control.NonFatal
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
-import stasis.core.security.exceptions.AuthenticationFailure
-import stasis.core.telemetry.TelemetryContext
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+
+import stasis.layers.security.exceptions.AuthenticationFailure
+import stasis.layers.telemetry.TelemetryContext
 import stasis.server.security.authenticators.DefaultBootstrapCodeAuthenticator
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.model.mocks.MockDeviceBootstrapCodeStore
 import stasis.test.specs.unit.shared.model.Generators
-
-import scala.util.control.NonFatal
 
 class DefaultBootstrapCodeAuthenticatorSpec extends AsyncUnitSpec {
   "A DefaultBootstrapCodeAuthenticator" should "authenticate requests with valid bootstrap codes" in {
@@ -69,8 +71,8 @@ class DefaultBootstrapCodeAuthenticatorSpec extends AsyncUnitSpec {
       }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "DefaultBootstrapCodeAuthenticatorSpec"
   )
 

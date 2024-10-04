@@ -1,13 +1,14 @@
 package stasis.test.specs.unit.client.mocks
 
+import java.util.concurrent.atomic.AtomicInteger
+
+import scala.concurrent.Future
+
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 
-import java.util.concurrent.atomic.AtomicInteger
 import stasis.client.tracking.ServerTracker
 import stasis.test.specs.unit.client.mocks.MockServerTracker.Statistic
-
-import scala.concurrent.Future
 
 class MockServerTracker extends ServerTracker {
   private val stats: Map[Statistic, AtomicInteger] = Map(

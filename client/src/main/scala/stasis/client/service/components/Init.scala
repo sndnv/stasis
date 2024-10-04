@@ -1,11 +1,14 @@
 package stasis.client.service.components
 
+import java.io.Console
+
+import scala.concurrent.Future
+import scala.concurrent.Promise
+
 import org.apache.pekko.Done
 import org.apache.pekko.http.scaladsl.Http
-import stasis.core.security.tls.EndpointContext
 
-import java.io.Console
-import scala.concurrent.{Future, Promise}
+import stasis.layers.security.tls.EndpointContext
 
 trait Init {
   def credentials(): Future[(String, Array[Char])]

@@ -1,18 +1,27 @@
 package stasis.core.persistence.backends.memory
 
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
-import org.apache.pekko.util.{ByteString, Timeout}
-import org.apache.pekko.{Done, NotUsed}
+import java.util.UUID
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.stream.scaladsl.Keep
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.util.Timeout
+
 import stasis.core.persistence.Metrics
 import stasis.core.persistence.backends.StreamingBackend
-import stasis.core.telemetry.TelemetryContext
-
-import java.util.UUID
-import scala.concurrent.{ExecutionContext, Future}
+import stasis.layers.persistence.memory.MemoryStore
+import stasis.layers.telemetry.TelemetryContext
 
 class StreamingMemoryBackend private (
-  backend: MemoryBackend[UUID, ByteString],
+  backend: MemoryStore[UUID, ByteString],
   maxSize: Long,
   maxChunkSize: Int
 )(implicit ec: ExecutionContext, telemetry: TelemetryContext)
@@ -84,18 +93,18 @@ class StreamingMemoryBackend private (
 }
 
 object StreamingMemoryBackend {
-  def apply[K](
+  def apply(
     maxSize: Long,
     maxChunkSize: Int,
     name: String
   )(implicit
-    s: ActorSystem[SpawnProtocol.Command],
+    s: ActorSystem[Nothing],
     telemetry: TelemetryContext,
     t: Timeout
   ): StreamingMemoryBackend = {
     implicit val ec: ExecutionContext = s.executionContext
     new StreamingMemoryBackend(
-      backend = MemoryBackend[UUID, ByteString](name),
+      backend = MemoryStore[UUID, ByteString](name),
       maxSize = maxSize,
       maxChunkSize = maxChunkSize
     )

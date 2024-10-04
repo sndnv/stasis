@@ -1,17 +1,24 @@
 package stasis.client.ops.backup.stages
 
-import org.apache.pekko.stream.Materializer
-import org.apache.pekko.stream.scaladsl.{Flow, Source}
-import org.apache.pekko.{Done, NotUsed}
-import stasis.client.encryption.secrets.DeviceSecret
-import stasis.client.model.{DatasetMetadata, EntityMetadata}
-import stasis.client.ops.backup.Providers
-import stasis.core.packaging.{Crate, Manifest}
-import stasis.shared.api.requests.CreateDatasetEntry
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
-import stasis.shared.ops.Operation
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
-import scala.concurrent.{ExecutionContext, Future}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+
+import stasis.client.encryption.secrets.DeviceSecret
+import stasis.client.model.DatasetMetadata
+import stasis.client.model.EntityMetadata
+import stasis.client.ops.backup.Providers
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
+import stasis.shared.api.requests.CreateDatasetEntry
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
+import stasis.shared.ops.Operation
 
 trait MetadataPush {
   protected def targetDataset: DatasetDefinition

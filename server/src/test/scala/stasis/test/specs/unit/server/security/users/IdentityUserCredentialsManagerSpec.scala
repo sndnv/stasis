@@ -5,15 +5,14 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.ActorSystem
-import org.apache.pekko.actor.typed.Behavior
-import org.apache.pekko.actor.typed.SpawnProtocol
-import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.HttpResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+
 import stasis.core.api.PoolClient
-import stasis.core.security.tls.EndpointContext
+import stasis.layers.security.tls.EndpointContext
 import stasis.server.security.users.IdentityUserCredentialsManager
 import stasis.server.security.users.UserCredentialsManager
 import stasis.shared.model.users.User
@@ -270,8 +269,8 @@ class IdentityUserCredentialsManagerSpec extends AsyncUnitSpec {
 
   private val credentials = OAuth2BearerToken(token = "test-token")
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "IdentityUserCredentialsManagerSpec"
   )
 

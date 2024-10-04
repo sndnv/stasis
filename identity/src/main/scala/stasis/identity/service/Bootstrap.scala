@@ -1,21 +1,24 @@
 package stasis.identity.service
 
 import java.io.File
+import java.time.Instant
 
-import org.apache.pekko.Done
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
+import scala.util.Try
+import scala.util.control.NonFatal
+
 import com.typesafe.config.ConfigFactory
 import com.typesafe.{config => typesafe}
+import org.apache.pekko.Done
 import org.slf4j.Logger
+
 import stasis.identity.model.Seconds
 import stasis.identity.model.apis.Api
 import stasis.identity.model.clients.Client
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.secrets.Secret
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters._
-import scala.util.Try
-import scala.util.control.NonFatal
 
 object Bootstrap {
   final case class Entities(
@@ -54,7 +57,10 @@ object Bootstrap {
 
       run(entities, persistence)
     } else {
-      Future.successful(Done)
+      persistence.migrate().map { migrationResult =>
+        log.debug("Executed [{}] out of [{}] migrations", migrationResult.executed, migrationResult.found)
+        Done
+      }
     }
   }
 
@@ -62,30 +68,34 @@ object Bootstrap {
     entities: Entities,
     persistence: Persistence
   )(implicit ec: ExecutionContext, log: Logger): Future[Done] = {
-    val identityApi: Api = Api(id = Api.ManageIdentity)
+    val identityApi: Api = Api.create(id = Api.ManageIdentity)
 
     for {
       _ <- persistence.init()
+      migrationResult <- persistence.migrate()
       _ <- logged(persistence.apis.put, identityApi)
       _ <- Future.sequence(entities.apis.map(api => logged(persistence.apis.put, api)))
       _ <- Future.sequence(entities.clients.map(client => logged(persistence.clients.put, client)))
       _ <- Future.sequence(entities.owners.map(owner => logged(persistence.resourceOwners.put, owner)))
     } yield {
+      log.debug("Executed [{}] out of [{}] migrations", migrationResult.executed, migrationResult.found)
       Done
     }
   }
 
   private def apiFromConfig(
     config: typesafe.Config
-  ): Api =
-    Api(id = config.getString("id"))
+  ): Api = {
+    val now = Instant.now()
+    Api(id = config.getString("id"), created = now, updated = now)
+  }
 
   private def clientFromConfig(
     config: typesafe.Config
   )(implicit secretConfig: Secret.ClientConfig): Client = {
     val salt = Secret.generateSalt()
 
-    Client(
+    Client.create(
       id = Try(config.getString("id"))
         .flatMap(id => Try(java.util.UUID.fromString(id)))
         .getOrElse(Client.generateId()),
@@ -103,7 +113,7 @@ object Bootstrap {
   )(implicit secretConfig: Secret.ResourceOwnerConfig): ResourceOwner = {
     val salt = Secret.generateSalt()
 
-    ResourceOwner(
+    ResourceOwner.create(
       username = config.getString("username"),
       password = Secret.derive(rawSecret = config.getString("raw-password"), salt),
       salt = salt,

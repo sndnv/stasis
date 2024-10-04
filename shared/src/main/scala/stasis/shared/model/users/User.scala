@@ -1,8 +1,8 @@
 package stasis.shared.model.users
 
-import stasis.shared.security.Permission
-
 import scala.concurrent.duration.FiniteDuration
+
+import stasis.shared.security.Permission
 
 final case class User(
   id: User.Id,

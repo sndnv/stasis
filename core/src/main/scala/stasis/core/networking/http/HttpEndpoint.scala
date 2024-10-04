@@ -1,40 +1,48 @@
 package stasis.core.networking.http
 
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+import scala.util.control.NonFatal
+
 import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.ContentTypes
+import org.apache.pekko.http.scaladsl.model.HttpEntity
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
-import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server._
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.core.api.MessageResponse
-import stasis.core.api.directives.{EntityDiscardingDirectives, LoggingDirectives}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import stasis.core.networking.Endpoint
-import stasis.core.packaging.{Crate, Manifest}
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
 import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.reservations.ReservationStoreView
 import stasis.core.routing.Router
 import stasis.core.security.NodeAuthenticator
-import stasis.core.security.tls.EndpointContext
-import stasis.core.telemetry.TelemetryContext
-
-import scala.concurrent.Future
-import scala.util.control.NonFatal
-import scala.util.{Failure, Success}
+import stasis.layers.api.MessageResponse
+import stasis.layers.api.directives.EntityDiscardingDirectives
+import stasis.layers.api.directives.LoggingDirectives
+import stasis.layers.security.tls.EndpointContext
+import stasis.layers.telemetry.TelemetryContext
 
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
 class HttpEndpoint(
   router: Router,
   reservationStore: ReservationStoreView,
   override protected val authenticator: NodeAuthenticator[HttpCredentials]
-)(implicit system: ActorSystem[SpawnProtocol.Command], override val telemetry: TelemetryContext)
+)(implicit system: ActorSystem[Nothing], override val telemetry: TelemetryContext)
     extends Endpoint[HttpCredentials]
     with EntityDiscardingDirectives
     with LoggingDirectives {
 
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.core.api.Formats._
 
   override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
@@ -65,8 +73,7 @@ class HttpEndpoint(
           request.uri.path.toString,
           e.getClass.getSimpleName,
           e.getMessage,
-          failureReference,
-          e
+          failureReference
         )
 
         discardEntity & complete(
@@ -228,7 +235,7 @@ object HttpEndpoint {
     router: Router,
     reservationStore: ReservationStoreView,
     authenticator: NodeAuthenticator[HttpCredentials]
-  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext): HttpEndpoint =
+  )(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext): HttpEndpoint =
     new HttpEndpoint(
       router = router,
       reservationStore = reservationStore,

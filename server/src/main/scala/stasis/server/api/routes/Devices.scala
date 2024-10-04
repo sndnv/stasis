@@ -1,24 +1,31 @@
 package stasis.server.api.routes
 
+import scala.concurrent.Future
+
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
-import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
+import org.apache.pekko.http.scaladsl.model.ContentTypes
+import org.apache.pekko.http.scaladsl.model.HttpEntity
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import stasis.server.model.devices.{DeviceKeyStore, DeviceStore}
+
+import stasis.server.model.devices.DeviceKeyStore
+import stasis.server.model.devices.DeviceStore
 import stasis.server.model.nodes.ServerNodeStore
 import stasis.server.model.users.UserStore
 import stasis.server.security.CurrentUser
 import stasis.shared.api.requests.UpdateDeviceKey._
 import stasis.shared.api.requests._
-import stasis.shared.api.responses.{CreatedDevice, DeletedDevice, DeletedDeviceKey}
+import stasis.shared.api.responses.CreatedDevice
+import stasis.shared.api.responses.DeletedDevice
+import stasis.shared.api.responses.DeletedDeviceKey
 import stasis.shared.model.devices.Device
-
-import scala.concurrent.Future
 
 class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.shared.api.Formats._
 
   def routes(implicit currentUser: CurrentUser): Route =

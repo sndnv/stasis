@@ -1,10 +1,13 @@
 package stasis.test.specs.unit.server.service
 
 import java.util.concurrent.ThreadLocalRandom
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+
 import com.typesafe.config.Config
-import stasis.core.telemetry.TelemetryContext
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+
+import stasis.layers.persistence.migration.MigrationResult
+import stasis.layers.telemetry.TelemetryContext
 import stasis.server.service.ServerPersistence
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
@@ -54,6 +57,18 @@ class ServerPersistenceSpec extends AsyncUnitSpec {
     }
   }
 
+  it should "support running data store migrations" in {
+    val persistence = new ServerPersistence(
+      persistenceConfig = config.getConfig("persistence")
+    )
+
+    for {
+      result <- persistence.migrate()
+    } yield {
+      result should be(MigrationResult(found = 0, executed = 0)) // no migrations are currently available
+    }
+  }
+
   it should "provide service data stores as resources" in {
     val persistence = new ServerPersistence(
       persistenceConfig = config.getConfig("persistence")
@@ -72,8 +87,8 @@ class ServerPersistenceSpec extends AsyncUnitSpec {
     )
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "ServerPersistenceSpec"
   )
 

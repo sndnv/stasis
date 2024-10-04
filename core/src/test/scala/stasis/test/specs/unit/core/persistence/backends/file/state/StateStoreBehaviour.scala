@@ -1,18 +1,20 @@
 package stasis.test.specs.unit.core.persistence.backends.file.state
 
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import scala.concurrent.Future
+import scala.util.Success
+import scala.util.Try
+
+import org.apache.pekko.actor.typed.ActorSystem
+
 import stasis.core.persistence.backends.file.state.StateStore
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.FileSystemHelpers
-
-import scala.concurrent.Future
-import scala.util.{Success, Try}
 
 trait StateStoreBehaviour { _: AsyncUnitSpec with FileSystemHelpers =>
   import FileSystemHelpers._
   import StateStoreBehaviour._
 
-  def stateStore(setup: FileSystemSetup)(implicit system: ActorSystem[SpawnProtocol.Command]): Unit = {
+  def stateStore(setup: FileSystemSetup)(implicit system: ActorSystem[Nothing]): Unit = {
     it should "support persisting state to file" in withRetry {
       val (filesystem, _) = createMockFileSystem(setup)
 

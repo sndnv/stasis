@@ -1,11 +1,19 @@
 package stasis.test.specs.unit.client.ops.recovery.stages
 
+import java.nio.file.Paths
+import java.util.concurrent.atomic.AtomicInteger
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
+import scala.util.control.NonFatal
+
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.stream._
+import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
+
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.encryption.secrets.DeviceSecret
@@ -18,14 +26,9 @@ import stasis.core.packaging.Crate
 import stasis.core.routing.Node
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.client.mocks._
-import stasis.test.specs.unit.client.{Fixtures, ResourceHelpers}
-
-import java.nio.file.Paths
-import java.util.concurrent.atomic.AtomicInteger
-import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
-import scala.util.control.NonFatal
 
 class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Eventually { spec =>
   "A Recovery EntityProcessing stage" should "extract part IDs from a path" in {
@@ -189,11 +192,11 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(0)
 
-          mockTelemetry.ops.recovery.entityExamined should be(0)
-          mockTelemetry.ops.recovery.entityCollected should be(0)
-          mockTelemetry.ops.recovery.entityChunkProcessed should be(contentCrates * 4) // x4 == one for each step
-          mockTelemetry.ops.recovery.entityProcessed should be(totalChanged)
-          mockTelemetry.ops.recovery.metadataApplied should be(0)
+          mockTelemetry.client.ops.recovery.entityExamined should be(0)
+          mockTelemetry.client.ops.recovery.entityCollected should be(0)
+          mockTelemetry.client.ops.recovery.entityChunkProcessed should be(contentCrates * 4) // x4 == one for each step
+          mockTelemetry.client.ops.recovery.entityProcessed should be(totalChanged)
+          mockTelemetry.client.ops.recovery.metadataApplied should be(0)
         }
       }
   }
@@ -274,11 +277,11 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           mockTracker.statistics(MockRecoveryTracker.Statistic.FailureEncountered) should be(0)
           mockTracker.statistics(MockRecoveryTracker.Statistic.Completed) should be(0)
 
-          mockTelemetry.ops.recovery.entityExamined should be(0)
-          mockTelemetry.ops.recovery.entityCollected should be(0)
-          mockTelemetry.ops.recovery.entityChunkProcessed should be(0)
-          mockTelemetry.ops.recovery.entityProcessed should be(0)
-          mockTelemetry.ops.recovery.metadataApplied should be(0)
+          mockTelemetry.client.ops.recovery.entityExamined should be(0)
+          mockTelemetry.client.ops.recovery.entityCollected should be(0)
+          mockTelemetry.client.ops.recovery.entityChunkProcessed should be(0)
+          mockTelemetry.client.ops.recovery.entityProcessed should be(0)
+          mockTelemetry.client.ops.recovery.metadataApplied should be(0)
         }
       }
   }

@@ -1,18 +1,21 @@
 package stasis.core.networking.grpc.internal
 
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import org.apache.pekko.grpc.GrpcClientSettings
-import org.apache.pekko.grpc.scaladsl.{SingleResponseRequestBuilder, StreamResponseRequestBuilder}
-import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
-import stasis.core.networking.grpc.{proto, GrpcEndpointAddress}
-import stasis.core.security.tls.EndpointContext
-
 import scala.concurrent.ExecutionContext
+
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.grpc.GrpcClientSettings
+import org.apache.pekko.grpc.scaladsl.SingleResponseRequestBuilder
+import org.apache.pekko.grpc.scaladsl.StreamResponseRequestBuilder
+import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
+
+import stasis.core.networking.grpc.GrpcEndpointAddress
+import stasis.core.networking.grpc.proto
+import stasis.layers.security.tls.EndpointContext
 
 private[grpc] class Client(
   address: GrpcEndpointAddress,
   context: Option[EndpointContext]
-)(implicit system: ActorSystem[SpawnProtocol.Command]) {
+)(implicit system: ActorSystem[Nothing]) {
   implicit val ec: ExecutionContext = system.executionContext
 
   val client: proto.StasisEndpointClient = {
@@ -45,6 +48,6 @@ object Client {
   def apply(
     address: GrpcEndpointAddress,
     context: Option[EndpointContext]
-  )(implicit system: ActorSystem[SpawnProtocol.Command]): Client =
+  )(implicit system: ActorSystem[Nothing]): Client =
     new Client(address, context)
 }

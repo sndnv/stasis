@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.identity.model.apis
 
-import stasis.test.specs.unit.UnitSpec
+import stasis.layers.UnitSpec
 import stasis.test.specs.unit.identity.model.Generators
 
 class ApiSpec extends UnitSpec {

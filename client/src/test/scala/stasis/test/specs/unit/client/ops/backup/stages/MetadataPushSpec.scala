@@ -1,19 +1,24 @@
 package stasis.test.specs.unit.client.ops.backup.stages
 
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.{Materializer, SystemMaterializer}
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.SystemMaterializer
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.encryption.secrets.DeviceSecret
-import stasis.client.model.{DatasetMetadata, FilesystemMetadata}
+import stasis.client.model.DatasetMetadata
+import stasis.client.model.FilesystemMetadata
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.backup.stages.MetadataPush
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
-import stasis.test.specs.unit.client.mocks.{MockBackupTracker, _}
+import stasis.test.specs.unit.client.mocks.MockBackupTracker
+import stasis.test.specs.unit.client.mocks._
 
 class MetadataPushSpec extends AsyncUnitSpec { spec =>
   "A Backup MetadataPush stage" should "push dataset metadata" in {

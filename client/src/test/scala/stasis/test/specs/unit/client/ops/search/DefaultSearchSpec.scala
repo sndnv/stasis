@@ -3,15 +3,18 @@ package stasis.test.specs.unit.client.ops.search
 import java.nio.file.Paths
 import java.time.Instant
 
-import stasis.client.model.{DatasetMetadata, FilesystemMetadata}
-import stasis.client.ops.search.{DefaultSearch, Search}
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import scala.concurrent.Future
+
+import stasis.client.model.DatasetMetadata
+import stasis.client.model.FilesystemMetadata
+import stasis.client.ops.search.DefaultSearch
+import stasis.client.ops.search.Search
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks.MockServerApiEndpointClient
 import stasis.test.specs.unit.shared.model.Generators
-
-import scala.concurrent.Future
 
 class DefaultSearchSpec extends AsyncUnitSpec {
   "A DefaultSearch" should "perform searchers on dataset metadata" in {

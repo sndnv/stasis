@@ -1,14 +1,15 @@
 package stasis.test.specs.unit.core.persistence.backends.file.state
 
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
+
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.FileSystemHelpers
 import stasis.test.specs.unit.core.FileSystemHelpers.FileSystemSetup
 
 class StateStoreSpec extends AsyncUnitSpec with FileSystemHelpers with StateStoreBehaviour {
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "StateStoreSpec"
   )
 

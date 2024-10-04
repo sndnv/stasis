@@ -1,27 +1,28 @@
 package stasis.test.specs.unit.identity.authentication.manage
 
 import java.security.Key
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
-import org.jose4j.jws.AlgorithmIdentifiers
-import stasis.core.persistence.backends.memory.MemoryBackend
-import stasis.core.security.exceptions.AuthenticationFailure
-import stasis.core.security.jwt.DefaultJwtAuthenticator
-import stasis.core.security.keys.KeyProvider
-import stasis.identity.authentication.manage.DefaultResourceOwnerAuthenticator
-import stasis.identity.model.owners.{ResourceOwner, ResourceOwnerStore}
-import stasis.identity.model.tokens.generators.JwtBearerAccessTokenGenerator
-import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.security.mocks.MockJwksGenerators
-import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-import stasis.test.specs.unit.identity.model.Generators
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
-class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+import org.jose4j.jws.AlgorithmIdentifiers
+
+import stasis.identity.authentication.manage.DefaultResourceOwnerAuthenticator
+import stasis.identity.model.tokens.generators.JwtBearerAccessTokenGenerator
+import stasis.layers.UnitSpec
+import stasis.layers.security.exceptions.AuthenticationFailure
+import stasis.layers.security.jwt.DefaultJwtAuthenticator
+import stasis.layers.security.keys.KeyProvider
+import stasis.layers.security.mocks.MockJwksGenerators
+import stasis.layers.telemetry.MockTelemetryContext
+import stasis.test.specs.unit.identity.model.Generators
+import stasis.test.specs.unit.identity.persistence.mocks.MockResourceOwnerStore
+
+class DefaultResourceOwnerAuthenticatorSpec extends UnitSpec { test =>
   "A DefaultResourceOwnerAuthenticator" should "authenticate resource owners with valid JWTs" in {
     val store = createStore()
 
@@ -137,8 +138,8 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
       }
   }
 
-  private implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    guardianBehavior = Behaviors.ignore,
     "DefaultResourceOwnerAuthenticatorSpec-manage"
   )
 
@@ -165,8 +166,5 @@ class DefaultResourceOwnerAuthenticatorSpec extends AsyncUnitSpec { test =>
 
   private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
-  private def createStore() =
-    ResourceOwnerStore(
-      MemoryBackend[ResourceOwner.Id, ResourceOwner](name = s"owner-store-${java.util.UUID.randomUUID()}")
-    )
+  private def createStore() = MockResourceOwnerStore()
 }

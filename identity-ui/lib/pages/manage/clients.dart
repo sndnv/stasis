@@ -7,6 +7,7 @@ import 'package:identity_ui/model/requests/update_client_credentials.dart';
 import 'package:identity_ui/pages/default/components.dart';
 import 'package:identity_ui/pages/manage/components/entity_form.dart';
 import 'package:identity_ui/pages/manage/components/entity_table.dart';
+import 'package:identity_ui/pages/manage/components/rendering.dart';
 
 class Clients extends StatefulWidget {
   const Clients({super.key, required this.client});
@@ -44,53 +45,63 @@ class _ClientsState extends State<Clients> {
                 DataColumn(label: Text('Subject')),
                 DataColumn(label: Text('Token Expiration')),
                 DataColumn(label: Text('Active')),
+                DataColumn(label: Text('Created')),
+                DataColumn(label: Text('Updated')),
                 DataColumn(label: Text('')),
               ],
-              entityToRow: (client) => [
-                DataCell(
-                  client.active
-                      ? Text(client.id)
-                      : Row(
-                          children: [
-                            Text(client.id),
-                            const Padding(padding: EdgeInsets.symmetric(horizontal: 4)),
-                            const IconButton(
-                              tooltip: 'Deactivated client',
-                              onPressed: null,
-                              icon: Icon(Icons.warning),
-                            )
-                          ],
-                        ),
-                ),
-                DataCell(Text(client.redirectUri)),
-                DataCell(Text(client.subject ?? '-')),
-                DataCell(Text('${client.tokenExpiration} s')),
-                DataCell(Text(client.active ? 'Yes' : 'No')),
-                DataCell(
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      IconButton(
-                        tooltip:
-                            widget.client.clientId == client.id ? 'Cannot update the current client' : 'Update Client',
-                        onPressed: widget.client.clientId == client.id ? null : () => _editClient(client),
-                        icon: const Icon(Icons.edit),
-                      ),
-                      IconButton(
-                        tooltip: 'Update Client Credentials',
-                        onPressed: () => _editClientCredentials(client),
-                        icon: const Icon(Icons.lock_reset),
-                      ),
-                      IconButton(
-                        tooltip:
-                            widget.client.clientId == client.id ? 'Cannot remove the current client' : 'Remove Client',
-                        onPressed: widget.client.clientId == client.id ? null : () => _removeClient(context, client.id),
-                        icon: const Icon(Icons.delete),
-                      ),
-                    ],
+              entityToRow: (e) {
+                Client client = e;
+                return [
+                  DataCell(
+                    client.active
+                        ? Text(client.id)
+                        : Row(
+                            children: [
+                              Text(client.id),
+                              const Padding(padding: EdgeInsets.symmetric(horizontal: 4)),
+                              const IconButton(
+                                tooltip: 'Deactivated client',
+                                onPressed: null,
+                                icon: Icon(Icons.warning),
+                              )
+                            ],
+                          ),
                   ),
-                ),
-              ],
+                  DataCell(Text(client.redirectUri)),
+                  DataCell(Text(client.subject ?? '-')),
+                  DataCell(Text('${client.tokenExpiration} s')),
+                  DataCell(Text(client.active ? 'Yes' : 'No')),
+                  DataCell(Text(client.created.render())),
+                  DataCell(Text(client.updated.render())),
+                  DataCell(
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          tooltip: widget.client.clientId == client.id
+                              ? 'Cannot update the current client'
+                              : 'Update Client',
+                          onPressed: widget.client.clientId == client.id ? null : () => _editClient(client),
+                          icon: const Icon(Icons.edit),
+                        ),
+                        IconButton(
+                          tooltip: 'Update Client Credentials',
+                          onPressed: () => _editClientCredentials(client),
+                          icon: const Icon(Icons.lock_reset),
+                        ),
+                        IconButton(
+                          tooltip: widget.client.clientId == client.id
+                              ? 'Cannot remove the current client'
+                              : 'Remove Client',
+                          onPressed:
+                              widget.client.clientId == client.id ? null : () => _removeClient(context, client.id),
+                          icon: const Icon(Icons.delete),
+                        ),
+                      ],
+                    ),
+                  ),
+                ];
+              },
             ),
           ],
         );

@@ -1,16 +1,20 @@
 package stasis.test.specs.unit.server.api.routes
 
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import stasis.core.persistence.CrateStorageReservation
 import stasis.core.persistence.reservations.ReservationStore
-import stasis.core.telemetry.TelemetryContext
-import stasis.server.api.routes.{Reservations, RoutesContext}
+import stasis.layers.telemetry.TelemetryContext
+import stasis.server.api.routes.Reservations
+import stasis.server.api.routes.RoutesContext
 import stasis.server.model.reservations.ServerReservationStore
-import stasis.server.security.{CurrentUser, ResourceProvider}
+import stasis.server.security.CurrentUser
+import stasis.server.security.ResourceProvider
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.Generators
@@ -20,6 +24,7 @@ import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
 
 class ReservationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.core.api.Formats._
 
   "Reservations routes" should "respond with all reservations" in withRetry {
@@ -33,8 +38,8 @@ class ReservationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "ReservationsSpec"
   )
 

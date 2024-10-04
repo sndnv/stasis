@@ -1,17 +1,21 @@
 package stasis.core.persistence.reservations
 
-import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
-import org.apache.pekko.util.Timeout
-import stasis.core.packaging.Crate
-import stasis.core.persistence.backends.KeyValueBackend
-import stasis.core.persistence.backends.memory.MemoryBackend
-import stasis.core.persistence.{CrateStorageReservation, Metrics, StoreInitializationResult}
-import stasis.core.routing.Node
-import stasis.core.telemetry.TelemetryContext
-
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
+
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.util.Timeout
+
+import stasis.core.packaging.Crate
+import stasis.core.persistence.CrateStorageReservation
+import stasis.core.persistence.Metrics
+import stasis.core.persistence.StoreInitializationResult
+import stasis.core.routing.Node
+import stasis.layers.persistence.KeyValueStore
+import stasis.layers.persistence.memory.MemoryStore
+import stasis.layers.telemetry.TelemetryContext
 
 trait ReservationStore { store =>
   def put(reservation: CrateStorageReservation): Future[Done]
@@ -36,9 +40,9 @@ trait ReservationStore { store =>
 object ReservationStore {
   def apply(
     expiration: FiniteDuration,
-    backend: KeyValueBackend[CrateStorageReservation.Id, CrateStorageReservation]
+    backend: KeyValueStore[CrateStorageReservation.Id, CrateStorageReservation]
   )(implicit
-    system: ActorSystem[SpawnProtocol.Command],
+    system: ActorSystem[Nothing],
     telemetry: TelemetryContext,
     timeout: Timeout
   ): StoreInitializationResult[ReservationStore] = {
@@ -47,10 +51,8 @@ object ReservationStore {
 
     val metrics = telemetry.metrics[Metrics.ReservationStore]
 
-    val cache: KeyValueBackend[(Crate.Id, Node.Id), CrateStorageReservation.Id] =
-      MemoryBackend[(Crate.Id, Node.Id), CrateStorageReservation.Id](
-        name = s"reservations-cache-${java.util.UUID.randomUUID().toString}"
-      )
+    val cache: KeyValueStore[(Crate.Id, Node.Id), CrateStorageReservation.Id] =
+      MemoryStore[(Crate.Id, Node.Id), CrateStorageReservation.Id](name = "reservations-cache")
 
     def caching(): Future[Done] =
       backend.entries

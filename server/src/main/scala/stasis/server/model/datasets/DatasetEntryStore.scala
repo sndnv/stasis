@@ -2,14 +2,17 @@ package stasis.server.model.datasets
 
 import java.time.Instant
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import org.apache.pekko.Done
-import stasis.core.persistence.backends.KeyValueBackend
+
+import stasis.layers.persistence.KeyValueStore
 import stasis.server.security.Resource
-import stasis.shared.model.datasets.{DatasetDefinition, DatasetEntry}
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
 import stasis.shared.security.Permission
-
-import scala.concurrent.{ExecutionContext, Future}
 
 trait DatasetEntryStore { store =>
   protected implicit def ec: ExecutionContext
@@ -158,7 +161,7 @@ object DatasetEntryStore {
   }
 
   def apply(
-    backend: KeyValueBackend[DatasetEntry.Id, DatasetEntry]
+    backend: KeyValueStore[DatasetEntry.Id, DatasetEntry]
   )(implicit ctx: ExecutionContext): DatasetEntryStore =
     new DatasetEntryStore {
       override implicit protected def ec: ExecutionContext = ctx

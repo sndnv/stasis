@@ -1,37 +1,46 @@
 package stasis.test.specs.unit.server.api.routes
 
+import java.util.UUID
+
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
+import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import play.api.libs.json.JsArray
+
 import stasis.core.networking.http.HttpEndpointAddress
-import stasis.core.packaging.{Crate, Manifest}
+import stasis.core.packaging.Crate
+import stasis.core.packaging.Manifest
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.staging.StagingStore
-import stasis.core.routing.{Node, NodeProxy}
-import stasis.core.telemetry.TelemetryContext
-import stasis.server.api.routes.{RoutesContext, Staging}
+import stasis.core.routing.Node
+import stasis.core.routing.NodeProxy
+import stasis.layers.telemetry.TelemetryContext
+import stasis.server.api.routes.RoutesContext
+import stasis.server.api.routes.Staging
 import stasis.server.model.staging.ServerStagingStore
-import stasis.server.security.{CurrentUser, ResourceProvider}
+import stasis.server.security.CurrentUser
+import stasis.server.security.ResourceProvider
 import stasis.shared.api.responses.DeletedPendingDestaging
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.networking.mocks.{MockGrpcEndpointClient, MockHttpEndpointClient}
+import stasis.test.specs.unit.core.networking.mocks.MockGrpcEndpointClient
+import stasis.test.specs.unit.core.networking.mocks.MockHttpEndpointClient
 import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.server.security.mocks.MockResourceProvider
 
-import java.util.UUID
-import scala.concurrent.Future
-import scala.concurrent.duration._
-
 class StagingSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.shared.api.Formats._
 
   "Staging routes" should "respond with all pending destaging operations" in withRetry {
@@ -79,8 +88,8 @@ class StagingSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  private implicit val typedSystem: ActorSystem[SpawnProtocol.Command] = ActorSystem(
-    Behaviors.setup(_ => SpawnProtocol()): Behavior[SpawnProtocol.Command],
+  private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+    Behaviors.ignore,
     "StagingSpec"
   )
 

@@ -7,6 +7,7 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.LoggerFactory
+
 import stasis.client.api.Context
 import stasis.client.api.http.routes.Schedules
 import stasis.client.ops.scheduling.OperationScheduler.ActiveSchedule
@@ -17,6 +18,7 @@ import stasis.test.specs.unit.client.mocks._
 
 class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.client.api.http.Formats._
   import stasis.shared.api.Formats._
 

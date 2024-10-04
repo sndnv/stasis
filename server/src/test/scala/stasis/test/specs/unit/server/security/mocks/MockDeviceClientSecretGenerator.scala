@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.server.security.mocks
 
-import stasis.server.security.devices.DeviceClientSecretGenerator
-
 import scala.concurrent.Future
+
+import stasis.server.security.devices.DeviceClientSecretGenerator
 
 class MockDeviceClientSecretGenerator extends DeviceClientSecretGenerator {
   override def generate(): Future[String] =

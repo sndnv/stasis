@@ -1,30 +1,35 @@
 package stasis.server.api
 
-import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
+import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.http.cors.scaladsl.CorsDirectives._
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server._
-import org.apache.pekko.http.cors.scaladsl.CorsDirectives._
-import org.slf4j.{Logger, LoggerFactory}
-import stasis.core.api.directives.{EntityDiscardingDirectives, LoggingDirectives}
-import stasis.core.security.tls.EndpointContext
-import stasis.core.telemetry.TelemetryContext
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+import stasis.layers.api.directives.EntityDiscardingDirectives
+import stasis.layers.api.directives.LoggingDirectives
+import stasis.layers.security.tls.EndpointContext
+import stasis.layers.telemetry.TelemetryContext
 import stasis.server.api.routes._
 import stasis.server.security.ResourceProvider
 import stasis.server.security.authenticators.UserAuthenticator
 import stasis.server.security.users.UserCredentialsManager
 import stasis.shared.secrets.SecretsConfig
 
-import scala.concurrent.{ExecutionContextExecutor, Future}
-import scala.util.{Failure, Success}
-
 class ApiEndpoint(
   resourceProvider: ResourceProvider,
   authenticator: UserAuthenticator,
   userCredentialsManager: UserCredentialsManager,
   secretsConfig: SecretsConfig
-)(implicit val system: ActorSystem[SpawnProtocol.Command], override val telemetry: TelemetryContext)
+)(implicit val system: ActorSystem[Nothing], override val telemetry: TelemetryContext)
     extends LoggingDirectives
     with EntityDiscardingDirectives {
   private implicit val ec: ExecutionContextExecutor = system.executionContext
@@ -121,7 +126,7 @@ object ApiEndpoint {
     authenticator: UserAuthenticator,
     userCredentialsManager: UserCredentialsManager,
     secretsConfig: SecretsConfig
-  )(implicit system: ActorSystem[SpawnProtocol.Command], telemetry: TelemetryContext): ApiEndpoint =
+  )(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext): ApiEndpoint =
     new ApiEndpoint(
       resourceProvider = resourceProvider,
       authenticator = authenticator,

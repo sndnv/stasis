@@ -1,12 +1,13 @@
 package stasis.client.collection.rules.internal
 
-import stasis.client.collection.rules.Rule
-
 import java.io.IOException
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
+
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+
+import stasis.client.collection.rules.Rule
 
 object FilesWalker {
   final case class FilterResult(

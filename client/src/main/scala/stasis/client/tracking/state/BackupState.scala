@@ -1,13 +1,19 @@
 package stasis.client.tracking.state
 
-import stasis.client.model.{proto, EntityMetadata, SourceEntity}
-import stasis.shared.model.datasets.DatasetDefinition
-import stasis.shared.ops.Operation
-
-import java.nio.file.{Path, Paths}
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.Instant
 import java.util.UUID
-import scala.util.{Failure, Success, Try}
+
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+
+import stasis.client.model.EntityMetadata
+import stasis.client.model.SourceEntity
+import stasis.client.model.proto
+import stasis.shared.model.datasets.DatasetDefinition
+import stasis.shared.ops.Operation
 
 final case class BackupState(
   operation: Operation.Id,

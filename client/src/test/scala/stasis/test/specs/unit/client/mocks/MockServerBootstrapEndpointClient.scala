@@ -2,11 +2,11 @@ package stasis.test.specs.unit.client.mocks
 
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.concurrent.Future
+
 import stasis.client.api.clients.ServerBootstrapEndpointClient
 import stasis.shared.model.devices.DeviceBootstrapParameters
 import stasis.test.specs.unit.client.mocks.MockServerBootstrapEndpointClient.Statistic
-
-import scala.concurrent.Future
 
 class MockServerBootstrapEndpointClient(
   params: DeviceBootstrapParameters

@@ -1,14 +1,19 @@
 package stasis.test.specs.unit.identity.api.oauth
 
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
-import org.apache.pekko.http.scaladsl.model.{StatusCodes, Uri}
 import play.api.libs.json._
+
 import stasis.identity.api.oauth.ImplicitGrant
 import stasis.identity.api.oauth.ImplicitGrant._
+import stasis.identity.model.ResponseType
+import stasis.identity.model.Seconds
 import stasis.identity.model.clients.Client
 import stasis.identity.model.secrets.Secret
-import stasis.identity.model.tokens.{AccessToken, TokenType}
-import stasis.identity.model.{ResponseType, Seconds}
+import stasis.identity.model.tokens.AccessToken
+import stasis.identity.model.tokens.TokenType
+import stasis.layers
 import stasis.test.specs.unit.identity.RouteTest
 import stasis.test.specs.unit.identity.model.Generators
 
@@ -83,7 +88,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = stasis.test.Generators.generateString(withSize = secrets.owner.saltSize)
+    val salt = layers.Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
       password = Secret.derive(rawPassword, salt)(secrets.owner),
       salt = salt
@@ -95,7 +100,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
       client_id = client.id,
       redirect_uri = Some(client.redirectUri),
       scope = grant.apiAudienceToScope(Seq(api)),
-      state = stasis.test.Generators.generateString(withSize = 16)
+      state = layers.Generators.generateString(withSize = 16)
     )
 
     stores.clients.put(client).await
@@ -136,7 +141,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = stasis.test.Generators.generateString(withSize = secrets.owner.saltSize)
+    val salt = layers.Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
       password = Secret.derive(rawPassword, salt)(secrets.owner),
       salt = salt
@@ -148,7 +153,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
       client_id = client.id,
       redirect_uri = Some(client.redirectUri),
       scope = grant.apiAudienceToScope(Seq(api)),
-      state = stasis.test.Generators.generateString(withSize = 16)
+      state = layers.Generators.generateString(withSize = 16)
     )
 
     stores.clients.put(client).await
@@ -192,7 +197,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = stasis.test.Generators.generateString(withSize = secrets.owner.saltSize)
+    val salt = layers.Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
       password = Secret.derive(rawPassword, salt)(secrets.owner),
       salt = salt
@@ -204,7 +209,7 @@ class ImplicitGrantSpec extends RouteTest with OAuthFixtures {
       client_id = client.id,
       redirect_uri = Some("some-uri"),
       scope = grant.apiAudienceToScope(Seq(api)),
-      state = stasis.test.Generators.generateString(withSize = 16)
+      state = layers.Generators.generateString(withSize = 16)
     )
 
     stores.clients.put(client).await

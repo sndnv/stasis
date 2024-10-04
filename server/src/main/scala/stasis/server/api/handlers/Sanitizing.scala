@@ -1,15 +1,15 @@
 package stasis.server.api.handlers
 
+import scala.util.control.NonFatal
+
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.ExceptionHandler
 import org.slf4j.Logger
-import stasis.core.api.MessageResponse
-import stasis.core.streaming.Operators.ExtendedSource
+import stasis.layers.api.MessageResponse
+import stasis.layers.streaming.Operators.ExtendedSource
 import stasis.server.security.exceptions.AuthorizationFailure
-
-import scala.util.control.NonFatal
 
 object Sanitizing {
   def create(log: Logger): ExceptionHandler =
@@ -26,7 +26,6 @@ object Sanitizing {
 
       case NonFatal(e) =>
         import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
-        import stasis.core.api.Formats.messageResponseFormat
 
         extractRequestEntity { entity =>
           extractActorSystem { implicit system =>
@@ -36,8 +35,7 @@ object Sanitizing {
               "Unhandled exception encountered: [{} - {}]; failure reference is [{}]",
               e.getClass.getSimpleName,
               e.getMessage,
-              failureReference,
-              e
+              failureReference
             )
 
             onSuccess(entity.dataBytes.cancelled()) { _ =>

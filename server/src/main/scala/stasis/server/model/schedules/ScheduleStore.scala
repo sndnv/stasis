@@ -1,12 +1,14 @@
 package stasis.server.model.schedules
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import org.apache.pekko.Done
-import stasis.core.persistence.backends.KeyValueBackend
+
+import stasis.layers.persistence.KeyValueStore
 import stasis.server.security.Resource
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.security.Permission
-
-import scala.concurrent.{ExecutionContext, Future}
 
 trait ScheduleStore { store =>
   protected implicit def ec: ExecutionContext
@@ -82,7 +84,7 @@ object ScheduleStore {
   }
 
   def apply(
-    backend: KeyValueBackend[Schedule.Id, Schedule]
+    backend: KeyValueStore[Schedule.Id, Schedule]
   )(implicit ctx: ExecutionContext): ScheduleStore =
     new ScheduleStore {
       override implicit protected def ec: ExecutionContext = ctx

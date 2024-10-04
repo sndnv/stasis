@@ -1,6 +1,7 @@
 package stasis.client.encryption.secrets
 
 import org.apache.pekko.util.ByteString
+
 import stasis.client.encryption.Aes
 import stasis.client.encryption.stream.CipherStage
 
