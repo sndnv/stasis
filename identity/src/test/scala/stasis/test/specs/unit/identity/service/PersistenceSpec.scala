@@ -86,7 +86,7 @@ class PersistenceSpec extends UnitSpec {
     for {
       result <- persistence.migrate()
     } yield {
-      result should be(MigrationResult(found = 0, executed = 0)) // no migrations are currently available
+      result should be(MigrationResult(found = 4, executed = 0))
     }
   }
 

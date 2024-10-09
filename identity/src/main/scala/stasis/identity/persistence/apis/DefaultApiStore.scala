@@ -10,6 +10,7 @@ import slick.jdbc.JdbcProfile
 import slick.lifted.ProvenShape
 
 import stasis.identity.model.apis.Api
+import stasis.identity.persistence.internal
 import stasis.layers.persistence.Metrics
 import stasis.layers.persistence.migration.Migration
 import stasis.layers.telemetry.TelemetryContext
@@ -35,8 +36,6 @@ class DefaultApiStore(
   }
 
   private val store = TableQuery[SlickAccountStore]
-
-  override val migrations: Seq[Migration] = Seq.empty
 
   override def init(): Future[Done] =
     database.run(store.schema.create).map(_ => Done)
@@ -81,4 +80,16 @@ class DefaultApiStore(
 
   override def contains(api: Api.Id): Future[Boolean] =
     database.run(store.filter(_.id === api).exists.result)
+
+  override val migrations: Seq[Migration] = Seq(
+    internal
+      .LegacyKeyValueStore(name, profile, database)
+      .asMigration[Api, SlickAccountStore](withVersion = 1, current = store) { e =>
+        Api(
+          id = (e \ "id").as[String],
+          created = Instant.now(),
+          updated = Instant.now()
+        )
+      }
+  )
 }

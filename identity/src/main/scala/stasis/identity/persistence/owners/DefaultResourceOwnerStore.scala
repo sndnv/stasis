@@ -13,6 +13,7 @@ import slick.lifted.ProvenShape
 
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.secrets.Secret
+import stasis.identity.persistence.internal
 import stasis.layers.persistence.Metrics
 import stasis.layers.persistence.migration.Migration
 import stasis.layers.telemetry.TelemetryContext
@@ -59,8 +60,6 @@ class DefaultResourceOwnerStore(
 
   private val store = TableQuery[SlickAccountStore]
 
-  override val migrations: Seq[Migration] = Seq.empty
-
   override def init(): Future[Done] =
     database.run(store.schema.create).map(_ => Done)
 
@@ -103,4 +102,23 @@ class DefaultResourceOwnerStore(
 
   override def contains(owner: ResourceOwner.Id): Future[Boolean] =
     database.run(store.filter(_.username === owner).exists.result)
+
+  override val migrations: Seq[Migration] = Seq(
+    internal
+      .LegacyKeyValueStore(name, profile, database)
+      .asMigration[ResourceOwner, SlickAccountStore](withVersion = 1, current = store) { e =>
+        import java.util.Base64
+
+        ResourceOwner(
+          username = (e \ "username").as[String],
+          password = Secret(ByteString(Base64.getUrlDecoder.decode((e \ "password").as[String]))),
+          salt = (e \ "salt").as[String],
+          allowedScopes = (e \ "allowed_scopes").as[Seq[String]],
+          active = (e \ "active").as[Boolean],
+          subject = (e \ "subject").asOpt[String],
+          created = Instant.now(),
+          updated = Instant.now()
+        )
+      }
+  )
 }

@@ -1,8 +1,10 @@
 package stasis.test.specs.unit.identity.persistence.tokens
 
+import java.nio.charset.StandardCharsets
 import java.time.Instant
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 import org.apache.pekko.Done
@@ -13,6 +15,7 @@ import org.scalatest.concurrent.Eventually
 
 import stasis.identity.model.clients.Client
 import stasis.identity.model.tokens.StoredRefreshToken
+import stasis.identity.persistence.internal.LegacyKeyValueStore
 import stasis.identity.persistence.tokens.DefaultRefreshTokenStore
 import stasis.layers.UnitSpec
 import stasis.layers.persistence.SlickTestDatabase
@@ -178,6 +181,82 @@ class DefaultRefreshTokenStoreSpec extends UnitSpec with Eventually with SlickTe
         )
 
         tokens.map(_.copy(expiration = Instant.MIN, created = expectedStoredToken.created)) should be(Seq(expectedStoredToken))
+      }
+    }
+  }
+
+  it should "provide migrations" in withRetry {
+    withClue("from key-value store to version 1") {
+      withStore { (profile, database) =>
+        import play.api.libs.json._
+
+        val expiration = 3.seconds
+
+        val name = "TEST_TOKENS"
+        val legacy = LegacyKeyValueStore(name = name, profile = profile, database = database)
+
+        val current = new DefaultRefreshTokenStore(
+          name = name,
+          profile = profile,
+          database = database,
+          expiration = expiration,
+          directory = MemoryStore(name = "token-directory")
+        )
+
+        val client = Client.generateId()
+        val owner = Generators.generateResourceOwner
+        val now = Instant.now()
+
+        val tokens = Seq(
+          Generators.generateRefreshToken,
+          Generators.generateRefreshToken,
+          Generators.generateRefreshToken
+        ).map { token =>
+          StoredRefreshToken(
+            token = token,
+            client = client,
+            owner = owner.username,
+            scope = Some("test-scope"),
+            expiration = now.plusSeconds(expiration.toSeconds),
+            created = now
+          )
+        }
+
+        val jsonTokens = tokens.map { token =>
+          token.token.value -> Json
+            .obj(
+              "token" -> token.token.value,
+              "client" -> token.client,
+              "owner" -> token.owner,
+              "scope" -> token.scope,
+              "expiration" -> token.expiration
+            )
+            .toString()
+            .getBytes(StandardCharsets.UTF_8)
+        }
+
+        for {
+          _ <- legacy.create()
+          _ <- Future.sequence(jsonTokens.map(e => legacy.insert(e._1, e._2)))
+          migration = current.migrations.find(_.version == 1) match {
+            case Some(migration) => migration
+            case None            => fail("Expected migration with version == 1 but none was found")
+          }
+          currentResultBefore <- current.all.failed
+          neededBefore <- migration.needed.run()
+          _ <- migration.action.run()
+          neededAfter <- migration.needed.run()
+          currentResultAfter <- current.all
+          _ <- current.drop()
+        } yield {
+          currentResultBefore.getMessage should include("""Column "TOKEN" not found""")
+          neededBefore should be(true)
+
+          neededAfter should be(false)
+          currentResultAfter.map(_.copy(created = now)).sortBy(_.token.value) should be(
+            tokens.map(_.copy(created = now)).sortBy(_.token.value)
+          )
+        }
       }
     }
   }
