@@ -44,8 +44,7 @@ device and recover the original system in an automated and repeatable way.*
 * ***[Default Redundancy](https://github.com/sndnv/stasis/wiki/Architecture-%3A%3A-Core-Persistence)*** -
   copies of a device's encrypted data are sent to multiple nodes by default (local and remote)
 * ***[Hybrid Data Storage](https://github.com/sndnv/stasis/wiki/Architecture-%3A%3A-Data-Stores)*** -
-  various storage backends (**[Apache Geode](https://geode.apache.org/)**, **[Slick](https://scala-slick.org/)**,
-  **in-memory**, **file-based**) are supported and used
+  various storage backends (**[Slick](https://scala-slick.org/)**, **in-memory**, **file-based**) are supported and used
 * ***Secrets Escrow*** -
   enables storing encrypted device secrets on the server to simplify recovering of a lost or replaced device
 * ***Serverless Mode*** -
