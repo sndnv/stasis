@@ -14,6 +14,7 @@ import stasis.identity.model.clients.Client
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.tokens.RefreshToken
 import stasis.identity.model.tokens.StoredRefreshToken
+import stasis.identity.persistence.internal
 import stasis.layers.persistence.KeyValueStore
 import stasis.layers.persistence.Metrics
 import stasis.layers.persistence.migration.Migration
@@ -36,7 +37,7 @@ class DefaultRefreshTokenStore(
     MappedColumnType.base[RefreshToken, String](_.value, RefreshToken.apply)
 
   private class SlickAccountStore(tag: Tag) extends Table[StoredRefreshToken](tag, name) {
-    def token: Rep[RefreshToken] = column[RefreshToken]("REFRESH_TOKEN", O.PrimaryKey)
+    def token: Rep[RefreshToken] = column[RefreshToken]("TOKEN", O.PrimaryKey)
     def client: Rep[Client.Id] = column[Client.Id]("CLIENT")
     def owner: Rep[ResourceOwner.Id] = column[ResourceOwner.Id]("OWNER")
     def scope: Rep[Option[String]] = column[Option[String]]("SCOPE")
@@ -55,8 +56,6 @@ class DefaultRefreshTokenStore(
   }
 
   private val store = TableQuery[SlickAccountStore]
-
-  override val migrations: Seq[Migration] = Seq.empty
 
   override def init(): Future[Done] =
     database.run(store.schema.create).flatMap(_ => directory.init())
@@ -137,6 +136,21 @@ class DefaultRefreshTokenStore(
 
   private def expire(token: RefreshToken): Future[Boolean] =
     org.apache.pekko.pattern.after(expiration)(delete(token))
+
+  override val migrations: Seq[Migration] = Seq(
+    internal
+      .LegacyKeyValueStore(name, profile, database)
+      .asMigration[StoredRefreshToken, SlickAccountStore](withVersion = 1, current = store) { e =>
+        StoredRefreshToken(
+          token = RefreshToken((e \ "token").as[String]),
+          client = (e \ "client").as[Client.Id],
+          owner = (e \ "owner").as[ResourceOwner.Id],
+          scope = (e \ "scope").asOpt[String],
+          expiration = (e \ "expiration").as[Instant],
+          created = Instant.now()
+        )
+      }
+  )
 
   locally {
     val _ = all.flatMap { entries =>

@@ -1,8 +1,15 @@
 package stasis.test.specs.unit.identity.persistence.owners
 
+import java.nio.charset.StandardCharsets
+import java.time.Instant
+import java.util.Base64
+
+import scala.concurrent.Future
+
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
+import stasis.identity.persistence.internal.LegacyKeyValueStore
 import stasis.identity.persistence.owners.DefaultResourceOwnerStore
 import stasis.identity.persistence.owners.ResourceOwnerStore
 import stasis.layers.UnitSpec
@@ -65,6 +72,63 @@ class DefaultResourceOwnerStoreSpec extends UnitSpec with SlickTestDatabase {
         containsOwnerAfterDelete should be(false)
         a[ClassCastException] should be thrownBy {
           val _ = storeView.asInstanceOf[ResourceOwnerStore]
+        }
+      }
+    }
+  }
+
+  it should "provide migrations" in withRetry {
+    withClue("from key-value store to version 1") {
+      withStore { (profile, database) =>
+        import play.api.libs.json._
+
+        val name = "TEST_OWNERS"
+        val legacy = LegacyKeyValueStore(name = name, profile = profile, database = database)
+        val current = new DefaultResourceOwnerStore(name = name, profile = profile, database = database)
+
+        val owners = Seq(
+          Generators.generateResourceOwner,
+          Generators.generateResourceOwner,
+          Generators.generateResourceOwner
+        )
+
+        val jsonOwners = owners.map { owner =>
+          owner.username -> Json
+            .obj(
+              "username" -> owner.username,
+              "password" -> Json.toJson(Base64.getUrlEncoder.encodeToString(owner.password.value.toArray)),
+              "salt" -> owner.salt,
+              "allowed_scopes" -> owner.allowedScopes,
+              "active" -> owner.active,
+              "subject" -> owner.subject
+            )
+            .toString()
+            .getBytes(StandardCharsets.UTF_8)
+        }
+
+        for {
+          _ <- legacy.create()
+          _ <- Future.sequence(jsonOwners.map(e => legacy.insert(e._1, e._2)))
+          migration = current.migrations.find(_.version == 1) match {
+            case Some(migration) => migration
+            case None            => fail("Expected migration with version == 1 but none was found")
+          }
+          currentResultBefore <- current.all.failed
+          neededBefore <- migration.needed.run()
+          _ <- migration.action.run()
+          neededAfter <- migration.needed.run()
+          currentResultAfter <- current.all
+          _ <- current.drop()
+        } yield {
+          currentResultBefore.getMessage should include("""Column "USERNAME" not found""")
+          neededBefore should be(true)
+
+          neededAfter should be(false)
+
+          val now = Instant.now()
+          currentResultAfter.map(_.copy(created = now, updated = now)).sortBy(_.username) should be(
+            owners.map(_.copy(created = now, updated = now)).sortBy(_.username)
+          )
         }
       }
     }

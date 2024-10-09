@@ -14,6 +14,7 @@ import slick.lifted.ProvenShape
 import stasis.identity.model.Seconds
 import stasis.identity.model.clients.Client
 import stasis.identity.model.secrets.Secret
+import stasis.identity.persistence.internal
 import stasis.layers.persistence.Metrics
 import stasis.layers.persistence.migration.Migration
 import stasis.layers.telemetry.TelemetryContext
@@ -62,8 +63,6 @@ class DefaultClientStore(
 
   private val store = TableQuery[SlickAccountStore]
 
-  override val migrations: Seq[Migration] = Seq.empty
-
   override def init(): Future[Done] =
     database.run(store.schema.create).map(_ => Done)
 
@@ -103,4 +102,24 @@ class DefaultClientStore(
         }
         result
       }
+
+  override val migrations: Seq[Migration] = Seq(
+    internal
+      .LegacyKeyValueStore(name, profile, database)
+      .asMigration[Client, SlickAccountStore](withVersion = 1, current = store) { e =>
+        import java.util.Base64
+
+        Client(
+          id = (e \ "id").as[Client.Id],
+          redirectUri = (e \ "redirect_uri").as[String],
+          tokenExpiration = Seconds((e \ "token_expiration").as[Long]),
+          secret = Secret(ByteString(Base64.getUrlDecoder.decode((e \ "secret").as[String]))),
+          salt = (e \ "salt").as[String],
+          active = (e \ "active").as[Boolean],
+          subject = (e \ "subject").asOpt[String],
+          created = Instant.now(),
+          updated = Instant.now()
+        )
+      }
+  )
 }
