@@ -144,7 +144,7 @@ class DefaultRefreshTokenStore(
         StoredRefreshToken(
           token = RefreshToken((e \ "token").as[String]),
           client = (e \ "client").as[Client.Id],
-          owner = (e \ "owner").as[ResourceOwner.Id],
+          owner = (e \ "owner" \ "username").as[ResourceOwner.Id],
           scope = (e \ "scope").asOpt[String],
           expiration = (e \ "expiration").as[Instant],
           created = Instant.now()

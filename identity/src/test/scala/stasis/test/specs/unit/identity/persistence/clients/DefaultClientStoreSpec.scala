@@ -89,8 +89,8 @@ class DefaultClientStoreSpec extends UnitSpec with SlickTestDatabase {
           client.id.toString -> Json
             .obj(
               "id" -> client.id,
-              "redirect_uri" -> client.redirectUri,
-              "token_expiration" -> client.tokenExpiration.value,
+              "redirectUri" -> client.redirectUri,
+              "tokenExpiration" -> client.tokenExpiration.value,
               "secret" -> Json.toJson(Base64.getUrlEncoder.encodeToString(client.secret.value.toArray)),
               "salt" -> client.salt,
               "active" -> client.active,
