@@ -113,7 +113,7 @@ class DefaultResourceOwnerStore(
           username = (e \ "username").as[String],
           password = Secret(ByteString(Base64.getUrlDecoder.decode((e \ "password").as[String]))),
           salt = (e \ "salt").as[String],
-          allowedScopes = (e \ "allowed_scopes").as[Seq[String]],
+          allowedScopes = (e \ "allowedScopes").as[Seq[String]],
           active = (e \ "active").as[Boolean],
           subject = (e \ "subject").asOpt[String],
           created = Instant.now(),

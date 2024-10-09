@@ -98,7 +98,7 @@ class DefaultResourceOwnerStoreSpec extends UnitSpec with SlickTestDatabase {
               "username" -> owner.username,
               "password" -> Json.toJson(Base64.getUrlEncoder.encodeToString(owner.password.value.toArray)),
               "salt" -> owner.salt,
-              "allowed_scopes" -> owner.allowedScopes,
+              "allowedScopes" -> owner.allowedScopes,
               "active" -> owner.active,
               "subject" -> owner.subject
             )

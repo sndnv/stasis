@@ -227,7 +227,9 @@ class DefaultRefreshTokenStoreSpec extends UnitSpec with Eventually with SlickTe
             .obj(
               "token" -> token.token.value,
               "client" -> token.client,
-              "owner" -> token.owner,
+              "owner" -> Json.obj(
+                "username" -> token.owner
+              ),
               "scope" -> token.scope,
               "expiration" -> token.expiration
             )

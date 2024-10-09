@@ -111,8 +111,8 @@ class DefaultClientStore(
 
         Client(
           id = (e \ "id").as[Client.Id],
-          redirectUri = (e \ "redirect_uri").as[String],
-          tokenExpiration = Seconds((e \ "token_expiration").as[Long]),
+          redirectUri = (e \ "redirectUri").as[String],
+          tokenExpiration = Seconds((e \ "tokenExpiration").as[Long]),
           secret = Secret(ByteString(Base64.getUrlDecoder.decode((e \ "secret").as[String]))),
           salt = (e \ "salt").as[String],
           active = (e \ "active").as[Boolean],

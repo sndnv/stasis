@@ -10,13 +10,13 @@ ThisBuild / scalaVersion := "2.13.15"
 
 lazy val versions = new {
   // pekko
-  val pekko         = "1.0.2"
-  val pekkoHttp     = "1.0.1"
-  val pekkoHttpCors = "1.0.1"
-  val pekkoJson     = "2.7.0"
+  val pekko         = "1.1.2"
+  val pekkoHttp     = "1.1.0"
+  val pekkoHttpCors = "1.1.0"
+  val pekkoJson     = "3.0.0"
 
   // persistence
-  val slick    = "3.5.1"
+  val slick    = "3.5.2"
   val postgres = "42.7.4"
   val mariadb  = "3.4.1"
   val sqlite   = "3.46.1.3"
@@ -41,7 +41,7 @@ lazy val versions = new {
   val hkdf         = "2.0.0"
   val appdirs      = "1.2.2"
   val scopt        = "4.1.0"
-  val logback      = "1.5.8"
+  val logback      = "1.5.9"
   val systemTray   = "4.4"
   val bouncycastle = "1.78.1"
 }
