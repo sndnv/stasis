@@ -16,7 +16,6 @@ lazy val versions = new {
   val pekkoJson     = "2.7.0"
 
   // persistence
-  val geode    = "1.15.1"
   val slick    = "3.5.1"
   val postgres = "42.7.4"
   val mariadb  = "3.4.1"
@@ -173,7 +172,6 @@ lazy val core = (project in file("./core"))
       "io.opentelemetry"       % "opentelemetry-sdk"                 % versions.openTelemetry           % Provided,
       "io.opentelemetry"       % "opentelemetry-exporter-prometheus" % versions.openTelemetryPrometheus % Provided,
       "io.prometheus"          % "simpleclient"                      % versions.prometheus              % Provided,
-      "org.apache.geode"       % "geode-core"                        % versions.geode                   % Provided,
       "com.typesafe.slick"    %% "slick"                             % versions.slick                   % Provided,
       "com.h2database"         % "h2"                                % versions.h2                      % Test,
       "org.scalacheck"        %% "scalacheck"                        % versions.scalaCheck              % Test,
