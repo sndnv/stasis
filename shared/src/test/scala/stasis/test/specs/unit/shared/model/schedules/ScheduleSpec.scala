@@ -1,5 +1,6 @@
 package stasis.test.specs.unit.shared.model.schedules
 
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -20,7 +21,9 @@ class ScheduleSpec extends UnitSpec {
       info = "test-schedule",
       isPublic = true,
       start = now.minusSeconds((interval * startOffset).toSeconds),
-      interval = interval
+      interval = interval,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val recentSchedule = pastSchedule.copy(start = now)
@@ -46,7 +49,9 @@ class ScheduleSpec extends UnitSpec {
       info = "test-schedule",
       isPublic = true,
       start = LocalDateTime.now(),
-      interval = 0.millis
+      interval = 0.millis,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     schedule.nextInvocation should be(schedule.start.plus(1, ChronoUnit.MILLIS))

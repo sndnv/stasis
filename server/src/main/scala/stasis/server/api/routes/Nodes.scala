@@ -6,8 +6,7 @@ import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
-
-import stasis.server.model.nodes.ServerNodeStore
+import stasis.server.persistence.nodes.ServerNodeStore
 import stasis.server.security.CurrentUser
 import stasis.shared.api.requests.CreateNode
 import stasis.shared.api.requests.UpdateNode

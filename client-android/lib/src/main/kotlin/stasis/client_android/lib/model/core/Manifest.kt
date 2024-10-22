@@ -1,6 +1,7 @@
 package stasis.client_android.lib.model.core
 
 import com.squareup.moshi.JsonClass
+import java.time.Instant
 
 @JsonClass(generateAdapter = true)
 data class Manifest(
@@ -9,7 +10,8 @@ data class Manifest(
     val copies: Int,
     val origin: NodeId,
     val source: NodeId,
-    val destinations: List<NodeId>
+    val destinations: List<NodeId>,
+    val created: Instant
 ) {
     companion object {
         operator fun invoke(
@@ -24,7 +26,8 @@ data class Manifest(
             copies = copies,
             origin = origin,
             source = source,
-            destinations = emptyList()
+            destinations = emptyList(),
+            created = Instant.now()
         )
     }
 }

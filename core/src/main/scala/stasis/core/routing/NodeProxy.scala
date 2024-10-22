@@ -39,31 +39,31 @@ class NodeProxy(
 
   def push(node: Node, manifest: Manifest): Future[Sink[ByteString, Future[Done]]] =
     node match {
-      case Node.Local(id, storeDescriptor) =>
+      case Node.Local(id, storeDescriptor, _, _) =>
         crateStore(id, storeDescriptor).flatMap(_.sink(manifest.crate))
 
-      case Node.Remote.Http(_, address, _) =>
+      case Node.Remote.Http(_, address, _, _, _) =>
         httpClient.push(address, manifest)
 
-      case Node.Remote.Grpc(_, address, _) =>
+      case Node.Remote.Grpc(_, address, _, _, _) =>
         grpcClient.push(address, manifest)
     }
 
   def pull(node: Node, crate: Crate.Id): Future[Option[Source[ByteString, NotUsed]]] =
     node match {
-      case Node.Local(id, storeDescriptor) =>
+      case Node.Local(id, storeDescriptor, _, _) =>
         crateStore(id, storeDescriptor).flatMap(_.retrieve(crate))
 
-      case Node.Remote.Http(_, address, _) =>
+      case Node.Remote.Http(_, address, _, _, _) =>
         httpClient.pull(address, crate)
 
-      case Node.Remote.Grpc(_, address, _) =>
+      case Node.Remote.Grpc(_, address, _, _, _) =>
         grpcClient.pull(address, crate)
     }
 
   def canStore(node: Node, request: CrateStorageRequest): Future[Boolean] =
     node match {
-      case Node.Local(id, storeDescriptor) =>
+      case Node.Local(id, storeDescriptor, _, _) =>
         crateStore(id, storeDescriptor).flatMap(_.canStore(request))
 
       case _: Node.Remote[_] =>
@@ -73,13 +73,13 @@ class NodeProxy(
 
   def discard(node: Node, crate: Crate.Id): Future[Boolean] =
     node match {
-      case Node.Local(id, storeDescriptor) =>
+      case Node.Local(id, storeDescriptor, _, _) =>
         crateStore(id, storeDescriptor).flatMap(_.discard(crate))
 
-      case Node.Remote.Http(_, address, _) =>
+      case Node.Remote.Http(_, address, _, _, _) =>
         httpClient.discard(address, crate)
 
-      case Node.Remote.Grpc(_, address, _) =>
+      case Node.Remote.Grpc(_, address, _, _, _) =>
         grpcClient.discard(address, crate)
     }
 

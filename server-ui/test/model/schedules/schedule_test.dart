@@ -15,6 +15,8 @@ void main() {
         isPublic: true,
         start: now.subtract(interval * startOffset),
         interval: interval,
+        created: DateTime.now(),
+        updated: DateTime.now(),
       );
 
       final recentSchedule = pastSchedule.copyWith(start: now);

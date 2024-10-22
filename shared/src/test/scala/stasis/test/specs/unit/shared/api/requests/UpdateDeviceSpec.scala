@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.shared.api.requests
 
+import java.time.Instant
+
 import scala.concurrent.duration._
 
 import stasis.core.routing.Node
@@ -16,7 +18,9 @@ class UpdateDeviceSpec extends UnitSpec {
       salt = "test-salt",
       active = true,
       limits = None,
-      permissions = Set.empty
+      permissions = Set.empty,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val initialDevice = Device(
@@ -25,7 +29,9 @@ class UpdateDeviceSpec extends UnitSpec {
       node = Node.generateId(),
       owner = owner.id,
       active = true,
-      limits = None
+      limits = None,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val expectedDeviceWithUpdatedState = initialDevice.copy(active = false)
@@ -45,7 +51,11 @@ class UpdateDeviceSpec extends UnitSpec {
     val updateStateRequest = UpdateDeviceState(active = expectedDeviceWithUpdatedState.active)
     val updateLimitsRequest = UpdateDeviceLimits(limits = expectedDeviceWithUpdatedLimits.limits)
 
-    updateStateRequest.toUpdatedDevice(initialDevice, owner) should be(expectedDeviceWithUpdatedState)
-    updateLimitsRequest.toUpdatedDevice(initialDevice, owner) should be(expectedDeviceWithUpdatedLimits)
+    updateStateRequest.toUpdatedDevice(initialDevice, owner).copy(updated = expectedDeviceWithUpdatedState.updated) should be(
+      expectedDeviceWithUpdatedState
+    )
+    updateLimitsRequest.toUpdatedDevice(initialDevice, owner).copy(updated = expectedDeviceWithUpdatedLimits.updated) should be(
+      expectedDeviceWithUpdatedLimits
+    )
   }
 }

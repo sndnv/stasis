@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.shared.api.requests
 
+import java.time.Instant
+
 import stasis.shared.api.requests.CreateUser
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.UnitSpec
@@ -13,7 +15,9 @@ class CreateUserSpec extends UnitSpec {
       salt = salt,
       active = true,
       limits = None,
-      permissions = Set.empty
+      permissions = Set.empty,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val request = CreateUser(
@@ -23,6 +27,8 @@ class CreateUserSpec extends UnitSpec {
       permissions = expectedUser.permissions
     )
 
-    request.toUser(withSalt = salt).copy(id = expectedUser.id) should be(expectedUser)
+    request
+      .toUser(withSalt = salt)
+      .copy(id = expectedUser.id, created = expectedUser.created, updated = expectedUser.updated) should be(expectedUser)
   }
 }

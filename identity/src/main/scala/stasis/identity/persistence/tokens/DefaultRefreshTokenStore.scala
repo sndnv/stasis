@@ -1,4 +1,5 @@
 package stasis.identity.persistence.tokens
+
 import java.time.Instant
 
 import scala.concurrent.Future
@@ -36,7 +37,7 @@ class DefaultRefreshTokenStore(
   private implicit val tokenColumnType: JdbcType[RefreshToken] =
     MappedColumnType.base[RefreshToken, String](_.value, RefreshToken.apply)
 
-  private class SlickAccountStore(tag: Tag) extends Table[StoredRefreshToken](tag, name) {
+  private class SlickStore(tag: Tag) extends Table[StoredRefreshToken](tag, name) {
     def token: Rep[RefreshToken] = column[RefreshToken]("TOKEN", O.PrimaryKey)
     def client: Rep[Client.Id] = column[Client.Id]("CLIENT")
     def owner: Rep[ResourceOwner.Id] = column[ResourceOwner.Id]("OWNER")
@@ -55,7 +56,7 @@ class DefaultRefreshTokenStore(
       ) <> ((StoredRefreshToken.apply _).tupled, StoredRefreshToken.unapply)
   }
 
-  private val store = TableQuery[SlickAccountStore]
+  private val store = TableQuery[SlickStore]
 
   override def init(): Future[Done] =
     database.run(store.schema.create).flatMap(_ => directory.init())
@@ -68,7 +69,7 @@ class DefaultRefreshTokenStore(
     token: RefreshToken,
     owner: ResourceOwner,
     scope: Option[String]
-  ): Future[Done] =
+  ): Future[Done] = metrics.recordPut(store = name) {
     for {
       _ <- dropExisting(client, owner.username)
       now = Instant.now()
@@ -81,42 +82,29 @@ class DefaultRefreshTokenStore(
         created = now
       )
       _ <- database.run(store.insertOrUpdate(value))
-      _ = metrics.recordPut(store = name)
       _ <- directory.put(client -> owner.username, token)
     } yield {
       val _ = expire(token)
       Done
     }
+  }
 
-  override def delete(token: RefreshToken): Future[Boolean] =
+  override def delete(token: RefreshToken): Future[Boolean] = metrics.recordDelete(store = name) {
     get(token)
       .flatMap {
         case Some(existingToken) => directory.delete(existingToken.client -> existingToken.owner)
         case None                => Future.successful(false)
       }
       .flatMap(_ => database.run(store.filter(_.token === token).delete).map(_ == 1))
-      .map { result =>
-        metrics.recordDelete(store = name)
-        result
-      }
+  }
 
-  override def get(token: RefreshToken): Future[Option[StoredRefreshToken]] =
-    database
-      .run(store.filter(_.token === token).map(_.value).result.headOption)
-      .map { result =>
-        result.foreach(_ => metrics.recordGet(store = name))
-        result
-      }
+  override def get(token: RefreshToken): Future[Option[StoredRefreshToken]] = metrics.recordGet(store = name) {
+    database.run(store.filter(_.token === token).map(_.value).result.headOption)
+  }
 
-  override def all: Future[Seq[StoredRefreshToken]] =
-    database
-      .run(store.result)
-      .map { result =>
-        if (result.nonEmpty) {
-          metrics.recordGet(store = name, entries = result.size)
-        }
-        result
-      }
+  override def all: Future[Seq[StoredRefreshToken]] = metrics.recordList(store = name) {
+    database.run(store.result)
+  }
 
   private def dropExisting(client: Client.Id, owner: ResourceOwner.Id): Future[Done] =
     directory
@@ -140,7 +128,7 @@ class DefaultRefreshTokenStore(
   override val migrations: Seq[Migration] = Seq(
     internal
       .LegacyKeyValueStore(name, profile, database)
-      .asMigration[StoredRefreshToken, SlickAccountStore](withVersion = 1, current = store) { e =>
+      .asMigration[StoredRefreshToken, SlickStore](withVersion = 1, current = store) { e =>
         StoredRefreshToken(
           token = RefreshToken((e \ "token").as[String]),
           client = (e \ "client").as[Client.Id],

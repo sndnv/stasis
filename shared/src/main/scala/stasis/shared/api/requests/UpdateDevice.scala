@@ -1,5 +1,7 @@
 package stasis.shared.api.requests
 
+import java.time.Instant
+
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
 
@@ -9,8 +11,11 @@ object UpdateDevice {
   implicit class RequestToUpdatedDevice(request: UpdateDevice) {
     def toUpdatedDevice(device: Device, owner: User): Device =
       request match {
-        case UpdateDeviceState(active)  => device.copy(active = active)
-        case UpdateDeviceLimits(limits) => device.copy(limits = Device.resolveLimits(owner.limits, limits))
+        case UpdateDeviceState(active) =>
+          device.copy(active = active, updated = Instant.now())
+
+        case UpdateDeviceLimits(limits) =>
+          device.copy(limits = Device.resolveLimits(owner.limits, limits), updated = Instant.now())
       }
   }
 }

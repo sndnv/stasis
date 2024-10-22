@@ -64,11 +64,11 @@ extension ExtendedRetention on Retention {
 
     switch (policy.policyType) {
       case 'all':
-        return '$renderedDuration, all versions';
+        return '$renderedDuration,\nall versions';
       case 'at-most':
-        return '$renderedDuration, at most ${policy.versions ?? 0} ${policy.versions != 1 ? 'versions' : 'version'}';
+        return '$renderedDuration,\nat most ${policy.versions ?? 0} ${policy.versions != 1 ? 'versions' : 'version'}';
       case 'latest-only':
-        return '$renderedDuration, latest version only';
+        return '$renderedDuration,\nlatest version only';
     }
 
     return '$renderedDuration, ${policy.policyType}';

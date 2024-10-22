@@ -1,5 +1,7 @@
 package stasis.shared.api.requests
 
+import java.time.Instant
+
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.crates.CrateStore
@@ -13,27 +15,35 @@ object CreateNode {
   final case class CreateRemoteGrpcNode(address: GrpcEndpointAddress, storageAllowed: Boolean) extends CreateNode
 
   implicit class RequestToNode(request: CreateNode) {
-    def toNode: Node =
+    def toNode: Node = {
+      val now = Instant.now()
       request match {
         case CreateLocalNode(storeDescriptor) =>
           Node.Local(
             id = Node.generateId(),
-            storeDescriptor = storeDescriptor
+            storeDescriptor = storeDescriptor,
+            created = now,
+            updated = now
           )
 
         case CreateRemoteHttpNode(address, storageAllowed) =>
           Node.Remote.Http(
             id = Node.generateId(),
             address = address,
-            storageAllowed = storageAllowed
+            storageAllowed = storageAllowed,
+            created = now,
+            updated = now
           )
 
         case CreateRemoteGrpcNode(address, storageAllowed) =>
           Node.Remote.Grpc(
             id = Node.generateId(),
             address = address,
-            storageAllowed = storageAllowed
+            storageAllowed = storageAllowed,
+            created = now,
+            updated = now
           )
       }
+    }
   }
 }

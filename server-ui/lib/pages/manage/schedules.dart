@@ -1,3 +1,4 @@
+import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import 'package:server_ui/api/api_client.dart';
 import 'package:server_ui/model/api/requests/create_schedule.dart';
@@ -52,11 +53,12 @@ class _SchedulesState extends State<Schedules> {
           header: const Text('Schedules'),
           columns: [
             EntityTableColumn(label: 'ID', sortBy: (e) => (e.id as String).toMinimizedString()),
-            EntityTableColumn(label: 'Info', sortBy: (e) => e.info),
-            EntityTableColumn(label: 'Public', sortBy: (e) => e.isPublic.toString()),
+            EntityTableColumn(label: 'Info', sortBy: (e) => e.info, size: ColumnSize.L),
+            EntityTableColumn(label: 'Public', sortBy: (e) => e.isPublic.toString(), size: ColumnSize.S),
             EntityTableColumn(label: 'Start', sortBy: (e) => e.start),
-            EntityTableColumn(label: 'Interval', sortBy: (e) => e.interval),
+            EntityTableColumn(label: 'Interval', sortBy: (e) => e.interval, size: ColumnSize.S),
             EntityTableColumn(label: 'Next Invocation', sortBy: (e) => (e as Schedule).nextInvocation()),
+            EntityTableColumn(label: 'Updated', sortBy: (e) => e.updated.toString()),
             EntityTableColumn(label: ''),
           ],
           entityToRow: (entity) {
@@ -69,6 +71,12 @@ class _SchedulesState extends State<Schedules> {
               DataCell(Text(schedule.start.render())),
               DataCell(Text(schedule.interval.render())),
               DataCell(Text(schedule.nextInvocation().render())),
+              DataCell(
+                Tooltip(
+                  message: 'Created: ${schedule.created.render()}\nUpdated: ${schedule.updated.render()}',
+                  child: Text(schedule.updated.render(), overflow: TextOverflow.ellipsis),
+                ),
+              ),
               DataCell(
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,

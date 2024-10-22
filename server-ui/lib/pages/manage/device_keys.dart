@@ -4,6 +4,7 @@ import 'package:server_ui/model/devices/device_key.dart';
 import 'package:server_ui/pages/default/components.dart';
 import 'package:server_ui/pages/manage/components/entity_table.dart';
 import 'package:server_ui/pages/manage/components/extensions.dart';
+import 'package:server_ui/pages/manage/components/rendering.dart';
 import 'package:server_ui/pages/page_destinations.dart';
 
 class DeviceKeys extends StatefulWidget {
@@ -42,6 +43,7 @@ class _DeviceKeysState extends State<DeviceKeys> {
           columns: [
             EntityTableColumn(label: 'Device', sortBy: (e) => (e.device as String).toMinimizedString()),
             EntityTableColumn(label: 'Owner', sortBy: (e) => (e.owner as String).toMinimizedString()),
+            EntityTableColumn(label: 'Created', sortBy: (e) => e.created.toString()),
             EntityTableColumn(label: ''),
           ],
           entityToRow: (entity) {
@@ -64,6 +66,7 @@ class _DeviceKeysState extends State<DeviceKeys> {
                       )
                     : null,
               )),
+              DataCell(Text(key.created.render(), overflow: TextOverflow.ellipsis)),
               DataCell(
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,

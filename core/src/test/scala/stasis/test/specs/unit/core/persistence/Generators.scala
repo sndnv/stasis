@@ -1,5 +1,6 @@
 package stasis.test.specs.unit.core.persistence
 
+import java.time.Instant
 import java.util.concurrent.ThreadLocalRandom
 
 import stasis.core.networking.grpc.GrpcEndpointAddress
@@ -20,7 +21,8 @@ object Generators {
       copies = rnd.nextInt(0, Int.MaxValue),
       origin = Node.generateId(),
       source = Node.generateId(),
-      destinations = generateSeq(g = Node.generateId())
+      destinations = generateSeq(g = Node.generateId()),
+      created = Instant.now()
     )
 
   def generateRequest(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): CrateStorageRequest =
@@ -39,7 +41,8 @@ object Generators {
       size = rnd.nextLong(0, Long.MaxValue),
       copies = rnd.nextInt(0, Int.MaxValue),
       origin = Node.generateId(),
-      target = Node.generateId()
+      target = Node.generateId(),
+      created = Instant.now()
     )
 
   def generateLocalNode(implicit
@@ -51,14 +54,18 @@ object Generators {
         maxSize = rnd.nextLong(0, Long.MaxValue),
         maxChunkSize = rnd.nextInt(0, Int.MaxValue),
         name = generateString(withSize = 42)
-      )
+      ),
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
   def generateRemoteHttpNode(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Node.Remote.Http =
     Node.Remote.Http(
       id = Node.generateId(),
       address = HttpEndpointAddress(generateUri),
-      storageAllowed = true
+      storageAllowed = true,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
   def generateRemoteGrpcNode(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Node.Remote.Grpc =
@@ -69,6 +76,8 @@ object Generators {
         port = rnd.nextInt(50000, 60000),
         tlsEnabled = rnd.nextBoolean()
       ),
-      storageAllowed = true
+      storageAllowed = true,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 }

@@ -70,7 +70,8 @@ trait RouteTest extends UnitSpec with ScalatestRouteTest {
     failingDelete: Boolean = false,
     failingGet: Boolean = false,
     failingEntries: Boolean = false,
-    failingContains: Boolean = false
+    failingContains: Boolean = false,
+    failingLoad: Boolean = false
   ): ApiStore =
     new MockApiStore(
       underlying = new FailingMemoryStore[Api.Id, Api] {
@@ -82,6 +83,7 @@ trait RouteTest extends UnitSpec with ScalatestRouteTest {
         override def getFails: Boolean = failingGet
         override def entriesFails: Boolean = failingEntries
         override def containsFails: Boolean = failingContains
+        override def loadFails: Boolean = failingLoad
       }
     )
 
@@ -90,7 +92,8 @@ trait RouteTest extends UnitSpec with ScalatestRouteTest {
     failingDelete: Boolean = false,
     failingGet: Boolean = false,
     failingEntries: Boolean = false,
-    failingContains: Boolean = false
+    failingContains: Boolean = false,
+    failingLoad: Boolean = false
   ): ClientStore =
     new MockClientStore(
       new FailingMemoryStore[Client.Id, Client] {
@@ -102,6 +105,7 @@ trait RouteTest extends UnitSpec with ScalatestRouteTest {
         override def getFails: Boolean = failingGet
         override def entriesFails: Boolean = failingEntries
         override def containsFails: Boolean = failingContains
+        override def loadFails: Boolean = failingLoad
       }
     )
 
@@ -110,7 +114,8 @@ trait RouteTest extends UnitSpec with ScalatestRouteTest {
     failingDelete: Boolean = false,
     failingGet: Boolean = false,
     failingEntries: Boolean = false,
-    failingContains: Boolean = false
+    failingContains: Boolean = false,
+    failingLoad: Boolean = false
   ): AuthorizationCodeStore =
     new MockAuthorizationCodeStore(
       new FailingMemoryStore[AuthorizationCode, StoredAuthorizationCode] {
@@ -122,6 +127,7 @@ trait RouteTest extends UnitSpec with ScalatestRouteTest {
         override def getFails: Boolean = failingGet
         override def entriesFails: Boolean = failingEntries
         override def containsFails: Boolean = failingContains
+        override def loadFails: Boolean = failingLoad
       }
     )
 
@@ -130,7 +136,8 @@ trait RouteTest extends UnitSpec with ScalatestRouteTest {
     failingDelete: Boolean = false,
     failingGet: Boolean = false,
     failingEntries: Boolean = false,
-    failingContains: Boolean = false
+    failingContains: Boolean = false,
+    failingLoad: Boolean = false
   ): ResourceOwnerStore =
     new MockResourceOwnerStore(
       new FailingMemoryStore[ResourceOwner.Id, ResourceOwner] {
@@ -142,6 +149,7 @@ trait RouteTest extends UnitSpec with ScalatestRouteTest {
         override def getFails: Boolean = failingGet
         override def entriesFails: Boolean = failingEntries
         override def containsFails: Boolean = failingContains
+        override def loadFails: Boolean = failingLoad
       }
     )
 
@@ -150,7 +158,8 @@ trait RouteTest extends UnitSpec with ScalatestRouteTest {
     failingDelete: Boolean = false,
     failingGet: Boolean = false,
     failingEntries: Boolean = false,
-    failingContains: Boolean = false
+    failingContains: Boolean = false,
+    failingLoad: Boolean = false
   ): RefreshTokenStore =
     new MockRefreshTokenStore(
       new FailingMemoryStore[RefreshToken, StoredRefreshToken] {
@@ -162,6 +171,7 @@ trait RouteTest extends UnitSpec with ScalatestRouteTest {
         override def getFails: Boolean = failingGet
         override def entriesFails: Boolean = failingEntries
         override def containsFails: Boolean = failingContains
+        override def loadFails: Boolean = failingLoad
       }
     )
 
@@ -220,6 +230,7 @@ object RouteTest {
     def getFails: Boolean
     def entriesFails: Boolean
     def containsFails: Boolean
+    def loadFails: Boolean
 
     override def init(): Future[Done] = Future.successful(Done)
     override def drop(): Future[Done] = Future.successful(Done)
@@ -238,5 +249,8 @@ object RouteTest {
 
     override def contains(key: K): Future[Boolean] =
       if (containsFails) Future.failed(new RuntimeException("Operation failure enabled")) else underlying.contains(key)
+
+    override def load(entries: Map[K, V]): Future[Done] =
+      if (loadFails) Future.failed(new RuntimeException("Operation failure enabled")) else underlying.load(entries)
   }
 }

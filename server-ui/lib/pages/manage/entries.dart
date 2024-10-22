@@ -145,6 +145,14 @@ class _DatasetEntriesState extends State<DatasetEntries> {
               trailing: FittedBox(child: manifest.crate.asShortId()),
             ),
             ListTile(
+              title: const Text('Created'),
+              leading: const Icon(Icons.more_time),
+              trailing: Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: Text(manifest.created.render()),
+              ),
+            ),
+            ListTile(
               title: const Text('Size'),
               leading: const Icon(Icons.sd_storage),
               trailing: Padding(

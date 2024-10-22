@@ -24,6 +24,21 @@ class AppFiles {
   final String? apiToken;
   final AppFilesPaths paths;
 
+  static AppFiles empty() {
+    return AppFiles(
+      config: ConfigFactory.empty(),
+      rules: [],
+      schedules: [],
+      apiToken: null,
+      paths: AppFilesPaths(
+        config: '/tmp',
+        rules: '/tmp',
+        schedules: '/tmp',
+        apiToken: '/tmp',
+      ),
+    );
+  }
+
   static AppFiles load({required String configDir}) {
     final configFilePath = '$configDir/$configFileName';
     final config = ConfigFactory.load(path: configFilePath);

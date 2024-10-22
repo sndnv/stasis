@@ -71,12 +71,21 @@ class FormatsSpec extends UnitSpec {
   }
 
   they should "convert device keys to/from JSON" in {
-    val original = DeviceKey(value = ByteString("test"), owner = User.generateId(), device = Device.generateId())
+    val now = Instant.now()
+
+    val original = DeviceKey(
+      value = ByteString("test"),
+      owner = User.generateId(),
+      device = Device.generateId(),
+      created = now
+    )
+
     val json =
       s"""
          |{
          |"owner":"${original.owner}",
-         |"device":"${original.device}"
+         |"device":"${original.device}",
+         |"created":"$now"
          |}
       """.stripMargin.replaceAll("\n", "").trim
 
@@ -94,9 +103,13 @@ class FormatsSpec extends UnitSpec {
   }
 
   they should "convert schedules to/from JSON with 'next_invocation' field" in withRetry {
+    val now = Instant.now().truncatedTo(ChronoUnit.SECONDS)
+
     val schedule = Generators.generateSchedule.copy(
       start = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS),
-      interval = 30.seconds
+      interval = 30.seconds,
+      created = now,
+      updated = now
     )
 
     val json =
@@ -107,6 +120,8 @@ class FormatsSpec extends UnitSpec {
            |"is_public":${schedule.isPublic},
            |"start":"${schedule.start.truncatedTo(ChronoUnit.SECONDS)}",
            |"interval":${schedule.interval.toSeconds},
+           |"created":"$now",
+           |"updated":"$now",
            |"next_invocation":"0"
            |}
       """.stripMargin.replaceAll("\n", "").trim

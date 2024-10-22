@@ -10,28 +10,23 @@ import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.util.Timeout
 import slick.jdbc.JdbcProfile
 
-import stasis.core.packaging.Crate
-import stasis.core.packaging.Manifest
-import stasis.core.persistence.CrateStorageReservation
-import stasis.core.persistence.StoreInitializationResult
-import stasis.core.persistence.backends.slick.SlickBackend
 import stasis.core.persistence.backends.slick.SlickProfile
 import stasis.core.persistence.crates.CrateStore
+import stasis.core.persistence.manifests.DefaultManifestStore
 import stasis.core.persistence.manifests.ManifestStore
-import stasis.core.persistence.manifests.ManifestStoreSerdes
+import stasis.core.persistence.nodes.DefaultNodeStore
 import stasis.core.persistence.nodes.NodeStore
-import stasis.core.persistence.nodes.NodeStoreSerdes
+import stasis.core.persistence.reservations.DefaultReservationStore
 import stasis.core.persistence.reservations.ReservationStore
-import stasis.core.persistence.reservations.ReservationStoreSerdes
 import stasis.core.persistence.staging.StagingStore
-import stasis.core.routing.Node
+import stasis.layers.persistence.memory.MemoryStore
 import stasis.layers.persistence.migration.MigrationExecutor
 import stasis.layers.persistence.migration.MigrationResult
 import stasis.layers.telemetry.TelemetryContext
-import stasis.server.model.manifests.ServerManifestStore
-import stasis.server.model.nodes.ServerNodeStore
-import stasis.server.model.reservations.ServerReservationStore
-import stasis.server.model.staging.ServerStagingStore
+import stasis.server.persistence.manifests.ServerManifestStore
+import stasis.server.persistence.nodes.ServerNodeStore
+import stasis.server.persistence.reservations.ServerReservationStore
+import stasis.server.persistence.staging.ServerStagingStore
 import stasis.server.security.Resource
 
 class CorePersistence(
@@ -48,8 +43,6 @@ class CorePersistence(
   val databaseUrl: String = persistenceConfig.getString("database.url")
   val databaseDriver: String = persistenceConfig.getString("database.driver")
   val databaseKeepAlive: Boolean = persistenceConfig.getBoolean("database.keep-alive-connection")
-
-  val nodeCachingEnabled: Boolean = persistenceConfig.getBoolean("nodes.caching-enabled")
 
   val reservationExpiration: FiniteDuration = persistenceConfig.getDuration("reservations.expiration").toMillis.millis
 
@@ -76,21 +69,25 @@ class CorePersistence(
 
   private val migrationExecutor: MigrationExecutor = MigrationExecutor()
 
-  private val StoreInitializationResult(nodeStore, nodeStoreInit) = NodeStore(
-    backend = backends.nodes,
-    cachingEnabled = nodeCachingEnabled
+  private val nodeStore = new DefaultNodeStore(
+    name = "NODES",
+    profile = profile,
+    database = database,
+    cache = MemoryStore(name = "nodes-cache")
   )
-
-  private val StoreInitializationResult(reservationStore, reservationStoreInit) = ReservationStore(
-    expiration = reservationExpiration,
-    backend = backends.reservations
-  )
-
-  val manifests: ManifestStore = ManifestStore(backend = backends.manifests)
 
   val nodes: NodeStore = nodeStore
 
-  val reservations: ReservationStore = reservationStore
+  val reservations: ReservationStore = DefaultReservationStore(
+    name = "RESERVATIONS",
+    expiration = reservationExpiration
+  )
+
+  val manifests: ManifestStore = new DefaultManifestStore(
+    name = "MANIFESTS",
+    profile = profile,
+    database = database
+  )
 
   val staging: Option[StagingStore] = stagingStoreDescriptor.map { descriptor =>
     StagingStore(
@@ -100,36 +97,31 @@ class CorePersistence(
   }
 
   def startup(): Future[Done] =
-    for {
-      _ <- nodeStoreInit()
-      _ <- reservationStoreInit()
-    } yield {
-      Done
-    }
+    nodeStore.prepare()
 
   def migrate(): Future[MigrationResult] =
     for {
-      manifestsMigration <- migrationExecutor.execute(forStore = backends.manifests)
-      nodesMigration <- migrationExecutor.execute(forStore = backends.nodes)
-      reservationsMigration <- migrationExecutor.execute(forStore = backends.reservations)
+      manifestsMigration <- migrationExecutor.execute(forStore = manifests)
+      nodesMigration <- migrationExecutor.execute(forStore = nodes)
+      reservationsMigration <- migrationExecutor.execute(forStore = reservations)
     } yield {
       manifestsMigration + nodesMigration + reservationsMigration
     }
 
   def init(): Future[Done] =
     for {
-      _ <- backends.manifests.init()
-      _ <- backends.nodes.init()
-      _ <- backends.reservations.init()
+      _ <- manifests.init()
+      _ <- nodes.init()
+      _ <- reservations.init()
     } yield {
       Done
     }
 
   def drop(): Future[Done] =
     for {
-      _ <- backends.manifests.drop()
-      _ <- backends.nodes.drop()
-      _ <- backends.reservations.drop()
+      _ <- manifests.drop()
+      _ <- nodes.drop()
+      _ <- reservations.drop()
     } yield {
       Done
     }
@@ -151,29 +143,6 @@ class CorePersistence(
   private val serverManifests: ServerManifestStore = ServerManifestStore(manifests)
   private val serverReservations: ServerReservationStore = ServerReservationStore(reservations)
   private val serverStaging: Option[ServerStagingStore] = staging.map(ServerStagingStore.apply)
-
-  private object backends {
-    val manifests: SlickBackend[Crate.Id, Manifest] = SlickBackend(
-      name = "MANIFESTS",
-      profile = profile,
-      database = database,
-      serdes = ManifestStoreSerdes
-    )
-
-    val nodes: SlickBackend[Node.Id, Node] = SlickBackend(
-      name = "NODES",
-      profile = profile,
-      database = database,
-      serdes = NodeStoreSerdes
-    )
-
-    val reservations: SlickBackend[CrateStorageReservation.Id, CrateStorageReservation] = SlickBackend(
-      name = "RESERVATIONS",
-      profile = profile,
-      database = database,
-      serdes = ReservationStoreSerdes
-    )
-  }
 }
 
 object CorePersistence {

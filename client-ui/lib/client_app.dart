@@ -1,10 +1,12 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:stasis_client_ui/api/api_client.dart';
 import 'package:stasis_client_ui/api/app_processes.dart';
 import 'package:stasis_client_ui/api/default_client_api.dart';
 import 'package:stasis_client_ui/api/default_init_api.dart';
+import 'package:stasis_client_ui/api/mock_api_client.dart';
 import 'package:stasis_client_ui/color_schemes.dart';
 import 'package:stasis_client_ui/config/app_dirs.dart';
 import 'package:stasis_client_ui/config/app_files.dart';
@@ -75,42 +77,62 @@ class _ClientAppState extends State<ClientApp> {
     try {
       const processes = AppProcesses(serviceBinary: applicationName, serviceMainClass: applicationMainClass);
 
-      final files = AppFiles.load(configDir: configDir);
-      final apiConfig = files.config.getConfig('stasis.client.api');
-      final apiTimeout = Duration(
-        seconds: int.tryParse(Platform.environment['STASIS_CLIENT_UI_API_TIMEOUT'] ?? '') ?? 30,
+      final mockEnabled = bool.tryParse(
+        Platform.environment['STASIS_CLIENT_UI_MOCK_ENABLED'] ?? '',
+        caseSensitive: false,
       );
 
-      InitApi init = DefaultInitApi.fromConfig(config: apiConfig, timeout: apiTimeout);
-
-      final apiToken = files.apiToken;
-      if (apiToken != null) {
-        ClientApi api = DefaultClientApi.fromConfig(config: apiConfig, apiToken: apiToken, timeout: apiTimeout);
-
-        return FutureBuilder<bool>(
-          future: api.isActive(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.done) {
-              final isActive = snapshot.data ?? false;
-
-              if (isActive) {
-                return MaterialApp(
-                  title: title,
-                  theme: defaultTheme,
-                  darkTheme: darkTheme,
-                  initialRoute: PageRouterDestination.home.route,
-                  onGenerateRoute: PageRouter(api: api, onApiInactive: _reload, files: files).underlying.generator,
-                );
-              } else {
-                return appWithLogin(init: init, api: api, processes: processes);
-              }
-            } else {
-              return const Center(child: CircularProgressIndicator());
-            }
-          },
+      if (kDebugMode && mockEnabled == true) {
+        return MaterialApp(
+          title: title,
+          theme: defaultTheme,
+          darkTheme: darkTheme,
+          initialRoute: PageRouterDestination.home.route,
+          onGenerateRoute: PageRouter(
+            api: MockApiClient(),
+            onApiInactive: _reload,
+            files: AppFiles.empty(),
+          ).underlying.generator,
         );
       } else {
-        return appWithLogin(init: init, api: null, processes: processes);
+        final files = AppFiles.load(configDir: configDir);
+
+        final apiConfig = files.config.getConfig('stasis.client.api');
+        final apiTimeout = Duration(
+          seconds: int.tryParse(Platform.environment['STASIS_CLIENT_UI_API_TIMEOUT'] ?? '') ?? 30,
+        );
+
+        InitApi init = DefaultInitApi.fromConfig(config: apiConfig, timeout: apiTimeout);
+
+        final apiToken = files.apiToken;
+        if (apiToken != null) {
+          ClientApi api = DefaultClientApi.fromConfig(config: apiConfig, apiToken: apiToken, timeout: apiTimeout);
+
+          return FutureBuilder<bool>(
+            future: api.isActive(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done) {
+                final isActive = snapshot.data ?? false;
+
+                if (isActive) {
+                  return MaterialApp(
+                    title: title,
+                    theme: defaultTheme,
+                    darkTheme: darkTheme,
+                    initialRoute: PageRouterDestination.home.route,
+                    onGenerateRoute: PageRouter(api: api, onApiInactive: _reload, files: files).underlying.generator,
+                  );
+                } else {
+                  return appWithLogin(init: init, api: api, processes: processes);
+                }
+              } else {
+                return const Center(child: CircularProgressIndicator());
+              }
+            },
+          );
+        } else {
+          return appWithLogin(init: init, api: null, processes: processes);
+        }
       }
     } on ConfigFileNotAvailableException catch (e) {
       return appWithContent(content: ClientNotConfiguredCard.build(context, applicationName, e));

@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:server_ui/api/api_client.dart';
+import 'package:server_ui/api/derived_passwords.dart';
 import 'package:server_ui/model/api/requests/update_user_password.dart';
 import 'package:server_ui/model/datasets/dataset_definition.dart';
 import 'package:server_ui/model/devices/device.dart';
 import 'package:server_ui/model/users/user.dart';
-import 'package:server_ui/api/derived_passwords.dart';
 import 'package:server_ui/pages/default/components.dart';
 import 'package:server_ui/pages/manage/components/entity_form.dart';
 import 'package:server_ui/pages/manage/components/extensions.dart';
 import 'package:server_ui/pages/manage/components/rendering.dart';
+import 'package:server_ui/pages/page_destinations.dart';
 import 'package:server_ui/utils/pair.dart';
 import 'package:server_ui/utils/triple.dart';
-import 'package:server_ui/pages/page_destinations.dart';
 
 class Home extends StatelessWidget {
   const Home({
@@ -295,6 +295,7 @@ class Home extends StatelessWidget {
             ElevatedButton(
               style: ButtonStyle(
                 backgroundColor: WidgetStateColor.resolveWith((states) => theme.buttonTheme.colorScheme!.error),
+                foregroundColor: WidgetStateColor.resolveWith((states) => theme.buttonTheme.colorScheme!.onError),
               ),
               onPressed: () {
                 final messenger = ScaffoldMessenger.of(context);

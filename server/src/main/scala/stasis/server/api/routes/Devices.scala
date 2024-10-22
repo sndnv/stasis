@@ -11,10 +11,10 @@ import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 
-import stasis.server.model.devices.DeviceKeyStore
-import stasis.server.model.devices.DeviceStore
-import stasis.server.model.nodes.ServerNodeStore
-import stasis.server.model.users.UserStore
+import stasis.server.persistence.devices.DeviceKeyStore
+import stasis.server.persistence.devices.DeviceStore
+import stasis.server.persistence.nodes.ServerNodeStore
+import stasis.server.persistence.users.UserStore
 import stasis.server.security.CurrentUser
 import stasis.shared.api.requests.UpdateDeviceKey._
 import stasis.shared.api.requests._
@@ -36,7 +36,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
             resource[DeviceStore.View.Privileged] { view =>
               view.list().map { devices =>
                 log.debugN("User [{}] successfully retrieved [{}] devices", currentUser, devices.size)
-                discardEntity & complete(devices.values)
+                discardEntity & complete(devices)
               }
             }
           },
@@ -46,7 +46,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                 userView.get(createRequest.owner).flatMap {
                   case Some(owner) =>
                     val device = createRequest.toDevice(owner)
-                    deviceManage.create(device).map { _ =>
+                    deviceManage.put(device).map { _ =>
                       log.debugN(
                         "User [{}] successfully created device [{}] with node [{}]",
                         currentUser,
@@ -155,7 +155,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                 resource[DeviceStore.View.Self] { view =>
                   view.list(currentUser).map { devices =>
                     log.debugN("User [{}] successfully retrieved [{}] devices", currentUser, devices.size)
-                    discardEntity & complete(devices.values)
+                    discardEntity & complete(devices)
                   }
                 }
               },
@@ -168,7 +168,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                           val (device, node) = createRequest.toDeviceAndNode(owner)
 
                           for {
-                            _ <- deviceManage.create(currentUser, device)
+                            _ <- deviceManage.put(currentUser, device)
                             _ <- nodeManage.create(currentUser, device, node)
                           } yield {
                             log.debugN(
@@ -240,7 +240,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                   head {
                     resources[DeviceStore.View.Self, DeviceKeyStore.View.Self] { (deviceView, keyView) =>
                       deviceView.list(currentUser).flatMap { ownDevices =>
-                        keyView.exists(ownDevices.values.map(_.id).toSeq, deviceId).map {
+                        keyView.exists(ownDevices.map(_.id).toSeq, deviceId).map {
                           case true =>
                             log.debugN("User [{}] successfully retrieved key information for device [{}]", currentUser, deviceId)
                             val entity = HttpEntity(ContentTypes.`application/octet-stream`, Source.empty)
@@ -256,7 +256,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                   get {
                     resources[DeviceStore.View.Self, DeviceKeyStore.View.Self] { (deviceView, keyView) =>
                       deviceView.list(currentUser).flatMap { ownDevices =>
-                        keyView.get(ownDevices.values.map(_.id).toSeq, deviceId).map {
+                        keyView.get(ownDevices.map(_.id).toSeq, deviceId).map {
                           case Some(key) =>
                             log.debugN("User [{}] successfully retrieved key for device [{}]", currentUser, deviceId)
                             val entity = HttpEntity(ContentTypes.`application/octet-stream`, Source.single(key.value))
@@ -275,13 +275,13 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                         extractMaterializer { implicit mat =>
                           resources[DeviceStore.View.Self, UserStore.View.Self, DeviceKeyStore.Manage.Self] {
                             (deviceView, userView, keyManage) =>
-                              deviceView.list(currentUser).map(devices => (devices.values, devices.get(deviceId))).flatMap {
+                              deviceView.list(currentUser).map(devices => (devices, devices.find(_.id == deviceId))).flatMap {
                                 case (ownDevices, Some(device)) =>
                                   userView.get(currentUser).flatMap {
                                     case Some(owner) =>
                                       for {
                                         keyBytes <- requestStream.runFold(ByteString.empty)(_ concat _)
-                                        _ <- keyManage.put(ownDevices.map(_.id).toSeq, keyBytes.toDeviceKey(device, owner))
+                                        _ <- keyManage.put(ownDevices.map(_.id), keyBytes.toDeviceKey(device, owner))
                                       } yield {
                                         log.debugN("User [{}] successfully updated key for device [{}]", currentUser, deviceId)
                                         complete(StatusCodes.OK)
@@ -313,7 +313,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                   delete {
                     resources[DeviceStore.View.Self, DeviceKeyStore.Manage.Self] { (deviceView, keyManage) =>
                       deviceView.list(currentUser).flatMap { ownDevices =>
-                        keyManage.delete(ownDevices.values.map(_.id).toSeq, deviceId).map { deleted =>
+                        keyManage.delete(ownDevices.map(_.id).toSeq, deviceId).map { deleted =>
                           if (deleted) {
                             log.debugN("User [{}] successfully deleted key for device [{}]", currentUser, deviceId)
                           } else {
@@ -332,7 +332,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
           path("keys") {
             resources[DeviceStore.View.Self, DeviceKeyStore.View.Self] { (deviceView, keyView) =>
               deviceView.list(currentUser).flatMap { ownDevices =>
-                keyView.list(ownDevices.values.map(_.id).toSeq).map { keys =>
+                keyView.list(ownDevices.map(_.id).toSeq).map { keys =>
                   log.debugN("User [{}] successfully retrieved [{}] device keys", currentUser, keys.size)
                   discardEntity & complete(keys)
                 }
@@ -361,7 +361,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
           case Some(device) =>
             userView.get(device.owner).flatMap {
               case Some(owner) =>
-                deviceManage.update(updateRequest.toUpdatedDevice(device, owner)).map { _ =>
+                deviceManage.put(updateRequest.toUpdatedDevice(device, owner)).map { _ =>
                   log.debugN("User [{}] successfully updated device [{}]", currentUser, deviceId)
                   complete(StatusCodes.OK)
                 }
@@ -395,7 +395,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
         case Some(device) =>
           userView.get(currentUser).flatMap {
             case Some(owner) =>
-              deviceManage.update(currentUser, updateRequest.toUpdatedDevice(device, owner)).map { _ =>
+              deviceManage.put(currentUser, updateRequest.toUpdatedDevice(device, owner)).map { _ =>
                 log.debugN("User [{}] successfully updated device [{}]", currentUser, deviceId)
                 complete(StatusCodes.OK)
               }

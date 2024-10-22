@@ -7,16 +7,11 @@ import stasis.core.packaging.Crate
 import stasis.core.packaging.Manifest
 import stasis.core.persistence.manifests.ManifestStore
 import stasis.core.routing.Node
-import stasis.layers.persistence.memory.MemoryStore
-import stasis.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class ManifestStoreSpec extends AsyncUnitSpec {
   "A ManifestStore" should "add, retrieve and delete manifests" in {
-    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
-
-    val store = createStore()
+    val store = MockManifestStore()
 
     val expectedManifest = Manifest(
       crate = Crate.generateId(),
@@ -34,15 +29,11 @@ class ManifestStoreSpec extends AsyncUnitSpec {
     } yield {
       actualManifest should be(Some(expectedManifest))
       missingManifest should be(None)
-
-      telemetry.core.persistence.manifest.manifest should be(1)
     }
   }
 
   it should "provide a read-only view" in {
-    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
-
-    val store = createStore()
+    val store = MockManifestStore()
     val storeView = store.view
 
     val expectedManifest = Manifest(
@@ -62,8 +53,6 @@ class ManifestStoreSpec extends AsyncUnitSpec {
       actualManifest should be(Some(expectedManifest))
       missingManifest should be(None)
 
-      telemetry.core.persistence.manifest.manifest should be(1)
-
       a[ClassCastException] should be thrownBy { val _ = storeView.asInstanceOf[ManifestStore] }
     }
   }
@@ -72,9 +61,4 @@ class ManifestStoreSpec extends AsyncUnitSpec {
     Behaviors.ignore,
     "ManifestStoreSpec"
   )
-
-  private def createStore()(implicit telemetry: TelemetryContext): ManifestStore =
-    ManifestStore(
-      MemoryStore[Crate.Id, Manifest](name = s"manifest-store-${java.util.UUID.randomUUID()}")
-    )
 }

@@ -10,4 +10,5 @@ trait KeyValueStore[K, V] extends Store {
   def delete(key: K): Future[Boolean]
   def contains(key: K): Future[Boolean]
   def entries: Future[Map[K, V]]
+  def load(entries: Map[K, V]): Future[Done]
 }

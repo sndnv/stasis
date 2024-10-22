@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.client.mocks
 
+import java.time.Instant
+
 import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
@@ -281,7 +283,12 @@ class MockServerApiEndpoint(
                   key <- source.runFold(ByteString.empty)(_ concat _)
                   _ <- keyStore.put(
                     key = deviceId,
-                    value = DeviceKey(value = key, owner = Generators.generateUser.id, device = deviceId)
+                    value = DeviceKey(
+                      value = key,
+                      owner = Generators.generateUser.id,
+                      device = deviceId,
+                      created = Instant.now()
+                    )
                   )
                 } yield Done
 

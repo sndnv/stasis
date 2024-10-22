@@ -1,6 +1,8 @@
 package stasis.client_android.activities.fragments.status
 
+import android.graphics.Typeface
 import android.os.Bundle
+import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,9 +11,12 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import dagger.hilt.android.AndroidEntryPoint
 import stasis.client_android.R
+import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.asSizeString
 import stasis.client_android.activities.helpers.Common.asString
+import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.Common.toMinimizedString
+import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullDateTime
 import stasis.client_android.activities.helpers.Transitions.operationComplete
 import stasis.client_android.activities.helpers.Transitions.operationInProgress
 import stasis.client_android.api.DeviceStatusViewModel
@@ -49,6 +54,7 @@ class DeviceDetailsFragment : Fragment() {
                     binding.deviceLimits.isVisible = false
                     binding.deviceLimitsNone.isVisible = true
                 }
+
                 else -> {
                     binding.deviceLimits.isVisible = true
                     binding.deviceLimitsNone.isVisible = false
@@ -99,6 +105,12 @@ class DeviceDetailsFragment : Fragment() {
                 R.string.device_field_content_node,
                 device.node.toString()
             )
+
+            val created = device.created.formatAsFullDateTime(context)
+            binding.deviceCreated.text = context.getString(R.string.device_field_content_created, created)
+
+            val updated = device.updated.formatAsFullDateTime(context)
+            binding.deviceUpdated.text = context.getString(R.string.device_field_content_updated, updated)
 
             activity.operationComplete()
         }

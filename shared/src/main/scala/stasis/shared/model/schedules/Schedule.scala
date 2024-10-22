@@ -1,5 +1,6 @@
 package stasis.shared.model.schedules
 
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -10,7 +11,9 @@ final case class Schedule(
   info: String,
   isPublic: Boolean,
   start: LocalDateTime,
-  interval: FiniteDuration
+  interval: FiniteDuration,
+  created: Instant,
+  updated: Instant
 ) {
   def nextInvocation: LocalDateTime = {
     val now = LocalDateTime.now()

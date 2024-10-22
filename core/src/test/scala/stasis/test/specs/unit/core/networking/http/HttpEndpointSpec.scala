@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.core.networking.http
 
+import java.time.Instant
+
 import scala.collection.mutable
 
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
@@ -22,7 +24,7 @@ import stasis.layers.api.MessageResponse
 import stasis.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
-import stasis.test.specs.unit.core.persistence.mocks.MockReservationStore
+import stasis.test.specs.unit.core.persistence.reservations.MockReservationStore
 import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockHttpAuthenticator
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
@@ -93,7 +95,8 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       size = storageRequest.size,
       copies = storageRequest.copies,
       origin = Node.generateId(),
-      target = Node.generateId()
+      target = Node.generateId(),
+      created = Instant.now()
     )
 
     Put(s"/reservations")
@@ -304,7 +307,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     new TestHttpEndpoint(
       testCrateStore = testCrateStore,
-      testReservationStore = testReservationStore.getOrElse(new MockReservationStore()),
+      testReservationStore = testReservationStore.getOrElse(MockReservationStore()),
       testAuthenticator = testAuthenticator
     )
   }
@@ -333,7 +336,8 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     size = crateContent.length.toLong,
     copies = 3,
     origin = Node.generateId(),
-    target = Node.generateId()
+    target = Node.generateId(),
+    created = Instant.now()
   )
 
   private val ports: mutable.Queue[Int] = (27000 to 27100).to(mutable.Queue)

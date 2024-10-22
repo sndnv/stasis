@@ -23,8 +23,6 @@ object Metrics {
   )
 
   trait StreamingBackend extends MetricsProvider {
-    def recordInit(backend: String): Unit
-    def recordDrop(backend: String): Unit
     def recordWrite(backend: String, bytes: Long): Unit
     def recordRead(backend: String, bytes: Long): Unit
     def recordDiscard(backend: String): Unit
@@ -32,8 +30,6 @@ object Metrics {
 
   object StreamingBackend {
     object NoOp extends StreamingBackend {
-      override def recordInit(backend: String): Unit = ()
-      override def recordDrop(backend: String): Unit = ()
       override def recordWrite(backend: String, bytes: Long): Unit = ()
       override def recordRead(backend: String, bytes: Long): Unit = ()
       override def recordDiscard(backend: String): Unit = ()
@@ -42,19 +38,11 @@ object Metrics {
     class Default(meter: Meter, namespace: String) extends StreamingBackend {
       private val subsystem: String = "persistence_streaming"
 
-      private val initOperations = meter.counter(name = s"${namespace}_${subsystem}_init_operations")
-      private val dropOperations = meter.counter(name = s"${namespace}_${subsystem}_drop_operations")
       private val writeOperations = meter.counter(name = s"${namespace}_${subsystem}_write_operations")
       private val writeBytes = meter.counter(name = s"${namespace}_${subsystem}_write_bytes")
       private val readOperations = meter.counter(name = s"${namespace}_${subsystem}_read_operations")
       private val readBytes = meter.counter(name = s"${namespace}_${subsystem}_read_bytes")
       private val discardOperations = meter.counter(name = s"${namespace}_${subsystem}_discard_operations")
-
-      override def recordInit(backend: String): Unit =
-        initOperations.inc(Labels.Backend -> backend)
-
-      override def recordDrop(backend: String): Unit =
-        dropOperations.inc(Labels.Backend -> backend)
 
       override def recordWrite(backend: String, bytes: Long): Unit = {
         writeOperations.inc(Labels.Backend -> backend)

@@ -6,7 +6,7 @@ import scala.concurrent.Future
 import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import stasis.layers.security.exceptions.AuthenticationFailure
-import stasis.server.model.devices.DeviceBootstrapCodeStore
+import stasis.server.persistence.devices.DeviceBootstrapCodeStore
 import stasis.server.security.CurrentUser
 import stasis.shared.model.devices.DeviceBootstrapCode
 

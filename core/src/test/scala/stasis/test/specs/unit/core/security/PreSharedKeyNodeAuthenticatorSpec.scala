@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.core.security
 
+import java.time.Instant
+
 import scala.util.control.NonFatal
 
 import org.apache.pekko.actor.typed.ActorSystem
@@ -11,6 +13,7 @@ import stasis.core.routing.Node
 import stasis.core.security.PreSharedKeyNodeAuthenticator
 import stasis.layers.persistence.memory.MemoryStore
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.persistence.nodes.MockNodeStore
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class PreSharedKeyNodeAuthenticatorSpec extends AsyncUnitSpec {
@@ -19,7 +22,9 @@ class PreSharedKeyNodeAuthenticatorSpec extends AsyncUnitSpec {
     val node = Node.Remote.Http(
       id = Node.generateId(),
       address = HttpEndpointAddress("http://some-address:9000"),
-      storageAllowed = true
+      storageAllowed = true,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val nodeSecret: String = "some-secret"
@@ -38,7 +43,9 @@ class PreSharedKeyNodeAuthenticatorSpec extends AsyncUnitSpec {
     val node = Node.Remote.Http(
       id = Node.generateId(),
       address = HttpEndpointAddress("http://some-address:9000"),
-      storageAllowed = true
+      storageAllowed = true,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val nodeSecret: String = "some-secret"
@@ -59,7 +66,9 @@ class PreSharedKeyNodeAuthenticatorSpec extends AsyncUnitSpec {
     val node = Node.Remote.Http(
       id = Node.generateId(),
       address = HttpEndpointAddress("http://some-address:9000"),
-      storageAllowed = true
+      storageAllowed = true,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val nodeSecret: String = "some-secret"
@@ -81,7 +90,9 @@ class PreSharedKeyNodeAuthenticatorSpec extends AsyncUnitSpec {
     val node = Node.Remote.Http(
       id = Node.generateId(),
       address = HttpEndpointAddress("http://some-address:9000"),
-      storageAllowed = true
+      storageAllowed = true,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val nodeSecret: String = "some-secret"
@@ -107,7 +118,9 @@ class PreSharedKeyNodeAuthenticatorSpec extends AsyncUnitSpec {
     val node = Node.Remote.Http(
       id = Node.generateId(),
       address = HttpEndpointAddress("http://some-address:9000"),
-      storageAllowed = true
+      storageAllowed = true,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val nodeSecret: String = "some-secret"
@@ -128,21 +141,18 @@ class PreSharedKeyNodeAuthenticatorSpec extends AsyncUnitSpec {
   private def createAuthenticator(node: Node.Id, nodeSecret: String): (PreSharedKeyNodeAuthenticator, NodeStore) = {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
-    val storeInit = NodeStore(
-      backend = MemoryStore[Node.Id, Node](name = s"node-store-${java.util.UUID.randomUUID()}"),
-      cachingEnabled = false
-    )
+    val store = MockNodeStore()
 
     val backend = MemoryStore[String, String](s"psk-authenticator-store-${java.util.UUID.randomUUID()}")
 
     val authenticator = new PreSharedKeyNodeAuthenticator(
-      nodeStore = storeInit.store.view,
+      nodeStore = store.view,
       backend = backend
     )
 
     backend.put(node.toString, nodeSecret).await
 
-    (authenticator, storeInit.store)
+    (authenticator, store)
   }
 
   private implicit val system: ActorSystem[Nothing] = ActorSystem(

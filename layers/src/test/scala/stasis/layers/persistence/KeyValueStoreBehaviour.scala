@@ -33,6 +33,8 @@ trait KeyValueStoreBehaviour { _: UnitSpec =>
         telemetry.layers.persistence.keyValue.put should be(1)
         telemetry.layers.persistence.keyValue.get should be(1)
         telemetry.layers.persistence.keyValue.delete should be(0)
+        telemetry.layers.persistence.keyValue.contains should be(0)
+        telemetry.layers.persistence.keyValue.list should be(0)
       }
     }
 
@@ -56,6 +58,8 @@ trait KeyValueStoreBehaviour { _: UnitSpec =>
         telemetry.layers.persistence.keyValue.put should be(2)
         telemetry.layers.persistence.keyValue.get should be(2)
         telemetry.layers.persistence.keyValue.delete should be(0)
+        telemetry.layers.persistence.keyValue.contains should be(0)
+        telemetry.layers.persistence.keyValue.list should be(0)
       }
     }
 
@@ -72,8 +76,10 @@ trait KeyValueStoreBehaviour { _: UnitSpec =>
         missing should be(None)
 
         telemetry.layers.persistence.keyValue.put should be(0)
-        telemetry.layers.persistence.keyValue.get should be(0)
+        telemetry.layers.persistence.keyValue.get should be(1)
         telemetry.layers.persistence.keyValue.delete should be(0)
+        telemetry.layers.persistence.keyValue.contains should be(0)
+        telemetry.layers.persistence.keyValue.list should be(0)
       }
     }
 
@@ -99,8 +105,10 @@ trait KeyValueStoreBehaviour { _: UnitSpec =>
         )
 
         telemetry.layers.persistence.keyValue.put should be(3)
-        telemetry.layers.persistence.keyValue.get should be(3)
+        telemetry.layers.persistence.keyValue.get should be(0)
         telemetry.layers.persistence.keyValue.delete should be(0)
+        telemetry.layers.persistence.keyValue.contains should be(0)
+        telemetry.layers.persistence.keyValue.list should be(1)
       }
     }
 
@@ -122,8 +130,10 @@ trait KeyValueStoreBehaviour { _: UnitSpec =>
         missing should be(None)
 
         telemetry.layers.persistence.keyValue.put should be(1)
-        telemetry.layers.persistence.keyValue.get should be(1)
+        telemetry.layers.persistence.keyValue.get should be(2)
         telemetry.layers.persistence.keyValue.delete should be(1)
+        telemetry.layers.persistence.keyValue.contains should be(0)
+        telemetry.layers.persistence.keyValue.list should be(0)
       }
     }
 
@@ -146,6 +156,8 @@ trait KeyValueStoreBehaviour { _: UnitSpec =>
         telemetry.layers.persistence.keyValue.put should be(1)
         telemetry.layers.persistence.keyValue.get should be(0)
         telemetry.layers.persistence.keyValue.delete should be(1)
+        telemetry.layers.persistence.keyValue.contains should be(2)
+        telemetry.layers.persistence.keyValue.list should be(0)
       }
     }
 
@@ -176,8 +188,43 @@ trait KeyValueStoreBehaviour { _: UnitSpec =>
         missing should be(Map.empty)
 
         telemetry.layers.persistence.keyValue.put should be(3)
-        telemetry.layers.persistence.keyValue.get should be(3)
+        telemetry.layers.persistence.keyValue.get should be(0)
         telemetry.layers.persistence.keyValue.delete should be(0)
+        telemetry.layers.persistence.keyValue.contains should be(0)
+        telemetry.layers.persistence.keyValue.list should be(2)
+      }
+    }
+
+    it should "load multiple entries" in withRetry {
+      val telemetry: MockTelemetryContext = MockTelemetryContext()
+
+      val store = createStore(telemetry)
+
+      for {
+        _ <- before(store)
+        _ <- store.put(key = s"$testKey-0", value = testValue)
+        _ <- store.load(
+          entries = Map(
+            s"$testKey-1" -> (testValue + 1),
+            s"$testKey-2" -> (testValue + 2)
+          )
+        )
+        existing <- store.entries
+        _ <- after(store)
+      } yield {
+        existing should be(
+          Map(
+            s"$testKey-0" -> testValue,
+            s"$testKey-1" -> (testValue + 1),
+            s"$testKey-2" -> (testValue + 2)
+          )
+        )
+
+        telemetry.layers.persistence.keyValue.put should be(1)
+        telemetry.layers.persistence.keyValue.get should be(0)
+        telemetry.layers.persistence.keyValue.delete should be(0)
+        telemetry.layers.persistence.keyValue.contains should be(0)
+        telemetry.layers.persistence.keyValue.list should be(1)
       }
     }
   }

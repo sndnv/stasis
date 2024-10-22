@@ -9,9 +9,10 @@ import scala.util.Try
 import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.jose4j.jwt.JwtClaims
+
 import stasis.layers.security.exceptions.AuthenticationFailure
 import stasis.layers.security.jwt.JwtAuthenticator
-import stasis.server.model.users.UserStore
+import stasis.server.persistence.users.UserStore
 import stasis.server.security.CurrentUser
 import stasis.shared.model.users.User
 

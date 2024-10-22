@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.core.security
 
+import java.time.Instant
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -12,10 +14,9 @@ import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
 import stasis.core.security.JwtNodeCredentialsProvider
-import stasis.layers.persistence.memory.MemoryStore
 import stasis.layers.security.exceptions.ProviderFailure
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
+import stasis.test.specs.unit.core.persistence.nodes.MockNodeStore
 
 class JwtNodeCredentialsProviderSpec extends AsyncUnitSpec {
   "A JwtNodeCredentialsProvider" should "provide node credentials" in {
@@ -25,7 +26,9 @@ class JwtNodeCredentialsProviderSpec extends AsyncUnitSpec {
     val node = Node.Remote.Http(
       id = Node.generateId(),
       address = HttpEndpointAddress("http://some-address:9000"),
-      storageAllowed = true
+      storageAllowed = true,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     store.put(node).await
@@ -42,7 +45,9 @@ class JwtNodeCredentialsProviderSpec extends AsyncUnitSpec {
     val node = Node.Remote.Http(
       id = Node.generateId(),
       address = HttpEndpointAddress("http://some-address:9000"),
-      storageAllowed = true
+      storageAllowed = true,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val otherAddress = HttpEndpointAddress("http://some-address:9001")
@@ -59,19 +64,14 @@ class JwtNodeCredentialsProviderSpec extends AsyncUnitSpec {
   }
 
   private def createProvider(token: String): (JwtNodeCredentialsProvider[HttpEndpointAddress], NodeStore) = {
-    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
-
-    val storeInit = NodeStore(
-      backend = MemoryStore[Node.Id, Node](name = s"node-store-${java.util.UUID.randomUUID()}"),
-      cachingEnabled = false
-    )
+    val store = MockNodeStore()
 
     val provider = new JwtNodeCredentialsProvider[HttpEndpointAddress](
-      nodeStore = storeInit.store.view,
+      nodeStore = store.view,
       underlying = (_: String) => Future.successful(token)
     )
 
-    (provider, storeInit.store)
+    (provider, store)
   }
 
   private implicit val system: ActorSystem[Nothing] = ActorSystem(

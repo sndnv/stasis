@@ -35,7 +35,6 @@ class FileBackend(
   override def init(): Future[Done] =
     Future {
       val _ = Files.createDirectories(parent)
-      metrics.recordInit(backend = parentDirectory)
       Done
     }
 
@@ -44,11 +43,9 @@ class FileBackend(
       Future {
         parent.toFile.listFiles().foreach(_.delete)
         Files.delete(parent)
-        metrics.recordDrop(backend = parentDirectory)
         Done
       }
     } else {
-      metrics.recordDrop(backend = parentDirectory)
       Future.successful(Done)
     }
 

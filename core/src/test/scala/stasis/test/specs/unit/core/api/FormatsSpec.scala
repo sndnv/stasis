@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.core.api
 
+import java.time.Instant
+
 import play.api.libs.json.Json
 
 import stasis.core.api.Formats._
@@ -10,7 +12,25 @@ import stasis.core.routing.Node
 import stasis.test.specs.unit.UnitSpec
 
 class FormatsSpec extends UnitSpec {
-  "Formats" should "convert crate store descriptors to/from JSON" in {
+  "Formats" should "convert endpoint addresses to/from JSON" in {
+    val httpAddress = HttpEndpointAddress(uri = "http://some-address:1234")
+    val grpcAddress = GrpcEndpointAddress(host = "some-host", port = 1234, tlsEnabled = false)
+
+    val addresses = Map(
+      "http" -> (httpAddress, s"""{"address_type":"http","address":{"uri":"${httpAddress.uri}"}}"""),
+      "grpc" -> (grpcAddress, s"""{"address_type":"grpc","address":{"host":"${grpcAddress.host}","port":${grpcAddress.port},"tls_enabled":${grpcAddress.tlsEnabled}}}""")
+    )
+
+    addresses.foreach { case (_, (address, json)) =>
+      addressFormat.writes(address).toString should be(json)
+      addressFormat.reads(Json.parse(json)).asOpt match {
+        case Some(createdAddress) => createdAddress should be(address)
+        case None                 => fail("Expected result but none was returned")
+      }
+    }
+  }
+
+  they should "convert crate store descriptors to/from JSON" in {
     val descriptors = Map(
       "memory" -> (
         CrateStore.Descriptor.ForStreamingMemoryBackend(maxSize = 42, maxChunkSize = 999, name = "backend-format-test"),
@@ -44,24 +64,42 @@ class FormatsSpec extends UnitSpec {
     )
     val httpAddress = HttpEndpointAddress(uri = "http://some-address:1234")
     val grpcAddress = GrpcEndpointAddress(host = "some-host", port = 1234, tlsEnabled = false)
+    val now = Instant.now()
 
     val nodes: Map[String, (Node, String)] = Map(
       "local" -> (
-        Node.Local(id = nodeId, storeDescriptor = storeDescriptor),
-        s"""{"node_type":"local","id":"$nodeId","store_descriptor":${Json.toJson(storeDescriptor).toString}}"""
+        Node.Local(id = nodeId, storeDescriptor = storeDescriptor, created = now, updated = now),
+        s"""
+           |{
+           |"node_type":"local",
+           |"id":"$nodeId",
+           |"store_descriptor":${Json.toJson(storeDescriptor).toString},
+           |"created":"${now.toString}",
+           |"updated":"${now.toString}"
+           |}""".stripMargin.replaceAll("\n", "").trim
       ),
       "remote-http" -> (
-        Node.Remote.Http(id = nodeId, address = httpAddress, storageAllowed = true),
-        s"""{"node_type":"remote-http","id":"$nodeId","address":{"uri":"${httpAddress.uri}"},"storage_allowed":true}"""
+        Node.Remote.Http(id = nodeId, address = httpAddress, storageAllowed = true, created = now, updated = now),
+        s"""
+           |{
+           |"node_type":"remote-http",
+           |"id":"$nodeId",
+           |"address":{"uri":"${httpAddress.uri}"},
+           |"storage_allowed":true,
+           |"created":"${now.toString}",
+           |"updated":"${now.toString}"
+           |}""".stripMargin.replaceAll("\n", "").trim
       ),
       "remote-grpc" -> (
-        Node.Remote.Grpc(id = nodeId, address = grpcAddress, storageAllowed = false),
+        Node.Remote.Grpc(id = nodeId, address = grpcAddress, storageAllowed = false, created = now, updated = now),
         s"""
            |{
            |"node_type":"remote-grpc",
            |"id":"$nodeId",
            |"address":{"host":"${grpcAddress.host}","port":${grpcAddress.port},"tls_enabled":${grpcAddress.tlsEnabled}},
-           |"storage_allowed":false
+           |"storage_allowed":false,
+           |"created":"${now.toString}",
+           |"updated":"${now.toString}"
            |}""".stripMargin.replaceAll("\n", "").trim
       )
     )

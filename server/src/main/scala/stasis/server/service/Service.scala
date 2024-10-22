@@ -384,9 +384,6 @@ trait Service {
          |    reservations:
          |      expiration: ${corePersistence.reservationExpiration.toMillis.toString} ms
          |
-         |    nodes:
-         |      caching-enabled: ${corePersistence.nodeCachingEnabled.toString}
-         |
          |    staging:
          |      enabled:         ${corePersistence.stagingStoreDescriptor.isDefined.toString}
          |      destaging-delay: ${corePersistence.stagingStoreDestagingDelay.toMillis.toString} ms

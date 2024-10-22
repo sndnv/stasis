@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.shared.api.requests
 
+import java.time.Instant
+
 import stasis.core.routing.Node
 import stasis.shared.api.requests.CreateDevicePrivileged
 import stasis.shared.model.devices.Device
@@ -14,7 +16,9 @@ class CreateDevicePrivilegedSpec extends UnitSpec {
       node = Node.generateId(),
       owner = owner.id,
       active = true,
-      limits = None
+      limits = None,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val privilegedRequest = CreateDevicePrivileged(
@@ -24,7 +28,9 @@ class CreateDevicePrivilegedSpec extends UnitSpec {
       limits = expectedDevice.limits
     )
 
-    privilegedRequest.toDevice(owner).copy(id = expectedDevice.id) should be(expectedDevice)
+    privilegedRequest
+      .toDevice(owner)
+      .copy(id = expectedDevice.id, created = expectedDevice.created, updated = expectedDevice.updated) should be(expectedDevice)
   }
 
   it should "generate random node IDs if none are provided when converting requests to devices" in {
@@ -34,7 +40,9 @@ class CreateDevicePrivilegedSpec extends UnitSpec {
       node = Node.generateId(),
       owner = owner.id,
       active = true,
-      limits = None
+      limits = None,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val privilegedRequest = CreateDevicePrivileged(
@@ -44,9 +52,11 @@ class CreateDevicePrivilegedSpec extends UnitSpec {
       limits = expectedDevice.limits
     )
 
-    val actualDevice = privilegedRequest.toDevice(owner).copy(id = expectedDevice.id)
+    val actualDevice = privilegedRequest
+      .toDevice(owner)
+      .copy(id = expectedDevice.id, created = expectedDevice.created, updated = expectedDevice.updated)
     actualDevice should be(expectedDevice.copy(node = actualDevice.node))
-    actualDevice.node should not be (expectedDevice.node)
+    actualDevice.node should not be expectedDevice.node
   }
 
   private val owner = User(
@@ -54,6 +64,8 @@ class CreateDevicePrivilegedSpec extends UnitSpec {
     salt = "test-salt",
     active = true,
     limits = None,
-    permissions = Set.empty
+    permissions = Set.empty,
+    created = Instant.now(),
+    updated = Instant.now()
   )
 }

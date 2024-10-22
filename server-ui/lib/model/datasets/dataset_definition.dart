@@ -14,6 +14,8 @@ class DatasetDefinition with _$DatasetDefinition {
     required int redundantCopies,
     required Retention existingVersions,
     required Retention removedVersions,
+    @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) required DateTime created,
+    @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) required DateTime updated,
   }) = _DatasetDefinition;
 
   factory DatasetDefinition.fromJson(Map<String, Object?> json) => _$DatasetDefinitionFromJson(json);

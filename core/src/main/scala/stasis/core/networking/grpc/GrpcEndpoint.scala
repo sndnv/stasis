@@ -29,7 +29,7 @@ import stasis.core.networking.exceptions.CredentialsFailure
 import stasis.core.networking.exceptions.EndpointFailure
 import stasis.core.networking.exceptions.ReservationFailure
 import stasis.core.packaging.Manifest
-import stasis.core.persistence.reservations.ReservationStoreView
+import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.routing.Node
 import stasis.core.routing.Router
 import stasis.core.security.NodeAuthenticator
@@ -40,7 +40,7 @@ import stasis.layers.telemetry.TelemetryContext
 
 class GrpcEndpoint(
   router: Router,
-  reservationStore: ReservationStoreView,
+  reservationStore: ReservationStore.View,
   override protected val authenticator: NodeAuthenticator[HttpCredentials]
 )(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext)
     extends Endpoint[HttpCredentials] {

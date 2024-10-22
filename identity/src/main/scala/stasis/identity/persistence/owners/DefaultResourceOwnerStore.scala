@@ -35,7 +35,7 @@ class DefaultResourceOwnerStore(
   private implicit val secretColumnType: JdbcType[Secret] =
     MappedColumnType.base[Secret, Array[Byte]](_.value.toArray, s => Secret(ByteString(s)))
 
-  private class SlickAccountStore(tag: Tag) extends Table[ResourceOwner](tag, name) {
+  private class SlickStore(tag: Tag) extends Table[ResourceOwner](tag, name) {
     def username: Rep[ResourceOwner.Id] = column[ResourceOwner.Id]("USERNAME", O.PrimaryKey)
     def password: Rep[Secret] = column[Secret]("PASSWORD")
     def salt: Rep[String] = column[String]("SALT")
@@ -58,7 +58,7 @@ class DefaultResourceOwnerStore(
       ) <> ((ResourceOwner.apply _).tupled, ResourceOwner.unapply)
   }
 
-  private val store = TableQuery[SlickAccountStore]
+  private val store = TableQuery[SlickStore]
 
   override def init(): Future[Done] =
     database.run(store.schema.create).map(_ => Done)
@@ -66,47 +66,30 @@ class DefaultResourceOwnerStore(
   override def drop(): Future[Done] =
     database.run(store.schema.drop).map(_ => Done)
 
-  override def put(owner: ResourceOwner): Future[Done] =
-    database
-      .run(store.insertOrUpdate(owner))
-      .map { _ =>
-        metrics.recordPut(store = name)
-        Done
-      }
+  override def put(owner: ResourceOwner): Future[Done] = metrics.recordPut(store = name) {
+    database.run(store.insertOrUpdate(owner)).map(_ => Done)
+  }
 
-  override def delete(owner: ResourceOwner.Id): Future[Boolean] =
-    database
-      .run(store.filter(_.username === owner).delete.map(_ == 1))
-      .map { result =>
-        metrics.recordDelete(store = name)
-        result
-      }
+  override def delete(owner: ResourceOwner.Id): Future[Boolean] = metrics.recordDelete(store = name) {
+    database.run(store.filter(_.username === owner).delete.map(_ == 1))
+  }
 
-  override def get(owner: ResourceOwner.Id): Future[Option[ResourceOwner]] =
-    database
-      .run(store.filter(_.username === owner).map(_.value).result.headOption)
-      .map { result =>
-        result.foreach(_ => metrics.recordGet(store = name))
-        result
-      }
+  override def get(owner: ResourceOwner.Id): Future[Option[ResourceOwner]] = metrics.recordGet(store = name) {
+    database.run(store.filter(_.username === owner).map(_.value).result.headOption)
+  }
 
-  override def all: Future[Seq[ResourceOwner]] =
-    database
-      .run(store.result)
-      .map { result =>
-        if (result.nonEmpty) {
-          metrics.recordGet(store = name, entries = result.size)
-        }
-        result
-      }
+  override def all: Future[Seq[ResourceOwner]] = metrics.recordList(store = name) {
+    database.run(store.result)
+  }
 
-  override def contains(owner: ResourceOwner.Id): Future[Boolean] =
+  override def contains(owner: ResourceOwner.Id): Future[Boolean] = metrics.recordContains(store = name) {
     database.run(store.filter(_.username === owner).exists.result)
+  }
 
   override val migrations: Seq[Migration] = Seq(
     internal
       .LegacyKeyValueStore(name, profile, database)
-      .asMigration[ResourceOwner, SlickAccountStore](withVersion = 1, current = store) { e =>
+      .asMigration[ResourceOwner, SlickStore](withVersion = 1, current = store) { e =>
         import java.util.Base64
 
         ResourceOwner(

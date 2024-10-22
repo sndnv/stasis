@@ -4,6 +4,7 @@ import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 import stasis.client_android.lib.model.server.devices.DeviceId
 import java.time.Duration
+import java.time.Instant
 import java.util.UUID
 
 @JsonClass(generateAdapter = true)
@@ -16,7 +17,9 @@ data class DatasetDefinition(
     @Json(name = "existing_versions")
     val existingVersions: Retention,
     @Json(name = "removed_versions")
-    val removedVersions: Retention
+    val removedVersions: Retention,
+    val created: Instant,
+    val updated: Instant
 ) {
     @JsonClass(generateAdapter = true)
     data class Retention(

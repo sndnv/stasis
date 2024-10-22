@@ -64,5 +64,25 @@
                 android:paddingEnd="4dp"
                 android:textAppearance="?attr/textAppearanceBody2" />
         </LinearLayout>
+
+        <TextView
+            android:id="@+id/dataset_definition_summary_created"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:maxLines="1"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:textAppearance="?attr/textAppearanceBody2" />
+
+        <TextView
+            android:id="@+id/dataset_definition_summary_updated"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:maxLines="1"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:textAppearance="?attr/textAppearanceBody2" />
     </LinearLayout>
 </layout>

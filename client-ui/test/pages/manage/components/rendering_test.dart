@@ -51,6 +51,10 @@ void main() {
       expect(const Duration(hours: 47).renderApproximate(), '47 hours');
       expect(const Duration(hours: 48).renderApproximate(), '2 days');
       expect(const Duration(hours: 49).renderApproximate(), '2 days');
+      expect(const Duration(days: 364).renderApproximate(), '11 months');
+      expect(const Duration(days: 365).renderApproximate(), '1 year');
+      expect(const Duration(days: 366).renderApproximate(), '1 year');
+      expect(const Duration(days: 1095).renderApproximate(), '3 years');
     });
 
     test('convert DateTimes to strings', () {

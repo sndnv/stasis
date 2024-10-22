@@ -3,7 +3,13 @@ import 'package:stasis_client_ui/model/users/user.dart';
 
 void main() {
   group('An ExtendedUser should', () {
-    const user = User(id: 'test-id', active: true, permissions: {});
+    final user = User(
+      id: 'test-id',
+      active: true,
+      permissions: {},
+      created: DateTime.parse('2020-10-01T01:03:01'),
+      updated: DateTime.parse('2020-10-01T01:03:02'),
+    );
 
     test('check if permissions allow for privileged view access', () async {
       expect(user.viewPrivilegedAllowed(), false);

@@ -1,5 +1,7 @@
 package stasis.layers.persistence
 
+import scala.concurrent.Future
+
 import stasis.layers.UnitSpec
 import stasis.layers.telemetry.mocks.MockMeter
 
@@ -11,27 +13,31 @@ class MetricsSpec extends UnitSpec {
       )
     )
 
+    val future = Future.successful(0)
+
     val keyValueMetrics = Metrics.Store.NoOp
-    noException should be thrownBy keyValueMetrics.recordPut(store = null)
-    noException should be thrownBy keyValueMetrics.recordGet(store = null)
-    noException should be thrownBy keyValueMetrics.recordGet(store = null, entries = 0)
-    noException should be thrownBy keyValueMetrics.recordDelete(store = null)
+    noException should be thrownBy keyValueMetrics.recordPut(store = null)(future)
+    noException should be thrownBy keyValueMetrics.recordGet(store = null)(future)
+    noException should be thrownBy keyValueMetrics.recordDelete(store = null)(future)
+    noException should be thrownBy keyValueMetrics.recordContains(store = null)(future)
+    noException should be thrownBy keyValueMetrics.recordList(store = null)(future)
   }
 
   they should "provide a default implementation" in {
     val meter = MockMeter()
 
-    val keyValueMetrics = new Metrics.Store.Default(meter = meter, namespace = "test")
-    keyValueMetrics.recordPut(store = "test")
-    keyValueMetrics.recordPut(store = "test")
-    keyValueMetrics.recordPut(store = "test")
-    keyValueMetrics.recordGet(store = "test")
-    keyValueMetrics.recordGet(store = "test", entries = 4)
-    keyValueMetrics.recordDelete(store = "test")
-    keyValueMetrics.recordDelete(store = "test")
+    val future = Future.successful(0)
 
-    meter.metric(name = "test_persistence_store_put_operations") should be(3)
-    meter.metric(name = "test_persistence_store_get_operations") should be(2)
-    meter.metric(name = "test_persistence_store_delete_operations") should be(2)
+    val keyValueMetrics = new Metrics.Store.Default(meter = meter, namespace = "test")
+    keyValueMetrics.recordPut(store = "test")(future)
+    keyValueMetrics.recordPut(store = "test")(future)
+    keyValueMetrics.recordPut(store = "test")(future)
+    keyValueMetrics.recordGet(store = "test")(future)
+    keyValueMetrics.recordDelete(store = "test")(future)
+    keyValueMetrics.recordDelete(store = "test")(future)
+    keyValueMetrics.recordContains(store = "test")(future)
+    keyValueMetrics.recordList(store = "test")(future)
+
+    meter.metric(name = "test_persistence_store_operation_duration") should be(8)
   }
 }

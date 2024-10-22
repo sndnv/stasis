@@ -7,8 +7,8 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
 
-import stasis.server.model.datasets.DatasetEntryStore
-import stasis.server.model.devices.DeviceStore
+import stasis.server.persistence.datasets.DatasetEntryStore
+import stasis.server.persistence.devices.DeviceStore
 import stasis.server.security.CurrentUser
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.responses.CreatedDatasetEntry
@@ -32,7 +32,7 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
                 entries.size,
                 definitionId
               )
-              discardEntity & complete(entries.values)
+              discardEntity & complete(entries)
             }
           }
         }
@@ -77,7 +77,7 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
                     resources[DeviceStore.View.Self, DatasetEntryStore.View.Self] { (deviceView, entryView) =>
                       deviceView
                         .list(currentUser)
-                        .flatMap(devices => entryView.list(devices.keys.toSeq, definitionId))
+                        .flatMap(devices => entryView.list(devices.map(_.id), definitionId))
                         .map { entries =>
                           log.debugN(
                             "User [{}] successfully retrieved [{}] entries for definition [{}]",
@@ -85,7 +85,7 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
                             entries.size,
                             definitionId
                           )
-                          discardEntity & complete(entries.values)
+                          discardEntity & complete(entries)
                         }
                     }
                   },
@@ -96,7 +96,7 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
                           val entry = createRequest.toEntry
                           deviceView
                             .list(currentUser)
-                            .flatMap(devices => entryManage.create(devices.keys.toSeq, entry))
+                            .flatMap(devices => entryManage.create(devices.map(_.id), entry))
                             .map { _ =>
                               log.debugN("User [{}] successfully created entry [{}]", currentUser, entry.id)
                               complete(CreatedDatasetEntry(entry.id))
@@ -121,7 +121,7 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
                     resources[DeviceStore.View.Self, DatasetEntryStore.View.Self] { (deviceView, entryView) =>
                       deviceView
                         .list(currentUser)
-                        .flatMap(devices => entryView.latest(devices.keys.toSeq, definitionId, until))
+                        .flatMap(devices => entryView.latest(devices.map(_.id), definitionId, until))
                         .map {
                           case Some(entry) =>
                             log.debugN(
@@ -152,7 +152,7 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
                 resources[DeviceStore.View.Self, DatasetEntryStore.View.Self] { (deviceView, entryView) =>
                   deviceView
                     .list(currentUser)
-                    .flatMap(devices => entryView.get(devices.keys.toSeq, entryId))
+                    .flatMap(devices => entryView.get(devices.map(_.id), entryId))
                     .map {
                       case Some(entry) =>
                         log.debugN("User [{}] successfully retrieved entry [{}]", currentUser, entryId)
@@ -168,7 +168,7 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
                 resources[DeviceStore.View.Self, DatasetEntryStore.Manage.Self] { (deviceView, entryManage) =>
                   deviceView
                     .list(currentUser)
-                    .flatMap(devices => entryManage.delete(devices.keys.toSeq, entryId))
+                    .flatMap(devices => entryManage.delete(devices.map(_.id), entryId))
                     .map { deleted =>
                       if (deleted) {
                         log.debugN("User [{}] successfully deleted entry [{}]", currentUser, entryId)

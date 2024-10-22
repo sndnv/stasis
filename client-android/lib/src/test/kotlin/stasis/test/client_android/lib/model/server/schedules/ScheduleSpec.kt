@@ -4,6 +4,7 @@ import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.shouldBe
 import stasis.client_android.lib.model.server.schedules.Schedule
 import java.time.Duration
+import java.time.Instant
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -20,12 +21,15 @@ class ScheduleSpec : WordSpec({
                 info = "test-schedule",
                 isPublic = true,
                 start = now.minusSeconds((interval.multipliedBy(startOffset.toLong())).seconds),
-                interval = interval
+                interval = interval,
+                created = Instant.now(),
+                updated = Instant.now(),
             )
 
             val recentSchedule = pastSchedule.copy(start = now)
 
-            val futureSchedule = pastSchedule.copy(start = now.plusSeconds((interval.multipliedBy(startOffset.toLong())).seconds))
+            val futureSchedule =
+                pastSchedule.copy(start = now.plusSeconds((interval.multipliedBy(startOffset.toLong())).seconds))
 
             pastSchedule.nextInvocation() shouldBe (
                     pastSchedule.start.plusSeconds((interval.multipliedBy((startOffset + 1).toLong())).seconds)

@@ -2,8 +2,7 @@ package stasis.server.api.routes
 
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
-
-import stasis.server.model.reservations.ServerReservationStore
+import stasis.server.persistence.reservations.ServerReservationStore
 import stasis.server.security.CurrentUser
 
 class Reservations()(implicit ctx: RoutesContext) extends ApiRoutes {
@@ -17,7 +16,7 @@ class Reservations()(implicit ctx: RoutesContext) extends ApiRoutes {
         resource[ServerReservationStore.View.Service] { view =>
           view.list().map { reservations =>
             log.debug("User [{}] successfully retrieved [{}] reservations", currentUser, reservations.size)
-            discardEntity & complete(reservations.values)
+            discardEntity & complete(reservations)
           }
         }
       }

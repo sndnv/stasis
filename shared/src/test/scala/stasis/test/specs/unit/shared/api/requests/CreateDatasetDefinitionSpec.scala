@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.shared.api.requests
 
+import java.time.Instant
+
 import scala.concurrent.duration._
 
 import stasis.shared.api.requests.CreateDatasetDefinition
@@ -9,13 +11,17 @@ import stasis.test.specs.unit.UnitSpec
 
 class CreateDatasetDefinitionSpec extends UnitSpec {
   it should "convert requests to definitions" in {
+    val now = Instant.now()
+
     val expectedDefinition = DatasetDefinition(
       id = DatasetDefinition.generateId(),
       info = "test-definition",
       device = Device.generateId(),
       redundantCopies = 1,
       existingVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.All, duration = 1.second),
-      removedVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.LatestOnly, duration = 1.second)
+      removedVersions = DatasetDefinition.Retention(DatasetDefinition.Retention.Policy.LatestOnly, duration = 1.second),
+      created = now,
+      updated = now
     )
 
     val request = CreateDatasetDefinition(
@@ -26,6 +32,10 @@ class CreateDatasetDefinitionSpec extends UnitSpec {
       removedVersions = expectedDefinition.removedVersions
     )
 
-    request.toDefinition.copy(id = expectedDefinition.id) should be(expectedDefinition)
+    request.toDefinition.copy(
+      id = expectedDefinition.id,
+      created = expectedDefinition.created,
+      updated = expectedDefinition.updated
+    ) should be(expectedDefinition)
   }
 }

@@ -39,20 +39,10 @@ class ContainerBackend(
     s"ContainerBackend(path=$path, maxChunkSize=${maxChunkSize.toString}, maxChunks=${maxChunks.toString})"
 
   override def init(): Future[Done] =
-    container
-      .create()
-      .map { result =>
-        metrics.recordInit(backend = path)
-        result
-      }
+    container.create()
 
   override def drop(): Future[Done] =
-    container
-      .destroy()
-      .map { result =>
-        metrics.recordDrop(backend = path)
-        result
-      }
+    container.destroy()
 
   override def available(): Future[Boolean] =
     container.exists

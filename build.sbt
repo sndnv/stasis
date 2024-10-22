@@ -23,8 +23,8 @@ lazy val versions = new {
   val h2       = "2.3.232"
 
   // telemetry
-  val openTelemetry           = "1.42.1"
-  val openTelemetryPrometheus = "1.42.1-alpha"
+  val openTelemetry           = "1.43.0"
+  val openTelemetryPrometheus = "1.43.0-alpha"
   val prometheus              = "0.16.0"
 
   // testing
@@ -41,7 +41,7 @@ lazy val versions = new {
   val hkdf         = "2.0.0"
   val appdirs      = "1.2.2"
   val scopt        = "4.1.0"
-  val logback      = "1.5.9"
+  val logback      = "1.5.11"
   val systemTray   = "4.4"
   val bouncycastle = "1.78.1"
 }

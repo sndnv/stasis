@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.core.telemetry
 
 import stasis.layers.telemetry.metrics.MetricsProvider
-import stasis.test.specs.unit.core.persistence.mocks.MockPersistenceMetrics
+import stasis.test.specs.unit.core.persistence.MockPersistenceMetrics
 import stasis.test.specs.unit.core.routing.mocks.MockRoutingMetrics
 
 class MockTelemetryContext extends stasis.layers.telemetry.MockTelemetryContext {

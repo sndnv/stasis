@@ -12,6 +12,7 @@ import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.asString
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.Common.toMinimizedString
+import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullDateTime
 import stasis.client_android.activities.helpers.Transitions.setSourceTransitionName
 import stasis.client_android.databinding.ListItemDatasetDefinitionDetailsBinding
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
@@ -85,6 +86,36 @@ class DatasetDefinitionListItemAdapter(
                             placeholder = "%1\$s",
                             content = definition.redundantCopies.toString(),
                             style = StyleSpan(Typeface.BOLD)
+                        )
+                    )
+
+            binding.datasetDefinitionSummaryCreated.text =
+                context.getString(R.string.dataset_definition_field_content_created)
+                    .renderAsSpannable(
+                        StyledString(
+                            placeholder = "%1\$s",
+                            content = context.getString(R.string.dataset_definition_field_content_created_label),
+                            style = StyleSpan(Typeface.BOLD)
+                        ),
+                        StyledString(
+                            placeholder = "%2\$s",
+                            content = definition.created.formatAsFullDateTime(context),
+                            style = StyleSpan(Typeface.NORMAL)
+                        )
+                    )
+
+            binding.datasetDefinitionSummaryUpdated.text =
+                context.getString(R.string.dataset_definition_field_content_updated)
+                    .renderAsSpannable(
+                        StyledString(
+                            placeholder = "%1\$s",
+                            content = context.getString(R.string.dataset_definition_field_content_updated_label),
+                            style = StyleSpan(Typeface.BOLD)
+                        ),
+                        StyledString(
+                            placeholder = "%2\$s",
+                            content = definition.updated.formatAsFullDateTime(context),
+                            style = StyleSpan(Typeface.NORMAL)
                         )
                     )
 

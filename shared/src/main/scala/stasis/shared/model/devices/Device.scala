@@ -1,5 +1,7 @@
 package stasis.shared.model.devices
 
+import java.time.Instant
+
 import scala.concurrent.duration.FiniteDuration
 
 import stasis.core.routing.Node
@@ -11,7 +13,9 @@ final case class Device(
   node: Node.Id,
   owner: User.Id,
   active: Boolean,
-  limits: Option[Device.Limits]
+  limits: Option[Device.Limits],
+  created: Instant,
+  updated: Instant
 )
 
 object Device {

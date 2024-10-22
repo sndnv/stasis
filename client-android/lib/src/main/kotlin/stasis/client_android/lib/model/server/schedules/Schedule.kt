@@ -3,6 +3,7 @@ package stasis.client_android.lib.model.server.schedules
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 import java.time.Duration
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.UUID
@@ -15,7 +16,9 @@ data class Schedule(
     @Json(name = "is_public")
     val isPublic: Boolean,
     val start: LocalDateTime,
-    val interval: Duration
+    val interval: Duration,
+    val created: Instant,
+    val updated: Instant
 ) {
     fun nextInvocation(): LocalDateTime {
         val now = LocalDateTime.now()

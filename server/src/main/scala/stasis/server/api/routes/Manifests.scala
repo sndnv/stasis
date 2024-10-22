@@ -4,8 +4,7 @@ import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
-
-import stasis.server.model.manifests.ServerManifestStore
+import stasis.server.persistence.manifests.ServerManifestStore
 import stasis.server.security.CurrentUser
 import stasis.shared.api.responses.DeletedManifest
 

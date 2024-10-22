@@ -1,5 +1,8 @@
 package stasis.layers.persistence
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.metrics.Meter
 
@@ -15,18 +18,27 @@ object Metrics {
   )
 
   trait Store extends MetricsProvider {
-    def recordPut(store: String): Unit
-    def recordGet(store: String): Unit
-    def recordGet(store: String, entries: Int): Unit
-    def recordDelete(store: String): Unit
+    def recordPut[T](store: String)(f: => Future[T]): Future[T] =
+      recordOperation(store, operation = Store.Operation.Put)(f)
+
+    def recordGet[T](store: String)(f: => Future[T]): Future[T] =
+      recordOperation(store, operation = Store.Operation.Get)(f)
+
+    def recordDelete[T](store: String)(f: => Future[T]): Future[T] =
+      recordOperation(store, operation = Store.Operation.Delete)(f)
+
+    def recordContains[T](store: String)(f: => Future[T]): Future[T] =
+      recordOperation(store, operation = Store.Operation.Contains)(f)
+
+    def recordList[T](store: String)(f: => Future[T]): Future[T] =
+      recordOperation(store, operation = Store.Operation.List)(f)
+
+    def recordOperation[T](store: String, operation: Store.Operation)(f: => Future[T]): Future[T]
   }
 
   object Store {
     object NoOp extends Store {
-      override def recordPut(store: String): Unit = ()
-      override def recordGet(store: String): Unit = ()
-      override def recordGet(store: String, entries: Int): Unit = ()
-      override def recordDelete(store: String): Unit = ()
+      override def recordOperation[T](store: String, operation: Store.Operation)(f: => Future[T]): Future[T] = f
     }
 
     class Default(meter: Meter, namespace: String) extends Store {
@@ -34,24 +46,46 @@ object Metrics {
 
       private val subsystem: String = "persistence_store"
 
-      private val putOperations = meter.counter(name = s"${namespace}_${subsystem}_put_operations")
-      private val getOperations = meter.counter(name = s"${namespace}_${subsystem}_get_operations")
-      private val deleteOperations = meter.counter(name = s"${namespace}_${subsystem}_delete_operations")
+      private val operationDuration = meter.histogram(name = s"${namespace}_${subsystem}_operation_duration")
 
-      override def recordPut(store: String): Unit =
-        putOperations.inc(Labels.Store -> store)
+      override def recordOperation[T](store: String, operation: Store.Operation)(f: => Future[T]): Future[T] = {
+        val start = System.currentTimeMillis()
+        val result = f
+        result.foreach { _ =>
+          operationDuration.record(
+            value = System.currentTimeMillis() - start,
+            attributes = Labels.Store -> store,
+            Labels.Operation -> operation.name
+          )
+        }(ExecutionContext.parasitic)
+        result
+      }
+    }
 
-      override def recordGet(store: String): Unit =
-        getOperations.inc(Labels.Store -> store)
+    sealed trait Operation {
+      def name: String
+    }
 
-      override def recordGet(store: String, entries: Int): Unit =
-        getOperations.add(value = entries.toLong, Labels.Store -> store)
-
-      override def recordDelete(store: String): Unit =
-        deleteOperations.inc(Labels.Store -> store)
+    object Operation {
+      case object Put extends Operation {
+        val name: String = "put"
+      }
+      case object Get extends Operation {
+        val name: String = "get"
+      }
+      case object Delete extends Operation {
+        val name: String = "delete"
+      }
+      case object Contains extends Operation {
+        val name: String = "contains"
+      }
+      case object List extends Operation {
+        val name: String = "list"
+      }
     }
 
     object Labels {
+      val Operation: AttributeKey[String] = AttributeKey.stringKey("operation")
       val Store: AttributeKey[String] = AttributeKey.stringKey("store")
     }
   }

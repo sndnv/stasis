@@ -22,7 +22,7 @@ import stasis.core.networking.Endpoint
 import stasis.core.packaging.Crate
 import stasis.core.packaging.Manifest
 import stasis.core.persistence.CrateStorageRequest
-import stasis.core.persistence.reservations.ReservationStoreView
+import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.routing.Router
 import stasis.core.security.NodeAuthenticator
 import stasis.layers.api.MessageResponse
@@ -34,7 +34,7 @@ import stasis.layers.telemetry.TelemetryContext
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
 class HttpEndpoint(
   router: Router,
-  reservationStore: ReservationStoreView,
+  reservationStore: ReservationStore.View,
   override protected val authenticator: NodeAuthenticator[HttpCredentials]
 )(implicit system: ActorSystem[Nothing], override val telemetry: TelemetryContext)
     extends Endpoint[HttpCredentials]
@@ -233,7 +233,7 @@ class HttpEndpoint(
 object HttpEndpoint {
   def apply(
     router: Router,
-    reservationStore: ReservationStoreView,
+    reservationStore: ReservationStore.View,
     authenticator: NodeAuthenticator[HttpCredentials]
   )(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext): HttpEndpoint =
     new HttpEndpoint(

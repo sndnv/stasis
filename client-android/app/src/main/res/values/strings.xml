@@ -259,6 +259,10 @@
     <string name="dataset_definition_field_content_copies">Redundant copies: %1$s</string>
     <string name="dataset_definition_field_content_existing_versions">Existing data: %1$s</string>
     <string name="dataset_definition_field_content_removed_versions">Removed data: %1$s</string>
+    <string name="dataset_definition_field_content_created_label">Created</string>
+    <string name="dataset_definition_field_content_created">%1$s: %2$s</string>
+    <string name="dataset_definition_field_content_updated_label">Updated</string>
+    <string name="dataset_definition_field_content_updated">%1$s: %2$s</string>
     <string name="dataset_definitions_list_empty">No Definitions</string>
     <string name="dataset_definition_add_button_title">Add definition</string>
     <string name="dataset_definition_add_button_hint">Create new backup definition</string>
@@ -437,6 +441,10 @@
     <string name="device_header_title">Device</string>
     <string name="device_field_title_name">Name</string>
     <string name="device_field_title_limits">Limits</string>
+    <string name="device_field_title_created">Created</string>
+    <string name="device_field_title_updated">Last Updated</string>
+    <string name="device_field_content_created">%1$s"</string>
+    <string name="device_field_content_updated">%1$s"</string>
     <string name="device_field_title_node">Node</string>
     <string name="device_field_content_node">%1$s</string>
     <string name="device_field_content_info_active">%1$s (active)</string>
@@ -455,6 +463,10 @@
     <string name="user_header_title">User</string>
     <string name="user_field_title_limits">Limits</string>
     <string name="user_field_title_permissions">Permissions</string>
+    <string name="user_field_title_created">Created</string>
+    <string name="user_field_title_updated">Last Updated</string>
+    <string name="user_field_content_created">%1$s"</string>
+    <string name="user_field_content_updated">%1$s"</string>
     <string name="user_field_content_info_active">%1$s (active)</string>
     <string name="user_field_content_info_inactive">%1$s (inactive)</string>
     <string name="user_field_content_limits_none">None</string>

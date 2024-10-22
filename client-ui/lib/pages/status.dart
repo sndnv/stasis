@@ -74,6 +74,9 @@ class Status extends StatelessWidget {
               )
             : const ListTile(title: Text('Limits'), subtitle: Text('none'));
 
+        final userCreatedDifference = DateTime.now().difference(user.created).renderApproximate();
+        final userUpdatedDifference = DateTime.now().difference(user.updated).renderApproximate();
+
         final deviceLimits = device.limits != null
             ? ListTile(
                 title: const Text('Limits'),
@@ -116,6 +119,9 @@ class Status extends StatelessWidget {
               )
             : const ListTile(title: Text('Limits'), subtitle: Text('none'));
 
+        final deviceCreatedDifference = DateTime.now().difference(device.created).renderApproximate();
+        final deviceUpdatedDifference = DateTime.now().difference(device.updated).renderApproximate();
+
         final userTile = ExpansionTile(
           leading: const Icon(Icons.person),
           title: const Text('User'),
@@ -130,11 +136,19 @@ class Status extends StatelessWidget {
               subtitle: Wrap(
                 children: (user.permissions.toList()..sort())
                     .map((p) => Padding(
-                          padding: const EdgeInsets.all(2.0),
-                          child: Chip(label: Text(p)),
-                        ))
+                  padding: const EdgeInsets.all(2.0),
+                  child: Chip(label: Text(p)),
+                ))
                     .toList(),
               ),
+            ),
+            ListTile(
+              title: const Text('Created'),
+              subtitle: Text('${user.created.render()} ($userCreatedDifference ago)'),
+            ),
+            ListTile(
+              title: const Text('Last Updated'),
+              subtitle: Text('${user.updated.render()} ($userUpdatedDifference ago)'),
             ),
           ],
         );
@@ -155,6 +169,14 @@ class Status extends StatelessWidget {
             ListTile(
               title: const Text('Node'),
               subtitle: Text(device.node),
+            ),
+            ListTile(
+              title: const Text('Created'),
+              subtitle: Text('${device.created.render()} ($deviceCreatedDifference ago)'),
+            ),
+            ListTile(
+              title: const Text('Last Updated'),
+              subtitle: Text('${device.updated.render()} ($deviceUpdatedDifference ago)'),
             ),
           ],
         );

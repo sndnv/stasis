@@ -1,5 +1,6 @@
 package stasis.shared.api.requests
 
+import java.time.Instant
 import java.time.LocalDateTime
 
 import scala.concurrent.duration.FiniteDuration
@@ -18,7 +19,8 @@ object UpdateSchedule {
       schedule.copy(
         info = request.info,
         start = request.start,
-        interval = request.interval
+        interval = request.interval,
+        updated = Instant.now()
       )
   }
 }

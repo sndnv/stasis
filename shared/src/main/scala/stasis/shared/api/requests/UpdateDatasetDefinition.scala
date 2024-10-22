@@ -1,5 +1,7 @@
 package stasis.shared.api.requests
 
+import java.time.Instant
+
 import stasis.shared.model.datasets.DatasetDefinition
 
 final case class UpdateDatasetDefinition(
@@ -16,7 +18,8 @@ object UpdateDatasetDefinition {
         info = request.info,
         redundantCopies = request.redundantCopies,
         existingVersions = request.existingVersions,
-        removedVersions = request.removedVersions
+        removedVersions = request.removedVersions,
+        updated = Instant.now()
       )
   }
 }
