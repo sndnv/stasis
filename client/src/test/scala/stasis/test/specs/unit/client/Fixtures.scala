@@ -127,7 +127,9 @@ object Fixtures {
       removedVersions = DatasetDefinition.Retention(
         policy = DatasetDefinition.Retention.Policy.All,
         duration = 1.second
-      )
+      ),
+      created = Instant.now(),
+      updated = Instant.now()
     )
   }
 

@@ -30,7 +30,7 @@ import stasis.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.MockHttpNodeCredentialsProvider
 import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
-import stasis.test.specs.unit.core.persistence.mocks.MockReservationStore
+import stasis.test.specs.unit.core.persistence.reservations.MockReservationStore
 import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockHttpAuthenticator
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
@@ -542,7 +542,7 @@ class HttpEndpointClientSpec extends AsyncUnitSpec with Eventually {
   }
 
   private class TestFixtures(implicit telemetry: TelemetryContext) {
-    lazy val reservationStore: MockReservationStore = new MockReservationStore()
+    lazy val reservationStore: MockReservationStore = MockReservationStore()
     lazy val crateStore: MockCrateStore = new MockCrateStore(maxStorageSize = Some(99))
     lazy val router: MockRouter = new MockRouter(crateStore, Node.generateId(), reservationStore)
   }

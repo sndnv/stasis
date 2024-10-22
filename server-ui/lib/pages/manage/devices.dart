@@ -1,3 +1,4 @@
+import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import 'package:server_ui/api/api_client.dart';
 import 'package:server_ui/model/api/requests/create_device_own.dart';
@@ -67,8 +68,9 @@ class _DevicesState extends State<Devices> {
             EntityTableColumn(label: 'Name', sortBy: (e) => e.name),
             EntityTableColumn(label: 'Owner', sortBy: (e) => (e.owner as String).toMinimizedString()),
             EntityTableColumn(label: 'Node', sortBy: (e) => (e.node as String).toMinimizedString()),
-            EntityTableColumn(label: 'Active', sortBy: (e) => e.active.toString()),
-            EntityTableColumn(label: 'Limits', sortBy: (e) => e.limits?.maxStorage.toInt() ?? 0),
+            EntityTableColumn(label: 'Active', sortBy: (e) => e.active.toString(), size: ColumnSize.S),
+            EntityTableColumn(label: 'Limits', sortBy: (e) => e.limits?.maxStorage.toInt() ?? 0, size: ColumnSize.S),
+            EntityTableColumn(label: 'Updated', sortBy: (e) => e.updated.toString()),
             EntityTableColumn(label: ''),
           ],
           entityToRow: (entity) {
@@ -146,6 +148,12 @@ class _DevicesState extends State<Devices> {
                     );
                   }) ??
                   const Text('none')),
+              DataCell(
+                Tooltip(
+                  message: 'Created: ${device.created.render()}\nUpdated: ${device.updated.render()}',
+                  child: Text(device.updated.render(), overflow: TextOverflow.ellipsis),
+                ),
+              ),
               DataCell(
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,

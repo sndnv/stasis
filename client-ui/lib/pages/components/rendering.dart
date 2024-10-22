@@ -47,7 +47,17 @@ extension ExtendedDuration on Duration {
     if (inSeconds >= 120) {
       if (inMinutes >= 120) {
         if (inHours >= 48) {
-          return Duration(days: inDays).render();
+          if (inDays >= 30) {
+            final years = inDays ~/ 365;
+            if (years > 0) {
+              return '$years ${years == 1 ? ChronoUnit.years.singular : ChronoUnit.years.plural}';
+            } else {
+              final months = inDays ~/ 31;
+              return '$months ${months == 1 ? ChronoUnit.months.singular : ChronoUnit.months.plural}';
+            }
+          } else {
+            return Duration(days: inDays).render();
+          }
         } else {
           return Duration(hours: inHours).render();
         }

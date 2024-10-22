@@ -19,6 +19,7 @@ import stasis.client_android.scheduling.SchedulerService.Companion.toSchedulerMe
 import stasis.client_android.serialization.Extras.putActiveSchedule
 import stasis.client_android.serialization.Extras.putActiveScheduleId
 import java.time.Duration
+import java.time.Instant
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -80,7 +81,9 @@ class SchedulerServiceSpec {
             info = "test-schedule",
             isPublic = true,
             start = LocalDateTime.now(),
-            interval = Duration.ofSeconds(42)
+            interval = Duration.ofSeconds(42),
+            created = Instant.now(),
+            updated = Instant.now(),
         )
 
         val actualDelay = schedule.executionDelay()

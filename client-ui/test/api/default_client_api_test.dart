@@ -260,16 +260,18 @@ void main() {
       final underlying = MockClient();
       final client = DefaultClientApi(server: server, underlying: underlying, apiToken: apiToken);
 
-      const definitions = [
+      final definitions = [
         DatasetDefinition(
           id: 'test-id-1',
           info: 'test-definition-01',
           device: 'test-device-1',
           redundantCopies: 2,
           existingVersions:
-              Retention(policy: Policy(policyType: 'at-most', versions: 5), duration: Duration(seconds: 3600)),
+              const Retention(policy: Policy(policyType: 'at-most', versions: 5), duration: Duration(seconds: 3600)),
           removedVersions:
-              Retention(policy: Policy(policyType: 'all', versions: null), duration: Duration(seconds: 60)),
+              const Retention(policy: Policy(policyType: 'all', versions: null), duration: Duration(seconds: 60)),
+          created: DateTime.parse('2020-10-01T01:03:01'),
+          updated: DateTime.parse('2020-10-01T01:03:02'),
         ),
         DatasetDefinition(
           id: 'test-id-2',
@@ -277,9 +279,11 @@ void main() {
           device: 'test-device-2',
           redundantCopies: 3,
           existingVersions:
-              Retention(policy: Policy(policyType: 'all', versions: null), duration: Duration(seconds: 600000)),
+              const Retention(policy: Policy(policyType: 'all', versions: null), duration: Duration(seconds: 600000)),
           removedVersions:
-              Retention(policy: Policy(policyType: 'latest-only', versions: null), duration: Duration(seconds: 6000)),
+              const Retention(policy: Policy(policyType: 'latest-only', versions: null), duration: Duration(seconds: 6000)),
+          created: DateTime.parse('2020-10-01T01:03:01'),
+          updated: DateTime.parse('2020-10-01T01:03:02'),
         ),
         DatasetDefinition(
           id: 'test-id-13',
@@ -287,9 +291,11 @@ void main() {
           device: 'test-device-3',
           redundantCopies: 1,
           existingVersions:
-              Retention(policy: Policy(policyType: 'latest-only', versions: null), duration: Duration(seconds: 60)),
+              const Retention(policy: Policy(policyType: 'latest-only', versions: null), duration: Duration(seconds: 60)),
           removedVersions:
-              Retention(policy: Policy(policyType: 'latest-only', versions: null), duration: Duration(seconds: 60)),
+              const Retention(policy: Policy(policyType: 'latest-only', versions: null), duration: Duration(seconds: 60)),
+          created: DateTime.parse('2020-10-01T01:03:01'),
+          updated: DateTime.parse('2020-10-01T01:03:02'),
         ),
       ];
 
@@ -406,10 +412,10 @@ void main() {
       final underlying = MockClient();
       final client = DefaultClientApi(server: server, underlying: underlying, apiToken: apiToken);
 
-      const user = User(
+      final user = User(
         id: 'test-user-1',
         active: true,
-        limits: UserLimits(
+        limits: const UserLimits(
           maxDevices: 42,
           maxCrates: 999,
           maxStorage: 1000000000,
@@ -418,6 +424,8 @@ void main() {
           minRetention: Duration(seconds: 90),
         ),
         permissions: {'A', 'B', 'C'},
+        created: DateTime.parse('2020-10-01T01:03:01'),
+        updated: DateTime.parse('2020-10-01T01:03:02'),
       );
 
       when(underlying.get(Uri.parse('$server/user'), headers: authorization))
@@ -456,19 +464,21 @@ void main() {
       final underlying = MockClient();
       final client = DefaultClientApi(server: server, underlying: underlying, apiToken: apiToken);
 
-      const device = Device(
+      final device = Device(
         id: 'test-device-1',
         name: 'test-device-01',
         node: 'test-node',
         owner: 'test-owner',
         active: true,
-        limits: DeviceLimits(
+        limits: const DeviceLimits(
           maxCrates: 100,
           maxStorage: 5000000,
           maxStoragePerCrate: 50000,
           maxRetention: Duration(seconds: 4000),
           minRetention: Duration(seconds: 60),
         ),
+        created: DateTime.parse('2020-10-01T01:03:01'),
+        updated: DateTime.parse('2020-10-01T01:03:02'),
       );
 
       when(underlying.get(Uri.parse('$server/device'), headers: authorization))
@@ -924,6 +934,8 @@ void main() {
           start: DateTime.now(),
           interval: const Duration(seconds: 1),
           nextInvocation: DateTime.now(),
+          created: DateTime.parse('2020-10-01T01:03:01'),
+          updated: DateTime.parse('2020-10-01T01:03:02'),
         ),
         Schedule(
           id: 'test-id-2',
@@ -932,6 +944,8 @@ void main() {
           start: DateTime.now(),
           interval: const Duration(seconds: 1),
           nextInvocation: DateTime.now(),
+          created: DateTime.parse('2020-10-01T01:03:01'),
+          updated: DateTime.parse('2020-10-01T01:03:02'),
         ),
       ];
 

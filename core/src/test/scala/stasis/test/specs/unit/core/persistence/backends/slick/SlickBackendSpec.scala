@@ -30,7 +30,7 @@ class SlickBackendSpec extends UnitSpec with KeyValueStoreBehaviour {
 
     override val migrations: Seq[Migration] = Seq.empty
 
-    private val slickBackend = new SlickBackend[String, Int](
+    private val slickBackend = SlickBackend[String, Int](
       name = name,
       profile = H2Profile,
       database = h2db,
@@ -55,6 +55,8 @@ class SlickBackendSpec extends UnitSpec with KeyValueStoreBehaviour {
     override def contains(key: String): Future[Boolean] = slickBackend.contains(key)
 
     override def entries: Future[Map[String, Int]] = slickBackend.entries
+
+    override def load(entries: Map[String, Int]): Future[Done] = slickBackend.load(entries)
 
     def close(): Future[Done] =
       drop().map { _ =>

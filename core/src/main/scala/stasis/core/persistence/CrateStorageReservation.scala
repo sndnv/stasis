@@ -1,5 +1,7 @@
 package stasis.core.persistence
 
+import java.time.Instant
+
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
 
@@ -9,7 +11,8 @@ final case class CrateStorageReservation(
   size: Long,
   copies: Int,
   origin: Node.Id,
-  target: Node.Id
+  target: Node.Id,
+  created: Instant
 ) {
   override def toString: String =
     s"""
@@ -19,7 +22,8 @@ final case class CrateStorageReservation(
        |  size=${size.toString},
        |  copies=${copies.toString},
        |  origin=${origin.toString},
-       |  target=${target.toString}
+       |  target=${target.toString},
+       |  created=${created.toString}
        |)
      """.stripMargin.replaceAll("\n", "").replaceAll(" ", "").trim
 }
@@ -35,7 +39,8 @@ object CrateStorageReservation {
       size = request.size,
       copies = request.copies,
       origin = request.origin,
-      target = target
+      target = target,
+      created = Instant.now()
     )
 
   type Id = java.util.UUID

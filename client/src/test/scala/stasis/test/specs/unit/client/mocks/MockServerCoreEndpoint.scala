@@ -18,7 +18,7 @@ import stasis.core.routing.Node
 import stasis.layers.security.tls.EndpointContext
 import stasis.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
-import stasis.test.specs.unit.core.persistence.mocks.MockReservationStore
+import stasis.test.specs.unit.core.persistence.reservations.MockReservationStore
 import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockHttpAuthenticator
 
@@ -27,7 +27,7 @@ class MockServerCoreEndpoint(
 )(implicit typedSystem: ActorSystem[Nothing], telemetry: TelemetryContext) {
   private implicit val ec: ExecutionContext = typedSystem.executionContext
 
-  private val reservationStore = new MockReservationStore()
+  private val reservationStore = MockReservationStore()
   private val crateStore = new MockCrateStore()
   private val router = new MockRouter(crateStore, Node.generateId(), reservationStore)
 

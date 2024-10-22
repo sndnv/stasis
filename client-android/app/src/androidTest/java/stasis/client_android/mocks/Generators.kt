@@ -42,7 +42,9 @@ object Generators {
             salt = generateString(withSize = 16),
             active = true,
             limits = null,
-            permissions = emptySet()
+            permissions = emptySet(),
+            created = Instant.now(),
+            updated = Instant.now(),
         )
 
     fun generateSchedule(): Schedule {
@@ -53,7 +55,9 @@ object Generators {
             info = generateString(withSize = 16),
             isPublic = rnd.nextBoolean(),
             start = LocalDateTime.now(),
-            interval = generateDuration()
+            interval = generateDuration(),
+            created = Instant.now(),
+            updated = Instant.now(),
         )
     }
 
@@ -64,7 +68,9 @@ object Generators {
             node = UUID.randomUUID(),
             owner = UUID.randomUUID(),
             active = true,
-            limits = null
+            limits = null,
+            created = Instant.now(),
+            updated = Instant.now(),
         )
 
     fun generateDefinition(): DatasetDefinition {
@@ -82,7 +88,9 @@ object Generators {
             removedVersions = DatasetDefinition.Retention(
                 policy = DatasetDefinition.Retention.Policy.All,
                 duration = generateDuration()
-            )
+            ),
+            created = Instant.now(),
+            updated = Instant.now(),
         )
     }
 

@@ -50,7 +50,7 @@ void main() {
           policy: Policy(policyType: 'all', versions: null),
           duration: Duration(seconds: 1),
         ).render(),
-        '1 second, all versions',
+        '1 second,\nall versions',
       );
 
       expect(
@@ -58,7 +58,7 @@ void main() {
           policy: Policy(policyType: 'at-most', versions: 1),
           duration: Duration(seconds: 2),
         ).render(),
-        '2 seconds, at most 1 version',
+        '2 seconds,\nat most 1 version',
       );
 
       expect(
@@ -66,7 +66,7 @@ void main() {
           policy: Policy(policyType: 'at-most', versions: 2),
           duration: Duration(seconds: 3),
         ).render(),
-        '3 seconds, at most 2 versions',
+        '3 seconds,\nat most 2 versions',
       );
 
       expect(
@@ -74,7 +74,7 @@ void main() {
           policy: Policy(policyType: 'latest-only', versions: null),
           duration: Duration(seconds: 4),
         ).render(),
-        '4 seconds, latest version only',
+        '4 seconds,\nlatest version only',
       );
     });
 

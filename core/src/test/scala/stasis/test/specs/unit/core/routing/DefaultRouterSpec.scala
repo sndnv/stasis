@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.core.routing
 
+import java.time.Instant
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -31,7 +33,10 @@ import stasis.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.MockGrpcEndpointClient
 import stasis.test.specs.unit.core.networking.mocks.MockHttpEndpointClient
+import stasis.test.specs.unit.core.persistence.manifests.MockManifestStore
 import stasis.test.specs.unit.core.persistence.mocks._
+import stasis.test.specs.unit.core.persistence.nodes.MockNodeStore
+import stasis.test.specs.unit.core.persistence.reservations.MockReservationStore
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
@@ -39,24 +44,32 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
     val node1 = Node.Remote.Http(
       id = Node.generateId(),
       address = HttpEndpointAddress("localhost:8000"),
-      storageAllowed = true
+      storageAllowed = true,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val node2 = Node.Local(
       id = Node.generateId(),
-      storeDescriptor = null /* actual crate store is not needed for this test */
+      storeDescriptor = null, /* actual crate store is not needed for this test */
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val node3 = Node.Remote.Http(
       id = Node.generateId(),
       address = HttpEndpointAddress("localhost:9000"),
-      storageAllowed = true
+      storageAllowed = true,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val node4 = Node.Remote.Http(
       id = Node.generateId(),
       address = HttpEndpointAddress("localhost:10000"),
-      storageAllowed = false
+      storageAllowed = false,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     DefaultRouter.distributeCopies(
@@ -215,7 +228,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
   it should "expire reservations on successful push" in {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
-    val testReservationStore = new MockReservationStore(ignoreMissingReservations = false)
+    val testReservationStore = MockReservationStore(ignoreMissingReservations = false)
     val router = createTestRouter(
       fixtures = Some(
         new TestFixtures {
@@ -229,7 +242,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
 
     router.reserve(request = CrateStorageRequest(testManifest)).await
 
-    testReservationStore.reservations.await.values.toList match {
+    testReservationStore.reservations.await.toList match {
       case reservation :: _ => reservation.crate should be(testManifest.crate)
       case Nil              => fail("Unexpected empty reservations list returned")
     }
@@ -257,7 +270,7 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
   it should "fail to push crates if no reservation is available" in {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
-    val testReservationStore = new MockReservationStore(ignoreMissingReservations = false)
+    val testReservationStore = MockReservationStore(ignoreMissingReservations = false)
     val router = createTestRouter(
       fixtures = Some(
         new TestFixtures {
@@ -1285,18 +1298,32 @@ class DefaultRouterSpec extends AsyncUnitSpec with Eventually {
   )
 
   private class TestFixtures(implicit telemetry: TelemetryContext) {
-    lazy val reservationStore: MockReservationStore = new MockReservationStore()
+    lazy val reservationStore: MockReservationStore = MockReservationStore()
     lazy val crateStore: MockCrateStore = new MockCrateStore()
-    lazy val manifestStore: MockManifestStore = new MockManifestStore
-    lazy val nodeStore: MockNodeStore = new MockNodeStore
+    lazy val manifestStore: MockManifestStore = MockManifestStore()
+    lazy val nodeStore: MockNodeStore = MockNodeStore()
     lazy val localNode: Node.Local = Node.Local(
       id = Node.generateId(),
-      storeDescriptor = null /* mock crate store is always provided in this test */
+      storeDescriptor = null, /* mock crate store is always provided in this test */
+      created = Instant.now(),
+      updated = Instant.now()
     )
     lazy val stagingStore: Option[StagingStore] = None
     lazy val remoteNodes: Seq[Node.Remote.Http] = Seq(
-      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:8000"), storageAllowed = true),
-      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:9000"), storageAllowed = true)
+      Node.Remote.Http(
+        id = Node.generateId(),
+        address = HttpEndpointAddress("localhost:8000"),
+        storageAllowed = true,
+        created = Instant.now(),
+        updated = Instant.now()
+      ),
+      Node.Remote.Http(
+        id = Node.generateId(),
+        address = HttpEndpointAddress("localhost:9000"),
+        storageAllowed = true,
+        created = Instant.now(),
+        updated = Instant.now()
+      )
     )
 
     def testNodes: Seq[Node] =

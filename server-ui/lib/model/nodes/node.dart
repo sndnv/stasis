@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:server_ui/model/nodes/crate_store_descriptor.dart';
+import 'package:server_ui/model/formats.dart';
 
 part 'node.freezed.dart';
 
@@ -8,14 +9,51 @@ part 'node.g.dart';
 abstract class Node {
   Node();
 
-  factory Node.local({required String id, required CrateStoreDescriptor storeDescriptor}) =>
-      LocalNode(nodeType: 'local', id: id, storeDescriptor: storeDescriptor);
+  factory Node.local({
+    required String id,
+    required CrateStoreDescriptor storeDescriptor,
+    required DateTime created,
+    required DateTime updated,
+  }) =>
+      LocalNode(
+        nodeType: 'local',
+        id: id,
+        storeDescriptor: storeDescriptor,
+        created: created,
+        updated: updated,
+      );
 
-  factory Node.remoteHttp({required String id, required HttpEndpointAddress address, required bool storageAllowed}) =>
-      RemoteHttpNode(nodeType: 'remote-http', id: id, address: address, storageAllowed: storageAllowed);
+  factory Node.remoteHttp({
+    required String id,
+    required HttpEndpointAddress address,
+    required bool storageAllowed,
+    required DateTime created,
+    required DateTime updated,
+  }) =>
+      RemoteHttpNode(
+        nodeType: 'remote-http',
+        id: id,
+        address: address,
+        storageAllowed: storageAllowed,
+        created: created,
+        updated: updated,
+      );
 
-  factory Node.remoteGrpc({required String id, required GrpcEndpointAddress address, required bool storageAllowed}) =>
-      RemoteGrpcNode(nodeType: 'remote-grpc', id: id, address: address, storageAllowed: storageAllowed);
+  factory Node.remoteGrpc({
+    required String id,
+    required GrpcEndpointAddress address,
+    required bool storageAllowed,
+    required DateTime created,
+    required DateTime updated,
+  }) =>
+      RemoteGrpcNode(
+        nodeType: 'remote-grpc',
+        id: id,
+        address: address,
+        storageAllowed: storageAllowed,
+        created: created,
+        updated: updated,
+      );
 
   factory Node.fromJson(Map<String, dynamic> json) {
     final type = json['node_type'] as String;
@@ -41,6 +79,8 @@ class LocalNode extends Node with _$LocalNode {
     required String nodeType,
     required String id,
     required CrateStoreDescriptor storeDescriptor,
+    @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) required DateTime created,
+    @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) required DateTime updated,
   }) = _LocalNode;
 
   factory LocalNode.fromJson(Map<String, Object?> json) => _$LocalNodeFromJson(json);
@@ -54,6 +94,8 @@ class RemoteHttpNode extends Node with _$RemoteHttpNode {
     required String id,
     required HttpEndpointAddress address,
     required bool storageAllowed,
+    @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) required DateTime created,
+    @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) required DateTime updated,
   }) = _RemoteHttpNode;
 
   factory RemoteHttpNode.fromJson(Map<String, Object?> json) => _$RemoteHttpNodeFromJson(json);
@@ -67,6 +109,8 @@ class RemoteGrpcNode extends Node with _$RemoteGrpcNode {
     required String id,
     required GrpcEndpointAddress address,
     required bool storageAllowed,
+    @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) required DateTime created,
+    @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) required DateTime updated,
   }) = _RemoteGrpcNode;
 
   factory RemoteGrpcNode.fromJson(Map<String, Object?> json) => _$RemoteGrpcNodeFromJson(json);
@@ -159,6 +203,32 @@ extension ExtendedNode on Node {
       return RemoteGrpcNode;
     } else {
       throw ArgumentError('Unexpected node type encountered: [$runtimeType]');
+    }
+  }
+
+  DateTime created() {
+    switch (actualType()) {
+      case const (LocalNode):
+        return (this as LocalNode).created;
+      case const (RemoteHttpNode):
+        return (this as RemoteHttpNode).created;
+      case const (RemoteGrpcNode):
+        return (this as RemoteGrpcNode).created;
+      default:
+        throw ArgumentError('Unexpected node type encountered: [$runtimeType]');
+    }
+  }
+
+  DateTime updated() {
+    switch (actualType()) {
+      case const (LocalNode):
+        return (this as LocalNode).updated;
+      case const (RemoteHttpNode):
+        return (this as RemoteHttpNode).updated;
+      case const (RemoteGrpcNode):
+        return (this as RemoteGrpcNode).updated;
+      default:
+        throw ArgumentError('Unexpected node type encountered: [$runtimeType]');
     }
   }
 }

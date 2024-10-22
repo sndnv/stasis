@@ -1,5 +1,7 @@
 package stasis.shared.model.users
 
+import java.time.Instant
+
 import scala.concurrent.duration.FiniteDuration
 
 import stasis.shared.security.Permission
@@ -9,7 +11,9 @@ final case class User(
   salt: String,
   active: Boolean,
   limits: Option[User.Limits],
-  permissions: Set[Permission]
+  permissions: Set[Permission],
+  created: Instant,
+  updated: Instant
 )
 
 object User {

@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:server_ui/model/formats.dart';
 
 part 'manifest.freezed.dart';
 part 'manifest.g.dart';
@@ -13,6 +14,7 @@ class Manifest with _$Manifest {
     required String origin,
     required String source,
     required List<String> destinations,
+    @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) required DateTime created,
   }) = _Manifest;
 
   factory Manifest.fromJson(Map<String, Object?> json) => _$ManifestFromJson(json);

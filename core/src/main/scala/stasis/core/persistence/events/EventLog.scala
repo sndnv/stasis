@@ -2,9 +2,9 @@ package stasis.core.persistence.events
 
 import scala.concurrent.Future
 
-import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.Done
 import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
 
 import stasis.core.persistence.backends.EventLogBackend
 
@@ -13,8 +13,8 @@ trait EventLog[E, S] { log =>
   def state: Future[S]
   def stateStream: Source[S, NotUsed]
 
-  def view: EventLogView[S] =
-    new EventLogView[S] {
+  def view: EventLog.View[S] =
+    new EventLog.View[S] {
       override def state: Future[S] = log.state
       override def stateStream: Source[S, NotUsed] = log.stateStream
     }
@@ -30,4 +30,9 @@ object EventLog {
       override def state: Future[S] = backend.getState
       override def stateStream: Source[S, NotUsed] = backend.getStateStream
     }
+
+  trait View[S] {
+    def state: Future[S]
+    def stateStream: Source[S, NotUsed]
+  }
 }

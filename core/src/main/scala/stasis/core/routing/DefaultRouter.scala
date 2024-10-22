@@ -1,5 +1,7 @@
 package stasis.core.routing
 
+import java.time.Instant
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
@@ -25,7 +27,7 @@ import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.CrateStorageReservation
 import stasis.core.persistence.exceptions.ReservationFailure
 import stasis.core.persistence.manifests.ManifestStore
-import stasis.core.persistence.nodes.NodeStoreView
+import stasis.core.persistence.nodes.NodeStore
 import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.persistence.staging.StagingStore
 import stasis.core.routing.exceptions.DiscardFailure
@@ -381,7 +383,8 @@ class DefaultRouter(
                     size = request.size,
                     copies = math.min(request.copies, reservedCopies),
                     origin = request.origin,
-                    target = routerId
+                    target = routerId,
+                    created = Instant.now()
                   )
 
                   persistence.reservations.put(reservation).map { _ =>
@@ -488,7 +491,7 @@ class DefaultRouter(
 object DefaultRouter {
   final case class Persistence(
     manifests: ManifestStore,
-    nodes: NodeStoreView,
+    nodes: NodeStore.View,
     reservations: ReservationStore,
     staging: Option[StagingStore]
   )

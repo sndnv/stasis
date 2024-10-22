@@ -99,6 +99,11 @@ class Config {
 
 /// Factory for creating `Config` instances.
 class ConfigFactory {
+  static Config empty() {
+    const Map<String, dynamic> map = {};
+    return Config(config: map);
+  }
+
   static Config load({required String path}) {
     return _loadFromJson(path: path) ?? _loadFromHocon(path: path);
   }

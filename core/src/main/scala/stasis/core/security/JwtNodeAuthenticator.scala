@@ -12,13 +12,13 @@ import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.jose4j.jwt.JwtClaims
 
-import stasis.core.persistence.nodes.NodeStoreView
+import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
 import stasis.layers.security.exceptions.AuthenticationFailure
 import stasis.layers.security.jwt.JwtAuthenticator
 
 class JwtNodeAuthenticator(
-  nodeStore: NodeStoreView,
+  nodeStore: NodeStore.View,
   underlying: JwtAuthenticator
 )(implicit ec: ExecutionContext)
     extends NodeAuthenticator[HttpCredentials] {
@@ -56,7 +56,7 @@ class JwtNodeAuthenticator(
 
 object JwtNodeAuthenticator {
   def apply(
-    nodeStore: NodeStoreView,
+    nodeStore: NodeStore.View,
     underlying: JwtAuthenticator
   )(implicit ec: ExecutionContext): JwtNodeAuthenticator =
     new JwtNodeAuthenticator(

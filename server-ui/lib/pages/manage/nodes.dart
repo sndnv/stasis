@@ -1,3 +1,4 @@
+import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import 'package:server_ui/api/api_client.dart';
 import 'package:server_ui/model/api/requests/create_node.dart';
@@ -6,8 +7,9 @@ import 'package:server_ui/model/nodes/node.dart';
 import 'package:server_ui/pages/default/components.dart';
 import 'package:server_ui/pages/manage/components/entity_form.dart';
 import 'package:server_ui/pages/manage/components/entity_table.dart';
-import 'package:server_ui/pages/manage/components/forms/node_field.dart';
 import 'package:server_ui/pages/manage/components/extensions.dart';
+import 'package:server_ui/pages/manage/components/forms/node_field.dart';
+import 'package:server_ui/pages/manage/components/rendering.dart';
 
 class Nodes extends StatefulWidget {
   const Nodes({super.key, required this.client});
@@ -46,9 +48,14 @@ class _NodesState extends State<Nodes> {
           header: const Text('Nodes'),
           columns: [
             EntityTableColumn(label: 'ID', sortBy: (e) => (e.id as String).toMinimizedString()),
-            EntityTableColumn(label: 'Type', sortBy: (e) => (e as Node).nodeType()),
+            EntityTableColumn(label: 'Type', sortBy: (e) => (e as Node).nodeType(), size: ColumnSize.S),
             EntityTableColumn(label: 'Address'),
-            EntityTableColumn(label: 'Storage', sortBy: (e) => (e as Node).storageAllowed().toString()),
+            EntityTableColumn(
+              label: 'Storage',
+              sortBy: (e) => (e as Node).storageAllowed().toString(),
+              size: ColumnSize.S,
+            ),
+            EntityTableColumn(label: 'Updated', sortBy: (e) => e.updated.toString()),
             EntityTableColumn(label: ''),
           ],
           entityToRow: (entity) {
@@ -59,6 +66,12 @@ class _NodesState extends State<Nodes> {
               DataCell(Text(node.nodeType())),
               DataCell(node.renderAddress(context)),
               DataCell(Text(node.storageAllowed() ? 'Allowed' : 'Not Allowed')),
+              DataCell(
+                Tooltip(
+                  message: 'Created: ${node.created().render()}\nUpdated: ${node.updated().render()}',
+                  child: Text(node.updated().render(), overflow: TextOverflow.ellipsis),
+                ),
+              ),
               DataCell(
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,

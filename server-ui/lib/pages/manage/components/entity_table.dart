@@ -40,7 +40,8 @@ class _EntityTableState<T> extends State<EntityTable> {
   @override
   Widget build(BuildContext context) {
     final columns = widget.columns
-        .map((column) => DataColumn(
+        .map((column) => DataColumn2(
+              size: column.size,
               label: column.label == '' && widget.filterBy != null
                   ? TextField(
                       controller: _filterController,
@@ -136,8 +137,10 @@ class EntityTableColumn {
   EntityTableColumn({
     required this.label,
     this.sortBy,
+    this.size = ColumnSize.M,
   });
 
   String label;
   dynamic Function(dynamic entity)? sortBy;
+  ColumnSize size;
 }

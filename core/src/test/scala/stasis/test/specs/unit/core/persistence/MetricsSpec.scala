@@ -17,8 +17,6 @@ class MetricsSpec extends UnitSpec {
     )
 
     val streamingMetrics = Metrics.StreamingBackend.NoOp
-    noException should be thrownBy streamingMetrics.recordInit(backend = null)
-    noException should be thrownBy streamingMetrics.recordDrop(backend = null)
     noException should be thrownBy streamingMetrics.recordWrite(backend = null, bytes = 0)
     noException should be thrownBy streamingMetrics.recordRead(backend = null, bytes = 0)
     noException should be thrownBy streamingMetrics.recordDiscard(backend = null)
@@ -38,8 +36,6 @@ class MetricsSpec extends UnitSpec {
     val meter = MockMeter()
 
     val streamingMetrics = new Metrics.StreamingBackend.Default(meter = meter, namespace = "test")
-    streamingMetrics.recordInit(backend = "test")
-    streamingMetrics.recordDrop(backend = "test")
     streamingMetrics.recordWrite(backend = "test", bytes = 1)
     streamingMetrics.recordWrite(backend = "test", bytes = 2)
     streamingMetrics.recordWrite(backend = "test", bytes = 3)
@@ -47,8 +43,6 @@ class MetricsSpec extends UnitSpec {
     streamingMetrics.recordDiscard(backend = "test")
     streamingMetrics.recordDiscard(backend = "test")
 
-    meter.metric(name = "test_persistence_streaming_init_operations") should be(1)
-    meter.metric(name = "test_persistence_streaming_drop_operations") should be(1)
     meter.metric(name = "test_persistence_streaming_write_operations") should be(3)
     meter.metric(name = "test_persistence_streaming_write_bytes") should be(3)
     meter.metric(name = "test_persistence_streaming_read_operations") should be(1)

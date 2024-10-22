@@ -34,38 +34,28 @@ class MemoryStore[K, V] private (
         result
       }
 
-  override def put(key: K, value: V): Future[Done] =
-    (storeRef ? ((ref: ActorRef[Done]) => Put(key, value, ref)))
-      .map { result =>
-        metrics.recordPut(store = name)
-        result
-      }
+  override def put(key: K, value: V): Future[Done] = metrics.recordPut(store = name) {
+    storeRef ? ((ref: ActorRef[Done]) => Put(key, value, ref))
+  }
 
-  override def delete(key: K): Future[Boolean] =
-    (storeRef ? ((ref: ActorRef[Boolean]) => Remove(key, ref)))
-      .map { result =>
-        metrics.recordDelete(store = name)
-        result
-      }
+  override def delete(key: K): Future[Boolean] = metrics.recordDelete(store = name) {
+    storeRef ? ((ref: ActorRef[Boolean]) => Remove(key, ref))
+  }
 
-  override def get(key: K): Future[Option[V]] =
-    (storeRef ? ((ref: ActorRef[Option[V]]) => Get(key, ref)))
-      .map { result =>
-        result.foreach(_ => metrics.recordGet(store = name))
-        result
-      }
+  override def get(key: K): Future[Option[V]] = metrics.recordGet(store = name) {
+    storeRef ? ((ref: ActorRef[Option[V]]) => Get(key, ref))
+  }
 
-  override def contains(key: K): Future[Boolean] =
+  override def contains(key: K): Future[Boolean] = metrics.recordContains(store = name) {
     (storeRef ? ((ref: ActorRef[Option[V]]) => Get(key, ref))).map(_.isDefined)
+  }
 
-  override def entries: Future[Map[K, V]] =
-    (storeRef ? ((ref: ActorRef[Map[K, V]]) => GetAll(ref)))
-      .map { result =>
-        if (result.nonEmpty) {
-          metrics.recordGet(store = name, entries = result.size)
-        }
-        result
-      }
+  override def entries: Future[Map[K, V]] = metrics.recordList(store = name) {
+    storeRef ? ((ref: ActorRef[Map[K, V]]) => GetAll(ref))
+  }
+
+  override def load(entries: Map[K, V]): Future[Done] =
+    storeRef ? ((ref: ActorRef[Done]) => Load(entries, ref))
 }
 
 object MemoryStore {
@@ -86,6 +76,7 @@ object MemoryStore {
   private final case class Get[K, V](key: K, replyTo: ActorRef[Option[V]]) extends Message[K, V]
   private final case class GetAll[K, V](replyTo: ActorRef[Map[K, V]]) extends Message[K, V]
   private final case class Reset[K, V](replyTo: ActorRef[Done]) extends Message[K, V]
+  private final case class Load[K, V](entries: Map[K, V], replyTo: ActorRef[Done]) extends Message[K, V]
 
   private def store[K, V](map: Map[K, V]): Behavior[Message[K, V]] =
     Behaviors.receive { (_, message) =>
@@ -109,6 +100,10 @@ object MemoryStore {
         case Reset(replyTo) =>
           replyTo ! Done
           store(map = Map.empty[K, V])
+
+        case Load(entries, replyTo) =>
+          replyTo ! Done
+          store(map = map ++ entries)
       }
     }
 }

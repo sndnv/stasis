@@ -1,5 +1,6 @@
 package stasis.shared.api.requests
 
+import java.time.Instant
 import java.time.LocalDateTime
 
 import scala.concurrent.duration.FiniteDuration
@@ -15,13 +16,17 @@ final case class CreateSchedule(
 
 object CreateSchedule {
   implicit class RequestToSchedule(request: CreateSchedule) {
-    def toSchedule: Schedule =
+    def toSchedule: Schedule = {
+      val now = Instant.now()
       Schedule(
         id = Schedule.generateId(),
         info = request.info,
         isPublic = request.isPublic,
         start = request.start,
-        interval = request.interval
+        interval = request.interval,
+        created = now,
+        updated = now
       )
+    }
   }
 }

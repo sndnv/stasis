@@ -1,5 +1,6 @@
 package stasis.test.specs.unit.shared.api.requests
 
+import java.time.Instant
 import java.time.LocalDateTime
 
 import scala.concurrent.duration._
@@ -15,7 +16,9 @@ class CreateScheduleSpec extends UnitSpec {
       info = "test-info",
       isPublic = true,
       start = LocalDateTime.now(),
-      interval = 3.seconds
+      interval = 3.seconds,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val request = CreateSchedule(
@@ -25,6 +28,10 @@ class CreateScheduleSpec extends UnitSpec {
       interval = expectedSchedule.interval
     )
 
-    request.toSchedule.copy(id = expectedSchedule.id) should be(expectedSchedule)
+    request.toSchedule.copy(
+      id = expectedSchedule.id,
+      created = expectedSchedule.created,
+      updated = expectedSchedule.updated
+    ) should be(expectedSchedule)
   }
 }

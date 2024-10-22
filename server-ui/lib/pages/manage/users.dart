@@ -1,3 +1,4 @@
+import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import 'package:server_ui/api/api_client.dart';
 import 'package:server_ui/model/api/requests/create_user.dart';
@@ -56,10 +57,11 @@ class _UsersState extends State<Users> {
           header: const Text('Users'),
           columns: [
             EntityTableColumn(label: 'ID', sortBy: (e) => (e.id as String).toMinimizedString()),
-            EntityTableColumn(label: 'Salt'),
-            EntityTableColumn(label: 'Active', sortBy: (e) => e.active.toString()),
+            EntityTableColumn(label: 'Salt', size: ColumnSize.S),
+            EntityTableColumn(label: 'Active', sortBy: (e) => e.active.toString(), size: ColumnSize.S),
             EntityTableColumn(label: 'Permissions'),
-            EntityTableColumn(label: 'Limits'),
+            EntityTableColumn(label: 'Limits', size: ColumnSize.S),
+            EntityTableColumn(label: 'Updated', sortBy: (e) => e.updated.toString()),
             EntityTableColumn(label: ''),
           ],
           entityToRow: (entity) {
@@ -150,6 +152,12 @@ class _UsersState extends State<Users> {
                     );
                   }) ??
                   const Text('none')),
+              DataCell(
+                Tooltip(
+                  message: 'Created: ${user.created.render()}\nUpdated: ${user.updated.render()}',
+                  child: Text(user.updated.render(), overflow: TextOverflow.ellipsis),
+                ),
+              ),
               DataCell(
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,

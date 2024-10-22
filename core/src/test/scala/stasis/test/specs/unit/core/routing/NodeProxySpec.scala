@@ -1,5 +1,6 @@
 package stasis.test.specs.unit.core.routing
 
+import java.time.Instant
 import java.util.UUID
 
 import scala.concurrent.Future
@@ -32,16 +33,12 @@ import stasis.test.specs.unit.core.routing.NodeProxySpec.FailingEndpointClient
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class NodeProxySpec extends AsyncUnitSpec {
-
-  private implicit val system: ActorSystem[Nothing] = ActorSystem(
-    Behaviors.ignore,
-    "NodeProxySpec"
-  )
-
   "An NodeProxy" should behave like localNodeProxy(
     node = Node.Local(
       id = Node.generateId(),
-      storeDescriptor = null /* mock crate store is always provided in this test */
+      storeDescriptor = null, /* mock crate store is always provided in this test */
+      created = Instant.now(),
+      updated = Instant.now()
     )
   )
 
@@ -49,7 +46,9 @@ class NodeProxySpec extends AsyncUnitSpec {
     node = Node.Remote.Http(
       id = Node.generateId(),
       address = HttpEndpointAddress("http://some-address:1234"),
-      storageAllowed = true
+      storageAllowed = true,
+      created = Instant.now(),
+      updated = Instant.now()
     )
   )
 
@@ -57,7 +56,9 @@ class NodeProxySpec extends AsyncUnitSpec {
     node = Node.Remote.Grpc(
       id = Node.generateId(),
       address = GrpcEndpointAddress(host = "some-address", port = 1234, tlsEnabled = false),
-      storageAllowed = true
+      storageAllowed = true,
+      created = Instant.now(),
+      updated = Instant.now()
     )
   )
 
@@ -76,7 +77,9 @@ class NodeProxySpec extends AsyncUnitSpec {
           maxSize = 1,
           maxChunkSize = 2,
           name = s"node-a-${UUID.randomUUID()}"
-        )
+        ),
+        created = Instant.now(),
+        updated = Instant.now()
       )
 
       val nodeB = Node.Local(
@@ -85,7 +88,9 @@ class NodeProxySpec extends AsyncUnitSpec {
           maxSize = 1000,
           maxChunkSize = 2,
           name = s"node-b-${UUID.randomUUID()}"
-        )
+        ),
+        created = Instant.now(),
+        updated = Instant.now()
       )
 
       proxy.stores.await should be(Map.empty)
@@ -228,6 +233,11 @@ class NodeProxySpec extends AsyncUnitSpec {
         )
     }
   }
+
+  private implicit val system: ActorSystem[Nothing] = ActorSystem(
+    guardianBehavior = Behaviors.ignore,
+    name = "NodeProxySpec"
+  )
 }
 
 object NodeProxySpec {

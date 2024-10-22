@@ -12,6 +12,8 @@ class User with _$User {
     required bool active,
     required Set<String> permissions,
     UserLimits? limits,
+    @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) required DateTime created,
+    @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) required DateTime updated,
   }) = _User;
 
   factory User.fromJson(Map<String, Object?> json) => _$UserFromJson(json);

@@ -1,5 +1,7 @@
 package stasis.shared.model.datasets
 
+import java.time.Instant
+
 import scala.concurrent.duration.FiniteDuration
 
 import stasis.shared.model.devices.Device
@@ -10,7 +12,9 @@ final case class DatasetDefinition(
   device: Device.Id,
   redundantCopies: Int,
   existingVersions: DatasetDefinition.Retention,
-  removedVersions: DatasetDefinition.Retention
+  removedVersions: DatasetDefinition.Retention,
+  created: Instant,
+  updated: Instant
 )
 
 object DatasetDefinition {

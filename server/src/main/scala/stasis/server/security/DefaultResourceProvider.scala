@@ -4,7 +4,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.reflect.ClassTag
 
-import stasis.server.model.users.UserStore
+import stasis.server.persistence.users.UserStore
 import stasis.server.security.exceptions.AuthorizationFailure
 
 class DefaultResourceProvider(

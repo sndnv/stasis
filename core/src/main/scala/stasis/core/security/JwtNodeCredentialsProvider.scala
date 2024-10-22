@@ -7,13 +7,13 @@ import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 
 import stasis.core.networking.EndpointAddress
-import stasis.core.persistence.nodes.NodeStoreView
+import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
 import stasis.layers.security.exceptions.ProviderFailure
 import stasis.layers.security.jwt.JwtProvider
 
 class JwtNodeCredentialsProvider[A <: EndpointAddress](
-  nodeStore: NodeStoreView,
+  nodeStore: NodeStore.View,
   underlying: JwtProvider
 )(implicit ec: ExecutionContext)
     extends NodeCredentialsProvider[A, HttpCredentials] {
@@ -36,7 +36,7 @@ class JwtNodeCredentialsProvider[A <: EndpointAddress](
 
 object JwtNodeCredentialsProvider {
   def apply[A <: EndpointAddress](
-    nodeStore: NodeStoreView,
+    nodeStore: NodeStore.View,
     underlying: JwtProvider
   )(implicit ec: ExecutionContext): JwtNodeCredentialsProvider[A] =
     new JwtNodeCredentialsProvider[A](

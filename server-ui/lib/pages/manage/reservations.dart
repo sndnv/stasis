@@ -1,3 +1,4 @@
+import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import 'package:server_ui/api/api_client.dart';
 import 'package:server_ui/model/reservations/crate_storage_reservation.dart';
@@ -41,10 +42,11 @@ class _CrateStorageReservationsState extends State<CrateStorageReservations> {
           columns: [
             EntityTableColumn(label: 'ID', sortBy: (e) => (e.id as String).toMinimizedString()),
             EntityTableColumn(label: 'Crate', sortBy: (e) => (e.crate as String).toMinimizedString()),
-            EntityTableColumn(label: 'Size', sortBy: (e) => e.size),
-            EntityTableColumn(label: 'Copies', sortBy: (e) => e.copies),
+            EntityTableColumn(label: 'Size', sortBy: (e) => e.size, size: ColumnSize.S),
+            EntityTableColumn(label: 'Copies', sortBy: (e) => e.copies, size: ColumnSize.S),
             EntityTableColumn(label: 'Origin', sortBy: (e) => (e.origin as String).toMinimizedString()),
             EntityTableColumn(label: 'Target', sortBy: (e) => (e.target as String).toMinimizedString()),
+            EntityTableColumn(label: 'Created', sortBy: (e) => e.created.toString()),
           ],
           entityToRow: (entity) {
             final reservation = entity as CrateStorageReservation;
@@ -68,6 +70,7 @@ class _CrateStorageReservationsState extends State<CrateStorageReservations> {
                   withFilter: reservation.target,
                 ),
               )),
+              DataCell(Text(reservation.created.render(), overflow: TextOverflow.ellipsis)),
             ];
           },
         );

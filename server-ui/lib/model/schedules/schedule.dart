@@ -16,6 +16,8 @@ class Schedule with _$Schedule {
     required bool isPublic,
     @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) required DateTime start,
     @JsonKey(fromJson: durationFromJson, toJson: durationToJson) required Duration interval,
+    @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) required DateTime created,
+    @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) required DateTime updated,
   }) = _Schedule;
 
   factory Schedule.fromJson(Map<String, Object?> json) => _$ScheduleFromJson(json);

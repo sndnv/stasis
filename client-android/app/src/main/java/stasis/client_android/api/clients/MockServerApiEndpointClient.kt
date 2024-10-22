@@ -119,7 +119,9 @@ class MockServerApiEndpointClient : ServerApiEndpointClient {
         removedVersions = DatasetDefinition.Retention(
             policy = DatasetDefinition.Retention.Policy.All,
             duration = Duration.ofHours(366)
-        )
+        ),
+        created = Instant.EPOCH,
+        updated = Instant.EPOCH,
     )
 
     private val defaultEntry = DatasetEntry(
@@ -136,7 +138,9 @@ class MockServerApiEndpointClient : ServerApiEndpointClient {
         info = "test-schedule",
         isPublic = true,
         start = LocalDateTime.MAX,
-        interval = Duration.ofHours(12)
+        interval = Duration.ofHours(12),
+        created = Instant.EPOCH,
+        updated = Instant.EPOCH,
     )
 
     private val defaultMetadata = DatasetMetadata(
@@ -152,7 +156,9 @@ class MockServerApiEndpointClient : ServerApiEndpointClient {
         salt = "test-salt",
         active = true,
         limits = null,
-        permissions = setOf("a", "b", "c")
+        permissions = setOf("a", "b", "c"),
+        created = Instant.EPOCH,
+        updated = Instant.EPOCH,
     )
 
     private val currentDevice = Device(
@@ -161,6 +167,8 @@ class MockServerApiEndpointClient : ServerApiEndpointClient {
         node = MockConfig.DeviceNode,
         owner = MockConfig.User,
         active = true,
-        limits = null
+        limits = null,
+        created = Instant.EPOCH,
+        updated = Instant.EPOCH,
     )
 }

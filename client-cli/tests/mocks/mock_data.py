@@ -122,13 +122,17 @@ USER = {
         'max_retention': 9000,
         'min_retention': 90,
     },
-    'permissions': ['A', 'B', 'C']
+    'permissions': ['A', 'B', 'C'],
+    'created': '2020-10-01T01:03:01',
+    'updated': '2020-10-01T04:05:06',
 }
 
 USER_WITHOUT_LIMITS = {
     'id': str(uuid4()),
     'active': True,
     'permissions': ['A', 'B', 'C'],
+    'created': '2020-10-01T01:03:01',
+    'updated': '2020-11-01T04:05:06',
 }
 
 DEVICE = {
@@ -143,7 +147,9 @@ DEVICE = {
         'max_storage_per_crate': 50_000,
         'max_retention': 4000,
         'min_retention': 60,
-    }
+    },
+    'created': '2020-10-01T01:03:01',
+    'updated': '2020-11-01T04:05:06',
 }
 
 DEVICE_WITHOUT_LIMITS = {
@@ -152,6 +158,8 @@ DEVICE_WITHOUT_LIMITS = {
     'node': str(uuid4()),
     'owner': USER['id'],
     'active': True,
+    'created': '2020-10-01T01:03:01',
+    'updated': '2020-11-01T04:05:06',
 }
 
 DEFINITIONS = [
@@ -162,6 +170,8 @@ DEFINITIONS = [
         'redundant_copies': 2,
         'existing_versions': {'policy': {'policy_type': 'at-most', 'versions': 5}, 'duration': 3600},
         'removed_versions': {'policy': {'policy_type': 'all'}, 'duration': 60},
+        'created': '2020-10-01T01:03:01',
+        'updated': '2020-11-01T04:05:06',
     },
     {
         'id': str(uuid4()),
@@ -170,6 +180,8 @@ DEFINITIONS = [
         'redundant_copies': 3,
         'existing_versions': {'policy': {'policy_type': 'all'}, 'duration': 600000},
         'removed_versions': {'policy': {'policy_type': 'latest-only'}, 'duration': 6000},
+        'created': '2020-10-01T01:03:01',
+        'updated': '2020-11-01T04:05:06',
     },
     {
         'id': str(uuid4()),
@@ -178,6 +190,8 @@ DEFINITIONS = [
         'redundant_copies': 1,
         'existing_versions': {'policy': {'policy_type': 'latest-only'}, 'duration': 60},
         'removed_versions': {'policy': {'policy_type': 'latest-only'}, 'duration': 60},
+        'created': '2020-10-01T01:03:01',
+        'updated': '2020-11-01T04:05:06',
     },
 ]
 
@@ -248,6 +262,8 @@ SCHEDULES_PUBLIC = [
         'start': '2001-01-01T01:01:01',
         'interval': 60 * 60 * 1,
         'next_invocation': '2020-10-01T01:02:03',
+        'created': '2020-10-01T01:03:01',
+        'updated': '2020-11-01T04:05:06',
     },
     {
         'id': str(uuid4()),
@@ -256,6 +272,8 @@ SCHEDULES_PUBLIC = [
         'start': '2002-02-02T02:02:02',
         'interval': 60 * 60 * 12,
         'next_invocation': '2020-11-11T01:02:04',
+        'created': '2020-10-01T01:03:01',
+        'updated': '2020-11-01T04:05:06',
     },
     {
         'id': str(uuid4()),
@@ -264,6 +282,8 @@ SCHEDULES_PUBLIC = [
         'start': '2003-03-03T03:03:03',
         'interval': 60 * 60 * 24,
         'next_invocation': '2020-12-21T01:02:05',
+        'created': '2020-10-01T01:03:01',
+        'updated': '2020-11-01T04:05:06',
     },
 ]
 

@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.core.security
 
+import java.time.Instant
+
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
@@ -13,7 +15,6 @@ import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
 import stasis.core.security.JwtNodeAuthenticator
-import stasis.layers.persistence.memory.MemoryStore
 import stasis.layers.security.exceptions.AuthenticationFailure
 import stasis.layers.security.jwt.DefaultJwtAuthenticator
 import stasis.layers.security.mocks.MockJwkProvider
@@ -21,6 +22,7 @@ import stasis.layers.security.mocks.MockJwksGenerators
 import stasis.layers.security.mocks.MockJwtGenerators
 import stasis.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.persistence.nodes.MockNodeStore
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
@@ -32,7 +34,9 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
     val node = Node.Remote.Http(
       id = Node.generateId(),
       address = HttpEndpointAddress("http://some-address:9000"),
-      storageAllowed = true
+      storageAllowed = true,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val nodeToken: String = MockJwtGenerators.generateJwt(
@@ -60,7 +64,9 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
     val node = Node.Remote.Http(
       id = Node.generateId(),
       address = HttpEndpointAddress("http://some-address:9000"),
-      storageAllowed = true
+      storageAllowed = true,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val nodeToken: String = MockJwtGenerators.generateJwt(
@@ -89,7 +95,9 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
     val node = Node.Remote.Http(
       id = Node.generateId(),
       address = HttpEndpointAddress("http://some-address:9000"),
-      storageAllowed = true
+      storageAllowed = true,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val otherNode = "some-node"
@@ -121,7 +129,9 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
     val node = Node.Remote.Http(
       id = Node.generateId(),
       address = HttpEndpointAddress("http://some-address:9000"),
-      storageAllowed = true
+      storageAllowed = true,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     store.put(node).await
@@ -138,10 +148,7 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
   }
 
   private def createAuthenticator()(implicit telemetry: TelemetryContext): (JwtNodeAuthenticator, NodeStore) = {
-    val storeInit = NodeStore(
-      backend = MemoryStore[Node.Id, Node](name = s"node-store-${java.util.UUID.randomUUID()}"),
-      cachingEnabled = false
-    )
+    val store = MockNodeStore()
 
     val underlying = new DefaultJwtAuthenticator(
       provider = MockJwkProvider(jwk),
@@ -151,11 +158,11 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
     )
 
     val authenticator = new JwtNodeAuthenticator(
-      nodeStore = storeInit.store.view,
+      nodeStore = store.view,
       underlying = underlying
     )
 
-    (authenticator, storeInit.store)
+    (authenticator, store)
   }
 
   private implicit val system: ActorSystem[Nothing] = ActorSystem(

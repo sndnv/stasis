@@ -14,6 +14,8 @@ class Device with _$Device {
     required String owner,
     required bool active,
     DeviceLimits? limits,
+    @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) required DateTime created,
+    @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) required DateTime updated,
   }) = _Device;
 
   factory Device.fromJson(Map<String, Object?> json) => _$DeviceFromJson(json);

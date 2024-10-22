@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.shared.api.requests
 
+import java.time.Instant
+
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.crates.CrateStore
@@ -13,7 +15,9 @@ class CreateNodeSpec extends UnitSpec {
   it should "convert requests to local nodes" in {
     val expectedNode = Node.Local(
       id = Node.generateId(),
-      storeDescriptor = CrateStore.Descriptor.ForFileBackend(parentDirectory = "/tmp")
+      storeDescriptor = CrateStore.Descriptor.ForFileBackend(parentDirectory = "/tmp"),
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val request = CreateLocalNode(
@@ -21,14 +25,16 @@ class CreateNodeSpec extends UnitSpec {
     )
 
     val actualNode = request.toNode
-    actualNode should be(expectedNode.copy(id = actualNode.id))
+    actualNode should be(expectedNode.copy(id = actualNode.id, created = actualNode.created, updated = actualNode.updated))
   }
 
   it should "convert requests to remote HTTP nodes" in {
     val expectedNode = Node.Remote.Http(
       id = Node.generateId(),
       address = HttpEndpointAddress(uri = "http://example.com"),
-      storageAllowed = true
+      storageAllowed = true,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val request = CreateRemoteHttpNode(
@@ -38,14 +44,16 @@ class CreateNodeSpec extends UnitSpec {
 
     val actualNode = request.toNode
 
-    actualNode should be(expectedNode.copy(id = actualNode.id))
+    actualNode should be(expectedNode.copy(id = actualNode.id, created = actualNode.created, updated = actualNode.updated))
   }
 
   it should "convert requests to remote gRPC nodes" in {
     val expectedNode = Node.Remote.Grpc(
       id = Node.generateId(),
       address = GrpcEndpointAddress(host = "example.com", port = 443, tlsEnabled = true),
-      storageAllowed = false
+      storageAllowed = false,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val request = CreateRemoteGrpcNode(
@@ -55,6 +63,6 @@ class CreateNodeSpec extends UnitSpec {
 
     val actualNode = request.toNode
 
-    actualNode should be(expectedNode.copy(id = actualNode.id))
+    actualNode should be(expectedNode.copy(id = actualNode.id, created = actualNode.created, updated = actualNode.updated))
   }
 }

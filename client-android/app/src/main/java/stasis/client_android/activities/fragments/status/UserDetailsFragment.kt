@@ -1,6 +1,8 @@
 package stasis.client_android.activities.fragments.status
 
+import android.graphics.Typeface
 import android.os.Bundle
+import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,9 +12,12 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.chip.Chip
 import dagger.hilt.android.AndroidEntryPoint
 import stasis.client_android.R
+import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.asSizeString
 import stasis.client_android.activities.helpers.Common.asString
+import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.Common.toMinimizedString
+import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullDateTime
 import stasis.client_android.activities.helpers.Transitions.operationComplete
 import stasis.client_android.activities.helpers.Transitions.operationInProgress
 import stasis.client_android.api.UserStatusViewModel
@@ -48,6 +53,7 @@ class UserDetailsFragment : Fragment() {
                     binding.userLimits.isVisible = false
                     binding.userLimitsNone.isVisible = true
                 }
+
                 else -> {
                     binding.userLimits.isVisible = true
                     binding.userLimitsNone.isVisible = false
@@ -111,6 +117,12 @@ class UserDetailsFragment : Fragment() {
                 chip.text = context.getString(R.string.user_field_content_permission, permission)
                 binding.userPermissions.addView(chip)
             }
+
+            val created = user.created.formatAsFullDateTime(context)
+            binding.userCreated.text = context.getString(R.string.user_field_content_created, created)
+
+            val updated = user.updated.formatAsFullDateTime(context)
+            binding.userUpdated.text = context.getString(R.string.user_field_content_updated, updated)
 
             activity.operationComplete()
         }

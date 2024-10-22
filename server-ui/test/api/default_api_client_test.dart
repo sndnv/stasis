@@ -52,7 +52,7 @@ void main() {
 
       const versions = Retention(policy: Policy(policyType: 'at-most', versions: 2), duration: Duration(seconds: 3));
 
-      const definitions = [
+      final definitions = [
         DatasetDefinition(
           id: 'test-id-1',
           info: 'test-info-1',
@@ -60,6 +60,8 @@ void main() {
           redundantCopies: 2,
           existingVersions: versions,
           removedVersions: versions,
+          created: DateTime.now(),
+          updated: DateTime.now(),
         ),
         DatasetDefinition(
           id: 'test-id-2',
@@ -68,6 +70,8 @@ void main() {
           redundantCopies: 3,
           existingVersions: versions,
           removedVersions: versions,
+          created: DateTime.now(),
+          updated: DateTime.now(),
         ),
       ];
 
@@ -85,7 +89,7 @@ void main() {
 
       const versions = Retention(policy: Policy(policyType: 'at-most', versions: 2), duration: Duration(seconds: 3));
 
-      const definitions = [
+      final definitions = [
         DatasetDefinition(
           id: 'test-id-1',
           info: 'test-info-1',
@@ -93,6 +97,8 @@ void main() {
           redundantCopies: 2,
           existingVersions: versions,
           removedVersions: versions,
+          created: DateTime.now(),
+          updated: DateTime.now(),
         ),
         DatasetDefinition(
           id: 'test-id-2',
@@ -101,6 +107,8 @@ void main() {
           redundantCopies: 3,
           existingVersions: versions,
           removedVersions: versions,
+          created: DateTime.now(),
+          updated: DateTime.now(),
         ),
       ];
 
@@ -348,10 +356,31 @@ void main() {
       final underlying = MockClient();
       final client = DefaultApiClient(server: server, underlying: underlying);
 
-      const users = [
-        User(id: 'test-user-1', salt: 'test-salt-1', active: true, permissions: {'a', 'b', 'c'}),
-        User(id: 'test-user-2', salt: 'test-salt-2', active: false, permissions: {'d'}),
-        User(id: 'test-user-3', salt: 'test-salt-3', active: true, permissions: {'a', 'b', 'c'}),
+      final users = [
+        User(
+          id: 'test-user-1',
+          salt: 'test-salt-1',
+          active: true,
+          permissions: {'a', 'b', 'c'},
+          created: DateTime.now(),
+          updated: DateTime.now(),
+        ),
+        User(
+          id: 'test-user-2',
+          salt: 'test-salt-2',
+          active: false,
+          permissions: {'d'},
+          created: DateTime.now(),
+          updated: DateTime.now(),
+        ),
+        User(
+          id: 'test-user-3',
+          salt: 'test-salt-3',
+          active: true,
+          permissions: {'a', 'b', 'c'},
+          created: DateTime.now(),
+          updated: DateTime.now(),
+        ),
       ];
 
       final response = jsonEncode(users);
@@ -463,7 +492,14 @@ void main() {
       final underlying = MockClient();
       final client = DefaultApiClient(server: server, underlying: underlying);
 
-      const self = User(id: 'test-user-1', salt: 'test-salt-1', active: true, permissions: {'a', 'b', 'c'});
+      final self = User(
+        id: 'test-user-1',
+        salt: 'test-salt-1',
+        active: true,
+        permissions: {'a', 'b', 'c'},
+        created: DateTime.now(),
+        updated: DateTime.now(),
+      );
 
       final response = jsonEncode(self);
 
@@ -515,10 +551,34 @@ void main() {
       final underlying = MockClient();
       final client = DefaultApiClient(server: server, underlying: underlying);
 
-      const devices = [
-        Device(id: 'test-id-1', name: 'test-device', owner: 'test-owner', node: 'test-node-1', active: true),
-        Device(id: 'test-id-2', name: 'test-device', owner: 'test-owner', node: 'test-node-2', active: false),
-        Device(id: 'test-id-3', name: 'test-device', owner: 'test-owner', node: 'test-node-3', active: true),
+      final devices = [
+        Device(
+          id: 'test-id-1',
+          name: 'test-device',
+          owner: 'test-owner',
+          node: 'test-node-1',
+          active: true,
+          created: DateTime.now(),
+          updated: DateTime.now(),
+        ),
+        Device(
+          id: 'test-id-2',
+          name: 'test-device',
+          owner: 'test-owner',
+          node: 'test-node-2',
+          active: false,
+          created: DateTime.now(),
+          updated: DateTime.now(),
+        ),
+        Device(
+          id: 'test-id-3',
+          name: 'test-device',
+          owner: 'test-owner',
+          node: 'test-node-3',
+          active: true,
+          created: DateTime.now(),
+          updated: DateTime.now(),
+        ),
       ];
 
       final response = jsonEncode(devices);
@@ -532,10 +592,34 @@ void main() {
       final underlying = MockClient();
       final client = DefaultApiClient(server: server, underlying: underlying);
 
-      const devices = [
-        Device(id: 'test-id-1', name: 'test-device', owner: 'test-owner', node: 'test-node-1', active: true),
-        Device(id: 'test-id-2', name: 'test-device', owner: 'test-owner', node: 'test-node-2', active: false),
-        Device(id: 'test-id-3', name: 'test-device', owner: 'test-owner', node: 'test-node-3', active: true),
+      final devices = [
+        Device(
+          id: 'test-id-1',
+          name: 'test-device',
+          owner: 'test-owner',
+          node: 'test-node-1',
+          active: true,
+          created: DateTime.now(),
+          updated: DateTime.now(),
+        ),
+        Device(
+          id: 'test-id-2',
+          name: 'test-device',
+          owner: 'test-owner',
+          node: 'test-node-2',
+          active: false,
+          created: DateTime.now(),
+          updated: DateTime.now(),
+        ),
+        Device(
+          id: 'test-id-3',
+          name: 'test-device',
+          owner: 'test-owner',
+          node: 'test-node-3',
+          active: true,
+          created: DateTime.now(),
+          updated: DateTime.now(),
+        ),
       ];
 
       final response = jsonEncode(devices);
@@ -685,10 +769,10 @@ void main() {
       final underlying = MockClient();
       final client = DefaultApiClient(server: server, underlying: underlying);
 
-      const deviceKeys = [
-        DeviceKey(owner: 'test-owner', device: 'test-device-1'),
-        DeviceKey(owner: 'test-owner', device: 'test-device-2'),
-        DeviceKey(owner: 'test-owner', device: 'test-device-3'),
+      final deviceKeys = [
+        DeviceKey(owner: 'test-owner', device: 'test-device-1', created: DateTime.now()),
+        DeviceKey(owner: 'test-owner', device: 'test-device-2', created: DateTime.now()),
+        DeviceKey(owner: 'test-owner', device: 'test-device-3', created: DateTime.now()),
       ];
 
       final response = jsonEncode(deviceKeys);
@@ -702,10 +786,10 @@ void main() {
       final underlying = MockClient();
       final client = DefaultApiClient(server: server, underlying: underlying);
 
-      const deviceKeys = [
-        DeviceKey(owner: 'test-owner', device: 'test-device-1'),
-        DeviceKey(owner: 'test-owner', device: 'test-device-2'),
-        DeviceKey(owner: 'test-owner', device: 'test-device-3'),
+      final deviceKeys = [
+        DeviceKey(owner: 'test-owner', device: 'test-device-1', created: DateTime.now()),
+        DeviceKey(owner: 'test-owner', device: 'test-device-2', created: DateTime.now()),
+        DeviceKey(owner: 'test-owner', device: 'test-device-3', created: DateTime.now()),
       ];
 
       final response = jsonEncode(deviceKeys);
@@ -721,7 +805,7 @@ void main() {
       final client = DefaultApiClient(server: server, underlying: underlying);
 
       const device = 'test-device-1';
-      const deviceKey = DeviceKey(owner: 'test-owner', device: device);
+      final deviceKey = DeviceKey(owner: 'test-owner', device: device, created: DateTime.now());
 
       final response = jsonEncode(deviceKey);
 
@@ -736,7 +820,7 @@ void main() {
       final client = DefaultApiClient(server: server, underlying: underlying);
 
       const device = 'test-device-1';
-      const deviceKey = DeviceKey(owner: 'test-owner', device: device);
+      final deviceKey = DeviceKey(owner: 'test-owner', device: device, created: DateTime.now());
 
       final response = jsonEncode(deviceKey);
 
@@ -779,9 +863,33 @@ void main() {
       final now = DateTime.now();
 
       final devices = [
-        Schedule(id: 'test-id-1', info: 'test-info', isPublic: true, start: now, interval: const Duration(seconds: 1)),
-        Schedule(id: 'test-id-2', info: 'test-info', isPublic: false, start: now, interval: const Duration(seconds: 1)),
-        Schedule(id: 'test-id-3', info: 'test-info', isPublic: true, start: now, interval: const Duration(seconds: 1)),
+        Schedule(
+          id: 'test-id-1',
+          info: 'test-info',
+          isPublic: true,
+          start: now,
+          interval: const Duration(seconds: 1),
+          created: DateTime.now(),
+          updated: DateTime.now(),
+        ),
+        Schedule(
+          id: 'test-id-2',
+          info: 'test-info',
+          isPublic: false,
+          start: now,
+          interval: const Duration(seconds: 1),
+          created: DateTime.now(),
+          updated: DateTime.now(),
+        ),
+        Schedule(
+          id: 'test-id-3',
+          info: 'test-info',
+          isPublic: true,
+          start: now,
+          interval: const Duration(seconds: 1),
+          created: DateTime.now(),
+          updated: DateTime.now(),
+        ),
       ];
 
       final response = jsonEncode(devices);
@@ -798,9 +906,33 @@ void main() {
       final now = DateTime.now();
 
       final devices = [
-        Schedule(id: 'test-id-1', info: 'test-info', isPublic: true, start: now, interval: const Duration(seconds: 1)),
-        Schedule(id: 'test-id-2', info: 'test-info', isPublic: true, start: now, interval: const Duration(seconds: 1)),
-        Schedule(id: 'test-id-3', info: 'test-info', isPublic: true, start: now, interval: const Duration(seconds: 1)),
+        Schedule(
+          id: 'test-id-1',
+          info: 'test-info',
+          isPublic: true,
+          start: now,
+          interval: const Duration(seconds: 1),
+          created: DateTime.now(),
+          updated: DateTime.now(),
+        ),
+        Schedule(
+          id: 'test-id-2',
+          info: 'test-info',
+          isPublic: true,
+          start: now,
+          interval: const Duration(seconds: 1),
+          created: DateTime.now(),
+          updated: DateTime.now(),
+        ),
+        Schedule(
+          id: 'test-id-3',
+          info: 'test-info',
+          isPublic: true,
+          start: now,
+          interval: const Duration(seconds: 1),
+          created: DateTime.now(),
+          updated: DateTime.now(),
+        ),
       ];
 
       final response = jsonEncode(devices);
@@ -866,16 +998,22 @@ void main() {
         Node.local(
           id: 'test-node-1',
           storeDescriptor: CrateStoreDescriptor.file(parentDirectory: '/tmp'),
+          created: DateTime.now(),
+          updated: DateTime.now(),
         ),
         Node.remoteHttp(
           id: 'test-node-2',
           address: const HttpEndpointAddress(uri: 'http://localhost:12345'),
+          created: DateTime.now(),
+          updated: DateTime.now(),
           storageAllowed: true,
         ),
         Node.remoteGrpc(
           id: 'test-node-3',
           address: const GrpcEndpointAddress(host: 'localhost', port: 12346, tlsEnabled: false),
           storageAllowed: false,
+          created: DateTime.now(),
+          updated: DateTime.now(),
         ),
       ];
 
@@ -932,13 +1070,14 @@ void main() {
       final underlying = MockClient();
       final client = DefaultApiClient(server: server, underlying: underlying);
 
-      const manifest = Manifest(
+      final manifest = Manifest(
         crate: 'test-crate-1',
         size: 1,
         copies: 2,
         origin: 'test-origin',
         source: 'test-source',
         destinations: ['test-destination-1', 'test-destination-2'],
+        created: DateTime.now(),
       );
 
       final response = jsonEncode(manifest);
@@ -966,7 +1105,7 @@ void main() {
       final underlying = MockClient();
       final client = DefaultApiClient(server: server, underlying: underlying);
 
-      const reservations = [
+      final reservations = [
         CrateStorageReservation(
           id: 'test-id-1',
           crate: 'test-crate-1',
@@ -974,6 +1113,7 @@ void main() {
           copies: 2,
           origin: 'test-origin',
           target: 'test-target',
+          created: DateTime.now(),
         ),
         CrateStorageReservation(
           id: 'test-id-2',
@@ -982,6 +1122,7 @@ void main() {
           copies: 2,
           origin: 'test-origin',
           target: 'test-target',
+          created: DateTime.now(),
         ),
       ];
 

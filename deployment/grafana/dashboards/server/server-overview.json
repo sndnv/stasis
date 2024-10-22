@@ -367,30 +367,6 @@
           "legendFormat": "[{{backend}}] - Discard",
           "range": true,
           "refId": "C"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prom"
-          },
-          "editorMode": "code",
-          "expr": "sum(rate(stasis_server_persistence_streaming_init_operations_total[$__rate_interval])) by (backend)",
-          "hide": false,
-          "legendFormat": "[{{backend}}] - Init",
-          "range": true,
-          "refId": "D"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prom"
-          },
-          "editorMode": "code",
-          "expr": "sum(rate(stasis_server_persistence_streaming_drop_operations_total[$__rate_interval])) by (backend)",
-          "hide": false,
-          "legendFormat": "[{{backend}}] - Drop",
-          "range": true,
-          "refId": "E"
         }
       ],
       "title": "Operations",
@@ -568,34 +544,10 @@
             "uid": "prom"
           },
           "editorMode": "code",
-          "expr": "sum(rate(stasis_server_persistence_store_put_operations_total[$__rate_interval])) by (backend)",
-          "legendFormat": "[{{backend}}] - Put",
+          "expr": "sum(rate(stasis_server_persistence_store_operation_duration_count[$__rate_interval])) by (store, operation)",
+          "legendFormat": "[{{store}}] - {{operation}}",
           "range": true,
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prom"
-          },
-          "editorMode": "code",
-          "expr": "sum(rate(stasis_server_persistence_store_get_operations_total[$__rate_interval])) by (backend)",
-          "hide": false,
-          "legendFormat": "[{{backend}}] - Get",
-          "range": true,
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prom"
-          },
-          "editorMode": "code",
-          "expr": "sum(rate(stasis_server_persistence_store_delete_operations_total[$__rate_interval])) by (backend)",
-          "hide": false,
-          "legendFormat": "[{{backend}}] - Delete",
-          "range": true,
-          "refId": "C"
         }
       ],
       "title": "Operations",

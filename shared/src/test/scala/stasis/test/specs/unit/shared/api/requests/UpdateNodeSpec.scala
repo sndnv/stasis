@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.shared.api.requests
 
+import java.time.Instant
+
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.crates.CrateStore
@@ -13,7 +15,9 @@ class UpdateNodeSpec extends UnitSpec {
   it should "convert requests to updated local nodes" in {
     val initialNode = Node.Local(
       id = Node.generateId(),
-      storeDescriptor = CrateStore.Descriptor.ForFileBackend(parentDirectory = "/tmp")
+      storeDescriptor = CrateStore.Descriptor.ForFileBackend(parentDirectory = "/tmp"),
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val request = UpdateLocalNode(
@@ -22,14 +26,16 @@ class UpdateNodeSpec extends UnitSpec {
 
     val updatedNode = request.toUpdatedNode(initialNode)
 
-    updatedNode should be(initialNode.copy(storeDescriptor = request.storeDescriptor))
+    updatedNode should be(initialNode.copy(storeDescriptor = request.storeDescriptor, updated = updatedNode.updated))
   }
 
   it should "convert requests to updated remote HTTP nodes" in {
     val initialNode = Node.Remote.Http(
       id = Node.generateId(),
       address = HttpEndpointAddress(uri = "http://example.com"),
-      storageAllowed = true
+      storageAllowed = true,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val request = UpdateRemoteHttpNode(
@@ -39,14 +45,16 @@ class UpdateNodeSpec extends UnitSpec {
 
     val updatedNode = request.toUpdatedNode(initialNode)
 
-    updatedNode should be(initialNode.copy(address = request.address))
+    updatedNode should be(initialNode.copy(address = request.address, updated = updatedNode.updated))
   }
 
   it should "convert requests to updated remote gRPC nodes" in {
     val initialNode = Node.Remote.Grpc(
       id = Node.generateId(),
       address = GrpcEndpointAddress(host = "example.com", port = 443, tlsEnabled = true),
-      storageAllowed = false
+      storageAllowed = false,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val request = UpdateRemoteGrpcNode(
@@ -56,14 +64,16 @@ class UpdateNodeSpec extends UnitSpec {
 
     val updatedNode = request.toUpdatedNode(initialNode)
 
-    updatedNode should be(initialNode.copy(address = request.address))
+    updatedNode should be(initialNode.copy(address = request.address, updated = updatedNode.updated))
   }
 
   it should "fail to convert requests when node types do not match" in {
     val initialNode = Node.Remote.Http(
       id = Node.generateId(),
       address = HttpEndpointAddress(uri = "http://example.com"),
-      storageAllowed = true
+      storageAllowed = true,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val request = UpdateLocalNode(

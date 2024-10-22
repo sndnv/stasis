@@ -47,15 +47,18 @@ class MockApiClient extends ApiClient implements InitApi, ClientApi {
 
   @override
   Future<List<DatasetDefinition>> getDatasetDefinitions() {
-    const definitions = [
+    final definitions = [
       DatasetDefinition(
         id: '255bb999-6fba-49f0-b5bb-7c34da741872',
         info: 'test-definition-01',
         device: 'test-device-1',
         redundantCopies: 2,
         existingVersions:
-            Retention(policy: Policy(policyType: 'at-most', versions: 5), duration: Duration(seconds: 3600)),
-        removedVersions: Retention(policy: Policy(policyType: 'all', versions: null), duration: Duration(seconds: 60)),
+            const Retention(policy: Policy(policyType: 'at-most', versions: 5), duration: Duration(seconds: 3600)),
+        removedVersions:
+            const Retention(policy: Policy(policyType: 'all', versions: null), duration: Duration(seconds: 60)),
+        created: DateTime.parse('2020-10-01T01:03:01'),
+        updated: DateTime.parse('2020-10-01T01:03:02'),
       ),
       DatasetDefinition(
         id: 'test-id-2',
@@ -63,9 +66,11 @@ class MockApiClient extends ApiClient implements InitApi, ClientApi {
         device: 'test-device-2',
         redundantCopies: 3,
         existingVersions:
-            Retention(policy: Policy(policyType: 'all', versions: null), duration: Duration(seconds: 600000)),
-        removedVersions:
-            Retention(policy: Policy(policyType: 'latest-only', versions: null), duration: Duration(seconds: 6000)),
+            const Retention(policy: Policy(policyType: 'all', versions: null), duration: Duration(seconds: 600000)),
+        removedVersions: const Retention(
+            policy: Policy(policyType: 'latest-only', versions: null), duration: Duration(seconds: 6000)),
+        created: DateTime.parse('2020-10-01T01:03:01'),
+        updated: DateTime.parse('2020-10-01T01:03:02'),
       ),
       DatasetDefinition(
         id: 'test-id-3',
@@ -73,9 +78,11 @@ class MockApiClient extends ApiClient implements InitApi, ClientApi {
         device: 'test-device-3',
         redundantCopies: 1,
         existingVersions:
-            Retention(policy: Policy(policyType: 'latest-only', versions: null), duration: Duration(seconds: 60)),
+            const Retention(policy: Policy(policyType: 'latest-only', versions: null), duration: Duration(seconds: 60)),
         removedVersions:
-            Retention(policy: Policy(policyType: 'latest-only', versions: null), duration: Duration(seconds: 60)),
+            const Retention(policy: Policy(policyType: 'latest-only', versions: null), duration: Duration(seconds: 60)),
+        created: DateTime.parse('2020-10-01T01:03:01'),
+        updated: DateTime.parse('2020-10-01T01:03:02'),
       ),
     ];
 
@@ -350,10 +357,10 @@ class MockApiClient extends ApiClient implements InitApi, ClientApi {
 
   @override
   Future<User> getSelf() {
-    const user = User(
+    final user = User(
       id: 'test-user-1',
       active: true,
-      limits: UserLimits(
+      limits: const UserLimits(
         maxDevices: 42,
         maxCrates: 999,
         maxStorage: 1000000000,
@@ -362,6 +369,8 @@ class MockApiClient extends ApiClient implements InitApi, ClientApi {
         minRetention: Duration(seconds: 90),
       ),
       permissions: {'A', 'B', 'C'},
+      created: DateTime.parse('2020-10-01T01:03:01'),
+      updated: DateTime.parse('2020-10-01T01:03:02'),
     );
 
     return Future.value(user);
@@ -379,19 +388,21 @@ class MockApiClient extends ApiClient implements InitApi, ClientApi {
 
   @override
   Future<Device> getCurrentDevice() {
-    const device = Device(
+    final device = Device(
       id: 'test-device-1',
       name: 'test-device-01',
       node: 'test-node',
       owner: 'test-owner',
       active: true,
-      limits: DeviceLimits(
+      limits: const DeviceLimits(
         maxCrates: 100,
         maxStorage: 5000000,
         maxStoragePerCrate: 50000,
         maxRetention: Duration(seconds: 4000),
         minRetention: Duration(seconds: 60),
       ),
+      created: DateTime.parse('2020-10-01T01:03:01'),
+      updated: DateTime.parse('2020-10-01T01:03:02'),
     );
 
     return Future.value(device);
@@ -643,6 +654,8 @@ class MockApiClient extends ApiClient implements InitApi, ClientApi {
         start: DateTime.now(),
         interval: const Duration(seconds: 1),
         nextInvocation: DateTime.now(),
+        created: DateTime.parse('2020-10-01T01:03:01'),
+        updated: DateTime.parse('2020-10-01T01:03:02'),
       ),
       Schedule(
         id: 'test-id-2',
@@ -651,6 +664,8 @@ class MockApiClient extends ApiClient implements InitApi, ClientApi {
         start: DateTime.now(),
         interval: const Duration(seconds: 123),
         nextInvocation: DateTime.now(),
+        created: DateTime.parse('2020-10-01T01:03:01'),
+        updated: DateTime.parse('2020-10-01T01:03:02'),
       ),
     ];
     return Future.value(schedules);

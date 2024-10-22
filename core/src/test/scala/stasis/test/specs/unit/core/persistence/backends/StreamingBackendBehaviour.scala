@@ -49,8 +49,6 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
       } yield {
         result should be(testContent)
 
-        telemetry.core.persistence.streaming.init should be(1)
-        telemetry.core.persistence.streaming.drop should be(1)
         telemetry.core.persistence.streaming.write should be(1)
         telemetry.core.persistence.streaming.read should be(1)
         telemetry.core.persistence.streaming.discard should be(0)
@@ -69,8 +67,6 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
       } yield {
         source should be(None)
 
-        telemetry.core.persistence.streaming.init should be(1)
-        telemetry.core.persistence.streaming.drop should be(1)
         telemetry.core.persistence.streaming.write should be(0)
         telemetry.core.persistence.streaming.read should be(0)
         telemetry.core.persistence.streaming.discard should be(0)
@@ -95,8 +91,6 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
         deleteResult should be(true)
         missingSource.isDefined should be(false)
 
-        telemetry.core.persistence.streaming.init should be(1)
-        telemetry.core.persistence.streaming.drop should be(1)
         telemetry.core.persistence.streaming.write should be(1)
         telemetry.core.persistence.streaming.read should be(1)
         telemetry.core.persistence.streaming.discard should be(1)
@@ -122,8 +116,6 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
         existsAfterPush should be(true)
         existsAfterDelete should be(false)
 
-        telemetry.core.persistence.streaming.init should be(1)
-        telemetry.core.persistence.streaming.drop should be(1)
         telemetry.core.persistence.streaming.write should be(1)
         telemetry.core.persistence.streaming.read should be(0)
         telemetry.core.persistence.streaming.discard should be(1)
@@ -146,8 +138,6 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
         canStore should be(true)
         cantStore should be(false)
 
-        telemetry.core.persistence.streaming.init should be(1)
-        telemetry.core.persistence.streaming.drop should be(1)
         telemetry.core.persistence.streaming.write should be(1)
         telemetry.core.persistence.streaming.read should be(0)
         telemetry.core.persistence.streaming.discard should be(0)
@@ -175,8 +165,6 @@ trait StreamingBackendBehaviour { _: AsyncUnitSpec =>
         existsAfterReset should be(false)
         availableAfterDrop should be(alwaysAvailable) // either the backend is always available or should have been dropped
 
-        telemetry.core.persistence.streaming.init should be(1)
-        telemetry.core.persistence.streaming.drop should be(2)
         telemetry.core.persistence.streaming.write should be(1)
         telemetry.core.persistence.streaming.read should be(0)
         telemetry.core.persistence.streaming.discard should be(0)

@@ -1,6 +1,7 @@
 package stasis.shared.api
 
 import java.nio.charset.StandardCharsets
+import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 import org.apache.pekko.util.ByteString
@@ -138,13 +139,15 @@ object Formats {
         key <- k.validate[JsObject]
         owner <- (key \ "owner").validate[User.Id]
         device <- (key \ "device").validate[Device.Id]
+        created <- (key \ "created").validate[Instant]
       } yield {
-        DeviceKey(value = ByteString.empty, owner = owner, device = device)
+        DeviceKey(value = ByteString.empty, owner = owner, device = device, created = created)
       },
     tjs = { key =>
       Json.obj(
         "owner" -> Json.toJson(key.owner),
-        "device" -> Json.toJson(key.device)
+        "device" -> Json.toJson(key.device),
+        "created" -> Json.toJson(key.created)
       )
     }
   )
@@ -377,7 +380,7 @@ object Formats {
   implicit val operationProgressFormat: Format[Operation.Progress] =
     Json.format[Operation.Progress]
 
-  private def stringToPermission(string: String): Permission =
+  def stringToPermission(string: String): Permission =
     string.toLowerCase match {
       case "view-self"         => Permission.View.Self
       case "view-privileged"   => Permission.View.Privileged
@@ -388,7 +391,7 @@ object Formats {
       case "manage-service"    => Permission.Manage.Service
     }
 
-  private def permissionToString(permission: Permission): String =
+  def permissionToString(permission: Permission): String =
     permission match {
       case Permission.View.Self         => "view-self"
       case Permission.View.Privileged   => "view-privileged"
@@ -399,7 +402,7 @@ object Formats {
       case Permission.Manage.Service    => "manage-service"
     }
 
-  private def stringToOperationType(string: String): Operation.Type =
+  def stringToOperationType(string: String): Operation.Type =
     string.toLowerCase match {
       case "client-backup"             => Operation.Type.Backup
       case "client-recovery"           => Operation.Type.Recovery
@@ -409,7 +412,7 @@ object Formats {
       case "server-garbage-collection" => Operation.Type.GarbageCollection
     }
 
-  private def operationTypeToString(operationType: Operation.Type): String =
+  def operationTypeToString(operationType: Operation.Type): String =
     operationType match {
       case Operation.Type.Backup            => "client-backup"
       case Operation.Type.Recovery          => "client-recovery"

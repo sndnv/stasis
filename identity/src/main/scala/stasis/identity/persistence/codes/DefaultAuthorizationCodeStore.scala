@@ -28,38 +28,24 @@ class DefaultAuthorizationCodeStore(
 
   override def drop(): Future[Done] = backend.drop()
 
-  override def put(storedCode: StoredAuthorizationCode): Future[Done] =
+  override def put(storedCode: StoredAuthorizationCode): Future[Done] = metrics.recordPut(store = name) {
     backend
       .put(storedCode.code, storedCode)
       .map { result =>
         val _ = org.apache.pekko.pattern.after(expiration)(backend.delete(storedCode.code))
-        metrics.recordPut(store = name)
         result
       }
+  }
 
-  override def delete(code: AuthorizationCode): Future[Boolean] =
-    backend
-      .delete(code)
-      .map { result =>
-        metrics.recordDelete(store = name)
-        result
-      }
+  override def delete(code: AuthorizationCode): Future[Boolean] = metrics.recordDelete(store = name) {
+    backend.delete(code)
+  }
 
-  override def get(code: AuthorizationCode): Future[Option[StoredAuthorizationCode]] =
-    backend
-      .get(code)
-      .map { result =>
-        result.foreach(_ => metrics.recordGet(store = name))
-        result
-      }
+  override def get(code: AuthorizationCode): Future[Option[StoredAuthorizationCode]] = metrics.recordGet(store = name) {
+    backend.get(code)
+  }
 
-  override def all: Future[Seq[StoredAuthorizationCode]] =
-    backend.entries
-      .map(_.values.toSeq)
-      .map { result =>
-        if (result.nonEmpty) {
-          metrics.recordGet(store = name, entries = result.size)
-        }
-        result
-      }
+  override def all: Future[Seq[StoredAuthorizationCode]] = metrics.recordList(store = name) {
+    backend.entries.map(_.values.toSeq)
+  }
 }

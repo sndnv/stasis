@@ -36,7 +36,7 @@ class DefaultClientStore(
   private implicit val secretColumnType: JdbcType[Secret] =
     MappedColumnType.base[Secret, Array[Byte]](_.value.toArray, s => Secret(ByteString(s)))
 
-  private class SlickAccountStore(tag: Tag) extends Table[Client](tag, name) {
+  private class SlickStore(tag: Tag) extends Table[Client](tag, name) {
     def id: Rep[Client.Id] = column[Client.Id]("ID", O.PrimaryKey)
     def redirectUri: Rep[String] = column[String]("REDIRECT_URI")
     def tokenExpiration: Rep[Seconds] = column[Seconds]("TOKEN_EXPIRATION")
@@ -61,7 +61,7 @@ class DefaultClientStore(
       ) <> ((Client.apply _).tupled, Client.unapply)
   }
 
-  private val store = TableQuery[SlickAccountStore]
+  private val store = TableQuery[SlickStore]
 
   override def init(): Future[Done] =
     database.run(store.schema.create).map(_ => Done)
@@ -69,44 +69,27 @@ class DefaultClientStore(
   override def drop(): Future[Done] =
     database.run(store.schema.drop).map(_ => Done)
 
-  override def put(client: Client): Future[Done] =
-    database
-      .run(store.insertOrUpdate(client))
-      .map { _ =>
-        metrics.recordPut(store = name)
-        Done
-      }
+  override def put(client: Client): Future[Done] = metrics.recordPut(store = name) {
+    database.run(store.insertOrUpdate(client)).map(_ => Done)
+  }
 
-  override def delete(client: Client.Id): Future[Boolean] =
+  override def delete(client: Client.Id): Future[Boolean] = metrics.recordDelete(store = name) {
     database
       .run(store.filter(_.id === client).delete.map(_ == 1))
-      .map { result =>
-        metrics.recordDelete(store = name)
-        result
-      }
+  }
 
-  override def get(client: Client.Id): Future[Option[Client]] =
-    database
-      .run(store.filter(_.id === client).map(_.value).result.headOption)
-      .map { result =>
-        result.foreach(_ => metrics.recordGet(store = name))
-        result
-      }
+  override def get(client: Client.Id): Future[Option[Client]] = metrics.recordGet(store = name) {
+    database.run(store.filter(_.id === client).map(_.value).result.headOption)
+  }
 
-  override def all: Future[Seq[Client]] =
-    database
-      .run(store.result)
-      .map { result =>
-        if (result.nonEmpty) {
-          metrics.recordGet(store = name, entries = result.size)
-        }
-        result
-      }
+  override def all: Future[Seq[Client]] = metrics.recordList(store = name) {
+    database.run(store.result)
+  }
 
   override val migrations: Seq[Migration] = Seq(
     internal
       .LegacyKeyValueStore(name, profile, database)
-      .asMigration[Client, SlickAccountStore](withVersion = 1, current = store) { e =>
+      .asMigration[Client, SlickStore](withVersion = 1, current = store) { e =>
         import java.util.Base64
 
         Client(

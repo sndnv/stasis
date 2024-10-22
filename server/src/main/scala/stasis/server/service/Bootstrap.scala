@@ -1,12 +1,13 @@
 package stasis.server.service
 
 import java.io.File
+import java.time.Instant
 import java.time.LocalDateTime
 import java.util.UUID
 
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -95,24 +96,28 @@ object Bootstrap {
     for {
       _ <- serverPersistence.init()
       _ <- corePersistence.init()
-      _ <- Future.sequence(entities.definitions.map(e => logged(serverPersistence.datasetDefinitions.manage().create, e)))
-      _ <- Future.sequence(entities.devices.map(e => logged(serverPersistence.devices.manage().create, e)))
-      _ <- Future.sequence(entities.schedules.map(e => logged(serverPersistence.schedules.manage().create, e)))
-      _ <- Future.sequence(entities.users.map(e => logged(serverPersistence.users.manage().create, e)))
+      _ <- Future.sequence(entities.definitions.map(e => logged(serverPersistence.datasetDefinitions.manage().put, e)))
+      _ <- Future.sequence(entities.devices.map(e => logged(serverPersistence.devices.manage().put, e)))
+      _ <- Future.sequence(entities.schedules.map(e => logged(serverPersistence.schedules.manage().put, e)))
+      _ <- Future.sequence(entities.users.map(e => logged(serverPersistence.users.manage().put, e)))
       _ <- Future.sequence(entities.nodes.map(e => logged(corePersistence.nodes.put, e)))
     } yield {
       Done
     }
 
-  private def definitionFromConfig(config: typesafe.Config): DatasetDefinition =
+  private def definitionFromConfig(config: typesafe.Config): DatasetDefinition = {
+    val now = Instant.now()
     DatasetDefinition(
       id = UUID.fromString(config.getString("id")),
       info = config.getString("info"),
       device = UUID.fromString(config.getString("device")),
       redundantCopies = config.getInt("redundant-copies"),
       existingVersions = retentionFromConfig(config.getConfig("existing-versions")),
-      removedVersions = retentionFromConfig(config.getConfig("removed-versions"))
+      removedVersions = retentionFromConfig(config.getConfig("removed-versions")),
+      created = now,
+      updated = now
     )
+  }
 
   private def retentionFromConfig(config: typesafe.Config): DatasetDefinition.Retention =
     DatasetDefinition.Retention(
@@ -124,15 +129,19 @@ object Bootstrap {
       duration = config.getDuration("duration").toSeconds.seconds
     )
 
-  private def deviceFromConfig(config: typesafe.Config): Device =
+  private def deviceFromConfig(config: typesafe.Config): Device = {
+    val now = Instant.now()
     Device(
       id = UUID.fromString(config.getString("id")),
       name = config.getString("name"),
       node = UUID.fromString(config.getString("node")),
       owner = UUID.fromString(config.getString("owner")),
       active = config.getBoolean("active"),
-      limits = Try(config.getConfig("limits")).toOption.map(deviceLimitsFromConfig)
+      limits = Try(config.getConfig("limits")).toOption.map(deviceLimitsFromConfig),
+      created = now,
+      updated = now
     )
+  }
 
   private def deviceLimitsFromConfig(config: typesafe.Config): Device.Limits =
     Device.Limits(
@@ -143,7 +152,8 @@ object Bootstrap {
       minRetention = config.getDuration("min-retention").toSeconds.seconds
     )
 
-  private def scheduleFromConfig(config: typesafe.Config): Schedule =
+  private def scheduleFromConfig(config: typesafe.Config): Schedule = {
+    val now = Instant.now()
     Schedule(
       id = UUID.fromString(config.getString("id")),
       info = config.getString("info"),
@@ -153,17 +163,24 @@ object Bootstrap {
         .toOption
         .map(LocalDateTime.parse)
         .getOrElse(LocalDateTime.now()),
-      interval = config.getDuration("interval").toSeconds.seconds
+      interval = config.getDuration("interval").toSeconds.seconds,
+      created = now,
+      updated = now
     )
+  }
 
-  private def userFromConfig(config: typesafe.Config): User =
+  private def userFromConfig(config: typesafe.Config): User = {
+    val now = Instant.now()
     User(
       id = UUID.fromString(config.getString("id")),
       salt = config.getString("salt"),
       active = config.getBoolean("active"),
       limits = Try(config.getConfig("limits")).toOption.map(userLimitsFromConfig),
-      permissions = userPermissionsFromConfig(config.getStringList("permissions").asScala.toSeq)
+      permissions = userPermissionsFromConfig(config.getStringList("permissions").asScala.toSeq),
+      created = now,
+      updated = now
     )
+  }
 
   private def userLimitsFromConfig(config: typesafe.Config): User.Limits =
     User.Limits(
@@ -189,19 +206,24 @@ object Bootstrap {
       }
       .toSet
 
-  private def nodeFromConfig(config: typesafe.Config): Node =
+  private def nodeFromConfig(config: typesafe.Config): Node = {
+    val now = Instant.now()
     config.getString("type").toLowerCase match {
       case "local" =>
         Node.Local(
           id = UUID.fromString(config.getString("id")),
-          storeDescriptor = CrateStore.Descriptor(config.getConfig("store"))
+          storeDescriptor = CrateStore.Descriptor(config.getConfig("store")),
+          created = now,
+          updated = now
         )
 
       case "remote-http" =>
         Node.Remote.Http(
           id = UUID.fromString(config.getString("id")),
           address = HttpEndpointAddress(config.getString("address")),
-          storageAllowed = config.getBoolean("storage-allowed")
+          storageAllowed = config.getBoolean("storage-allowed"),
+          created = now,
+          updated = now
         )
 
       case "remote-grpc" =>
@@ -212,10 +234,13 @@ object Bootstrap {
             port = config.getInt("address.port"),
             tlsEnabled = config.getBoolean("address.tls-enabled")
           ),
-          storageAllowed = config.getBoolean("storage-allowed")
+          storageAllowed = config.getBoolean("storage-allowed"),
+          created = now,
+          updated = now
         )
 
     }
+  }
 
   private def logged[T](
     create: T => Future[Done],

@@ -1,3 +1,4 @@
+import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import 'package:server_ui/api/api_client.dart';
 import 'package:server_ui/model/api/requests/create_dataset_definition.dart';
@@ -63,9 +64,10 @@ class _DatasetDefinitionsState extends State<DatasetDefinitions> {
             EntityTableColumn(label: 'ID', sortBy: (e) => (e.id as String).toMinimizedString()),
             EntityTableColumn(label: 'Info', sortBy: (e) => e.info),
             EntityTableColumn(label: 'Device', sortBy: (e) => (e.device as String).toMinimizedString()),
-            EntityTableColumn(label: 'Redundant Copies', sortBy: (e) => e.redundantCopies),
+            EntityTableColumn(label: 'Copies', sortBy: (e) => e.redundantCopies, size: ColumnSize.S),
             EntityTableColumn(label: 'Retention\nExisting Versions'),
             EntityTableColumn(label: 'Retention\nRemoved Versions'),
+            EntityTableColumn(label: 'Updated', sortBy: (e) => e.updated.toString()),
             EntityTableColumn(label: ''),
           ],
           entityToRow: (entity) {
@@ -81,9 +83,20 @@ class _DatasetDefinitionsState extends State<DatasetDefinitions> {
                   withFilter: definition.device,
                 ),
               )),
-              DataCell(Text(definition.redundantCopies.toString())),
+              DataCell(
+                Tooltip(
+                  message: 'Redundant copies: ${definition.redundantCopies.toString()}',
+                  child: Text(definition.redundantCopies.toString()),
+                ),
+              ),
               DataCell(Text(definition.existingVersions.render())),
               DataCell(Text(definition.removedVersions.render())),
+              DataCell(
+                Tooltip(
+                  message: 'Created: ${definition.created.render()}\nUpdated: ${definition.updated.render()}',
+                  child: Text(definition.updated.render(), overflow: TextOverflow.ellipsis),
+                ),
+              ),
               DataCell(
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,

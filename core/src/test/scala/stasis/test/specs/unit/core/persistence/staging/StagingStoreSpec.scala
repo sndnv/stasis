@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.core.persistence.staging
 
+import java.time.Instant
+
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
@@ -251,12 +253,26 @@ class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfter
     lazy val localNodes: Map[Node.Local, Int] = Map(
       Node.Local(
         id = Node.generateId(),
-        storeDescriptor = null /* mock crate store is always provided in this test */
+        storeDescriptor = null, /* mock crate store is always provided in this test */
+        created = Instant.now(),
+        updated = Instant.now()
       ) -> 1
     )
     lazy val remoteNodes: Map[Node.Remote.Http, Int] = Map(
-      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:8000"), storageAllowed = true) -> 1,
-      Node.Remote.Http(Node.generateId(), address = HttpEndpointAddress("localhost:9000"), storageAllowed = true) -> 1
+      Node.Remote.Http(
+        Node.generateId(),
+        address = HttpEndpointAddress("localhost:8000"),
+        storageAllowed = true,
+        created = Instant.now(),
+        updated = Instant.now()
+      ) -> 1,
+      Node.Remote.Http(
+        Node.generateId(),
+        address = HttpEndpointAddress("localhost:9000"),
+        storageAllowed = true,
+        created = Instant.now(),
+        updated = Instant.now()
+      ) -> 1
     )
     lazy val proxy: NodeProxy = new NodeProxy(
       httpClient = testClient,

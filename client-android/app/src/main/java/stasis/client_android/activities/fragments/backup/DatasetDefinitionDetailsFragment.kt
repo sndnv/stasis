@@ -25,6 +25,7 @@ import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.asString
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.Common.toMinimizedString
+import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullDateTime
 import stasis.client_android.activities.helpers.Transitions.configureSourceTransition
 import stasis.client_android.activities.helpers.Transitions.configureTargetTransition
 import stasis.client_android.activities.helpers.Transitions.operationComplete
@@ -129,6 +130,37 @@ class DatasetDefinitionDetailsFragment : Fragment() {
                             style = StyleSpan(Typeface.BOLD)
                         )
                     )
+
+            binding.datasetDefinitionDetailsCreated.text =
+                context.getString(R.string.dataset_definition_field_content_created)
+                    .renderAsSpannable(
+                        StyledString(
+                            placeholder = "%1\$s",
+                            content = context.getString(R.string.dataset_definition_field_content_created_label),
+                            style = StyleSpan(Typeface.BOLD)
+                        ),
+                        StyledString(
+                            placeholder = "%2\$s",
+                            content = definition.created.formatAsFullDateTime(context),
+                            style = StyleSpan(Typeface.NORMAL)
+                        )
+                    )
+
+            binding.datasetDefinitionDetailsUpdated.text =
+                context.getString(R.string.dataset_definition_field_content_updated)
+                    .renderAsSpannable(
+                        StyledString(
+                            placeholder = "%1\$s",
+                            content = context.getString(R.string.dataset_definition_field_content_updated_label),
+                            style = StyleSpan(Typeface.BOLD)
+                        ),
+                        StyledString(
+                            placeholder = "%2\$s",
+                            content = definition.updated.formatAsFullDateTime(context),
+                            style = StyleSpan(Typeface.NORMAL)
+                        )
+                    )
+
 
             binding.startBackup.setOnClickListener {
                 if (activity.needsExtraPermissions()) {

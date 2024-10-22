@@ -1,7 +1,7 @@
-import 'package:stasis_client_ui/pages/components/rendering.dart';
-import 'package:stasis_client_ui/utils/chrono_unit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:stasis_client_ui/pages/components/rendering.dart';
+import 'package:stasis_client_ui/utils/chrono_unit.dart';
 
 class DurationField extends StatefulWidget {
   const DurationField({
@@ -85,6 +85,10 @@ class _DurationFieldState extends State<DurationField> {
 
   Duration _fromFields(int amount, ChronoUnit unit) {
     switch (unit) {
+      case ChronoUnit.years:
+        return Duration(days: amount * 365);
+      case ChronoUnit.months:
+        return Duration(days: amount * 31);
       case ChronoUnit.days:
         return Duration(days: amount);
       case ChronoUnit.hours:

@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.shared.api.requests
 
+import java.time.Instant
+
 import stasis.shared.api.requests.CreateDeviceOwn
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.UnitSpec
@@ -26,6 +28,8 @@ class CreateDeviceOwnSpec extends UnitSpec {
     salt = "test-salt",
     active = true,
     limits = None,
-    permissions = Set.empty
+    permissions = Set.empty,
+    created = Instant.now(),
+    updated = Instant.now()
   )
 }

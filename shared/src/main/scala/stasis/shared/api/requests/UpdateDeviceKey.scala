@@ -1,5 +1,7 @@
 package stasis.shared.api.requests
 
+import java.time.Instant
+
 import org.apache.pekko.util.ByteString
 
 import stasis.shared.model.devices.Device
@@ -12,7 +14,8 @@ object UpdateDeviceKey {
       DeviceKey(
         value = key,
         owner = owner.id,
-        device = device.id
+        device = device.id,
+        created = Instant.now()
       )
   }
 }

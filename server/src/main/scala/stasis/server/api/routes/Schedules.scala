@@ -7,7 +7,7 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
 
-import stasis.server.model.schedules.ScheduleStore
+import stasis.server.persistence.schedules.ScheduleStore
 import stasis.server.security.CurrentUser
 import stasis.shared.api.requests.CreateSchedule
 import stasis.shared.api.requests.UpdateSchedule
@@ -27,7 +27,7 @@ class Schedules()(implicit ctx: RoutesContext) extends ApiRoutes {
             resource[ScheduleStore.View.Service] { view =>
               view.list().map { schedules =>
                 log.debugN("User [{}] successfully retrieved [{}] schedules", currentUser, schedules.size)
-                discardEntity & complete(schedules.values)
+                discardEntity & complete(schedules)
               }
             }
           },
@@ -36,7 +36,7 @@ class Schedules()(implicit ctx: RoutesContext) extends ApiRoutes {
               resource[ScheduleStore.Manage.Service] { manage =>
                 val schedule = createRequest.toSchedule
 
-                manage.create(schedule).map { _ =>
+                manage.put(schedule).map { _ =>
                   log.debugN("User [{}] successfully created schedule [{}]", currentUser, schedule.id)
                   complete(CreatedSchedule(schedule.id))
                 }
@@ -52,7 +52,7 @@ class Schedules()(implicit ctx: RoutesContext) extends ApiRoutes {
               resource[ScheduleStore.View.Public] { view =>
                 view.list().map { schedules =>
                   log.debugN("User [{}] successfully retrieved [{}] public schedules", currentUser, schedules.size)
-                  discardEntity & complete(schedules.values)
+                  discardEntity & complete(schedules)
                 }
               }
             }
@@ -94,7 +94,7 @@ class Schedules()(implicit ctx: RoutesContext) extends ApiRoutes {
               resources[ScheduleStore.View.Service, ScheduleStore.Manage.Service] { (view, manage) =>
                 view.get(scheduleId).flatMap {
                   case Some(schedule) =>
-                    manage.update(updateRequest.toUpdatedSchedule(schedule)).map { _ =>
+                    manage.put(updateRequest.toUpdatedSchedule(schedule)).map { _ =>
                       log.debugN("User [{}] successfully updated schedule [{}]", currentUser, scheduleId)
                       complete(StatusCodes.OK)
                     }

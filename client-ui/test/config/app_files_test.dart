@@ -27,5 +27,19 @@ void main() {
         throwsA(const TypeMatcher<FileNotAvailableException>()),
       );
     });
+
+    test('provide empty app files', () async {
+      final files = AppFiles.empty();
+
+      expect(files.paths.config, '/tmp');
+      expect(files.paths.rules, '/tmp');
+      expect(files.paths.schedules, '/tmp');
+      expect(files.paths.apiToken, '/tmp');
+
+      expect(files.config.isEmpty(), true);
+      expect(files.rules, []);
+      expect(files.schedules, []);
+      expect(files.apiToken, null);
+    });
   });
 }

@@ -1,5 +1,7 @@
 package stasis.shared.api.requests
 
+import java.time.Instant
+
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.devices.Device
 
@@ -20,7 +22,9 @@ object CreateDatasetDefinition {
         device = request.device,
         redundantCopies = request.redundantCopies,
         existingVersions = request.existingVersions,
-        removedVersions = request.removedVersions
+        removedVersions = request.removedVersions,
+        created = Instant.now(),
+        updated = Instant.now()
       )
   }
 }

@@ -1,5 +1,8 @@
 package stasis.core.api
 
+import java.time.Instant
+
+import stasis.core.networking.EndpointAddress
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.packaging.Manifest
@@ -20,6 +23,19 @@ object Formats {
 
   implicit val grpcEndpointAddressFormat: Format[GrpcEndpointAddress] =
     Json.format[GrpcEndpointAddress]
+
+  implicit val addressFormat: Format[EndpointAddress] = Format(
+    _.validate[JsObject].flatMap { address =>
+      (address \ "address_type").validate[String].map {
+        case "http" => (address \ "address").as[HttpEndpointAddress]
+        case "grpc" => (address \ "address").as[GrpcEndpointAddress]
+      }
+    },
+    {
+      case address: HttpEndpointAddress => Json.obj("address_type" -> Json.toJson("http"), "address" -> Json.toJson(address))
+      case address: GrpcEndpointAddress => Json.obj("address_type" -> Json.toJson("grpc"), "address" -> Json.toJson(address))
+    }
+  )
 
   implicit val crateStoreDescriptorReads: Reads[CrateStore.Descriptor] = Reads {
     _.validate[JsObject].flatMap { descriptor =>
@@ -77,21 +93,27 @@ object Formats {
           val id = (node \ "id").as[Node.Id]
           Node.Local(
             id = id,
-            storeDescriptor = (node \ "store_descriptor").as[CrateStore.Descriptor]
+            storeDescriptor = (node \ "store_descriptor").as[CrateStore.Descriptor],
+            created = (node \ "created").as[Instant],
+            updated = (node \ "updated").as[Instant]
           )
 
         case "remote-http" =>
           Node.Remote.Http(
             id = (node \ "id").as[Node.Id],
             address = (node \ "address").as[HttpEndpointAddress],
-            storageAllowed = (node \ "storage_allowed").as[Boolean]
+            storageAllowed = (node \ "storage_allowed").as[Boolean],
+            created = (node \ "created").as[Instant],
+            updated = (node \ "updated").as[Instant]
           )
 
         case "remote-grpc" =>
           Node.Remote.Grpc(
             id = (node \ "id").as[Node.Id],
             address = (node \ "address").as[GrpcEndpointAddress],
-            storageAllowed = (node \ "storage_allowed").as[Boolean]
+            storageAllowed = (node \ "storage_allowed").as[Boolean],
+            created = (node \ "created").as[Instant],
+            updated = (node \ "updated").as[Instant]
           )
       }
     }
@@ -102,7 +124,9 @@ object Formats {
       Json.obj(
         "node_type" -> Json.toJson("local"),
         "id" -> Json.toJson(node.id),
-        "store_descriptor" -> Json.toJson(node.storeDescriptor)
+        "store_descriptor" -> Json.toJson(node.storeDescriptor),
+        "created" -> Json.toJson(node.created),
+        "updated" -> Json.toJson(node.updated)
       )
 
     case node: Node.Remote.Http =>
@@ -110,7 +134,9 @@ object Formats {
         "node_type" -> Json.toJson("remote-http"),
         "id" -> Json.toJson(node.id),
         "address" -> Json.toJson(node.address),
-        "storage_allowed" -> Json.toJson(node.storageAllowed)
+        "storage_allowed" -> Json.toJson(node.storageAllowed),
+        "created" -> Json.toJson(node.created),
+        "updated" -> Json.toJson(node.updated)
       )
 
     case node: Node.Remote.Grpc =>
@@ -118,7 +144,9 @@ object Formats {
         "node_type" -> Json.toJson("remote-grpc"),
         "id" -> Json.toJson(node.id),
         "address" -> Json.toJson(node.address),
-        "storage_allowed" -> Json.toJson(node.storageAllowed)
+        "storage_allowed" -> Json.toJson(node.storageAllowed),
+        "created" -> Json.toJson(node.created),
+        "updated" -> Json.toJson(node.updated)
       )
   }
 

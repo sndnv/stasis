@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.shared.api.requests
 
+import java.time.Instant
+
 import scala.concurrent.duration._
 
 import stasis.shared.api.requests.UpdateUserLimits
@@ -17,7 +19,9 @@ class UpdateUserSpec extends UnitSpec {
       salt = "test-salt",
       active = true,
       limits = None,
-      permissions = Set.empty
+      permissions = Set.empty,
+      created = Instant.now(),
+      updated = Instant.now()
     )
 
     val expectedUserWithUpdatedState = initialUser.copy(active = false)
@@ -47,9 +51,17 @@ class UpdateUserSpec extends UnitSpec {
 
     val updateSaltRequest = UpdateUserSalt(salt = "other-salt")
 
-    updateStateRequest.toUpdatedUser(initialUser) should be(expectedUserWithUpdatedState)
-    updateLimitsRequest.toUpdatedUser(initialUser) should be(expectedUserWithUpdatedLimits)
-    updatePermissionsRequest.toUpdatedUser(initialUser) should be(expectedUserWithUpdatedPermissions)
-    updateSaltRequest.toUpdatedUser(initialUser) should be(expectedUserWithUpdatedSalt)
+    updateStateRequest.toUpdatedUser(initialUser).copy(updated = expectedUserWithUpdatedState.updated) should be(
+      expectedUserWithUpdatedState
+    )
+    updateLimitsRequest.toUpdatedUser(initialUser).copy(updated = expectedUserWithUpdatedLimits.updated) should be(
+      expectedUserWithUpdatedLimits
+    )
+    updatePermissionsRequest.toUpdatedUser(initialUser).copy(updated = expectedUserWithUpdatedPermissions.updated) should be(
+      expectedUserWithUpdatedPermissions
+    )
+    updateSaltRequest.toUpdatedUser(initialUser).copy(updated = expectedUserWithUpdatedSalt.updated) should be(
+      expectedUserWithUpdatedSalt
+    )
   }
 }

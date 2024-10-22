@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.core.networking.grpc
 
+import java.time.Instant
+
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
@@ -21,7 +23,7 @@ import stasis.core.routing.Node
 import stasis.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
-import stasis.test.specs.unit.core.persistence.mocks.MockReservationStore
+import stasis.test.specs.unit.core.persistence.reservations.MockReservationStore
 import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockGrpcAuthenticator
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
@@ -168,7 +170,8 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       size = storageRequest.size,
       copies = storageRequest.copies,
       origin = testNode,
-      target = Node.generateId()
+      target = Node.generateId(),
+      created = Instant.now()
     )
 
     for {
@@ -181,7 +184,11 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       reservation match {
         case Some(actualReservation) =>
           actualReservation should be(
-            expectedReservation.copy(id = actualReservation.id, target = actualReservation.target)
+            expectedReservation.copy(
+              id = actualReservation.id,
+              target = actualReservation.target,
+              created = actualReservation.created
+            )
           )
 
         case None =>
@@ -242,7 +249,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
     val endpoint = createTestGrpcEndpoint(
-      testReservationStore = Some(new MockReservationStore()),
+      testReservationStore = Some(MockReservationStore()),
       testCrateStore = Some(new MockCrateStore(maxStorageSize = Some(0))),
       reservationDisabled = true
     )
@@ -336,7 +343,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   it should "handle push failures" in withRetry {
     implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
-    val reservationStore = new MockReservationStore()
+    val reservationStore = MockReservationStore()
     val endpoint = createTestGrpcEndpoint(
       testReservationStore = Some(reservationStore),
       testCrateStore = Some(new MockCrateStore(persistDisabled = true))
@@ -518,7 +525,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   )(implicit telemetry: TelemetryContext): TestGrpcEndpoint =
     new TestGrpcEndpoint(
       testCrateStore = testCrateStore,
-      testReservationStore = testReservationStore.getOrElse(new MockReservationStore()),
+      testReservationStore = testReservationStore.getOrElse(MockReservationStore()),
       testAuthenticator = testAuthenticator,
       reservationDisabled = reservationDisabled
     )
@@ -553,6 +560,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     size = crateContent.length.toLong,
     copies = 3,
     origin = testNode,
-    target = Node.generateId()
+    target = Node.generateId(),
+    created = Instant.now()
   )
 }

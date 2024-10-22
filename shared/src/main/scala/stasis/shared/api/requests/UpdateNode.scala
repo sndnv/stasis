@@ -1,5 +1,7 @@
 package stasis.shared.api.requests
 
+import java.time.Instant
+
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.crates.CrateStore
@@ -17,13 +19,13 @@ object UpdateNode {
     def toUpdatedNode(node: Node): Node =
       (request, node) match {
         case (UpdateLocalNode(storeDescriptor), node: Node.Local) =>
-          node.copy(storeDescriptor = storeDescriptor)
+          node.copy(storeDescriptor = storeDescriptor, updated = Instant.now())
 
         case (UpdateRemoteHttpNode(address, storageAllowed), node: Node.Remote.Http) =>
-          node.copy(address = address, storageAllowed = storageAllowed)
+          node.copy(address = address, storageAllowed = storageAllowed, updated = Instant.now())
 
         case (UpdateRemoteGrpcNode(address, storageAllowed), node: Node.Remote.Grpc) =>
-          node.copy(address = address, storageAllowed = storageAllowed)
+          node.copy(address = address, storageAllowed = storageAllowed, updated = Instant.now())
 
         case (_, _) =>
           val requestType = request.getClass.getSimpleName

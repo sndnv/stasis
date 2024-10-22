@@ -7,7 +7,7 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
 
-import stasis.server.model.users.UserStore
+import stasis.server.persistence.users.UserStore
 import stasis.server.security.CurrentUser
 import stasis.server.security.users.UserCredentialsManager
 import stasis.shared.api.requests._
@@ -35,7 +35,7 @@ class Users(
             resource[UserStore.View.Privileged] { view =>
               view.list().map { users =>
                 log.debugN("User [{}] successfully retrieved [{}] users", currentUser, users.size)
-                discardEntity & complete(users.values)
+                discardEntity & complete(users)
               }
             }
           },
@@ -66,7 +66,7 @@ class Users(
                   )
                   .map {
                     case UserCredentialsManager.Result.Success =>
-                      onSuccess(manage.create(user)) { _ =>
+                      onSuccess(manage.put(user)) { _ =>
                         log.debugN("User [{}] successfully created user [{}]", currentUser, user.id)
                         complete(CreatedUser(user.id))
                       }
@@ -387,7 +387,7 @@ class Users(
     resources[UserStore.View.Privileged, UserStore.Manage.Privileged] { (view, manage) =>
       view.get(userId).flatMap {
         case Some(user) =>
-          manage.update(updateRequest.toUpdatedUser(user)).map { _ =>
+          manage.put(updateRequest.toUpdatedUser(user)).map { _ =>
             log.debugN("User [{}] successfully updated user [{}]", currentUser, userId)
             complete(StatusCodes.OK)
           }

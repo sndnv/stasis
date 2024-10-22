@@ -3,6 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('A ConfigFactory should', () {
+    test('provide empty config', () async {
+      final config = ConfigFactory.empty();
+
+      const expected = '{}';
+
+      expect(config.toString(), expected);
+    });
+
     test('load config from valid JSON files', () async {
       const configFile = './test/resources/valid.json';
 

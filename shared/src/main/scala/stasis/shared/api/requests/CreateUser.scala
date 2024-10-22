@@ -1,5 +1,7 @@
 package stasis.shared.api.requests
 
+import java.time.Instant
+
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 
@@ -18,7 +20,9 @@ object CreateUser {
         salt = withSalt,
         active = true,
         limits = request.limits,
-        permissions = request.permissions
+        permissions = request.permissions,
+        created = Instant.now(),
+        updated = Instant.now()
       )
   }
 }

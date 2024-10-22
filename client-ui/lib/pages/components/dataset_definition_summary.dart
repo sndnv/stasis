@@ -30,6 +30,9 @@ class DatasetDefinitionSummary {
       ),
     );
 
+    final createdDifference = DateTime.now().difference(definition.created).renderApproximate();
+    final updatedDifference = DateTime.now().difference(definition.updated).renderApproximate();
+
     final subtitle = Padding(
       padding: const EdgeInsets.all(4.0),
       child: RichText(
@@ -42,6 +45,10 @@ class DatasetDefinitionSummary {
             TextSpan(text: definition.removedVersions.render(), style: smallBold),
             TextSpan(text: '\n Redundant copies: ', style: theme.textTheme.bodySmall),
             TextSpan(text: definition.redundantCopies.toString(), style: smallBold),
+            TextSpan(text: '\nCreated: ', style: smallBold),
+            TextSpan(text: '${definition.created.render()} ($createdDifference ago)', style: theme.textTheme.bodySmall),
+            TextSpan(text: '\nUpdated: ', style: smallBold),
+            TextSpan(text: '${definition.updated.render()} ($updatedDifference ago)', style: theme.textTheme.bodySmall),
           ],
         ),
       ),

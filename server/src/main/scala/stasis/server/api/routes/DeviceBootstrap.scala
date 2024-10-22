@@ -8,9 +8,9 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
 
-import stasis.server.model.devices.DeviceBootstrapCodeStore
-import stasis.server.model.devices.DeviceStore
-import stasis.server.model.users.UserStore
+import stasis.server.persistence.devices.DeviceBootstrapCodeStore
+import stasis.server.persistence.devices.DeviceStore
+import stasis.server.persistence.users.UserStore
 import stasis.server.security.CurrentUser
 import stasis.server.security.devices.DeviceBootstrapCodeGenerator
 import stasis.server.security.devices.DeviceClientSecretGenerator
@@ -66,7 +66,7 @@ class DeviceBootstrap(
                 DeviceBootstrapCodeStore.View.Self
               ] { (deviceView, bootstrapCodeView) =>
                 for {
-                  devices <- deviceView.list(currentUser).map(_.keys.toSeq)
+                  devices <- deviceView.list(currentUser).map(_.map(_.id))
                   codes <- bootstrapCodeView.list(devices)
                 } yield {
                   log.debugN("User [{}] successfully retrieved [{}] own device bootstrap codes", currentUser, codes.size)
@@ -80,7 +80,7 @@ class DeviceBootstrap(
               put {
                 resources[DeviceStore.View.Self, DeviceBootstrapCodeStore.Manage.Self] { (deviceView, bootstrapCodeManage) =>
                   for {
-                    devices <- deviceView.list(currentUser).map(_.keys.toSeq)
+                    devices <- deviceView.list(currentUser).map(_.map(_.id))
                     code <- context.bootstrapCodeGenerator.generate(currentUser, deviceId)
                     _ <- bootstrapCodeManage.put(devices, code)
                   } yield {
@@ -92,7 +92,7 @@ class DeviceBootstrap(
               delete {
                 resources[DeviceStore.View.Self, DeviceBootstrapCodeStore.Manage.Self] { (deviceView, bootstrapCodeManage) =>
                   for {
-                    devices <- deviceView.list(currentUser).map(_.keys.toSeq)
+                    devices <- deviceView.list(currentUser).map(_.map(_.id))
                     deleted <- bootstrapCodeManage.delete(devices, deviceId)
                   } yield {
                     if (deleted) {
@@ -120,7 +120,7 @@ class DeviceBootstrap(
         ] { (deviceView, userView) =>
           val result = for {
             devices <- deviceView.list(currentUser)
-            device <- devices.get(code.device) match {
+            device <- devices.find(_.id == code.device) match {
               case Some(device) => Future.successful(device)
               case None         => Future.failed(new IllegalStateException(s"Device [${code.device.toString}] not found"))
             }

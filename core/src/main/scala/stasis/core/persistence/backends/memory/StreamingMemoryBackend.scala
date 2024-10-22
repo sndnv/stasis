@@ -33,19 +33,10 @@ class StreamingMemoryBackend private (
     s"StreamingMemoryBackend(maxSize=${maxSize.toString}, maxChunkSize=${maxChunkSize.toString})"
 
   override def init(): Future[Done] =
-    backend
-      .init()
-      .map { result =>
-        metrics.recordInit(backend = backend.name)
-        result
-      }
+    backend.init()
 
-  override def drop(): Future[Done] = backend
-    .drop()
-    .map { result =>
-      metrics.recordDrop(backend = backend.name)
-      result
-    }
+  override def drop(): Future[Done] =
+    backend.drop()
 
   override def available(): Future[Boolean] = Future.successful(true)
 

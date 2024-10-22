@@ -3,7 +3,14 @@ import 'package:server_ui/model/users/user.dart';
 
 void main() {
   group('An ExtendedUser should', () {
-    const user = User(id: 'test-id', salt: 'test-salt', active: true, permissions: {});
+    final user = User(
+      id: 'test-id',
+      salt: 'test-salt',
+      active: true,
+      permissions: {},
+      created: DateTime.now(),
+      updated: DateTime.now(),
+    );
 
     test('check if permissions allow for privileged view access', () async {
       expect(user.viewPrivilegedAllowed(), false);
