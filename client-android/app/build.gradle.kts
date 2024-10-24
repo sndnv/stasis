@@ -64,8 +64,8 @@ android {
         targetSdk = 34
 
         applicationId = "stasis.client.android"
-        versionCode = 2
-        versionName = "1.1.4-SNAPSHOT"
+        versionCode = 3
+        versionName = "1.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
