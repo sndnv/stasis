@@ -337,6 +337,6 @@ object StasisClientDependencies {
         val DeviceRefreshInterval: Duration = Duration.ofMinutes(5)
         val SchedulesRefreshInterval: Duration = Duration.ofMinutes(5)
 
-        val CredentialsExpirationTolerance: Duration = Duration.ofSeconds(15)
+        val CredentialsExpirationTolerance: Duration = Duration.ofSeconds(120)
     }
 }
