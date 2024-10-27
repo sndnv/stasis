@@ -73,7 +73,7 @@ class _OwnersState extends State<Owners> {
                           ),
                   ),
                   DataCell(Text(owner.subject ?? '-')),
-                  DataCell(Text(owner.allowedScopes.join(', '))),
+                  DataCell(Text(owner.allowedScopes.isEmpty ? '-' : owner.allowedScopes.join(', '))),
                   DataCell(Text(owner.active ? 'Yes' : 'No')),
                   DataCell(Text(owner.created.render())),
                   DataCell(Text(owner.updated.render())),
