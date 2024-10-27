@@ -9,6 +9,7 @@ import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.ActorSystem
 import slick.jdbc.JdbcProfile
 import slick.jdbc.JdbcType
+import slick.lifted.Index
 import slick.lifted.ProvenShape
 
 import stasis.identity.model.clients.Client
@@ -16,7 +17,6 @@ import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.tokens.RefreshToken
 import stasis.identity.model.tokens.StoredRefreshToken
 import stasis.identity.persistence.internal
-import stasis.layers.persistence.KeyValueStore
 import stasis.layers.persistence.Metrics
 import stasis.layers.persistence.migration.Migration
 import stasis.layers.telemetry.TelemetryContext
@@ -25,8 +25,7 @@ class DefaultRefreshTokenStore(
   override val name: String,
   protected val profile: JdbcProfile,
   protected val database: JdbcProfile#Backend#Database,
-  expiration: FiniteDuration,
-  directory: KeyValueStore[(Client.Id, ResourceOwner.Id), RefreshToken]
+  expiration: FiniteDuration
 )(implicit val system: ActorSystem[Nothing], telemetry: TelemetryContext)
     extends RefreshTokenStore {
   import profile.api._
@@ -36,6 +35,8 @@ class DefaultRefreshTokenStore(
 
   private implicit val tokenColumnType: JdbcType[RefreshToken] =
     MappedColumnType.base[RefreshToken, String](_.value, RefreshToken.apply)
+
+  private[tokens] val clientOwnerIndexName: String = s"${name}_UNIQUE_CLIENT_OWNER"
 
   private class SlickStore(tag: Tag) extends Table[StoredRefreshToken](tag, name) {
     def token: Rep[RefreshToken] = column[RefreshToken]("TOKEN", O.PrimaryKey)
@@ -54,15 +55,18 @@ class DefaultRefreshTokenStore(
         expiration,
         created
       ) <> ((StoredRefreshToken.apply _).tupled, StoredRefreshToken.unapply)
+
+    def index_unique_client_owner: Index =
+      index(clientOwnerIndexName, (client, owner), unique = true)
   }
 
   private val store = TableQuery[SlickStore]
 
   override def init(): Future[Done] =
-    database.run(store.schema.create).flatMap(_ => directory.init())
+    database.run(store.schema.create).map(_ => Done)
 
   override def drop(): Future[Done] =
-    database.run(store.schema.drop).flatMap(_ => directory.drop())
+    database.run(store.schema.drop).map(_ => Done)
 
   override def put(
     client: Client.Id,
@@ -70,19 +74,20 @@ class DefaultRefreshTokenStore(
     owner: ResourceOwner,
     scope: Option[String]
   ): Future[Done] = metrics.recordPut(store = name) {
+    val now = Instant.now()
+
+    val stored = StoredRefreshToken(
+      token = token,
+      client = client,
+      owner = owner.username,
+      scope = scope,
+      expiration = now.plusSeconds(expiration.toSeconds),
+      created = now
+    )
+
     for {
-      _ <- dropExisting(client, owner.username)
-      now = Instant.now()
-      value = StoredRefreshToken(
-        token = token,
-        client = client,
-        owner = owner.username,
-        scope = scope,
-        expiration = now.plusSeconds(expiration.toSeconds),
-        created = now
-      )
-      _ <- database.run(store.insertOrUpdate(value))
-      _ <- directory.put(client -> owner.username, token)
+      _ <- delete(client, owner)
+      _ <- database.run(store.insertOrUpdate(stored))
     } yield {
       val _ = expire(token)
       Done
@@ -90,37 +95,20 @@ class DefaultRefreshTokenStore(
   }
 
   override def delete(token: RefreshToken): Future[Boolean] = metrics.recordDelete(store = name) {
-    get(token)
-      .flatMap {
-        case Some(existingToken) => directory.delete(existingToken.client -> existingToken.owner)
-        case None                => Future.successful(false)
-      }
-      .flatMap(_ => database.run(store.filter(_.token === token).delete).map(_ == 1))
+    database.run(store.filter(_.token === token).delete).map(_ == 1)
   }
 
   override def get(token: RefreshToken): Future[Option[StoredRefreshToken]] = metrics.recordGet(store = name) {
-    database.run(store.filter(_.token === token).map(_.value).result.headOption)
+    database.run(store.filter(e => e.token === token && e.expiration > Instant.now()).map(_.value).result.headOption)
   }
 
   override def all: Future[Seq[StoredRefreshToken]] = metrics.recordList(store = name) {
-    database.run(store.result)
+    val now = Instant.now()
+    database.run(store.filter(_.expiration > now).result)
   }
 
-  private def dropExisting(client: Client.Id, owner: ResourceOwner.Id): Future[Done] =
-    directory
-      .get(client -> owner)
-      .flatMap {
-        case Some(existingToken) =>
-          for {
-            _ <- directory.delete(client -> owner)
-            _ <- delete(existingToken)
-          } yield {
-            Done
-          }
-
-        case None =>
-          Future.successful(Done)
-      }
+  private def delete(client: Client.Id, owner: ResourceOwner): Future[Done] =
+    database.run(store.filter(e => e.client === client && e.owner === owner.username).delete).map(_ => Done)
 
   private def expire(token: RefreshToken): Future[Boolean] =
     org.apache.pekko.pattern.after(expiration)(delete(token))
@@ -137,22 +125,31 @@ class DefaultRefreshTokenStore(
           expiration = (e \ "expiration").as[Instant],
           created = Instant.now()
         )
+      },
+    Migration(
+      version = 2,
+      needed = Migration.Action {
+        for {
+          table <- database.run(slick.jdbc.meta.MTable.getTables(namePattern = name).map(_.headOption))
+          indices <- table.map(t => database.run(t.getIndexInfo(unique = true))).getOrElse(Future.successful(Seq.empty))
+        } yield {
+          table.nonEmpty && !indices.flatMap(_.indexName).contains(clientOwnerIndexName)
+        }
+      },
+      action = Migration.Action {
+        database.run(sqlu"""CREATE UNIQUE INDEX "#$clientOwnerIndexName" ON "#$name" ("CLIENT","OWNER")""")
       }
+    )
   )
 
   locally {
-    val _ = all.flatMap { entries =>
+    val _ = database.run(store.result).flatMap { entries =>
       val now = Instant.now()
 
       Future.sequence(
-        entries.map {
+        entries.collect {
           case storedToken if storedToken.expiration.isBefore(now) =>
             delete(storedToken.token)
-
-          case storedToken =>
-            directory
-              .put(storedToken.client -> storedToken.owner, storedToken.token)
-              .flatMap(_ => expire(storedToken.token))
         }
       )
     }

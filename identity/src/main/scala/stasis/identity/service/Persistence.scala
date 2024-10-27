@@ -11,11 +11,8 @@ import org.apache.pekko.util.Timeout
 import slick.jdbc.JdbcProfile
 
 import stasis.core.persistence.backends.slick.SlickProfile
-import stasis.identity.model.clients.Client
 import stasis.identity.model.codes.AuthorizationCode
 import stasis.identity.model.codes.StoredAuthorizationCode
-import stasis.identity.model.owners.ResourceOwner
-import stasis.identity.model.tokens.RefreshToken
 import stasis.identity.persistence.apis.ApiStore
 import stasis.identity.persistence.apis.DefaultApiStore
 import stasis.identity.persistence.clients.ClientStore
@@ -81,8 +78,7 @@ class Persistence(
       name = "REFRESH_TOKENS",
       profile = profile,
       database = database,
-      expiration = refreshTokenExpiration,
-      directory = backends.tokenDirectory
+      expiration = refreshTokenExpiration
     )
 
   val authorizationCodes: AuthorizationCodeStore =
@@ -126,9 +122,6 @@ class Persistence(
     }
 
   private object backends {
-    val tokenDirectory: KeyValueStore[(Client.Id, ResourceOwner.Id), RefreshToken] =
-      MemoryStore[(Client.Id, ResourceOwner.Id), RefreshToken](name = "token-directory")
-
     val codes: KeyValueStore[AuthorizationCode, StoredAuthorizationCode] =
       MemoryStore[AuthorizationCode, StoredAuthorizationCode](name = "code-store")
   }
