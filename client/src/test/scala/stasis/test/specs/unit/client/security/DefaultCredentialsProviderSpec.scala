@@ -9,6 +9,7 @@ import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 
 import stasis.client.security.DefaultCredentialsProvider
+import stasis.layers.security.exceptions.ProviderFailure
 import stasis.layers.security.mocks.MockOAuthClient
 import stasis.layers.security.oauth.OAuthClient.AccessTokenResponse
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -108,33 +109,65 @@ class DefaultCredentialsProviderSpec extends AsyncUnitSpec with Eventually {
     }
   }
 
-  it should "fail if not API refresh token is available" in {
+  it should "handle core token refresh failures" in {
+    val (provider, client) = createProvider(
+      initialCoreToken = defaultCoreToken.copy(expires_in = 1, refresh_token = None),
+      newToken = None,
+      expirationTolerance = 1.second
+    )
+
+    val e = provider.core.failed.await
+    client.tokensProvided should be(1)
+
+    e.getMessage should include("No token response is available")
+  }
+
+  it should "handle core token retrieval failures" in {
+    val (provider, client) = createProvider(
+      initialCoreToken = defaultCoreToken.copy(expires_in = 1),
+      newToken = None,
+      expirationTolerance = 1.second
+    )
+
+    val e = provider.core.failed.await
+    client.tokensProvided should be(1)
+
+    e.getMessage should include("No token response is available")
+  }
+
+  it should "handle API token refresh failures" in {
+    val (provider, client) = createProvider(
+      initialApiToken = defaultApiToken.copy(expires_in = 1),
+      newToken = None,
+      expirationTolerance = 1.second
+    )
+
+    val e = provider.api.failed.await
+    client.tokensProvided should be(1)
+
+    e.getMessage should include("No token response is available")
+  }
+
+  it should "fail if no API refresh token is available" in {
     val (provider, client) = createProvider(
       initialApiToken = defaultApiToken.copy(expires_in = 1, refresh_token = None),
       expirationTolerance = 1.second
     )
 
-    eventually[Assertion] {
-      val token = provider.api.await
+    val e = provider.api.failed.await
+    client.tokensProvided should be(0)
 
-      token match {
-        case OAuth2BearerToken(actualToken) =>
-          actualToken should be(defaultApiToken.access_token)
-          client.tokensProvided should be(0)
-
-        case other =>
-          fail(s"Unexpected token received: [$other]")
-      }
-    }
+    e should be(a[ProviderFailure])
+    e.getMessage should include("refresh token is not available")
   }
 
   private def createProvider(
     initialCoreToken: AccessTokenResponse = defaultCoreToken,
     initialApiToken: AccessTokenResponse = defaultApiToken,
-    newToken: AccessTokenResponse = defaultNewToken,
+    newToken: Option[AccessTokenResponse] = Some(defaultNewToken),
     expirationTolerance: FiniteDuration = 3.seconds
   ): (DefaultCredentialsProvider, MockOAuthClient) = {
-    val client = new MockOAuthClient(token = Some(newToken))
+    val client = new MockOAuthClient(token = newToken)
 
     val provider = DefaultCredentialsProvider(
       tokens = DefaultCredentialsProvider.Tokens(
