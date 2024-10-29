@@ -1,5 +1,7 @@
 package stasis.layers.security.jwt
 
+import java.time.Instant
+
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -9,6 +11,8 @@ import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.scalatest.BeforeAndAfterAll
 
 import stasis.layers.UnitSpec
+import stasis.layers.persistence.KeyValueStore
+import stasis.layers.persistence.migration.Migration
 import stasis.layers.security.jwt
 import stasis.layers.security.mocks.MockOAuthClient
 import stasis.layers.security.oauth.OAuthClient
@@ -55,6 +59,46 @@ class DefaultJwtProviderSpec extends UnitSpec with BeforeAndAfterAll {
       response3 should not be empty
       response4 should not be empty
       response5 should not be empty
+    }
+  }
+
+  it should "retrieve new tokens when old ones expire" in {
+    import DefaultJwtProvider.StoredAccessTokenResponse
+
+    val cache = new KeyValueStore[String, StoredAccessTokenResponse] {
+      override def get(key: String): Future[Option[StoredAccessTokenResponse]] =
+        Future.successful(Some(StoredAccessTokenResponse(token, expiresAt = Instant.MIN)))
+
+      override def put(key: String, value: StoredAccessTokenResponse): Future[Done] = Future.successful(Done)
+      override def delete(key: String): Future[Boolean] = Future.successful(false)
+      override def contains(key: String): Future[Boolean] = Future.successful(false)
+      override def entries: Future[Map[String, StoredAccessTokenResponse]] = Future.successful(Map.empty)
+      override def load(entries: Map[String, StoredAccessTokenResponse]): Future[Done] = Future.successful(Done)
+      override def name(): String = "test-token-cache"
+      override def migrations(): Seq[Migration] = Seq.empty
+      override def init(): Future[Done] = Future.successful(Done)
+      override def drop(): Future[Done] = Future.successful(Done)
+    }
+
+    val mockClient = new MockOAuthClient(token = Some(token))
+
+    val provider = new DefaultJwtProvider(
+      client = mockClient,
+      clientParameters = OAuthClient.GrantParameters.ClientCredentials(),
+      expirationTolerance = 3.seconds,
+      cache = cache
+    )
+
+    for {
+      response1 <- provider.provide(scope = client)
+      response2 <- provider.provide(scope = client)
+      response3 <- provider.provide(scope = client)
+    } yield {
+      mockClient.tokensProvided should be(3)
+
+      response1 should not be empty
+      response2 should not be empty
+      response3 should not be empty
     }
   }
 

@@ -1,10 +1,12 @@
 package stasis.client.security
 
-import scala.concurrent.ExecutionContext
+import java.time.Instant
+
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Success
+import scala.util.Try
 
 import org.apache.pekko.actor.typed._
 import org.apache.pekko.actor.typed.scaladsl.AskPattern._
@@ -14,18 +16,26 @@ import org.apache.pekko.actor.typed.scaladsl.TimerScheduler
 import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.apache.pekko.util.Timeout
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
+import stasis.layers.security.exceptions.ProviderFailure
 import stasis.layers.security.oauth.OAuthClient
 import stasis.layers.security.oauth.OAuthClient.AccessTokenResponse
 
 class DefaultCredentialsProvider private (
   providerRef: ActorRef[DefaultCredentialsProvider.Message]
-)(implicit scheduler: Scheduler, timeout: Timeout)
+)(implicit system: ActorSystem[Nothing], timeout: Timeout)
     extends CredentialsProvider {
+  import system.executionContext
+
   import DefaultCredentialsProvider._
 
-  override def core: Future[HttpCredentials] = providerRef ? (ref => GetCoreCredentials(ref))
-  override def api: Future[HttpCredentials] = providerRef ? (ref => GetApiCredentials(ref))
+  override def core: Future[HttpCredentials] =
+    (providerRef ? (ref => GetCoreCredentials(ref))).flatMap(Future.fromTry)
+
+  override def api: Future[HttpCredentials] =
+    (providerRef ? (ref => GetApiCredentials(ref))).flatMap(Future.fromTry)
 }
 
 object DefaultCredentialsProvider {
@@ -33,84 +43,108 @@ object DefaultCredentialsProvider {
     tokens: Tokens,
     client: OAuthClient
   )(implicit system: ActorSystem[Nothing], timeout: Timeout): DefaultCredentialsProvider = {
-    val behaviour = Behaviors.setup[Message] { ctx =>
-      Behaviors.withTimers[Message] { timers =>
-        implicit val jwtClient: OAuthClient = client
-        implicit val pekkoTimers: TimerScheduler[Message] = timers
+    implicit val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
-        val coreTokenExpiration = tokens.core.expires_in.seconds
-        val apiTokenExpiration = tokens.api.expires_in.seconds
+    val behaviour = Behaviors.withTimers[Message] { timers =>
+      implicit val jwtClient: OAuthClient = client
+      implicit val pekkoTimers: TimerScheduler[Message] = timers
 
-        ctx.log.debugN(
-          "Core token with scope [{}] received; expires in [{}] second(s)",
-          tokens.core.scope.getOrElse("none"),
-          coreTokenExpiration
-        )
+      log.debugN(
+        "Core token with scope [{}] received; expires in [{}] second(s)",
+        tokens.core.scope.getOrElse("none"),
+        tokens.core.expires_in.seconds
+      )
 
-        timers.startSingleTimer(
-          key = RefreshCoreTokenKey,
-          msg = RefreshCoreToken,
-          delay = tokens.core.expires_in.seconds - tokens.expirationTolerance
-        )
+      log.debugN(
+        "API token with scope [{}] received; expires in [{}] second(s)",
+        tokens.api.scope.getOrElse("none"),
+        tokens.api.expires_in.seconds
+      )
 
-        ctx.log.debugN(
-          "API token with scope [{}] received; expires in [{}] second(s)",
-          tokens.api.scope.getOrElse("none"),
-          apiTokenExpiration
-        )
-
-        timers.startSingleTimer(
-          key = RefreshApiTokenKey,
-          msg = RefreshApiToken,
-          delay = tokens.api.expires_in.seconds - tokens.expirationTolerance
-        )
-
-        import ctx.executionContext
-        provider(tokens = tokens)
-      }
+      provider(tokens = tokens)
     }
 
     new DefaultCredentialsProvider(
-      providerRef = system.systemActorOf(behaviour, name = s"credentials-provider-${java.util.UUID.randomUUID().toString}")
+      providerRef = system.systemActorOf(
+        behavior = behaviour,
+        name = s"credentials-provider-${java.util.UUID.randomUUID().toString}"
+      )
     )
   }
 
   final case class Tokens(
     core: AccessTokenResponse,
+    coreExpiresAt: Instant,
     api: AccessTokenResponse,
+    apiExpiresAt: Instant,
     expirationTolerance: FiniteDuration
   ) {
-    def withCore(token: AccessTokenResponse): Tokens = copy(core = token)
-    def withApi(token: AccessTokenResponse): Tokens = copy(api = token)
+    def withCore(token: AccessTokenResponse): Tokens =
+      copy(core = token, coreExpiresAt = Instant.now().plusSeconds(token.expires_in))
+
+    def withApi(token: AccessTokenResponse): Tokens =
+      copy(api = token, apiExpiresAt = Instant.now().plusSeconds(token.expires_in))
+
+    def coreIsValid(): Boolean =
+      coreExpiresAt.isAfter(Instant.now().plusMillis(expirationTolerance.toMillis))
+
+    def apiIsValid(): Boolean =
+      apiExpiresAt.isAfter(Instant.now().plusMillis(expirationTolerance.toMillis))
+  }
+
+  object Tokens {
+    def apply(
+      core: AccessTokenResponse,
+      api: AccessTokenResponse,
+      expirationTolerance: FiniteDuration
+    ): Tokens = {
+      val now = Instant.now()
+
+      Tokens(
+        core = core,
+        coreExpiresAt = now.plusSeconds(core.expires_in),
+        api = api,
+        apiExpiresAt = now.plusSeconds(api.expires_in),
+        expirationTolerance = expirationTolerance
+      )
+    }
   }
 
   private sealed trait Message
-  private final case class GetCoreCredentials(replyTo: ActorRef[HttpCredentials]) extends Message
-  private final case class GetApiCredentials(replyTo: ActorRef[HttpCredentials]) extends Message
+  private final case class GetCoreCredentials(replyTo: ActorRef[Try[HttpCredentials]]) extends Message
+  private final case class GetApiCredentials(replyTo: ActorRef[Try[HttpCredentials]]) extends Message
   private final case class UpdateCoreToken(token: AccessTokenResponse) extends Message
   private final case class UpdateApiToken(token: AccessTokenResponse) extends Message
-  private case object RefreshCoreToken extends Message
-  private case object RefreshApiToken extends Message
+  private final case class RefreshCoreToken(replyTo: Option[ActorRef[Try[HttpCredentials]]]) extends Message
+  private final case class RefreshApiToken(replyTo: Option[ActorRef[Try[HttpCredentials]]]) extends Message
 
   private case object RefreshCoreTokenKey
   private case object RefreshApiTokenKey
 
   private def provider(
     tokens: Tokens
-  )(implicit timers: TimerScheduler[Message], client: OAuthClient, ec: ExecutionContext): Behavior[Message] =
+  )(implicit timers: TimerScheduler[Message], client: OAuthClient, log: Logger): Behavior[Message] = {
     Behaviors.receive {
-      case (_, GetCoreCredentials(replyTo)) =>
-        replyTo ! OAuth2BearerToken(token = tokens.core.access_token)
+      case (_, GetCoreCredentials(replyTo)) if tokens.coreIsValid() =>
+        replyTo ! Success(OAuth2BearerToken(token = tokens.core.access_token))
         Behaviors.same
 
-      case (_, GetApiCredentials(replyTo)) =>
-        replyTo ! OAuth2BearerToken(token = tokens.api.access_token)
+      case (ctx, GetCoreCredentials(replyTo)) =>
+        ctx.self ! RefreshCoreToken(replyTo = Some(replyTo))
         Behaviors.same
 
-      case (ctx, UpdateCoreToken(token)) =>
+      case (_, GetApiCredentials(replyTo)) if tokens.apiIsValid() =>
+        replyTo ! Success(OAuth2BearerToken(token = tokens.api.access_token))
+        Behaviors.same
+
+      case (ctx, GetApiCredentials(replyTo)) =>
+        ctx.self ! RefreshApiToken(replyTo = Some(replyTo))
+        Behaviors.same
+
+      case (_, UpdateCoreToken(token)) =>
         val tokenExpiration = token.expires_in.seconds
 
-        ctx.log.debugN(
+        log.debugN(
           "Core token with scope [{}] updated; expires in [{}] second(s)",
           token.scope.getOrElse("none"),
           tokenExpiration
@@ -118,16 +152,16 @@ object DefaultCredentialsProvider {
 
         timers.startSingleTimer(
           key = RefreshCoreTokenKey,
-          msg = RefreshCoreToken,
+          msg = RefreshCoreToken(replyTo = None),
           delay = tokenExpiration - tokens.expirationTolerance
         )
 
         provider(tokens = tokens.withCore(token))
 
-      case (ctx, UpdateApiToken(token)) =>
+      case (_, UpdateApiToken(token)) =>
         val tokenExpiration = token.expires_in.seconds
 
-        ctx.log.debugN(
+        log.debugN(
           "API token with scope [{}] updated; expires in [{}] second(s)",
           token.scope.getOrElse("none"),
           tokenExpiration
@@ -135,15 +169,16 @@ object DefaultCredentialsProvider {
 
         timers.startSingleTimer(
           key = RefreshApiTokenKey,
-          msg = RefreshApiToken,
+          msg = RefreshApiToken(replyTo = None),
           delay = tokenExpiration - tokens.expirationTolerance
         )
 
         provider(tokens = tokens.withApi(token))
 
-      case (ctx, RefreshCoreToken) =>
+      case (ctx, RefreshCoreToken(replyTo)) =>
+        import ctx.executionContext
+
         val self = ctx.self
-        val log = ctx.log
 
         tokens.core.refresh_token match {
           case Some(token) =>
@@ -157,6 +192,7 @@ object DefaultCredentialsProvider {
               .onComplete {
                 case Success(token) =>
                   self ! UpdateCoreToken(token)
+                  replyTo.foreach(_ ! Success(OAuth2BearerToken(token = token.access_token)))
 
                 case Failure(e) =>
                   log.errorN(
@@ -165,6 +201,7 @@ object DefaultCredentialsProvider {
                     e.getClass.getSimpleName,
                     e.getMessage
                   )
+                  replyTo.foreach(_ ! Failure(e))
               }
 
           case None =>
@@ -178,6 +215,7 @@ object DefaultCredentialsProvider {
               .onComplete {
                 case Success(token) =>
                   self ! UpdateCoreToken(token)
+                  replyTo.foreach(_ ! Success(OAuth2BearerToken(token = token.access_token)))
 
                 case Failure(e) =>
                   log.errorN(
@@ -186,14 +224,16 @@ object DefaultCredentialsProvider {
                     e.getClass.getSimpleName,
                     e.getMessage
                   )
+                  replyTo.foreach(_ ! Failure(e))
               }
         }
 
         Behaviors.same
 
-      case (ctx, RefreshApiToken) =>
+      case (ctx, RefreshApiToken(replyTo)) =>
+        import ctx.executionContext
+
         val self = ctx.self
-        val log = ctx.log
 
         tokens.api.refresh_token match {
           case Some(token) =>
@@ -206,6 +246,7 @@ object DefaultCredentialsProvider {
               .onComplete {
                 case Success(token) =>
                   self ! UpdateApiToken(token)
+                  replyTo.foreach(_ ! Success(OAuth2BearerToken(token = token.access_token)))
 
                 case Failure(e) =>
                   log.errorN(
@@ -214,15 +255,16 @@ object DefaultCredentialsProvider {
                     e.getClass.getSimpleName,
                     e.getMessage
                   )
+                  replyTo.foreach(_ ! Failure(e))
               }
 
           case None =>
-            log.errorN(
-              "Cannot refresh API token from [{}]; refresh token is not available",
-              client.tokenEndpoint
-            )
+            val message = s"Cannot refresh API token from [${client.tokenEndpoint}]; refresh token is not available"
+            log.errorN(message)
+            replyTo.foreach(_ ! Failure(ProviderFailure(message)))
         }
 
         Behaviors.same
     }
+  }
 }

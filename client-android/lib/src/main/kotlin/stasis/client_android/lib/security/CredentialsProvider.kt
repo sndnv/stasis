@@ -31,14 +31,9 @@ class CredentialsProvider(
 ) {
     private val onCoreTokenUpdatedHandlers: ConcurrentHashMap<Any, (Try<AccessTokenResponse>) -> Unit> =
         ConcurrentHashMap()
+
     private val onApiTokenUpdatedHandlers: ConcurrentHashMap<Any, (Try<AccessTokenResponse>) -> Unit> =
         ConcurrentHashMap()
-
-    private val latestCoreToken: AtomicReference<Try<AccessTokenResponse>> =
-        AtomicReference(Failure(RuntimeException("No core access token found")))
-
-    private val latestApiToken: AtomicReference<Try<AccessTokenResponse>> =
-        AtomicReference(Failure(RuntimeException("No API access token found")))
 
     private val latestDeviceSecret: AtomicReference<Try<DeviceSecret>> =
         AtomicReference(Failure(MissingDeviceSecret()))
@@ -53,7 +48,6 @@ class CredentialsProvider(
     private val coreTokenManager: OAuthTokenManager = OAuthTokenManager(
         oAuthClient = oAuthClient,
         onTokenUpdated = { response ->
-            latestCoreToken.set(response)
             onCoreTokenUpdatedHandlers.values.forEach { handler -> handler(response) }
         },
         expirationTolerance = config.expirationTolerance,
@@ -63,7 +57,6 @@ class CredentialsProvider(
     private val apiTokenManager: OAuthTokenManager = OAuthTokenManager(
         oAuthClient = oAuthClient,
         onTokenUpdated = { response ->
-            latestApiToken.set(response)
             onApiTokenUpdatedHandlers.values.forEach { handler -> handler(response) }
         },
         expirationTolerance = config.expirationTolerance,
@@ -71,11 +64,11 @@ class CredentialsProvider(
     )
 
     val core: Try<AccessTokenResponse>
-        get() = latestCoreToken.get()
+        get() = coreTokenManager.token
 
 
     val api: Try<AccessTokenResponse>
-        get() = latestApiToken.get()
+        get() = apiTokenManager.token
 
     val deviceSecret: Try<DeviceSecret>
         get() = latestDeviceSecret.get()

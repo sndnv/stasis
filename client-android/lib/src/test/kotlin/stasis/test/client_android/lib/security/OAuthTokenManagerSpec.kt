@@ -218,5 +218,185 @@ class OAuthTokenManagerSpec : WordSpec({
 
             manager.reset()
         }
+
+        "provide the latest available token (with refresh token)" {
+            val requested = AtomicInteger(0)
+            val updates = Collections.synchronizedList(mutableListOf<Try<AccessTokenResponse>>())
+
+            val refreshToken = "refresh-token"
+            val expectedResponse = response.copy(refresh_token = refreshToken)
+
+            val client = object : OAuthClient {
+                override suspend fun token(
+                    scope: String?,
+                    parameters: OAuthClient.GrantParameters
+                ): Try<AccessTokenResponse> {
+                    requested.incrementAndGet()
+                    return Success(expectedResponse)
+                }
+            }
+
+            val manager = OAuthTokenManager(
+                oAuthClient = client,
+                onTokenUpdated = { updates.add(it) },
+                expirationTolerance = tolerance,
+                coroutineScope = testScope
+            )
+
+            manager.token.failed().get().message shouldBe ("No access token found")
+            manager.scheduleWithRefreshToken(Success(expectedResponse))
+            manager.token shouldBe (Success(expectedResponse))
+
+            requested.get() shouldBe (0)
+            updates.size shouldBe (1)
+            updates[0] shouldBe (Success(expectedResponse))
+
+            manager.reset()
+        }
+
+        "provide the latest available token (with client credentials)" {
+            val requested = AtomicInteger(0)
+            val updates = Collections.synchronizedList(mutableListOf<Try<AccessTokenResponse>>())
+
+            val client = object : OAuthClient {
+                override suspend fun token(
+                    scope: String?,
+                    parameters: OAuthClient.GrantParameters
+                ): Try<AccessTokenResponse> {
+                    requested.incrementAndGet()
+                    return Success(response)
+                }
+            }
+
+            val manager = OAuthTokenManager(
+                oAuthClient = client,
+                onTokenUpdated = { updates.add(it) },
+                expirationTolerance = tolerance,
+                coroutineScope = testScope
+            )
+
+            manager.token.failed().get().message shouldBe ("No access token found")
+            manager.scheduleWithClientCredentials(Success(response))
+            manager.token shouldBe (Success(response))
+
+            requested.get() shouldBe (0)
+            updates.size shouldBe (1)
+            updates[0] shouldBe (Success(response))
+
+            manager.reset()
+        }
+
+        "retrieve new tokens when old ones expire (with refresh token)" {
+            val requested = AtomicInteger(0)
+            val updates = Collections.synchronizedList(mutableListOf<Try<AccessTokenResponse>>())
+
+            val refreshToken = "refresh-token"
+            val expiredResponse = response.copy(refresh_token = refreshToken, expires_in = 0)
+            val validResponse = response.copy(refresh_token = refreshToken, expires_in = 42)
+
+            val client = object : OAuthClient {
+                override suspend fun token(
+                    scope: String?,
+                    parameters: OAuthClient.GrantParameters
+                ): Try<AccessTokenResponse> {
+                    requested.incrementAndGet()
+                    return Success(validResponse)
+                }
+            }
+
+            val manager = OAuthTokenManager(
+                oAuthClient = client,
+                onTokenUpdated = { updates.add(it) },
+                expirationTolerance = tolerance,
+                coroutineScope = testScope
+            )
+
+            manager.token.failed().get().message shouldBe ("No access token found")
+
+            manager.scheduleWithRefreshToken(Success(expiredResponse))
+
+            manager.token shouldBe (Success(validResponse))
+
+            requested.get() shouldBe (1)
+            updates.size shouldBe (2)
+            updates[0] shouldBe (Success(expiredResponse))
+            updates[1] shouldBe (Success(validResponse))
+
+            manager.reset()
+        }
+
+        "retrieve new tokens when old ones expire (with client credentials)" {
+            val requested = AtomicInteger(0)
+            val updates = Collections.synchronizedList(mutableListOf<Try<AccessTokenResponse>>())
+
+            val expiredResponse = response.copy(expires_in = 0)
+            val validResponse = response.copy(expires_in = 42)
+
+            val client = object : OAuthClient {
+                override suspend fun token(
+                    scope: String?,
+                    parameters: OAuthClient.GrantParameters
+                ): Try<AccessTokenResponse> {
+                    requested.incrementAndGet()
+                    return Success(validResponse)
+                }
+            }
+
+            val manager = OAuthTokenManager(
+                oAuthClient = client,
+                onTokenUpdated = { updates.add(it) },
+                expirationTolerance = tolerance,
+                coroutineScope = testScope
+            )
+
+            manager.token.failed().get().message shouldBe ("No access token found")
+
+            manager.scheduleWithClientCredentials(Success(expiredResponse))
+
+            manager.token shouldBe (Success(validResponse))
+
+            requested.get() shouldBe (1)
+            updates.size shouldBe (2)
+            updates[0] shouldBe (Success(expiredResponse))
+            updates[1] shouldBe (Success(validResponse))
+
+            manager.reset()
+        }
+
+        "fail if a valid token could not be retrieved" {
+            val requested = AtomicInteger(0)
+            val updates = Collections.synchronizedList(mutableListOf<Try<AccessTokenResponse>>())
+
+            val expiredResponse = response.copy(expires_in = 0)
+
+            val client = object : OAuthClient {
+                override suspend fun token(
+                    scope: String?,
+                    parameters: OAuthClient.GrantParameters
+                ): Try<AccessTokenResponse> {
+                    requested.incrementAndGet()
+                    return Failure(RuntimeException("Test failure"))
+                }
+            }
+
+            val manager = OAuthTokenManager(
+                oAuthClient = client,
+                onTokenUpdated = { updates.add(it) },
+                expirationTolerance = tolerance,
+                coroutineScope = testScope
+            )
+
+            manager.token.failed().get().message shouldBe ("No access token found")
+
+            manager.scheduleWithClientCredentials(Success(expiredResponse))
+
+            manager.token.failed().get().message shouldBe ("Test failure")
+
+            requested.get() shouldBe (1)
+            updates.size shouldBe (1)
+            updates[0] shouldBe (Success(expiredResponse))
+
+            manager.reset()
+        }
     }
 })

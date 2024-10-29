@@ -435,10 +435,10 @@ class CredentialsProviderSpec : WordSpec({
                 apiUpdates.size shouldBe (0)
 
                 provider.core.failed()
-                    .map { it.message } shouldBe (Success("No core access token found"))
+                    .map { it.message } shouldBe (Success("No access token found"))
 
                 provider.api.failed()
-                    .map { it.message } shouldBe (Success("No API access token found"))
+                    .map { it.message } shouldBe (Success("No access token found"))
 
                 provider.deviceSecret.failed()
                     .map { it.message } shouldBe (Success("Test failure"))
