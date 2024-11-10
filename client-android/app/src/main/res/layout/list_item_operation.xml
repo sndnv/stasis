@@ -46,44 +46,6 @@
                 android:visibility="gone" />
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end|center"
-            android:layout_marginEnd="8dp">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/operation_resume_button"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_marginEnd="4dp"
-                android:contentDescription="@string/operation_resume_button_hint"
-                android:text="@string/operation_resume_button_title" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/operation_stop_button"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_marginEnd="4dp"
-                android:contentDescription="@string/operation_stop_button_hint"
-                android:text="@string/operation_stop_button_title" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/operation_remove_button"
-                style="?attr/materialButtonStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:contentDescription="@string/operation_remove_button_hint"
-                android:minWidth="48dp"
-                android:minHeight="48dp"
-                app:icon="@drawable/ic_close"
-                app:iconPadding="0dp" />
-        </LinearLayout>
-
         <com.google.android.material.progressindicator.LinearProgressIndicator
             android:id="@+id/operation_progress"
             android:layout_width="match_parent"

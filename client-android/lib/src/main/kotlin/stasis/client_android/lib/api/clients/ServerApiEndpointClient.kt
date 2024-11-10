@@ -5,6 +5,7 @@ import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
 import stasis.client_android.lib.model.server.api.requests.ResetUserPassword
+import stasis.client_android.lib.model.server.api.requests.UpdateDatasetDefinition
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetDefinition
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetEntry
 import stasis.client_android.lib.model.server.api.responses.Ping
@@ -29,11 +30,14 @@ interface ServerApiEndpointClient {
     suspend fun datasetDefinitions(): Try<List<DatasetDefinition>>
     suspend fun datasetDefinition(definition: DatasetDefinitionId): Try<DatasetDefinition>
     suspend fun createDatasetDefinition(request: CreateDatasetDefinition): Try<CreatedDatasetDefinition>
+    suspend fun updateDatasetDefinition(definition: DatasetDefinitionId, request: UpdateDatasetDefinition): Try<Unit>
+    suspend fun deleteDatasetDefinition(definition: DatasetDefinitionId): Try<Unit>
 
     suspend fun datasetEntries(definition: DatasetDefinitionId): Try<List<DatasetEntry>>
     suspend fun datasetEntry(entry: DatasetEntryId): Try<DatasetEntry>
     suspend fun latestEntry(definition: DatasetDefinitionId, until: Instant?): Try<DatasetEntry?>
     suspend fun createDatasetEntry(request: CreateDatasetEntry): Try<CreatedDatasetEntry>
+    suspend fun deleteDatasetEntry(entry: DatasetEntryId): Try<Unit>
 
     suspend fun publicSchedules(): Try<List<Schedule>>
     suspend fun publicSchedule(schedule: ScheduleId): Try<Schedule>

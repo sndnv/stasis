@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/rules_list_definition"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:paddingHorizontal="8dp"
+                android:textAppearance="?attr/textAppearanceCaption" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rules_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="vertical"
+                android:transitionGroup="true"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/rules_list_empty"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="@string/rules_list_empty"
+            android:visibility="gone" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/rules_reset_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|center"
+            android:layout_marginBottom="134dp"
+            android:backgroundTint="@color/primary"
+            android:contentDescription="@string/rule_reset_button_hint"
+            android:tooltipText="@string/rule_reset_button_hint"
+            app:borderWidth="0dp"
+            app:fabCustomSize="40dp"
+            app:layout_anchor="@id/rules_tree_button"
+            app:layout_anchorGravity="top|center"
+            app:srcCompat="@drawable/ic_reset"
+            app:useCompatPadding="true" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/rule_add_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="78dp"
+            android:contentDescription="@string/rule_add_button_hint"
+            android:tooltipText="@string/rule_add_button_hint"
+            app:borderWidth="0dp"
+            app:fabCustomSize="40dp"
+            app:layout_anchor="@id/rules_tree_button"
+            app:layout_anchorGravity="top|center"
+            app:srcCompat="@drawable/ic_add"
+            app:useCompatPadding="true" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/rules_tree_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="16dp"
+            android:contentDescription="@string/rule_tree_button_hint"
+            android:tooltipText="@string/rule_tree_button_hint"
+            app:borderWidth="0dp"
+            app:fabCustomSize="56dp"
+            app:srcCompat="@drawable/ic_tree"
+            app:useCompatPadding="true" />
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+</layout>

@@ -139,19 +139,22 @@ class DefaultOperationExecutorSpec : WordSpec({
                 id = 1L,
                 operation = Rule.Operation.Include,
                 directory = "/home__/stasis",
-                pattern = "**"
+                pattern = "**",
+                definition = null
             ),
             Rule(
                 id = 2L,
                 operation = Rule.Operation.Exclude,
                 directory = "/home__/stasis",
-                pattern = "**/*cache*/*"
+                pattern = "**/*cache*/*",
+                definition = null
             ),
             Rule(
                 id = 3L,
                 operation = Rule.Operation.Exclude,
                 directory = "/home__/stasis",
-                pattern = "**/*log*/*"
+                pattern = "**/*log*/*",
+                definition = null
             ),
         )
 

@@ -103,7 +103,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="@string/dataset_definition_start_backup" />
+                android:contentDescription="@string/dataset_definition_start_backup_hint"
+                android:text="@string/dataset_definition_start_backup"
+                android:tooltipText="@string/dataset_definition_start_backup_hint" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/entries_list"

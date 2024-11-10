@@ -176,6 +176,26 @@ class CommonSpec {
     }
 
     @Test
+    fun convertPolicyTypes() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
+        assertThat(
+            DatasetDefinition.Retention.Policy.AtMost(versions = 1).toPolicyTypeString(context),
+            equalTo("At most")
+        )
+
+        assertThat(
+            DatasetDefinition.Retention.Policy.LatestOnly.toPolicyTypeString(context),
+            equalTo("Latest-only")
+        )
+
+        assertThat(
+            DatasetDefinition.Retention.Policy.All.toPolicyTypeString(context),
+            equalTo("All")
+        )
+    }
+
+    @Test
     fun convertPolicyTypeStrings() {
         val context = ApplicationProvider.getApplicationContext<Context>()
 

@@ -21,7 +21,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/new_dataset_definition_retention_field_title_duration"
+                android:text="@string/dataset_definition_retention_field_title_duration"
                 android:textAppearance="?attr/textAppearanceCaption" />
 
             <include
@@ -45,7 +45,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingBottom="5.5dp"
-                android:text="@string/new_dataset_definition_retention_field_title_policy"
+                android:text="@string/dataset_definition_retention_field_title_policy"
                 android:textAppearance="?attr/textAppearanceCaption" />
 
             <androidx.constraintlayout.widget.ConstraintLayout

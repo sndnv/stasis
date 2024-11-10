@@ -36,8 +36,8 @@
             app:destination="@id/datasetDefinitionDetailsFragment" />
 
         <action
-            android:id="@+id/action_backupFragment_to_newDatasetDefinitionFragment"
-            app:destination="@id/newDatasetDefinitionFragment" />
+            android:id="@+id/action_backupFragment_to_datasetDefinitionFormFragment"
+            app:destination="@id/datasetDefinitionFormFragment" />
     </fragment>
 
     <fragment
@@ -227,9 +227,15 @@
     </fragment>
 
     <fragment
-        android:id="@+id/newDatasetDefinitionFragment"
-        android:name="stasis.client_android.activities.fragments.backup.NewDatasetDefinitionFragment"
-        android:label="NewDatasetDefinitionFragment" />
+        android:id="@+id/datasetDefinitionFormFragment"
+        android:name="stasis.client_android.activities.fragments.backup.DatasetDefinitionFormFragment"
+        android:label="datasetDefinitionFormFragment">
+
+        <argument
+            android:name="definition"
+            app:argType="java.util.UUID"
+            app:nullable="true" />
+    </fragment>
 
     <activity
         android:id="@+id/welcomeActivity"

@@ -55,7 +55,8 @@ class Converters {
                 id = rule.id,
                 operation = rule.operation,
                 directory = rule.directory,
-                pattern = rule.pattern
+                pattern = rule.pattern,
+                definition = rule.definition
             )
 
         fun entityToRule(entity: RuleEntity): Rule =
@@ -63,7 +64,8 @@ class Converters {
                 id = entity.id,
                 operation = entity.operation,
                 directory = entity.directory,
-                pattern = entity.pattern
+                pattern = entity.pattern,
+                definition = entity.definition
             )
 
         fun activeScheduleToEntity(schedule: ActiveSchedule): ActiveScheduleEntity {
@@ -79,6 +81,7 @@ class Converters {
 
                     "backup" to Gson().toJson(json)
                 }
+
                 is OperationScheduleAssignment.Expiration -> "expiration" to null
                 is OperationScheduleAssignment.Validation -> "validation" to null
                 is OperationScheduleAssignment.KeyRotation -> "key_rotation" to null
@@ -159,6 +162,7 @@ class Converters {
 
                     assignmentJson.addProperty("type", "backup")
                 }
+
                 is OperationScheduleAssignment.Expiration -> assignmentJson.addProperty("type", "expiration")
                 is OperationScheduleAssignment.Validation -> assignmentJson.addProperty("type", "validation")
                 is OperationScheduleAssignment.KeyRotation -> assignmentJson.addProperty("type", "key_rotation")

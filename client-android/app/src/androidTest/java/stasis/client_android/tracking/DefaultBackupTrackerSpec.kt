@@ -111,7 +111,8 @@ class DefaultBackupTrackerSpec {
             id = 0,
             operation = stasis.client_android.lib.collection.rules.Rule.Operation.Include,
             directory = "/tmp/1",
-            pattern = "*"
+            pattern = "*",
+            definition = null
         )
 
         val rule2 = rule1.copy(directory = "/tmp/2")

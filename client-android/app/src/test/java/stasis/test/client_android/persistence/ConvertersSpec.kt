@@ -64,14 +64,16 @@ class ConvertersSpec {
             id = 0L,
             operation = Rule.Operation.Include,
             directory = "/a/b/c",
-            pattern = "**"
+            pattern = "**",
+            definition = UUID.randomUUID()
         )
 
         val entity = RuleEntity(
             id = rule.id,
             operation = rule.operation,
             directory = rule.directory,
-            pattern = rule.pattern
+            pattern = rule.pattern,
+            definition = rule.definition
         )
 
         assertThat(Converters.ruleToEntity(rule), equalTo(entity))

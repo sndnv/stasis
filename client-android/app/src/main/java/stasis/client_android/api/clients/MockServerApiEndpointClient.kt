@@ -9,6 +9,7 @@ import stasis.client_android.lib.model.core.CrateId
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
 import stasis.client_android.lib.model.server.api.requests.ResetUserPassword
+import stasis.client_android.lib.model.server.api.requests.UpdateDatasetDefinition
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetDefinition
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetEntry
 import stasis.client_android.lib.model.server.api.responses.Ping
@@ -25,6 +26,7 @@ import stasis.client_android.lib.model.server.users.User
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
+import java.math.BigInteger
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDateTime
@@ -47,6 +49,15 @@ class MockServerApiEndpointClient : ServerApiEndpointClient {
     override suspend fun createDatasetDefinition(request: CreateDatasetDefinition): Try<CreatedDatasetDefinition> =
         Success(CreatedDatasetDefinition(definition = defaultDefinition.id))
 
+    override suspend fun updateDatasetDefinition(
+        definition: DatasetDefinitionId,
+        request: UpdateDatasetDefinition
+    ): Try<Unit> =
+        Success(Unit)
+
+    override suspend fun deleteDatasetDefinition(definition: DatasetDefinitionId): Try<Unit> =
+        Success(Unit)
+
     override suspend fun datasetEntries(definition: DatasetDefinitionId): Try<List<DatasetEntry>> =
         when (definition) {
             defaultDefinition.id -> Success(listOf(defaultEntry))
@@ -67,6 +78,9 @@ class MockServerApiEndpointClient : ServerApiEndpointClient {
 
     override suspend fun createDatasetEntry(request: CreateDatasetEntry): Try<CreatedDatasetEntry> =
         Success(CreatedDatasetEntry(entry = defaultEntry.id))
+
+    override suspend fun deleteDatasetEntry(entry: DatasetEntryId): Try<Unit> =
+        Success(Unit)
 
     override suspend fun publicSchedules(): Try<List<Schedule>> =
         Success(listOf(defaultSchedule))
@@ -155,7 +169,14 @@ class MockServerApiEndpointClient : ServerApiEndpointClient {
         id = MockConfig.User,
         salt = "test-salt",
         active = true,
-        limits = null,
+        limits = User.Limits(
+            maxDevices = 12 * 1024,
+            maxCrates = Long.MAX_VALUE,
+            maxStorage = BigInteger.valueOf(1024L * 1024 * 1024 * 1024),
+            maxStoragePerCrate = BigInteger.valueOf(64L * 1024 * 1024 * 1024),
+            maxRetention = Duration.ofDays(4),
+            minRetention = Duration.ofHours(12),
+        ),
         permissions = setOf("a", "b", "c"),
         created = Instant.EPOCH,
         updated = Instant.EPOCH,

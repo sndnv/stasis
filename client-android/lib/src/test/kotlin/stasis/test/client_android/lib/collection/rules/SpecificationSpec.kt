@@ -24,19 +24,61 @@ class SpecificationSpec : WordSpec({
             objects.rootDirs shouldBeGreaterThan (0)
             objects.nestedDirs shouldBeGreaterThan (0)
 
-            val rule1 = Rule(id = 1, operation = Rule.Operation.Include, directory = "/work", pattern = "?")
-            val rule2 = Rule(id = 2, operation = Rule.Operation.Exclude, directory = "/work", pattern = "[a-z]")
-            val rule3 = Rule(id = 3, operation = Rule.Operation.Exclude, directory = "/work", pattern = "{0|1}")
-            val rule4 = Rule(id = 4, operation = Rule.Operation.Include, directory = "/work", pattern = "root-dir-?/*")
+            val rule1 = Rule(
+                id = 1,
+                operation = Rule.Operation.Include,
+                directory = "/work",
+                pattern = "?",
+                definition = null
+            )
+
+            val rule2 = Rule(
+                id = 2,
+                operation = Rule.Operation.Exclude,
+                directory = "/work",
+                pattern = "[a-z]",
+                definition = null
+            )
+
+            val rule3 = Rule(
+                id = 3,
+                operation = Rule.Operation.Exclude,
+                directory = "/work",
+                pattern = "{0|1}",
+                definition = null
+            )
+
+            val rule4 = Rule(
+                id = 4,
+                operation = Rule.Operation.Include,
+                directory = "/work",
+                pattern = "root-dir-?/*",
+                definition = null
+            )
+
             val rule5 = Rule(
                 id = 5,
                 operation = Rule.Operation.Include,
                 directory = "/work/root",
-                pattern = "**/child-*[a-c]/a"
+                pattern = "**/child-*[a-c]/a",
+                definition = null
             )
-            val rule6 =
-                Rule(id = 6, operation = Rule.Operation.Exclude, directory = "/work/root", pattern = "parent-0/**")
-            val rule7 = Rule(id = 7, operation = Rule.Operation.Exclude, directory = "/work/root", pattern = "**/q")
+
+            val rule6 = Rule(
+                id = 6,
+                operation = Rule.Operation.Exclude,
+                directory = "/work/root",
+                pattern = "parent-0/**",
+                definition = null
+            )
+
+            val rule7 = Rule(
+                id = 7,
+                operation = Rule.Operation.Exclude,
+                directory = "/work/root",
+                pattern = "**/q",
+                definition = null
+            )
 
             val azRangeSize = ('a'..'z').toList().size
             val zeroOneListSize = listOf('0', '1').size
@@ -116,9 +158,21 @@ class SpecificationSpec : WordSpec({
         "provide list of unmatched rules" {
             val (filesystem, _) = createMockFileSystem(setup = FileSystemSetup.empty())
 
-            val rule1 = Rule(id = 1, operation = Rule.Operation.Include, directory = "/test/", pattern = "**")
-            val rule2 =
-                Rule(id = 2, operation = Rule.Operation.Include, directory = "/work", pattern = "missing-test-file")
+            val rule1 = Rule(
+                id = 1,
+                operation = Rule.Operation.Include,
+                directory = "/test/",
+                pattern = "**",
+                definition = null
+            )
+
+            val rule2 = Rule(
+                id = 2,
+                operation = Rule.Operation.Include,
+                directory = "/work",
+                pattern = "missing-test-file",
+                definition = null
+            )
 
             val spec = Specification(listOf(rule1, rule2), {}, filesystem)
 
@@ -140,11 +194,45 @@ class SpecificationSpec : WordSpec({
                 setup = setup.copy(chars = FileSystemSetup.AlphaNumericChars, nestedParentDirs = 0)
             )
 
-            val rule1 = Rule(id = 1, operation = Rule.Operation.Include, directory = "/work", pattern = "?")
-            val rule2 = Rule(id = 2, operation = Rule.Operation.Exclude, directory = "/work", pattern = "a")
-            val rule3 = Rule(id = 3, operation = Rule.Operation.Exclude, directory = "/work", pattern = "b")
-            val rule4 = Rule(id = 4, operation = Rule.Operation.Exclude, directory = "/work", pattern = "c")
-            val rule5 = Rule(id = 5, operation = Rule.Operation.Include, directory = "/work", pattern = "[c-f]")
+            val rule1 = Rule(
+                id = 1,
+                operation = Rule.Operation.Include,
+                directory = "/work",
+                pattern = "?",
+                definition = null
+            )
+
+            val rule2 = Rule(
+                id = 2,
+                operation = Rule.Operation.Exclude,
+                directory = "/work",
+                pattern = "a",
+                definition = null
+            )
+
+            val rule3 = Rule(
+                id = 3,
+                operation = Rule.Operation.Exclude,
+                directory = "/work",
+                pattern = "b",
+                definition = null
+            )
+
+            val rule4 = Rule(
+                id = 4,
+                operation = Rule.Operation.Exclude,
+                directory = "/work",
+                pattern = "c",
+                definition = null
+            )
+
+            val rule5 = Rule(
+                id = 5,
+                operation = Rule.Operation.Include,
+                directory = "/work",
+                pattern = "[c-f]",
+                definition = null
+            )
 
             val rules = listOf(rule1, rule2, rule3, rule4, rule5)
 
@@ -228,7 +316,13 @@ class SpecificationSpec : WordSpec({
         "handle matching failures" {
             val (filesystem, _) = createMockFileSystem(setup = FileSystemSetup.empty())
 
-            val rule1 = Rule(id = 1, operation = Rule.Operation.Include, directory = "/work/missing-dir", pattern = "*")
+            val rule1 = Rule(
+                id = 1,
+                operation = Rule.Operation.Include,
+                directory = "/work/missing-dir",
+                pattern = "*",
+                definition = null
+            )
 
             val spec = Specification(rules = listOf(rule1), onMatchIncluded = {}, filesystem = filesystem)
 

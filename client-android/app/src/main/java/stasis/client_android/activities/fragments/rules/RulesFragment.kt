@@ -5,22 +5,33 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import androidx.viewpager2.adapter.FragmentStateAdapter
+import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import stasis.client_android.R
+import stasis.client_android.api.DatasetsViewModel
 import stasis.client_android.databinding.FragmentRulesBinding
+import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
+import stasis.client_android.lib.utils.Either.Left
+import stasis.client_android.lib.utils.Either.Right
 import stasis.client_android.persistence.rules.RuleViewModel
+import stasis.client_android.utils.LiveDataExtensions.and
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class RulesFragment : Fragment() {
     @Inject
     lateinit var rules: RuleViewModel
+
+    @Inject
+    lateinit var definitions: DatasetsViewModel
+
+    private var selectedDefinition: DatasetDefinitionId? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -34,53 +45,54 @@ class RulesFragment : Fragment() {
             false
         )
 
-        val adapter = RulesListItemAdapter(removeRule = { id -> rules.delete(id) })
+        (definitions.definitions() and rules.rules).observe(viewLifecycleOwner) { (definitionsList, rulesList) ->
+            val groupedRules = rulesList.groupBy { it.definition }.toList().sortedBy { it.first }
 
-        binding.rulesList.adapter = adapter
+            binding.rulesPager.adapter = object : FragmentStateAdapter(this) {
+                override fun getItemCount(): Int = groupedRules.size
 
-        rules.rules.observe(viewLifecycleOwner) { rulesList ->
-            adapter.setRules(rulesList)
+                override fun createFragment(position: Int): Fragment {
+                    val (currentDefinition, currentRules) = groupedRules[position]
 
-            if (rulesList.isEmpty()) {
-                binding.rulesListEmpty.isVisible = true
-                binding.rulesList.isVisible = false
-            } else {
-                binding.rulesListEmpty.isVisible = false
-                binding.rulesList.isVisible = true
+                    return DefinitionRulesFragment(
+                        currentDefinition = currentDefinition?.let { current ->
+                            when (val result = definitionsList.find { it.id == current }) {
+                                null -> Left(current)
+                                else -> Right(result)
+                            }
+                        },
+                        existingDefinitions = definitionsList,
+                        rules = currentRules,
+                        createRule = { rule -> lifecycleScope.launch { rules.put(rule).await() } },
+                        updateRule = { rule -> lifecycleScope.launch { rules.put(rule).await() } },
+                        deleteRule = { id -> rules.delete(id) },
+                        resetRule = {
+                            lifecycleScope.launch {
+                                rules.clear().await()
+                                rules.bootstrap().await()
+
+                                Toast.makeText(
+                                    context,
+                                    context?.getString(R.string.toast_rules_reset),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    )
+                }
             }
-        }
 
-        binding.ruleAddButton.setOnClickListener {
-            NewRuleDialogFragment(
-                onRuleCreationRequested = { rule ->
-                    lifecycleScope.launch { rules.put(rule).await() }
-                }
-            ).show(parentFragmentManager, NewRuleDialogFragment.Tag)
-        }
-
-        binding.rulesResetButton.setOnClickListener {
-            val context = requireContext()
-
-            MaterialAlertDialogBuilder(context)
-                .setTitle(context.getString(R.string.rules_reset_confirm_title))
-                .setNeutralButton(context.getString(R.string.rules_reset_confirm_cancel_button_title)) { dialog, _ ->
-                    dialog.dismiss()
-                }
-                .setPositiveButton(context.getString(R.string.rules_reset_confirm_ok_button_title)) { dialog, _ ->
-                    lifecycleScope.launch {
-                        rules.clear().await()
-                        rules.bootstrap().await()
-
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.toast_rules_reset),
-                            Toast.LENGTH_SHORT
-                        ).show()
+            binding.rulesPager.registerOnPageChangeCallback(
+                object : ViewPager2.OnPageChangeCallback() {
+                    override fun onPageSelected(position: Int) {
+                        selectedDefinition = groupedRules.getOrNull(position)?.first
                     }
-
-                    dialog.dismiss()
                 }
-                .show()
+            )
+
+            binding.rulesPager.currentItem = groupedRules.indexOfFirst { it.first == selectedDefinition }
+
+            TabLayoutMediator(binding.rulesTabs, binding.rulesPager) { _, _ -> }.attach()
         }
 
         return binding.root

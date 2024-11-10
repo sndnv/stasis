@@ -1,7 +1,6 @@
 package stasis.client_android.lib.api.clients
 
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okio.ByteString
 import stasis.client_android.lib.api.clients.exceptions.ResourceMissingFailure
@@ -12,6 +11,7 @@ import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
 import stasis.client_android.lib.model.server.api.requests.ResetUserPassword
+import stasis.client_android.lib.model.server.api.requests.UpdateDatasetDefinition
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetDefinition
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetEntry
 import stasis.client_android.lib.model.server.api.responses.Ping
@@ -81,6 +81,27 @@ class DefaultServerApiEndpointClient(
             )
         }
 
+    override suspend fun updateDatasetDefinition(
+        definition: DatasetDefinitionId,
+        request: UpdateDatasetDefinition
+    ): Try<Unit> =
+        Try {
+            request { builder ->
+                builder
+                    .url("$server/v1/datasets/definitions/own/$definition")
+                    .put(request.toBody())
+            }.successful()
+        }
+
+    override suspend fun deleteDatasetDefinition(definition: DatasetDefinitionId): Try<Unit> =
+        Try {
+            request { builder ->
+                builder
+                    .url("$server/v1/datasets/definitions/own/$definition")
+                    .delete()
+            }.successful()
+        }
+
     override suspend fun datasetEntries(definition: DatasetDefinitionId): Try<List<DatasetEntry>> =
         jsonListRequest { builder ->
             builder
@@ -124,6 +145,14 @@ class DefaultServerApiEndpointClient(
                 .post(request.toBody())
         }
 
+    override suspend fun deleteDatasetEntry(entry: DatasetEntryId): Try<Unit> =
+        Try {
+            request { builder ->
+                builder
+                    .url("$server/v1/datasets/entries/own/$entry")
+                    .delete()
+            }.successful()
+        }
 
     override suspend fun publicSchedules(): Try<List<Schedule>> =
         jsonListRequest { builder ->
@@ -132,7 +161,6 @@ class DefaultServerApiEndpointClient(
                 .get()
         }
 
-
     override suspend fun publicSchedule(schedule: ScheduleId): Try<Schedule> =
         jsonRequest { builder ->
             builder
@@ -140,13 +168,11 @@ class DefaultServerApiEndpointClient(
                 .get()
         }
 
-
     override suspend fun datasetMetadata(entry: DatasetEntryId): Try<DatasetMetadata> =
         when (val result = datasetEntry(entry)) {
             is Success -> datasetMetadata(entry = result.value)
             is Failure -> Failure(result.exception)
         }
-
 
     override suspend fun datasetMetadata(entry: DatasetEntry): Try<DatasetMetadata> =
         when (decryption) {
@@ -233,7 +259,6 @@ class DefaultServerApiEndpointClient(
                 else -> Failure(it)
             }
         }
-
 
     override suspend fun ping(): Try<Ping> =
         jsonRequest { builder ->

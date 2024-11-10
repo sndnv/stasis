@@ -169,10 +169,10 @@ class MainActivity : AppCompatActivity() {
                     R.string.context_help_backup_entry_details
                 )
 
-                R.id.newDatasetDefinitionFragment -> Triple(
+                R.id.datasetDefinitionFormFragment -> Triple(
                     R.id.item_backup,
-                    R.string.navigation_subtitle_backup_new_definition,
-                    R.string.context_help_backup_new_definition
+                    R.string.navigation_subtitle_backup_definition_form,
+                    R.string.context_help_backup_definition_form
                 )
 
                 R.id.recoverFragment -> Triple(

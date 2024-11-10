@@ -19,6 +19,7 @@ import stasis.client_android.lib.model.core.CrateId
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
 import stasis.client_android.lib.model.server.api.requests.ResetUserPassword
+import stasis.client_android.lib.model.server.api.requests.UpdateDatasetDefinition
 import stasis.client_android.lib.model.server.api.responses.Ping
 import stasis.client_android.lib.model.server.api.responses.UpdatedUserSalt
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
@@ -139,6 +140,51 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             api.shutdown()
         }
 
+        "update dataset definitions" {
+            val expectedDefinition = UUID.randomUUID()
+
+            val api = createServer(withResponse = MockResponse())
+            val apiClient = createClient(api.url("/").toString())
+
+            val expectedRequest = UpdateDatasetDefinition(
+                info = "test-definition",
+                redundantCopies = 1,
+                existingVersions = DatasetDefinition.Retention(
+                    policy = DatasetDefinition.Retention.Policy.All,
+                    duration = Duration.ofSeconds(3)
+                ),
+                removedVersions = DatasetDefinition.Retention(
+                    policy = DatasetDefinition.Retention.Policy.All,
+                    duration = Duration.ofSeconds(3)
+                )
+            )
+
+            apiClient.updateDatasetDefinition(definition = expectedDefinition, request = expectedRequest).get()
+
+            val actualRequest = api.takeRequest()
+            actualRequest.method shouldBe ("PUT")
+            actualRequest.path shouldBe ("/v1/datasets/definitions/own/${expectedDefinition}")
+            apiClient.moshi.adapter(UpdateDatasetDefinition::class.java)
+                .fromJson(actualRequest.body) shouldBe (expectedRequest)
+
+            api.shutdown()
+        }
+
+        "delete dataset definitions" {
+            val expectedDefinition = UUID.randomUUID()
+
+            val api = createServer(withResponse = MockResponse())
+            val apiClient = createClient(api.url("/").toString())
+
+            apiClient.deleteDatasetDefinition(definition = expectedDefinition).get()
+
+            val actualRequest = api.takeRequest()
+            actualRequest.method shouldBe ("DELETE")
+            actualRequest.path shouldBe ("/v1/datasets/definitions/own/${expectedDefinition}")
+
+            api.shutdown()
+        }
+
         "create dataset entries" {
             val expectedEntry = UUID.randomUUID()
 
@@ -161,6 +207,21 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             actualRequest.path shouldBe ("/v1/datasets/entries/own/for-definition/${expectedRequest.definition}")
             apiClient.moshi.adapter(CreateDatasetEntry::class.java)
                 .fromJson(actualRequest.body) shouldBe (expectedRequest)
+
+            api.shutdown()
+        }
+
+        "delete dataset entries" {
+            val expectedEntry = UUID.randomUUID()
+
+            val api = createServer(withResponse = MockResponse())
+            val apiClient = createClient(api.url("/").toString())
+
+            apiClient.deleteDatasetEntry(entry = expectedEntry).get()
+
+            val actualRequest = api.takeRequest()
+            actualRequest.method shouldBe ("DELETE")
+            actualRequest.path shouldBe ("/v1/datasets/entries/own/$expectedEntry")
 
             api.shutdown()
         }

@@ -48,6 +48,7 @@
                 android:id="@+id/last_backup_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
                 android:orientation="vertical"
                 android:padding="16dp">
 
@@ -112,6 +113,7 @@
                 android:id="@+id/last_operation_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
                 android:orientation="vertical"
                 android:padding="16dp">
 
