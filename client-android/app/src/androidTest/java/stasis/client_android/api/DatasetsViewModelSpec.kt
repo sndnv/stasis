@@ -17,6 +17,7 @@ import stasis.client_android.Fixtures
 import stasis.client_android.await
 import stasis.client_android.eventually
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
+import stasis.client_android.lib.model.server.api.requests.UpdateDatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.ops.search.Search
 import stasis.client_android.lib.security.CredentialsProvider
@@ -72,6 +73,68 @@ class DatasetsViewModelSpec {
                     mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionCreated],
                     equalTo(1)
                 )
+
+                assertThat(definitionCreated.get(), equalTo(true))
+            }
+        }
+    }
+
+    @Test
+    fun updateDatasetDefinitions() {
+        val definitionUpdated = AtomicBoolean(false)
+
+        val mockApiClient = MockServerApiEndpointClient()
+        val model = createModel(mockApiClient)
+
+        runBlocking {
+            model.updateDefinition(
+                definition = UUID.randomUUID(),
+                request = UpdateDatasetDefinition(
+                    info = "test-info",
+                    redundantCopies = 1,
+                    existingVersions = DatasetDefinition.Retention(
+                        policy = DatasetDefinition.Retention.Policy.All,
+                        duration = Duration.ofMillis(1)
+                    ),
+                    removedVersions = DatasetDefinition.Retention(
+                        policy = DatasetDefinition.Retention.Policy.All,
+                        duration = Duration.ofMillis(1)
+                    )
+                ),
+                f = { definitionUpdated.set(true) }
+            )
+
+            eventually {
+                assertThat(
+                    mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionUpdated],
+                    equalTo(1)
+                )
+
+                assertThat(definitionUpdated.get(), equalTo(true))
+            }
+        }
+    }
+
+    @Test
+    fun deleteDatasetDefinitions() {
+        val definitionDeleted = AtomicBoolean(false)
+
+        val mockApiClient = MockServerApiEndpointClient()
+        val model = createModel(mockApiClient)
+
+        runBlocking {
+            model.deleteDefinition(
+                definition = UUID.randomUUID(),
+                f = { definitionDeleted.set(true) }
+            )
+
+            eventually {
+                assertThat(
+                    mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionDeleted],
+                    equalTo(1)
+                )
+
+                assertThat(definitionDeleted.get(), equalTo(true))
             }
         }
     }
@@ -158,6 +221,30 @@ class DatasetsViewModelSpec {
                 mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved],
                 equalTo(1)
             )
+        }
+    }
+
+    @Test
+    fun deleteDatasetEntries() {
+        val entryDeleted = AtomicBoolean(false)
+
+        val mockApiClient = MockServerApiEndpointClient()
+        val model = createModel(mockApiClient)
+
+        runBlocking {
+            model.deleteEntry(
+                entry = UUID.randomUUID(),
+                f = { entryDeleted.set(true) }
+            )
+
+            eventually {
+                assertThat(
+                    mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted],
+                    equalTo(1)
+                )
+
+                assertThat(entryDeleted.get(), equalTo(true))
+            }
         }
     }
 

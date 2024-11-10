@@ -6,6 +6,7 @@ import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
 import stasis.client_android.lib.model.server.api.requests.ResetUserPassword
+import stasis.client_android.lib.model.server.api.requests.UpdateDatasetDefinition
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetDefinition
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetEntry
 import stasis.client_android.lib.model.server.api.responses.Ping
@@ -59,6 +60,23 @@ class CachedServerApiEndpointClient(
         return result
     }
 
+    override suspend fun updateDatasetDefinition(
+        definition: DatasetDefinitionId,
+        request: UpdateDatasetDefinition
+    ): Try<Unit> {
+        val result = underlying.updateDatasetDefinition(definition, request)
+        datasetDefinitionsCache.clear()
+        allDefinitionsCached.set(false)
+        return result
+    }
+
+    override suspend fun deleteDatasetDefinition(definition: DatasetDefinitionId): Try<Unit> {
+        val result = underlying.deleteDatasetDefinition(definition)
+        datasetDefinitionsCache.clear()
+        allDefinitionsCached.set(false)
+        return result
+    }
+
     override suspend fun datasetEntries(definition: DatasetDefinitionId): Try<List<DatasetEntry>> =
         underlying.datasetEntries(definition)
 
@@ -94,6 +112,15 @@ class CachedServerApiEndpointClient(
     override suspend fun createDatasetEntry(request: CreateDatasetEntry): Try<CreatedDatasetEntry> {
         val result = underlying.createDatasetEntry(request)
         latestEntries.remove(request.definition)
+        return result
+    }
+
+    override suspend fun deleteDatasetEntry(entry: DatasetEntryId): Try<Unit> {
+        val result = underlying.deleteDatasetEntry(entry)
+
+        latestEntries.toList().find { it.second == entry }?.first?.let { latestEntries.remove(it) }
+        datasetEntriesCache.remove(entry)
+
         return result
     }
 

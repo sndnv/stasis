@@ -47,6 +47,8 @@
             android:id="@+id/recover_from_entry"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="7dp"
             android:orientation="vertical"
             android:visibility="gone">
 
@@ -67,7 +69,6 @@
 
             </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
-
 
         <LinearLayout
             android:id="@+id/recover_until"

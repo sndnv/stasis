@@ -86,7 +86,8 @@ class RuleEntityDaoSpec {
         id = 1,
         operation = stasis.client_android.lib.collection.rules.Rule.Operation.Include,
         directory = "/a/b/c",
-        pattern = ".*"
+        pattern = ".*",
+        definition = null
     )
 
     private fun withDao(f: (dao: RuleEntityDao) -> Unit) {

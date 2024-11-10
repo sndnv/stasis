@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.view.isVisible
+import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import stasis.client_android.R
@@ -17,6 +18,8 @@ import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.Common.toMinimizedString
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullDateTime
 import stasis.client_android.activities.helpers.Transitions.setSourceTransitionName
+import stasis.client_android.activities.views.context.EntryAction
+import stasis.client_android.activities.views.context.EntryActionsContextDialogFragment
 import stasis.client_android.databinding.ListItemOperationBinding
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.OperationId
@@ -129,89 +132,132 @@ class OperationListItemAdapter(
                 }
             }
 
-            binding.operationResumeButton.isVisible =
-                state.type == Operation.Type.Backup && progress.completed == null && !isActive
-            binding.operationResumeButton.setOnClickListener {
-                MaterialAlertDialogBuilder(context)
-                    .setTitle(
-                        context.getString(R.string.operation_resume_confirm_title, operation.toMinimizedString())
-                    )
-                    .setNeutralButton(
-                        context.getString(R.string.operation_resume_confirm_cancel_button_title)
-                    ) { dialog, _ ->
-                        dialog.dismiss()
-                    }
-                    .setPositiveButton(
-                        context.getString(R.string.operation_resume_confirm_ok_button_title)
-                    ) { dialog, _ ->
-                        onOperationResumeRequested(operation)
-
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.toast_operation_resumed),
-                            Toast.LENGTH_SHORT
-                        ).show()
-
-                        dialog.dismiss()
-                    }
-                    .show()
-            }
-
-            binding.operationStopButton.isVisible = progress.completed == null && isActive
-            binding.operationStopButton.setOnClickListener {
-                MaterialAlertDialogBuilder(context)
-                    .setTitle(
-                        context.getString(R.string.operation_stop_confirm_title, operation.toMinimizedString())
-                    )
-                    .setNeutralButton(
-                        context.getString(R.string.operation_stop_confirm_cancel_button_title)
-                    ) { dialog, _ ->
-                        dialog.dismiss()
-                    }
-                    .setPositiveButton(
-                        context.getString(R.string.operation_stop_confirm_ok_button_title)
-                    ) { dialog, _ ->
-                        onOperationStopRequested(operation)
-
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.toast_operation_stopped),
-                            Toast.LENGTH_SHORT
-                        ).show()
-
-                        dialog.dismiss()
-                    }
-                    .show()
-            }
-
-            binding.operationRemoveButton.isVisible = !isActive
-            binding.operationRemoveButton.setOnClickListener {
-                MaterialAlertDialogBuilder(context)
-                    .setTitle(
-                        context.getString(R.string.operation_remove_confirm_title, operation.toMinimizedString())
-                    )
-                    .setNeutralButton(
-                        context.getString(R.string.operation_remove_confirm_cancel_button_title)
-                    ) { dialog, _ ->
-                        dialog.dismiss()
-                    }
-                    .setPositiveButton(
-                        context.getString(R.string.operation_remove_confirm_ok_button_title)
-                    ) { dialog, _ ->
-                        onOperationRemoveRequested(state.type, operation)
-
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.toast_operation_removed),
-                            Toast.LENGTH_SHORT
-                        ).show()
-
-                        dialog.dismiss()
-                    }
-                    .show()
-            }
-
             binding.root.setSourceTransitionName(R.string.operation_details_transition_name, operation)
+
+            binding.root.setOnLongClickListener {
+                EntryActionsContextDialogFragment(
+                    name = state.type.asString(context),
+                    description = operation.toString(),
+                    actions = listOfNotNull(
+                        EntryAction(
+                            icon = R.drawable.ic_operations,
+                            name = context.getString(R.string.operation_show_button_title),
+                            description = context.getString(R.string.operation_show_button_hint),
+                            handler = {
+                                onOperationDetailsRequested(binding.root, operation, state.type)
+                            }
+                        ),
+                        if (state.type == Operation.Type.Backup && progress.completed == null && !isActive) EntryAction(
+                            icon = R.drawable.ic_play,
+                            name = context.getString(R.string.operation_resume_button_title),
+                            description = context.getString(R.string.operation_resume_button_hint),
+                            handler = {
+                                MaterialAlertDialogBuilder(context)
+                                    .setTitle(
+                                        context.getString(
+                                            R.string.operation_resume_confirm_title,
+                                            operation.toMinimizedString()
+                                        )
+                                    )
+                                    .setNeutralButton(
+                                        context.getString(R.string.operation_resume_confirm_cancel_button_title)
+                                    ) { dialog, _ ->
+                                        dialog.dismiss()
+                                    }
+                                    .setPositiveButton(
+                                        context.getString(R.string.operation_resume_confirm_ok_button_title)
+                                    ) { dialog, _ ->
+                                        onOperationResumeRequested(operation)
+
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.toast_operation_resumed),
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+
+                                        dialog.dismiss()
+                                    }
+                                    .show()
+                            }
+                        ) else null,
+                        if (progress.completed == null && isActive) EntryAction(
+                            icon = R.drawable.ic_stop,
+                            name = context.getString(R.string.operation_stop_button_title),
+                            description = context.getString(R.string.operation_stop_button_hint),
+                            handler = {
+                                MaterialAlertDialogBuilder(context)
+                                    .setTitle(
+                                        context.getString(
+                                            R.string.operation_stop_confirm_title,
+                                            operation.toMinimizedString()
+                                        )
+                                    )
+                                    .setNeutralButton(
+                                        context.getString(R.string.operation_stop_confirm_cancel_button_title)
+                                    ) { dialog, _ ->
+                                        dialog.dismiss()
+                                    }
+                                    .setPositiveButton(
+                                        context.getString(R.string.operation_stop_confirm_ok_button_title)
+                                    ) { dialog, _ ->
+                                        onOperationStopRequested(operation)
+
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.toast_operation_stopped),
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+
+                                        dialog.dismiss()
+                                    }
+                                    .show()
+                            }
+                        ) else null,
+                        if (!isActive) EntryAction(
+                            icon = R.drawable.ic_action_delete,
+                            name = context.getString(R.string.operation_remove_button_title),
+                            description = context.getString(R.string.operation_remove_button_hint),
+                            color = R.color.design_default_color_error,
+                            handler = {
+                                MaterialAlertDialogBuilder(context)
+                                    .setTitle(
+                                        context.getString(R.string.operation_remove_confirm_title)
+                                    )
+                                    .setMessage(
+                                        context.getString(R.string.operation_remove_confirm_content)
+                                            .renderAsSpannable(
+                                                StyledString(
+                                                    placeholder = "%1\$s",
+                                                    content = operation.toMinimizedString(),
+                                                    style = StyleSpan(Typeface.BOLD)
+                                                )
+                                            )
+                                    )
+                                    .setNeutralButton(
+                                        context.getString(R.string.operation_remove_confirm_cancel_button_title)
+                                    ) { dialog, _ ->
+                                        dialog.dismiss()
+                                    }
+                                    .setPositiveButton(
+                                        context.getString(R.string.operation_remove_confirm_ok_button_title)
+                                    ) { dialog, _ ->
+                                        onOperationRemoveRequested(state.type, operation)
+
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.toast_operation_removed),
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+
+                                        dialog.dismiss()
+                                    }
+                                    .show()
+                            }
+                        ) else null
+                    )
+                ).show(FragmentManager.findFragmentManager(binding.root), EntryActionsContextDialogFragment.Tag)
+                true
+            }
 
             binding.root.setOnClickListener { view ->
                 onOperationDetailsRequested(view, operation, state.type)

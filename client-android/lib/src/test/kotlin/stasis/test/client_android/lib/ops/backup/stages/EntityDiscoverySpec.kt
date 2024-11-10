@@ -60,13 +60,15 @@ class EntityDiscoverySpec : WordSpec({
                             id = 0,
                             operation = Rule.Operation.Include,
                             directory = sourceDirectory1Metadata.path.toAbsolutePath().toString(),
-                            pattern = "source-file-*"
+                            pattern = "source-file-*",
+                            definition = null
                         ),
                         Rule(
                             id = 1,
                             operation = Rule.Operation.Include,
                             directory = sourceDirectory2Metadata.path.toAbsolutePath().toString(),
-                            pattern = "source-file-*"
+                            pattern = "source-file-*",
+                            definition = null
                         )
                     )
                 )

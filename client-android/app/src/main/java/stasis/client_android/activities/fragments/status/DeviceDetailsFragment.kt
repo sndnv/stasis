@@ -63,47 +63,72 @@ class DeviceDetailsFragment : Fragment() {
                         R.string.device_limits_label_max_crates
                     )
                     binding.deviceLimitsMaxCrates.rowContent.text = context.getString(
-                        R.string.device_limits_content_max_crates,
-                        limits.maxCrates.asString()
-                    )
-
-                    binding.deviceLimitsMaxStorage.rowLabel.text = context.getString(
-                        R.string.device_limits_label_max_storage
-                    )
-                    binding.deviceLimitsMaxStorage.rowContent.text = context.getString(
-                        R.string.device_limits_content_max_storage,
-                        limits.maxStorage.asSizeString(context)
+                        R.string.device_limits_content_max_crates
+                    ).renderAsSpannable(
+                        StyledString(
+                            placeholder = "%1\$s",
+                            content = limits.maxCrates.asString(),
+                            style = StyleSpan(Typeface.BOLD)
+                        ),
                     )
 
                     binding.deviceLimitsMaxStoragePerCrate.rowLabel.text = context.getString(
                         R.string.device_limits_label_max_storage_per_crate
                     )
                     binding.deviceLimitsMaxStoragePerCrate.rowContent.text = context.getString(
-                        R.string.device_limits_content_max_storage_per_crate,
-                        limits.maxStoragePerCrate.asSizeString(context)
+                        R.string.device_limits_content_max_storage_per_crate
+                    ).renderAsSpannable(
+                        StyledString(
+                            placeholder = "%1\$s",
+                            content = limits.maxStoragePerCrate.asSizeString(context),
+                            style = StyleSpan(Typeface.BOLD)
+                        ),
+                    )
+
+                    binding.deviceLimitsMaxStorage.rowLabel.text = context.getString(
+                        R.string.device_limits_label_max_storage
+                    )
+                    binding.deviceLimitsMaxStorage.rowContent.text = context.getString(
+                        R.string.device_limits_content_max_storage
+                    ).renderAsSpannable(
+                        StyledString(
+                            placeholder = "%1\$s",
+                            content = limits.maxStorage.asSizeString(context),
+                            style = StyleSpan(Typeface.BOLD)
+                        ),
                     )
 
                     binding.deviceLimitsMaxRetention.rowLabel.text = context.getString(
                         R.string.device_limits_label_max_retention
                     )
                     binding.deviceLimitsMaxRetention.rowContent.text = context.getString(
-                        R.string.device_limits_content_max_retention,
-                        limits.maxRetention.asString(context)
+                        R.string.device_limits_content_max_retention
+                    ).renderAsSpannable(
+                        StyledString(
+                            placeholder = "%1\$s",
+                            content = limits.maxRetention.asString(context),
+                            style = StyleSpan(Typeface.BOLD)
+                        ),
                     )
 
                     binding.deviceLimitsMinRetention.rowLabel.text = context.getString(
                         R.string.device_limits_label_min_retention
                     )
                     binding.deviceLimitsMinRetention.rowContent.text = context.getString(
-                        R.string.device_limits_content_min_retention,
-                        limits.minRetention.asString(context)
+                        R.string.device_limits_content_min_retention
+                    ).renderAsSpannable(
+                        StyledString(
+                            placeholder = "%1\$s",
+                            content = limits.minRetention.asString(context),
+                            style = StyleSpan(Typeface.BOLD)
+                        ),
                     )
                 }
             }
 
             binding.deviceNode.text = context.getString(
                 R.string.device_field_content_node,
-                device.node.toString()
+                device.node.toMinimizedString()
             )
 
             val created = device.created.formatAsFullDateTime(context)

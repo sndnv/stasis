@@ -3,145 +3,134 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:orientation="vertical"
+        android:padding="16dp">
 
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/user_container"
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/user_header_title"
+            android:textAppearance="?attr/textAppearanceHeadline6"
+            android:textIsSelectable="true" />
+
+        <TextView
+            android:id="@+id/user_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:textIsSelectable="true" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingTop="16dp"
+            android:text="@string/user_field_title_limits"
+            android:textAppearance="?attr/textAppearanceSubtitle1"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/user_limits_none"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="4dp"
+            android:text="@string/user_field_content_limits_none"
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:textColor="?android:attr/textColorSecondary" />
+
+        <LinearLayout
+            android:id="@+id/user_limits"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="8dp">
+            android:orientation="vertical"
+            android:visibility="gone">
 
-            <LinearLayout
+            <include
+                android:id="@+id/user_limits_max_devices"
+                layout="@layout/layout_limits_row"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_height="wrap_content" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/user_header_title"
-                    android:textAppearance="?attr/textAppearanceHeadline6"
-                    android:textIsSelectable="true" />
+            <include
+                android:id="@+id/user_limits_max_crates"
+                layout="@layout/layout_limits_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
 
-                <TextView
-                    android:id="@+id/user_info"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingStart="4dp"
-                    android:paddingEnd="4dp"
-                    android:textAppearance="?attr/textAppearanceBody2"
-                    android:textIsSelectable="true" />
+            <include
+                android:id="@+id/user_limits_max_storage_per_crate"
+                layout="@layout/layout_limits_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="16dp"
-                    android:text="@string/user_field_title_limits"
-                    android:textAppearance="?attr/textAppearanceSubtitle1"
-                    android:textStyle="bold" />
+            <include
+                android:id="@+id/user_limits_max_storage"
+                layout="@layout/layout_limits_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
 
-                <TextView
-                    android:id="@+id/user_limits_none"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/user_field_content_limits_none"
-                    android:textAppearance="?attr/textAppearanceBody2"
-                    android:textColor="?android:attr/textColorSecondary" />
+            <include
+                android:id="@+id/user_limits_min_retention"
+                layout="@layout/layout_limits_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
 
-                <LinearLayout
-                    android:id="@+id/user_limits"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone">
+            <include
+                android:id="@+id/user_limits_max_retention"
+                layout="@layout/layout_limits_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
 
-                    <include
-                        android:id="@+id/user_limits_max_devices"
-                        layout="@layout/layout_limits_row"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingTop="16dp"
+            android:text="@string/user_field_title_permissions"
+            android:textAppearance="?attr/textAppearanceSubtitle1"
+            android:textStyle="bold" />
 
-                    <include
-                        android:id="@+id/user_limits_max_crates"
-                        layout="@layout/layout_limits_row"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content" />
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/user_permissions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
 
-                    <include
-                        android:id="@+id/user_limits_max_storage"
-                        layout="@layout/layout_limits_row"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"
+            android:text="@string/user_field_title_created"
+            android:textAppearance="?attr/textAppearanceSubtitle1"
+            android:textStyle="bold" />
 
-                    <include
-                        android:id="@+id/user_limits_max_storage_per_crate"
-                        layout="@layout/layout_limits_row"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content" />
+        <TextView
+            android:id="@+id/user_created"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:textIsSelectable="true" />
 
-                    <include
-                        android:id="@+id/user_limits_max_retention"
-                        layout="@layout/layout_limits_row"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingTop="16dp"
+            android:text="@string/user_field_title_updated"
+            android:textAppearance="?attr/textAppearanceSubtitle1"
+            android:textStyle="bold" />
 
-                    <include
-                        android:id="@+id/user_limits_min_retention"
-                        layout="@layout/layout_limits_row"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content" />
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="16dp"
-                    android:text="@string/user_field_title_permissions"
-                    android:textAppearance="?attr/textAppearanceSubtitle1"
-                    android:textStyle="bold" />
-
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/user_permissions"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="8dp"
-                    android:text="@string/user_field_title_created"
-                    android:textAppearance="?attr/textAppearanceSubtitle1"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/user_created"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingStart="4dp"
-                    android:paddingEnd="4dp"
-                    android:textAppearance="?attr/textAppearanceBody2"
-                    android:textIsSelectable="true" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="16dp"
-                    android:text="@string/user_field_title_updated"
-                    android:textAppearance="?attr/textAppearanceSubtitle1"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/user_updated"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingStart="4dp"
-                    android:paddingEnd="4dp"
-                    android:textAppearance="?attr/textAppearanceBody2"
-                    android:textIsSelectable="true" />
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
+        <TextView
+            android:id="@+id/user_updated"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:textIsSelectable="true" />
     </LinearLayout>
+
 </layout>

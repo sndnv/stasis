@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.view.doOnPreDraw
 import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
@@ -12,6 +13,7 @@ import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import stasis.client_android.R
+import stasis.client_android.activities.helpers.Common.getOrRenderFailure
 import stasis.client_android.activities.helpers.Transitions.configureSourceTransition
 import stasis.client_android.activities.helpers.Transitions.operationComplete
 import stasis.client_android.api.DatasetsViewModel
@@ -46,16 +48,36 @@ class DatasetDefinitionListFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         postponeEnterTransition()
 
-        val adapter = DatasetDefinitionListItemAdapter { itemView, definition ->
-            findNavController().navigate(
-                DatasetDefinitionListFragmentDirections.actionBackupFragmentToDatasetDefinitionDetailsFragment(
-                    definition = definition
-                ),
-                FragmentNavigatorExtras(
-                    itemView to getString(DatasetDefinitionDetailsFragment.TargetTransitionId)
+        val adapter = DatasetDefinitionListItemAdapter(
+            onDefinitionDetailsRequested = { itemView, definition ->
+                findNavController().navigate(
+                    DatasetDefinitionListFragmentDirections.actionBackupFragmentToDatasetDefinitionDetailsFragment(
+                        definition = definition
+                    ),
+                    FragmentNavigatorExtras(
+                        itemView to getString(DatasetDefinitionDetailsFragment.TargetTransitionId)
+                    )
                 )
-            )
-        }
+            },
+            onDefinitionUpdateRequested = { definition ->
+                findNavController().navigate(
+                    DatasetDefinitionListFragmentDirections
+                        .actionBackupFragmentToDatasetDefinitionFormFragment(definition = definition.id)
+                )
+            },
+            onDefinitionDeleteRequested = { definition ->
+                datasets.deleteDefinition(definition) {
+                    it.getOrRenderFailure(withContext = requireContext())
+                        ?.let {
+                            Toast.makeText(
+                                binding.root.context,
+                                getString(R.string.toast_dataset_definition_removed),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                }
+            }
+        )
 
         binding.datasetDefinitionsList.adapter = adapter
 
@@ -79,7 +101,7 @@ class DatasetDefinitionListFragment : Fragment() {
         binding.datasetDefinitionAddButton.setOnClickListener {
             findNavController().navigate(
                 DatasetDefinitionListFragmentDirections
-                    .actionBackupFragmentToNewDatasetDefinitionFragment()
+                    .actionBackupFragmentToDatasetDefinitionFormFragment(definition = null)
             )
         }
     }

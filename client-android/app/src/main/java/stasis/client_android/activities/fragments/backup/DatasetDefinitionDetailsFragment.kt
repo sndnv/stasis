@@ -9,6 +9,7 @@ import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
@@ -23,6 +24,7 @@ import kotlinx.coroutines.launch
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.asString
+import stasis.client_android.activities.helpers.Common.getOrRenderFailure
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.Common.toMinimizedString
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullDateTime
@@ -166,7 +168,9 @@ class DatasetDefinitionDetailsFragment : Fragment() {
                 if (activity.needsExtraPermissions()) {
                     activity?.requestMissingPermissions()
                 } else {
-                    rules.rules.observeOnce(this) { rules ->
+                    rules.rules.observeOnce(this) { rulesList ->
+                        val rules = rulesList.groupBy { it.definition }
+
                         liveData { providerContext.executor.active().isNotEmpty() }
                             .observe(viewLifecycleOwner) { operationsPending ->
                                 if (operationsPending) {
@@ -187,7 +191,7 @@ class DatasetDefinitionDetailsFragment : Fragment() {
                                     lifecycleScope.launch {
                                         providerContext.executor.startBackupWithRules(
                                             definition = definitionId,
-                                            rules = rules
+                                            rules = rules.getOrElse(definitionId) { rules.getOrElse(null) { emptyList() } }
                                         ) { e ->
                                             notificationManager.putOperationCompletedNotification(
                                                 context = context,
@@ -229,6 +233,18 @@ class DatasetDefinitionDetailsFragment : Fragment() {
                                     itemView to getString(DatasetEntryDetailsFragment.TargetTransitionId)
                                 )
                             )
+                        },
+                        onEntryDeleteRequested = { entry ->
+                            datasets.deleteEntry(entry) {
+                                it.getOrRenderFailure(withContext = requireContext())
+                                    ?.let {
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.toast_dataset_entry_removed),
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                            }
                         }
                     )
                     binding.entriesList.setHasFixedSize(true)

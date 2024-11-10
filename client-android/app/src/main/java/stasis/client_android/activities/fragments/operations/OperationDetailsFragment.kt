@@ -31,6 +31,7 @@ import stasis.client_android.providers.ProviderContext
 import stasis.client_android.utils.LiveDataExtensions.minimize
 import java.nio.file.Path
 import java.time.Duration
+import java.util.Locale
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -123,7 +124,7 @@ class OperationDetailsFragment : Fragment() {
                             .renderAsSpannable(
                                 StyledString(
                                     placeholder = "%1\$s",
-                                    content = String.format("%.2f", progressPct),
+                                    content = String.format(Locale.getDefault(), "%.2f", progressPct),
                                     style = StyleSpan(Typeface.BOLD)
                                 )
                             )

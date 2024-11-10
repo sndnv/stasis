@@ -7,6 +7,7 @@ import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
 import stasis.client_android.lib.model.server.api.requests.ResetUserPassword
+import stasis.client_android.lib.model.server.api.requests.UpdateDatasetDefinition
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetDefinition
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetEntry
 import stasis.client_android.lib.model.server.api.responses.Ping
@@ -23,7 +24,7 @@ import stasis.client_android.lib.model.server.users.User
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Success
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
 open class MockServerApiEndpointClient(
@@ -31,10 +32,13 @@ open class MockServerApiEndpointClient(
 ) : ServerApiEndpointClient {
     private val stats: Map<Statistic, AtomicInteger> = mapOf(
         Statistic.DatasetEntryCreated to AtomicInteger(0),
+        Statistic.DatasetEntryDeleted to AtomicInteger(0),
         Statistic.DatasetEntryRetrieved to AtomicInteger(0),
         Statistic.DatasetEntryRetrievedLatest to AtomicInteger(0),
         Statistic.DatasetEntriesRetrieved to AtomicInteger(0),
         Statistic.DatasetDefinitionCreated to AtomicInteger(0),
+        Statistic.DatasetDefinitionUpdated to AtomicInteger(0),
+        Statistic.DatasetDefinitionDeleted to AtomicInteger(0),
         Statistic.DatasetDefinitionRetrieved to AtomicInteger(0),
         Statistic.DatasetDefinitionsRetrieved to AtomicInteger(0),
         Statistic.PublicSchedulesRetrieved to AtomicInteger(0),
@@ -73,6 +77,19 @@ open class MockServerApiEndpointClient(
         return Success(CreatedDatasetDefinition(definition = UUID.randomUUID()))
     }
 
+    override suspend fun updateDatasetDefinition(
+        definition: DatasetDefinitionId,
+        request: UpdateDatasetDefinition
+    ): Try<Unit> {
+        stats[Statistic.DatasetDefinitionUpdated]?.getAndIncrement()
+        return Success(Unit)
+    }
+
+    override suspend fun deleteDatasetDefinition(definition: DatasetDefinitionId): Try<Unit> {
+        stats[Statistic.DatasetDefinitionDeleted]?.getAndIncrement()
+        return Success(Unit)
+    }
+
     override suspend fun datasetEntries(definition: DatasetDefinitionId): Try<List<DatasetEntry>> {
         stats[Statistic.DatasetEntriesRetrieved]?.getAndIncrement()
         return Success(
@@ -100,6 +117,11 @@ open class MockServerApiEndpointClient(
     override suspend fun createDatasetEntry(request: CreateDatasetEntry): Try<CreatedDatasetEntry> {
         stats[Statistic.DatasetEntryCreated]?.getAndIncrement()
         return Success(CreatedDatasetEntry(entry = UUID.randomUUID()))
+    }
+
+    override suspend fun deleteDatasetEntry(entry: DatasetEntryId): Try<Unit> {
+        stats[Statistic.DatasetEntryDeleted]?.getAndIncrement()
+        return Success(Unit)
     }
 
     override suspend fun publicSchedules(): Try<List<Schedule>> {
@@ -174,10 +196,13 @@ open class MockServerApiEndpointClient(
 
     sealed class Statistic {
         object DatasetEntryCreated : Statistic()
+        object DatasetEntryDeleted : Statistic()
         object DatasetEntryRetrieved : Statistic()
         object DatasetEntryRetrievedLatest : Statistic()
         object DatasetEntriesRetrieved : Statistic()
         object DatasetDefinitionCreated : Statistic()
+        object DatasetDefinitionUpdated : Statistic()
+        object DatasetDefinitionDeleted : Statistic()
         object DatasetDefinitionRetrieved : Statistic()
         object DatasetDefinitionsRetrieved : Statistic()
         object PublicSchedulesRetrieved : Statistic()

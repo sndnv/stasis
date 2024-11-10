@@ -30,6 +30,7 @@ dependencies {
     implementation("org.bitbucket.b_c:jose4j:0.9.6")
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.25")
     implementation("com.getkeepsafe.taptargetview:taptargetview:1.14.0")
+    implementation("io.github.amrdeveloper:treeview:1.1.4")
 
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")

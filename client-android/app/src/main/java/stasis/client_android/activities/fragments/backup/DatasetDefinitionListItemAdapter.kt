@@ -6,7 +6,10 @@ import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.asString
@@ -14,12 +17,16 @@ import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.Common.toMinimizedString
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullDateTime
 import stasis.client_android.activities.helpers.Transitions.setSourceTransitionName
+import stasis.client_android.activities.views.context.EntryAction
+import stasis.client_android.activities.views.context.EntryActionsContextDialogFragment
 import stasis.client_android.databinding.ListItemDatasetDefinitionDetailsBinding
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 
 class DatasetDefinitionListItemAdapter(
-    private val onDefinitionDetailsRequested: (View, DatasetDefinitionId) -> Unit
+    private val onDefinitionDetailsRequested: (View, DatasetDefinitionId) -> Unit,
+    private val onDefinitionUpdateRequested: (DatasetDefinition) -> Unit,
+    private val onDefinitionDeleteRequested: (DatasetDefinitionId) -> Unit
 ) : RecyclerView.Adapter<DatasetDefinitionListItemAdapter.ItemViewHolder>() {
     private var definitions = emptyList<DatasetDefinition>()
 
@@ -27,7 +34,13 @@ class DatasetDefinitionListItemAdapter(
         val inflater = LayoutInflater.from(parent.context)
         val binding = ListItemDatasetDefinitionDetailsBinding.inflate(inflater, parent, false)
 
-        return ItemViewHolder(parent.context, binding, onDefinitionDetailsRequested)
+        return ItemViewHolder(
+            context = parent.context,
+            binding = binding,
+            onDefinitionDetailsRequested = onDefinitionDetailsRequested,
+            onDefinitionUpdateRequested = onDefinitionUpdateRequested,
+            onDefinitionDeleteRequested = onDefinitionDeleteRequested
+        )
     }
 
     override fun getItemCount(): Int = definitions.size
@@ -39,7 +52,9 @@ class DatasetDefinitionListItemAdapter(
     class ItemViewHolder(
         private val context: Context,
         private val binding: ListItemDatasetDefinitionDetailsBinding,
-        private val onDefinitionDetailsRequested: (View, DatasetDefinitionId) -> Unit
+        private val onDefinitionDetailsRequested: (View, DatasetDefinitionId) -> Unit,
+        private val onDefinitionUpdateRequested: (DatasetDefinition) -> Unit,
+        private val onDefinitionDeleteRequested: (DatasetDefinitionId) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(
             definition: DatasetDefinition
@@ -123,6 +138,73 @@ class DatasetDefinitionListItemAdapter(
                 R.string.dataset_definition_summary_transition_name,
                 definition.id
             )
+
+            binding.root.setOnLongClickListener {
+                EntryActionsContextDialogFragment(
+                    name = definition.info,
+                    description = definition.id.toString(),
+                    actions = listOf(
+                        EntryAction(
+                            icon = R.drawable.ic_action_details,
+                            name = context.getString(R.string.dataset_definition_show_button_title),
+                            description = context.getString(R.string.dataset_definition_show_button_hint),
+                            handler = {
+                                onDefinitionDetailsRequested(binding.root, definition.id)
+                            }
+                        ),
+                        EntryAction(
+                            icon = R.drawable.ic_action_edit,
+                            name = context.getString(R.string.dataset_definition_update_button_title),
+                            description = context.getString(R.string.dataset_definition_update_button_hint),
+                            handler = {
+                                onDefinitionUpdateRequested(definition)
+                            }
+                        ),
+                        EntryAction(
+                            icon = R.drawable.ic_action_delete,
+                            name = context.getString(R.string.dataset_definition_remove_button_title),
+                            description = context.getString(R.string.dataset_definition_remove_button_hint),
+                            color = R.color.design_default_color_error,
+                            handler = {
+                                MaterialAlertDialogBuilder(context)
+                                    .setTitle(
+                                        context.getString(R.string.dataset_definition_remove_confirm_title)
+                                    )
+                                    .setMessage(
+                                        context.getString(R.string.dataset_definition_remove_confirm_content)
+                                            .renderAsSpannable(
+                                                StyledString(
+                                                    placeholder = "%1\$s",
+                                                    content = definition.info,
+                                                    style = StyleSpan(Typeface.BOLD)
+                                                )
+                                            )
+                                    )
+                                    .setNeutralButton(
+                                        context.getString(R.string.dataset_definition_remove_confirm_cancel_button_title)
+                                    ) { dialog, _ ->
+                                        dialog.dismiss()
+                                    }
+                                    .setPositiveButton(
+                                        context.getString(R.string.dataset_definition_remove_confirm_ok_button_title)
+                                    ) { dialog, _ ->
+                                        onDefinitionDeleteRequested(definition.id)
+
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.toast_dataset_definition_removed),
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+
+                                        dialog.dismiss()
+                                    }
+                                    .show()
+                            }
+                        )
+                    )
+                ).show(FragmentManager.findFragmentManager(binding.root), EntryActionsContextDialogFragment.Tag)
+                true
+            }
 
             binding.root.setOnClickListener { view -> onDefinitionDetailsRequested(view, definition.id) }
         }

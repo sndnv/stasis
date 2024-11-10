@@ -97,15 +97,27 @@ object Common {
                 duration,
                 policy.versions.toString()
             )
+
             is DatasetDefinition.Retention.Policy.LatestOnly -> context.getString(
                 R.string.dataset_definition_retention_latest_only,
                 duration
             )
+
             is DatasetDefinition.Retention.Policy.All -> context.getString(
                 R.string.dataset_definition_retention_all,
                 duration
             )
         }
+    }
+
+    fun DatasetDefinition.Retention.Policy.toPolicyTypeString(context: Context): String {
+        val string = when (this) {
+            is DatasetDefinition.Retention.Policy.AtMost -> "at-most"
+            is DatasetDefinition.Retention.Policy.LatestOnly -> "latest-only"
+            is DatasetDefinition.Retention.Policy.All -> "all"
+        }
+
+        return string.toPolicyTypeString(context)
     }
 
     fun String.toPolicyTypeString(context: Context): String = when (this) {
@@ -200,18 +212,22 @@ object Common {
             R.plurals.duration_days,
             amount
         )
+
         this == ChronoUnit.HOURS -> context.resources.getQuantityString(
             R.plurals.duration_hours,
             amount
         )
+
         this == ChronoUnit.MINUTES -> context.resources.getQuantityString(
             R.plurals.duration_minutes,
             amount
         )
+
         this == ChronoUnit.SECONDS -> context.resources.getQuantityString(
             R.plurals.duration_seconds,
             amount
         )
+
         else -> throw IllegalArgumentException("Unexpected ChronoUnit provided: [${this.name}]")
     }
 

@@ -47,7 +47,7 @@
     <string name="navigation_subtitle_backup_definitions">Backup definitions</string>
     <string name="navigation_subtitle_backup_definition_details">Backup definition details</string>
     <string name="navigation_subtitle_backup_entry_details">Backup entry details</string>
-    <string name="navigation_subtitle_backup_new_definition">New backup definition</string>
+    <string name="navigation_subtitle_backup_definition_form">Configure backup definition</string>
     <string name="navigation_subtitle_recover">Recover</string>
     <string name="navigation_subtitle_search">Search</string>
     <string name="navigation_subtitle_operations">Operations</string>
@@ -81,12 +81,14 @@
     <string name="context_help_backup_definitions">
         Showing all available backup definitions.\n\n
         In order to perform backups, a definition needs to be created first, which is then associated with each backup entry.\n\n
-        Backup definitions allow for grouping and configuration of backups - how many copies should be kept, for how long and how to version them.
+        Backup definitions allow for grouping and configuration of backups - how many copies should be kept, for how long and how to version them.\n\n
+        To show available actions for each definition, long-press an entry.
     </string>
     <string name="context_help_backup_definition_details">
         Showing all available backup entries for the selected definition.\n\n
         Each item represents an individual backup that was performed and shows information about when it was done,
-        how much data was stored and what changed since the last backup.
+        how much data was stored and what changed since the last backup.\n\n
+        To show available actions for a backup, long-press an entry.
     </string>
     <string name="context_help_backup_entry_details">
         Showing backup metadata information for the selected entry.\n\n
@@ -94,8 +96,8 @@
         details about what changed since the last backup.\n\n
         An item can be expanded to show additional metadata.
     </string>
-    <string name="context_help_backup_new_definition">
-        Creating a new backup definition.\n\n
+    <string name="context_help_backup_definition_form">
+        Creating or updating a backup definition.\n\n
         For each definition,the retention policies for existing and removed file versions can be specified.\n\n
         Retention policies:\n\n
         - at-most - keep at most N number of versions\n\n
@@ -112,7 +114,8 @@
     <string name="context_help_operations">
         Showing and stopping operations.\n\n
         Each item represents an individual operation and shows what its current state is and how many stages or steps have already been performed.\n\n
-        Operations older than 30 days are automatically removed.
+        Operations older than 30 days are automatically removed.\n\n
+        To show available actions for each operation, long-press an entry.
     </string>
     <string name="context_help_operation_details">
         Showing operation details.\n\n
@@ -124,7 +127,15 @@
     </string>
     <string name="context_help_rules">
         Showing configured backup rules.\n\n
-        Each rule determines whether matching files and directories are included (✓) or excluded (✗) during backups.
+        Each rule determines whether matching files and directories are included (✓) or excluded (✗) during backups.\n\n
+        To show available actions for each rule, long-press an entry.
+    </string>
+    <string name="context_help_rules_tree">
+        Showing available files and the rules that affect them.\n\n
+        Files that are going to be included in the backups are shown in green, those that are explicitly excluded are
+        shown in red and gray is used for files that are not affected by the rules.\n\n
+        Only explicitly included files will be considered when performing backups!\n\n
+        To show more details and suggested rules, long-press a file or folder entry.
     </string>
     <string name="context_help_schedules">
         Showing and managing client scheduling.\n\n
@@ -237,22 +248,23 @@
     <string name="home_last_operation_no_data">No Data</string>
 
     <!-- Backup -->
-    <string name="new_dataset_definition_field_title_info">Description</string>
-    <string name="new_dataset_definition_field_help_info">Any information or description that uniquely identifies the backup definition.</string>
-    <string name="new_dataset_definition_field_title_existing_versions">Existing Versions</string>
-    <string name="new_dataset_definition_field_help_existing_versions">Retention policy and duration for existing files.</string>
-    <string name="new_dataset_definition_field_title_removed_versions">Removed Versions</string>
-    <string name="new_dataset_definition_field_help_removed_versions">Retention policy and duration for removed files.</string>
-    <string name="new_dataset_definition_retention_field_title_duration">Duration (required)</string>
-    <string name="new_dataset_definition_retention_field_title_policy">Policy</string>
-    <string name="new_dataset_definition_field_error_info">Info cannot be empty</string>
-    <string name="new_dataset_definition_field_error_existing_versions_duration">Duration cannot be empty or 0</string>
-    <string name="new_dataset_definition_field_error_existing_versions_duration_padding"> </string>
-    <string name="new_dataset_definition_field_error_existing_versions_policy_versions">Versions cannot be empty or 0</string>
-    <string name="new_dataset_definition_field_error_removed_versions_duration">Duration cannot be empty or 0</string>
-    <string name="new_dataset_definition_field_error_removed_versions_duration_padding"> </string>
-    <string name="new_dataset_definition_field_error_removed_versions_policy_versions">Versions cannot be empty or 0</string>
-    <string name="new_dataset_definition_create">Create</string>
+    <string name="dataset_definition_field_title_info">Description</string>
+    <string name="dataset_definition_field_help_info">Any information or description that uniquely identifies the backup definition.</string>
+    <string name="dataset_definition_field_title_existing_versions">Existing Versions</string>
+    <string name="dataset_definition_field_help_existing_versions">Retention policy and duration for existing files.</string>
+    <string name="dataset_definition_field_title_removed_versions">Removed Versions</string>
+    <string name="dataset_definition_field_help_removed_versions">Retention policy and duration for removed files.</string>
+    <string name="dataset_definition_retention_field_title_duration">Duration (required)</string>
+    <string name="dataset_definition_retention_field_title_policy">Policy</string>
+    <string name="dataset_definition_field_error_info">Info cannot be empty</string>
+    <string name="dataset_definition_field_error_existing_versions_duration">Duration cannot be empty or 0</string>
+    <string name="dataset_definition_field_error_existing_versions_duration_padding"> </string>
+    <string name="dataset_definition_field_error_existing_versions_policy_versions">Versions cannot be empty or 0</string>
+    <string name="dataset_definition_field_error_removed_versions_duration">Duration cannot be empty or 0</string>
+    <string name="dataset_definition_field_error_removed_versions_duration_padding"> </string>
+    <string name="dataset_definition_field_error_removed_versions_policy_versions">Versions cannot be empty or 0</string>
+    <string name="dataset_definition_create">Create</string>
+    <string name="dataset_definition_update">Update</string>
 
     <string name="dataset_definition_field_title_retention">Retention</string>
     <string name="dataset_definition_field_content_info">%1$s (%2$s)</string>
@@ -264,14 +276,33 @@
     <string name="dataset_definition_field_content_updated_label">Updated</string>
     <string name="dataset_definition_field_content_updated">%1$s: %2$s</string>
     <string name="dataset_definitions_list_empty">No Definitions</string>
-    <string name="dataset_definition_add_button_title">Add definition</string>
-    <string name="dataset_definition_add_button_hint">Create new backup definition</string>
+    <string name="dataset_definition_add_button_hint">Create a new backup definition</string>
+    <string name="dataset_definition_show_button_title">Show</string>
+    <string name="dataset_definition_show_button_hint">Show details about this backup definition</string>
+    <string name="dataset_definition_update_button_title">Update</string>
+    <string name="dataset_definition_update_button_hint">Update this backup definition</string>
+    <string name="dataset_definition_remove_button_title">Remove</string>
+    <string name="dataset_definition_remove_button_hint">Permanently remove this backup definition</string>
     <string name="dataset_definition_start_backup">Start backup</string>
+    <string name="dataset_definition_start_backup_hint">Start a new backup process using this definition</string>
     <string name="dataset_definition_start_backup_disabled_title">Cannot start backup</string>
     <string name="dataset_definition_start_backup_disabled_content">A new backup operation cannot be started while other operations are running.</string>
     <string name="dataset_definition_entries_list_empty">No Entries</string>
+    <string name="dataset_definition_remove_confirm_title">Remove backup definition?</string>
+    <string name="dataset_definition_remove_confirm_content">Removing backup definition [%1$s] will make all associated backups inaccessible!</string>
+    <string name="dataset_definition_remove_confirm_cancel_button_title">Cancel</string>
+    <string name="dataset_definition_remove_confirm_ok_button_title">OK</string>
     <string name="backup_operation">Backup</string>
 
+    <string name="dataset_entry_show_button_title">Show</string>
+    <string name="dataset_entry_show_button_hint">Show details about this backup entry</string>
+    <string name="dataset_entry_remove_button_title">Remove</string>
+    <string name="dataset_entry_remove_button_hint">Permanently remove this backup entry</string>
+    <string name="dataset_entry_remove_confirm_title">Remove backup entry?</string>
+    <string name="dataset_entry_remove_confirm_content">Removing backup entry [%1$s] will make all of its data inaccessible!</string>
+    <string name="dataset_entry_remove_confirm_cancel_button_title">Cancel</string>
+    <string name="dataset_entry_remove_confirm_ok_button_title">OK</string>
+    <string name="dataset_entry_info">%1$s, %2$s"</string>
     <string name="dataset_entry_field_content_title">%1$s, %2$s (%3$s)"</string>
     <string name="dataset_entry_field_content_info">Crates: %1$s, Changes: %2$s, Size: %3$s"</string>
     <string name="dataset_entry_details_metadata_empty">No Additional Metadata</string>
@@ -343,27 +374,65 @@
     <string name="recovery_operation">Recovery</string>
 
     <!-- Rules -->
-    <string name="rule_add_button_title">Add rule</string>
-    <string name="rule_add_button_hint">Add rule</string>
+    <string name="rule_add_button_title">Add</string>
+    <string name="rule_add_button_hint">Manually add a new rule</string>
+    <string name="rule_update_button_title">Update</string>
+    <string name="rule_update_button_hint">Make changes to this rule</string>
     <string name="rule_reset_button_hint">Reset to default rules</string>
+    <string name="rule_tree_button_hint">Browse files and add new rules</string>
     <string name="rule_operation_hint">Rule operation</string>
     <string name="rule_remove_button_title">Remove</string>
-    <string name="rule_remove_button_hint">Remove rule</string>
+    <string name="rule_remove_button_hint">Permanently remove this rule</string>
+    <string name="rule_field_title_operation">Operation</string>
     <string name="rule_field_title_operation_include">Include</string>
     <string name="rule_field_title_operation_exclude">Exclude</string>
+    <string name="rule_field_title_definition">Backup Definition</string>
     <string name="rule_field_title_directory">Directory</string>
     <string name="rule_field_title_pattern">Pattern</string>
     <string name="rule_field_error_directory">Directory cannot be empty</string>
     <string name="rule_field_error_pattern">Pattern cannot be empty</string>
+    <string name="rule_field_content_definition_info">%1$s (%2$s)</string>
+    <string name="rule_field_content_definition_default">default</string>
     <string name="rule_field_content_directory">%1$s</string>
     <string name="rule_field_content_pattern">%1$s</string>
-    <string name="rule_remove_confirm_title">Remove rule for directory [%1$s]?</string>
+    <string name="rule_remove_confirm_title">Remove rule?</string>
+    <string name="rule_remove_confirm_content">Removing rule [%1$s] for directory [%2$s] may impact future backup operations. Any data already stored will be unaffected!</string>
     <string name="rule_remove_confirm_cancel_button_title">Cancel</string>
     <string name="rule_remove_confirm_ok_button_title">OK</string>
-    <string name="rules_reset_confirm_title">Remove all existing rules and reset to defaults?</string>
+    <string name="rules_reset_confirm_title">Reset rules?</string>
+    <string name="rules_reset_confirm_content">Removing all existing rules and resetting them to the device defaults may impact future backup operations. Any data already stored will be unaffected!</string>
     <string name="rules_reset_confirm_cancel_button_title">Cancel</string>
     <string name="rules_reset_confirm_ok_button_title">OK</string>
     <string name="rules_list_empty">No Rules</string>
+    <string name="rules_list_definition_none">Default</string>
+    <string name="rules_list_definition">For definition [%1$s]</string>
+    <string name="rules_tree_title_default">Files and rules</string>
+    <string name="rules_tree_title">Files and rules - [%1$s]</string>
+    <string name="rules_tree_node_name_directory">%1$s (%2$s)</string>
+    <string name="rules_tree_node_name_file">%1$s</string>
+    <string name="rules_tree_node_icon_hint_file">Entry is a file</string>
+    <string name="rules_tree_node_icon_hint_directory">Entry is a directory</string>
+    <string name="rules_tree_help_hint">Show more information about using the files and rules tree</string>
+    <string name="rules_tree_error">One or more of the configured rules have inaccessible directories</string>
+    <string name="rule_suggestions_label_file">Suggested File Rules (%1$s)</string>
+    <string name="rule_suggestions_label_directory">Suggested Directory Rules (%1$s)</string>
+    <string name="rule_suggestion_entry_name">%1$s</string>
+    <string name="rule_suggestion_entry_parent">%1$s</string>
+    <string name="rule_suggestion_description">%1$s</string>
+    <string name="rule_suggestion_operation_hint_include">Rule includes files and directories</string>
+    <string name="rule_suggestion_operation_hint_exclude">Rule excludes files and directories</string>
+    <string name="rule_suggestion_pattern">%1$s</string>
+    <string name="rule_suggestion_directory_include_nested">Include all content in this directory and all subdirectories</string>
+    <string name="rule_suggestion_directory_include_current">Include only content directly in this directory</string>
+    <string name="rule_suggestion_directory_exclude_nested">Exclude this directory and all its content</string>
+    <string name="rule_suggestion_file_include_current">Include this file</string>
+    <string name="rule_suggestion_file_include_name_all">Include all files with this name (in all directories)</string>
+    <string name="rule_suggestion_file_include_extension_parent">Include all files with this extension (in parent directory)</string>
+    <string name="rule_suggestion_file_include_extension_all">Include all files with this extension (in all directories)</string>
+    <string name="rule_suggestion_file_exclude_current">Exclude this file</string>
+    <string name="rule_suggestion_file_exclude_name_all">Exclude all files with this name (in all directories)</string>
+    <string name="rule_suggestion_file_exclude_extension_parent">Exclude all files with this extension (in parent directory)</string>
+    <string name="rule_suggestion_file_exclude_extension_all">Exclude all files with this extension (in all directories)</string>
 
     <!-- Schedules -->
     <string name="schedule_field_content_info">%1$s</string>
@@ -387,10 +456,13 @@
     <!-- Operations -->
     <string name="operations_list_empty">No Operations</string>
     <string name="operation_stop_button_title">Stop</string>
-    <string name="operation_stop_button_hint">Stop operation</string>
+    <string name="operation_stop_button_hint">Stop this operation</string>
+    <string name="operation_show_button_title">Show</string>
+    <string name="operation_show_button_hint">Show details about this operation</string>
     <string name="operation_resume_button_title">Resume</string>
-    <string name="operation_resume_button_hint">Resume operation</string>
-    <string name="operation_remove_button_hint">Remove operation</string>
+    <string name="operation_resume_button_hint">Resume this operation</string>
+    <string name="operation_remove_button_title">Remove</string>
+    <string name="operation_remove_button_hint">Remove details about this operation</string>
     <string name="operation_type_backup">Backup</string>
     <string name="operation_type_recovery">Recovery</string>
     <string name="operation_type_expiration">Expiration</string>
@@ -411,7 +483,8 @@
     <string name="operation_resume_confirm_title">Resume operation [%1$s]?</string>
     <string name="operation_resume_confirm_cancel_button_title">Cancel</string>
     <string name="operation_resume_confirm_ok_button_title">OK</string>
-    <string name="operation_remove_confirm_title">Remove operation [%1$s]?</string>
+    <string name="operation_remove_confirm_title">Remove operation?</string>
+    <string name="operation_remove_confirm_content">Removing operation [%1$s] will make all its statistics inaccessible. Any data already stored will be unaffected!</string>
     <string name="operation_remove_confirm_cancel_button_title">Cancel</string>
     <string name="operation_remove_confirm_ok_button_title">OK</string>
     <string name="operation_field_title_metadata">Metadata</string>
@@ -451,11 +524,11 @@
     <string name="device_field_content_info_inactive">%1$s (inactive)</string>
     <string name="device_field_content_limits_none">None</string>
     <string name="device_limits_label_max_crates">Crates</string>
-    <string name="device_limits_label_max_storage">Storage</string>
-    <string name="device_limits_label_max_storage_per_crate" />
-    <string name="device_limits_label_max_retention">Retention</string>
-    <string name="device_limits_label_min_retention" />
-    <string name="device_limits_content_max_crates">%1$s</string>
+    <string name="device_limits_label_max_storage" />
+    <string name="device_limits_label_max_storage_per_crate">Storage</string>
+    <string name="device_limits_label_max_retention" />
+    <string name="device_limits_label_min_retention">Retention</string>
+    <string name="device_limits_content_max_crates">%1$s (max)</string>
     <string name="device_limits_content_max_storage">%1$s (total)</string>
     <string name="device_limits_content_max_storage_per_crate">%1$s (per crate)</string>
     <string name="device_limits_content_max_retention">%1$s (max)</string>
@@ -473,12 +546,12 @@
     <string name="user_field_content_permission">%1$s</string>
     <string name="user_limits_label_max_devices">Devices</string>
     <string name="user_limits_label_max_crates">Crates</string>
-    <string name="user_limits_label_max_storage">Storage</string>
-    <string name="user_limits_label_max_storage_per_crate" />
-    <string name="user_limits_label_max_retention">Retention</string>
-    <string name="user_limits_label_min_retention" />
-    <string name="user_limits_content_max_devices">%1$s</string>
-    <string name="user_limits_content_max_crates">%1$s</string>
+    <string name="user_limits_label_max_storage" />
+    <string name="user_limits_label_max_storage_per_crate">Storage</string>
+    <string name="user_limits_label_max_retention" />
+    <string name="user_limits_label_min_retention">Retention</string>
+    <string name="user_limits_content_max_devices">%1$s (max)</string>
+    <string name="user_limits_content_max_crates">%1$s (max)</string>
     <string name="user_limits_content_max_storage">%1$s (total)</string>
     <string name="user_limits_content_max_storage_per_crate">%1$s (per crate)</string>
     <string name="user_limits_content_max_retention">%1$s (max)</string>
@@ -507,8 +580,12 @@
     <string name="notification_operation_failed_text">%1$s</string>
 
     <!-- Toasts -->
-    <string name="toast_dataset_definition_created">Backup definition %1$s created</string>
+    <string name="toast_dataset_definition_created">Backup definition [%1$s] created</string>
+    <string name="toast_dataset_definition_updated">Backup definition [%1$s] updated</string>
+    <string name="toast_dataset_definition_removed">Backup definition removed</string>
+    <string name="toast_dataset_entry_removed">Backup entry removed</string>
     <string name="toast_rule_created">Rule created</string>
+    <string name="toast_rule_updated">Rule updated</string>
     <string name="toast_rule_removed">Rule removed</string>
     <string name="toast_rules_reset">Rules reset</string>
     <string name="toast_schedule_assignment_created">Schedule assignment created</string>
@@ -542,6 +619,13 @@
     <string name="assignment_field_content_expiration">Expiration</string>
     <string name="assignment_field_content_validation">Validation</string>
     <string name="assignment_field_content_key_rotation">Key Rotation</string>
+
+    <!-- Context Actions -->
+    <string name="entry_actions_entry_name">%1$s</string>
+    <string name="entry_actions_entry_description">%1$s</string>
+    <string name="entry_actions_entry_actions_title">Actions</string>
+    <string name="entry_actions_action_name">%1$s</string>
+    <string name="entry_actions_action_description">%1$s</string>
 
     <!-- Settings -->
     <string name="settings_category_date_time">Date/Time</string>

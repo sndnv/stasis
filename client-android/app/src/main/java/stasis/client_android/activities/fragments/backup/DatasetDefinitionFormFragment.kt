@@ -13,6 +13,7 @@ import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputLayout
 import dagger.hilt.android.AndroidEntryPoint
@@ -22,20 +23,21 @@ import stasis.client_android.activities.helpers.Common.asString
 import stasis.client_android.activities.helpers.Common.fromPolicyTypeString
 import stasis.client_android.activities.helpers.Common.getOrRenderFailure
 import stasis.client_android.activities.helpers.Common.toFields
-import stasis.client_android.activities.helpers.Common.toMinimizedString
 import stasis.client_android.activities.helpers.Common.toPolicyTypeString
 import stasis.client_android.api.DatasetsViewModel
-import stasis.client_android.databinding.FragmentNewDatasetDefinitionBinding
+import stasis.client_android.databinding.FragmentDatasetDefinitionFormBinding
 import stasis.client_android.databinding.InputDatasetDefinitionRetentionBinding
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
+import stasis.client_android.lib.model.server.api.requests.UpdateDatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.model.server.devices.DeviceId
+import stasis.client_android.utils.LiveDataExtensions.observeOnce
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class NewDatasetDefinitionFragment : Fragment() {
+class DatasetDefinitionFormFragment : Fragment() {
     @Inject
     lateinit var datasets: DatasetsViewModel
 
@@ -44,32 +46,69 @@ class NewDatasetDefinitionFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val binding: FragmentNewDatasetDefinitionBinding = DataBindingUtil.inflate(
+        val binding: FragmentDatasetDefinitionFormBinding = DataBindingUtil.inflate(
             inflater,
-            R.layout.fragment_new_dataset_definition,
+            R.layout.fragment_dataset_definition_form,
             container,
             false
         )
 
-        val fields = initNewDefinitionFields(binding = binding)
+        val controller = findNavController()
 
-        binding.createDefinition.setOnClickListener {
+        val args: DatasetDefinitionFormFragmentArgs by navArgs()
+
+        fun actionHandler(fields: Fields, definition: DatasetDefinition?) {
             if (fields.validate()) {
-                datasets.createDefinition(request = fields.toRequest(forDevice = datasets.self)) {
-                    it.getOrRenderFailure(withContext = requireContext())
-                        ?.definition
-                        ?.let { definition ->
-                            Toast.makeText(
-                                binding.root.context,
-                                getString(
-                                    R.string.toast_dataset_definition_created,
-                                    definition.toMinimizedString()
-                                ),
-                                Toast.LENGTH_SHORT
-                            ).show()
+                when (definition) {
+                    null -> datasets.createDefinition(request = fields.toCreateRequest(forDevice = datasets.self)) {
+                        it.getOrRenderFailure(withContext = requireContext())
+                            ?.let {
+                                Toast.makeText(
+                                    binding.root.context,
+                                    getString(R.string.toast_dataset_definition_created, fields.info),
+                                    Toast.LENGTH_SHORT
+                                ).show()
 
-                            findNavController().popBackStack()
-                        }
+                                controller.popBackStack()
+                            }
+                    }
+
+                    else -> datasets.updateDefinition(
+                        definition = definition.id,
+                        request = fields.toUpdateRequest()
+                    ) {
+                        it.getOrRenderFailure(withContext = requireContext())
+                            ?.let {
+                                Toast.makeText(
+                                    binding.root.context,
+                                    getString(R.string.toast_dataset_definition_updated, fields.info),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+
+                                controller.popBackStack()
+                            }
+                    }
+
+                }
+            }
+        }
+
+        when (val definitionId = args.definition) {
+            null -> {
+                binding.definitionFormAction.text = getString(R.string.dataset_definition_create)
+                val fields = initFields(binding = binding, definition = null)
+                binding.definitionFormAction.setOnClickListener { actionHandler(fields, null) }
+            }
+
+            else -> {
+                binding.definitionLoadInProgress.isVisible = true
+                binding.definitionFormContainer.isVisible = false
+                datasets.definition(definitionId).observeOnce(viewLifecycleOwner) { definition ->
+                    binding.definitionLoadInProgress.isVisible = false
+                    binding.definitionFormContainer.isVisible = true
+                    binding.definitionFormAction.text = getString(R.string.dataset_definition_update)
+                    val fields = initFields(binding = binding, definition = definition)
+                    binding.definitionFormAction.setOnClickListener { actionHandler(fields, definition) }
                 }
             }
         }
@@ -77,30 +116,32 @@ class NewDatasetDefinitionFragment : Fragment() {
         return binding.root
     }
 
-    private fun initNewDefinitionFields(binding: FragmentNewDatasetDefinitionBinding): Fields {
+    private fun initFields(
+        binding: FragmentDatasetDefinitionFormBinding,
+        definition: DatasetDefinition?
+    ): Fields {
         val context = binding.root.context
 
+        binding.info.editText?.setText(definition?.info)
         binding.info.setStartIconOnClickListener {
             MaterialAlertDialogBuilder(context)
-                .setTitle(R.string.new_dataset_definition_field_title_info)
-                .setMessage(getString(R.string.new_dataset_definition_field_help_info))
+                .setTitle(R.string.dataset_definition_field_title_info)
+                .setMessage(getString(R.string.dataset_definition_field_help_info))
                 .show()
         }
 
         initRetention(
             binding = binding.existingVersions,
-            duration = Defaults.ExistingVersionsDuration,
-            policy = "all",
-            helpTitleId = R.string.new_dataset_definition_field_title_existing_versions,
-            helpMessageId = R.string.new_dataset_definition_field_help_existing_versions
+            retention = definition?.existingVersions ?: Defaults.ExistingVersions,
+            helpTitleId = R.string.dataset_definition_field_title_existing_versions,
+            helpMessageId = R.string.dataset_definition_field_help_existing_versions
         )
 
         initRetention(
             binding = binding.removedVersions,
-            duration = Defaults.RemovedVersionsDuration,
-            policy = "latest-only",
-            helpTitleId = R.string.new_dataset_definition_field_title_removed_versions,
-            helpMessageId = R.string.new_dataset_definition_field_help_removed_versions
+            retention = definition?.removedVersions ?: Defaults.RemovedVersions,
+            helpTitleId = R.string.dataset_definition_field_title_removed_versions,
+            helpMessageId = R.string.dataset_definition_field_help_removed_versions
         )
 
         return Fields(
@@ -119,8 +160,7 @@ class NewDatasetDefinitionFragment : Fragment() {
 
     private fun initRetention(
         binding: InputDatasetDefinitionRetentionBinding,
-        duration: Duration,
-        policy: String,
+        retention: DatasetDefinition.Retention,
         @StringRes helpTitleId: Int,
         @StringRes helpMessageId: Int
     ) {
@@ -132,7 +172,7 @@ class NewDatasetDefinitionFragment : Fragment() {
             Defaults.DurationTypes.map { it.asString(context) }
         )
 
-        val retentionDuration = duration.toFields()
+        val retentionDuration = retention.duration.toFields()
 
         binding.retentionDuration.durationAmountValue = retentionDuration.first.toString()
         val retentionDurationTypeView =
@@ -161,7 +201,7 @@ class NewDatasetDefinitionFragment : Fragment() {
 
         val policyTypeView = binding.retentionPolicyType.editText as? AutoCompleteTextView
         policyTypeView?.setAdapter(policyTypesAdapter)
-        policyTypeView?.setText(policy.toPolicyTypeString(context), false)
+        policyTypeView?.setText(retention.policy.toPolicyTypeString(context), false)
         policyTypeView?.setOnItemClickListener { _, _, position, _ ->
             policyVersionsView?.isVisible = position == 0
         }
@@ -170,8 +210,15 @@ class NewDatasetDefinitionFragment : Fragment() {
     object Defaults {
         val RedundantCopies: Int = 2
 
-        val ExistingVersionsDuration: Duration = Duration.of(7, ChronoUnit.DAYS)
-        val RemovedVersionsDuration: Duration = Duration.of(21, ChronoUnit.DAYS)
+        val ExistingVersions: DatasetDefinition.Retention = DatasetDefinition.Retention(
+            policy = DatasetDefinition.Retention.Policy.All,
+            duration = Duration.of(7, ChronoUnit.DAYS)
+        )
+
+        val RemovedVersions: DatasetDefinition.Retention = DatasetDefinition.Retention(
+            policy = DatasetDefinition.Retention.Policy.LatestOnly,
+            duration = Duration.of(21, ChronoUnit.DAYS)
+        )
 
         val DurationTypes: List<ChronoUnit> = listOf(
             ChronoUnit.SECONDS,
@@ -202,35 +249,36 @@ class NewDatasetDefinitionFragment : Fragment() {
 
         fun validate(): Boolean {
             val infoValid = infoField.validateText {
-                context.getString(R.string.new_dataset_definition_field_error_info)
+                context.getString(R.string.dataset_definition_field_error_info)
             }
 
             val existingVersionsDurationAmountValid =
                 existingVersionsDurationAmountField.validateDurationAmount {
-                    context.getString(R.string.new_dataset_definition_field_error_existing_versions_duration)
+                    context.getString(R.string.dataset_definition_field_error_existing_versions_duration)
                 }
 
             val removedVersionsDurationAmountValid =
                 removedVersionsDurationAmountField.validateDurationAmount {
-                    context.getString(R.string.new_dataset_definition_field_error_removed_versions_duration)
+                    context.getString(R.string.dataset_definition_field_error_removed_versions_duration)
                 }
 
             existingVersionsDurationTypeField.isErrorEnabled = !existingVersionsDurationAmountValid
             existingVersionsDurationTypeField.error =
                 if (existingVersionsDurationAmountValid) null
-                else context.getString(R.string.new_dataset_definition_field_error_existing_versions_duration_padding)
+                else context.getString(R.string.dataset_definition_field_error_existing_versions_duration_padding)
 
             removedVersionsDurationTypeField.isErrorEnabled = !removedVersionsDurationAmountValid
             removedVersionsDurationTypeField.error =
                 if (removedVersionsDurationAmountValid) null
-                else context.getString(R.string.new_dataset_definition_field_error_removed_versions_duration_padding)
+                else context.getString(R.string.dataset_definition_field_error_removed_versions_duration_padding)
 
             val existingVersionsRetentionPolicyVersionValid =
                 when (existingVersionsRetentionPolicyTypeField.editText?.text.toString()
                     .fromPolicyTypeString(context)) {
                     "at-most" -> existingVersionsRetentionPolicyVersionsField.validateInt {
-                        context.getString(R.string.new_dataset_definition_field_error_existing_versions_policy_versions)
+                        context.getString(R.string.dataset_definition_field_error_existing_versions_policy_versions)
                     }
+
                     else -> true
                 }
 
@@ -238,8 +286,9 @@ class NewDatasetDefinitionFragment : Fragment() {
                 when (removedVersionsRetentionPolicyTypeField.editText?.text.toString()
                     .fromPolicyTypeString(context)) {
                     "at-most" -> removedVersionsRetentionPolicyVersionsField.validateInt {
-                        context.getString(R.string.new_dataset_definition_field_error_removed_versions_policy_versions)
+                        context.getString(R.string.dataset_definition_field_error_removed_versions_policy_versions)
                     }
+
                     else -> true
                 }
 
@@ -251,9 +300,16 @@ class NewDatasetDefinitionFragment : Fragment() {
             return infoValid && existingVersionsValid && removedVersionsValid
         }
 
-        fun toRequest(forDevice: DeviceId): CreateDatasetDefinition = CreateDatasetDefinition(
+        fun toCreateRequest(forDevice: DeviceId): CreateDatasetDefinition = CreateDatasetDefinition(
             info = info,
             device = forDevice,
+            redundantCopies = Defaults.RedundantCopies,
+            existingVersions = existingVersions,
+            removedVersions = removedVersions
+        )
+
+        fun toUpdateRequest(): UpdateDatasetDefinition = UpdateDatasetDefinition(
+            info = info,
             redundantCopies = Defaults.RedundantCopies,
             existingVersions = existingVersions,
             removedVersions = removedVersions
@@ -339,6 +395,7 @@ class NewDatasetDefinitionFragment : Fragment() {
                 "at-most" -> DatasetDefinition.Retention.Policy.AtMost(
                     versions = policyVersionsField.editText?.text.toString().toInt()
                 )
+
                 "latest-only" -> DatasetDefinition.Retention.Policy.LatestOnly
                 "all" -> DatasetDefinition.Retention.Policy.All
                 else -> throw IllegalArgumentException("Unexpected policy type encountered: [$actualPolicyType]")

@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import stasis.client_android.activities.helpers.Common.getOrRenderFailure
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
+import stasis.client_android.lib.model.server.api.requests.UpdateDatasetDefinition
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
@@ -45,6 +46,25 @@ class DatasetsViewModel @Inject constructor(
         }
     }
 
+    fun updateDefinition(
+        definition: DatasetDefinitionId,
+        request: UpdateDatasetDefinition,
+        f: (Try<Unit>) -> Unit
+    ) {
+        viewModelScope.launch {
+            f(providerContext.api.updateDatasetDefinition(definition, request))
+        }
+    }
+
+    fun deleteDefinition(
+        definition: DatasetDefinitionId,
+        f: (Try<Unit>) -> Unit
+    ) {
+        viewModelScope.launch {
+            f(providerContext.api.deleteDatasetDefinition(definition))
+        }
+    }
+
     fun definitions(): LiveData<List<DatasetDefinition>> = liveData {
         providerContext.api.datasetDefinitions()
             .map { definitions -> definitions.sortedBy { it.info } }
@@ -77,6 +97,15 @@ class DatasetsViewModel @Inject constructor(
     fun entry(entry: DatasetEntryId): LiveData<DatasetEntry> = liveData {
         providerContext.api.datasetEntry(entry)
             .getOrRenderFailure(withContext = getApplication())
+    }
+
+    fun deleteEntry(
+        entry: DatasetEntryId,
+        f: (Try<Unit>) -> Unit
+    ) {
+        viewModelScope.launch {
+            f(providerContext.api.deleteDatasetEntry(entry))
+        }
     }
 
     fun latestEntry(): LiveData<DatasetEntry?> = optionalLiveData {

@@ -24,7 +24,7 @@ class RuleRepository(private val dao: RuleEntityDao) {
         dao.delete(id)
 
     suspend fun bootstrap() {
-        DefaultRules.map { rule -> dao.put(rule) }
+        RulesConfig.DefaultRules.map { rule -> dao.put(rule) }
     }
 
     suspend fun clear() {
@@ -36,23 +36,5 @@ class RuleRepository(private val dao: RuleEntityDao) {
             val dao = RuleEntityDatabase.getInstance(context).dao()
             return RuleRepository(dao)
         }
-
-        val DefaultRules: List<RuleEntity> = listOf(
-            RuleEntity(
-                operation = Rule.Operation.Include,
-                directory = "/storage/emulated/0",
-                pattern = "**"
-            ), // includes all accessible user storage
-            RuleEntity(
-                operation = Rule.Operation.Exclude,
-                directory = "/storage/emulated/0",
-                pattern = "{Android,Android/**}"
-            ), // exclude private app data
-            RuleEntity(
-                operation = Rule.Operation.Exclude,
-                directory = "/storage/emulated/0",
-                pattern = "**/.thumbnails"
-            ) // exclude thumbnails
-        )
     }
 }

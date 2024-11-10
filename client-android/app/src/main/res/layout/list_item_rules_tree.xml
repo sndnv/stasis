@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground">
+
+    <ImageView
+        android:id="@+id/rule_tree_node_state"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_centerVertical="true"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_tree_arrow_right" />
+
+    <ImageView
+        android:id="@+id/rule_tree_node_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_centerVertical="true"
+        android:layout_toEndOf="@id/rule_tree_node_state"
+        android:src="@drawable/ic_tree_directory" />
+
+    <TextView
+        android:id="@+id/rule_tree_node_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@id/rule_tree_node_icon"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:padding="4dp"
+        android:scrollHorizontally="true"
+        android:textSize="20sp" />
+</RelativeLayout>

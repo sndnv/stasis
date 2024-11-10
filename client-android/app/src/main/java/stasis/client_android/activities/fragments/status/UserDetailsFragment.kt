@@ -62,47 +62,78 @@ class UserDetailsFragment : Fragment() {
                         R.string.user_limits_label_max_devices
                     )
                     binding.userLimitsMaxDevices.rowContent.text = context.getString(
-                        R.string.user_limits_content_max_devices,
-                        limits.maxDevices.asString()
+                        R.string.user_limits_content_max_devices
+                    ).renderAsSpannable(
+                        StyledString(
+                            placeholder = "%1\$s",
+                            content = limits.maxDevices.asString(),
+                            style = StyleSpan(Typeface.BOLD)
+                        ),
                     )
 
                     binding.userLimitsMaxCrates.rowLabel.text = context.getString(
                         R.string.user_limits_label_max_crates
                     )
                     binding.userLimitsMaxCrates.rowContent.text = context.getString(
-                        R.string.user_limits_content_max_crates,
-                        limits.maxCrates.asString()
-                    )
-
-                    binding.userLimitsMaxStorage.rowLabel.text = context.getString(
-                        R.string.user_limits_label_max_storage
-                    )
-                    binding.userLimitsMaxStorage.rowContent.text = context.getString(
-                        R.string.user_limits_content_max_storage,
-                        limits.maxStorage.asSizeString(context)
+                        R.string.user_limits_content_max_crates
+                    ).renderAsSpannable(
+                        StyledString(
+                            placeholder = "%1\$s",
+                            content = limits.maxCrates.asString(),
+                            style = StyleSpan(Typeface.BOLD)
+                        ),
                     )
 
                     binding.userLimitsMaxStoragePerCrate.rowLabel.text = context.getString(
                         R.string.user_limits_label_max_storage_per_crate
                     )
                     binding.userLimitsMaxStoragePerCrate.rowContent.text = context.getString(
-                        R.string.user_limits_content_max_storage_per_crate,
-                        limits.maxStoragePerCrate.asSizeString(context)
+                        R.string.user_limits_content_max_storage_per_crate
+                    ).renderAsSpannable(
+                        StyledString(
+                            placeholder = "%1\$s",
+                            content = limits.maxStoragePerCrate.asSizeString(context),
+                            style = StyleSpan(Typeface.BOLD)
+                        ),
                     )
 
-                    binding.userLimitsMaxRetention.rowLabel.text =
-                        context.getString(R.string.user_limits_label_max_retention)
-                    binding.userLimitsMaxRetention.rowContent.text = context.getString(
-                        R.string.user_limits_content_max_retention,
-                        limits.maxRetention.asString(context)
+                    binding.userLimitsMaxStorage.rowLabel.text = context.getString(
+                        R.string.user_limits_label_max_storage
+                    )
+                    binding.userLimitsMaxStorage.rowContent.text = context.getString(
+                        R.string.user_limits_content_max_storage
+                    ).renderAsSpannable(
+                        StyledString(
+                            placeholder = "%1\$s",
+                            content = limits.maxStorage.asSizeString(context),
+                            style = StyleSpan(Typeface.BOLD)
+                        ),
                     )
 
                     binding.userLimitsMinRetention.rowLabel.text = context.getString(
                         R.string.user_limits_label_min_retention
                     )
                     binding.userLimitsMinRetention.rowContent.text = context.getString(
-                        R.string.user_limits_content_min_retention,
-                        limits.minRetention.asString(context)
+                        R.string.user_limits_content_min_retention
+                    ).renderAsSpannable(
+                        StyledString(
+                            placeholder = "%1\$s",
+                            content = limits.minRetention.asString(context),
+                            style = StyleSpan(Typeface.BOLD)
+                        ),
+                    )
+
+                    binding.userLimitsMaxRetention.rowLabel.text = context.getString(
+                        R.string.user_limits_label_max_retention
+                    )
+                    binding.userLimitsMaxRetention.rowContent.text = context.getString(
+                        R.string.user_limits_content_max_retention
+                    ).renderAsSpannable(
+                        StyledString(
+                            placeholder = "%1\$s",
+                            content = limits.maxRetention.asString(context),
+                            style = StyleSpan(Typeface.BOLD)
+                        ),
                     )
                 }
             }

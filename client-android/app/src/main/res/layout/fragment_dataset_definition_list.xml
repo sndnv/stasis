@@ -41,10 +41,13 @@
             android:id="@+id/dataset_definition_add_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom|center"
+            android:layout_gravity="bottom|end"
             android:layout_margin="16dp"
             android:contentDescription="@string/dataset_definition_add_button_hint"
-            android:text="@string/dataset_definition_add_button_title"
-            app:icon="@drawable/ic_add" />
+            android:tooltipText="@string/dataset_definition_add_button_hint"
+            app:borderWidth="0dp"
+            app:fabCustomSize="56dp"
+            app:icon="@drawable/ic_add"
+            app:useCompatPadding="true" />
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </layout>

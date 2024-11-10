@@ -83,7 +83,7 @@ class RuleRepositorySpec {
 
         assertThat(
             repo.rules.await().map { it.copy(id = 0) },
-            equalTo(RuleRepository.DefaultRules.map { it.asRule().copy(id = 0) })
+            equalTo(RulesConfig.DefaultRules.map { it.asRule().copy(id = 0) })
         )
     }
 
@@ -113,7 +113,8 @@ class RuleRepositorySpec {
         id = 1,
         operation = stasis.client_android.lib.collection.rules.Rule.Operation.Include,
         directory = "/a/b/c",
-        pattern = ".*"
+        pattern = ".*",
+        definition = null
     )
 
     private fun createRepo(): RuleRepository {

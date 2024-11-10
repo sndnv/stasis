@@ -24,10 +24,24 @@ class FilesWalkerSpec : WordSpec({
         "support filtering files and directories based on provided matchers" {
             val (filesystem, _) = createMockFileSystem(setup)
 
-            val rule1 = Rule(id = 0, operation = Rule.Operation.Include, directory = "/", pattern = "*")
+            val rule1 = Rule(
+                id = 0,
+                operation = Rule.Operation.Include,
+                directory = "/",
+                pattern = "*",
+                definition = null
+            )
+
             val matcher1 = filesystem.getPathMatcher("glob:/work/root/parent-*/*-{a,b,c}")
 
-            val rule2 = Rule(id = 1, operation = Rule.Operation.Exclude, directory = "/", pattern = "*")
+            val rule2 = Rule(
+                id = 1,
+                operation = Rule.Operation.Exclude,
+                directory = "/",
+                pattern = "*",
+                definition = null
+            )
+
             val matcher2 = filesystem.getPathMatcher("glob:/work/root/parent-*/*-{d,e}")
 
             val matchers = listOf(
@@ -85,10 +99,24 @@ class FilesWalkerSpec : WordSpec({
         "support skipping excluded subtrees" {
             val (filesystem, _) = createMockFileSystem(setup)
 
-            val rule1 = Rule(id = 0, operation = Rule.Operation.Include, directory = "/", pattern = "*")
+            val rule1 = Rule(
+                id = 0,
+                operation = Rule.Operation.Include,
+                directory = "/",
+                pattern = "*",
+                definition = null
+            )
+
             val matcher1 = filesystem.getPathMatcher("glob:/work/root/parent-{0,1}/*-{a,b,c}/*")
 
-            val rule2 = Rule(id = 1, operation = Rule.Operation.Exclude, directory = "/", pattern = "*")
+            val rule2 = Rule(
+                id = 1,
+                operation = Rule.Operation.Exclude,
+                directory = "/",
+                pattern = "*",
+                definition = null
+            )
+
             val matcher2 = filesystem.getPathMatcher("glob:/work/root/parent-{0,1}/*-{c,d,e}")
 
             val matchers = listOf(

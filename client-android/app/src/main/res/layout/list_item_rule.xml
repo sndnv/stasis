@@ -1,61 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <androidx.coordinatorlayout.widget.CoordinatorLayout
+    <LinearLayout
+        android:id="@+id/rule_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="8dp">
+        android:background="?attr/selectableItemBackground"
+        android:orientation="horizontal"
+        android:padding="8dp">
 
-        <LinearLayout
+        <ImageView
+            android:id="@+id/rule_operation"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:layout_gravity="center"
+            android:contentDescription="@string/rule_operation_hint"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp" />
 
-            <ImageView
-                android:id="@+id/rule_operation"
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp">
+
+            <TextView
+                android:id="@+id/rule_directory"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:contentDescription="@string/rule_operation_hint"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp" />
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textAppearance="?attr/textAppearanceSubtitle1" />
 
-            <RelativeLayout
-                android:layout_width="match_parent"
+            <TextView
+                android:id="@+id/rule_pattern"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="?attr/selectableItemBackground"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp">
-
-                <TextView
-                    android:id="@+id/rule_directory"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:maxLines="1"
-                    android:textAppearance="?attr/textAppearanceSubtitle1"
-                    android:textIsSelectable="true" />
-
-                <TextView
-                    android:id="@+id/rule_pattern"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_below="@id/rule_directory"
-                    android:layout_gravity="center_vertical"
-                    android:maxLines="2"
-                    android:textAppearance="?attr/textAppearanceBody2"
-                    android:textIsSelectable="true" />
-            </RelativeLayout>
-        </LinearLayout>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/rule_remove_button"
-            style="?attr/materialButtonOutlinedStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end|center"
-            android:layout_marginEnd="8dp"
-            android:contentDescription="@string/rule_remove_button_hint"
-            android:text="@string/rule_remove_button_title" />
-
-    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+                android:layout_below="@id/rule_directory"
+                android:layout_gravity="center_vertical"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textAppearance="?attr/textAppearanceBody2" />
+        </RelativeLayout>
+    </LinearLayout>
 </layout>
