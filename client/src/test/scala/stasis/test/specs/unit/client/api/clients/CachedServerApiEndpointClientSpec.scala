@@ -13,6 +13,7 @@ import stasis.core.packaging.Crate
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.requests.ResetUserPassword
+import stasis.shared.api.requests.UpdateDatasetDefinition
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
@@ -49,6 +50,49 @@ class CachedServerApiEndpointClientSpec extends AsyncUnitSpec {
     }
   }
 
+  it should "update dataset definitions, without caching" in {
+    val mockApiClient = MockServerApiEndpointClient()
+    val client = createClient(underlying = mockApiClient)
+
+    val definition = DatasetDefinition.generateId()
+
+    val request = UpdateDatasetDefinition(
+      info = "updated-definition",
+      redundantCopies = 1,
+      existingVersions = DatasetDefinition.Retention(
+        policy = DatasetDefinition.Retention.Policy.All,
+        duration = 3.seconds
+      ),
+      removedVersions = DatasetDefinition.Retention(
+        policy = DatasetDefinition.Retention.Policy.All,
+        duration = 3.seconds
+      )
+    )
+
+    for {
+      _ <- client.updateDatasetDefinition(definition = definition, request = request)
+      _ <- client.updateDatasetDefinition(definition = definition, request = request)
+      _ <- client.updateDatasetDefinition(definition = definition, request = request)
+    } yield {
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetDefinitionUpdated) should be(3)
+    }
+  }
+
+  it should "delete dataset definitions, without caching" in {
+    val mockApiClient = MockServerApiEndpointClient()
+    val client = createClient(underlying = mockApiClient)
+
+    val definition = DatasetDefinition.generateId()
+
+    for {
+      _ <- client.deleteDatasetDefinition(definition = definition)
+      _ <- client.deleteDatasetDefinition(definition = definition)
+      _ <- client.deleteDatasetDefinition(definition = definition)
+    } yield {
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetDefinitionDeleted) should be(3)
+    }
+  }
+
   it should "create dataset entries, without caching" in {
     val mockApiClient = MockServerApiEndpointClient()
     val client = createClient(underlying = mockApiClient)
@@ -66,6 +110,21 @@ class CachedServerApiEndpointClientSpec extends AsyncUnitSpec {
       _ <- client.createDatasetEntry(request = request)
     } yield {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryCreated) should be(3)
+    }
+  }
+
+  it should "delete dataset entries, without caching" in {
+    val mockApiClient = MockServerApiEndpointClient()
+    val client = createClient(underlying = mockApiClient)
+
+    val entry = DatasetEntry.generateId()
+
+    for {
+      _ <- client.deleteDatasetEntry(entry = entry)
+      _ <- client.deleteDatasetEntry(entry = entry)
+      _ <- client.deleteDatasetEntry(entry = entry)
+    } yield {
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryDeleted) should be(3)
     }
   }
 

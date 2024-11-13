@@ -88,7 +88,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
   it should "provide routes for dataset entries" in withRetry {
     val endpoint = createEndpoint()
 
-    Get(s"/datasets/entries/${DatasetDefinition.generateId()}")
+    Get(s"/datasets/entries/for-definition/${DatasetDefinition.generateId()}")
       .addCredentials(testCredentials) ~> endpoint.endpointRoutes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[DatasetEntry]] should not be empty

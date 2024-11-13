@@ -31,6 +31,7 @@ import stasis.layers.security.tls.EndpointContext
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.requests.ResetUserPassword
+import stasis.shared.api.requests.UpdateDatasetDefinition
 import stasis.shared.api.responses.CreatedDatasetDefinition
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
@@ -105,6 +106,53 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
       }
   }
 
+  it should "update dataset definitions" in {
+    val definition = Generators.generateDefinition
+
+    val apiPort = ports.dequeue()
+    val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials, withDefinitions = Some(Seq(definition)))
+    api.start(port = apiPort)
+
+    val apiClient = createClient(apiPort)
+
+    val expectedRequest = UpdateDatasetDefinition(
+      info = "updated-definition",
+      redundantCopies = 1,
+      existingVersions = DatasetDefinition.Retention(
+        policy = DatasetDefinition.Retention.Policy.All,
+        duration = 3.seconds
+      ),
+      removedVersions = DatasetDefinition.Retention(
+        policy = DatasetDefinition.Retention.Policy.All,
+        duration = 3.seconds
+      )
+    )
+
+    for {
+      _ <- apiClient.updateDatasetDefinition(definition = definition.id, request = expectedRequest)
+      definitionExists <- api.definitionExists(definition.id)
+    } yield {
+      definitionExists should be(true)
+    }
+  }
+
+  it should "delete dataset definitions" in {
+    val definition = Generators.generateDefinition
+
+    val apiPort = ports.dequeue()
+    val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials, withDefinitions = Some(Seq(definition)))
+    api.start(port = apiPort)
+
+    val apiClient = createClient(apiPort)
+
+    for {
+      _ <- apiClient.deleteDatasetDefinition(definition = definition.id)
+      definitionExists <- api.definitionExists(definition.id)
+    } yield {
+      definitionExists should be(false)
+    }
+  }
+
   it should "create dataset entries" in {
     val apiPort = ports.dequeue()
     val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials)
@@ -124,6 +172,23 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
       entryExists <- api.entryExists(createdEntry.entry)
     } yield {
       entryExists should be(true)
+    }
+  }
+
+  it should "delete dataset entries" in {
+    val entry = Generators.generateEntry
+
+    val apiPort = ports.dequeue()
+    val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials, withEntries = Some(Seq(entry)))
+    api.start(port = apiPort)
+
+    val apiClient = createClient(apiPort)
+
+    for {
+      _ <- apiClient.deleteDatasetEntry(entry = entry.id)
+      entryExists <- api.entryExists(entry.id)
+    } yield {
+      entryExists should be(false)
     }
   }
 
@@ -191,7 +256,7 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
 
   it should "retrieve individual dataset definitions" in {
     val device = Device.generateId()
-    val expectedDefinition = DatasetEntry.generateId()
+    val expectedDefinition = DatasetDefinition.generateId()
 
     val apiPort = ports.dequeue()
     val api = new MockServerApiEndpoint(

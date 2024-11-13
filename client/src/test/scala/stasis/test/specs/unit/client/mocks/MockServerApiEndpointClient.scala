@@ -13,6 +13,7 @@ import stasis.client.model.DatasetMetadata
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.requests.ResetUserPassword
+import stasis.shared.api.requests.UpdateDatasetDefinition
 import stasis.shared.api.responses.CreatedDatasetDefinition
 import stasis.shared.api.responses.CreatedDatasetEntry
 import stasis.shared.api.responses.Ping
@@ -30,10 +31,13 @@ class MockServerApiEndpointClient(
 ) extends ServerApiEndpointClient {
   private val stats: Map[Statistic, AtomicInteger] = Map(
     Statistic.DatasetEntryCreated -> new AtomicInteger(0),
+    Statistic.DatasetEntryDeleted -> new AtomicInteger(0),
     Statistic.DatasetEntryRetrieved -> new AtomicInteger(0),
     Statistic.DatasetEntryRetrievedLatest -> new AtomicInteger(0),
     Statistic.DatasetEntriesRetrieved -> new AtomicInteger(0),
     Statistic.DatasetDefinitionCreated -> new AtomicInteger(0),
+    Statistic.DatasetDefinitionUpdated -> new AtomicInteger(0),
+    Statistic.DatasetDefinitionDeleted -> new AtomicInteger(0),
     Statistic.DatasetDefinitionRetrieved -> new AtomicInteger(0),
     Statistic.DatasetDefinitionsRetrieved -> new AtomicInteger(0),
     Statistic.PublicSchedulesRetrieved -> new AtomicInteger(0),
@@ -57,9 +61,24 @@ class MockServerApiEndpointClient(
     Future.successful(CreatedDatasetDefinition(DatasetDefinition.generateId()))
   }
 
+  override def updateDatasetDefinition(definition: DatasetDefinition.Id, request: UpdateDatasetDefinition): Future[Done] = {
+    stats(Statistic.DatasetDefinitionUpdated).getAndIncrement()
+    Future.successful(Done)
+  }
+
+  override def deleteDatasetDefinition(definition: DatasetDefinition.Id): Future[Done] = {
+    stats(Statistic.DatasetDefinitionDeleted).getAndIncrement()
+    Future.successful(Done)
+  }
+
   override def createDatasetEntry(request: CreateDatasetEntry): Future[CreatedDatasetEntry] = {
     stats(Statistic.DatasetEntryCreated).getAndIncrement()
     Future.successful(CreatedDatasetEntry(DatasetEntry.generateId()))
+  }
+
+  override def deleteDatasetEntry(entry: DatasetEntry.Id): Future[Done] = {
+    stats(Statistic.DatasetEntryDeleted).getAndIncrement()
+    Future.successful(Done)
   }
 
   override def datasetDefinitions(): Future[Seq[DatasetDefinition]] = {
@@ -179,10 +198,13 @@ object MockServerApiEndpointClient {
   sealed trait Statistic
   object Statistic {
     case object DatasetEntryCreated extends Statistic
+    case object DatasetEntryDeleted extends Statistic
     case object DatasetEntryRetrieved extends Statistic
     case object DatasetEntryRetrievedLatest extends Statistic
     case object DatasetEntriesRetrieved extends Statistic
     case object DatasetDefinitionCreated extends Statistic
+    case object DatasetDefinitionUpdated extends Statistic
+    case object DatasetDefinitionDeleted extends Statistic
     case object DatasetDefinitionRetrieved extends Statistic
     case object DatasetDefinitionsRetrieved extends Statistic
     case object PublicSchedulesRetrieved extends Statistic

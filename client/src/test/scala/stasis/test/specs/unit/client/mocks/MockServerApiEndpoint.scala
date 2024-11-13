@@ -27,6 +27,7 @@ import stasis.layers.security.tls.EndpointContext
 import stasis.layers.telemetry.TelemetryContext
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
+import stasis.shared.api.requests.UpdateDatasetDefinition
 import stasis.shared.api.responses.CreatedDatasetDefinition
 import stasis.shared.api.responses.CreatedDatasetEntry
 import stasis.shared.api.responses.Ping
@@ -43,6 +44,7 @@ class MockServerApiEndpoint(
   expectedCredentials: HttpCredentials,
   expectedDeviceKey: Option[ByteString] = None,
   definitionsWithoutEntries: Seq[DatasetDefinition.Id] = Seq.empty,
+  withEntries: Option[Seq[DatasetEntry]] = None,
   withDefinitions: Option[Seq[DatasetDefinition]] = None
 )(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext, timeout: Timeout) {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -112,22 +114,51 @@ class MockServerApiEndpoint(
               )
             },
             path(JavaUUID) { definitionId =>
-              get {
-                val definition: Option[DatasetDefinition] = withDefinitions match {
-                  case Some(definitions) => definitions.find(_.id == definitionId)
-                  case None              => Some(Generators.generateDefinition.copy(id = definitionId))
-                }
+              concat(
+                get {
+                  val definition: Option[DatasetDefinition] = withDefinitions match {
+                    case Some(definitions) => definitions.find(_.id == definitionId)
+                    case None              => Some(Generators.generateDefinition.copy(id = definitionId))
+                  }
 
-                definition match {
-                  case Some(definition) =>
-                    log.infoN("Successfully retrieved definition [{}]", definition.id)
-                    complete(definition)
+                  definition match {
+                    case Some(definition) =>
+                      log.infoN("Successfully retrieved definition [{}]", definition.id)
+                      complete(definition)
 
-                  case None =>
-                    log.warnN("Definition [{}] not found", definitionId)
-                    complete(StatusCodes.NotFound)
+                    case None =>
+                      log.warnN("Definition [{}] not found", definitionId)
+                      complete(StatusCodes.NotFound)
+                  }
+                },
+                put {
+                  entity(as[UpdateDatasetDefinition]) { updateRequest =>
+                    withDefinitions.flatMap(_.find(_.id == definitionId)) match {
+                      case Some(existing) =>
+                        val updated = updateRequest.toUpdatedDefinition(existing)
+                        onSuccess(definitionsStore.put(updated.id, updated)) { _ =>
+                          log.infoN("Successfully updated definition [{}]", updated.id)
+                          complete(StatusCodes.OK)
+                        }
+
+                      case None =>
+                        log.warnN("Definition [{}] not found", definitionId)
+                        complete(StatusCodes.NotFound)
+                    }
+                  }
+                },
+                delete {
+                  withDefinitions.flatMap(_.find(_.id == definitionId)) match {
+                    case Some(existing) =>
+                      log.infoN("Successfully removed existing definition [{}]", existing.id)
+                      complete(StatusCodes.OK)
+
+                    case None =>
+                      log.warnN("Definition [{}] not found", definitionId)
+                      complete(StatusCodes.NotFound)
+                  }
                 }
-              }
+              )
             }
           )
         }
@@ -196,11 +227,24 @@ class MockServerApiEndpoint(
             )
           },
           path(JavaUUID) { entryId =>
-            get {
-              val entry: DatasetEntry = Generators.generateEntry.copy(id = entryId)
-              log.infoN("Successfully retrieved entry [{}]", entry.id)
-              complete(entry)
-            }
+            concat(
+              get {
+                val entry: DatasetEntry = Generators.generateEntry.copy(id = entryId)
+                log.infoN("Successfully retrieved entry [{}]", entry.id)
+                complete(entry)
+              },
+              delete {
+                withEntries.flatMap(_.find(_.id == entryId)) match {
+                  case Some(existing) =>
+                    log.infoN("Successfully removed existing entry [{}]", existing.id)
+                    complete(StatusCodes.OK)
+
+                  case None =>
+                    log.warnN("Entry [{}] not found", entryId)
+                    complete(StatusCodes.NotFound)
+                }
+              }
+            )
           }
         )
       }
