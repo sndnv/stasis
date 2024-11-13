@@ -13,6 +13,7 @@ import stasis.client.api.Context
 
 class DatasetEntries()(implicit context: Context) extends ApiRoutes {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.shared.api.Formats._
 
   def routes(): Route =
@@ -34,7 +35,7 @@ class DatasetEntries()(implicit context: Context) extends ApiRoutes {
           }
         }
       },
-      pathPrefix(JavaUUID) { definition =>
+      pathPrefix("for-definition" / JavaUUID) { definition =>
         concat(
           pathEndOrSingleSlash {
             get {
@@ -67,6 +68,14 @@ class DatasetEntries()(implicit context: Context) extends ApiRoutes {
             }
           }
         )
+      },
+      path(JavaUUID) { entryId =>
+        delete {
+          onSuccess(context.api.deleteDatasetEntry(entryId)) { _ =>
+            log.debugN("API successfully removed entry [{}]", entryId)
+            consumeEntity & complete(StatusCodes.OK)
+          }
+        }
       }
     )
 }

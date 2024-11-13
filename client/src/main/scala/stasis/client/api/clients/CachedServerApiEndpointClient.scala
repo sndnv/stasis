@@ -16,6 +16,7 @@ import stasis.client.model.DatasetMetadata
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.requests.ResetUserPassword
+import stasis.shared.api.requests.UpdateDatasetDefinition
 import stasis.shared.api.responses.CreatedDatasetDefinition
 import stasis.shared.api.responses.CreatedDatasetEntry
 import stasis.shared.api.responses.Ping
@@ -85,8 +86,24 @@ class CachedServerApiEndpointClient(
   override def createDatasetDefinition(request: CreateDatasetDefinition): Future[CreatedDatasetDefinition] =
     underlying.createDatasetDefinition(request)
 
+  override def updateDatasetDefinition(definition: DatasetDefinition.Id, request: UpdateDatasetDefinition): Future[Done] = {
+    datasetDefinitionsCache.remove(definition)
+    underlying.updateDatasetDefinition(definition, request)
+  }
+
+  override def deleteDatasetDefinition(definition: DatasetDefinition.Id): Future[Done] = {
+    datasetDefinitionsCache.remove(definition)
+    underlying.deleteDatasetDefinition(definition)
+  }
+
   override def createDatasetEntry(request: CreateDatasetEntry): Future[CreatedDatasetEntry] =
     underlying.createDatasetEntry(request)
+
+  override def deleteDatasetEntry(entry: DatasetEntry.Id): Future[Done] = {
+    datasetEntriesCache.remove(entry)
+    datasetMetadataCache.remove(entry)
+    underlying.deleteDatasetEntry(entry)
+  }
 
   override def datasetDefinitions(): Future[Seq[DatasetDefinition]] =
     underlying.datasetDefinitions()

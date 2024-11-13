@@ -27,6 +27,7 @@ import stasis.layers.streaming.Operators.ExtendedSource
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.requests.ResetUserPassword
+import stasis.shared.api.requests.UpdateDatasetDefinition
 import stasis.shared.api.responses.CreatedDatasetDefinition
 import stasis.shared.api.responses.CreatedDatasetEntry
 import stasis.shared.api.responses.Ping
@@ -80,6 +81,36 @@ class DefaultServerApiEndpointClient(
       )
     }
 
+  override def updateDatasetDefinition(definition: DatasetDefinition.Id, request: UpdateDatasetDefinition): Future[Done] =
+    for {
+      entity <- request.toEntity
+      credentials <- credentials
+      response <- offer(
+        request = HttpRequest(
+          method = HttpMethods.PUT,
+          uri = s"$apiUrl/v1/datasets/definitions/own/${definition.toString}",
+          entity = entity
+        ).addCredentials(credentials = credentials)
+      ).transformClientFailures()
+      _ <- response.processed()
+    } yield {
+      Done
+    }
+
+  override def deleteDatasetDefinition(definition: DatasetDefinition.Id): Future[Done] =
+    for {
+      credentials <- credentials
+      response <- offer(
+        request = HttpRequest(
+          method = HttpMethods.DELETE,
+          uri = s"$apiUrl/v1/datasets/definitions/own/${definition.toString}"
+        ).addCredentials(credentials = credentials)
+      ).transformClientFailures()
+      _ <- response.processed()
+    } yield {
+      Done
+    }
+
   override def createDatasetEntry(request: CreateDatasetEntry): Future[CreatedDatasetEntry] =
     for {
       entity <- request.toEntity
@@ -94,6 +125,20 @@ class DefaultServerApiEndpointClient(
       created <- response.to[CreatedDatasetEntry]
     } yield {
       created
+    }
+
+  override def deleteDatasetEntry(entry: DatasetEntry.Id): Future[Done] =
+    for {
+      credentials <- credentials
+      response <- offer(
+        request = HttpRequest(
+          method = HttpMethods.DELETE,
+          uri = s"$apiUrl/v1/datasets/entries/own/${entry.toString}"
+        ).addCredentials(credentials = credentials)
+      ).transformClientFailures()
+      _ <- response.processed()
+    } yield {
+      Done
     }
 
   override def datasetDefinitions(): Future[Seq[DatasetDefinition]] =
