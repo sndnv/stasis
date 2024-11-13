@@ -1,23 +1,22 @@
 import 'dart:convert';
 
-import 'package:stasis_client_ui/api/default_client_api.dart';
-import 'package:stasis_client_ui/config/config.dart';
-import 'package:stasis_client_ui/model/api/requests/update_user_password.dart';
-import 'package:stasis_client_ui/model/api/requests/update_user_salt.dart';
-import 'package:stasis_client_ui/model/datasets/entity_metadata.dart';
-import 'package:stasis_client_ui/utils/pair.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
-
+import 'package:stasis_client_ui/api/default_client_api.dart';
+import 'package:stasis_client_ui/config/config.dart';
 import 'package:stasis_client_ui/model/api/requests/create_dataset_definition.dart';
+import 'package:stasis_client_ui/model/api/requests/update_dataset_definition.dart';
+import 'package:stasis_client_ui/model/api/requests/update_user_password.dart';
+import 'package:stasis_client_ui/model/api/requests/update_user_salt.dart';
 import 'package:stasis_client_ui/model/api/responses/created_dataset_definition.dart';
 import 'package:stasis_client_ui/model/api/responses/operation_started.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_definition.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_entry.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_metadata.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_metadata_search_result.dart';
+import 'package:stasis_client_ui/model/datasets/entity_metadata.dart';
 import 'package:stasis_client_ui/model/devices/device.dart';
 import 'package:stasis_client_ui/model/devices/server_state.dart';
 import 'package:stasis_client_ui/model/operations/operation.dart';
@@ -28,6 +27,7 @@ import 'package:stasis_client_ui/model/schedules/active_schedule.dart';
 import 'package:stasis_client_ui/model/schedules/schedule.dart';
 import 'package:stasis_client_ui/model/service/ping.dart';
 import 'package:stasis_client_ui/model/users/user.dart';
+import 'package:stasis_client_ui/utils/pair.dart';
 
 import 'default_client_api_test.mocks.dart';
 
@@ -280,8 +280,8 @@ void main() {
           redundantCopies: 3,
           existingVersions:
               const Retention(policy: Policy(policyType: 'all', versions: null), duration: Duration(seconds: 600000)),
-          removedVersions:
-              const Retention(policy: Policy(policyType: 'latest-only', versions: null), duration: Duration(seconds: 6000)),
+          removedVersions: const Retention(
+              policy: Policy(policyType: 'latest-only', versions: null), duration: Duration(seconds: 6000)),
           created: DateTime.parse('2020-10-01T01:03:01'),
           updated: DateTime.parse('2020-10-01T01:03:02'),
         ),
@@ -290,10 +290,10 @@ void main() {
           info: 'test-definition-03',
           device: 'test-device-3',
           redundantCopies: 1,
-          existingVersions:
-              const Retention(policy: Policy(policyType: 'latest-only', versions: null), duration: Duration(seconds: 60)),
-          removedVersions:
-              const Retention(policy: Policy(policyType: 'latest-only', versions: null), duration: Duration(seconds: 60)),
+          existingVersions: const Retention(
+              policy: Policy(policyType: 'latest-only', versions: null), duration: Duration(seconds: 60)),
+          removedVersions: const Retention(
+              policy: Policy(policyType: 'latest-only', versions: null), duration: Duration(seconds: 60)),
           created: DateTime.parse('2020-10-01T01:03:01'),
           updated: DateTime.parse('2020-10-01T01:03:02'),
         ),
@@ -303,6 +303,18 @@ void main() {
           .thenAnswer((_) async => http.Response(jsonEncode(definitions), 200));
 
       expect(await client.getDatasetDefinitions(), definitions);
+    });
+
+    test('delete dataset definitions', () async {
+      final underlying = MockClient();
+      final client = DefaultClientApi(server: server, underlying: underlying, apiToken: apiToken);
+
+      const definition = 'test-definition-1';
+
+      when(underlying.delete(Uri.parse('$server/datasets/definitions/$definition'), headers: authorization))
+          .thenAnswer((_) async => http.Response('', 200));
+
+      expect(() async => await client.deleteDatasetDefinition(definition: definition), returnsNormally);
     });
 
     test('get dataset entries', () async {
@@ -375,7 +387,7 @@ void main() {
         ),
       ];
 
-      when(underlying.get(Uri.parse('$server/datasets/entries/$definition'), headers: authorization))
+      when(underlying.get(Uri.parse('$server/datasets/entries/for-definition/$definition'), headers: authorization))
           .thenAnswer((_) async => http.Response(jsonEncode(entries), 200));
 
       expect(await client.getDatasetEntriesForDefinition(definition: definition), entries);
@@ -397,15 +409,29 @@ void main() {
         created: DateTime.parse('2020-10-01T01:03:01'),
       );
 
-      when(underlying.get(Uri.parse('$server/datasets/entries/$definition1/latest'), headers: authorization))
+      when(underlying.get(Uri.parse('$server/datasets/entries/for-definition/$definition1/latest'),
+              headers: authorization))
           .thenAnswer((_) async => http.Response(jsonEncode(entry), 200));
 
       expect(await client.getLatestDatasetEntryForDefinition(definition: definition1), entry);
 
-      when(underlying.get(Uri.parse('$server/datasets/entries/$definition2/latest'), headers: authorization))
+      when(underlying.get(Uri.parse('$server/datasets/entries/for-definition/$definition2/latest'),
+              headers: authorization))
           .thenAnswer((_) async => http.Response('', 404));
 
       expect(await client.getLatestDatasetEntryForDefinition(definition: definition2), null);
+    });
+
+    test('delete dataset entries', () async {
+      final underlying = MockClient();
+      final client = DefaultClientApi(server: server, underlying: underlying, apiToken: apiToken);
+
+      const entry = 'test-entry-1';
+
+      when(underlying.delete(Uri.parse('$server/datasets/entries/$entry'), headers: authorization))
+          .thenAnswer((_) async => http.Response('', 200));
+
+      expect(() async => await client.deleteDatasetEntry(entry: entry), returnsNormally);
     });
 
     test('get current user', () async {
@@ -817,6 +843,32 @@ void main() {
           .thenAnswer((_) async => http.Response(jsonEncode(response), 200));
 
       expect(await client.defineBackup(request: request), response);
+    });
+
+    test('update backups', () async {
+      final underlying = MockClient();
+      final client = DefaultClientApi(server: server, underlying: underlying, apiToken: apiToken);
+
+      const definition = 'test-definition-1';
+
+      const request = UpdateDatasetDefinition(
+        info: 'test-info',
+        redundantCopies: 1,
+        existingVersions: Retention(
+          policy: Policy(policyType: 'all', versions: null),
+          duration: Duration(seconds: 2),
+        ),
+        removedVersions: Retention(
+          policy: Policy(policyType: 'at-most', versions: 3),
+          duration: Duration(seconds: 4),
+        ),
+      );
+
+      when(underlying.put(Uri.parse('$server/datasets/definitions/$definition'),
+              headers: {...applicationJson, ...authorization}, body: jsonEncode(request)))
+          .thenAnswer((_) async => http.Response('', 200));
+
+      expect(() async => await client.updateBackup(definition: definition, request: request), returnsNormally);
     });
 
     test('recover until timestamp (without parameters)', () async {

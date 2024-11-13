@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:stasis_client_ui/api/api_client.dart';
 import 'package:stasis_client_ui/model/api/responses/operation_started.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_definition.dart';
@@ -5,7 +6,6 @@ import 'package:stasis_client_ui/pages/common/components.dart';
 import 'package:stasis_client_ui/pages/components/entity_form.dart';
 import 'package:stasis_client_ui/pages/components/extensions.dart';
 import 'package:stasis_client_ui/pages/components/forms/dataset_entry_field.dart';
-import 'package:flutter/material.dart';
 
 class Recover extends StatefulWidget {
   const Recover({
@@ -53,58 +53,61 @@ class _RecoverState extends State<Recover> {
           title: 'Start the recovery process of a dataset',
         );
 
-        final submitButton = RecoverButton(
-          definitionController: _definitionController,
-          entryController: _entryController,
-          onPressed: () {
-            final definition = _selectedDefinition!;
-            final pathQuery = _queryController.text.trim();
-            const destination = null; // unsupported
-            const discardPaths = null; // unsupported
+        final submitButton = Padding(
+          padding: const EdgeInsets.only(bottom: 24.0),
+          child: RecoverButton(
+            definitionController: _definitionController,
+            entryController: _entryController,
+            onPressed: () {
+              final definition = _selectedDefinition!;
+              final pathQuery = _queryController.text.trim();
+              const destination = null; // unsupported
+              const discardPaths = null; // unsupported
 
-            Future<OperationStarted> operation;
-            switch (_entryController.entryType) {
-              case DatasetEntryType.latest:
-                operation = widget.client.recoverFromLatest(
-                  definition: definition,
-                  pathQuery: pathQuery.isNotEmpty ? pathQuery : null,
-                  destination: destination,
-                  discardPaths: discardPaths,
-                );
-                break;
-              case DatasetEntryType.entry:
-                operation = widget.client.recoverFrom(
-                  definition: definition,
-                  entry: _entryController.entry!,
-                  pathQuery: pathQuery.isNotEmpty ? pathQuery : null,
-                  destination: destination,
-                  discardPaths: discardPaths,
-                );
-                break;
-              case DatasetEntryType.until:
-                operation = widget.client.recoverUntil(
-                  definition: definition,
-                  until: _entryController.dateTime,
-                  pathQuery: pathQuery.isNotEmpty ? pathQuery : null,
-                  destination: destination,
-                  discardPaths: discardPaths,
-                );
-                break;
-              default:
-                throw Exception('Expected valid entry type but [${_entryController.entryType}] found');
-            }
+              Future<OperationStarted> operation;
+              switch (_entryController.entryType) {
+                case DatasetEntryType.latest:
+                  operation = widget.client.recoverFromLatest(
+                    definition: definition,
+                    pathQuery: pathQuery.isNotEmpty ? pathQuery : null,
+                    destination: destination,
+                    discardPaths: discardPaths,
+                  );
+                  break;
+                case DatasetEntryType.entry:
+                  operation = widget.client.recoverFrom(
+                    definition: definition,
+                    entry: _entryController.entry!,
+                    pathQuery: pathQuery.isNotEmpty ? pathQuery : null,
+                    destination: destination,
+                    discardPaths: discardPaths,
+                  );
+                  break;
+                case DatasetEntryType.until:
+                  operation = widget.client.recoverUntil(
+                    definition: definition,
+                    until: _entryController.dateTime,
+                    pathQuery: pathQuery.isNotEmpty ? pathQuery : null,
+                    destination: destination,
+                    discardPaths: discardPaths,
+                  );
+                  break;
+                default:
+                  throw Exception('Expected valid entry type but [${_entryController.entryType}] found');
+              }
 
-            final messenger = ScaffoldMessenger.of(context);
+              final messenger = ScaffoldMessenger.of(context);
 
-            operation.then((_) {
-              messenger.showSnackBar(const SnackBar(content: Text('Recovery started...')));
-              setState(() {});
-            }).onError((e, stackTrace) {
-              messenger.showSnackBar(SnackBar(content: Text('Failed to start recovery: [$e]')));
-            }).whenComplete(() {
-              if (context.mounted) Navigator.pop(context);
-            });
-          },
+              operation.then((_) {
+                messenger.showSnackBar(const SnackBar(content: Text('Recovery started...')));
+                setState(() {});
+              }).onError((e, stackTrace) {
+                messenger.showSnackBar(SnackBar(content: Text('Failed to start recovery: [$e]')));
+              }).whenComplete(() {
+                if (context.mounted) Navigator.pop(context);
+              });
+            },
+          ),
         );
 
         if (_selectedDefinition != null) {

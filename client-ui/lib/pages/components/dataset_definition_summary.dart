@@ -1,9 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:stasis_client_ui/api/api_client.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_definition.dart';
 import 'package:stasis_client_ui/pages/components/extensions.dart';
 import 'package:stasis_client_ui/pages/components/rendering.dart';
 import 'package:stasis_client_ui/pages/components/sizing.dart';
-import 'package:flutter/material.dart';
 
 class DatasetDefinitionSummary {
   static ListTile build(
@@ -11,6 +11,7 @@ class DatasetDefinitionSummary {
     required DatasetDefinition definition,
     required ClientApi client,
     void Function()? onTap,
+    void Function()? onLongPress,
   }) {
     final theme = Theme.of(context);
     final mediumBold = theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold);
@@ -30,9 +31,6 @@ class DatasetDefinitionSummary {
       ),
     );
 
-    final createdDifference = DateTime.now().difference(definition.created).renderApproximate();
-    final updatedDifference = DateTime.now().difference(definition.updated).renderApproximate();
-
     final subtitle = Padding(
       padding: const EdgeInsets.all(4.0),
       child: RichText(
@@ -46,9 +44,9 @@ class DatasetDefinitionSummary {
             TextSpan(text: '\n Redundant copies: ', style: theme.textTheme.bodySmall),
             TextSpan(text: definition.redundantCopies.toString(), style: smallBold),
             TextSpan(text: '\nCreated: ', style: smallBold),
-            TextSpan(text: '${definition.created.render()} ($createdDifference ago)', style: theme.textTheme.bodySmall),
+            TextSpan(text: definition.created.render(), style: theme.textTheme.bodySmall),
             TextSpan(text: '\nUpdated: ', style: smallBold),
-            TextSpan(text: '${definition.updated.render()} ($updatedDifference ago)', style: theme.textTheme.bodySmall),
+            TextSpan(text: definition.updated.render(), style: theme.textTheme.bodySmall),
           ],
         ),
       ),
@@ -78,6 +76,7 @@ class DatasetDefinitionSummary {
       subtitle: subtitle,
       trailing: trailing,
       onTap: onTap,
+      onLongPress: onLongPress,
     );
   }
 }
