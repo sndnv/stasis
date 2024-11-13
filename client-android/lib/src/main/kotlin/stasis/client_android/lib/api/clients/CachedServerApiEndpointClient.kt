@@ -72,8 +72,7 @@ class CachedServerApiEndpointClient(
 
     override suspend fun deleteDatasetDefinition(definition: DatasetDefinitionId): Try<Unit> {
         val result = underlying.deleteDatasetDefinition(definition)
-        datasetDefinitionsCache.clear()
-        allDefinitionsCached.set(false)
+        datasetDefinitionsCache.remove(definition)
         return result
     }
 
