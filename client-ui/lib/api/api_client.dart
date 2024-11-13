@@ -1,26 +1,27 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:http/http.dart' as http;
 import 'package:stasis_client_ui/model/api/requests/create_dataset_definition.dart';
+import 'package:stasis_client_ui/model/api/requests/update_dataset_definition.dart';
 import 'package:stasis_client_ui/model/api/requests/update_user_password.dart';
 import 'package:stasis_client_ui/model/api/requests/update_user_salt.dart';
 import 'package:stasis_client_ui/model/api/responses/created_dataset_definition.dart';
 import 'package:stasis_client_ui/model/api/responses/operation_started.dart';
-import 'package:stasis_client_ui/model/operations/operation.dart';
-import 'package:stasis_client_ui/model/operations/operation_progress.dart';
-import 'package:stasis_client_ui/model/operations/operation_state.dart';
-import 'package:stasis_client_ui/model/operations/specification_rules.dart';
-import 'package:stasis_client_ui/model/service/init_state.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_definition.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_entry.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_metadata.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_metadata_search_result.dart';
 import 'package:stasis_client_ui/model/devices/device.dart';
 import 'package:stasis_client_ui/model/devices/server_state.dart';
+import 'package:stasis_client_ui/model/operations/operation.dart';
+import 'package:stasis_client_ui/model/operations/operation_progress.dart';
+import 'package:stasis_client_ui/model/operations/operation_state.dart';
+import 'package:stasis_client_ui/model/operations/specification_rules.dart';
 import 'package:stasis_client_ui/model/schedules/active_schedule.dart';
 import 'package:stasis_client_ui/model/schedules/schedule.dart';
+import 'package:stasis_client_ui/model/service/init_state.dart';
 import 'package:stasis_client_ui/model/users/user.dart';
-import 'package:http/http.dart' as http;
 
 abstract class ApiClient {
   ApiClient({required this.server, required this.underlying, String? token}) : _token = token;
@@ -154,11 +155,15 @@ abstract class ClientApi {
 
   Future<List<DatasetDefinition>> getDatasetDefinitions();
 
+  Future<void> deleteDatasetDefinition({required String definition});
+
   Future<List<DatasetEntry>> getDatasetEntries();
 
   Future<List<DatasetEntry>> getDatasetEntriesForDefinition({required String definition});
 
   Future<DatasetEntry?> getLatestDatasetEntryForDefinition({required String definition});
+
+  Future<void> deleteDatasetEntry({required String entry});
 
   Future<DatasetMetadata> getDatasetMetadata({required String entry});
 
@@ -191,6 +196,8 @@ abstract class ClientApi {
   Future<OperationStarted> startBackup({required String definition});
 
   Future<CreatedDatasetDefinition> defineBackup({required CreateDatasetDefinition request});
+
+  Future<void> updateBackup({required String definition, required UpdateDatasetDefinition request});
 
   Future<OperationStarted> recoverUntil({
     required String definition,

@@ -1,15 +1,15 @@
+import 'package:collection/collection.dart';
+import 'package:flutter/material.dart';
 import 'package:stasis_client_ui/api/api_client.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_entry.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_metadata.dart';
 import 'package:stasis_client_ui/model/operations/operation.dart' as operation;
 import 'package:stasis_client_ui/model/operations/operation_progress.dart';
-import 'package:stasis_client_ui/pages/components/sizing.dart';
+import 'package:stasis_client_ui/pages/common/components.dart';
 import 'package:stasis_client_ui/pages/components/extensions.dart';
 import 'package:stasis_client_ui/pages/components/rendering.dart';
+import 'package:stasis_client_ui/pages/components/sizing.dart';
 import 'package:stasis_client_ui/utils/pair.dart';
-import 'package:stasis_client_ui/pages/common/components.dart';
-import 'package:collection/collection.dart';
-import 'package:flutter/material.dart';
 
 class Home extends StatelessWidget {
   const Home({
@@ -32,6 +32,8 @@ class Home extends StatelessWidget {
 
         const padding = EdgeInsets.fromLTRB(8.0, 16.0, 8.0, 16.0);
 
+        const minCardHeight = 128.0;
+
         final backupContainer = Padding(
           padding: padding,
           child: Column(
@@ -39,7 +41,10 @@ class Home extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Last Backup', style: theme.textTheme.bodySmall),
-              createBasicCard(theme, [backup]),
+              ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: minCardHeight),
+                child: createBasicCard(theme, [backup]),
+              ),
             ],
           ),
         );
@@ -51,7 +56,10 @@ class Home extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Last Operation', style: theme.textTheme.bodySmall),
-              createBasicCard(theme, [operation]),
+              ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: minCardHeight),
+                child: createBasicCard(theme, [operation]),
+              ),
             ],
           ),
         );
@@ -150,7 +158,7 @@ class Home extends StatelessWidget {
         subtitle: Padding(padding: const EdgeInsets.symmetric(horizontal: 4.0), child: subtitle),
       );
     } else {
-      return ListTile(title: Text('No data', style: mediumItalic));
+      return ListTile(title: Text('No data', style: mediumItalic, textAlign: TextAlign.center));
     }
   }
 
@@ -200,7 +208,7 @@ class Home extends StatelessWidget {
         subtitle: Padding(padding: const EdgeInsets.symmetric(horizontal: 4.0), child: subtitle),
       );
     } else {
-      return ListTile(title: Text('No data', style: mediumItalic));
+      return ListTile(title: Text('No data', style: mediumItalic, textAlign: TextAlign.center));
     }
   }
 }

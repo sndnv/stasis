@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:stasis_client_ui/api/api_client.dart';
 import 'package:stasis_client_ui/model/api/requests/create_dataset_definition.dart';
+import 'package:stasis_client_ui/model/api/requests/update_dataset_definition.dart';
 import 'package:stasis_client_ui/model/api/requests/update_user_password.dart';
 import 'package:stasis_client_ui/model/api/requests/update_user_salt.dart';
 import 'package:stasis_client_ui/model/api/responses/created_dataset_definition.dart';
@@ -51,6 +52,11 @@ class MockApiClient extends ApiClient implements ClientApi {
   }
 
   @override
+  Future<void> deleteDatasetDefinition({required String definition}) {
+    return Future.value();
+  }
+
+  @override
   Future<List<DatasetEntry>> getDatasetEntries() {
     return Future.value([defaultEntry]);
   }
@@ -71,6 +77,11 @@ class MockApiClient extends ApiClient implements ClientApi {
     } else {
       return Future.value(null);
     }
+  }
+
+  @override
+  Future<void> deleteDatasetEntry({required String entry}) {
+    return Future.value();
   }
 
   @override
@@ -179,6 +190,11 @@ class MockApiClient extends ApiClient implements ClientApi {
   }
 
   @override
+  Future<void> updateBackup({required String definition, required UpdateDatasetDefinition request}) {
+    return Future.value();
+  }
+
+  @override
   Future<OperationStarted> recoverUntil({
     required String definition,
     required DateTime until,
@@ -267,7 +283,14 @@ class MockApiClient extends ApiClient implements ClientApi {
   static final currentUser = User(
     id: user,
     active: true,
-    limits: null,
+    limits: const UserLimits(
+      maxDevices: 1024 * 1024,
+      maxCrates: 1024 * 1024 * 1024,
+      maxStorage: 24 * 1024 * 1024 * 1024,
+      maxStoragePerCrate: 1024 * 1024 * 1024,
+      maxRetention: Duration(days: 3),
+      minRetention: Duration(hours: 12),
+    ),
     permissions: {'a', 'b', 'c'},
     created: DateTime.now().subtract(const Duration(days: 3871)),
     updated: DateTime.now().subtract(const Duration(hours: 39)),

@@ -1,5 +1,7 @@
+import 'package:http/http.dart' as http;
 import 'package:stasis_client_ui/api/api_client.dart';
 import 'package:stasis_client_ui/model/api/requests/create_dataset_definition.dart';
+import 'package:stasis_client_ui/model/api/requests/update_dataset_definition.dart';
 import 'package:stasis_client_ui/model/api/requests/update_user_password.dart';
 import 'package:stasis_client_ui/model/api/requests/update_user_salt.dart';
 import 'package:stasis_client_ui/model/api/responses/created_dataset_definition.dart';
@@ -15,12 +17,11 @@ import 'package:stasis_client_ui/model/operations/operation.dart';
 import 'package:stasis_client_ui/model/operations/operation_progress.dart';
 import 'package:stasis_client_ui/model/operations/operation_state.dart';
 import 'package:stasis_client_ui/model/operations/specification_rules.dart';
-import 'package:stasis_client_ui/utils/pair.dart';
 import 'package:stasis_client_ui/model/schedules/active_schedule.dart';
 import 'package:stasis_client_ui/model/schedules/schedule.dart';
 import 'package:stasis_client_ui/model/service/init_state.dart';
 import 'package:stasis_client_ui/model/users/user.dart';
-import 'package:http/http.dart' as http;
+import 'package:stasis_client_ui/utils/pair.dart';
 
 class MockApiClient extends ApiClient implements InitApi, ClientApi {
   MockApiClient() : super(server: 'mock-server', underlying: http.Client());
@@ -87,6 +88,11 @@ class MockApiClient extends ApiClient implements InitApi, ClientApi {
     ];
 
     return Future.value(definitions);
+  }
+
+  @override
+  Future<void> deleteDatasetDefinition({required String definition}) {
+    return Future.value();
   }
 
   @override
@@ -176,6 +182,11 @@ class MockApiClient extends ApiClient implements InitApi, ClientApi {
       created: DateTime.parse('2020-10-01T01:03:02'),
     );
     return Future.value(entry);
+  }
+
+  @override
+  Future<void> deleteDatasetEntry({required String entry}) {
+    return Future.value();
   }
 
   @override
@@ -610,6 +621,11 @@ class MockApiClient extends ApiClient implements InitApi, ClientApi {
   @override
   Future<CreatedDatasetDefinition> defineBackup({required CreateDatasetDefinition request}) {
     return Future.value(const CreatedDatasetDefinition(definition: 'test-definition'));
+  }
+
+  @override
+  Future<void> updateBackup({required String definition, required UpdateDatasetDefinition request}) {
+    return Future.value();
   }
 
   @override

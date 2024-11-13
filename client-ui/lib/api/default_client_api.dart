@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:http/io_client.dart' as io_client;
 import 'package:stasis_client_ui/api/api_client.dart';
 import 'package:stasis_client_ui/api/endpoint_context.dart';
 import 'package:stasis_client_ui/config/config.dart';
 import 'package:stasis_client_ui/model/api/requests/create_dataset_definition.dart';
+import 'package:stasis_client_ui/model/api/requests/update_dataset_definition.dart';
 import 'package:stasis_client_ui/model/api/requests/update_user_password.dart';
 import 'package:stasis_client_ui/model/api/requests/update_user_salt.dart';
 import 'package:stasis_client_ui/model/api/responses/created_dataset_definition.dart';
@@ -23,7 +25,6 @@ import 'package:stasis_client_ui/model/schedules/active_schedule.dart';
 import 'package:stasis_client_ui/model/schedules/schedule.dart';
 import 'package:stasis_client_ui/model/service/ping.dart';
 import 'package:stasis_client_ui/model/users/user.dart';
-import 'package:http/io_client.dart' as io_client;
 
 class DefaultClientApi extends ApiClient implements ClientApi {
   DefaultClientApi({
@@ -108,6 +109,12 @@ class DefaultClientApi extends ApiClient implements ClientApi {
   }
 
   @override
+  Future<void> deleteDatasetDefinition({required String definition}) async {
+    final path = '/datasets/definitions/$definition';
+    return await delete(from: path);
+  }
+
+  @override
   Future<List<DatasetEntry>> getDatasetEntries() async {
     const path = '/datasets/entries';
     return await get(from: path, fromJson: DatasetEntry.fromJson);
@@ -115,14 +122,20 @@ class DefaultClientApi extends ApiClient implements ClientApi {
 
   @override
   Future<List<DatasetEntry>> getDatasetEntriesForDefinition({required String definition}) async {
-    final path = '/datasets/entries/$definition';
+    final path = '/datasets/entries/for-definition/$definition';
     return await get(from: path, fromJson: DatasetEntry.fromJson);
   }
 
   @override
   Future<DatasetEntry?> getLatestDatasetEntryForDefinition({required String definition}) async {
-    final path = '/datasets/entries/$definition/latest';
+    final path = '/datasets/entries/for-definition/$definition/latest';
     return await getOptional(from: path, fromJson: DatasetEntry.fromJson);
+  }
+
+  @override
+  Future<void> deleteDatasetEntry({required String entry}) async {
+    final path = '/datasets/entries/$entry';
+    return await delete(from: path);
   }
 
   @override
@@ -262,6 +275,12 @@ class DefaultClientApi extends ApiClient implements ClientApi {
   Future<CreatedDatasetDefinition> defineBackup({required CreateDatasetDefinition request}) async {
     const path = '/datasets/definitions';
     return await post(data: request.toJson(), to: path, fromJsonResponse: CreatedDatasetDefinition.fromJson);
+  }
+
+  @override
+  Future<void> updateBackup({required String definition, required UpdateDatasetDefinition request}) async {
+    final path = '/datasets/definitions/$definition';
+    return await put(data: request.toJson(), to: path);
   }
 
   @override
