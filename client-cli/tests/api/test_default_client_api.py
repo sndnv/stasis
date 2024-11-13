@@ -105,6 +105,29 @@ class DefaultClientApiSpec(unittest.TestCase):
         )
 
     @patch('requests.request')
+    def test_should_get_specific_dataset_definitions(self, mock_request):
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
+        mock_request.return_value = MockResponse.success(mock_data.DEFINITIONS[0])
+
+        definition = uuid4()
+
+        self.assertEqual(
+            client.dataset_definition(definition=definition),
+            mock_data.DEFINITIONS[0]
+        )
+
+        self.assert_valid_request(
+            mock=mock_request,
+            expected_method='get',
+            expected_url='/datasets/definitions/{}'.format(definition),
+        )
+
+    @patch('requests.request')
     def test_should_get_dataset_definitions(self, mock_request):
         client = DefaultClientApi(
             api_url=self.url,
@@ -120,6 +143,29 @@ class DefaultClientApiSpec(unittest.TestCase):
             mock=mock_request,
             expected_method='get',
             expected_url='/datasets/definitions'
+        )
+
+    @patch('requests.request')
+    def test_should_delete_dataset_definitions(self, mock_request):
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
+        mock_request.return_value = MockResponse.success()
+
+        definition = uuid4()
+
+        self.assertEqual(
+            client.dataset_definition_delete(definition=definition),
+            {'successful': True, 'operation': None}
+        )
+
+        self.assert_valid_request(
+            mock=mock_request,
+            expected_method='delete',
+            expected_url='/datasets/definitions/{}'.format(definition),
         )
 
     @patch('requests.request')
@@ -156,7 +202,26 @@ class DefaultClientApiSpec(unittest.TestCase):
         self.assert_valid_request(
             mock=mock_request,
             expected_method='get',
-            expected_url='/datasets/entries/{}'.format(definition)
+            expected_url='/datasets/entries/for-definition/{}'.format(definition)
+        )
+
+    @patch('requests.request')
+    def test_should_delete_dataset_entries(self, mock_request):
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
+        mock_request.return_value = MockResponse.success()
+
+        entry = uuid4()
+        self.assertEqual(client.dataset_entry_delete(entry=entry), {'successful': True, 'operation': None})
+
+        self.assert_valid_request(
+            mock=mock_request,
+            expected_method='delete',
+            expected_url='/datasets/entries/{}'.format(entry),
         )
 
     @patch('requests.request')
@@ -491,6 +556,30 @@ class DefaultClientApiSpec(unittest.TestCase):
             mock=mock_request,
             expected_method='post',
             expected_url='/datasets/definitions',
+            expected_request_data=definition_request
+        )
+
+    @patch('requests.request')
+    def test_should_update_backups(self, mock_request):
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
+        mock_request.return_value = MockResponse.success()
+
+        definition = uuid4()
+        definition_request = {'a': 1, 'b': 2}
+        self.assertEqual(
+            client.backup_update(definition=definition, request=definition_request),
+            {'successful': True, 'operation': None}
+        )
+
+        self.assert_valid_request(
+            mock=mock_request,
+            expected_method='put',
+            expected_url='/datasets/definitions/{}'.format(definition),
             expected_request_data=definition_request
         )
 

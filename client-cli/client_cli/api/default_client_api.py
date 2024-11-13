@@ -38,6 +38,12 @@ class DefaultClientApi(ClientApi):
     def dataset_metadata_search(self, search_query, until):
         return self.get(url='/datasets/metadata/search', params={'query': search_query, 'until': until})
 
+    def dataset_definition(self, definition):
+        return self.get(url='/datasets/definitions/{}'.format(definition))
+
+    def dataset_definition_delete(self, definition):
+        return self.delete(url='/datasets/definitions/{}'.format(definition))
+
     def dataset_definitions(self):
         return self.get(url='/datasets/definitions')
 
@@ -45,7 +51,10 @@ class DefaultClientApi(ClientApi):
         return self.get(url='/datasets/entries')
 
     def dataset_entries_for_definition(self, definition):
-        return self.get(url='/datasets/entries/{}'.format(definition))
+        return self.get(url='/datasets/entries/for-definition/{}'.format(definition))
+
+    def dataset_entry_delete(self, entry):
+        return self.delete(url='/datasets/entries/{}'.format(entry))
 
     def user(self):
         return self.get(url='/user')
@@ -102,6 +111,9 @@ class DefaultClientApi(ClientApi):
 
     def backup_define(self, request):
         return self.post(url='/datasets/definitions', data=request)
+
+    def backup_update(self, definition, request):
+        return self.put(url='/datasets/definitions/{}'.format(definition), data=request)
 
     def recover_until(self, definition, until, path_query, destination, discard_paths):
         params = {'query': path_query, 'destination': destination, 'keep_structure': not discard_paths}

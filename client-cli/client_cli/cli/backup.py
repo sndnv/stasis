@@ -185,7 +185,7 @@ show.add_command(show_rules)
     help='Retention policy for existing files (2).'
 )
 @click.option(
-    '--existing-versions-duration', callback=validate_duration,
+    '--existing-versions-duration', type=click.UNPROCESSED, callback=validate_duration,
     required=True, prompt='Existing Versions Retention Duration',
     default='30 days', show_default=True,
     help='Maximum amount of time to keep existing versions.'
@@ -197,7 +197,7 @@ show.add_command(show_rules)
     help='Retention policy for removed files (2).'
 )
 @click.option(
-    '--removed-versions-duration', callback=validate_duration,
+    '--removed-versions-duration', type=click.UNPROCESSED, callback=validate_duration,
     required=True, prompt='Existing Versions Retention Duration',
     default='365 days', show_default=True,
     help='Maximum amount of time to keep removed versions.'
@@ -255,6 +255,127 @@ def define(ctx, info, redundant_copies, existing_versions_policy, existing_versi
     click.echo(ctx.obj.rendering.render_operation_response(response))
 
 
+@click.command(
+    short_help='Update an existing dataset definition.',
+    epilog=' '.join(
+        [
+            'Notes:',
+            '(1) Server may make more than the specified number of copies but never fewer.',
+            '(2) Retention policies:',
+            '`at-most` - keep at most N number of versions;',
+            '`latest-only` - keep only latest version',
+            '`all` - keep all versions',
+        ]
+    )
+)
+@click.argument('definition', type=click.UUID)
+@click.option(
+    '--info', required=False, default=None, help='Information about the definition.'
+)
+@click.option(
+    '--redundant-copies', type=int, required=False, default=None,
+    help='Number of required redundant copies for each piece of data that is stored (1).'
+)
+@click.option(
+    '--existing-versions-policy',
+    type=click.Choice(['at-most', 'latest-only', 'all'], case_sensitive=False),
+    required=False, default=None, help='Retention policy for existing files (2).'
+)
+@click.option(
+    '--removed-versions-policy',
+    type=click.Choice(['at-most', 'latest-only', 'all'], case_sensitive=False),
+    required=False, default=None, help='Retention policy for removed files (2).'
+)
+@click.pass_context
+def update(ctx, definition, info, redundant_copies, existing_versions_policy, removed_versions_policy):
+    """Update an existing dataset definition."""
+    # pylint: disable=too-many-arguments
+    existing_definition = ctx.obj.api.dataset_definition(definition)
+
+    def build_policy(policy_type, policy_name):
+        if policy_type is None:
+            return None
+        else:
+            duration = click.prompt(
+                '{} Versions Retention Duration'.format(policy_name),
+                value_proc=lambda v: validate_duration(None, None, v)
+            )
+
+            if policy_type == 'at-most':
+                versions = click.prompt('{} versions to keep for policy [at-most]'.format(policy_name), type=int)
+
+                return {
+                    'policy': {
+                        'policy_type': 'at-most',
+                        'versions': versions,
+                    },
+                    'duration': duration,
+                }
+            else:
+                return {
+                    'policy': {
+                        'policy_type': policy_type
+                    },
+                    'duration': duration,
+                }
+
+    request = {
+        'info': info or existing_definition['info'],
+        'redundant_copies': redundant_copies or existing_definition['redundant_copies'],
+        'existing_versions': build_policy(
+            policy_type=existing_versions_policy,
+            policy_name='Existing'
+        ) or existing_definition['existing_versions'],
+        'removed_versions': build_policy(
+            policy_type=removed_versions_policy,
+            policy_name='Removed'
+        ) or existing_definition['removed_versions'],
+    }
+
+    response = ctx.obj.api.backup_update(definition, request)
+
+    click.echo(ctx.obj.rendering.render_operation_response(response))
+
+
+@click.command(short_help='Delete an existing dataset definition.', name='definition')
+@click.argument('definition', type=click.UUID)
+@click.pass_context
+def delete_definition(ctx, definition):
+    """Delete an existing dataset definition."""
+    click.confirm(
+        'Remove backup definition [{}]? This will make all associated backups inaccessible!'.format(definition),
+        abort=True
+    )
+
+    response = ctx.obj.api.dataset_definition_delete(definition)
+
+    click.echo(ctx.obj.rendering.render_operation_response(response))
+
+
+@click.command(short_help='Delete an existing dataset entry.', name='entry')
+@click.argument('entry', type=click.UUID)
+@click.pass_context
+def delete_entry(ctx, entry):
+    """Delete an existing dataset entry."""
+    click.confirm(
+        'Remove backup entry [{}]? This will make all of its data inaccessible!'.format(entry),
+        abort=True
+    )
+
+    response = ctx.obj.api.dataset_entry_delete(entry)
+
+    click.echo(ctx.obj.rendering.render_operation_response(response))
+
+
+@click.group()
+def delete():
+    """Delete backup-related data."""
+
+
+delete.add_command(delete_definition)
+delete.add_command(delete_entry)
+
+
 @click.command(short_help='Start backup operations.')
 @click.argument('definition', type=click.UUID)
 @click.option('-f', '--follow', is_flag=True, default=False, help='Follow operation and display progress updates.')
@@ -306,5 +427,7 @@ def cli():
 
 cli.add_command(show)
 cli.add_command(define)
+cli.add_command(update)
+cli.add_command(delete)
 cli.add_command(start)
 cli.add_command(search)

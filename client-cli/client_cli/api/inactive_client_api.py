@@ -26,13 +26,22 @@ class InactiveClientApi(ClientApi):
     def dataset_metadata_search(self, search_query, until):
         InactiveClientApi._abort()
 
+    def dataset_definition(self, definition):
+        InactiveClientApi._abort()
+
     def dataset_definitions(self):
+        InactiveClientApi._abort()
+
+    def dataset_definition_delete(self, definition):
         InactiveClientApi._abort()
 
     def dataset_entries(self):
         InactiveClientApi._abort()
 
     def dataset_entries_for_definition(self, definition):
+        InactiveClientApi._abort()
+
+    def dataset_entry_delete(self, entry):
         InactiveClientApi._abort()
 
     def user(self):
@@ -78,6 +87,9 @@ class InactiveClientApi(ClientApi):
         InactiveClientApi._abort()
 
     def backup_define(self, request):
+        InactiveClientApi._abort()
+
+    def backup_update(self, definition, request):
         InactiveClientApi._abort()
 
     def recover_until(self, definition, until, path_query, destination, discard_paths):

@@ -11,9 +11,12 @@ class MockClientApi(ClientApi):
             'stop': 0,
             'dataset_metadata': 0,
             'dataset_metadata_search': 0,
+            'dataset_definition': 0,
+            'dataset_definition_delete': 0,
             'dataset_definitions': 0,
             'dataset_entries': 0,
             'dataset_entries_for_definition': 0,
+            'dataset_entry_delete': 0,
             'user': 0,
             'user_password_update': 0,
             'user_salt_update': 0,
@@ -29,6 +32,7 @@ class MockClientApi(ClientApi):
             'backup_rules': 0,
             'backup_start': 0,
             'backup_define': 0,
+            'backup_update': 0,
             'recover_until': 0,
             'recover_from': 0,
             'recover_from_latest': 0,
@@ -53,9 +57,17 @@ class MockClientApi(ClientApi):
         self.stats['dataset_metadata_search'] += 1
         return mock_data.METADATA_SEARCH_RESULTS
 
+    def dataset_definition(self, definition):
+        self.stats['dataset_definition'] += 1
+        return mock_data.DEFINITIONS[0]
+
     def dataset_definitions(self):
         self.stats['dataset_definitions'] += 1
         return mock_data.DEFINITIONS
+
+    def dataset_definition_delete(self, definition):
+        self.stats['dataset_definition_delete'] += 1
+        return {'successful': True}
 
     def dataset_entries(self):
         self.stats['dataset_entries'] += 1
@@ -64,6 +76,10 @@ class MockClientApi(ClientApi):
     def dataset_entries_for_definition(self, definition):
         self.stats['dataset_entries_for_definition'] += 1
         return mock_data.ENTRIES
+
+    def dataset_entry_delete(self, entry):
+        self.stats['dataset_entry_delete'] += 1
+        return {'successful': True}
 
     def user(self):
         self.stats['user'] += 1
@@ -124,6 +140,10 @@ class MockClientApi(ClientApi):
 
     def backup_define(self, request):
         self.stats['backup_define'] += 1
+        return {'successful': True}
+
+    def backup_update(self, definition, request):
+        self.stats['backup_update'] += 1
         return {'successful': True}
 
     def recover_until(self, definition, until, path_query, destination, discard_paths):
