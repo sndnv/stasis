@@ -41,12 +41,29 @@ class ClientApi(ABC):
         :return: search results
         """
 
+    def dataset_definition(self, definition):
+        """
+        Retrieves the dataset definition with the provided ID.
+
+        :param definition: definition to retrieve
+        :return: requested definition
+        """
+
     @abstractmethod
     def dataset_definitions(self):
         """
         Retrieves all dataset definitions for the current user and device.
 
         :return: requested definitions
+        """
+
+    @abstractmethod
+    def dataset_definition_delete(self, definition):
+        """
+        Deletes an existing dataset definition.
+
+        :param definition: definition to delete
+        :return: dict with result of action
         """
 
     @abstractmethod
@@ -64,6 +81,15 @@ class ClientApi(ABC):
 
         :param definition: definition associated with requested entries
         :return: requested entries
+        """
+
+    @abstractmethod
+    def dataset_entry_delete(self, entry):
+        """
+        Deletes an existing dataset entry.
+
+        :param entry: entry to delete
+        :return: dict with result of action
         """
 
     @abstractmethod
@@ -194,6 +220,16 @@ class ClientApi(ABC):
         Creates a new dataset definition with the provided data.
 
         :param request: data to use for creating a definition
+        :return: dict with result of action
+        """
+
+    @abstractmethod
+    def backup_update(self, definition, request):
+        """
+        Updates an existing dataset definition with the provided data.
+
+        :param definition: definition to update
+        :param request: data to use for updating a definition
         :return: dict with result of action
         """
 

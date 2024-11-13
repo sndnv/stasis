@@ -77,7 +77,12 @@ class CliPackageSpec(unittest.TestCase):
 
     def test_should_validate_duration_values(self):
         durations = {
+            1: 1,
+            2: 2,
+            30: 30,
+            40.0: 40.0,
             '1 second': 1,
+            '10s': 10,
             '42 seconds': 42,
             '1 m': 60,
             '42 minutes': 42 * 60,

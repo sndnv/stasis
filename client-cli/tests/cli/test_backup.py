@@ -116,6 +116,62 @@ class BackupSpec(unittest.TestCase):
         self.assertEqual(context.api.stats['device'], 1)
         self.assertEqual(context.api.stats['backup_define'], 1)
 
+    @patch('click.prompt')
+    def test_should_update_backups(self, mock_prompt):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        mock_prompt.return_value = '5'
+
+        definition = uuid4()
+
+        runner = Runner(cli)
+        result = runner.invoke(
+            args=[
+                'update',
+                str(definition),
+                '--info', 'test',
+                '--redundant-copies', 5,
+                '--existing-versions-policy', 'at-most',
+                '--removed-versions-policy', 'all',
+            ],
+            obj=context
+        )
+
+        self.assertEqual(result.exit_code, 0, result.output)
+
+        self.assertTrue(json.loads(result.output))
+        self.assertEqual(context.api.stats['dataset_definition'], 1)
+        self.assertEqual(context.api.stats['backup_update'], 1)
+
+    @patch('click.prompt')
+    def test_should_partially_update_backups(self, mock_prompt):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        mock_prompt.return_value = 5
+
+        definition = uuid4()
+
+        runner = Runner(cli)
+        result = runner.invoke(
+            args=[
+                'update',
+                str(definition),
+                '--info', 'test',
+
+            ],
+            obj=context
+        )
+
+        self.assertEqual(result.exit_code, 0, result.output)
+
+        self.assertTrue(json.loads(result.output))
+        self.assertEqual(context.api.stats['dataset_definition'], 1)
+        self.assertEqual(context.api.stats['backup_update'], 1)
+
     def test_should_fail_define_backups_when_invalid_duration_specified(self):
         context = Context()
         context.api = MockClientApi()
@@ -172,3 +228,45 @@ class BackupSpec(unittest.TestCase):
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertTrue(json.loads(result.output))
         self.assertEqual(context.api.stats['dataset_metadata_search'], 1)
+
+    @patch('click.confirm')
+    def test_should_delete_dataset_definitions(self, mock_confirm):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        mock_confirm.return_value = None
+
+        definition = uuid4()
+
+        runner = Runner(cli)
+        result = runner.invoke(
+            args=['delete', 'definition', str(definition)],
+            obj=context
+        )
+
+        self.assertEqual(result.exit_code, 0, result.output)
+
+        self.assertTrue(json.loads(result.output))
+        self.assertEqual(context.api.stats['dataset_definition_delete'], 1)
+
+    @patch('click.confirm')
+    def test_should_delete_dataset_entries(self, mock_confirm):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        mock_confirm.return_value = None
+
+        entry = uuid4()
+
+        runner = Runner(cli)
+        result = runner.invoke(
+            args=['delete', 'entry', str(entry)],
+            obj=context
+        )
+
+        self.assertEqual(result.exit_code, 0, result.output)
+
+        self.assertTrue(json.loads(result.output))
+        self.assertEqual(context.api.stats['dataset_entry_delete'], 1)

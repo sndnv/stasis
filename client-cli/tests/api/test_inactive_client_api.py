@@ -35,13 +35,22 @@ class InactiveClientApiSpec(unittest.TestCase):
             api.dataset_metadata_search(search_query=query, until=until)
 
         with self.assertRaises(Abort):
+            api.dataset_definition(definition=definition)
+
+        with self.assertRaises(Abort):
             api.dataset_definitions()
+
+        with self.assertRaises(Abort):
+            api.dataset_definition_delete(definition=definition)
 
         with self.assertRaises(Abort):
             api.dataset_entries()
 
         with self.assertRaises(Abort):
             api.dataset_entries_for_definition(definition=definition)
+
+        with self.assertRaises(Abort):
+            api.dataset_entry_delete(entry=entry)
 
         with self.assertRaises(Abort):
             api.user()
@@ -87,6 +96,9 @@ class InactiveClientApiSpec(unittest.TestCase):
 
         with self.assertRaises(Abort):
             api.backup_define(request=definition_request)
+
+        with self.assertRaises(Abort):
+            api.backup_update(definition=definition, request=definition_request)
 
         with self.assertRaises(Abort):
             api.recover_until(definition=definition, until=until, path_query=query, destination='', discard_paths=True)

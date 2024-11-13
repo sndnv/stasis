@@ -3,6 +3,7 @@
 import datetime
 import itertools
 import logging
+import numbers
 import os
 import re
 import sys
@@ -60,6 +61,9 @@ def load_api_token(application_name, api_token_file_name) -> Optional[str]:
 def validate_duration(_, __, value):
     """Validates the provided duration value and fails if it is not as expected."""
     try:
+        if isinstance(value, numbers.Number):
+            return value
+
         duration_types = {
             'seconds': ['seconds', 'second', 's'],
             'minutes': ['minutes', 'minute', 'm'],
