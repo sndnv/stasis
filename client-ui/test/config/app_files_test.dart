@@ -9,12 +9,10 @@ void main() {
       final files = AppFiles.load(configDir: configDir);
 
       expect(files.paths.config, '$configDir/client.conf');
-      expect(files.paths.rules, '$configDir/client.rules');
       expect(files.paths.schedules, '$configDir/client.schedules');
       expect(files.paths.apiToken, '$configDir/api-token');
 
       expect(files.config.isEmpty(), false);
-      expect(files.rules, ['test-rules']);
       expect(files.schedules, ['test-schedules']);
       expect(files.apiToken, 'test-token');
     });
@@ -32,12 +30,10 @@ void main() {
       final files = AppFiles.empty();
 
       expect(files.paths.config, '/tmp');
-      expect(files.paths.rules, '/tmp');
       expect(files.paths.schedules, '/tmp');
       expect(files.paths.apiToken, '/tmp');
 
       expect(files.config.isEmpty(), true);
-      expect(files.rules, []);
       expect(files.schedules, []);
       expect(files.apiToken, null);
     });

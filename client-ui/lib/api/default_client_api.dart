@@ -20,6 +20,7 @@ import 'package:stasis_client_ui/model/devices/server_state.dart';
 import 'package:stasis_client_ui/model/operations/operation.dart';
 import 'package:stasis_client_ui/model/operations/operation_progress.dart';
 import 'package:stasis_client_ui/model/operations/operation_state.dart';
+import 'package:stasis_client_ui/model/operations/rule.dart';
 import 'package:stasis_client_ui/model/operations/specification_rules.dart';
 import 'package:stasis_client_ui/model/schedules/active_schedule.dart';
 import 'package:stasis_client_ui/model/schedules/schedule.dart';
@@ -290,8 +291,17 @@ class DefaultClientApi extends ApiClient implements ClientApi {
   }
 
   @override
-  Future<SpecificationRules> getBackupRules() async {
+  Future<Map<String, List<Rule>>> getBackupRules() async {
     const path = '/operations/backup/rules';
+    return await underlying.get(Uri.parse('$server$path'), headers: authorization).andProcessResponseWith((r) {
+      final json = jsonDecode(r.body) as Map<String, dynamic>;
+      return json.map((k, rules) => MapEntry(k, (rules as List<dynamic>).map((rule) => Rule.fromJson(rule)).toList()));
+    });
+  }
+
+  @override
+  Future<SpecificationRules> getBackupSpecification({required String definition}) async {
+    final path = '/operations/backup/rules/$definition/specification';
     return await getOne(from: path, fromJson: SpecificationRules.fromJson);
   }
 
