@@ -1,0 +1,6 @@
+definition = 9457cdf4-85b2-445b-a5b1-ee7e7f5dc50c
+definition = 3eee3d55-557d-4be7-8075-f802437c99a1
+definition = c0378fd9-9f77-45b7-99e6-9428743b6a91   # latest is always used
+
++ /home__/stasis           **                       # include all files for the current user
+- /home__/stasis/test      **                       # exclude test directory

@@ -19,6 +19,7 @@ import org.scalatest.concurrent.Eventually
 
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
+import stasis.client.collection.rules.RuleSet
 import stasis.client.encryption.secrets.DeviceFileSecret
 import stasis.client.encryption.secrets.DeviceMetadataSecret
 import stasis.client.ops.ParallelismConfig
@@ -282,10 +283,11 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     val executor = createExecutor()
 
     executor.rules
-      .map { spec =>
-        // test rules are not expected to match anything on the default filesystem
-        spec.entries should be(empty)
-        spec.unmatched should not be empty
+      .map { rules =>
+        rules.definitions.toList match {
+          case (None, defaultRules) :: Nil => defaultRules.size should be(8)
+          case result                      => fail(s"Unexpected result received: [$result]")
+        }
       }
   }
 
@@ -421,7 +423,10 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
     new DefaultOperationExecutor(
       config = DefaultOperationExecutor.Config(
         backup = DefaultOperationExecutor.Config.Backup(
-          rulesFile = "/ops/scheduling/test.rules".asTestResource,
+          rulesLoader = () =>
+            RuleSet.fromFiles(
+              files = Seq("/ops/scheduling/test.rules".asTestResource)
+            )(typedSystem.executionContext),
           limits = backup.Backup.Limits(
             maxChunkSize = 8192,
             maxPartSize = 16384

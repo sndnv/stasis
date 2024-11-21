@@ -1,7 +1,6 @@
 package stasis.test.specs.unit.client.mocks
 
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -10,8 +9,7 @@ import scala.concurrent.Future
 import org.apache.pekko.Done
 
 import stasis.client.collection.rules.Rule
-import stasis.client.collection.rules.Specification
-import stasis.client.collection.rules.internal.IndexedRule
+import stasis.client.collection.rules.RuleSet
 import stasis.client.ops.recovery.Recovery
 import stasis.client.ops.scheduling.OperationExecutor
 import stasis.shared.model.datasets.DatasetDefinition
@@ -56,41 +54,22 @@ class MockOperationExecutor() extends OperationExecutor {
     )
   }
 
-  override def rules: Future[Specification] = {
+  override def rules: Future[RuleSet] = {
     stats(Statistic.GetRules).incrementAndGet()
 
     val rule1 = Rule(line = "+ /tmp/file *", lineNumber = 0).get
-    val explanation = Specification.Entry.Explanation(operation = Rule.Operation.Include, original = rule1.original)
-
     val rule2 = Rule(line = "+ /tmp/other *", lineNumber = 1).get
 
-    val file1 = Paths.get("/tmp/file/01")
-    val file2 = Paths.get("/tmp/file/02")
+    val rule3 = Rule(line = "- /tmp/other/def1 *", lineNumber = 0).get
 
-    val spec = Specification(
-      entries = Map(
-        file1 -> Specification.Entry(
-          file = file1,
-          directory = file1.getParent,
-          operation = Rule.Operation.Include,
-          reason = Seq(explanation)
-        ),
-        file2 -> Specification.Entry(
-          file = file2,
-          directory = file2.getParent,
-          operation = Rule.Operation.Include,
-          reason = Seq(explanation)
-        )
-      ),
-      failures = Seq(
-        Specification.FailedMatch(
-          rule = IndexedRule(index = 0, underlying = rule2),
-          path = Paths.get("/tmp/other"),
-          failure = new RuntimeException("Test failure")
+    Future.successful(
+      RuleSet(
+        definitions = Map(
+          None -> Seq(rule1, rule2),
+          Some(MockOperationExecutor.definitionWithRules) -> Seq(rule3)
         )
       )
     )
-    Future.successful(spec)
   }
 
   override def startBackupWithRules(
@@ -157,6 +136,8 @@ class MockOperationExecutor() extends OperationExecutor {
 
 object MockOperationExecutor {
   def apply(): MockOperationExecutor = new MockOperationExecutor()
+
+  val definitionWithRules: DatasetDefinition.Id = java.util.UUID.fromString("f34dfba2-e484-4731-8bf4-4b52c1ee9dbf")
 
   sealed trait Statistic
   object Statistic {

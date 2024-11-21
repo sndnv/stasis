@@ -3,6 +3,7 @@ package stasis.client.service.components
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
+import stasis.client.collection.rules.RuleSet
 import stasis.client.ops
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.monitoring.DefaultServerMonitor
@@ -26,12 +27,11 @@ object Ops {
     import tracking._
 
     for {
-      rulesFile <- rawConfig.getString("ops.backup.rules-file").future
+      rulesFilePattern <- rawConfig.getString("ops.backup.rules-files").future
       schedulesFile <- rawConfig.getString("ops.scheduling.schedules-file").future
-      rulesFile <- directory.requireFile(rulesFile)
-      _ = log.debug("Loading rules file [{}]...", rulesFile)
+      _ = log.debug("Using rules file pattern [{}]...", rulesFilePattern)
       schedulesFile <- directory.requireFile(schedulesFile)
-      _ = log.debug("Loading schedules file [{}]...", schedulesFile)
+      _ = log.debug("Using schedules file [{}]...", schedulesFile)
     } yield {
       implicit val parallelismConfig: ParallelismConfig =
         ParallelismConfig(
@@ -70,7 +70,7 @@ object Ops {
           new DefaultOperationExecutor(
             config = DefaultOperationExecutor.Config(
               backup = DefaultOperationExecutor.Config.Backup(
-                rulesFile = rulesFile,
+                rulesLoader = RuleSet.Factory(directory = directory, pattern = rulesFilePattern),
                 limits = backupLimits
               )
             ),

@@ -7,7 +7,7 @@ import scala.concurrent.Future
 
 import org.apache.pekko.Done
 
-import stasis.client.collection.rules.Specification
+import stasis.client.collection.rules.RuleSet
 import stasis.client.ops.recovery
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
@@ -17,7 +17,7 @@ trait OperationExecutor {
 
   def active: Future[Map[Operation.Id, Operation.Type]]
   def completed: Future[Map[Operation.Id, Operation.Type]]
-  def rules: Future[Specification]
+  def rules: Future[RuleSet]
 
   def startBackupWithRules(
     definition: DatasetDefinition.Id

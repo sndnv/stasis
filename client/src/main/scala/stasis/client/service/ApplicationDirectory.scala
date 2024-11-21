@@ -6,6 +6,7 @@ import java.nio.file.attribute.PosixFilePermissions
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
 
 import net.harawata.appdirs.AppDirsFactory
 import org.apache.pekko.util.ByteString
@@ -13,7 +14,11 @@ import org.apache.pekko.util.ByteString
 trait ApplicationDirectory {
   def findFile(file: String): Option[Path]
 
+  def findFiles(pattern: String): Seq[Path]
+
   def requireFile(file: String): Future[Path]
+
+  def requireFiles(pattern: String): Future[Seq[Path]]
 
   def pullFile[T](file: String)(implicit ec: ExecutionContext, um: ByteString => T): Future[T]
 
@@ -55,6 +60,17 @@ object ApplicationDirectory {
       configLocations.map(_.resolve(path)).find(Files.exists(_))
     }
 
+    override def findFiles(pattern: String): Seq[Path] =
+      configLocations.flatMap { location =>
+        val matcher = filesystem.getPathMatcher(s"glob:${location.toString}${filesystem.getSeparator}$pattern")
+
+        Files
+          .find(location, Int.MaxValue, (file, _) => matcher.matches(file))
+          .toList
+          .asScala
+          .toSeq
+      }.distinct
+
     override def requireFile(file: String): Future[Path] =
       findFile(file) match {
         case Some(path) =>
@@ -63,6 +79,19 @@ object ApplicationDirectory {
         case None =>
           Future.failed(new FileNotFoundException(s"File [$file] not found in [${configLocations.mkString(", ")}]"))
       }
+
+    override def requireFiles(pattern: String): Future[Seq[Path]] = {
+      val files = findFiles(pattern)
+      if (files.nonEmpty) {
+        Future.successful(files)
+      } else {
+        Future.failed(
+          new FileNotFoundException(
+            s"No files matching [$pattern] were found in [${configLocations.mkString(", ")}]"
+          )
+        )
+      }
+    }
 
     override def pullFile[T](file: String)(implicit ec: ExecutionContext, um: ByteString => T): Future[T] =
       requireFile(file)

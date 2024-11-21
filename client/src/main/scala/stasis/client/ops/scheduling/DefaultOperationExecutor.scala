@@ -14,7 +14,7 @@ import org.apache.pekko.util.Timeout
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-import stasis.client.collection.rules.Specification
+import stasis.client.collection.rules.RuleSet
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.backup
@@ -56,18 +56,18 @@ class DefaultOperationExecutor(
   override def completed: Future[Map[Operation.Id, Operation.Type]] =
     completedOperations.entries
 
-  override def rules: Future[Specification] =
-    SchedulingConfig.rules(file = config.backup.rulesFile).flatMap(Specification.untracked)
+  override def rules: Future[RuleSet] =
+    config.backup.rulesLoader.latest()
 
   override def startBackupWithRules(
     definition: DatasetDefinition.Id
   ): Future[Operation.Id] =
     for {
       _ <- requireUniqueOperation(ofType = Operation.Type.Backup)
-      rules <- SchedulingConfig.rules(file = config.backup.rulesFile)
+      rules <- config.backup.rulesLoader.latest()
       descriptor <- backup.Backup.Descriptor(
         definition = definition,
-        collector = backup.Backup.Descriptor.Collector.WithRules(rules),
+        collector = backup.Backup.Descriptor.Collector.WithRules(rules.forDefinitionOrDefault(definition)),
         deviceSecret = secret,
         limits = config.backup.limits
       )
@@ -250,7 +250,7 @@ object DefaultOperationExecutor {
 
   object Config {
     final case class Backup(
-      rulesFile: Path,
+      rulesLoader: RuleSet.Factory,
       limits: backup.Backup.Limits
     )
   }

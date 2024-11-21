@@ -74,13 +74,78 @@ class Operations()(implicit context: Context) extends ApiRoutes {
       },
       pathPrefix("backup") {
         concat(
-          path("rules") {
-            get {
-              onSuccess(context.executor.rules) { rules =>
-                log.debugN("API successfully retrieved backup rules specification")
-                consumeEntity & complete(SpecificationRules(rules))
+          pathPrefix("rules") {
+            concat(
+              pathEndOrSingleSlash {
+                get {
+                  onSuccess(context.executor.rules) { rules =>
+                    val result = rules.definitions.map { case (k, v) => k.map(_.toString).getOrElse("default") -> v }
+                    log.debugN("API successfully retrieved all backup rules")
+                    consumeEntity & complete(result)
+                  }
+                }
+              },
+              pathPrefix("default") {
+                concat(
+                  pathEndOrSingleSlash {
+                    get {
+                      onSuccess(context.executor.rules) { rules =>
+                        val result = rules.default()
+                        log.debugN("API successfully retrieved default backup rules")
+                        consumeEntity & complete(result)
+                      }
+                    }
+                  },
+                  path("specification") {
+                    get {
+                      extractExecutionContext { implicit ec =>
+                        val result = for {
+                          rules <- context.executor.rules
+                          spec <- Specification.untracked(rules.default())
+                        } yield {
+                          spec
+                        }
+
+                        onSuccess(result) { spec =>
+                          log.debugN("API successfully retrieved default backup rules specification")
+                          consumeEntity & complete(SpecificationRules(spec))
+                        }
+                      }
+                    }
+                  }
+                )
+              },
+              pathPrefix(JavaUUID) { definition =>
+                concat(
+                  pathEndOrSingleSlash {
+                    get {
+                      onSuccess(context.executor.rules) { rules =>
+                        val result = rules.forDefinitionOrDefault(definition)
+                        log.debugN("API successfully retrieved backup rules for definition [{}]", definition)
+                        consumeEntity & complete(result)
+                      }
+                    }
+                  },
+                  path("specification") {
+                    get {
+                      extractExecutionContext { implicit ec =>
+                        val result = for {
+                          rules <- context.executor.rules
+                          spec <- Specification.untracked(rules.forDefinitionOrDefault(definition))
+                        } yield {
+                          spec
+                        }
+
+                        onSuccess(result) { spec =>
+                          log.debugN("API successfully retrieved backup rules specification for definition [{}]", definition)
+                          consumeEntity & complete(SpecificationRules(spec))
+                        }
+                      }
+                    }
+                  }
+                )
               }
-            }
+            )
           },
           path(JavaUUID) { definition =>
             put {

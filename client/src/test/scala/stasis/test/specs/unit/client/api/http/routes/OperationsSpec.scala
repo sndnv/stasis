@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory
 
 import stasis.client.api.Context
 import stasis.client.api.http.routes.Operations
+import stasis.client.api.http.routes.Operations.SpecificationRules
+import stasis.client.collection.rules.Rule
 import stasis.client.ops.recovery.Recovery.PathQuery
 import stasis.client.tracking.BackupTracker
 import stasis.client.tracking.RecoveryTracker
@@ -195,21 +197,35 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "provide current backup rules" in withRetry {
+  they should "provide all current backup rules" in withRetry {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
-    import Operations._
+    import stasis.client.api.http.Formats.ruleFormat
 
     val mockExecutor = MockOperationExecutor()
     val routes = createRoutes(executor = mockExecutor)
 
     Get("/backup/rules") ~> routes ~> check {
       status should be(StatusCodes.OK)
-      val spec = responseAs[SpecificationRules]
 
-      spec.included should not be empty
-      spec.excluded shouldBe empty
-      spec.explanation should not be empty
+      responseAs[Map[String, Seq[Rule]]].toList match {
+        case ("default", defaultRules) :: (_, otherRules) :: Nil =>
+          defaultRules should be(
+            Seq(
+              Rule(Rule.Operation.Include, "/tmp/file", "*", None, Rule.Original("+ /tmp/file *", 0)),
+              Rule(Rule.Operation.Include, "/tmp/other", "*", None, Rule.Original("+ /tmp/other *", 1))
+            )
+          )
+
+          otherRules should be(
+            Seq(
+              Rule(Rule.Operation.Exclude, "/tmp/other/def1", "*", None, Rule.Original("- /tmp/other/def1 *", 0))
+            )
+          )
+
+        case result =>
+          fail(s"Unexpected result received: [$result]")
+      }
 
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
@@ -224,6 +240,158 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartKeyRotation) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.Stop) should be(0)
     }
+  }
+
+  they should "provide current default backup rules" in withRetry {
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
+    import stasis.client.api.http.Formats.ruleFormat
+
+    val mockExecutor = MockOperationExecutor()
+    val routes = createRoutes(executor = mockExecutor)
+
+    Get(s"/backup/rules/default") ~> routes ~> check {
+      status should be(StatusCodes.OK)
+
+      val rules = responseAs[Seq[Rule]]
+      rules should be(
+        Seq(
+          Rule(Rule.Operation.Include, "/tmp/file", "*", None, Rule.Original("+ /tmp/file *", 0)),
+          Rule(Rule.Operation.Include, "/tmp/other", "*", None, Rule.Original("+ /tmp/other *", 1))
+        )
+      )
+
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(1)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.ResumeBackupWithState) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithEntry) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartExpiration) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartValidation) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.StartKeyRotation) should be(0)
+      mockExecutor.statistics(MockOperationExecutor.Statistic.Stop) should be(0)
+    }
+  }
+
+  they should "provide current backup rules for a specific definition" in withRetry {
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
+    import stasis.client.api.http.Formats.ruleFormat
+
+    val mockExecutor = MockOperationExecutor()
+    val routes = createRoutes(executor = mockExecutor)
+
+    val definition1 = MockOperationExecutor.definitionWithRules
+    val definition2 = DatasetDefinition.generateId()
+
+    Get(s"/backup/rules/$definition1") ~> routes ~> check {
+      status should be(StatusCodes.OK)
+
+      val rules = responseAs[Seq[Rule]]
+      rules should be(
+        Seq(
+          Rule(Rule.Operation.Exclude, "/tmp/other/def1", "*", None, Rule.Original("- /tmp/other/def1 *", 0))
+        )
+      )
+    }
+
+    Get(s"/backup/rules/$definition2") ~> routes ~> check {
+      status should be(StatusCodes.OK)
+
+      val rules = responseAs[Seq[Rule]] // default rules
+
+      rules should be(
+        Seq(
+          Rule(Rule.Operation.Include, "/tmp/file", "*", None, Rule.Original("+ /tmp/file *", 0)),
+          Rule(Rule.Operation.Include, "/tmp/other", "*", None, Rule.Original("+ /tmp/other *", 1))
+        )
+      )
+    }
+
+    mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(2)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.ResumeBackupWithState) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithEntry) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.StartExpiration) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.StartValidation) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.StartKeyRotation) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.Stop) should be(0)
+  }
+
+  they should "provide current default backup specification" in withRetry {
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
+    val mockExecutor = MockOperationExecutor()
+    val routes = createRoutes(executor = mockExecutor)
+
+    Get(s"/backup/rules/default/specification") ~> routes ~> check {
+      status should be(StatusCodes.OK)
+
+      val spec = responseAs[SpecificationRules]
+      spec.included shouldBe empty
+      spec.excluded shouldBe empty
+      spec.unmatched should be(
+        Seq(
+          Rule.Original("+ /tmp/file *", 0) -> "NoSuchFileException: /tmp/file",
+          Rule.Original("+ /tmp/other *", 1) -> "NoSuchFileException: /tmp/other"
+        )
+      )
+    }
+
+    mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(1)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.ResumeBackupWithState) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithEntry) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.StartExpiration) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.StartValidation) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.StartKeyRotation) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.Stop) should be(0)
+  }
+
+  they should "provide current backup specification for a definition" in withRetry {
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
+    val mockExecutor = MockOperationExecutor()
+    val routes = createRoutes(executor = mockExecutor)
+
+    val definition = MockOperationExecutor.definitionWithRules
+
+    Get(s"/backup/rules/$definition/specification") ~> routes ~> check {
+      status should be(StatusCodes.OK)
+
+      val spec = responseAs[SpecificationRules]
+      spec.included shouldBe empty
+      spec.excluded shouldBe empty
+      spec.unmatched should be(
+        Seq(
+          Rule.Original("- /tmp/other/def1 *", 0) -> "NoSuchFileException: /tmp/other/def1"
+        )
+      )
+    }
+
+    mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.GetRules) should be(1)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithRules) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.StartBackupWithFiles) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.ResumeBackupWithState) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithDefinition) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.StartRecoveryWithEntry) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.StartExpiration) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.StartValidation) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.StartKeyRotation) should be(0)
+    mockExecutor.statistics(MockOperationExecutor.Statistic.Stop) should be(0)
   }
 
   they should "support starting backups" in withRetry {
