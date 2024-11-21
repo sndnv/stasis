@@ -97,22 +97,30 @@ class Writer(ABC):
         """
 
     @abstractmethod
-    def render_backup_rules_matched(self, state, rules) -> str:
+    def render_backup_rules(self, rules) -> str:
         """
-        Renders the provided matched backup rules.
+        Renders the provided backup rules.
 
-        :param state: rules state (included or excluded)
         :param rules: rules to render
         :return: render result, as a string
         """
 
     @abstractmethod
-    def render_backup_rules_unmatched(self, rules) -> str:
+    def render_backup_specification_matched(self, state, spec) -> str:
         """
-        Renders the provided unmatched backup rules.
+        Renders the provided matched backup specification.
 
-        :param state: rules state (included or excluded)
-        :param rules: rules to render
+        :param state: specification state (included or excluded)
+        :param spec: specification to render
+        :return: render result, as a string
+        """
+
+    @abstractmethod
+    def render_backup_specification_unmatched(self, spec) -> str:
+        """
+        Renders the provided unmatched backup specification.
+
+        :param spec: specification to render
         :return: render result, as a string
         """
 

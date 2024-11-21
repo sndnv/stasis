@@ -106,6 +106,12 @@ class DefaultClientApi(ClientApi):
     def backup_rules(self):
         return self.get(url='/operations/backup/rules')
 
+    def backup_rules_for_definition(self, definition):
+        return self.get(url='/operations/backup/rules/{}'.format(definition or 'default'))
+
+    def backup_specification_for_definition(self, definition):
+        return self.get(url='/operations/backup/rules/{}/specification'.format(definition or 'default'))
+
     def backup_start(self, definition):
         return self.put(url='/operations/backup/{}'.format(definition))
 

@@ -83,6 +83,12 @@ class InactiveClientApi(ClientApi):
     def backup_rules(self):
         InactiveClientApi._abort()
 
+    def backup_rules_for_definition(self, definition):
+        InactiveClientApi._abort()
+
+    def backup_specification_for_definition(self, definition):
+        InactiveClientApi._abort()
+
     def backup_start(self, definition):
         InactiveClientApi._abort()
 

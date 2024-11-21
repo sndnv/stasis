@@ -30,6 +30,8 @@ class MockClientApi(ClientApi):
             'operation_resume': 0,
             'operation_remove': 0,
             'backup_rules': 0,
+            'backup_rules_for_definition': 0,
+            'backup_specification_for_definition': 0,
             'backup_start': 0,
             'backup_define': 0,
             'backup_update': 0,
@@ -133,6 +135,14 @@ class MockClientApi(ClientApi):
     def backup_rules(self):
         self.stats['backup_rules'] += 1
         return mock_data.BACKUP_RULES
+
+    def backup_rules_for_definition(self, definition):
+        self.stats['backup_rules_for_definition'] += 1
+        return mock_data.BACKUP_RULES.get(definition, mock_data.BACKUP_RULES['default'])
+
+    def backup_specification_for_definition(self, definition):
+        self.stats['backup_specification_for_definition'] += 1
+        return mock_data.BACKUP_SPEC
 
     def backup_start(self, definition):
         self.stats['backup_start'] += 1

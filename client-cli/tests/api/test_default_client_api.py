@@ -12,6 +12,8 @@ from tests.mocks import mock_data
 
 
 class DefaultClientApiSpec(unittest.TestCase):
+    # pylint: disable=too-many-public-methods
+
     @classmethod
     def setUpClass(cls):
         cls.url = 'http://localhost:9999'
@@ -516,6 +518,90 @@ class DefaultClientApiSpec(unittest.TestCase):
             mock=mock_request,
             expected_method='get',
             expected_url='/operations/backup/rules'
+        )
+
+    @patch('requests.request')
+    def test_should_get_backup_rules_for_definition(self, mock_request):
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
+        mock_request.return_value = MockResponse.success(mock_data.BACKUP_RULES[mock_data.DEFINITIONS[0]['id']])
+
+        self.assertEqual(
+            client.backup_rules_for_definition(definition=mock_data.DEFINITIONS[0]['id']),
+            mock_data.BACKUP_RULES[mock_data.DEFINITIONS[0]['id']]
+        )
+
+        self.assert_valid_request(
+            mock=mock_request,
+            expected_method='get',
+            expected_url='/operations/backup/rules/{}'.format(mock_data.DEFINITIONS[0]['id'])
+        )
+
+    @patch('requests.request')
+    def test_should_get_default_backup_rules(self, mock_request):
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
+        mock_request.return_value = MockResponse.success(mock_data.BACKUP_RULES['default'])
+
+        self.assertEqual(
+            client.backup_rules_for_definition(definition=None),
+            mock_data.BACKUP_RULES['default']
+        )
+
+        self.assert_valid_request(
+            mock=mock_request,
+            expected_method='get',
+            expected_url='/operations/backup/rules/default'
+        )
+
+    @patch('requests.request')
+    def test_should_get_backup_specification_for_definition(self, mock_request):
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
+        mock_request.return_value = MockResponse.success(mock_data.BACKUP_SPEC)
+
+        self.assertEqual(
+            client.backup_specification_for_definition(definition=mock_data.DEFINITIONS[0]['id']),
+            mock_data.BACKUP_SPEC
+        )
+
+        self.assert_valid_request(
+            mock=mock_request,
+            expected_method='get',
+            expected_url='/operations/backup/rules/{}/specification'.format(mock_data.DEFINITIONS[0]['id'])
+        )
+
+    @patch('requests.request')
+    def test_should_get_default_backup_specification(self, mock_request):
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
+        mock_request.return_value = MockResponse.success(mock_data.BACKUP_SPEC)
+
+        self.assertEqual(
+            client.backup_specification_for_definition(definition=None),
+            mock_data.BACKUP_SPEC
+        )
+
+        self.assert_valid_request(
+            mock=mock_request,
+            expected_method='get',
+            expected_url='/operations/backup/rules/default/specification'
         )
 
     @patch('requests.request')

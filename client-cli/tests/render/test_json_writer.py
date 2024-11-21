@@ -60,18 +60,23 @@ class JsonWriterSpec(unittest.TestCase):
             JsonWriter().render_operation_progress(progress=mock_data.BACKUP_PROGRESS[-1])
         )
 
-    def test_should_render_backup_rules_matched(self):
+    def test_should_render_backup_rules(self):
         self.assertTrue(
-            JsonWriter().render_backup_rules_matched(state='included', rules=mock_data.BACKUP_RULES)
+            JsonWriter().render_backup_rules(rules=mock_data.BACKUP_RULES['default'])
+        )
+
+    def test_should_render_backup_specification_matched(self):
+        self.assertTrue(
+            JsonWriter().render_backup_specification_matched(state='included', spec=mock_data.BACKUP_SPEC)
         )
 
         self.assertTrue(
-            JsonWriter().render_backup_rules_matched(state='excluded', rules=mock_data.BACKUP_RULES)
+            JsonWriter().render_backup_specification_matched(state='excluded', spec=mock_data.BACKUP_SPEC)
         )
 
-    def test_should_render_backup_rules_unmatched(self):
+    def test_should_render_backup_specification_unmatched(self):
         self.assertTrue(
-            JsonWriter().render_backup_rules_unmatched(rules=mock_data.BACKUP_RULES)
+            JsonWriter().render_backup_specification_unmatched(spec=mock_data.BACKUP_SPEC)
         )
 
     def test_should_render_operation_response(self):

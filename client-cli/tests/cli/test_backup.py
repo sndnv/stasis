@@ -69,15 +69,15 @@ class BackupSpec(unittest.TestCase):
 
         self.assertEqual(context.api.stats['dataset_metadata'], 3)
 
-    def test_should_show_backup_rules(self):
+    def test_should_show_spec_for_definition(self):
         context = Context()
         context.api = MockClientApi()
         context.rendering = JsonWriter()
 
         runner = Runner(cli)
-        result_matched_included = runner.invoke(args=['show', 'rules', 'included'], obj=context)
-        result_matched_excluded = runner.invoke(args=['show', 'rules', 'excluded'], obj=context)
-        result_unmatched = runner.invoke(args=['show', 'rules', 'unmatched'], obj=context)
+        result_matched_included = runner.invoke(args=['show', 'rules', 'spec', 'included'], obj=context)
+        result_matched_excluded = runner.invoke(args=['show', 'rules', 'spec', 'excluded'], obj=context)
+        result_unmatched = runner.invoke(args=['show', 'rules', 'spec', 'unmatched'], obj=context)
 
         self.assertEqual(result_matched_included.exit_code, 0, result_matched_included.output)
         self.assertTrue(json.loads(result_matched_included.output))
@@ -86,7 +86,20 @@ class BackupSpec(unittest.TestCase):
         self.assertEqual(result_unmatched.exit_code, 0, result_unmatched.output)
         self.assertTrue(json.loads(result_unmatched.output))
 
-        self.assertEqual(context.api.stats['backup_rules'], 3)
+        self.assertEqual(context.api.stats['backup_specification_for_definition'], 3)
+
+    def test_should_show_rules_for_definition(self):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        runner = Runner(cli)
+        result = runner.invoke(args=['show', 'rules', 'list'], obj=context)
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertTrue(json.loads(result.output))
+
+        self.assertEqual(context.api.stats['backup_rules_for_definition'], 1)
 
     @patch('click.prompt')
     def test_should_define_backups(self, mock_prompt):
