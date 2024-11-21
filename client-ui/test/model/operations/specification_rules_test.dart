@@ -1,8 +1,9 @@
 import 'dart:convert';
 
+import 'package:flutter_test/flutter_test.dart';
+import 'package:stasis_client_ui/model/operations/rule.dart';
 import 'package:stasis_client_ui/model/operations/specification_rules.dart';
 import 'package:stasis_client_ui/utils/pair.dart';
-import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('SpecificationRules should', () {
@@ -27,15 +28,15 @@ void main() {
         excluded: ['/other'],
         explanation: {
           '/some/path/01': [
-            const Explanation(operation: 'include', original: Original(line: '+ /some/path *', lineNumber: 0)),
+            const Explanation(operation: 'include', original: OriginalRule(line: '+ /some/path *', lineNumber: 0)),
           ],
           '/other': [
-            const Explanation(operation: 'exclude', original: Original(line: '- / other', lineNumber: 1)),
+            const Explanation(operation: 'exclude', original: OriginalRule(line: '- / other', lineNumber: 1)),
           ],
         },
         unmatched: [
-          Pair(const Original(line: '+ /test_01 *', lineNumber: 2), 'Not found'),
-          Pair(const Original(line: '- /test_02 *', lineNumber: 3), 'Test failure'),
+          Pair(const OriginalRule(line: '+ /test_01 *', lineNumber: 2), 'Not found'),
+          Pair(const OriginalRule(line: '- /test_02 *', lineNumber: 3), 'Test failure'),
         ],
       );
 

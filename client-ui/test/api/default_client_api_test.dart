@@ -22,6 +22,7 @@ import 'package:stasis_client_ui/model/devices/server_state.dart';
 import 'package:stasis_client_ui/model/operations/operation.dart';
 import 'package:stasis_client_ui/model/operations/operation_progress.dart';
 import 'package:stasis_client_ui/model/operations/operation_state.dart';
+import 'package:stasis_client_ui/model/operations/rule.dart';
 import 'package:stasis_client_ui/model/operations/specification_rules.dart';
 import 'package:stasis_client_ui/model/schedules/active_schedule.dart';
 import 'package:stasis_client_ui/model/schedules/schedule.dart';
@@ -782,7 +783,47 @@ void main() {
       final underlying = MockClient();
       final client = DefaultClientApi(server: server, underlying: underlying, apiToken: apiToken);
 
-      final rules = SpecificationRules(included: [
+      const rules = {
+        'default': [
+          Rule(
+            operation: 'include',
+            directory: '/some/path',
+            pattern: '*',
+            comment: null,
+            original: OriginalRule(line: '+ /some/path *', lineNumber: 0),
+          ),
+          Rule(
+            operation: 'exclude',
+            directory: '/',
+            pattern: 'other',
+            comment: null,
+            original: OriginalRule(line: '- / other', lineNumber: 1),
+          ),
+        ],
+        '255bb999-6fba-49f0-b5bb-7c34da741872': [
+          Rule(
+            operation: 'include',
+            directory: '/a/b',
+            pattern: '**',
+            comment: 'Some test comment',
+            original: OriginalRule(line: '+ /a/b **  # Some test comment', lineNumber: 0),
+          ),
+        ],
+      };
+
+      when(underlying.get(Uri.parse('$server/operations/backup/rules'), headers: authorization))
+          .thenAnswer((_) async => http.Response(jsonEncode(rules), 200));
+
+      expect(await client.getBackupRules(), rules);
+    });
+
+    test('get backup specification', () async {
+      final underlying = MockClient();
+      final client = DefaultClientApi(server: server, underlying: underlying, apiToken: apiToken);
+
+      const definition = 'test-definition';
+
+      final spec = SpecificationRules(included: [
         '/some/path/01',
         '/some/path',
         '/some'
@@ -790,18 +831,19 @@ void main() {
         '/other'
       ], explanation: {
         '/some/path/01': [
-          const Explanation(operation: 'include', original: Original(line: '+ /some/path *', lineNumber: 0))
+          const Explanation(operation: 'include', original: OriginalRule(line: '+ /some/path *', lineNumber: 0))
         ],
-        '/other': [const Explanation(operation: 'exclude', original: Original(line: '- / other', lineNumber: 1))],
+        '/other': [const Explanation(operation: 'exclude', original: OriginalRule(line: '- / other', lineNumber: 1))],
       }, unmatched: [
-        Pair(const Original(line: '+ /test_01 *', lineNumber: 2), 'Not found'),
-        Pair(const Original(line: '- /test_02 *', lineNumber: 3), 'Test failure'),
+        Pair(const OriginalRule(line: '+ /test_01 *', lineNumber: 2), 'Not found'),
+        Pair(const OriginalRule(line: '- /test_02 *', lineNumber: 3), 'Test failure'),
       ]);
 
-      when(underlying.get(Uri.parse('$server/operations/backup/rules'), headers: authorization))
-          .thenAnswer((_) async => http.Response(jsonEncode(rules), 200));
+      when(underlying.get(Uri.parse('$server/operations/backup/rules/$definition/specification'),
+              headers: authorization))
+          .thenAnswer((_) async => http.Response(jsonEncode(spec), 200));
 
-      expect(await client.getBackupRules(), rules);
+      expect(await client.getBackupSpecification(definition: definition), spec);
     });
 
     test('start backups', () async {

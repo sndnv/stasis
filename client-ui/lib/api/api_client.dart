@@ -17,6 +17,7 @@ import 'package:stasis_client_ui/model/devices/server_state.dart';
 import 'package:stasis_client_ui/model/operations/operation.dart';
 import 'package:stasis_client_ui/model/operations/operation_progress.dart';
 import 'package:stasis_client_ui/model/operations/operation_state.dart';
+import 'package:stasis_client_ui/model/operations/rule.dart';
 import 'package:stasis_client_ui/model/operations/specification_rules.dart';
 import 'package:stasis_client_ui/model/schedules/active_schedule.dart';
 import 'package:stasis_client_ui/model/schedules/schedule.dart';
@@ -191,7 +192,9 @@ abstract class ClientApi {
 
   Future<void> removeOperation({required String operation});
 
-  Future<SpecificationRules> getBackupRules();
+  Future<Map<String, List<Rule>>> getBackupRules();
+
+  Future<SpecificationRules> getBackupSpecification({required String definition});
 
   Future<OperationStarted> startBackup({required String definition});
 

@@ -16,6 +16,7 @@ import 'package:stasis_client_ui/model/devices/server_state.dart';
 import 'package:stasis_client_ui/model/operations/operation.dart';
 import 'package:stasis_client_ui/model/operations/operation_progress.dart';
 import 'package:stasis_client_ui/model/operations/operation_state.dart';
+import 'package:stasis_client_ui/model/operations/rule.dart';
 import 'package:stasis_client_ui/model/operations/specification_rules.dart';
 import 'package:stasis_client_ui/model/schedules/active_schedule.dart';
 import 'package:stasis_client_ui/model/schedules/schedule.dart';
@@ -592,25 +593,56 @@ class MockApiClient extends ApiClient implements InitApi, ClientApi {
   }
 
   @override
-  Future<SpecificationRules> getBackupRules() {
-    final rules = SpecificationRules(included: [
-      '/Users/angelsanadinov/repos/k8s/k8s-platform-normalizer-config/k8s-platform-normalizer-config/k8s-platform-normalizer-config/k8s-platform-normalizer-config/k8s-platform-normalizer-config/Users/angelsanadinov/repos/k8s/k8s-platform-normalizer-config//Users/angelsanadinov/repos/k8s/k8s-platform-normalizer-config/Users/angelsanadinov/repos/k8s/k8s-platform-normalizer-config/Users/angelsanadinov/repos/k8s/k8s-platform-normalizer-config',
-      '/some/path/01',
-      '/some/path',
-      '/some'
-    ], excluded: [
-      '/other'
-    ], explanation: {
-      '/some/path/01': [
-        const Explanation(operation: 'include', original: Original(line: '+ /some/path *', lineNumber: 0))
+  Future<Map<String, List<Rule>>> getBackupRules() {
+    const rules = {
+      'default': [
+        Rule(
+          operation: 'include',
+          directory: '/some/path',
+          pattern: '*',
+          comment: null,
+          original: OriginalRule(line: '+ /some/path *', lineNumber: 0),
+        ),
+        Rule(
+          operation: 'exclude',
+          directory: '/',
+          pattern: 'other',
+          comment: null,
+          original: OriginalRule(line: '- / other', lineNumber: 1),
+        ),
       ],
-      '/other': [const Explanation(operation: 'exclude', original: Original(line: '- / other', lineNumber: 1))],
-    }, unmatched: [
-      Pair(const Original(line: '+ /test_01 *', lineNumber: 2), 'Not found'),
-      Pair(const Original(line: '- /test_02 *', lineNumber: 3), 'Test failure'),
-    ]);
+      '255bb999-6fba-49f0-b5bb-7c34da741872': [
+        Rule(
+          operation: 'include',
+          directory: '/a/b',
+          pattern: '**',
+          comment: 'Some test comment',
+          original: OriginalRule(line: '+ /a/b **  # Some test comment', lineNumber: 0),
+        ),
+      ],
+    };
 
     return Future.value(rules);
+  }
+
+  @override
+  Future<SpecificationRules> getBackupSpecification({required String definition}) {
+    final spec = SpecificationRules(
+      included: ['/some/path/01', '/some/path', '/some'],
+      excluded: ['/other'],
+      explanation: {
+        '/some/path/01': [
+          const Explanation(operation: 'include', original: OriginalRule(line: '+ /some/path *', lineNumber: 0))
+        ],
+        '/other': [const Explanation(operation: 'exclude', original: OriginalRule(line: '- / other', lineNumber: 1))],
+      },
+      unmatched: [
+        Pair(const OriginalRule(line: '+ /test_01 *', lineNumber: 2), 'Not found'),
+        Pair(const OriginalRule(line: '- /test_02 *', lineNumber: 3), 'Test failure'),
+      ],
+    );
+
+    return Future.value(spec);
   }
 
   @override
