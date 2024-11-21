@@ -5,6 +5,7 @@ import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.ThreadLocalRandom
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Failure
@@ -22,6 +23,7 @@ import org.apache.pekko.util.Timeout
 import stasis.client.api.clients.ServerApiEndpointClient
 import stasis.client.ops.exceptions.ScheduleRetrievalFailure
 import stasis.client.ops.scheduling.OperationScheduler.ActiveSchedule
+import stasis.client.service.ApplicationConfiguration
 
 class DefaultOperationScheduler private (
   schedulerRef: ActorRef[DefaultOperationScheduler.Message]
@@ -109,7 +111,7 @@ object DefaultOperationScheduler {
           log.debugN("Refreshing schedules from [{}]", config.schedulesFile.toAbsolutePath)
 
           val _ = for {
-            configuredSchedules <- SchedulingConfig.schedules(file = config.schedulesFile)
+            configuredSchedules <- loadSchedules(file = config.schedulesFile)
             loadedSchedules <- Future.sequence(
               configuredSchedules.map { assignment =>
                 api
@@ -248,4 +250,7 @@ object DefaultOperationScheduler {
           Behaviors.stopped
       }
     }
+
+  def loadSchedules(file: Path)(implicit ec: ExecutionContext): Future[Seq[OperationScheduleAssignment]] =
+    ApplicationConfiguration.parseEntries(file)(OperationScheduleAssignment.apply)
 }

@@ -1,4 +1,4 @@
-package stasis.client.ops.scheduling
+package stasis.client.service
 
 import java.nio.file.Path
 
@@ -7,19 +7,11 @@ import scala.concurrent.Future
 import scala.io.Source
 import scala.util.Try
 
-import stasis.client.collection.rules.Rule
-
-object SchedulingConfig {
+object ApplicationConfiguration {
   object Comment {
     final val Hash: String = "#"
     final val Slash: String = "//"
   }
-
-  def rules(file: Path)(implicit ec: ExecutionContext): Future[Seq[Rule]] =
-    SchedulingConfig.parseEntries(file)(Rule.apply)
-
-  def schedules(file: Path)(implicit ec: ExecutionContext): Future[Seq[OperationScheduleAssignment]] =
-    SchedulingConfig.parseEntries(file)(OperationScheduleAssignment.apply)
 
   def parseEntries[T](file: Path)(parse: (String, Int) => Try[T])(implicit ec: ExecutionContext): Future[Seq[T]] =
     Future {

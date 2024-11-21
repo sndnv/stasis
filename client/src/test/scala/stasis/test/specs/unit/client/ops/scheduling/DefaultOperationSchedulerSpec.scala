@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.client.ops.scheduling
 
+import java.nio.file.Paths
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.concurrent.Future
@@ -25,7 +27,40 @@ import stasis.test.specs.unit.client.mocks.MockOperationExecutor
 import stasis.test.specs.unit.client.mocks.MockServerApiEndpointClient
 
 class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with BeforeAndAfterAll {
-  "A DefaultOperationScheduler" should "provide a list of active schedules" in {
+  "A DefaultOperationScheduler" should "support loading schedule assignments from a file" in {
+    val schedule1 = UUID.fromString("c7a1a7c4-94e1-44a8-8365-9fc44c8f51ea")
+    val schedule2 = UUID.fromString("b859d9fb-1962-4a29-b18d-2c7c835cf18b")
+    val schedule3 = UUID.fromString("4bb8ab15-e8ba-40dd-b814-b8b112a79147")
+    val schedule4 = UUID.fromString("ce849f2c-e170-427c-8e9d-0e3d8cdcf700")
+    val schedule5 = UUID.fromString("2f059ab6-3db2-4a34-8082-780d673f6519")
+
+    val definition1 = UUID.fromString("ea371971-adc5-44ba-9d93-6f65507d6967")
+    val definition2 = UUID.fromString("a1a55d45-b3b2-48df-b628-2fb2e7e022a4")
+
+    val expectedSchedules = Seq(
+      OperationScheduleAssignment.Backup(
+        schedule = schedule1,
+        definition = definition1,
+        entities = Seq.empty
+      ),
+      OperationScheduleAssignment.Backup(
+        schedule = schedule2,
+        definition = definition2,
+        entities = Seq(Paths.get("/work/file-01"), Paths.get("/work/file-02"))
+      ),
+      OperationScheduleAssignment.Expiration(schedule = schedule3),
+      OperationScheduleAssignment.Validation(schedule = schedule4),
+      OperationScheduleAssignment.KeyRotation(schedule = schedule5)
+    )
+
+    DefaultOperationScheduler
+      .loadSchedules(file = "/ops/scheduling/test.schedules".asTestResource)
+      .map { actualSchedules =>
+        actualSchedules should be(expectedSchedules)
+      }
+  }
+
+  it should "provide a list of active schedules" in {
     val scheduler = createScheduler()
 
     managedScheduler(scheduler) {
