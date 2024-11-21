@@ -109,14 +109,40 @@ def show_metadata(ctx, entry, output):
         click.echo(ctx.obj.rendering.render_dataset_metadata_crates(metadata_crates))
 
 
-@click.command(name='rules')
-@click.argument('state', type=click.Choice(['included', 'excluded', 'unmatched'], case_sensitive=False),
-                default='included')
+@click.command(name='list')
+@click.argument('definition', type=click.UUID, required=False, default=None)
 @click.pass_context
 @with_filtering
 @with_sorting
-def show_rules(ctx, state):
+def show_rules_for_definition(ctx, definition):
     """Show configured backup rules."""
+    spec = backup_rules.get_spec_rules()
+
+    fields = spec['fields']
+    default_sorting = spec['sorting']
+    default_sorting = Sorting(field=default_sorting['field'], ordering=default_sorting['ordering'])
+
+    filtering = ctx.obj.filtering
+    sorting = ctx.obj.sorting
+
+    rules = ctx.obj.api.backup_rules_for_definition(definition=definition)
+
+    rules = backup_rules.flatten_rules(rules)
+    rules = filtering.apply(rules, fields) if filtering else rules
+    rules = (sorting or default_sorting).apply(rules, fields)
+
+    click.echo(ctx.obj.rendering.render_backup_rules(rules))
+
+
+@click.command(name='spec')
+@click.argument('state', type=click.Choice(['included', 'excluded', 'unmatched'], case_sensitive=False),
+                default='included')
+@click.argument('definition', type=click.UUID, required=False, default=None)
+@click.pass_context
+@with_filtering
+@with_sorting
+def show_spec_for_definition(ctx, state, definition):
+    """Show backup specification based on configured rules."""
     spec = backup_rules.get_spec_unmatched() if state == 'unmatched' else backup_rules.get_spec_matched()
 
     fields = spec['fields']
@@ -126,20 +152,29 @@ def show_rules(ctx, state):
     filtering = ctx.obj.filtering
     sorting = ctx.obj.sorting
 
-    rules = ctx.obj.api.backup_rules()
+    specification = ctx.obj.api.backup_specification_for_definition(definition=definition)
 
     if state == 'unmatched':
-        rules = backup_rules.flatten_unmatched(rules)
-        rules = filtering.apply(rules, fields) if filtering else rules
-        rules = (sorting or default_sorting).apply(rules, fields)
+        specification = backup_rules.flatten_specification_unmatched(specification)
+        specification = filtering.apply(specification, fields) if filtering else specification
+        specification = (sorting or default_sorting).apply(specification, fields)
 
-        click.echo(ctx.obj.rendering.render_backup_rules_unmatched(rules))
+        click.echo(ctx.obj.rendering.render_backup_specification_unmatched(specification))
     else:
-        rules = backup_rules.flatten_matched(state, rules)
-        rules = filtering.apply(rules, fields) if filtering else rules
-        rules = (sorting or default_sorting).apply(rules, fields)
+        specification = backup_rules.flatten_specification_matched(state, specification)
+        specification = filtering.apply(specification, fields) if filtering else specification
+        specification = (sorting or default_sorting).apply(specification, fields)
 
-        click.echo(ctx.obj.rendering.render_backup_rules_matched(state, rules))
+        click.echo(ctx.obj.rendering.render_backup_specification_matched(state, specification))
+
+
+@click.group(name='rules')
+def show_rules():
+    """Show backup rules data."""
+
+
+show_rules.add_command(show_rules_for_definition)
+show_rules.add_command(show_spec_for_definition)
 
 
 @click.group()

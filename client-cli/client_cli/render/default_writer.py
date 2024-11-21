@@ -46,11 +46,14 @@ class DefaultWriter(Writer):
     def render_operation_progress(self, progress) -> str:
         return ops.render_operation_progress(progress)
 
-    def render_backup_rules_matched(self, state, rules) -> str:
-        return backup_rules.render_matched_rules_as_table(state, rules)
+    def render_backup_rules(self, rules) -> str:
+        return backup_rules.render_rules_as_table(rules)
 
-    def render_backup_rules_unmatched(self, rules) -> str:
-        return backup_rules.render_unmatched_rules_as_table(rules)
+    def render_backup_specification_matched(self, state, spec) -> str:
+        return backup_rules.render_matched_specification_as_table(state, spec)
+
+    def render_backup_specification_unmatched(self, spec) -> str:
+        return backup_rules.render_unmatched_specification_as_table(spec)
 
     def render_operation_response(self, response):
         return ops.render_operation_response(response)

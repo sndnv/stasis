@@ -38,11 +38,14 @@ class JsonWriter(Writer):
     def render_operation_progress(self, progress) -> str:
         return json.dumps(progress, indent=4)
 
-    def render_backup_rules_matched(self, state, rules) -> str:
+    def render_backup_rules(self, rules) -> str:
         return json.dumps(rules, indent=4)
 
-    def render_backup_rules_unmatched(self, rules) -> str:
-        return json.dumps(rules, indent=4)
+    def render_backup_specification_matched(self, state, spec) -> str:
+        return json.dumps(spec, indent=4)
+
+    def render_backup_specification_unmatched(self, spec) -> str:
+        return json.dumps(spec, indent=4)
 
     def render_operation_response(self, response):
         return json.dumps(response, indent=4)

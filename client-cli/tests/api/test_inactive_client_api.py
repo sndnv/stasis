@@ -92,6 +92,12 @@ class InactiveClientApiSpec(unittest.TestCase):
             api.backup_rules()
 
         with self.assertRaises(Abort):
+            api.backup_rules_for_definition(definition=None)
+
+        with self.assertRaises(Abort):
+            api.backup_specification_for_definition(definition=None)
+
+        with self.assertRaises(Abort):
             api.backup_start(definition=definition)
 
         with self.assertRaises(Abort):

@@ -70,25 +70,32 @@ class DefaultWriterSpec(unittest.TestCase):
             DefaultWriter().render_operation_progress(progress=mock_data.RECOVERY_PROGRESS[0])
         )
 
-    def test_should_render_backup_rules_matched(self):
+    def test_should_render_backup_rules(self):
         self.assertTrue(
-            DefaultWriter().render_backup_rules_matched(
+            DefaultWriter().render_backup_rules(
+                rules=backup_rules.flatten_rules(rules=mock_data.BACKUP_RULES['default'])
+            )
+        )
+
+    def test_should_render_backup_specification_matched(self):
+        self.assertTrue(
+            DefaultWriter().render_backup_specification_matched(
                 state='included',
-                rules=backup_rules.flatten_matched(state='included', rules=mock_data.BACKUP_RULES)
+                spec=backup_rules.flatten_specification_matched(state='included', spec=mock_data.BACKUP_SPEC)
             )
         )
 
         self.assertTrue(
-            DefaultWriter().render_backup_rules_matched(
+            DefaultWriter().render_backup_specification_matched(
                 state='excluded',
-                rules=backup_rules.flatten_matched(state='excluded', rules=mock_data.BACKUP_RULES)
+                spec=backup_rules.flatten_specification_matched(state='excluded', spec=mock_data.BACKUP_SPEC)
             )
         )
 
-    def test_should_render_backup_rules_unmatched(self):
+    def test_should_render_backup_specification_unmatched(self):
         self.assertTrue(
-            DefaultWriter().render_backup_rules_unmatched(
-                rules=backup_rules.flatten_unmatched(rules=mock_data.BACKUP_RULES)
+            DefaultWriter().render_backup_specification_unmatched(
+                spec=backup_rules.flatten_specification_unmatched(spec=mock_data.BACKUP_SPEC)
             )
         )
 

@@ -200,9 +200,29 @@ class ClientApi(ABC):
     @abstractmethod
     def backup_rules(self):
         """
-        Retrieves the current backup specification/rules.
+        Retrieves the current backup rules.
 
-        :return: backup spec/rules
+        :return: backup rules
+        """
+
+    @abstractmethod
+    def backup_rules_for_definition(self, definition):
+        """
+        Retrieves the current backup rules for the provided definition
+        (or the default rules, if no definition is provided).
+
+        :param definition: relevant definition or `None` to retrieve the default rules
+        :return: backup rules
+        """
+
+    @abstractmethod
+    def backup_specification_for_definition(self, definition):
+        """
+        Retrieves the current backup specification for the provided definition
+        (or the default specification, if no definition is provided).
+
+        :param definition: relevant definition or `None` to retrieve the default specification
+        :return: backup spec
         """
 
     @abstractmethod
