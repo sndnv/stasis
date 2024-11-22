@@ -39,6 +39,7 @@ class _BackupState extends State<Backup> {
 
         final definitions = data.a;
         final currentDevice = data.b;
+        final defaultDefinition = (definitions..sort((a, b) => a.created.compareTo(b.created))).firstOrNull?.id;
 
         void show(DatasetDefinition definition) {
           Navigator.push(
@@ -46,7 +47,11 @@ class _BackupState extends State<Backup> {
             MaterialPageRoute<void>(
               builder: (_) => Scaffold(
                 appBar: TopBar.fromTitle(context, 'Backup definition details'),
-                body: BackupEntries(definition: definition, client: widget.client),
+                body: BackupEntries(
+                  definition: definition,
+                  isDefault: definition.id == defaultDefinition,
+                  client: widget.client,
+                ),
               ),
               fullscreenDialog: true,
             ),
@@ -98,6 +103,7 @@ class _BackupState extends State<Backup> {
               child: DatasetDefinitionSummary.build(
                 context,
                 definition: d,
+                isDefault: defaultDefinition == d.id,
                 client: widget.client,
                 onTap: () => show(d),
               ),

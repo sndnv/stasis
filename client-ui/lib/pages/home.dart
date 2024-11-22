@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:stasis_client_ui/api/api_client.dart';
+import 'package:stasis_client_ui/model/datasets/dataset_definition.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_entry.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_metadata.dart';
 import 'package:stasis_client_ui/model/operations/operation.dart' as operation;
@@ -10,6 +11,7 @@ import 'package:stasis_client_ui/pages/components/extensions.dart';
 import 'package:stasis_client_ui/pages/components/rendering.dart';
 import 'package:stasis_client_ui/pages/components/sizing.dart';
 import 'package:stasis_client_ui/utils/pair.dart';
+import 'package:stasis_client_ui/utils/triple.dart';
 
 class Home extends StatelessWidget {
   const Home({
@@ -21,7 +23,7 @@ class Home extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return buildPage<Pair<Pair<DatasetEntry, DatasetMetadata>?, OperationProgress?>>(
+    return buildPage<Triple<Pair<DatasetEntry, DatasetMetadata>?, OperationProgress?, DatasetDefinition?>>(
       of: () => _loadData(),
       builder: (context, data) {
         final theme = Theme.of(context);
@@ -29,6 +31,7 @@ class Home extends StatelessWidget {
 
         final backup = _renderLatestBackup(theme, data.a);
         final operation = _renderLatestOperation(theme, data.b);
+        final defaultDefinition = data.c;
 
         const padding = EdgeInsets.fromLTRB(8.0, 16.0, 8.0, 16.0);
 
@@ -64,29 +67,70 @@ class Home extends StatelessWidget {
           ),
         );
 
-        return SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.max,
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: media.size.width > Sizing.sm
-                ? [
-                    Row(
-                      mainAxisSize: MainAxisSize.max,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [Expanded(child: backupContainer), Expanded(child: operationContainer)],
-                    )
-                  ]
-                : [backupContainer, operationContainer],
-          ),
+        Widget? startBackupButton;
+        if (defaultDefinition != null) {
+          startBackupButton = Tooltip(
+            message: 'Start a backup with the default definition',
+            child: FloatingActionButton.small(
+              heroTag: null,
+              onPressed: () {
+                final messenger = ScaffoldMessenger.of(context);
+                client.startBackup(definition: defaultDefinition.id).then((_) {
+                  messenger.showSnackBar(const SnackBar(content: Text('Backup started...')));
+                }).onError((e, stackTrace) {
+                  messenger.showSnackBar(SnackBar(content: Text('Failed to start backup: [$e]')));
+                });
+              },
+              child: const Icon(Icons.upload),
+            ),
+          );
+        }
+
+        return Stack(
+          children: [
+            Align(
+              alignment: Alignment.topCenter,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: media.size.width > Sizing.sm
+                      ? [
+                          Row(
+                            mainAxisSize: MainAxisSize.max,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [Expanded(child: backupContainer), Expanded(child: operationContainer)],
+                          )
+                        ]
+                      : [backupContainer, operationContainer],
+                ),
+              ),
+            ),
+            Align(
+              alignment: Alignment.bottomRight,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [startBackupButton].whereNotNull().toList(),
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
   }
 
-  Future<Pair<Pair<DatasetEntry, DatasetMetadata>?, OperationProgress?>> _loadData() async {
+  Future<Triple<Pair<DatasetEntry, DatasetMetadata>?, OperationProgress?, DatasetDefinition?>> _loadData() async {
     return await _getLatestOperation().then(
-      (operation) => _getLatestMetadata().then((metadata) => Pair(metadata, operation)),
+      (operation) => _getLatestMetadata().then(
+        (metadata) => _getDefaultDatasetDefinition().then(
+          (definition) => Triple(metadata, operation, definition),
+        ),
+      ),
     );
   }
 
@@ -113,6 +157,12 @@ class Home extends StatelessWidget {
       ..sort((a, b) => b.progress.completed?.compareTo(a.progress.completed!) ?? 0);
 
     return completed.firstOrNull;
+  }
+
+  Future<DatasetDefinition?> _getDefaultDatasetDefinition() async {
+    final definitions = (await client.getDatasetDefinitions())..sort((a, b) => a.created.compareTo(b.created));
+
+    return definitions.firstOrNull;
   }
 
   Widget _renderLatestBackup(ThemeData theme, Pair<DatasetEntry, DatasetMetadata>? data) {

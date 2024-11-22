@@ -9,6 +9,7 @@ class DatasetDefinitionSummary {
   static ListTile build(
     BuildContext context, {
     required DatasetDefinition definition,
+    required bool isDefault,
     required ClientApi client,
     void Function()? onTap,
     void Function()? onLongPress,
@@ -72,7 +73,21 @@ class DatasetDefinitionSummary {
     );
 
     return ListTile(
-      title: title,
+      title: isDefault
+          ? Row(
+              children: [
+                title,
+                Tooltip(
+                  message: 'Default backup definition',
+                  child: Icon(
+                    Icons.check_box_outlined,
+                    size: 16.0,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ],
+            )
+          : title,
       subtitle: subtitle,
       trailing: trailing,
       onTap: onTap,
