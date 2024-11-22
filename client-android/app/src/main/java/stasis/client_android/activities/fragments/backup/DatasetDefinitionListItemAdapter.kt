@@ -24,11 +24,12 @@ import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 
 class DatasetDefinitionListItemAdapter(
-    private val onDefinitionDetailsRequested: (View, DatasetDefinitionId) -> Unit,
+    private val onDefinitionDetailsRequested: (View, DatasetDefinitionId, Boolean) -> Unit,
     private val onDefinitionUpdateRequested: (DatasetDefinition) -> Unit,
     private val onDefinitionDeleteRequested: (DatasetDefinitionId) -> Unit
 ) : RecyclerView.Adapter<DatasetDefinitionListItemAdapter.ItemViewHolder>() {
     private var definitions = emptyList<DatasetDefinition>()
+    private var defaultDefinition: DatasetDefinitionId? = null
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -37,6 +38,7 @@ class DatasetDefinitionListItemAdapter(
         return ItemViewHolder(
             context = parent.context,
             binding = binding,
+            getDefaultDatasetDefinition = { defaultDefinition },
             onDefinitionDetailsRequested = onDefinitionDetailsRequested,
             onDefinitionUpdateRequested = onDefinitionUpdateRequested,
             onDefinitionDeleteRequested = onDefinitionDeleteRequested
@@ -52,27 +54,32 @@ class DatasetDefinitionListItemAdapter(
     class ItemViewHolder(
         private val context: Context,
         private val binding: ListItemDatasetDefinitionDetailsBinding,
-        private val onDefinitionDetailsRequested: (View, DatasetDefinitionId) -> Unit,
+        private val getDefaultDatasetDefinition: () -> DatasetDefinitionId?,
+        private val onDefinitionDetailsRequested: (View, DatasetDefinitionId, Boolean) -> Unit,
         private val onDefinitionUpdateRequested: (DatasetDefinition) -> Unit,
         private val onDefinitionDeleteRequested: (DatasetDefinitionId) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(
             definition: DatasetDefinition
         ) {
+            val isDefault = definition.id == getDefaultDatasetDefinition()
+
             binding.datasetDefinitionSummaryInfo.text =
-                context.getString(R.string.dataset_definition_field_content_info)
-                    .renderAsSpannable(
-                        StyledString(
-                            placeholder = "%1\$s",
-                            content = definition.info,
-                            style = StyleSpan(Typeface.BOLD)
-                        ),
-                        StyledString(
-                            placeholder = "%2\$s",
-                            content = definition.id.toMinimizedString(),
-                            style = StyleSpan(Typeface.ITALIC)
-                        )
+                context.getString(
+                    if (isDefault) R.string.dataset_definition_field_content_info_default
+                    else R.string.dataset_definition_field_content_info
+                ).renderAsSpannable(
+                    StyledString(
+                        placeholder = "%1\$s",
+                        content = definition.info,
+                        style = StyleSpan(Typeface.BOLD)
+                    ),
+                    StyledString(
+                        placeholder = "%2\$s",
+                        content = definition.id.toMinimizedString(),
+                        style = StyleSpan(Typeface.ITALIC)
                     )
+                )
 
             binding.datasetDefinitionSummaryExistingVersions.text =
                 context.getString(R.string.dataset_definition_field_content_existing_versions)
@@ -149,7 +156,7 @@ class DatasetDefinitionListItemAdapter(
                             name = context.getString(R.string.dataset_definition_show_button_title),
                             description = context.getString(R.string.dataset_definition_show_button_hint),
                             handler = {
-                                onDefinitionDetailsRequested(binding.root, definition.id)
+                                onDefinitionDetailsRequested(binding.root, definition.id, isDefault)
                             }
                         ),
                         EntryAction(
@@ -206,12 +213,14 @@ class DatasetDefinitionListItemAdapter(
                 true
             }
 
-            binding.root.setOnClickListener { view -> onDefinitionDetailsRequested(view, definition.id) }
+            binding.root.setOnClickListener { view -> onDefinitionDetailsRequested(view, definition.id, isDefault) }
         }
     }
 
     internal fun setDefinitions(definitions: List<DatasetDefinition>) {
-        this.definitions = definitions
+        val sorted = definitions.sortedBy { it.created }
+        this.definitions = sorted
+        this.defaultDefinition = sorted.firstOrNull()?.id
         notifyDataSetChanged()
     }
 }

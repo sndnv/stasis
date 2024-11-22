@@ -25,7 +25,7 @@ import java.nio.file.Paths
 import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
-class DefaultBackupTrackerSpec {
+class DefaultBackupsTrackerSpec {
     @Test
     fun trackBackupEvents() {
         val context = ApplicationProvider.getApplicationContext<Context>()

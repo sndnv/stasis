@@ -1,5 +1,7 @@
 package stasis.client_android.activities.fragments
 
+import android.app.NotificationManager
+import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Typeface
 import android.os.Bundle
@@ -13,9 +15,11 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.map
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import stasis.client_android.R
+import stasis.client_android.activities.helpers.Backups.startBackup
 import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.asSizeString
 import stasis.client_android.activities.helpers.Common.asString
@@ -26,18 +30,26 @@ import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullD
 import stasis.client_android.api.DatasetsViewModel
 import stasis.client_android.databinding.FragmentHomeBinding
 import stasis.client_android.lib.model.DatasetMetadata
+import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetEntry
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.persistence.config.ConfigRepository
+import stasis.client_android.persistence.rules.RuleViewModel
 import stasis.client_android.providers.ProviderContext
 import stasis.client_android.utils.LiveDataExtensions.and
+import stasis.client_android.utils.LiveDataExtensions.observeOnce
+import stasis.client_android.utils.NotificationManagerExtensions.putOperationCompletedNotification
+import stasis.client_android.utils.NotificationManagerExtensions.putOperationStartedNotification
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class HomeFragment : Fragment() {
     @Inject
     lateinit var datasets: DatasetsViewModel
+
+    @Inject
+    lateinit var rules: RuleViewModel
 
     @Inject
     lateinit var providerContextFactory: ProviderContext.Factory
@@ -74,9 +86,17 @@ class HomeFragment : Fragment() {
                 }
             }
 
+            datasets.definitions().observeOnce(viewLifecycleOwner) { definitions ->
+                showBackupStartButton(
+                    binding = binding,
+                    providerContext = providerContext,
+                    definitions = definitions
+                )
+            }
+
             (providerContext.trackers.backup.state and providerContext.trackers.recovery.state).map { (backups, recoveries) ->
                 (backups + recoveries).filterValues { it.completed != null }
-                     .maxByOrNull { it.component2().completed!! }
+                    .maxByOrNull { it.component2().completed!! }
             }.observe(viewLifecycleOwner) { entry ->
                 when (entry) {
                     null -> showLastOperationNoData(binding)
@@ -265,6 +285,52 @@ class HomeFragment : Fragment() {
                     operationType = operationType?.toString()
                 )
             )
+        }
+    }
+
+    private fun showBackupStartButton(
+        binding: FragmentHomeBinding,
+        providerContext: ProviderContext,
+        definitions: List<DatasetDefinition>
+    ) {
+        val defaultDefinition: DatasetDefinition? = definitions.minByOrNull { it.created }
+        binding.startBackup.isVisible = defaultDefinition != null
+
+        if (defaultDefinition != null) {
+            binding.startBackup.setOnClickListener {
+                val notificationManager =
+                    activity?.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+                val context = requireContext()
+
+                startBackup(
+                    rulesModel = rules,
+                    providerContext = providerContext,
+                    definitionId = defaultDefinition.id,
+                    onOperationsPending = {
+                        MaterialAlertDialogBuilder(binding.root.context)
+                            .setIcon(R.drawable.ic_warning)
+                            .setTitle(getString(R.string.dataset_definition_start_backup_disabled_title))
+                            .setMessage(getString(R.string.dataset_definition_start_backup_disabled_content))
+                            .show()
+                    },
+                    onOperationStarted = { backupId ->
+                        notificationManager.putOperationStartedNotification(
+                            context = context,
+                            id = backupId,
+                            operation = getString(R.string.backup_operation),
+                        )
+                    },
+                    onOperationCompleted = { backupId, e ->
+                        notificationManager.putOperationCompletedNotification(
+                            context = context,
+                            id = backupId,
+                            operation = getString(R.string.backup_operation),
+                            failure = e
+                        )
+                    }
+                )
+            }
         }
     }
 }
