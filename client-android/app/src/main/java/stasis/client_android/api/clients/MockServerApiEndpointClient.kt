@@ -38,7 +38,7 @@ class MockServerApiEndpointClient : ServerApiEndpointClient {
     override val server: String = MockConfig.ServerApi
 
     override suspend fun datasetDefinitions(): Try<List<DatasetDefinition>> =
-        Success(listOf(defaultDefinition))
+        Success(listOf(defaultDefinition, otherDefinition))
 
     override suspend fun datasetDefinition(definition: DatasetDefinitionId): Try<DatasetDefinition> =
         when (definition) {
@@ -136,6 +136,23 @@ class MockServerApiEndpointClient : ServerApiEndpointClient {
         ),
         created = Instant.EPOCH,
         updated = Instant.EPOCH,
+    )
+
+    private val otherDefinition = DatasetDefinition(
+        id = DatasetDefinitionId.randomUUID(),
+        info = "other-definition",
+        device = self,
+        redundantCopies = 2,
+        existingVersions = DatasetDefinition.Retention(
+            policy = DatasetDefinition.Retention.Policy.All,
+            duration = Duration.ofHours(12)
+        ),
+        removedVersions = DatasetDefinition.Retention(
+            policy = DatasetDefinition.Retention.Policy.All,
+            duration = Duration.ofHours(366)
+        ),
+        created = Instant.now(),
+        updated = Instant.now(),
     )
 
     private val defaultEntry = DatasetEntry(

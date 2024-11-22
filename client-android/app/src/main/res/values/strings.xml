@@ -246,6 +246,7 @@
     <string name="home_last_operation_label">Last Operation</string>
     <string name="home_last_backup_no_data">No Data</string>
     <string name="home_last_operation_no_data">No Data</string>
+    <string name="home_start_backup_hint">Start a backup with the default definition</string>
 
     <!-- Backup -->
     <string name="dataset_definition_field_title_info">Description</string>
@@ -268,6 +269,7 @@
 
     <string name="dataset_definition_field_title_retention">Retention</string>
     <string name="dataset_definition_field_content_info">%1$s (%2$s)</string>
+    <string name="dataset_definition_field_content_info_default">%1$s (%2$s, default)</string>
     <string name="dataset_definition_field_content_copies">Redundant copies: %1$s</string>
     <string name="dataset_definition_field_content_existing_versions">Existing data: %1$s</string>
     <string name="dataset_definition_field_content_removed_versions">Removed data: %1$s</string>

@@ -49,10 +49,11 @@ class DatasetDefinitionListFragment : Fragment() {
         postponeEnterTransition()
 
         val adapter = DatasetDefinitionListItemAdapter(
-            onDefinitionDetailsRequested = { itemView, definition ->
+            onDefinitionDetailsRequested = { itemView, definition, isDefault ->
                 findNavController().navigate(
                     DatasetDefinitionListFragmentDirections.actionBackupFragmentToDatasetDefinitionDetailsFragment(
-                        definition = definition
+                        definition = definition,
+                        isDefault = isDefault
                     ),
                     FragmentNavigatorExtras(
                         itemView to getString(DatasetDefinitionDetailsFragment.TargetTransitionId)

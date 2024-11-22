@@ -211,6 +211,10 @@
             android:name="definition"
             app:argType="java.util.UUID" />
 
+        <argument
+            android:name="isDefault"
+            app:argType="boolean" />
+
         <action
             android:id="@+id/action_datasetDefinitionDetailsFragment_to_datasetEntryDetailsFragment"
             app:destination="@id/datasetEntryDetailsFragment" />

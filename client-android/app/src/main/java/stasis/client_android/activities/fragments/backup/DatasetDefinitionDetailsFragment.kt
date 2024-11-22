@@ -14,14 +14,13 @@ import androidx.annotation.StringRes
 import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 import stasis.client_android.R
+import stasis.client_android.activities.helpers.Backups.startBackup
 import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.asString
 import stasis.client_android.activities.helpers.Common.getOrRenderFailure
@@ -37,12 +36,8 @@ import stasis.client_android.databinding.FragmentDatasetDefinitionDetailsBinding
 import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.persistence.rules.RuleViewModel
 import stasis.client_android.providers.ProviderContext
-import stasis.client_android.utils.LiveDataExtensions.liveData
-import stasis.client_android.utils.LiveDataExtensions.observeOnce
 import stasis.client_android.utils.NotificationManagerExtensions.putOperationCompletedNotification
 import stasis.client_android.utils.NotificationManagerExtensions.putOperationStartedNotification
-import stasis.client_android.utils.Permissions.needsExtraPermissions
-import stasis.client_android.utils.Permissions.requestMissingPermissions
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -89,7 +84,10 @@ class DatasetDefinitionDetailsFragment : Fragment() {
 
         datasets.definition(definitionId).observe(viewLifecycleOwner) { definition ->
             binding.datasetDefinitionDetailsInfo.text =
-                getString(R.string.dataset_definition_field_content_info)
+                getString(
+                    if (args.isDefault) R.string.dataset_definition_field_content_info_default
+                    else R.string.dataset_definition_field_content_info
+                )
                     .renderAsSpannable(
                         StyledString(
                             placeholder = "%1\$s",
@@ -165,50 +163,37 @@ class DatasetDefinitionDetailsFragment : Fragment() {
 
 
             binding.startBackup.setOnClickListener {
-                if (activity.needsExtraPermissions()) {
-                    activity?.requestMissingPermissions()
-                } else {
-                    rules.rules.observeOnce(this) { rulesList ->
-                        val rules = rulesList.groupBy { it.definition }
+                startBackup(
+                    rulesModel = rules,
+                    providerContext = providerContext,
+                    definitionId = definitionId,
+                    onOperationsPending = {
+                        MaterialAlertDialogBuilder(binding.root.context)
+                            .setIcon(R.drawable.ic_warning)
+                            .setTitle(getString(R.string.dataset_definition_start_backup_disabled_title))
+                            .setMessage(getString(R.string.dataset_definition_start_backup_disabled_content))
+                            .show()
+                    },
+                    onOperationStarted = { backupId ->
+                        notificationManager.putOperationStartedNotification(
+                            context = context,
+                            id = backupId,
+                            operation = getString(R.string.backup_operation),
+                        )
 
-                        liveData { providerContext.executor.active().isNotEmpty() }
-                            .observe(viewLifecycleOwner) { operationsPending ->
-                                if (operationsPending) {
-                                    MaterialAlertDialogBuilder(binding.root.context)
-                                        .setIcon(R.drawable.ic_warning)
-                                        .setTitle(getString(R.string.dataset_definition_start_backup_disabled_title))
-                                        .setMessage(getString(R.string.dataset_definition_start_backup_disabled_content))
-                                        .show()
-                                } else {
-                                    val backupId = -2
-
-                                    notificationManager.putOperationStartedNotification(
-                                        context = context,
-                                        id = backupId,
-                                        operation = getString(R.string.backup_operation),
-                                    )
-
-                                    lifecycleScope.launch {
-                                        providerContext.executor.startBackupWithRules(
-                                            definition = definitionId,
-                                            rules = rules.getOrElse(definitionId) { rules.getOrElse(null) { emptyList() } }
-                                        ) { e ->
-                                            notificationManager.putOperationCompletedNotification(
-                                                context = context,
-                                                id = backupId,
-                                                operation = getString(R.string.backup_operation),
-                                                failure = e
-                                            )
-                                        }
-                                    }
-
-                                    controller.navigate(
-                                        DatasetDefinitionDetailsFragmentDirections.actionGlobalHomeFragment()
-                                    )
-                                }
-                            }
+                        controller.navigate(
+                            DatasetDefinitionDetailsFragmentDirections.actionGlobalHomeFragment()
+                        )
+                    },
+                    onOperationCompleted = { backupId, e ->
+                        notificationManager.putOperationCompletedNotification(
+                            context = context,
+                            id = backupId,
+                            operation = getString(R.string.backup_operation),
+                            failure = e
+                        )
                     }
-                }
+                )
             }
 
             datasets.metadata(forDefinition = definition.id)
