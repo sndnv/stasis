@@ -17,10 +17,12 @@ class BackupEntries extends StatelessWidget {
   const BackupEntries({
     super.key,
     required this.definition,
+    required this.isDefault,
     required this.client,
   });
 
   final DatasetDefinition definition;
+  final bool isDefault;
   final ClientApi client;
 
   @override
@@ -33,7 +35,14 @@ class BackupEntries extends StatelessWidget {
         final summary = ListView(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          children: [DatasetDefinitionSummary.build(context, definition: definition, client: client)],
+          children: [
+            DatasetDefinitionSummary.build(
+              context,
+              definition: definition,
+              isDefault: isDefault,
+              client: client,
+            ),
+          ],
         );
 
         void show(DatasetEntry entry, DatasetMetadata metadata) {

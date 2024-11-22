@@ -50,7 +50,7 @@ class MockApiClient extends ApiClient implements ClientApi {
 
   @override
   Future<List<DatasetDefinition>> getDatasetDefinitions() {
-    return Future.value([defaultDefinition]);
+    return Future.value([defaultDefinition, otherDefinition]);
   }
 
   @override
@@ -306,6 +306,17 @@ class MockApiClient extends ApiClient implements ClientApi {
     removedVersions: const Retention(policy: Policy(policyType: 'all', versions: null), duration: Duration(hours: 366)),
     created: DateTime.now().subtract(const Duration(days: 3871)),
     updated: DateTime.now().subtract(const Duration(hours: 39)),
+  );
+
+  static final otherDefinition = DatasetDefinition(
+    id: const Uuid().v4(),
+    info: 'other-definition',
+    device: device,
+    redundantCopies: 9999,
+    existingVersions: const Retention(policy: Policy(policyType: 'all', versions: null), duration: Duration(hours: 12)),
+    removedVersions: const Retention(policy: Policy(policyType: 'all', versions: null), duration: Duration(hours: 366)),
+    created: DateTime.now(),
+    updated: DateTime.now(),
   );
 
   static final defaultEntry = DatasetEntry(
