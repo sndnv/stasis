@@ -82,8 +82,52 @@ object Formats {
   implicit val deviceFormat: Format[Device] =
     Json.format[Device]
 
-  implicit val deviceBootstrapCodeFormat: Format[DeviceBootstrapCode] =
-    Json.format[DeviceBootstrapCode]
+  implicit val deviceBootstrapCodeFormat: Format[DeviceBootstrapCode] = Format(
+    fjs = c =>
+      for {
+        code <- c.validate[JsObject]
+        id <- (code \ "id").validate[DeviceBootstrapCode.Id]
+        value <- (code \ "value").validate[String]
+        owner <- (code \ "owner").validate[User.Id]
+        target <- (code \ "target").validate[JsObject]
+        target <- (target \ "type").as[String].toLowerCase match {
+          case "existing" => (target \ "device").validate[Device.Id].map(Left.apply[Device.Id, CreateDeviceOwn])
+          case "new"      => (target \ "request").validate[CreateDeviceOwn].map(Right.apply[Device.Id, CreateDeviceOwn])
+        }
+        expiresAt <- (code \ "expires_at").validate[Instant]
+      } yield {
+        DeviceBootstrapCode(
+          id = id,
+          value = value,
+          owner = owner,
+          target = target,
+          expiresAt = expiresAt
+        )
+      },
+    tjs = { code =>
+      val target = code.target match {
+        case Left(device) =>
+          Json.obj(
+            "type" -> Json.toJson("existing"),
+            "device" -> Json.toJson(device)
+          )
+
+        case Right(request) =>
+          Json.obj(
+            "type" -> Json.toJson("new"),
+            "request" -> Json.toJson(request)
+          )
+      }
+
+      Json.obj(
+        "id" -> Json.toJson(code.id),
+        "value" -> Json.toJson(code.value),
+        "owner" -> Json.toJson(code.owner),
+        "target" -> target,
+        "expires_at" -> Json.toJson(code.expiresAt)
+      )
+    }
+  )
 
   implicit val byteStringFormat: Format[ByteString] =
     Format(

@@ -213,7 +213,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
 
       bootstrapCodeExistsBeforeExec should be(true)
       code.owner should be(existingUser)
-      code.device should be(existingDevice.id)
+      code.target should be(Left(existingDevice.id))
 
       bootstrapCodeExistsAfterExec should be(false)
       params.authentication.tokenEndpoint should be("http://localhost:28998/oauth/token")

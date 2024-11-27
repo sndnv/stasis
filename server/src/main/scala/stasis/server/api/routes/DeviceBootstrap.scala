@@ -10,11 +10,13 @@ import org.apache.pekko.http.scaladsl.server.Route
 
 import stasis.server.persistence.devices.DeviceBootstrapCodeStore
 import stasis.server.persistence.devices.DeviceStore
+import stasis.server.persistence.nodes.ServerNodeStore
 import stasis.server.persistence.users.UserStore
 import stasis.server.security.CurrentUser
 import stasis.server.security.devices.DeviceBootstrapCodeGenerator
 import stasis.server.security.devices.DeviceClientSecretGenerator
 import stasis.server.security.devices.DeviceCredentialsManager
+import stasis.shared.api.requests.CreateDeviceOwn
 import stasis.shared.model.devices.DeviceBootstrapCode
 import stasis.shared.model.devices.DeviceBootstrapParameters
 
@@ -40,35 +42,12 @@ class DeviceBootstrap(
           }
         }
       },
-      path("for-device" / JavaUUID) { deviceId =>
-        delete {
-          resource[DeviceBootstrapCodeStore.Manage.Privileged] { bootstrapCodeManage =>
-            for {
-              deleted <- bootstrapCodeManage.delete(deviceId)
-            } yield {
-              if (deleted) {
-                log.debugN("User [{}] successfully deleted bootstrap code for device [{}]", currentUser, deviceId)
-              } else {
-                log.warnN("User [{}] failed to delete bootstrap code for device [{}]", currentUser, deviceId)
-              }
-
-              discardEntity & complete(StatusCodes.OK)
-            }
-          }
-        }
-      },
       pathPrefix("own") {
         concat(
           pathEndOrSingleSlash {
             get {
-              resources[
-                DeviceStore.View.Self,
-                DeviceBootstrapCodeStore.View.Self
-              ] { (deviceView, bootstrapCodeView) =>
-                for {
-                  devices <- deviceView.list(currentUser).map(_.map(_.id))
-                  codes <- bootstrapCodeView.list(devices)
-                } yield {
+              resource[DeviceBootstrapCodeStore.View.Self] { bootstrapCodeView =>
+                bootstrapCodeView.list(currentUser).map { codes =>
                   log.debugN("User [{}] successfully retrieved [{}] own device bootstrap codes", currentUser, codes.size)
                   discardEntity & complete(codes)
                 }
@@ -78,36 +57,64 @@ class DeviceBootstrap(
           path("for-device" / JavaUUID) { deviceId =>
             concat(
               put {
-                resources[DeviceStore.View.Self, DeviceBootstrapCodeStore.Manage.Self] { (deviceView, bootstrapCodeManage) =>
+                resource[DeviceBootstrapCodeStore.Manage.Self] { bootstrapCodeManage =>
                   for {
-                    devices <- deviceView.list(currentUser).map(_.map(_.id))
-                    code <- context.bootstrapCodeGenerator.generate(currentUser, deviceId)
-                    _ <- bootstrapCodeManage.put(devices, code)
+                    code <- context.bootstrapCodeGenerator.generate(currentUser = currentUser, device = deviceId)
+                    _ <- bootstrapCodeManage.put(currentUser, code)
                   } yield {
                     log.debugN("User [{}] successfully created bootstrap code for own device [{}]", currentUser, deviceId)
                     discardEntity & complete(code)
                   }
                 }
-              },
-              delete {
-                resources[DeviceStore.View.Self, DeviceBootstrapCodeStore.Manage.Self] { (deviceView, bootstrapCodeManage) =>
+              }
+            )
+          },
+          path("for-device" / "new") {
+            put {
+              entity(as[CreateDeviceOwn]) { createRequest =>
+                resource[DeviceBootstrapCodeStore.Manage.Self] { bootstrapCodeManage =>
                   for {
-                    devices <- deviceView.list(currentUser).map(_.map(_.id))
-                    deleted <- bootstrapCodeManage.delete(devices, deviceId)
+                    code <- context.bootstrapCodeGenerator.generate(currentUser = currentUser, request = createRequest)
+                    _ <- bootstrapCodeManage.put(currentUser, code)
                   } yield {
-                    if (deleted) {
-                      log.debugN("User [{}] successfully deleted bootstrap code for own device [{}]", currentUser, deviceId)
-                    } else {
-                      log.warnN("User [{}] failed to delete bootstrap code for own device [{}]", currentUser, deviceId)
-                    }
-
-                    discardEntity & complete(StatusCodes.OK)
+                    log.debugN("User [{}] successfully created bootstrap code for a new device", currentUser)
+                    discardEntity & complete(code)
                   }
                 }
               }
-            )
+            }
+          },
+          path(JavaUUID) { codeId =>
+            delete {
+              resource[DeviceBootstrapCodeStore.Manage.Self] { bootstrapCodeManage =>
+                bootstrapCodeManage.delete(currentUser, codeId).map { deleted =>
+                  if (deleted) {
+                    log.debugN("User [{}] successfully deleted bootstrap code [{}] for own device", currentUser, codeId)
+                  } else {
+                    log.warnN("User [{}] failed to delete bootstrap code for own device", currentUser)
+                  }
+
+                  discardEntity & complete(StatusCodes.OK)
+                }
+              }
+            }
           }
         )
+      },
+      path(JavaUUID) { codeId =>
+        delete {
+          resource[DeviceBootstrapCodeStore.Manage.Privileged] { bootstrapCodeManage =>
+            bootstrapCodeManage.delete(codeId).map { deleted =>
+              if (deleted) {
+                log.debugN("User [{}] successfully deleted device bootstrap code [{}]", currentUser, codeId)
+              } else {
+                log.warnN("User [{}] failed to delete device bootstrap code", currentUser)
+              }
+
+              discardEntity & complete(StatusCodes.OK)
+            }
+          }
+        }
       }
     )
 
@@ -116,24 +123,38 @@ class DeviceBootstrap(
       put {
         resources[
           DeviceStore.View.Self,
-          UserStore.View.Self
-        ] { (deviceView, userView) =>
+          DeviceStore.Manage.Self,
+          UserStore.View.Self,
+          ServerNodeStore.Manage.Self
+        ] { (deviceView, deviceManage, userView, nodeManage) =>
           val result = for {
-            devices <- deviceView.list(currentUser)
-            device <- devices.find(_.id == code.device) match {
-              case Some(device) => Future.successful(device)
-              case None         => Future.failed(new IllegalStateException(s"Device [${code.device.toString}] not found"))
-            }
             user <- userView.get(currentUser).flatMap {
               case Some(user) => Future.successful(user)
               case None       => Future.failed(new IllegalStateException(s"Current user [${currentUser.toString}] not found"))
+            }
+            devices <- deviceView.list(currentUser)
+            device <- code.target match {
+              case Left(deviceId) =>
+                devices.find(_.id == deviceId) match {
+                  case Some(device) => Future.successful(device)
+                  case None         => Future.failed(new IllegalStateException(s"Device [${deviceId.toString}] not found"))
+                }
+
+              case Right(request) =>
+                val (device, node) = request.toDeviceAndNode(owner = user)
+                for {
+                  _ <- deviceManage.put(currentUser, device)
+                  _ <- nodeManage.create(currentUser, device, node)
+                } yield {
+                  device
+                }
             }
             clientSecret <- context.clientSecretGenerator.generate()
             clientId <- context.credentialsManager.setClientSecret(device = device, clientSecret = clientSecret)
           } yield {
             context.deviceParams
               .withDeviceInfo(
-                device = code.device.toString,
+                device = device.id.toString,
                 nodeId = device.node.toString,
                 clientId = clientId,
                 clientSecret = clientSecret
@@ -149,7 +170,7 @@ class DeviceBootstrap(
               log.debugN(
                 "User [{}] successfully executed bootstrap for device [{}]",
                 currentUser,
-                code.device
+                code.targetInfo
               )
 
               discardEntity & complete(config)
@@ -158,7 +179,7 @@ class DeviceBootstrap(
               log.warnN(
                 "User [{}] failed to execute bootstrap for device [{}]: [{}]",
                 currentUser,
-                code.device,
+                code.targetInfo,
                 e.getMessage
               )
 

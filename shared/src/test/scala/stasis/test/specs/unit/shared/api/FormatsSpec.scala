@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.shared.api
 
-import java.time.temporal.ChronoUnit
 import java.time.Instant
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 
 import scala.concurrent.duration._
 
@@ -16,6 +16,7 @@ import stasis.core.packaging.Crate
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.staging.StagingStore.PendingDestaging
 import stasis.shared.api.Formats._
+import stasis.shared.api.requests.CreateDeviceOwn
 import stasis.shared.api.requests.CreateNode.CreateLocalNode
 import stasis.shared.api.requests.CreateNode.CreateRemoteGrpcNode
 import stasis.shared.api.requests.CreateNode.CreateRemoteHttpNode
@@ -24,6 +25,7 @@ import stasis.shared.api.requests.UpdateNode.UpdateRemoteGrpcNode
 import stasis.shared.api.requests.UpdateNode.UpdateRemoteHttpNode
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.devices.Device
+import stasis.shared.model.devices.DeviceBootstrapCode
 import stasis.shared.model.devices.DeviceKey
 import stasis.shared.model.users.User
 import stasis.shared.ops.Operation
@@ -60,6 +62,51 @@ class FormatsSpec extends UnitSpec {
       retentionPolicyFormat.writes(policy).toString should be(json)
       retentionPolicyFormat.reads(Json.parse(json)).asOpt should be(Some(policy))
     }
+  }
+
+  they should "convert device boostrap codes to/from JSON" in {
+    val deviceId = Device.generateId()
+    val request = CreateDeviceOwn(name = "test-name", limits = None)
+
+    val originalForExistingDevice = DeviceBootstrapCode(
+      value = "test-code",
+      owner = User.generateId(),
+      device = deviceId,
+      expiresAt = Instant.now().truncatedTo(ChronoUnit.SECONDS)
+    )
+
+    val originalForNewDevice = DeviceBootstrapCode(
+      value = "test-code",
+      owner = User.generateId(),
+      request = request,
+      expiresAt = Instant.now().truncatedTo(ChronoUnit.SECONDS)
+    )
+
+    val jsonForExistingDevice =
+      s"""
+         |{
+         |"id":"${originalForExistingDevice.id}",
+         |"value":"${originalForExistingDevice.value}",
+         |"owner":"${originalForExistingDevice.owner}",
+         |"target":{"type":"existing","device":"$deviceId"},
+         |"expires_at":"${originalForExistingDevice.expiresAt}"
+         |}""".stripMargin.replaceAll("\n", "").trim
+
+    val jsonForNewDevice =
+      s"""
+         |{
+         |"id":"${originalForNewDevice.id}",
+         |"value":"${originalForNewDevice.value}",
+         |"owner":"${originalForNewDevice.owner}",
+         |"target":{"type":"new","request":{"name":"${request.name}"}},
+         |"expires_at":"${originalForNewDevice.expiresAt}"
+         |}""".stripMargin.replaceAll("\n", "").trim
+
+    deviceBootstrapCodeFormat.writes(originalForExistingDevice).toString() should be(jsonForExistingDevice)
+    deviceBootstrapCodeFormat.reads(Json.parse(jsonForExistingDevice)).asOpt should be(Some(originalForExistingDevice))
+
+    deviceBootstrapCodeFormat.writes(originalForNewDevice).toString() should be(jsonForNewDevice)
+    deviceBootstrapCodeFormat.reads(Json.parse(jsonForNewDevice)).asOpt should be(Some(originalForNewDevice))
   }
 
   they should "convert ByteStrings to/from JSON" in {

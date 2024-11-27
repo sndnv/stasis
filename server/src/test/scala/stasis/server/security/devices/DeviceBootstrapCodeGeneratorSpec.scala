@@ -8,20 +8,31 @@ import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
 import stasis.server.security.CurrentUser
-import stasis.server.security.devices.DeviceBootstrapCodeGenerator
+import stasis.shared.api.requests.CreateDeviceOwn
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 
 class DeviceBootstrapCodeGeneratorSpec extends AsyncUnitSpec {
-  "A DeviceBootstrapCodeGenerator" should "allow generating device bootstrap codes for current user" in {
+  "A DeviceBootstrapCodeGenerator" should "allow generating bootstrap codes for an existing device for the current user" in {
     val generator = createGenerator()
 
     val device = Device.generateId()
     val code = generator.generate(currentUser, device).await
 
     code.value.length should be(DeviceBootstrapCodeGenerator.MinCodeSize)
-    code.device should be(device)
+    code.target should be(Left(device))
+    code.expiresAt.isAfter(Instant.now()) should be(true)
+  }
+
+  it should "allow generating bootstrap codes for a new device for the current user" in {
+    val generator = createGenerator()
+
+    val request = CreateDeviceOwn(name = "test-device", limits = None)
+    val code = generator.generate(currentUser, request).await
+
+    code.value.length should be(DeviceBootstrapCodeGenerator.MinCodeSize)
+    code.target should be(Right(request))
     code.expiresAt.isAfter(Instant.now()) should be(true)
   }
 

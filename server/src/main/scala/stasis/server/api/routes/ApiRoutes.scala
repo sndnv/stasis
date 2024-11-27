@@ -58,6 +58,25 @@ trait ApiRoutes extends EntityDiscardingDirectives {
       } yield result
     )(identity)
 
+  def resources[R1 <: Resource, R2 <: Resource, R3 <: Resource, R4 <: Resource](f: (R1, R2, R3, R4) => Future[Route])(implicit
+    provider: ResourceProvider,
+    user: CurrentUser,
+    ec: ExecutionContext,
+    t1: ClassTag[R1],
+    t2: ClassTag[R2],
+    t3: ClassTag[R3],
+    t4: ClassTag[R4]
+  ): Route =
+    onSuccess(
+      for {
+        resource1 <- provider.provide[R1]
+        resource2 <- provider.provide[R2]
+        resource3 <- provider.provide[R3]
+        resource4 <- provider.provide[R4]
+        result <- f(resource1, resource2, resource3, resource4)
+      } yield result
+    )(identity)
+
   implicit def routeContextToExecutionContext(implicit ctx: RoutesContext): ExecutionContext = ctx.ec
 
   implicit def routeContextToResourceProvider(implicit ctx: RoutesContext): ResourceProvider = ctx.resourceProvider
