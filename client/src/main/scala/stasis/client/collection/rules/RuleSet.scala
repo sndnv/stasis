@@ -8,17 +8,19 @@ import scala.concurrent.Future
 import scala.util.Try
 import scala.util.matching.Regex
 
-import stasis.client.service.ApplicationDirectory
 import stasis.client.service.ApplicationConfiguration
+import stasis.client.service.ApplicationDirectory
 import stasis.shared.model.datasets.DatasetDefinition
 
 final case class RuleSet(definitions: Map[Option[DatasetDefinition.Id], Seq[Rule]]) {
+  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def default(): Seq[Rule] =
     definitions.get(None) match {
       case Some(result) => result
       case None         => throw new IllegalStateException("No default rules were found")
     }
 
+  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def forDefinitionOrDefault(definition: DatasetDefinition.Id): Seq[Rule] =
     definitions.get(Some(definition)).orElse(definitions.get(None)) match {
       case Some(result) =>
