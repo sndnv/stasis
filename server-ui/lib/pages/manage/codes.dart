@@ -37,26 +37,37 @@ class _BootstrapCodesState extends State<BootstrapCodes> {
           appliedFilter: queryFilter,
           filterBy: (entity, filter) {
             final code = entity as DeviceBootstrapCode;
-            return code.owner.contains(filter) || code.device.contains(filter) || code.value.contains(filter);
+            final info = DeviceBootstrapCode.extractDeviceInfo(code);
+            return code.owner.contains(filter) || info.contains(filter) || code.value.contains(filter);
           },
           header: const Text('Device Bootstrap Codes'),
           columns: [
-            EntityTableColumn(label: 'Device', sortBy: (e) => (e.device as String).toMinimizedString()),
+            EntityTableColumn(label: 'Device', sortBy: (e) => (DeviceBootstrapCode.extractDeviceInfo(e))),
+            EntityTableColumn(label: 'Device Type', sortBy: (e) => (e.target.type as String)),
             EntityTableColumn(label: 'Owner', sortBy: (e) => (e.owner as String).toMinimizedString()),
             EntityTableColumn(label: 'Expiration', sortBy: (e) => e.expiresAt),
             EntityTableColumn(label: ''),
           ],
           entityToRow: (entity) {
             final code = entity as DeviceBootstrapCode;
+            final info = DeviceBootstrapCode.extractDeviceInfo(code);
 
-            return [
-              DataCell(code.device.asShortId(
+            final Widget device;
+            if (code.target.type == 'existing') {
+              device = info.asShortId(
                 link: Link(
                   buildContext: context,
                   destination: PageRouterDestination.devices,
-                  withFilter: code.device,
+                  withFilter: info,
                 ),
-              )),
+              );
+            } else {
+              device = Text(info);
+            }
+
+            return [
+              DataCell(device),
+              DataCell(Text(code.target.type)),
               DataCell(code.owner.asShortId(
                 link: widget.privileged
                     ? Link(
@@ -73,7 +84,7 @@ class _BootstrapCodesState extends State<BootstrapCodes> {
                   children: [
                     IconButton(
                       tooltip: 'Remove Device Bootstrap Code',
-                      onPressed: () => _removeDeviceBootstrapCode(code.device),
+                      onPressed: () => _removeDeviceBootstrapCode(deviceInfo: info, code: code.id),
                       icon: const Icon(Icons.delete),
                     ),
                   ],
@@ -86,12 +97,12 @@ class _BootstrapCodesState extends State<BootstrapCodes> {
     );
   }
 
-  void _removeDeviceBootstrapCode(String device) {
+  void _removeDeviceBootstrapCode({required String deviceInfo, required String code}) {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Remove bootstrap code for device [${device.toMinimizedString()}]?'),
+          title: Text('Remove bootstrap code for device [$deviceInfo]?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -101,7 +112,7 @@ class _BootstrapCodesState extends State<BootstrapCodes> {
               onPressed: () {
                 final messenger = ScaffoldMessenger.of(context);
 
-                widget.client.deleteBootstrapCode(privileged: widget.privileged, forDevice: device).then((_) {
+                widget.client.deleteBootstrapCode(privileged: widget.privileged, code: code).then((_) {
                   messenger.showSnackBar(const SnackBar(content: Text('Bootstrap code removed...')));
                   setState(() {});
                 }).onError((e, stackTrace) {

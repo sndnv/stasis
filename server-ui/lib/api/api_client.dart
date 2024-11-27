@@ -182,7 +182,7 @@ abstract class DeviceBootstrapCodesApiClient {
 
   Future<List<DeviceBootstrapCode>> getBootstrapCodes({required bool privileged});
 
-  Future<void> deleteBootstrapCode({required bool privileged, required String forDevice});
+  Future<void> deleteBootstrapCode({required bool privileged, required String code});
 
   Future<DeviceBootstrapCode> generateBootstrapCode({required String forDevice});
 }
