@@ -3,17 +3,19 @@ package stasis.server.security.devices
 import java.time.Instant
 import java.util.concurrent.ThreadLocalRandom
 
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 import scala.util.Random
 
 import stasis.server.security.CurrentUser
+import stasis.shared.api.requests.CreateDeviceOwn
 import stasis.shared.model.devices.Device
 import stasis.shared.model.devices.DeviceBootstrapCode
 
 trait DeviceBootstrapCodeGenerator { generator =>
   def generate(currentUser: CurrentUser, device: Device.Id): Future[DeviceBootstrapCode]
+  def generate(currentUser: CurrentUser, request: CreateDeviceOwn): Future[DeviceBootstrapCode]
 }
 
 object DeviceBootstrapCodeGenerator {
@@ -31,15 +33,28 @@ object DeviceBootstrapCodeGenerator {
     new DeviceBootstrapCodeGenerator {
       override def generate(currentUser: CurrentUser, device: Device.Id): Future[DeviceBootstrapCode] =
         Future {
-          val rnd: Random = ThreadLocalRandom.current()
-
           DeviceBootstrapCode(
-            value = rnd.alphanumeric.take(codeSize).mkString,
+            value = generateValue(),
             owner = currentUser.id,
             device = device,
             expiresAt = Instant.now().plusMillis(expiration.toMillis)
           )
         }
+
+      override def generate(currentUser: CurrentUser, request: CreateDeviceOwn): Future[DeviceBootstrapCode] =
+        Future {
+          DeviceBootstrapCode(
+            value = generateValue(),
+            owner = currentUser.id,
+            request = request,
+            expiresAt = Instant.now().plusMillis(expiration.toMillis)
+          )
+        }
+
+      private def generateValue(): String = {
+        val rnd: Random = ThreadLocalRandom.current()
+        rnd.alphanumeric.take(codeSize).mkString
+      }
     }
   }
 }

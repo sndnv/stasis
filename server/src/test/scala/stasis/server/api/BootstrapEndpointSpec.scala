@@ -26,8 +26,10 @@ import stasis.server.persistence.devices.DeviceBootstrapCodeStore
 import stasis.server.persistence.devices.DeviceStore
 import stasis.server.persistence.devices.MockDeviceBootstrapCodeStore
 import stasis.server.persistence.devices.MockDeviceStore
+import stasis.server.persistence.nodes.ServerNodeStore
 import stasis.server.persistence.users.MockUserStore
 import stasis.server.persistence.users.UserStore
+import stasis.server.security.CurrentUser
 import stasis.server.security.ResourceProvider
 import stasis.server.security.authenticators.BootstrapCodeAuthenticator
 import stasis.server.security.authenticators.UserAuthenticator
@@ -37,6 +39,7 @@ import stasis.shared.model.devices.DeviceBootstrapCode
 import stasis.shared.model.devices.DeviceBootstrapParameters
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.persistence.nodes.MockNodeStore
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
@@ -47,7 +50,7 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
 
     val fixtures = new TestFixtures {}
 
-    fixtures.bootstrapCodeStore.manageSelf().put(Seq(device.id), bootstrapCode).await
+    fixtures.bootstrapCodeStore.manageSelf().put(self, bootstrapCode).await
 
     Get("/devices/codes").addCredentials(testUserCredentials) ~> fixtures.endpoint.endpointRoutes ~> check {
       status should be(StatusCodes.OK)
@@ -86,10 +89,10 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
   it should "provide bootstrap code management routes" in withRetry {
     val fixtures = new TestFixtures {}
 
-    fixtures.bootstrapCodeStore.manageSelf().put(Seq(device.id), bootstrapCode).await
+    fixtures.bootstrapCodeStore.manageSelf().put(self, bootstrapCode).await
     fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(Some(bootstrapCode))
 
-    Delete(s"/devices/codes/for-device/${bootstrapCode.device}")
+    Delete(s"/devices/codes/${bootstrapCode.id}")
       .addCredentials(testUserCredentials) ~> fixtures.endpoint.endpointRoutes ~> check {
       status should be(StatusCodes.OK)
       fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(None)
@@ -171,6 +174,7 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
   private trait TestFixtures {
     lazy val userStore: UserStore = MockUserStore()
     lazy val deviceStore: DeviceStore = MockDeviceStore()
+    lazy val nodeStore: ServerNodeStore = ServerNodeStore(MockNodeStore())
     lazy val bootstrapCodeStore: DeviceBootstrapCodeStore = MockDeviceBootstrapCodeStore()
     lazy val bootstrapContext: DeviceBootstrap.BootstrapContext = DeviceBootstrap.BootstrapContext(
       bootstrapCodeGenerator = new MockDeviceBootstrapCodeGenerator(),
@@ -192,7 +196,8 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
         bootstrapCodeStore.manage(),
         bootstrapCodeStore.manageSelf(),
         bootstrapCodeStore.view(),
-        bootstrapCodeStore.viewSelf()
+        bootstrapCodeStore.viewSelf(),
+        nodeStore.manageSelf()
       )
     )
 
@@ -257,6 +262,8 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
   )
 
   private val userPassword = "test-password"
+
+  private val self: CurrentUser = CurrentUser(id = user.id)
 
   private val bootstrapCode: DeviceBootstrapCode = DeviceBootstrapCode(
     value = "test-code",

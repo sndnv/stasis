@@ -9,6 +9,8 @@ import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
 import stasis.layers.telemetry.TelemetryContext
+import stasis.server.security.CurrentUser
+import stasis.shared.api.requests.CreateDeviceOwn
 import stasis.shared.model.devices.Device
 import stasis.shared.model.devices.DeviceBootstrapCode
 import stasis.shared.model.users.User
@@ -51,10 +53,10 @@ class DeviceBootstrapCodeStoreSpec extends AsyncUnitSpec {
   it should "return existing device bootstrap codes for current user via view resource (self)" in {
     val store = MockDeviceBootstrapCodeStore()
 
-    val ownBootstrapCode = mockBootstrapCode.copy(device = ownDevices.head)
+    val ownBootstrapCode = mockBootstrapCode.copy(owner = self.id, target = Left(ownDevices.head))
     store.manage().put(ownBootstrapCode).await
 
-    store.viewSelf().get(ownDevices, ownBootstrapCode.value).map(result => result should be(Some(ownBootstrapCode)))
+    store.viewSelf().get(self, ownBootstrapCode.value).map(result => result should be(Some(ownBootstrapCode)))
   }
 
   it should "fail to return existing device bootstrap codes not for current user via view resource (self)" in {
@@ -64,13 +66,13 @@ class DeviceBootstrapCodeStoreSpec extends AsyncUnitSpec {
 
     store
       .viewSelf()
-      .get(ownDevices, mockBootstrapCode.value)
+      .get(self, mockBootstrapCode.value)
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
       }
       .recover { case NonFatal(e) =>
         e.getMessage should be(
-          s"Expected to retrieve own device bootstrap code but code for device [${mockBootstrapCode.device}] found"
+          s"Expected to retrieve own device bootstrap code but code for user [${mockBootstrapCode.owner}] found"
         )
       }
   }
@@ -78,18 +80,18 @@ class DeviceBootstrapCodeStoreSpec extends AsyncUnitSpec {
   it should "fail to return missing device bootstrap codes for current user via view resource (self)" in {
     val store = MockDeviceBootstrapCodeStore()
 
-    store.viewSelf().get(ownDevices, mockBootstrapCode.value).map(result => result should be(None))
+    store.viewSelf().get(self, mockBootstrapCode.value).map(result => result should be(None))
   }
 
   it should "return a list of device bootstrap codes for current user via view resource (self)" in {
     val store = MockDeviceBootstrapCodeStore()
 
-    val ownBootstrapCode = mockBootstrapCode.copy(device = ownDevices.head)
+    val ownBootstrapCode = mockBootstrapCode.copy(owner = self.id, target = Left(ownDevices.head))
     store.manage().put(ownBootstrapCode).await
     store.manage().put(mockBootstrapCode.copy(value = "test-code-2")).await
     store.manage().put(mockBootstrapCode.copy(value = "test-code-3")).await
 
-    store.viewSelf().list(ownDevices).map { result =>
+    store.viewSelf().list(self).map { result =>
       result.size should be(1)
       result.headOption should be(Some(ownBootstrapCode.copy(value = "*****")))
     }
@@ -118,7 +120,7 @@ class DeviceBootstrapCodeStoreSpec extends AsyncUnitSpec {
     for {
       putResult <- store.manage().put(mockBootstrapCode)
       getResult <- store.view().get(mockBootstrapCode.value)
-      deleteResult <- store.manage().delete(mockBootstrapCode.device)
+      deleteResult <- store.manage().delete(mockBootstrapCode.id)
       deletedGetResult <- store.view().get(mockBootstrapCode.value)
     } yield {
       putResult should be(Done)
@@ -133,7 +135,7 @@ class DeviceBootstrapCodeStoreSpec extends AsyncUnitSpec {
 
     for {
       getResult <- store.view().get(mockBootstrapCode.value)
-      deleteResult <- store.manage().delete(mockBootstrapCode.device)
+      deleteResult <- store.manage().delete(mockBootstrapCode.id)
     } yield {
       getResult should be(None)
       deleteResult should be(false)
@@ -161,14 +163,29 @@ class DeviceBootstrapCodeStoreSpec extends AsyncUnitSpec {
     store.manageSelf().requiredPermission should be(Permission.Manage.Self)
   }
 
-  it should "allow creating device bootstrap codes for current user via management resource (self)" in {
+  it should "allow creating device bootstrap codes for current user via management resource (self, existing device)" in {
     val store = MockDeviceBootstrapCodeStore()
 
-    val ownBootstrapCode = mockBootstrapCode.copy(device = ownDevices.head)
+    val ownBootstrapCode = mockBootstrapCode.copy(owner = self.id, target = Left(ownDevices.head))
 
     for {
-      putResult <- store.manageSelf().put(ownDevices, ownBootstrapCode)
-      getResult <- store.viewSelf().get(ownDevices, ownBootstrapCode.value)
+      putResult <- store.manageSelf().put(self, ownBootstrapCode)
+      getResult <- store.viewSelf().get(self, ownBootstrapCode.value)
+    } yield {
+      putResult should be(Done)
+      getResult should be(Some(ownBootstrapCode))
+    }
+  }
+
+  it should "allow creating device bootstrap codes for current user via management resource (self, new device)" in {
+    val store = MockDeviceBootstrapCodeStore()
+
+    val request = CreateDeviceOwn(name = "test-device", limits = None)
+    val ownBootstrapCode = mockBootstrapCode.copy(owner = self.id, target = Right(request))
+
+    for {
+      putResult <- store.manageSelf().put(self, ownBootstrapCode)
+      getResult <- store.viewSelf().get(self, ownBootstrapCode.value)
     } yield {
       putResult should be(Done)
       getResult should be(Some(ownBootstrapCode))
@@ -180,13 +197,13 @@ class DeviceBootstrapCodeStoreSpec extends AsyncUnitSpec {
 
     store
       .manageSelf()
-      .put(ownDevices, mockBootstrapCode)
+      .put(self, mockBootstrapCode)
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
       }
       .recover { case NonFatal(e) =>
         e.getMessage should be(
-          s"Expected to put own device bootstrap code but code for device [${mockBootstrapCode.device}] provided"
+          s"Expected to put own device bootstrap code but code for user [${mockBootstrapCode.owner}] provided"
         )
       }
   }
@@ -194,13 +211,13 @@ class DeviceBootstrapCodeStoreSpec extends AsyncUnitSpec {
   it should "allow deleting device bootstrap codes for current user via management resource (self)" in {
     val store = MockDeviceBootstrapCodeStore()
 
-    val ownBootstrapCode = mockBootstrapCode.copy(device = ownDevices.head)
+    val ownBootstrapCode = mockBootstrapCode.copy(owner = self.id, target = Left(ownDevices.head))
 
     for {
-      putResult <- store.manageSelf().put(ownDevices, ownBootstrapCode)
-      getResult <- store.viewSelf().get(ownDevices, ownBootstrapCode.value)
-      deleteResult <- store.manageSelf().delete(ownDevices, ownBootstrapCode.device)
-      deletedGetResult <- store.viewSelf().get(ownDevices, ownBootstrapCode.value)
+      putResult <- store.manageSelf().put(self, ownBootstrapCode)
+      getResult <- store.viewSelf().get(self, ownBootstrapCode.value)
+      deleteResult <- store.manageSelf().delete(self, ownBootstrapCode.id)
+      deletedGetResult <- store.viewSelf().get(self, ownBootstrapCode.value)
     } yield {
       putResult should be(Done)
       getResult should be(Some(ownBootstrapCode))
@@ -216,13 +233,13 @@ class DeviceBootstrapCodeStoreSpec extends AsyncUnitSpec {
 
     store
       .manageSelf()
-      .delete(ownDevices, mockBootstrapCode.device)
+      .delete(self, mockBootstrapCode.id)
       .map { response =>
         fail(s"Received unexpected response from store: [$response]")
       }
       .recover { case NonFatal(e) =>
         e.getMessage should be(
-          s"Expected to delete own device bootstrap code but code for device [${mockBootstrapCode.device}] provided"
+          s"Expected to delete own device bootstrap code but code for user [${mockBootstrapCode.owner}] found"
         )
       }
   }
@@ -230,11 +247,11 @@ class DeviceBootstrapCodeStoreSpec extends AsyncUnitSpec {
   it should "fail to delete missing device bootstrap codes for current user via management resource (self)" in {
     val store = MockDeviceBootstrapCodeStore()
 
-    val ownBootstrapCode = mockBootstrapCode.copy(device = ownDevices.head)
+    val ownBootstrapCode = mockBootstrapCode.copy(owner = self.id, target = Left(ownDevices.head))
 
     for {
       getResult <- store.view().get(ownBootstrapCode.value)
-      deleteResult <- store.manageSelf().delete(ownDevices, ownBootstrapCode.device)
+      deleteResult <- store.manageSelf().delete(self, ownBootstrapCode.id)
     } yield {
       getResult should be(None)
       deleteResult should be(false)
@@ -247,6 +264,8 @@ class DeviceBootstrapCodeStoreSpec extends AsyncUnitSpec {
   )
 
   private implicit val telemetry: TelemetryContext = MockTelemetryContext()
+
+  private val self = CurrentUser(User.generateId())
 
   private val ownDevices = Seq(Device.generateId(), Device.generateId())
 

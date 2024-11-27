@@ -6,6 +6,8 @@ import scala.concurrent.Future
 
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.http.scaladsl.marshalling.Marshal
+import org.apache.pekko.http.scaladsl.model.RequestEntity
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
@@ -21,16 +23,19 @@ import stasis.server.persistence.devices.DeviceBootstrapCodeStore
 import stasis.server.persistence.devices.DeviceStore
 import stasis.server.persistence.devices.MockDeviceBootstrapCodeStore
 import stasis.server.persistence.devices.MockDeviceStore
+import stasis.server.persistence.nodes.ServerNodeStore
 import stasis.server.persistence.users.MockUserStore
 import stasis.server.persistence.users.UserStore
 import stasis.server.security.CurrentUser
 import stasis.server.security.ResourceProvider
 import stasis.server.security.mocks._
+import stasis.shared.api.requests.CreateDeviceOwn
 import stasis.shared.model.devices.Device
 import stasis.shared.model.devices.DeviceBootstrapCode
 import stasis.shared.model.devices.DeviceBootstrapParameters
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.core.persistence.nodes.MockNodeStore
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.shared.model.Generators
 
@@ -62,7 +67,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     fixtures.bootstrapCodeStore.manage().put(bootstrapCode).await
     fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(Some(bootstrapCode))
 
-    Delete(s"/devices/codes/for-device/${bootstrapCode.device.toString}") ~> fixtures.routes ~> check {
+    Delete(s"/devices/codes/${bootstrapCode.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(None)
     }
@@ -73,7 +78,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
 
     fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(None)
 
-    Delete(s"/devices/codes/for-device/${bootstrapCode.device.toString}") ~> fixtures.routes ~> check {
+    Delete(s"/devices/codes/${bootstrapCode.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(None)
     }
@@ -87,8 +92,8 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     val fixtures = new TestFixtures {}
 
     val codes = Seq(
-      Generators.generateDeviceBootstrapCode.copy(device = devices.head.id),
-      Generators.generateDeviceBootstrapCode.copy(device = devices.head.id),
+      Generators.generateDeviceBootstrapCode.copy(owner = currentUser.id, target = Left(devices.head.id)),
+      Generators.generateDeviceBootstrapCode.copy(owner = currentUser.id, target = Left(devices.head.id)),
       Generators.generateDeviceBootstrapCode
     )
 
@@ -101,7 +106,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     }
   }
 
-  they should "crate new device bootstrap codes" in withRetry {
+  they should "crate bootstrap codes for existing devices" in withRetry {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     import stasis.shared.api.Formats._
@@ -116,7 +121,27 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
       val code = responseAs[DeviceBootstrapCode]
       code.value should be("test-code")
       code.owner should be(currentUser.id)
-      code.device should be(devices.head.id)
+      code.target should be(Left(devices.head.id))
+    }
+  }
+
+  they should "crate bootstrap codes for new devices" in withRetry {
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
+    import stasis.shared.api.Formats._
+
+    val fixtures = new TestFixtures {}
+
+    val request = CreateDeviceOwn(name = "test-device", limits = None)
+
+    Put("/devices/codes/own/for-device/new")
+      .withEntity(Marshal(request).to[RequestEntity].await) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+
+      val code = responseAs[DeviceBootstrapCode]
+      code.value should be("test-code")
+      code.owner should be(currentUser.id)
+      code.target should be(Right(request))
     }
   }
 
@@ -128,7 +153,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     fixtures.bootstrapCodeStore.manage().put(bootstrapCode).await
     fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(Some(bootstrapCode))
 
-    Delete(s"/devices/codes/own/for-device/${bootstrapCode.device.toString}") ~> fixtures.routes ~> check {
+    Delete(s"/devices/codes/own/${bootstrapCode.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(None)
     }
@@ -141,13 +166,13 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
 
     fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(None)
 
-    Delete(s"/devices/codes/own/for-device/${bootstrapCode.device.toString}") ~> fixtures.routes ~> check {
+    Delete(s"/devices/codes/own/${bootstrapCode.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(None)
     }
   }
 
-  they should "successfully execute device bootstrap" in withRetry {
+  they should "successfully execute bootstrap for existing devices" in withRetry {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     import stasis.shared.api.Formats._
@@ -173,6 +198,50 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
             userSalt = user.salt
           )
       )
+    }
+  }
+
+  they should "successfully execute bootstrap for new devices" in withRetry {
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
+    import stasis.shared.api.Formats._
+
+    val request = CreateDeviceOwn(name = "test-device", limits = None)
+
+    val fixtures = new TestFixtures {
+      override def currentBootstrapCode(): DeviceBootstrapCode = bootstrapCode.copy(
+        target = Right(request)
+      )
+    }
+
+    fixtures.userStore.manage().put(user).await
+    fixtures.deviceStore.view().list().await should be(empty)
+    fixtures.nodeStore.view().list().await should be(empty)
+
+    Put("/devices/execute") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+
+      val actualParams = responseAs[DeviceBootstrapParameters]
+
+      val device = fixtures.deviceStore.view().list().await.head
+      val (node, _) = fixtures.nodeStore.view().list().await.head
+
+      actualParams should be(
+        baseParams
+          .withDeviceInfo(
+            device = device.id.toString,
+            nodeId = node.toString,
+            clientId = "test-client-id",
+            clientSecret = "test-secret"
+          )
+          .withUserInfo(
+            user = user.id.toString,
+            userSalt = user.salt
+          )
+      )
+
+      fixtures.deviceStore.view().list().await should not be empty
+      fixtures.nodeStore.view().list().await should not be empty
     }
   }
 
@@ -212,8 +281,11 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
   private implicit val telemetry: TelemetryContext = MockTelemetryContext()
 
   private trait TestFixtures {
+    def currentBootstrapCode(): DeviceBootstrapCode = bootstrapCode
+
     lazy val userStore: UserStore = MockUserStore()
     lazy val deviceStore: DeviceStore = MockDeviceStore()
+    lazy val nodeStore: ServerNodeStore = ServerNodeStore(MockNodeStore())
     lazy val bootstrapCodeStore: DeviceBootstrapCodeStore = MockDeviceBootstrapCodeStore()
     lazy val bootstrapContext: DeviceBootstrap.BootstrapContext = DeviceBootstrap.BootstrapContext(
       bootstrapCodeGenerator = new MockDeviceBootstrapCodeGenerator(),
@@ -235,7 +307,8 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
         bootstrapCodeStore.view(),
         bootstrapCodeStore.viewSelf(),
         bootstrapCodeStore.manage(),
-        bootstrapCodeStore.manageSelf()
+        bootstrapCodeStore.manageSelf(),
+        nodeStore.manageSelf()
       )
     )
 
@@ -248,7 +321,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
             bootstrap.codes
           },
           pathPrefix("execute") {
-            bootstrap.execute(bootstrapCode)
+            bootstrap.execute(currentBootstrapCode())
           }
         )
       }

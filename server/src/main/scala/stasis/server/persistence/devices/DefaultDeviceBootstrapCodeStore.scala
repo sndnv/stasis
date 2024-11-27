@@ -14,7 +14,6 @@ import stasis.layers.persistence.KeyValueStore
 import stasis.layers.persistence.Metrics
 import stasis.layers.persistence.migration.Migration
 import stasis.layers.telemetry.TelemetryContext
-import stasis.shared.model.devices.Device
 import stasis.shared.model.devices.DeviceBootstrapCode
 
 class DefaultDeviceBootstrapCodeStore(
@@ -33,17 +32,28 @@ class DefaultDeviceBootstrapCodeStore(
   override def drop(): Future[Done] = backend.drop()
 
   override protected[devices] def put(code: DeviceBootstrapCode): Future[Done] = metrics.recordPut(store = name) {
-    backend
-      .put(code.value, code)
-      .map { result =>
-        val expiresIn = Instant.now().until(code.expiresAt, ChronoUnit.MILLIS).millis
-        val _ = org.apache.pekko.pattern.after(expiresIn)(delete(code.value))
-        result
-      }
+    for {
+      existing <- backend.entries
+      device = code.target.swap.toOption
+      existing <- Future.successful(existing.filter(e => e._2.owner == code.owner && e._2.target.swap.toOption == device).keys)
+      _ <- Future.sequence(existing.map(backend.delete))
+      result <- backend.put(code.value, code)
+    } yield {
+      val expiresIn = Instant.now().until(code.expiresAt, ChronoUnit.MILLIS).millis
+      val _ = org.apache.pekko.pattern.after(expiresIn)(delete(code.id))
+      result
+    }
   }
 
   override protected[devices] def delete(code: String): Future[Boolean] = metrics.recordDelete(store = name) {
     backend.delete(code)
+  }
+
+  override protected[devices] def delete(code: DeviceBootstrapCode.Id): Future[Boolean] = metrics.recordDelete(store = name) {
+    get(code).flatMap {
+      case Some(existing) => delete(existing.value)
+      case None           => Future.successful(false)
+    }
   }
 
   override protected[devices] def consume(code: String): Future[Option[DeviceBootstrapCode]] =
@@ -58,12 +68,12 @@ class DefaultDeviceBootstrapCodeStore(
     backend.get(code)
   }
 
+  override protected[devices] def get(code: DeviceBootstrapCode.Id): Future[Option[DeviceBootstrapCode]] =
+    metrics.recordGet(store = name) {
+      backend.entries.map(_.collectFirst { case (_, c) if c.id == code => c })
+    }
+
   override protected[devices] def list(): Future[Seq[DeviceBootstrapCode]] = metrics.recordList(store = name) {
     backend.entries.map(_.values.map(_.copy(value = "*****")).toSeq)
   }
-
-  override protected[devices] def find(forDevice: Device.Id): Future[Option[DeviceBootstrapCode]] =
-    metrics.recordGet(store = name) {
-      backend.entries.map(_.collectFirst { case (_, code) if code.device == forDevice => code })
-    }
 }
