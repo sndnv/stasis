@@ -16,8 +16,8 @@ class BootstrapApiClient extends ApiClient implements DeviceBootstrapCodesApiCli
   }
 
   @override
-  Future<void> deleteBootstrapCode({required bool privileged, required String forDevice}) async {
-    final path = privileged ? '/v1/devices/codes/for-device/$forDevice' : '/v1/devices/codes/own/for-device/$forDevice';
+  Future<void> deleteBootstrapCode({required bool privileged, required String code}) async {
+    final path = privileged ? '/v1/devices/codes/$code' : '/v1/devices/codes/own/$code';
     return await delete(from: path);
   }
 

@@ -6,14 +6,15 @@ import 'package:server_ui/model/api/requests/create_device_privileged.dart';
 import 'package:server_ui/model/api/requests/update_device_limits.dart';
 import 'package:server_ui/model/api/requests/update_device_state.dart';
 import 'package:server_ui/model/devices/device.dart';
+import 'package:server_ui/model/devices/device_bootstrap_code.dart';
 import 'package:server_ui/model/nodes/node.dart';
 import 'package:server_ui/pages/default/components.dart';
 import 'package:server_ui/pages/manage/components/entity_form.dart';
 import 'package:server_ui/pages/manage/components/entity_table.dart';
 import 'package:server_ui/pages/manage/components/extensions.dart';
-import 'package:server_ui/utils/pair.dart';
 import 'package:server_ui/pages/manage/components/rendering.dart';
 import 'package:server_ui/pages/page_destinations.dart';
+import 'package:server_ui/utils/pair.dart';
 
 class Devices extends StatefulWidget {
   const Devices({
@@ -337,7 +338,7 @@ class _DevicesState extends State<Devices> {
                     barrierDismissible: false,
                     builder: (context) {
                       return AlertDialog(
-                        title: Text('Bootstrap Information for [${code.device.toMinimizedString()}]'),
+                        title: Text('Bootstrap Information for [${DeviceBootstrapCode.extractDeviceInfo(code)}]'),
                         content: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
