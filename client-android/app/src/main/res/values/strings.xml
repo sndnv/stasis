@@ -623,6 +623,7 @@
     <string name="assignment_field_content_key_rotation">Key Rotation</string>
 
     <!-- Context Actions -->
+    <string name="entry_actions_expand_hint">Expand list of context actions</string>
     <string name="entry_actions_entry_name">%1$s</string>
     <string name="entry_actions_entry_description">%1$s</string>
     <string name="entry_actions_entry_actions_title">Actions</string>
