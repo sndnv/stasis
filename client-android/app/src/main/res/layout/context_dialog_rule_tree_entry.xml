@@ -4,6 +4,13 @@
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/entry_actions_expand_hint"
+        android:paddingTop="4dp"
+        android:src="@drawable/ic_actions_expand" />
+
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -16,7 +23,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="12dp"
-            android:layout_marginTop="12dp"
             android:drawablePadding="4dp"
             android:ellipsize="end"
             android:maxLines="1"
