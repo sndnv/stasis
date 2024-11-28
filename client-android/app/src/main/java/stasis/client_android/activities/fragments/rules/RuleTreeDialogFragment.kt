@@ -3,6 +3,7 @@ package stasis.client_android.activities.fragments.rules
 import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -33,8 +34,11 @@ import java.io.IOException
 import java.io.UncheckedIOException
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
+import java.nio.file.FileVisitResult
+import java.nio.file.FileVisitor
 import java.nio.file.Files
-import java.util.stream.Collectors
+import java.nio.file.Path
+import java.nio.file.attribute.BasicFileAttributes
 
 class RuleTreeDialogFragment(
     private val definition: Either<DatasetDefinitionId, DatasetDefinition>?,
@@ -99,7 +103,7 @@ class RuleTreeDialogFragment(
             .reduceOrNull { a, b -> commonAncestor(a, b, fs) } ?: RulesConfig.DefaultStorageDirectory
 
         try {
-            val paths = Files.walk(fs.getPath(root)).map { it.toString() }.collect(Collectors.toList())
+            val paths = TreeFileVisitor().walk(fs, root)
             adapter.updateTreeNodes(listOf(FileTreeNode.fromPaths(root = root, paths = paths, fs = fs)))
 
             adapter.setTreeNodeLongClickListener { treeNode, _ ->
@@ -208,5 +212,43 @@ class RuleTreeDialogFragment(
             excluded.any { node.id == it || node.id.startsWith("$it/") }
 
         const val Tag: String = "stasis.client_android.activities.fragments.rules.RulesFragmentRuleTreeDialogFragment"
+
+        class TreeFileVisitor : FileVisitor<Path> {
+            private val collected = mutableListOf<String>()
+            private val failures = mutableListOf<String>()
+
+            fun walk(fs: FileSystem, start: String): List<String> {
+                Files.walkFileTree(fs.getPath(start), this)
+                if (collected.isNotEmpty()) {
+                    return collected
+                } else if (failures.isNotEmpty()) {
+                    throw IOException("One or more failure encountered: [${failures.joinToString(", ")}]")
+                } else {
+                    throw IOException("The provided start path [$start] did not produce any results")
+                }
+            }
+
+            override fun preVisitDirectory(dir: Path?, attrs: BasicFileAttributes?): FileVisitResult {
+                dir?.let { collected.add(it.toString()) }
+                return FileVisitResult.CONTINUE
+            }
+
+            override fun visitFile(file: Path?, attrs: BasicFileAttributes?): FileVisitResult {
+                file?.let { collected.add(it.toString()) }
+                return FileVisitResult.CONTINUE
+            }
+
+            override fun visitFileFailed(file: Path?, exc: IOException?): FileVisitResult {
+                val failure = exc?.let { "${it.javaClass.simpleName} - ${it.message}" }
+                Log.v(TAG, "Failure encountered when visiting [$file]: [$failure]")
+                failure?.let { failures.add(failure) }
+                return FileVisitResult.CONTINUE
+            }
+
+            override fun postVisitDirectory(dir: Path?, exc: IOException?): FileVisitResult =
+                FileVisitResult.CONTINUE
+        }
+
+        private const val TAG: String = "SchedulerService"
     }
 }
