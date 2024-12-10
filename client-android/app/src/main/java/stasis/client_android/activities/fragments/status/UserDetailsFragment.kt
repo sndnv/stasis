@@ -18,8 +18,6 @@ import stasis.client_android.activities.helpers.Common.asString
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.Common.toMinimizedString
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullDateTime
-import stasis.client_android.activities.helpers.Transitions.operationComplete
-import stasis.client_android.activities.helpers.Transitions.operationInProgress
 import stasis.client_android.api.UserStatusViewModel
 import stasis.client_android.databinding.FragmentUserDetailsBinding
 import javax.inject.Inject
@@ -36,8 +34,6 @@ class UserDetailsFragment : Fragment() {
             container,
             false
         )
-
-        activity.operationInProgress()
 
         status.user.observe(viewLifecycleOwner) { user ->
             val context = requireContext()
@@ -58,10 +54,10 @@ class UserDetailsFragment : Fragment() {
                     binding.userLimits.isVisible = true
                     binding.userLimitsNone.isVisible = false
 
-                    binding.userLimitsMaxDevices.rowLabel.text = context.getString(
+                    binding.userLimitsMaxDevices.rowLabel.text = getString(
                         R.string.user_limits_label_max_devices
                     )
-                    binding.userLimitsMaxDevices.rowContent.text = context.getString(
+                    binding.userLimitsMaxDevices.rowContent.text = getString(
                         R.string.user_limits_content_max_devices
                     ).renderAsSpannable(
                         StyledString(
@@ -71,10 +67,10 @@ class UserDetailsFragment : Fragment() {
                         ),
                     )
 
-                    binding.userLimitsMaxCrates.rowLabel.text = context.getString(
+                    binding.userLimitsMaxCrates.rowLabel.text = getString(
                         R.string.user_limits_label_max_crates
                     )
-                    binding.userLimitsMaxCrates.rowContent.text = context.getString(
+                    binding.userLimitsMaxCrates.rowContent.text = getString(
                         R.string.user_limits_content_max_crates
                     ).renderAsSpannable(
                         StyledString(
@@ -84,10 +80,10 @@ class UserDetailsFragment : Fragment() {
                         ),
                     )
 
-                    binding.userLimitsMaxStoragePerCrate.rowLabel.text = context.getString(
+                    binding.userLimitsMaxStoragePerCrate.rowLabel.text = getString(
                         R.string.user_limits_label_max_storage_per_crate
                     )
-                    binding.userLimitsMaxStoragePerCrate.rowContent.text = context.getString(
+                    binding.userLimitsMaxStoragePerCrate.rowContent.text = getString(
                         R.string.user_limits_content_max_storage_per_crate
                     ).renderAsSpannable(
                         StyledString(
@@ -97,10 +93,10 @@ class UserDetailsFragment : Fragment() {
                         ),
                     )
 
-                    binding.userLimitsMaxStorage.rowLabel.text = context.getString(
+                    binding.userLimitsMaxStorage.rowLabel.text = getString(
                         R.string.user_limits_label_max_storage
                     )
-                    binding.userLimitsMaxStorage.rowContent.text = context.getString(
+                    binding.userLimitsMaxStorage.rowContent.text = getString(
                         R.string.user_limits_content_max_storage
                     ).renderAsSpannable(
                         StyledString(
@@ -110,10 +106,10 @@ class UserDetailsFragment : Fragment() {
                         ),
                     )
 
-                    binding.userLimitsMinRetention.rowLabel.text = context.getString(
+                    binding.userLimitsMinRetention.rowLabel.text = getString(
                         R.string.user_limits_label_min_retention
                     )
-                    binding.userLimitsMinRetention.rowContent.text = context.getString(
+                    binding.userLimitsMinRetention.rowContent.text = getString(
                         R.string.user_limits_content_min_retention
                     ).renderAsSpannable(
                         StyledString(
@@ -123,10 +119,10 @@ class UserDetailsFragment : Fragment() {
                         ),
                     )
 
-                    binding.userLimitsMaxRetention.rowLabel.text = context.getString(
+                    binding.userLimitsMaxRetention.rowLabel.text = getString(
                         R.string.user_limits_label_max_retention
                     )
-                    binding.userLimitsMaxRetention.rowContent.text = context.getString(
+                    binding.userLimitsMaxRetention.rowContent.text = getString(
                         R.string.user_limits_content_max_retention
                     ).renderAsSpannable(
                         StyledString(
@@ -145,17 +141,18 @@ class UserDetailsFragment : Fragment() {
                     binding.userPermissions,
                     false
                 ) as Chip
-                chip.text = context.getString(R.string.user_field_content_permission, permission)
+                chip.text = getString(R.string.user_field_content_permission, permission)
                 binding.userPermissions.addView(chip)
             }
 
             val created = user.created.formatAsFullDateTime(context)
-            binding.userCreated.text = context.getString(R.string.user_field_content_created, created)
+            binding.userCreated.text = getString(R.string.user_field_content_created, created)
 
             val updated = user.updated.formatAsFullDateTime(context)
-            binding.userUpdated.text = context.getString(R.string.user_field_content_updated, updated)
+            binding.userUpdated.text = getString(R.string.user_field_content_updated, updated)
 
-            activity.operationComplete()
+            binding.userLoadingInProgress.isVisible = false
+            binding.userContainer.isVisible = true
         }
 
         return binding.root

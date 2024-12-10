@@ -4,29 +4,45 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.LinearLayout
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import stasis.client_android.R
+import stasis.client_android.databinding.DialogLoginMoreOptionsBinding
 import stasis.client_android.lib.utils.Try
+import stasis.client_android.utils.DynamicArguments
+import stasis.client_android.utils.DynamicArguments.pullArguments
+import stasis.client_android.utils.DynamicArguments.withArgumentsId
 
-class MoreOptionsDialogFragment(
-    private val reEncryptDeviceSecret: (String, String, f: (Try<Unit>) -> Unit) -> Unit
-) : DialogFragment() {
+class MoreOptionsDialogFragment : DialogFragment(), DynamicArguments.Provider, DynamicArguments.Receiver {
+    override val argumentsKey: String = ArgumentsKey
+
+    override val receiver: Fragment = this
+
+    override val providedArguments: DynamicArguments.Provider.Arguments = DynamicArguments.Provider.Arguments()
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        val view = inflater.inflate(R.layout.dialog_login_more_options, container, false)
+        val binding = DialogLoginMoreOptionsBinding.inflate(inflater)
 
-        view.findViewById<LinearLayout>(R.id.login_reencrypt_secret).setOnClickListener {
-            MoreOptionsReEncryptDialogFragment(reEncryptDeviceSecret)
-                .show(parentFragmentManager, MoreOptionsReEncryptDialogFragment.DialogTag)
+        pullArguments<Arguments>().observe(viewLifecycleOwner) { arguments ->
+            providedArguments.put(
+                key = "MoreOptionsReEncryptDialogFragment",
+                arguments = MoreOptionsReEncryptDialogFragment.Companion.Arguments(
+                    reEncryptDeviceSecret = arguments.reEncryptDeviceSecret
+                )
+            )
+
+            binding.loginReencryptSecret.setOnClickListener {
+                MoreOptionsReEncryptDialogFragment()
+                    .withArgumentsId<MoreOptionsReEncryptDialogFragment>(id = "MoreOptionsReEncryptDialogFragment")
+                    .show(childFragmentManager, MoreOptionsReEncryptDialogFragment.DialogTag)
+            }
         }
 
-        view.findViewById<LinearLayout>(R.id.login_bootstrap).setOnClickListener {
+        binding.loginBootstrap.setOnClickListener {
             dialog?.dismiss()
             findNavController().navigate(
                 LoginFragmentDirections
@@ -34,13 +50,11 @@ class MoreOptionsDialogFragment(
             )
         }
 
-
-        view.findViewById<Button>(R.id.login_more_options_cancel).setOnClickListener {
+        binding.loginMoreOptionsCancel.setOnClickListener {
             dialog?.dismiss()
         }
 
-
-        return view
+        return binding.root
     }
 
     override fun onStart() {
@@ -52,6 +66,13 @@ class MoreOptionsDialogFragment(
     }
 
     companion object {
+        data class Arguments(
+            val reEncryptDeviceSecret: (String, String, f: (Try<Unit>) -> Unit) -> Unit
+        ) : DynamicArguments.ArgumentSet
+
+        private const val ArgumentsKey: String =
+            "stasis.client_android.activities.fragments.login.MoreOptionsDialogFragment.arguments.key"
+
         const val DialogTag: String =
             "stasis.client_android.activities.fragments.login.MoreOptionsDialogFragment"
     }

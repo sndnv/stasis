@@ -7,42 +7,47 @@ import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import stasis.client_android.R
+import stasis.client_android.activities.fragments.rules.RuleTreeDialogFragment.Companion.Arguments
 import stasis.client_android.activities.helpers.Common
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
+import stasis.client_android.databinding.DialogOperationStageStepsBinding
 import stasis.client_android.databinding.ListItemOperationStageStepBinding
+import stasis.client_android.utils.DynamicArguments
+import stasis.client_android.utils.DynamicArguments.pullArguments
 import java.nio.file.Path
 
-class OperationStageStepsDialogFragment(
-    private val steps: List<StageStep>
-) : DialogFragment() {
+class OperationStageStepsDialogFragment : DialogFragment(), DynamicArguments.Receiver {
+    override val argumentsKey: String = ArgumentsKey
+
+    override val receiver: Fragment = this
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val view = inflater.inflate(R.layout.dialog_operation_stage_steps, container, false)
+        val binding = DialogOperationStageStepsBinding.inflate(inflater)
 
-        val operationsListEmpty = view.findViewById<TextView>(R.id.operation_stage_steps_list_empty)
-        val operationsList = view.findViewById<RecyclerView>(R.id.operation_stage_steps_list)
+        pullArguments<Arguments>().observe(viewLifecycleOwner) { arguments ->
+            if (arguments.steps.isEmpty()) {
+                binding.operationStageStepsListEmpty.isVisible = true
+                binding.operationStageStepsList.isVisible = false
+            } else {
+                val adapter = StepsListItemAdapter(steps = arguments.steps.reversed())
 
-        if (steps.isEmpty()) {
-            operationsListEmpty.isVisible = true
-            operationsList.isVisible = false
-        } else {
-            val adapter = StepsListItemAdapter(steps = steps.reversed())
+                binding.operationStageStepsList.adapter = adapter
 
-            operationsList.adapter = adapter
-
-            operationsListEmpty.isVisible = false
-            operationsList.isVisible = true
+                binding.operationStageStepsListEmpty.isVisible = false
+                binding.operationStageStepsList.isVisible = true
+            }
         }
 
-        return view
+        return binding.root
     }
 
     class StepsListItemAdapter(
@@ -114,6 +119,11 @@ class OperationStageStepsDialogFragment(
     )
 
     companion object {
+        data class Arguments(val steps: List<StageStep>) : DynamicArguments.ArgumentSet
+
+        private const val ArgumentsKey: String =
+            "stasis.client_android.activities.fragments.operations.OperationStageStepsDialogFragment.arguments.key"
+
         const val Tag: String =
             "stasis.client_android.activities.fragments.operations.OperationStageStepsDialogFragment"
     }

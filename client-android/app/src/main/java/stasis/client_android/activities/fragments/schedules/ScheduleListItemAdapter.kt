@@ -22,14 +22,17 @@ import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.model.server.schedules.Schedule
 import stasis.client_android.lib.model.server.schedules.ScheduleId
 import stasis.client_android.lib.ops.scheduling.ActiveSchedule
+import stasis.client_android.utils.DynamicArguments
+import stasis.client_android.utils.DynamicArguments.withArgumentsId
 
 class ScheduleListItemAdapter(
     private val fragmentManager: FragmentManager,
+    private val provider: DynamicArguments.Provider,
     private val onAssignmentCreationRequested: (ActiveSchedule) -> Unit,
     private val onAssignmentRemovalRequested: (ActiveSchedule) -> Unit,
-    private val retrieveDefinitions: suspend () -> List<DatasetDefinition>
 ) : RecyclerView.Adapter<ScheduleListItemAdapter.ItemViewHolder>() {
     private var schedules = emptyList<Triple<ScheduleId, Schedule?, List<ActiveSchedule>>>()
+    private var definitions = emptyList<DatasetDefinition>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -39,9 +42,9 @@ class ScheduleListItemAdapter(
             context = parent.context,
             binding = binding,
             fragmentManager = fragmentManager,
+            provider = provider,
             onAssignmentCreationRequested = onAssignmentCreationRequested,
             onAssignmentRemovalRequested = onAssignmentRemovalRequested,
-            retrieveDefinitions = retrieveDefinitions
         )
     }
 
@@ -49,21 +52,22 @@ class ScheduleListItemAdapter(
 
     override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
         val (scheduleId, schedule, assigned) = schedules[position]
-        holder.bind(scheduleId, schedule, assigned)
+        holder.bind(scheduleId, schedule, assigned, definitions)
     }
 
     class ItemViewHolder(
         private val context: Context,
         private val binding: ListItemSchedulePublicBinding,
         private val fragmentManager: FragmentManager,
+        private val provider: DynamicArguments.Provider,
         private val onAssignmentCreationRequested: (ActiveSchedule) -> Unit,
         private val onAssignmentRemovalRequested: (ActiveSchedule) -> Unit,
-        private val retrieveDefinitions: suspend () -> List<DatasetDefinition>
     ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(
             scheduleId: ScheduleId,
             schedule: Schedule?,
-            assigned: List<ActiveSchedule>
+            assigned: List<ActiveSchedule>,
+            definitions: List<DatasetDefinition>
         ) {
             when (schedule) {
                 null -> {
@@ -81,6 +85,7 @@ class ScheduleListItemAdapter(
                     binding.scheduleInterval.isVisible = false
                     binding.assignSchedule.isVisible = false
                 }
+
                 else -> {
                     val nextInvocation = schedule.nextInvocation()
                     val date = nextInvocation.formatAsDate(context)
@@ -143,12 +148,21 @@ class ScheduleListItemAdapter(
                             )
                         )
 
-                    binding.assignSchedule.setOnClickListener {
-                        NewScheduleAssignmentDialogFragment(
+                    val argsId = "for-schedule-$scheduleId"
+
+                    provider.providedArguments.put(
+                        key = "$argsId-NewScheduleAssignmentDialogFragment",
+                        arguments = NewScheduleAssignmentDialogFragment.Companion.Arguments(
                             schedule = scheduleId,
                             onAssignmentCreationRequested = onAssignmentCreationRequested,
-                            retrieveDefinitions = retrieveDefinitions
-                        ).show(fragmentManager, NewScheduleAssignmentDialogFragment.Tag)
+                            definitions = definitions
+                        )
+                    )
+
+                    binding.assignSchedule.setOnClickListener {
+                        NewScheduleAssignmentDialogFragment()
+                            .withArgumentsId<NewScheduleAssignmentDialogFragment>(id = "$argsId-NewScheduleAssignmentDialogFragment")
+                            .show(fragmentManager, NewScheduleAssignmentDialogFragment.Tag)
                     }
                 }
             }
@@ -174,7 +188,11 @@ class ScheduleListItemAdapter(
         }
     }
 
-    internal fun setSchedules(public: List<Schedule>, configured: List<ActiveSchedule>) {
+    internal fun setSchedules(
+        public: List<Schedule>,
+        configured: List<ActiveSchedule>,
+        definitions: List<DatasetDefinition>
+    ) {
         val assigned = configured
             .groupBy { it.assignment.schedule }
             .map { (scheduleId, assigned) -> Triple(scheduleId, public.find { it.id == scheduleId }, assigned) }
@@ -186,6 +204,7 @@ class ScheduleListItemAdapter(
             .map { schedule -> Triple(schedule.id, schedule, emptyList<ActiveSchedule>()) }
 
         this.schedules = (assigned + unassigned).sortedBy { it.second?.nextInvocation() }
+        this.definitions = definitions
 
         notifyDataSetChanged()
     }

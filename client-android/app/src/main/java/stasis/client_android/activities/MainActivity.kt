@@ -3,9 +3,7 @@ package stasis.client_android.activities
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
-import android.graphics.Typeface
 import android.os.Bundle
-import android.text.style.StyleSpan
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.map
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -13,17 +11,15 @@ import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetView
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import stasis.client_android.BuildConfig
 import stasis.client_android.MainNavGraphDirections
 import stasis.client_android.R
-import stasis.client_android.activities.helpers.Common.StyledString
-import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullDateTime
 import stasis.client_android.activities.helpers.Transitions.operationComplete
 import stasis.client_android.activities.helpers.Transitions.operationInProgress
 import stasis.client_android.activities.receivers.LogoutReceiver
+import stasis.client_android.activities.views.dialogs.InformationDialogFragment
 import stasis.client_android.api.clients.MockConfig
 import stasis.client_android.databinding.ActivityMainBinding
 import stasis.client_android.lib.tracking.ServerTracker
@@ -54,6 +50,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var broadcastManager: LocalBroadcastManager
     private lateinit var logoutReceiver: LogoutReceiver
+    private lateinit var controller: NavController
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,9 +60,8 @@ class MainActivity : AppCompatActivity() {
         val binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val controller =
-            (supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment)
-                .navController
+        controller = (supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment)
+            .navController
 
         initNavigation(
             binding = binding,
@@ -286,10 +282,10 @@ class MainActivity : AppCompatActivity() {
                     when (val help = contextHelpRef.get()) {
                         null -> false
                         else -> {
-                            MaterialAlertDialogBuilder(binding.root.context)
-                                .setTitle(getString(R.string.context_help_dialog_title))
-                                .setMessage(getString(help))
-                                .show()
+                            InformationDialogFragment()
+                                .withTitle(getString(R.string.context_help_dialog_title))
+                                .withMessage(getString(help))
+                                .show(supportFragmentManager)
                             true
                         }
                     }
@@ -299,45 +295,36 @@ class MainActivity : AppCompatActivity() {
                     when (val servers = unreachableServersRef.get()) {
                         null -> false
                         else -> {
-                            MaterialAlertDialogBuilder(binding.root.context)
-                                .setTitle(getString(R.string.unreachable_servers_dialog_title))
-                                .setItems(
+                            InformationDialogFragment()
+                                .withTitle(getString(R.string.unreachable_servers_dialog_title))
+                                .withItems(
                                     servers.map { (server, state) ->
-                                        getString(R.string.unreachable_servers_list_item)
-                                            .renderAsSpannable(
-                                                StyledString(
-                                                    placeholder = "%1\$s",
-                                                    content = server,
-                                                    style = StyleSpan(Typeface.BOLD)
-                                                ),
-                                                StyledString(
-                                                    placeholder = "%2\$s",
-                                                    content = state.timestamp.formatAsFullDateTime(binding.root.context),
-                                                    style = StyleSpan(Typeface.BOLD)
-                                                )
-                                            )
-                                    }.toTypedArray(),
-                                    null
+                                        getString(
+                                            R.string.unreachable_servers_list_item,
+                                            server,
+                                            state.timestamp.formatAsFullDateTime(binding.root.context)
+                                        )
+                                    }.toTypedArray()
                                 )
-                                .show()
+                                .show(supportFragmentManager)
                             true
                         }
                     }
                 }
 
                 R.id.debug_mode -> {
-                    MaterialAlertDialogBuilder(binding.root.context)
-                        .setTitle(getString(R.string.debug_mode_dialog_title))
-                        .setMessage(getString(R.string.debug_mode_dialog_content))
-                        .show()
+                    InformationDialogFragment()
+                        .withTitle(getString(R.string.debug_mode_dialog_title))
+                        .withMessage(getString(R.string.debug_mode_dialog_content))
+                        .show(supportFragmentManager)
                     true
                 }
 
                 R.id.mock_mode -> {
-                    MaterialAlertDialogBuilder(binding.root.context)
-                        .setTitle(getString(R.string.mock_mode_dialog_title))
-                        .setMessage(getString(R.string.mock_mode_dialog_content))
-                        .show()
+                    InformationDialogFragment()
+                        .withTitle(getString(R.string.mock_mode_dialog_title))
+                        .withMessage(getString(R.string.mock_mode_dialog_content))
+                        .show(supportFragmentManager)
                     true
                 }
 

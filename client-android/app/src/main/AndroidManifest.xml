@@ -46,7 +46,6 @@
         <activity
             android:name=".activities.MainActivity"
             android:launchMode="singleInstance"
-            android:noHistory="true"
             android:theme="@style/Theme.StasisClient" />
 
         <receiver

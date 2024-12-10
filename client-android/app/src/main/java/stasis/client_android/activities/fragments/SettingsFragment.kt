@@ -10,7 +10,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.preference.DropDownPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import stasis.client_android.R
@@ -25,6 +24,7 @@ import stasis.client_android.activities.helpers.Common.asString
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsDate
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsTime
+import stasis.client_android.activities.views.dialogs.ConfirmationDialogFragment
 import stasis.client_android.lib.api.clients.exceptions.ResourceMissingFailure
 import stasis.client_android.lib.security.exceptions.InvalidUserCredentials
 import stasis.client_android.lib.utils.Try.Failure
@@ -41,12 +41,16 @@ import stasis.client_android.serialization.ByteStrings.decodeFromBase64
 import stasis.client_android.serialization.ByteStrings.encodeAsBase64
 import stasis.client_android.settings.Settings
 import stasis.client_android.settings.Settings.getPingInterval
+import stasis.client_android.utils.DynamicArguments
+import stasis.client_android.utils.DynamicArguments.withArgumentsId
 import java.time.Duration
 import java.time.Instant
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class SettingsFragment : PreferenceFragmentCompat() {
+class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
+    override val providedArguments: DynamicArguments.Provider.Arguments = DynamicArguments.Provider.Arguments()
+
     @Inject
     lateinit var config: ConfigViewModel
 
@@ -83,13 +87,17 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
 
-        findPreference<Preference>(Settings.Keys.ManageUserCredentialsUpdatePassword)?.setOnPreferenceClickListener {
-            val preferences = CredentialsRepository.getEncryptedPreferences(context)
+        val currentPreferences = CredentialsRepository.getEncryptedPreferences(context)
+        val apiServer = providerContextFactory.getOrCreate(currentPreferences)
+            .required().api.server
 
-            val providerContext = providerContextFactory.getOrCreate(preferences).required()
-
-            UpdatePasswordFragment(
+        providedArguments.put(
+            key = "UpdatePasswordFragment",
+            arguments = UpdatePasswordFragment.Companion.Arguments(
                 updateUserPassword = { currentPassword, newPassword, f ->
+                    val preferences = CredentialsRepository.getEncryptedPreferences(context)
+                    val providerContext = providerContextFactory.getOrCreate(preferences).required()
+
                     credentials.verifyUserPassword(password = currentPassword) { isValid ->
                         if (isValid) {
                             credentials.updateUserCredentials(
@@ -124,18 +132,16 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         }
                     }
                 }
-            ).show(parentFragmentManager, UpdatePasswordFragment.DialogTag)
+            )
+        )
 
-            true
-        }
-
-        findPreference<Preference>(Settings.Keys.ManageUserCredentialsUpdateSalt)?.setOnPreferenceClickListener {
-            val preferences = CredentialsRepository.getEncryptedPreferences(context)
-
-            val providerContext = providerContextFactory.getOrCreate(preferences).required()
-
-            UpdateSaltFragment(
+        providedArguments.put(
+            key = "UpdateSaltFragment",
+            arguments = UpdateSaltFragment.Companion.Arguments(
                 updateUserSalt = { currentPassword, newSalt, f ->
+                    val preferences = CredentialsRepository.getEncryptedPreferences(context)
+                    val providerContext = providerContextFactory.getOrCreate(preferences).required()
+
                     credentials.verifyUserPassword(password = currentPassword) { isValid ->
                         if (isValid) {
                             credentials.updateUserCredentials(
@@ -169,90 +175,64 @@ class SettingsFragment : PreferenceFragmentCompat() {
                             }
                         }
                     }
-                },
-            ).show(parentFragmentManager, UpdateSaltFragment.DialogTag)
-
-            true
-        }
-
-        findPreference<Preference>(Settings.Keys.ManageDeviceSecretLocallyExport)?.setOnPreferenceClickListener {
-            val preferences = CredentialsRepository.getEncryptedPreferences(context)
-
-            MaterialAlertDialogBuilder(context)
-                .setIcon(R.drawable.ic_warning)
-                .setTitle(R.string.settings_manage_device_secret_confirm_title)
-                .setMessage(R.string.settings_manage_device_secret_confirm_text)
-                .setNeutralButton(R.string.settings_manage_device_secret_confirm_cancel_button_title) { dialog, _ ->
-                    dialog.dismiss()
                 }
-                .setPositiveButton(R.string.settings_manage_device_secret_confirm_ok_button_title) { _, _ ->
-                    ExportDialogFragment(
-                        secret = preferences.getPlaintextDeviceSecret()?.encodeAsBase64().orEmpty()
-                    ).show(parentFragmentManager, ExportDialogFragment.DialogTag)
-                }
-                .show()
+            )
+        )
 
-            true
-        }
+        providedArguments.put(
+            key = "ExportDialogFragment",
+            arguments = ExportDialogFragment.Companion.Arguments(
+                secret = currentPreferences.getPlaintextDeviceSecret()?.encodeAsBase64().orEmpty()
+            )
+        )
 
-        findPreference<Preference>(Settings.Keys.ManageDeviceSecretLocallyImport)?.setOnPreferenceClickListener {
-            MaterialAlertDialogBuilder(context)
-                .setIcon(R.drawable.ic_warning)
-                .setTitle(R.string.settings_manage_device_secret_confirm_title)
-                .setMessage(R.string.settings_manage_device_secret_confirm_text)
-                .setNeutralButton(R.string.settings_manage_device_secret_confirm_cancel_button_title) { dialog, _ ->
-                    dialog.dismiss()
-                }
-                .setPositiveButton(R.string.settings_manage_device_secret_confirm_ok_button_title) { _, _ ->
-                    ImportDialogFragment(
-                        importSecret = { secret, password, f ->
-                            credentials.verifyUserPassword(password = password) { isValid ->
-                                if (isValid) {
-                                    credentials.updateDeviceSecret(
-                                        password = password,
-                                        secret = secret.decodeFromBase64()
-                                    ) { result ->
-                                        lifecycleScope.launch {
-                                            f(result)
+        providedArguments.put(
+            key = "ImportDialogFragment",
+            arguments = ImportDialogFragment.Companion.Arguments(
+                importSecret = { secret, password, f ->
+                    credentials.verifyUserPassword(password = password) { isValid ->
+                        if (isValid) {
+                            credentials.updateDeviceSecret(
+                                password = password,
+                                secret = secret.decodeFromBase64()
+                            ) { result ->
+                                lifecycleScope.launch {
+                                    f(result)
 
-                                            Toast.makeText(
-                                                context,
-                                                when (result) {
-                                                    is Success -> context.getString(
-                                                        R.string.settings_manage_device_secret_import_successful
-                                                    )
+                                    Toast.makeText(
+                                        context,
+                                        when (result) {
+                                            is Success -> context.getString(
+                                                R.string.settings_manage_device_secret_import_successful
+                                            )
 
-                                                    is Failure -> context.getString(
-                                                        R.string.settings_manage_device_secret_import_failed,
-                                                        result.exception.message
-                                                    )
-                                                },
-                                                Toast.LENGTH_LONG
-                                            ).show()
-                                        }
-                                    }
-                                } else {
-                                    lifecycleScope.launch {
-                                        f(Failure(InvalidUserCredentials()))
-                                    }
+                                            is Failure -> context.getString(
+                                                R.string.settings_manage_device_secret_import_failed,
+                                                result.exception.message
+                                            )
+                                        },
+                                        Toast.LENGTH_LONG
+                                    ).show()
                                 }
                             }
+                        } else {
+                            lifecycleScope.launch {
+                                f(Failure(InvalidUserCredentials()))
+                            }
                         }
-                    ).show(parentFragmentManager, ImportDialogFragment.DialogTag)
+                    }
                 }
-                .show()
+            )
+        )
 
-            true
-        }
-
-        findPreference<Preference>(Settings.Keys.ManageDeviceSecretRemotelyPush)?.setOnPreferenceClickListener {
-            val preferences = CredentialsRepository.getEncryptedPreferences(context)
-
-            val providerContext = providerContextFactory.getOrCreate(preferences).required()
-
-            PushDialogFragment(
-                server = providerContext.api.server,
+        providedArguments.put(
+            key = "PushDialogFragment",
+            arguments = PushDialogFragment.Companion.Arguments(
+                server = apiServer,
                 pushSecret = { password, remotePassword, f ->
+                    val preferences = CredentialsRepository.getEncryptedPreferences(context)
+                    val providerContext = providerContextFactory.getOrCreate(preferences).required()
+
                     credentials.verifyUserPassword(password = password) { isValid ->
                         if (isValid) {
                             credentials.pushDeviceSecret(
@@ -286,19 +266,17 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         }
                     }
                 }
-            ).show(parentFragmentManager, PushDialogFragment.DialogTag)
+            )
+        )
 
-            true
-        }
-
-        findPreference<Preference>(Settings.Keys.ManageDeviceSecretRemotelyPull)?.setOnPreferenceClickListener {
-            val preferences = CredentialsRepository.getEncryptedPreferences(context)
-
-            val providerContext = providerContextFactory.getOrCreate(preferences).required()
-
-            PullDialogFragment(
-                server = providerContext.api.server,
+        providedArguments.put(
+            key = "PullDialogFragment",
+            arguments = PullDialogFragment.Companion.Arguments(
+                server = apiServer,
                 secretAvailable = { f ->
+                    val preferences = CredentialsRepository.getEncryptedPreferences(context)
+                    val providerContext = providerContextFactory.getOrCreate(preferences).required()
+
                     credentials.remoteDeviceSecretExists(providerContext.api) { result ->
                         lifecycleScope.launch {
                             when (result) {
@@ -321,6 +299,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     }
                 },
                 pullSecret = { password, remotePassword, f ->
+                    val preferences = CredentialsRepository.getEncryptedPreferences(context)
+                    val providerContext = providerContextFactory.getOrCreate(preferences).required()
+
                     credentials.verifyUserPassword(password = password) { isValid ->
                         if (isValid) {
                             credentials.pullDeviceSecret(
@@ -358,7 +339,67 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         }
                     }
                 }
-            ).show(parentFragmentManager, PullDialogFragment.DialogTag)
+            )
+        )
+
+        findPreference<Preference>(Settings.Keys.ManageUserCredentialsUpdatePassword)?.setOnPreferenceClickListener {
+            UpdatePasswordFragment()
+                .withArgumentsId<UpdatePasswordFragment>(id = "UpdatePasswordFragment")
+                .show(childFragmentManager, UpdatePasswordFragment.DialogTag)
+
+            true
+        }
+
+        findPreference<Preference>(Settings.Keys.ManageUserCredentialsUpdateSalt)?.setOnPreferenceClickListener {
+            UpdateSaltFragment()
+                .withArgumentsId<UpdateSaltFragment>(id = "UpdateSaltFragment")
+                .show(childFragmentManager, UpdateSaltFragment.DialogTag)
+
+            true
+        }
+
+        findPreference<Preference>(Settings.Keys.ManageDeviceSecretLocallyExport)?.setOnPreferenceClickListener {
+            ConfirmationDialogFragment()
+                .withIcon(R.drawable.ic_warning)
+                .withTitle(getString(R.string.settings_manage_device_secret_confirm_title))
+                .withMessage(getString(R.string.settings_manage_device_secret_confirm_text))
+                .withConfirmationHandler {
+                    ExportDialogFragment()
+                        .withArgumentsId<ExportDialogFragment>(id = "ExportDialogFragment")
+                        .show(childFragmentManager, ExportDialogFragment.DialogTag)
+                }
+                .show(childFragmentManager)
+
+            true
+        }
+
+        findPreference<Preference>(Settings.Keys.ManageDeviceSecretLocallyImport)?.setOnPreferenceClickListener {
+            ConfirmationDialogFragment()
+                .withIcon(R.drawable.ic_warning)
+                .withTitle(getString(R.string.settings_manage_device_secret_confirm_title))
+                .withMessage(getString(R.string.settings_manage_device_secret_confirm_text))
+                .withConfirmationHandler {
+                    ImportDialogFragment()
+                        .withArgumentsId<ImportDialogFragment>(id = "ImportDialogFragment")
+                        .show(childFragmentManager, ImportDialogFragment.DialogTag)
+                }
+                .show(childFragmentManager)
+
+            true
+        }
+
+        findPreference<Preference>(Settings.Keys.ManageDeviceSecretRemotelyPush)?.setOnPreferenceClickListener {
+            PushDialogFragment()
+                .withArgumentsId<PushDialogFragment>(id = "PushDialogFragment")
+                .show(childFragmentManager, PushDialogFragment.DialogTag)
+
+            true
+        }
+
+        findPreference<Preference>(Settings.Keys.ManageDeviceSecretRemotelyPull)?.setOnPreferenceClickListener {
+            PullDialogFragment()
+                .withArgumentsId<PullDialogFragment>(id = "PullDialogFragment")
+                .show(childFragmentManager, PullDialogFragment.DialogTag)
 
             true
         }
@@ -383,21 +424,17 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         findPreference<Preference>(Settings.Keys.ResetConfig)?.setOnPreferenceClickListener {
-            MaterialAlertDialogBuilder(context)
-                .setTitle(context.getString(R.string.settings_reset_config_confirm_title))
-                .setNeutralButton(context.getString(R.string.settings_reset_config_confirm_cancel_button_title)) { dialog, _ ->
-                    dialog.dismiss()
-                }
-                .setPositiveButton(context.getString(R.string.settings_reset_config_confirm_ok_button_title)) { dialog, _ ->
+            ConfirmationDialogFragment()
+                .withTitle(getString(R.string.settings_reset_config_confirm_title))
+                .withConfirmationHandler {
                     credentials.logout {
                         config.reset()
                         rules.clear()
                         schedules.clear()
-                        dialog.dismiss()
                         activity?.finish()
                     }
                 }
-                .show()
+                .show(childFragmentManager)
 
             true
         }

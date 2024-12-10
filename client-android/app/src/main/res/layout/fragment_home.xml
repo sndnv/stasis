@@ -3,155 +3,173 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <LinearLayout
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:layout_height="match_parent">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginTop="8dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginBottom="1dp"
-                android:text="@string/home_last_backup_label"
-                android:textAppearance="?attr/textAppearanceCaption" />
-
-            <com.google.android.material.card.MaterialCardView
+            <LinearLayout
+                android:id="@+id/last_backup_container_wrapper"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginTop="1dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginBottom="8dp">
-
-                <com.google.android.material.progressindicator.CircularProgressIndicator
-                    android:id="@+id/last_backup_in_progress"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_margin="16dp"
-                    android:indeterminate="true"
-                    android:visibility="gone" />
+                android:orientation="vertical"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
 
                 <TextView
-                    android:id="@+id/last_backup_no_data"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginBottom="1dp"
+                    android:text="@string/home_last_backup_label"
+                    android:textAppearance="?attr/textAppearanceCaption" />
+
+                <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="8dp"
-                    android:text="@string/home_last_backup_no_data"
-                    android:textAlignment="center"
-                    android:textAppearance="?attr/textAppearanceBody2"
-                    android:visibility="gone" />
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="1dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginBottom="8dp">
 
-                <LinearLayout
-                    android:id="@+id/last_backup_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackground"
-                    android:orientation="vertical"
-                    android:padding="16dp">
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:id="@+id/last_backup_in_progress"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_margin="16dp"
+                        android:indeterminate="true"
+                        android:visibility="gone" />
 
                     <TextView
-                        android:id="@+id/dataset_entry_details_title"
+                        android:id="@+id/last_backup_no_data"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:maxLines="2"
-                        android:textAppearance="?attr/textAppearanceSubtitle1" />
+                        android:padding="8dp"
+                        android:text="@string/home_last_backup_no_data"
+                        android:textAlignment="center"
+                        android:textAppearance="?attr/textAppearanceBody2"
+                        android:visibility="gone" />
 
-                    <TextView
-                        android:id="@+id/dataset_entry_details_info"
+                    <LinearLayout
+                        android:id="@+id/last_backup_container"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
-                        android:maxLines="2"
-                        android:paddingStart="4dp"
-                        android:paddingEnd="4dp"
-                        android:textAppearance="?attr/textAppearanceBody2" />
-                </LinearLayout>
+                        android:background="?attr/selectableItemBackground"
+                        android:orientation="vertical"
+                        android:padding="16dp">
 
-            </com.google.android.material.card.MaterialCardView>
+                        <TextView
+                            android:id="@+id/dataset_entry_details_title"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:maxLines="2"
+                            android:textAppearance="?attr/textAppearanceSubtitle1" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginTop="8dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginBottom="1dp"
-                android:text="@string/home_last_operation_label"
-                android:textAppearance="?attr/textAppearanceCaption" />
+                        <TextView
+                            android:id="@+id/dataset_entry_details_info"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:maxLines="2"
+                            android:paddingStart="4dp"
+                            android:paddingEnd="4dp"
+                            android:textAppearance="?attr/textAppearanceBody2" />
+                    </LinearLayout>
 
-            <com.google.android.material.card.MaterialCardView
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/last_operation_container_wrapper"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginTop="1dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginBottom="8dp">
-
-                <com.google.android.material.progressindicator.CircularProgressIndicator
-                    android:id="@+id/last_operation_in_progress"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_margin="16dp"
-                    android:indeterminate="true"
-                    android:visibility="gone" />
+                android:orientation="vertical"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/last_backup_container_wrapper">
 
                 <TextView
-                    android:id="@+id/last_operation_no_data"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginBottom="1dp"
+                    android:text="@string/home_last_operation_label"
+                    android:textAppearance="?attr/textAppearanceCaption" />
+
+                <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="8dp"
-                    android:text="@string/home_last_operation_no_data"
-                    android:textAlignment="center"
-                    android:textAppearance="?attr/textAppearanceBody2"
-                    android:visibility="gone" />
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="1dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginBottom="8dp">
 
-                <LinearLayout
-                    android:id="@+id/last_operation_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackground"
-                    android:orientation="vertical"
-                    android:padding="16dp">
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:id="@+id/last_operation_in_progress"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_margin="16dp"
+                        android:indeterminate="true"
+                        android:visibility="gone" />
 
                     <TextView
-                        android:id="@+id/operation_info"
+                        android:id="@+id/last_operation_no_data"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:maxLines="2"
-                        android:textAppearance="?attr/textAppearanceSubtitle1" />
+                        android:padding="8dp"
+                        android:text="@string/home_last_operation_no_data"
+                        android:textAlignment="center"
+                        android:textAppearance="?attr/textAppearanceBody2"
+                        android:visibility="gone" />
 
-                    <TextView
-                        android:id="@+id/operation_details"
+                    <LinearLayout
+                        android:id="@+id/last_operation_container"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
-                        android:maxLines="2"
-                        android:paddingStart="4dp"
-                        android:paddingEnd="4dp"
-                        android:textAppearance="?attr/textAppearanceBody2" />
+                        android:background="?attr/selectableItemBackground"
+                        android:orientation="vertical"
+                        android:padding="16dp">
 
-                    <TextView
-                        android:id="@+id/operation_completed"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
-                        android:maxLines="2"
-                        android:paddingStart="4dp"
-                        android:paddingEnd="4dp"
-                        android:textAppearance="?attr/textAppearanceBody2" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-        </LinearLayout>
+                        <TextView
+                            android:id="@+id/operation_info"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:maxLines="2"
+                            android:textAppearance="?attr/textAppearanceSubtitle1" />
+
+                        <TextView
+                            android:id="@+id/operation_details"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:maxLines="2"
+                            android:paddingStart="4dp"
+                            android:paddingEnd="4dp"
+                            android:textAppearance="?attr/textAppearanceBody2" />
+
+                        <TextView
+                            android:id="@+id/operation_completed"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:maxLines="2"
+                            android:paddingStart="4dp"
+                            android:paddingEnd="4dp"
+                            android:textAppearance="?attr/textAppearanceBody2" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
         <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
             android:id="@+id/start_backup"

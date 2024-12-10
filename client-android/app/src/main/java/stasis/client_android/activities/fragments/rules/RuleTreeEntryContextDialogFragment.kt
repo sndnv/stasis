@@ -6,8 +6,6 @@ import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ListView
-import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.ColorInt
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -15,6 +13,7 @@ import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.views.tree.FileTreeNode
+import stasis.client_android.databinding.ContextDialogRuleTreeEntryBinding
 import stasis.client_android.lib.collection.rules.Rule
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 
@@ -29,16 +28,11 @@ class RuleTreeEntryContextDialogFragment(
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val view = inflater.inflate(R.layout.context_dialog_rule_tree_entry, container, false)
+        val binding = ContextDialogRuleTreeEntryBinding.inflate(inflater)
 
         val context = requireContext()
 
-        val name: TextView = view.findViewById(R.id.entry_name)
-        val parent: TextView = view.findViewById(R.id.entry_parent_directory)
-        val suggestionsTitle: TextView = view.findViewById(R.id.entry_rule_suggestions_title)
-        val suggestions: ListView = view.findViewById(R.id.entry_rule_suggestions)
-
-        name.setCompoundDrawablesWithIntrinsicBounds(
+        binding.entryName.setCompoundDrawablesWithIntrinsicBounds(
             if (selectedNode.isDirectory) R.drawable.ic_tree_directory
             else R.drawable.ic_tree_file,
             0,
@@ -46,7 +40,7 @@ class RuleTreeEntryContextDialogFragment(
             0
         )
 
-        name.text = context.getString(R.string.rule_suggestion_entry_name)
+        binding.entryName.text = context.getString(R.string.rule_suggestion_entry_name)
             .renderAsSpannable(
                 StyledString(
                     placeholder = "%1\$s",
@@ -55,9 +49,10 @@ class RuleTreeEntryContextDialogFragment(
                 )
             )
 
-        name.setTextColor(nodeColor)
+        binding.entryName.setTextColor(nodeColor)
 
-        parent.text = context.getString(R.string.rule_suggestion_entry_parent, selectedNode.parent ?: "-")
+        binding.entryParentDirectory.text =
+            context.getString(R.string.rule_suggestion_entry_parent, selectedNode.parent ?: "-")
 
         val suggestedRules = if (selectedNode.isDirectory) {
             listOf(
@@ -145,13 +140,13 @@ class RuleTreeEntryContextDialogFragment(
             )
         }.filterNotNull()
 
-        suggestionsTitle.text = context.getString(
+        binding.entryRuleSuggestionsTitle.text = context.getString(
             if (selectedNode.isDirectory) R.string.rule_suggestions_label_directory
             else R.string.rule_suggestions_label_file,
             suggestedRules.size
         )
 
-        suggestions.adapter = RuleSuggestionListItemAdapter(
+        binding.entryRuleSuggestions.adapter = RuleSuggestionListItemAdapter(
             context = context,
             resource = R.layout.list_item_rule_suggestion,
             suggestions = suggestedRules,
@@ -176,7 +171,12 @@ class RuleTreeEntryContextDialogFragment(
             }
         )
 
-        return view
+        return binding.root
+    }
+
+    override fun onPause() {
+        dismiss()
+        super.onPause()
     }
 
     companion object {

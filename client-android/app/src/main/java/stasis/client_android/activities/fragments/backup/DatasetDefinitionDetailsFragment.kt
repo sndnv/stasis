@@ -17,7 +17,6 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.Backups.startBackup
@@ -31,6 +30,7 @@ import stasis.client_android.activities.helpers.Transitions.configureSourceTrans
 import stasis.client_android.activities.helpers.Transitions.configureTargetTransition
 import stasis.client_android.activities.helpers.Transitions.operationComplete
 import stasis.client_android.activities.helpers.Transitions.setTargetTransitionName
+import stasis.client_android.activities.views.dialogs.InformationDialogFragment
 import stasis.client_android.api.DatasetsViewModel
 import stasis.client_android.databinding.FragmentDatasetDefinitionDetailsBinding
 import stasis.client_android.persistence.config.ConfigRepository
@@ -168,11 +168,11 @@ class DatasetDefinitionDetailsFragment : Fragment() {
                     providerContext = providerContext,
                     definitionId = definitionId,
                     onOperationsPending = {
-                        MaterialAlertDialogBuilder(binding.root.context)
-                            .setIcon(R.drawable.ic_warning)
-                            .setTitle(getString(R.string.dataset_definition_start_backup_disabled_title))
-                            .setMessage(getString(R.string.dataset_definition_start_backup_disabled_content))
-                            .show()
+                        InformationDialogFragment()
+                            .withIcon(R.drawable.ic_warning)
+                            .withTitle(getString(R.string.dataset_definition_start_backup_disabled_title))
+                            .withMessage(getString(R.string.dataset_definition_start_backup_disabled_content))
+                            .show(childFragmentManager)
                     },
                     onOperationStarted = { backupId ->
                         notificationManager.putOperationStartedNotification(

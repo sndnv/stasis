@@ -1,151 +1,160 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android">
 
-
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="8dp"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:layout_height="wrap_content">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/device_loading_in_progress"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/device_header_title"
-            android:textAppearance="?attr/textAppearanceHeadline6"
-            android:textIsSelectable="true" />
-
-        <TextView
-            android:id="@+id/device_info"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
-            android:textAppearance="?attr/textAppearanceBody2"
-            android:textIsSelectable="true" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingTop="16dp"
-            android:text="@string/device_field_title_name"
-            android:textAppearance="?attr/textAppearanceSubtitle1"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/device_name"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
-            android:textAppearance="?attr/textAppearanceBody2"
-            android:textColor="?android:attr/textColorSecondary" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingTop="16dp"
-            android:text="@string/device_field_title_limits"
-            android:textAppearance="?attr/textAppearanceSubtitle1"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/device_limits_none"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingHorizontal="4dp"
-            android:text="@string/device_field_content_limits_none"
-            android:textAppearance="?attr/textAppearanceBody2"
-            android:textColor="?android:attr/textColorSecondary" />
+            android:layout_centerHorizontal="true"
+            android:indeterminate="true" />
 
         <LinearLayout
-            android:id="@+id/device_limits"
+            android:id="@+id/device_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:visibility="gone">
 
-            <include
-                android:id="@+id/device_limits_max_crates"
-                layout="@layout/layout_limits_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/device_header_id"
+                android:textAppearance="?attr/textAppearanceSubtitle1"
+                android:textStyle="bold" />
 
-            <include
-                android:id="@+id/device_limits_max_storage_per_crate"
-                layout="@layout/layout_limits_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+            <TextView
+                android:id="@+id/device_info"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:textAppearance="?attr/textAppearanceBody2"
+                android:textIsSelectable="true" />
 
-            <include
-                android:id="@+id/device_limits_max_storage"
-                layout="@layout/layout_limits_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="16dp"
+                android:text="@string/device_field_title_name"
+                android:textAppearance="?attr/textAppearanceSubtitle1"
+                android:textStyle="bold" />
 
-            <include
-                android:id="@+id/device_limits_min_retention"
-                layout="@layout/layout_limits_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+            <TextView
+                android:id="@+id/device_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:textAppearance="?attr/textAppearanceBody2" />
 
-            <include
-                android:id="@+id/device_limits_max_retention"
-                layout="@layout/layout_limits_row"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="16dp"
+                android:text="@string/device_field_title_limits"
+                android:textAppearance="?attr/textAppearanceSubtitle1"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/device_limits_none"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="4dp"
+                android:text="@string/device_field_content_limits_none"
+                android:textAppearance="?attr/textAppearanceBody2"
+                android:textColor="?android:attr/textColorSecondary" />
+
+            <LinearLayout
+                android:id="@+id/device_limits"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <include
+                    android:id="@+id/device_limits_max_crates"
+                    layout="@layout/layout_limits_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+                <include
+                    android:id="@+id/device_limits_max_storage_per_crate"
+                    layout="@layout/layout_limits_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+                <include
+                    android:id="@+id/device_limits_max_storage"
+                    layout="@layout/layout_limits_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+                <include
+                    android:id="@+id/device_limits_min_retention"
+                    layout="@layout/layout_limits_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+                <include
+                    android:id="@+id/device_limits_max_retention"
+                    layout="@layout/layout_limits_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="16dp"
+                android:text="@string/device_field_title_node"
+                android:textAppearance="?attr/textAppearanceSubtitle1"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/device_node"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:textAppearance="?attr/textAppearanceBody2" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="16dp"
+                android:text="@string/device_field_title_created"
+                android:textAppearance="?attr/textAppearanceSubtitle1"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/device_created"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:textAppearance="?attr/textAppearanceBody2"
+                android:textIsSelectable="true" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="16dp"
+                android:text="@string/device_field_title_updated"
+                android:textAppearance="?attr/textAppearanceSubtitle1"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/device_updated"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:textAppearance="?attr/textAppearanceBody2"
+                android:textIsSelectable="true" />
         </LinearLayout>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingTop="16dp"
-            android:text="@string/device_field_title_node"
-            android:textAppearance="?attr/textAppearanceSubtitle1"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/device_node"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
-            android:textAppearance="?attr/textAppearanceBody2"
-            android:textColor="?android:attr/textColorSecondary" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingTop="16dp"
-            android:text="@string/device_field_title_created"
-            android:textAppearance="?attr/textAppearanceSubtitle1"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/device_created"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
-            android:textAppearance="?attr/textAppearanceBody2"
-            android:textIsSelectable="true" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingTop="16dp"
-            android:text="@string/device_field_title_updated"
-            android:textAppearance="?attr/textAppearanceSubtitle1"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/device_updated"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
-            android:textAppearance="?attr/textAppearanceBody2"
-            android:textIsSelectable="true" />
-    </LinearLayout>
+    </RelativeLayout>
 </layout>

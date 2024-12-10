@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -10,61 +11,185 @@
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="10dp">
 
-        <androidx.viewpager2.widget.ViewPager2
-            android:id="@+id/recovery_pager"
+        <ScrollView
+            android:id="@+id/recover_controls_container"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior"
-            app:layout_constraintBottom_toTopOf="@id/recovery_buttons"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <GridLayout
-            android:id="@+id/recovery_buttons"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:columnCount="3"
-            android:orientation="horizontal"
-            android:rowCount="1"
+            android:fadeScrollbars="false"
             app:layout_constraintBottom_toTopOf="@id/run_recover"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/recovery_pager">
+            app:layout_constraintTop_toTopOf="parent">
 
-            <Button
-                android:id="@+id/go_previous"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_row="0"
-                android:layout_column="0"
-                android:enabled="false"
-                android:text="@string/recovery_picker_previous" />
+                android:orientation="vertical">
 
-            <com.google.android.material.tabs.TabLayout
-                android:id="@+id/recovery_tabs"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_row="0"
-                android:layout_column="1"
-                android:layout_gravity="fill"
-                app:tabBackground="@drawable/dot_selector"
-                app:tabGravity="center"
-                app:tabIndicatorHeight="0dp"
-                app:tabPaddingEnd="10dp"
-                app:tabPaddingStart="10dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/recovery_pick_definition_title"
+                    android:textAppearance="?attr/textAppearanceCaption" />
 
-            <Button
-                android:id="@+id/go_next"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_row="0"
-                android:layout_column="2"
-                android:text="@string/recovery_picker_next" />
-        </GridLayout>
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/definition"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:importantForAutofill="no"
+                    app:hintEnabled="false"
+                    app:startIconCheckable="true"
+                    app:startIconDrawable="@drawable/ic_info">
+
+                    <AutoCompleteTextView
+                        android:id="@+id/definition_text_input"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:inputType="none"
+                        tools:ignore="LabelFor" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <LinearLayout
+                    android:id="@+id/recovery_options_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingTop="8dp"
+                        android:text="@string/recovery_pick_entry_source_type_title"
+                        android:textAppearance="?attr/textAppearanceCaption" />
+
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/recovery_source_type_button"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        app:selectionRequired="true"
+                        app:singleSelection="true">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/recovery_source_type_latest"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="56dp"
+                            android:layout_weight="1"
+                            android:text="@string/recovery_pick_entry_source_type_latest"
+                            app:cornerRadius="4dp"
+                            app:icon="@drawable/ic_check" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/recovery_source_type_entry"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="56dp"
+                            android:layout_weight="1"
+                            android:text="@string/recovery_pick_entry_source_type_entry"
+                            app:cornerRadius="4dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/recovery_source_type_until"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="56dp"
+                            android:layout_weight="1"
+                            android:text="@string/recovery_pick_entry_source_type_until"
+                            app:cornerRadius="4dp" />
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                    <LinearLayout
+                        android:id="@+id/recover_from_entry"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="7dp"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/entry"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense.ExposedDropdownMenu"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:importantForAutofill="no"
+                            app:hintEnabled="false">
+
+                            <AutoCompleteTextView
+                                android:id="@+id/entry_text_input"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:inputType="none"
+                                tools:ignore="LabelFor" />
+
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/recover_until"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="3dp"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <include
+                            android:id="@+id/recover_until_timestamp"
+                            layout="@layout/input_timestamp"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/recovery_more_options_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_gravity="center"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:paddingTop="8dp"
+                        android:text="@string/recovery_more_options_button" />
+
+                    <LinearLayout
+                        android:id="@+id/recovery_more_options_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingTop="8dp"
+                            android:text="@string/recovery_pick_path_query_title"
+                            android:textAppearance="?attr/textAppearanceCaption" />
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/path_query"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:importantForAutofill="no"
+                            android:inputType="text"
+                            app:endIconMode="clear_text"
+                            app:hintEnabled="false"
+                            app:startIconCheckable="true"
+                            app:startIconDrawable="@drawable/ic_info">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/path_query_text_input"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content" />
+
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
 
         <Button
             android:id="@+id/run_recover"
@@ -75,6 +200,6 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/recovery_buttons" />
+            app:layout_constraintTop_toBottomOf="@id/recover_controls_container" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

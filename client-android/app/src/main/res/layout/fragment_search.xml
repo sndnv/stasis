@@ -10,10 +10,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="10dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginVertical="10dp"
             android:orientation="vertical">
 
             <TextView
@@ -29,6 +27,7 @@
                 android:layout_height="wrap_content"
                 android:importantForAutofill="no"
                 android:inputType="text"
+                app:endIconMode="clear_text"
                 app:hintEnabled="false">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -43,10 +42,8 @@
             android:id="@+id/search_controls"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="10dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginVertical="10dp"
             android:orientation="vertical">
 
             <TextView

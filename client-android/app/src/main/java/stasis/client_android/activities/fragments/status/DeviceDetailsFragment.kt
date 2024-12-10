@@ -17,8 +17,6 @@ import stasis.client_android.activities.helpers.Common.asString
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.Common.toMinimizedString
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullDateTime
-import stasis.client_android.activities.helpers.Transitions.operationComplete
-import stasis.client_android.activities.helpers.Transitions.operationInProgress
 import stasis.client_android.api.DeviceStatusViewModel
 import stasis.client_android.databinding.FragmentDeviceDetailsBinding
 import javax.inject.Inject
@@ -35,8 +33,6 @@ class DeviceDetailsFragment : Fragment() {
             container,
             false
         )
-
-        activity.operationInProgress()
 
         status.device.observe(viewLifecycleOwner) { device ->
             val context = requireContext()
@@ -137,7 +133,8 @@ class DeviceDetailsFragment : Fragment() {
             val updated = device.updated.formatAsFullDateTime(context)
             binding.deviceUpdated.text = context.getString(R.string.device_field_content_updated, updated)
 
-            activity.operationComplete()
+            binding.deviceLoadingInProgress.isVisible = false
+            binding.deviceContainer.isVisible = true
         }
 
         return binding.root

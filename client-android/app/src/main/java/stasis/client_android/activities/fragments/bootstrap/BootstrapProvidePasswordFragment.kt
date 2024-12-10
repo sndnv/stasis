@@ -9,10 +9,10 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.TextInputExtensions.validateSecret
 import stasis.client_android.activities.helpers.TextInputExtensions.validateSecretMatches
+import stasis.client_android.activities.views.dialogs.InformationDialogFragment
 import stasis.client_android.databinding.FragmentBootstrapProvidePasswordBinding
 
 class BootstrapProvidePasswordFragment : Fragment() {
@@ -60,17 +60,17 @@ class BootstrapProvidePasswordFragment : Fragment() {
         }
 
         binding.bootstrapProvidePassword.setStartIconOnClickListener {
-            MaterialAlertDialogBuilder(requireContext())
-                .setTitle(R.string.bootstrap_password_hint)
-                .setMessage(getString(R.string.bootstrap_password_hint_extra))
-                .show()
+            InformationDialogFragment()
+                .withTitle(getString(R.string.bootstrap_password_hint))
+                .withMessage(getString(R.string.bootstrap_password_hint_extra))
+                .show(childFragmentManager)
         }
 
         binding.bootstrapProvidePasswordVerify.setStartIconOnClickListener {
-            MaterialAlertDialogBuilder(requireContext())
-                .setTitle(R.string.bootstrap_password_verify_hint)
-                .setMessage(getString(R.string.bootstrap_password_verify_hint_extra))
-                .show()
+            InformationDialogFragment()
+                .withTitle(getString(R.string.bootstrap_password_verify_hint))
+                .withMessage(getString(R.string.bootstrap_password_verify_hint_extra))
+                .show(childFragmentManager)
         }
 
         return binding.root

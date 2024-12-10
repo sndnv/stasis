@@ -1,6 +1,7 @@
 package stasis.client_android.activities.fragments.operations
 
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Typeface
 import android.text.style.StyleSpan
 import android.view.LayoutInflater
@@ -10,7 +11,6 @@ import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.asString
@@ -20,10 +20,12 @@ import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullD
 import stasis.client_android.activities.helpers.Transitions.setSourceTransitionName
 import stasis.client_android.activities.views.context.EntryAction
 import stasis.client_android.activities.views.context.EntryActionsContextDialogFragment
+import stasis.client_android.activities.views.dialogs.ConfirmationDialogFragment
 import stasis.client_android.databinding.ListItemOperationBinding
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.tracking.state.OperationState
+import java.util.Locale
 
 class OperationListItemAdapter(
     private val onOperationDetailsRequested: (View, OperationId, Operation.Type) -> Unit,
@@ -79,27 +81,32 @@ class OperationListItemAdapter(
                     )
                 )
 
+            binding.operationStarted.text = context.getString(
+                R.string.operation_field_content_started
+            ).renderAsSpannable(
+                StyledString(
+                    placeholder = "%1\$s",
+                    content = progress.started.formatAsFullDateTime(context),
+                    style = StyleSpan(Typeface.BOLD)
+                )
+            )
+
             binding.operationDetails.text = context.getString(
                 if (progress.failures == 0) R.string.operation_field_content_details
                 else R.string.operation_field_content_details_with_failures
             ).renderAsSpannable(
                 StyledString(
                     placeholder = "%1\$s",
-                    content = progress.started.formatAsFullDateTime(context),
-                    style = StyleSpan(Typeface.BOLD)
-                ),
-                StyledString(
-                    placeholder = "%2\$s",
                     content = progress.processed.toString(),
                     style = StyleSpan(Typeface.BOLD)
                 ),
                 StyledString(
-                    placeholder = "%3\$s",
+                    placeholder = "%2\$s",
                     content = progress.total.toString(),
                     style = StyleSpan(Typeface.BOLD)
                 ),
                 StyledString(
-                    placeholder = "%4\$s",
+                    placeholder = "%3\$s",
                     content = progress.failures.toString(),
                     style = StyleSpan(Typeface.BOLD)
                 )
@@ -109,8 +116,22 @@ class OperationListItemAdapter(
                 null -> {
                     val expectedSteps = progress.total
                     val actualSteps = progress.processed
+                    val progressPct = actualSteps / expectedSteps.toDouble() * 100
 
-                    binding.operationCompleted.isVisible = false
+                    if (context.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
+                        binding.operationCompleted.isVisible = false
+                    } else {
+                        binding.operationCompleted.text =
+                            context.getString(R.string.operation_field_content_completed_progress)
+                                .renderAsSpannable(
+                                    StyledString(
+                                        placeholder = "%1\$s",
+                                        content = String.format(Locale.getDefault(), "%.2f", progressPct),
+                                        style = StyleSpan(Typeface.BOLD)
+                                    )
+                                )
+                    }
+
                     binding.operationProgress.isVisible = true
 
                     binding.operationProgress.max = expectedSteps
@@ -152,21 +173,14 @@ class OperationListItemAdapter(
                             name = context.getString(R.string.operation_resume_button_title),
                             description = context.getString(R.string.operation_resume_button_hint),
                             handler = {
-                                MaterialAlertDialogBuilder(context)
-                                    .setTitle(
+                                ConfirmationDialogFragment()
+                                    .withTitle(
                                         context.getString(
                                             R.string.operation_resume_confirm_title,
                                             operation.toMinimizedString()
                                         )
                                     )
-                                    .setNeutralButton(
-                                        context.getString(R.string.operation_resume_confirm_cancel_button_title)
-                                    ) { dialog, _ ->
-                                        dialog.dismiss()
-                                    }
-                                    .setPositiveButton(
-                                        context.getString(R.string.operation_resume_confirm_ok_button_title)
-                                    ) { dialog, _ ->
+                                    .withConfirmationHandler {
                                         onOperationResumeRequested(operation)
 
                                         Toast.makeText(
@@ -174,10 +188,8 @@ class OperationListItemAdapter(
                                             context.getString(R.string.toast_operation_resumed),
                                             Toast.LENGTH_SHORT
                                         ).show()
-
-                                        dialog.dismiss()
                                     }
-                                    .show()
+                                    .show(FragmentManager.findFragmentManager(binding.root))
                             }
                         ) else null,
                         if (progress.completed == null && isActive) EntryAction(
@@ -185,21 +197,14 @@ class OperationListItemAdapter(
                             name = context.getString(R.string.operation_stop_button_title),
                             description = context.getString(R.string.operation_stop_button_hint),
                             handler = {
-                                MaterialAlertDialogBuilder(context)
-                                    .setTitle(
+                                ConfirmationDialogFragment()
+                                    .withTitle(
                                         context.getString(
                                             R.string.operation_stop_confirm_title,
                                             operation.toMinimizedString()
                                         )
                                     )
-                                    .setNeutralButton(
-                                        context.getString(R.string.operation_stop_confirm_cancel_button_title)
-                                    ) { dialog, _ ->
-                                        dialog.dismiss()
-                                    }
-                                    .setPositiveButton(
-                                        context.getString(R.string.operation_stop_confirm_ok_button_title)
-                                    ) { dialog, _ ->
+                                    .withConfirmationHandler {
                                         onOperationStopRequested(operation)
 
                                         Toast.makeText(
@@ -207,10 +212,8 @@ class OperationListItemAdapter(
                                             context.getString(R.string.toast_operation_stopped),
                                             Toast.LENGTH_SHORT
                                         ).show()
-
-                                        dialog.dismiss()
                                     }
-                                    .show()
+                                    .show(FragmentManager.findFragmentManager(binding.root))
                             }
                         ) else null,
                         if (!isActive) EntryAction(
@@ -219,28 +222,17 @@ class OperationListItemAdapter(
                             description = context.getString(R.string.operation_remove_button_hint),
                             color = R.color.design_default_color_error,
                             handler = {
-                                MaterialAlertDialogBuilder(context)
-                                    .setTitle(
+                                ConfirmationDialogFragment()
+                                    .withTitle(
                                         context.getString(R.string.operation_remove_confirm_title)
                                     )
-                                    .setMessage(
-                                        context.getString(R.string.operation_remove_confirm_content)
-                                            .renderAsSpannable(
-                                                StyledString(
-                                                    placeholder = "%1\$s",
-                                                    content = operation.toMinimizedString(),
-                                                    style = StyleSpan(Typeface.BOLD)
-                                                )
-                                            )
+                                    .withMessage(
+                                        context.getString(
+                                            R.string.operation_remove_confirm_content,
+                                            operation.toMinimizedString()
+                                        )
                                     )
-                                    .setNeutralButton(
-                                        context.getString(R.string.operation_remove_confirm_cancel_button_title)
-                                    ) { dialog, _ ->
-                                        dialog.dismiss()
-                                    }
-                                    .setPositiveButton(
-                                        context.getString(R.string.operation_remove_confirm_ok_button_title)
-                                    ) { dialog, _ ->
+                                    .withConfirmationHandler {
                                         onOperationRemoveRequested(state.type, operation)
 
                                         Toast.makeText(
@@ -248,10 +240,8 @@ class OperationListItemAdapter(
                                             context.getString(R.string.toast_operation_removed),
                                             Toast.LENGTH_SHORT
                                         ).show()
-
-                                        dialog.dismiss()
                                     }
-                                    .show()
+                                    .show(FragmentManager.findFragmentManager(binding.root))
                             }
                         ) else null
                     )

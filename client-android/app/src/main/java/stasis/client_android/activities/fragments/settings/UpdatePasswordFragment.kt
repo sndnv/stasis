@@ -4,125 +4,120 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
-import com.google.android.material.progressindicator.CircularProgressIndicator
-import com.google.android.material.textfield.TextInputLayout
+import androidx.fragment.app.Fragment
 import stasis.client_android.R
+import stasis.client_android.databinding.DialogUserCredentialsUpdatePasswordBinding
 import stasis.client_android.lib.security.exceptions.InvalidUserCredentials
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Failure
+import stasis.client_android.utils.DynamicArguments
+import stasis.client_android.utils.DynamicArguments.pullArguments
 
-class UpdatePasswordFragment(
-    private val updateUserPassword: (String, String, f: (Try<Unit>) -> Unit) -> Unit
-) : DialogFragment() {
+class UpdatePasswordFragment : DialogFragment(), DynamicArguments.Receiver {
+    override val argumentsKey: String = ArgumentsKey
+
+    override val receiver: Fragment = this
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        val view = inflater.inflate(R.layout.dialog_user_credentials_update_password, container, false)
+        val binding = DialogUserCredentialsUpdatePasswordBinding.inflate(inflater)
 
-        val currentPasswordView =
-            view.findViewById<TextInputLayout>(R.id.user_credentials_update_password_current_password)
-
-        val currentPasswordConfirmationView =
-            view.findViewById<TextInputLayout>(R.id.user_credentials_update_password_current_password_confirmation)
-
-        val newPasswordView =
-            view.findViewById<TextInputLayout>(R.id.user_credentials_update_password_new_password)
-
-        val newPasswordConfirmationView =
-            view.findViewById<TextInputLayout>(R.id.user_credentials_update_password_new_password_confirmation)
-
-        val inProgress = view.findViewById<CircularProgressIndicator>(R.id.user_credentials_update_password_in_progress)
-        val confirmButton = view.findViewById<Button>(R.id.user_credentials_update_password_confirm)
-
-        view.findViewById<Button>(R.id.user_credentials_update_password_cancel).setOnClickListener {
+        binding.userCredentialsUpdatePasswordCancel.setOnClickListener {
             dialog?.dismiss()
         }
 
-        confirmButton.setOnClickListener {
-            currentPasswordView.isErrorEnabled = false
-            currentPasswordView.error = null
-            currentPasswordConfirmationView.isErrorEnabled = false
-            currentPasswordConfirmationView.error = null
-            newPasswordView.isErrorEnabled = false
-            newPasswordView.error = null
-            newPasswordConfirmationView.isErrorEnabled = false
-            newPasswordConfirmationView.error = null
+        pullArguments<Arguments>().observe(viewLifecycleOwner) { arguments ->
+            binding.userCredentialsUpdatePasswordConfirm.setOnClickListener {
+                binding.userCredentialsUpdatePasswordCurrentPassword.isErrorEnabled = false
+                binding.userCredentialsUpdatePasswordCurrentPassword.error = null
+                binding.userCredentialsUpdatePasswordCurrentPasswordConfirmation.isErrorEnabled = false
+                binding.userCredentialsUpdatePasswordCurrentPasswordConfirmation.error = null
+                binding.userCredentialsUpdatePasswordNewPassword.isErrorEnabled = false
+                binding.userCredentialsUpdatePasswordNewPassword.error = null
+                binding.userCredentialsUpdatePasswordNewPasswordConfirmation.isErrorEnabled = false
+                binding.userCredentialsUpdatePasswordNewPasswordConfirmation.error = null
 
-            val currentPassword = currentPasswordView.editText?.text?.toString().orEmpty()
-            val currentPasswordConfirmation = currentPasswordConfirmationView.editText?.text?.toString().orEmpty()
-            val newPassword = newPasswordView.editText?.text?.toString().orEmpty()
-            val newPasswordConfirmation = newPasswordConfirmationView.editText?.text?.toString().orEmpty()
+                val currentPassword =
+                    binding.userCredentialsUpdatePasswordCurrentPassword.editText?.text?.toString().orEmpty()
+                val currentPasswordConfirmation =
+                    binding.userCredentialsUpdatePasswordCurrentPasswordConfirmation.editText?.text?.toString()
+                        .orEmpty()
+                val newPassword =
+                    binding.userCredentialsUpdatePasswordNewPassword.editText?.text?.toString().orEmpty()
+                val newPasswordConfirmation =
+                    binding.userCredentialsUpdatePasswordNewPasswordConfirmation.editText?.text?.toString().orEmpty()
 
-            val currentPasswordsMatch = currentPassword == currentPasswordConfirmation
-            val newPasswordsMatch = newPassword == newPasswordConfirmation
+                val currentPasswordsMatch = currentPassword == currentPasswordConfirmation
+                val newPasswordsMatch = newPassword == newPasswordConfirmation
 
-            when {
-                currentPassword.isEmpty() -> {
-                    currentPasswordView.isErrorEnabled = true
-                    currentPasswordView.error =
-                        getString(R.string.settings_manage_user_credentials_empty_password)
-                }
+                when {
+                    currentPassword.isEmpty() -> {
+                        binding.userCredentialsUpdatePasswordCurrentPassword.isErrorEnabled = true
+                        binding.userCredentialsUpdatePasswordCurrentPassword.error =
+                            getString(R.string.settings_manage_user_credentials_empty_password)
+                    }
 
-                currentPasswordConfirmation.isEmpty() -> {
-                    currentPasswordConfirmationView.isErrorEnabled = true
-                    currentPasswordConfirmationView.error =
-                        getString(R.string.settings_manage_user_credentials_empty_password)
-                }
+                    currentPasswordConfirmation.isEmpty() -> {
+                        binding.userCredentialsUpdatePasswordCurrentPasswordConfirmation.isErrorEnabled = true
+                        binding.userCredentialsUpdatePasswordCurrentPasswordConfirmation.error =
+                            getString(R.string.settings_manage_user_credentials_empty_password)
+                    }
 
-                !currentPasswordsMatch -> {
-                    currentPasswordView.isErrorEnabled = true
-                    currentPasswordView.error =
-                        getString(R.string.settings_manage_user_credentials_mismatched_passwords)
-                    currentPasswordConfirmationView.isErrorEnabled = true
-                    currentPasswordConfirmationView.error =
-                        getString(R.string.settings_manage_user_credentials_mismatched_passwords)
-                }
+                    !currentPasswordsMatch -> {
+                        binding.userCredentialsUpdatePasswordCurrentPassword.isErrorEnabled = true
+                        binding.userCredentialsUpdatePasswordCurrentPassword.error =
+                            getString(R.string.settings_manage_user_credentials_mismatched_passwords)
+                        binding.userCredentialsUpdatePasswordCurrentPasswordConfirmation.isErrorEnabled = true
+                        binding.userCredentialsUpdatePasswordCurrentPasswordConfirmation.error =
+                            getString(R.string.settings_manage_user_credentials_mismatched_passwords)
+                    }
 
-                newPassword.isEmpty() -> {
-                    newPasswordView.isErrorEnabled = true
-                    newPasswordView.error =
-                        getString(R.string.settings_manage_user_credentials_empty_password)
-                }
+                    newPassword.isEmpty() -> {
+                        binding.userCredentialsUpdatePasswordNewPassword.isErrorEnabled = true
+                        binding.userCredentialsUpdatePasswordNewPassword.error =
+                            getString(R.string.settings_manage_user_credentials_empty_password)
+                    }
 
-                newPasswordConfirmation.isEmpty() -> {
-                    newPasswordConfirmationView.isErrorEnabled = true
-                    newPasswordConfirmationView.error =
-                        getString(R.string.settings_manage_user_credentials_empty_password)
-                }
+                    newPasswordConfirmation.isEmpty() -> {
+                        binding.userCredentialsUpdatePasswordNewPasswordConfirmation.isErrorEnabled = true
+                        binding.userCredentialsUpdatePasswordNewPasswordConfirmation.error =
+                            getString(R.string.settings_manage_user_credentials_empty_password)
+                    }
 
-                !newPasswordsMatch -> {
-                    newPasswordView.isErrorEnabled = true
-                    newPasswordView.error =
-                        getString(R.string.settings_manage_user_credentials_mismatched_passwords)
-                    newPasswordConfirmationView.isErrorEnabled = true
-                    newPasswordConfirmationView.error =
-                        getString(R.string.settings_manage_user_credentials_mismatched_passwords)
-                }
+                    !newPasswordsMatch -> {
+                        binding.userCredentialsUpdatePasswordNewPassword.isErrorEnabled = true
+                        binding.userCredentialsUpdatePasswordNewPassword.error =
+                            getString(R.string.settings_manage_user_credentials_mismatched_passwords)
+                        binding.userCredentialsUpdatePasswordNewPasswordConfirmation.isErrorEnabled = true
+                        binding.userCredentialsUpdatePasswordNewPasswordConfirmation.error =
+                            getString(R.string.settings_manage_user_credentials_mismatched_passwords)
+                    }
 
-                else -> {
-                    confirmButton.isVisible = false
-                    inProgress.isVisible = true
-                    updateUserPassword(currentPassword, newPassword) {
-                        if (it is Failure && it.exception is InvalidUserCredentials) {
-                            currentPasswordView.isErrorEnabled = true
-                            currentPasswordView.error =
-                                getString(R.string.settings_manage_user_credentials_invalid_current_password)
-                            confirmButton.isVisible = true
-                            inProgress.isVisible = false
-                        } else {
-                            dialog?.dismiss()
+                    else -> {
+                        binding.userCredentialsUpdatePasswordConfirm.isVisible = false
+                        binding.userCredentialsUpdatePasswordInProgress.isVisible = true
+                        arguments.updateUserPassword(currentPassword, newPassword) {
+                            if (it is Failure && it.exception is InvalidUserCredentials) {
+                                binding.userCredentialsUpdatePasswordCurrentPassword.isErrorEnabled = true
+                                binding.userCredentialsUpdatePasswordCurrentPassword.error =
+                                    getString(R.string.settings_manage_user_credentials_invalid_current_password)
+                                binding.userCredentialsUpdatePasswordConfirm.isVisible = true
+                                binding.userCredentialsUpdatePasswordInProgress.isVisible = false
+                            } else {
+                                dialog?.dismiss()
+                            }
                         }
                     }
                 }
             }
         }
 
-        return view
+        return binding.root
     }
 
     override fun onStart() {
@@ -134,6 +129,13 @@ class UpdatePasswordFragment(
     }
 
     companion object {
+        data class Arguments(
+            val updateUserPassword: (String, String, f: (Try<Unit>) -> Unit) -> Unit
+        ) : DynamicArguments.ArgumentSet
+
+        private const val ArgumentsKey: String =
+            "stasis.client_android.activities.fragments.settings.UpdatePasswordFragment.arguments.key"
+
         const val DialogTag: String =
             "stasis.client_android.activities.fragments.settings.UpdatePasswordFragment"
     }

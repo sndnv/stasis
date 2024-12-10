@@ -8,7 +8,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.asSizeString
@@ -18,6 +17,7 @@ import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsDateT
 import stasis.client_android.activities.helpers.Transitions.setSourceTransitionName
 import stasis.client_android.activities.views.context.EntryAction
 import stasis.client_android.activities.views.context.EntryActionsContextDialogFragment
+import stasis.client_android.activities.views.dialogs.ConfirmationDialogFragment
 import stasis.client_android.databinding.ListItemDatasetEntryBinding
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.server.datasets.DatasetEntry
@@ -112,32 +112,20 @@ class DatasetEntryListItemAdapter(
                             description = context.getString(R.string.dataset_entry_remove_button_hint),
                             color = R.color.design_default_color_error,
                             handler = {
-                                MaterialAlertDialogBuilder(context)
-                                    .setTitle(
+                                ConfirmationDialogFragment()
+                                    .withTitle(
                                         context.getString(R.string.dataset_entry_remove_confirm_title)
                                     )
-                                    .setMessage(
-                                        context.getString(R.string.dataset_entry_remove_confirm_content)
-                                            .renderAsSpannable(
-                                                StyledString(
-                                                    placeholder = "%1\$s",
-                                                    content = entry.id.toMinimizedString(),
-                                                    style = StyleSpan(Typeface.BOLD)
-                                                )
-                                            )
+                                    .withMessage(
+                                        context.getString(
+                                            R.string.dataset_entry_remove_confirm_content,
+                                            entry.id.toMinimizedString()
+                                        )
                                     )
-                                    .setNeutralButton(
-                                        context.getString(R.string.dataset_entry_remove_confirm_cancel_button_title)
-                                    ) { dialog, _ ->
-                                        dialog.dismiss()
-                                    }
-                                    .setPositiveButton(
-                                        context.getString(R.string.dataset_entry_remove_confirm_ok_button_title)
-                                    ) { dialog, _ ->
+                                    .withConfirmationHandler {
                                         onEntryDeleteRequested(entry.id)
-                                        dialog.dismiss()
                                     }
-                                    .show()
+                                    .show(FragmentManager.findFragmentManager(binding.root))
                             }
                         )
                     )

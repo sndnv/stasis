@@ -10,15 +10,12 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import stasis.client_android.R
+import stasis.client_android.activities.views.dialogs.InformationDialogFragment
 import stasis.client_android.databinding.FragmentLoginBinding
-import stasis.client_android.lib.api.clients.DefaultServerApiEndpointClient
 import stasis.client_android.lib.api.clients.exceptions.AccessDeniedFailure
-import stasis.client_android.lib.encryption.Aes
-import stasis.client_android.lib.security.HttpCredentials
 import stasis.client_android.lib.security.exceptions.InvalidUserCredentials
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
@@ -26,13 +23,17 @@ import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.persistence.config.ConfigRepository.Companion.saveUsername
 import stasis.client_android.persistence.config.ConfigRepository.Companion.savedUsername
 import stasis.client_android.persistence.credentials.CredentialsViewModel
+import stasis.client_android.utils.DynamicArguments
+import stasis.client_android.utils.DynamicArguments.withArgumentsId
 import javax.crypto.AEADBadTagException
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class LoginFragment : Fragment() {
+class LoginFragment : Fragment(), DynamicArguments.Provider {
     @Inject
     lateinit var credentials: CredentialsViewModel
+
+    override val providedArguments: DynamicArguments.Provider.Arguments = DynamicArguments.Provider.Arguments()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -116,12 +117,11 @@ class LoginFragment : Fragment() {
                                     else -> result.exception.message
                                 }
 
-                                MaterialAlertDialogBuilder(context)
-                                    .setIcon(R.drawable.ic_warning)
-                                    .setTitle(getString(R.string.login_failed_title))
-                                    .setMessage(getString(R.string.login_failed_details, message))
-                                    .setPositiveButton(R.string.login_failed_dismiss) { _, _ -> } // do nothing
-                                    .show()
+                                InformationDialogFragment()
+                                    .withIcon(R.drawable.ic_warning)
+                                    .withTitle(getString(R.string.login_failed_title))
+                                    .withMessage(getString(R.string.login_failed_details, message))
+                                    .show(childFragmentManager)
                             }
                         }
                     }
@@ -129,8 +129,9 @@ class LoginFragment : Fragment() {
             }
         }
 
-        binding.loginMoreOptionsButton.setOnClickListener {
-            MoreOptionsDialogFragment(
+        providedArguments.put(
+            key = "MoreOptionsDialogFragment",
+            arguments = MoreOptionsDialogFragment.Companion.Arguments(
                 reEncryptDeviceSecret = { currentPassword, oldPassword, f ->
                     credentials.reEncryptDeviceSecret(
                         currentPassword = currentPassword,
@@ -162,7 +163,12 @@ class LoginFragment : Fragment() {
                     }
                 }
             )
-                .show(parentFragmentManager, MoreOptionsDialogFragment.DialogTag)
+        )
+
+        binding.loginMoreOptionsButton.setOnClickListener {
+            MoreOptionsDialogFragment()
+                .withArgumentsId<MoreOptionsDialogFragment>(id = "MoreOptionsDialogFragment")
+                .show(childFragmentManager, MoreOptionsDialogFragment.DialogTag)
         }
 
         return binding.root

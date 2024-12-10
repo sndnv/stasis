@@ -4,10 +4,12 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.view.isVisible
+import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.toMinimizedString
+import stasis.client_android.activities.views.dialogs.ConfirmationDialogFragment
 import stasis.client_android.databinding.ListItemScheduleAssignmentBinding
 import stasis.client_android.lib.ops.scheduling.ActiveSchedule
 import stasis.client_android.lib.ops.scheduling.OperationScheduleAssignment
@@ -41,12 +43,15 @@ class ActiveScheduleListItemAdapter(
                     R.string.assignment_field_content_backup,
                     assignment.definition.toMinimizedString()
                 )
+
                 is OperationScheduleAssignment.Expiration -> context.getString(
                     R.string.assignment_field_content_expiration
                 )
+
                 is OperationScheduleAssignment.Validation -> context.getString(
                     R.string.assignment_field_content_validation
                 )
+
                 is OperationScheduleAssignment.KeyRotation -> context.getString(
                     R.string.assignment_field_content_key_rotation
                 )
@@ -62,27 +67,22 @@ class ActiveScheduleListItemAdapter(
                     } else {
                         context.getString(R.string.assignment_field_content_backup_entities_any)
                     }
+
+                    binding.assignmentDetails.isVisible = false // managing per-schedule entities is not supported
                 }
 
                 else -> Unit // do nothing
             }
 
             binding.assignmentRemoveButton.setOnClickListener {
-                MaterialAlertDialogBuilder(context)
-                    .setTitle(
+                ConfirmationDialogFragment()
+                    .withTitle(
                         context.getString(
                             R.string.schedule_assignment_remove_confirm_title,
                             schedule.assignment.schedule.toMinimizedString()
                         )
                     )
-                    .setNeutralButton(
-                        context.getString(R.string.schedule_assignment_remove_confirm_cancel_button_title)
-                    ) { dialog, _ ->
-                        dialog.dismiss()
-                    }
-                    .setPositiveButton(
-                        context.getString(R.string.schedule_assignment_remove_confirm_ok_button_title)
-                    ) { dialog, _ ->
+                    .withConfirmationHandler {
                         onAssignmentRemovalRequested(schedule)
 
                         Toast.makeText(
@@ -90,10 +90,8 @@ class ActiveScheduleListItemAdapter(
                             context.getString(R.string.toast_schedule_assignment_removed),
                             Toast.LENGTH_SHORT
                         ).show()
-
-                        dialog.dismiss()
                     }
-                    .show()
+                    .show(FragmentManager.findFragmentManager(binding.root))
             }
         }
     }
