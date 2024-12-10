@@ -4,6 +4,7 @@ import okio.ByteString
 import stasis.client_android.lib.api.clients.ServerApiEndpointClient
 import stasis.client_android.lib.api.clients.exceptions.ResourceMissingFailure
 import stasis.client_android.lib.model.DatasetMetadata
+import stasis.client_android.lib.model.EntityMetadata
 import stasis.client_android.lib.model.FilesystemMetadata
 import stasis.client_android.lib.model.core.CrateId
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
@@ -27,9 +28,11 @@ import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
 import java.math.BigInteger
+import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 class MockServerApiEndpointClient : ServerApiEndpointClient {
@@ -73,7 +76,7 @@ class MockServerApiEndpointClient : ServerApiEndpointClient {
     override suspend fun latestEntry(definition: DatasetDefinitionId, until: Instant?): Try<DatasetEntry?> =
         when (definition) {
             defaultDefinition.id -> Success(defaultEntry)
-            else -> Failure(RuntimeException("Invalid definition requested: [$definition]"))
+            else -> Success(null)
         }
 
     override suspend fun createDatasetEntry(request: CreateDatasetEntry): Try<CreatedDatasetEntry> =
@@ -83,7 +86,16 @@ class MockServerApiEndpointClient : ServerApiEndpointClient {
         Success(Unit)
 
     override suspend fun publicSchedules(): Try<List<Schedule>> =
-        Success(listOf(defaultSchedule))
+        Success(
+            listOf(
+                defaultSchedule,
+                defaultSchedule.copy(
+                    id =
+                    ScheduleId.randomUUID(),
+                    info = "test-schedule",
+                )
+            )
+        )
 
     override suspend fun publicSchedule(schedule: ScheduleId): Try<Schedule> =
         when (schedule) {
@@ -168,17 +180,57 @@ class MockServerApiEndpointClient : ServerApiEndpointClient {
         id = ScheduleId.randomUUID(),
         info = "test-schedule",
         isPublic = true,
-        start = LocalDateTime.MAX,
+        start = LocalDateTime.now().plusHours(4),
         interval = Duration.ofHours(12),
-        created = Instant.EPOCH,
-        updated = Instant.EPOCH,
+        created = Instant.now().minusSeconds(42),
+        updated = Instant.now(),
     )
 
+    private val metadataFileOnePath = Paths.get("/tmp/file/one")
+    private val metadataFileTwoPath = Paths.get("/tmp/file/two")
+
     private val defaultMetadata = DatasetMetadata(
-        contentChanged = emptyMap(),
-        metadataChanged = emptyMap(),
+        contentChanged = mapOf(
+            metadataFileOnePath to EntityMetadata.File(
+                path = metadataFileOnePath,
+                size = 1,
+                link = null,
+                isHidden = false,
+                created = Instant.EPOCH.truncatedTo(ChronoUnit.SECONDS),
+                updated = Instant.EPOCH.truncatedTo(ChronoUnit.SECONDS),
+                owner = "root",
+                group = "root",
+                permissions = "rwxrwxrwx",
+                checksum = BigInteger("1"),
+                crates = mapOf(
+                    Paths.get("/tmp/file/one_0") to UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
+                ),
+                compression = "none"
+            )
+        ),
+        metadataChanged = mapOf(
+            metadataFileTwoPath to EntityMetadata.File(
+                path = metadataFileTwoPath,
+                size = 2,
+                link = Paths.get("/tmp/file/three"),
+                isHidden = false,
+                created = Instant.EPOCH.truncatedTo(ChronoUnit.SECONDS),
+                updated = Instant.EPOCH.truncatedTo(ChronoUnit.SECONDS),
+                owner = "root",
+                group = "root",
+                permissions = "rwxrwxrwx",
+                checksum = BigInteger("42"),
+                crates = mapOf(
+                    Paths.get("/tmp/file/two_0") to UUID.fromString("e672a956-1a95-4304-8af0-9418f0e43cba")
+                ),
+                compression = "gzip"
+            ),
+        ),
         filesystem = FilesystemMetadata(
-            entities = emptyMap()
+            entities = mapOf(
+                metadataFileOnePath to FilesystemMetadata.EntityState.New,
+                metadataFileTwoPath to FilesystemMetadata.EntityState.Updated,
+            )
         )
     )
 

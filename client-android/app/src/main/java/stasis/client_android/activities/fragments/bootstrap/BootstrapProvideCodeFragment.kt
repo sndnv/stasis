@@ -13,7 +13,6 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -23,6 +22,7 @@ import stasis.client_android.StasisClientDependencies
 import stasis.client_android.activities.helpers.Common
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.TextInputExtensions.validate
+import stasis.client_android.activities.views.dialogs.InformationDialogFragment
 import stasis.client_android.api.clients.MockOAuthClient
 import stasis.client_android.api.clients.MockServerApiEndpointClient
 import stasis.client_android.databinding.FragmentBootstrapProvideCodeBinding
@@ -37,7 +37,6 @@ import stasis.client_android.lib.security.HttpCredentials
 import stasis.client_android.lib.security.OAuthClient
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Companion.flatMap
-import stasis.client_android.lib.utils.Try.Companion.map
 import stasis.client_android.lib.utils.Try.Companion.recoverWith
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
@@ -84,7 +83,7 @@ class BootstrapProvideCodeFragment : Fragment() {
 
         fun showBootstrapFailed(e: Throwable) {
             binding.bootstrapProvideCode.isEnabled = true
-            binding.bootstrapProvideCodeButtonContainer.isVisible = true
+            binding.bootstrapProvideCodeButtonsContainer.isVisible = true
             binding.bootstrapProvideCodeInProgress.isVisible = false
 
             val message = when (e) {
@@ -100,18 +99,17 @@ class BootstrapProvideCodeFragment : Fragment() {
                 )
             }
 
-            MaterialAlertDialogBuilder(context)
-                .setIcon(R.drawable.ic_warning)
-                .setTitle(getString(R.string.bootstrap_failed_title))
-                .setMessage(getString(R.string.bootstrap_failed_details, message))
-                .setPositiveButton(R.string.bootstrap_failed_dismiss) { _, _ -> } // do nothing
-                .show()
+            InformationDialogFragment()
+                .withIcon(R.drawable.ic_warning)
+                .withTitle(getString(R.string.bootstrap_failed_title))
+                .withMessage(getString(R.string.bootstrap_failed_details, message))
+                .show(childFragmentManager)
         }
 
         binding.bootstrapProvideCodeFinishButton.setOnClickListener {
             binding.bootstrapProvideCode.validate(withError = R.string.bootstrap_code_error) { bootstrapCode ->
                 binding.bootstrapProvideCode.isEnabled = false
-                binding.bootstrapProvideCodeButtonContainer.isVisible = false
+                binding.bootstrapProvideCodeButtonsContainer.isVisible = false
                 binding.bootstrapProvideCodeInProgress.isVisible = true
 
                 val args: BootstrapProvideCodeFragmentArgs by navArgs()
@@ -220,10 +218,10 @@ class BootstrapProvideCodeFragment : Fragment() {
         }
 
         binding.bootstrapProvideCode.setStartIconOnClickListener {
-            MaterialAlertDialogBuilder(context)
-                .setTitle(R.string.bootstrap_code_hint)
-                .setMessage(getString(R.string.bootstrap_code_hint_extra))
-                .show()
+            InformationDialogFragment()
+                .withTitle(getString(R.string.bootstrap_code_hint))
+                .withMessage(getString(R.string.bootstrap_code_hint_extra))
+                .show(childFragmentManager)
         }
 
         return binding.root

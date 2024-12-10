@@ -15,7 +15,6 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.map
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import stasis.client_android.R
@@ -27,6 +26,7 @@ import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.Common.toMinimizedString
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsDateTime
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullDateTime
+import stasis.client_android.activities.views.dialogs.InformationDialogFragment
 import stasis.client_android.api.DatasetsViewModel
 import stasis.client_android.databinding.FragmentHomeBinding
 import stasis.client_android.lib.model.DatasetMetadata
@@ -308,11 +308,11 @@ class HomeFragment : Fragment() {
                     providerContext = providerContext,
                     definitionId = defaultDefinition.id,
                     onOperationsPending = {
-                        MaterialAlertDialogBuilder(binding.root.context)
-                            .setIcon(R.drawable.ic_warning)
-                            .setTitle(getString(R.string.dataset_definition_start_backup_disabled_title))
-                            .setMessage(getString(R.string.dataset_definition_start_backup_disabled_content))
-                            .show()
+                        InformationDialogFragment()
+                            .withIcon(R.drawable.ic_warning)
+                            .withTitle(getString(R.string.dataset_definition_start_backup_disabled_title))
+                            .withMessage(getString(R.string.dataset_definition_start_backup_disabled_content))
+                            .show(childFragmentManager)
                     },
                     onOperationStarted = { backupId ->
                         notificationManager.putOperationStartedNotification(

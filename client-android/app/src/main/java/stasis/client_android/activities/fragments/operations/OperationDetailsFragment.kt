@@ -28,6 +28,7 @@ import stasis.client_android.lib.tracking.state.BackupState
 import stasis.client_android.lib.tracking.state.RecoveryState
 import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.providers.ProviderContext
+import stasis.client_android.utils.DynamicArguments
 import stasis.client_android.utils.LiveDataExtensions.minimize
 import java.nio.file.Path
 import java.time.Duration
@@ -35,7 +36,8 @@ import java.util.Locale
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class OperationDetailsFragment : Fragment() {
+class OperationDetailsFragment : Fragment(), DynamicArguments.Provider {
+    override val providedArguments: DynamicArguments.Provider.Arguments = DynamicArguments.Provider.Arguments()
 
     @Inject
     lateinit var providerContextFactory: ProviderContext.Factory
@@ -86,6 +88,17 @@ class OperationDetailsFragment : Fragment() {
         updates?.observe(viewLifecycleOwner) { state ->
             val progress = state.asProgress()
 
+            binding.operationStart.text = context.getString(
+                R.string.operation_field_content_started
+            )
+                .renderAsSpannable(
+                    StyledString(
+                        placeholder = "%1\$s",
+                        content = progress.started.formatAsFullDateTime(context),
+                        style = StyleSpan(Typeface.BOLD)
+                    )
+                )
+
             binding.operationDetails.text = context.getString(
                 if (progress.failures == 0) R.string.operation_field_content_details
                 else R.string.operation_field_content_details_with_failures
@@ -93,21 +106,16 @@ class OperationDetailsFragment : Fragment() {
                 .renderAsSpannable(
                     StyledString(
                         placeholder = "%1\$s",
-                        content = progress.started.formatAsFullDateTime(context),
-                        style = StyleSpan(Typeface.BOLD)
-                    ),
-                    StyledString(
-                        placeholder = "%2\$s",
                         content = progress.processed.toString(),
                         style = StyleSpan(Typeface.BOLD)
                     ),
                     StyledString(
-                        placeholder = "%3\$s",
+                        placeholder = "%2\$s",
                         content = progress.total.toString(),
                         style = StyleSpan(Typeface.BOLD)
                     ),
                     StyledString(
-                        placeholder = "%4\$s",
+                        placeholder = "%3\$s",
                         content = progress.failures.toString(),
                         style = StyleSpan(Typeface.BOLD)
                     )
@@ -213,7 +221,8 @@ class OperationDetailsFragment : Fragment() {
 
                 binding.operationStagesList.adapter = OperationStageListItemAdapter(
                     context = context,
-                    fragmentManager = parentFragmentManager,
+                    provider = this,
+                    fragmentManager = childFragmentManager,
                     resource = R.layout.list_item_operation_stage,
                     stages = stages.toList()
                 )

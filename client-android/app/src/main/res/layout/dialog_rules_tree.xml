@@ -61,7 +61,9 @@
 
         <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
+            android:fadeScrollbars="false"
+            android:fillViewport="true"
             android:padding="8dp">
 
             <androidx.recyclerview.widget.RecyclerView

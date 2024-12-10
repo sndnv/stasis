@@ -7,9 +7,9 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.LinearLayout
 import android.widget.TextView
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import androidx.fragment.app.FragmentManager
 import stasis.client_android.R
-import java.nio.file.Path
+import stasis.client_android.activities.views.dialogs.InformationDialogFragment
 
 class OperationFailureListItemAdapter(
     context: Context,
@@ -30,10 +30,10 @@ class OperationFailureListItemAdapter(
         )
 
         failureContainer.setOnClickListener {
-            MaterialAlertDialogBuilder(context)
-                .setTitle(context.getString(R.string.operation_failure_title))
-                .setMessage(context.getString(R.string.operation_failure_message, failure))
-                .show()
+            InformationDialogFragment()
+                .withTitle(context.getString(R.string.operation_failure_title))
+                .withMessage(context.getString(R.string.operation_failure_message, failure))
+                .show(FragmentManager.findFragmentManager(layout))
         }
 
         return layout

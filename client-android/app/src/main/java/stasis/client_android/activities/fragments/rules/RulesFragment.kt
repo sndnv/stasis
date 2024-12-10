@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
@@ -20,11 +21,16 @@ import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.utils.Either.Left
 import stasis.client_android.lib.utils.Either.Right
 import stasis.client_android.persistence.rules.RuleViewModel
+import stasis.client_android.utils.DynamicArguments
+import stasis.client_android.utils.DynamicArguments.withArgumentsId
 import stasis.client_android.utils.LiveDataExtensions.and
+import java.util.UUID
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class RulesFragment : Fragment() {
+class RulesFragment : Fragment(), DynamicArguments.Provider {
+    override val providedArguments: DynamicArguments.Provider.Arguments = DynamicArguments.Provider.Arguments()
+
     @Inject
     lateinit var rules: RuleViewModel
 
@@ -45,16 +51,15 @@ class RulesFragment : Fragment() {
             false
         )
 
+        selectedDefinition = savedInstanceState?.getString(StateSelectedDefinitionIdKey)?.let { UUID.fromString(it) }
+
         (definitions.definitions() and rules.rules).observe(viewLifecycleOwner) { (definitionsList, rulesList) ->
             val groupedRules = rulesList.groupBy { it.definition }.toList().sortedBy { it.first }
 
-            binding.rulesPager.adapter = object : FragmentStateAdapter(this) {
-                override fun getItemCount(): Int = groupedRules.size
-
-                override fun createFragment(position: Int): Fragment {
-                    val (currentDefinition, currentRules) = groupedRules[position]
-
-                    return DefinitionRulesFragment(
+            groupedRules.forEach { (currentDefinition, currentRules) ->
+                providedArguments.put(
+                    key = currentDefinition?.toString() ?: "none",
+                    arguments = DefinitionRulesFragment.Companion.Arguments(
                         currentDefinition = currentDefinition?.let { current ->
                             when (val result = definitionsList.find { it.id == current }) {
                                 null -> Left(current)
@@ -79,8 +84,22 @@ class RulesFragment : Fragment() {
                             }
                         }
                     )
+
+                )
+            }
+
+            binding.rulesPager.adapter = object : FragmentStateAdapter(this) {
+                override fun getItemCount(): Int = groupedRules.size
+
+                override fun createFragment(position: Int): Fragment {
+                    val (currentDefinition, _) = groupedRules[position]
+
+                    return DefinitionRulesFragment()
+                        .withArgumentsId<DefinitionRulesFragment>(id = currentDefinition?.toString() ?: "none")
                 }
             }
+
+            binding.rulesPager.adapter?.stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT
 
             binding.rulesPager.registerOnPageChangeCallback(
                 object : ViewPager2.OnPageChangeCallback() {
@@ -96,5 +115,15 @@ class RulesFragment : Fragment() {
         }
 
         return binding.root
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString(StateSelectedDefinitionIdKey, selectedDefinition?.toString())
+        super.onSaveInstanceState(outState)
+    }
+
+    companion object {
+        private const val StateSelectedDefinitionIdKey: String =
+            "stasis.client_android.activities.fragments.rules.RulesFragment.state.selected_definition_id"
     }
 }

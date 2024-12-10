@@ -8,27 +8,31 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.views.context.EntryAction
 import stasis.client_android.activities.views.context.EntryActionsContextDialogFragment
+import stasis.client_android.activities.views.dialogs.ConfirmationDialogFragment
 import stasis.client_android.databinding.ListItemRuleBinding
 import stasis.client_android.lib.collection.rules.Rule
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
+import stasis.client_android.utils.DynamicArguments
+import stasis.client_android.utils.DynamicArguments.withArgumentsId
 
 class RulesListItemAdapter(
+    private val provider: DynamicArguments.Provider,
     private val existingDefinitions: List<DatasetDefinition>,
     private val updateRule: (Rule) -> Unit,
     private val removeRule: (Long) -> Unit
 ) : RecyclerView.Adapter<RulesListItemAdapter.ItemViewHolder>() {
+
     private var rules = emptyList<Rule>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         val binding = ListItemRuleBinding.inflate(inflater, parent, false)
-        return ItemViewHolder(parent.context, binding, existingDefinitions, updateRule, removeRule)
+        return ItemViewHolder(parent.context, provider, binding, existingDefinitions, updateRule, removeRule)
     }
 
     override fun getItemCount(): Int = rules.size
@@ -40,6 +44,7 @@ class RulesListItemAdapter(
 
     class ItemViewHolder(
         private val context: Context,
+        private val provider: DynamicArguments.Provider,
         private val binding: ListItemRuleBinding,
         private val existingDefinitions: List<DatasetDefinition>,
         private val updateRule: (Rule) -> Unit,
@@ -64,13 +69,22 @@ class RulesListItemAdapter(
 
             binding.rulePattern.text = context.getString(R.string.rule_field_content_pattern, rule.pattern)
 
-            binding.ruleContainer.setOnClickListener {
-                RuleFormDialogFragment(
+            val argsId = "for-rule-${rule.id.toString()}"
+
+            provider.providedArguments.put(
+                key = "$argsId-RuleFormDialogFragment",
+                arguments = RuleFormDialogFragment.Companion.Arguments(
                     currentDefinition = rule.definition,
                     existingDefinitions = existingDefinitions,
                     currentRule = rule,
                     onRuleActionRequested = { updateRule(it) }
-                ).show(FragmentManager.findFragmentManager(binding.root), RuleFormDialogFragment.Tag)
+                )
+            )
+
+            binding.ruleContainer.setOnClickListener {
+                RuleFormDialogFragment()
+                    .withArgumentsId<RuleFormDialogFragment>(id = "$argsId-RuleFormDialogFragment")
+                    .show(FragmentManager.findFragmentManager(binding.root), RuleFormDialogFragment.Tag)
             }
 
             binding.ruleContainer.setOnLongClickListener {
@@ -83,12 +97,9 @@ class RulesListItemAdapter(
                             name = context.getString(R.string.rule_update_button_title),
                             description = context.getString(R.string.rule_update_button_hint),
                             handler = {
-                                RuleFormDialogFragment(
-                                    currentDefinition = rule.definition,
-                                    existingDefinitions = existingDefinitions,
-                                    currentRule = rule,
-                                    onRuleActionRequested = { updateRule(it) }
-                                ).show(FragmentManager.findFragmentManager(binding.root), RuleFormDialogFragment.Tag)
+                                RuleFormDialogFragment()
+                                    .withArgumentsId<RuleFormDialogFragment>(id = "$argsId-RuleFormDialogFragment")
+                                    .show(FragmentManager.findFragmentManager(binding.root), RuleFormDialogFragment.Tag)
                             }
                         ),
                         EntryAction(
@@ -97,29 +108,18 @@ class RulesListItemAdapter(
                             description = context.getString(R.string.rule_remove_button_hint),
                             color = R.color.design_default_color_error,
                             handler = {
-                                MaterialAlertDialogBuilder(context)
-                                    .setTitle(
+                                ConfirmationDialogFragment()
+                                    .withTitle(
                                         context.getString(R.string.rule_remove_confirm_title)
                                     )
-                                    .setMessage(
-                                        context.getString(R.string.rule_remove_confirm_content)
-                                            .renderAsSpannable(
-                                                StyledString(
-                                                    placeholder = "%1\$s",
-                                                    content = rule.pattern,
-                                                    style = StyleSpan(Typeface.BOLD)
-                                                ),
-                                                StyledString(
-                                                    placeholder = "%2\$s",
-                                                    content = rule.directory,
-                                                    style = StyleSpan(Typeface.BOLD)
-                                                )
-                                            )
+                                    .withMessage(
+                                        context.getString(
+                                            R.string.rule_remove_confirm_content,
+                                            rule.pattern,
+                                            rule.directory
+                                        )
                                     )
-                                    .setNeutralButton(context.getString(R.string.rule_remove_confirm_cancel_button_title)) { dialog, _ ->
-                                        dialog.dismiss()
-                                    }
-                                    .setPositiveButton(context.getString(R.string.rule_remove_confirm_ok_button_title)) { dialog, _ ->
+                                    .withConfirmationHandler {
                                         removeRule(rule.id)
 
                                         Toast.makeText(
@@ -127,10 +127,8 @@ class RulesListItemAdapter(
                                             context.getString(R.string.toast_rule_removed),
                                             Toast.LENGTH_SHORT
                                         ).show()
-
-                                        dialog.dismiss()
                                     }
-                                    .show()
+                                    .show(FragmentManager.findFragmentManager(binding.root))
                             }
                         )
                     )

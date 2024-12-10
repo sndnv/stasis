@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?attr/selectableItemBackground"
-    android:minHeight="64dp"
+    android:minHeight="52dp"
     android:paddingStart="16dp"
     android:paddingEnd="16dp">
 
@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:maxLines="1"
-        android:paddingTop="16dp"
+        android:paddingTop="8dp"
         android:textAppearance="?attr/textAppearanceSubtitle1" />
 
     <TextView

@@ -50,7 +50,7 @@
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="wrap_content">
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/retention_policy_type"
@@ -60,7 +60,6 @@
                     android:layout_marginEnd="8dp"
                     android:importantForAutofill="no"
                     app:hintEnabled="false"
-                    app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toStartOf="@id/retention_policy_versions"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent">
@@ -81,7 +80,6 @@
                     android:importantForAutofill="no"
                     android:inputType="text"
                     app:hintEnabled="false"
-                    app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toEndOf="@+id/retention_policy_type"
                     app:layout_constraintTop_toTopOf="parent">

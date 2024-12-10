@@ -16,15 +16,19 @@ import dagger.hilt.android.AndroidEntryPoint
 import stasis.client_android.R
 import stasis.client_android.api.DatasetsViewModel
 import stasis.client_android.databinding.FragmentSchedulesBinding
+import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.model.server.schedules.Schedule
 import stasis.client_android.lib.ops.scheduling.ActiveSchedule
 import stasis.client_android.scheduling.SchedulerService
 import stasis.client_android.serialization.Extras.putActiveSchedule
-import stasis.client_android.utils.LiveDataExtensions.await
+import stasis.client_android.utils.DynamicArguments
+import stasis.client_android.utils.LiveDataExtensions.and
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class SchedulesFragment : Fragment() {
+class SchedulesFragment : Fragment(), DynamicArguments.Provider {
+    override val providedArguments: DynamicArguments.Provider.Arguments = DynamicArguments.Provider.Arguments()
+
     @Inject
     lateinit var datasets: DatasetsViewModel
 
@@ -40,8 +44,10 @@ class SchedulesFragment : Fragment() {
             this@SchedulesFragment.service = binder.service
             this@SchedulesFragment.serviceConnected = true
 
-            binder.service.publicAndConfiguredSchedules.observe(viewLifecycleOwner) { (public, configured) ->
-                updateView(public, configured)
+            (binder.service.publicAndConfiguredSchedules and datasets.definitions()).observe(viewLifecycleOwner) {
+                val (public, configured) = it.first
+                val definitions = it.second
+                updateView(public, configured, definitions)
             }
         }
 
@@ -82,7 +88,8 @@ class SchedulesFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         adapter = ScheduleListItemAdapter(
-            fragmentManager = parentFragmentManager,
+            fragmentManager = childFragmentManager,
+            provider = this,
             onAssignmentCreationRequested = { activeSchedule ->
                 val intent = Intent(context, SchedulerService::class.java).apply {
                     action = SchedulerService.ActionAddSchedule
@@ -104,15 +111,18 @@ class SchedulesFragment : Fragment() {
                 }
 
                 activity?.startService(intent)
-            },
-            retrieveDefinitions = { datasets.definitions().await(viewLifecycleOwner) }
+            }
         )
 
         binding.schedulesList.adapter = adapter
     }
 
-    private fun updateView(public: List<Schedule>, configured: List<ActiveSchedule>) {
-        adapter.setSchedules(public, configured)
+    private fun updateView(
+        public: List<Schedule>,
+        configured: List<ActiveSchedule>,
+        definitions: List<DatasetDefinition>
+    ) {
+        adapter.setSchedules(public, configured, definitions)
 
         if (public.isEmpty() && configured.isEmpty()) {
             binding.schedulesListEmpty.isVisible = true

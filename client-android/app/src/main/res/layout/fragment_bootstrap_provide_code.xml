@@ -3,36 +3,45 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <RelativeLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+        <ImageView
+            android:id="@+id/logo"
+            android:layout_width="192dp"
+            android:layout_height="192dp"
+            android:contentDescription="@string/bootstrap_logo"
+            android:src="@drawable/ic_launcher_foreground"
+            app:layout_constraintBottom_toTopOf="@id/guideline"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-            <ImageView
-                android:id="@+id/logo"
-                android:layout_width="192dp"
-                android:layout_height="192dp"
-                android:contentDescription="@string/bootstrap_logo"
-                android:src="@drawable/ic_launcher_foreground"
-                app:layout_constraintBottom_toTopOf="@id/bootstrap_provide_code_container"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.5" />
+
+        <ScrollView
+            android:id="@+id/bootstrap_provide_code_container"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:fadeScrollbars="false"
+            android:fillViewport="true"
+            app:layout_constraintBottom_toTopOf="@id/bootstrap_provide_code_buttons_container_wrapper"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/guideline">
 
             <LinearLayout
-                android:id="@+id/bootstrap_provide_code_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:gravity="center"
                 android:orientation="vertical"
-                android:paddingStart="64dp"
-                android:paddingEnd="64dp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/logo">
+                android:paddingHorizontal="64dp">
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/bootstrap_provide_code"
@@ -53,17 +62,20 @@
 
                 </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
+        </ScrollView>
 
         <LinearLayout
+            android:id="@+id/bootstrap_provide_code_buttons_container_wrapper"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/bootstrap_provide_code_container">
 
             <TableLayout
-                android:id="@+id/bootstrap_provide_code_button_container"
+                android:id="@+id/bootstrap_provide_code_buttons_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="16dp"
@@ -100,7 +112,6 @@
                 android:layout_margin="16dp"
                 android:indeterminate="true"
                 android:visibility="gone" />
-
         </LinearLayout>
-    </RelativeLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

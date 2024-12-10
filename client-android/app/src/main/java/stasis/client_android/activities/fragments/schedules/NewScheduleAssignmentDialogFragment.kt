@@ -6,27 +6,27 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
-import android.widget.Button
 import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
-import androidx.lifecycle.lifecycleScope
-import com.google.android.material.textfield.TextInputLayout
-import kotlinx.coroutines.launch
+import androidx.fragment.app.Fragment
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.fromAssignmentTypeString
 import stasis.client_android.activities.helpers.Common.toAssignmentTypeString
 import stasis.client_android.activities.helpers.Common.toMinimizedString
+import stasis.client_android.databinding.DialogNewScheduleAssignmentBinding
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.model.server.schedules.ScheduleId
 import stasis.client_android.lib.ops.scheduling.ActiveSchedule
 import stasis.client_android.lib.ops.scheduling.OperationScheduleAssignment
+import stasis.client_android.utils.DynamicArguments
+import stasis.client_android.utils.DynamicArguments.pullArguments
 
-class NewScheduleAssignmentDialogFragment(
-    private val schedule: ScheduleId,
-    private val onAssignmentCreationRequested: (ActiveSchedule) -> Unit,
-    private val retrieveDefinitions: suspend () -> List<DatasetDefinition>
-) : DialogFragment() {
+class NewScheduleAssignmentDialogFragment : DialogFragment(), DynamicArguments.Receiver {
+    override val argumentsKey: String = ArgumentsKey
+
+    override val receiver: Fragment = this
+
     private lateinit var definitions: Map<String, DatasetDefinition>
 
     override fun onCreateView(
@@ -34,18 +34,11 @@ class NewScheduleAssignmentDialogFragment(
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val view = inflater.inflate(R.layout.dialog_new_schedule_assignment, container, false)
+        val binding = DialogNewScheduleAssignmentBinding.inflate(inflater)
 
         val context = requireContext()
 
-        val assignmentType: TextInputLayout = view.findViewById(R.id.new_schedule_assignment_type)
-
-        val backupDefinition: TextInputLayout =
-            view.findViewById(R.id.new_schedule_assignment_backup_definition)
-        val backupDefinitionContainer: View =
-            view.findViewById(R.id.new_schedule_assignment_backup_definition_container)
-
-        val assignmentTypeTextView = assignmentType.editText as AutoCompleteTextView
+        val assignmentTypeTextView = binding.newScheduleAssignmentType.editText as AutoCompleteTextView
 
         assignmentTypeTextView.setAdapter(
             ArrayAdapter(
@@ -60,13 +53,13 @@ class NewScheduleAssignmentDialogFragment(
         )
 
         assignmentTypeTextView.setOnItemClickListener { _, _, position, _ ->
-            backupDefinitionContainer.isVisible = position == 0
+            binding.newScheduleAssignmentBackupDefinitionContainer.isVisible = position == 0
         }
 
-        val backupDefinitionTextView = backupDefinition.editText as AutoCompleteTextView
+        val backupDefinitionTextView = binding.newScheduleAssignmentBackupDefinition.editText as AutoCompleteTextView
 
-        lifecycleScope.launch {
-            definitions = retrieveDefinitions().associateBy {
+        pullArguments<Arguments>().observe(viewLifecycleOwner) { arguments ->
+            definitions = arguments.definitions.associateBy {
                 val key = "${it.info} (${it.id.toMinimizedString()})"
                 key
             }
@@ -78,58 +71,68 @@ class NewScheduleAssignmentDialogFragment(
                     definitions.keys.toList()
                 )
             )
-        }
 
-        view.findViewById<Button>(R.id.schedule_assignment_add_button).setOnClickListener {
-            val assignmentTypeString = assignmentTypeTextView.text.toString()
-            val assignment = when (val actualAssignmentType =
-                assignmentTypeString.fromAssignmentTypeString(context)) {
-                "backup" -> {
-                    backupDefinition.isErrorEnabled = false
-                    backupDefinition.error = null
+            binding.scheduleAssignmentAddButton.setOnClickListener {
+                val assignmentTypeString = assignmentTypeTextView.text.toString()
+                val assignment = when (val actualAssignmentType =
+                    assignmentTypeString.fromAssignmentTypeString(context)) {
+                    "backup" -> {
+                        binding.newScheduleAssignmentBackupDefinition.isErrorEnabled = false
+                        binding.newScheduleAssignmentBackupDefinition.error = null
 
-                    val definitionKey = backupDefinitionTextView.text.toString()
+                        val definitionKey = backupDefinitionTextView.text.toString()
 
-                    if (definitionKey.isNotBlank()) {
-                        val definition = definitions[definitionKey]?.id
-                        require(definition != null) { "Expected definition with key [$definitionKey] but none was found" }
+                        if (definitionKey.isNotBlank()) {
+                            val definition = definitions[definitionKey]?.id
+                            require(definition != null) { "Expected definition with key [$definitionKey] but none was found" }
 
-                        OperationScheduleAssignment.Backup(
-                            schedule,
-                            definition,
-                            entities = emptyList()
-                        )
-                    } else {
-                        backupDefinition.isErrorEnabled = true
-                        backupDefinition.error = getString(
-                            R.string.schedule_assignment_field_error_backup_definition
-                        )
-                        null
+                            OperationScheduleAssignment.Backup(
+                                arguments.schedule,
+                                definition,
+                                entities = emptyList()
+                            )
+                        } else {
+                            binding.newScheduleAssignmentBackupDefinition.isErrorEnabled = true
+                            binding.newScheduleAssignmentBackupDefinition.error = getString(
+                                R.string.schedule_assignment_field_error_backup_definition
+                            )
+                            null
+                        }
                     }
+
+                    "expiration" -> OperationScheduleAssignment.Expiration(arguments.schedule)
+                    "validation" -> OperationScheduleAssignment.Validation(arguments.schedule)
+                    "key-rotation" -> OperationScheduleAssignment.KeyRotation(arguments.schedule)
+                    else -> throw IllegalArgumentException("Unexpected schedule assignment type encountered: [$actualAssignmentType]")
                 }
-                "expiration" -> OperationScheduleAssignment.Expiration(schedule)
-                "validation" -> OperationScheduleAssignment.Validation(schedule)
-                "key-rotation" -> OperationScheduleAssignment.KeyRotation(schedule)
-                else -> throw IllegalArgumentException("Unexpected schedule assignment type encountered: [$actualAssignmentType]")
-            }
 
-            assignment?.let {
-                onAssignmentCreationRequested(ActiveSchedule(id = 0, assignment = assignment))
+                assignment?.let {
+                    arguments.onAssignmentCreationRequested(ActiveSchedule(id = 0, assignment = assignment))
 
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.toast_schedule_assignment_created),
-                    Toast.LENGTH_SHORT
-                ).show()
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.toast_schedule_assignment_created),
+                        Toast.LENGTH_SHORT
+                    ).show()
 
-                dialog?.dismiss()
+                    dialog?.dismiss()
+                }
             }
         }
 
-        return view
+        return binding.root
     }
 
     companion object {
+        data class Arguments(
+            val schedule: ScheduleId,
+            val definitions: List<DatasetDefinition>,
+            val onAssignmentCreationRequested: (ActiveSchedule) -> Unit
+        ) : DynamicArguments.ArgumentSet
+
+        private const val ArgumentsKey: String =
+            "stasis.client_android.activities.fragments.schedules.NewScheduleAssignmentDialogFragment.arguments.key"
+
         const val Tag: String =
             "stasis.client_android.activities.fragments.schedules.NewScheduleAssignmentDialogFragment"
 

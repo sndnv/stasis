@@ -14,7 +14,6 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputLayout
 import dagger.hilt.android.AndroidEntryPoint
 import stasis.client_android.R
@@ -24,6 +23,7 @@ import stasis.client_android.activities.helpers.Common.fromPolicyTypeString
 import stasis.client_android.activities.helpers.Common.getOrRenderFailure
 import stasis.client_android.activities.helpers.Common.toFields
 import stasis.client_android.activities.helpers.Common.toPolicyTypeString
+import stasis.client_android.activities.views.dialogs.InformationDialogFragment
 import stasis.client_android.api.DatasetsViewModel
 import stasis.client_android.databinding.FragmentDatasetDefinitionFormBinding
 import stasis.client_android.databinding.InputDatasetDefinitionRetentionBinding
@@ -124,10 +124,10 @@ class DatasetDefinitionFormFragment : Fragment() {
 
         binding.info.editText?.setText(definition?.info)
         binding.info.setStartIconOnClickListener {
-            MaterialAlertDialogBuilder(context)
-                .setTitle(R.string.dataset_definition_field_title_info)
-                .setMessage(getString(R.string.dataset_definition_field_help_info))
-                .show()
+            InformationDialogFragment()
+                .withTitle(getString(R.string.dataset_definition_field_title_info))
+                .withMessage(getString(R.string.dataset_definition_field_help_info))
+                .show(childFragmentManager)
         }
 
         initRetention(
@@ -184,10 +184,10 @@ class DatasetDefinitionFormFragment : Fragment() {
         )
 
         binding.retentionDuration.durationAmount.setStartIconOnClickListener {
-            MaterialAlertDialogBuilder(context)
-                .setTitle(helpTitleId)
-                .setMessage(getString(helpMessageId))
-                .show()
+            InformationDialogFragment()
+                .withTitle(getString(helpTitleId))
+                .withMessage(getString(helpMessageId))
+                .show(childFragmentManager)
         }
 
         val policyTypesAdapter = ArrayAdapter(

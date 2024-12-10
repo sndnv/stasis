@@ -1,5 +1,6 @@
 package stasis.client_android.activities.fragments.bootstrap
 
+import android.content.res.Configuration
 import android.graphics.Typeface
 import android.os.Bundle
 import android.text.style.StyleSpan
@@ -12,12 +13,12 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.TextInputExtensions.extractOptionalSecret
 import stasis.client_android.activities.helpers.TextInputExtensions.validateOptionalSecretMatches
+import stasis.client_android.activities.views.dialogs.InformationDialogFragment
 import stasis.client_android.databinding.FragmentBootstrapProvideSecretBinding
 import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.security.Secrets
@@ -101,6 +102,25 @@ class BootstrapProvideSecretFragment : Fragment() {
 
             binding.bootstrapProvideSecretRemotePasswordVerify.isVisible =
                 binding.bootstrapProvideSecretPullAllowed.isChecked && binding.bootstrapProvideSecretShowRemotePassword.isChecked
+
+            if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
+                val originalGuidelinePercent = 0.5f
+
+                val updatedGuidelinePercent = if (
+                    binding.bootstrapProvideSecretOverwriteExisting.isChecked
+                    && binding.bootstrapProvideSecretPullAllowed.isChecked
+                ) {
+                    if (binding.bootstrapProvideSecretShowRemotePassword.isChecked) {
+                        originalGuidelinePercent - 0.3f
+                    } else {
+                        originalGuidelinePercent - 0.2f
+                    }
+                } else {
+                    originalGuidelinePercent
+                }
+
+                binding.guideline.setGuidelinePercent(updatedGuidelinePercent)
+            }
         }
 
         resetState()
@@ -163,17 +183,17 @@ class BootstrapProvideSecretFragment : Fragment() {
         }
 
         binding.bootstrapProvideSecretRemotePassword.setStartIconOnClickListener {
-            MaterialAlertDialogBuilder(context)
-                .setTitle(R.string.bootstrap_remote_password_hint)
-                .setMessage(getString(R.string.bootstrap_remote_password_hint_extra))
-                .show()
+            InformationDialogFragment()
+                .withTitle(getString(R.string.bootstrap_remote_password_hint))
+                .withMessage(getString(R.string.bootstrap_remote_password_hint_extra))
+                .show(childFragmentManager)
         }
 
         binding.bootstrapProvideSecretRemotePasswordVerify.setStartIconOnClickListener {
-            MaterialAlertDialogBuilder(context)
-                .setTitle(R.string.bootstrap_remote_password_verify_hint)
-                .setMessage(getString(R.string.bootstrap_remote_password_verify_hint_extra))
-                .show()
+            InformationDialogFragment()
+                .withTitle(getString(R.string.bootstrap_remote_password_verify_hint))
+                .withMessage(getString(R.string.bootstrap_remote_password_verify_hint_extra))
+                .show(childFragmentManager)
         }
 
         return binding.root

@@ -4,104 +4,100 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
-import com.google.android.material.progressindicator.CircularProgressIndicator
-import com.google.android.material.textfield.TextInputLayout
+import androidx.fragment.app.Fragment
 import stasis.client_android.R
+import stasis.client_android.databinding.DialogLoginMoreOptionsReencryptBinding
 import stasis.client_android.lib.security.exceptions.InvalidUserCredentials
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Failure
+import stasis.client_android.utils.DynamicArguments
+import stasis.client_android.utils.DynamicArguments.pullArguments
 
-class MoreOptionsReEncryptDialogFragment(
-    private val reEncryptDeviceSecret: (String, String, f: (Try<Unit>) -> Unit) -> Unit
-) : DialogFragment() {
+class MoreOptionsReEncryptDialogFragment : DialogFragment(), DynamicArguments.Receiver {
+    override val argumentsKey: String = ArgumentsKey
+
+    override val receiver: Fragment = this
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        val view = inflater.inflate(R.layout.dialog_login_more_options_reencrypt, container, false)
+        val binding = DialogLoginMoreOptionsReencryptBinding.inflate(inflater)
 
-        val currentPasswordView =
-            view.findViewById<TextInputLayout>(R.id.login_reencrypt_secret_current_password)
-
-        val currentPasswordConfirmationView =
-            view.findViewById<TextInputLayout>(R.id.login_reencrypt_secret_current_password_confirmation)
-
-        val oldPasswordView =
-            view.findViewById<TextInputLayout>(R.id.login_reencrypt_secret_old_password)
-
-
-        val inProgress = view.findViewById<CircularProgressIndicator>(R.id.login_reencrypt_secret_in_progress)
-        val confirmButton = view.findViewById<Button>(R.id.login_reencrypt_secret_confirm)
-
-        view.findViewById<Button>(R.id.login_reencrypt_secret_cancel).setOnClickListener {
+        binding.loginReencryptSecretCancel.setOnClickListener {
             dialog?.dismiss()
         }
 
-        confirmButton.setOnClickListener {
-            currentPasswordView.isErrorEnabled = false
-            currentPasswordView.error = null
-            currentPasswordConfirmationView.isErrorEnabled = false
-            currentPasswordConfirmationView.error = null
-            oldPasswordView.isErrorEnabled = false
-            oldPasswordView.error = null
+        pullArguments<Arguments>().observe(viewLifecycleOwner) { arguments ->
+            binding.loginReencryptSecretConfirm.setOnClickListener {
+                binding.loginReencryptSecretCurrentPassword.isErrorEnabled = false
+                binding.loginReencryptSecretCurrentPassword.error = null
+                binding.loginReencryptSecretCurrentPasswordConfirmation.isErrorEnabled = false
+                binding.loginReencryptSecretCurrentPasswordConfirmation.error = null
+                binding.loginReencryptSecretOldPassword.isErrorEnabled = false
+                binding.loginReencryptSecretOldPassword.error = null
 
-            val currentPassword = currentPasswordView.editText?.text?.toString().orEmpty()
-            val currentPasswordConfirmation = currentPasswordConfirmationView.editText?.text?.toString().orEmpty()
-            val oldPassword = oldPasswordView.editText?.text?.toString().orEmpty()
+                val currentPassword =
+                    binding.loginReencryptSecretCurrentPassword.editText?.text?.toString().orEmpty()
 
-            val currentPasswordsMatch = currentPassword == currentPasswordConfirmation
+                val currentPasswordConfirmation =
+                    binding.loginReencryptSecretCurrentPasswordConfirmation.editText?.text?.toString().orEmpty()
 
-            when {
-                currentPassword.isEmpty() -> {
-                    currentPasswordView.isErrorEnabled = true
-                    currentPasswordView.error =
-                        getString(R.string.login_reencrypt_secret_empty_password)
-                }
+                val oldPassword = binding.loginReencryptSecretOldPassword.editText?.text?.toString().orEmpty()
 
-                currentPasswordConfirmation.isEmpty() -> {
-                    currentPasswordConfirmationView.isErrorEnabled = true
-                    currentPasswordConfirmationView.error =
-                        getString(R.string.login_reencrypt_secret_empty_password)
-                }
+                val currentPasswordsMatch = currentPassword == currentPasswordConfirmation
 
-                !currentPasswordsMatch -> {
-                    currentPasswordView.isErrorEnabled = true
-                    currentPasswordView.error =
-                        getString(R.string.login_reencrypt_secret_mismatched_passwords)
-                    currentPasswordConfirmationView.isErrorEnabled = true
-                    currentPasswordConfirmationView.error =
-                        getString(R.string.login_reencrypt_secret_mismatched_passwords)
-                }
+                when {
+                    currentPassword.isEmpty() -> {
+                        binding.loginReencryptSecretCurrentPassword.isErrorEnabled = true
+                        binding.loginReencryptSecretCurrentPassword.error =
+                            getString(R.string.login_reencrypt_secret_empty_password)
+                    }
 
-                oldPassword.isEmpty() -> {
-                    oldPasswordView.isErrorEnabled = true
-                    oldPasswordView.error =
-                        getString(R.string.login_reencrypt_secret_empty_password)
-                }
+                    currentPasswordConfirmation.isEmpty() -> {
+                        binding.loginReencryptSecretCurrentPasswordConfirmation.isErrorEnabled = true
+                        binding.loginReencryptSecretCurrentPasswordConfirmation.error =
+                            getString(R.string.login_reencrypt_secret_empty_password)
+                    }
 
-                else -> {
-                    confirmButton.isVisible = false
-                    inProgress.isVisible = true
+                    !currentPasswordsMatch -> {
+                        binding.loginReencryptSecretCurrentPassword.isErrorEnabled = true
+                        binding.loginReencryptSecretCurrentPassword.error =
+                            getString(R.string.login_reencrypt_secret_mismatched_passwords)
+                        binding.loginReencryptSecretCurrentPasswordConfirmation.isErrorEnabled = true
+                        binding.loginReencryptSecretCurrentPasswordConfirmation.error =
+                            getString(R.string.login_reencrypt_secret_mismatched_passwords)
+                    }
 
-                    reEncryptDeviceSecret(currentPassword, oldPassword) {
-                        if (it is Failure && it.exception is InvalidUserCredentials) {
-                            oldPasswordView.isErrorEnabled = true
-                            oldPasswordView.error = getString(R.string.login_reencrypt_secret_invalid_old_password)
-                            confirmButton.isVisible = true
-                            inProgress.isVisible = false
-                        } else {
-                            dialog?.dismiss()
+                    oldPassword.isEmpty() -> {
+                        binding.loginReencryptSecretOldPassword.isErrorEnabled = true
+                        binding.loginReencryptSecretOldPassword.error =
+                            getString(R.string.login_reencrypt_secret_empty_password)
+                    }
+
+                    else -> {
+                        binding.loginReencryptSecretConfirm.isVisible = false
+                        binding.loginReencryptSecretInProgress.isVisible = true
+
+                        arguments.reEncryptDeviceSecret(currentPassword, oldPassword) {
+                            if (it is Failure && it.exception is InvalidUserCredentials) {
+                                binding.loginReencryptSecretOldPassword.isErrorEnabled = true
+                                binding.loginReencryptSecretOldPassword.error = getString(R.string.login_reencrypt_secret_invalid_old_password)
+                                binding.loginReencryptSecretConfirm.isVisible = true
+                                binding.loginReencryptSecretInProgress.isVisible = false
+                            } else {
+                                dialog?.dismiss()
+                            }
                         }
                     }
                 }
             }
         }
 
-        return view
+        return binding.root
     }
 
     override fun onStart() {
@@ -113,6 +109,13 @@ class MoreOptionsReEncryptDialogFragment(
     }
 
     companion object {
+        data class Arguments(
+            val reEncryptDeviceSecret: (String, String, f: (Try<Unit>) -> Unit) -> Unit
+        ) : DynamicArguments.ArgumentSet
+
+        private const val ArgumentsKey: String =
+            "stasis.client_android.activities.fragments.login.MoreOptionsReEncryptDialogFragment.arguments.key"
+
         const val DialogTag: String =
             "stasis.client_android.activities.fragments.login.MoreOptionsReEncryptDialogFragment"
     }

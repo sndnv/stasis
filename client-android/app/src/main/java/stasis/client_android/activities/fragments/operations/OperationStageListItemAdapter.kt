@@ -11,13 +11,17 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.FragmentManager
 import stasis.client_android.R
+import stasis.client_android.activities.fragments.rules.RuleFormDialogFragment
 import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.Common.toOperationStageString
+import stasis.client_android.utils.DynamicArguments
+import stasis.client_android.utils.DynamicArguments.withArgumentsId
 import java.nio.file.Path
 
 class OperationStageListItemAdapter(
     context: Context,
+    private val provider: DynamicArguments.Provider,
     private val resource: Int,
     private val fragmentManager: FragmentManager,
     private val stages: List<Pair<String, List<Triple<Path, Int, Int>>>>
@@ -45,17 +49,26 @@ class OperationStageListItemAdapter(
                 )
             )
 
+        val argsId = "for-stage-$position"
+
+        provider.providedArguments.put(
+            key = "$argsId-OperationStageStepsDialogFragment",
+            arguments = OperationStageStepsDialogFragment.Companion.Arguments(
+                steps = steps.map { (entity, processed, total) ->
+                    OperationStageStepsDialogFragment.StageStep(
+                        entity = entity,
+                        processed = processed,
+                        total = total
+                    )
+                }
+            )
+        )
+
         stageContainer.setOnClickListener {
             if (steps.isNotEmpty()) {
-                OperationStageStepsDialogFragment(
-                    steps = steps.map { (entity, processed, total) ->
-                        OperationStageStepsDialogFragment.StageStep(
-                            entity = entity,
-                            processed = processed,
-                            total = total
-                        )
-                    }
-                ).show(fragmentManager, OperationStageStepsDialogFragment.Tag)
+                OperationStageStepsDialogFragment()
+                    .withArgumentsId<OperationStageStepsDialogFragment>(id = "$argsId-OperationStageStepsDialogFragment")
+                    .show(fragmentManager, OperationStageStepsDialogFragment.Tag)
             }
         }
 

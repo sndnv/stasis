@@ -7,52 +7,57 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
-import com.google.android.material.textfield.TextInputLayout
+import androidx.fragment.app.Fragment
 import stasis.client_android.R
+import stasis.client_android.databinding.DialogDeviceSecretExportBinding
+import stasis.client_android.utils.DynamicArguments
+import stasis.client_android.utils.DynamicArguments.pullArguments
 
-class ExportDialogFragment(
-    private val secret: String,
-) : DialogFragment() {
+class ExportDialogFragment : DialogFragment(), DynamicArguments.Receiver {
+    override val argumentsKey: String = ArgumentsKey
+
+    override val receiver: Fragment = this
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        val view = inflater.inflate(R.layout.dialog_device_secret_export, container, false)
+        val binding = DialogDeviceSecretExportBinding.inflate(inflater)
 
-        val exportedSecretView = view.findViewById<TextInputLayout>(R.id.export_device_secret)
-        exportedSecretView.editText?.setText(secret)
+        pullArguments<Arguments>().observe(viewLifecycleOwner) { arguments ->
+            binding.exportDeviceSecret.editText?.setText(arguments.secret)
 
-        view.findViewById<Button>(R.id.export_device_secret_cancel).setOnClickListener {
-            dialog?.dismiss()
-        }
+            binding.exportDeviceSecretCancel.setOnClickListener {
+                dialog?.dismiss()
+            }
 
-        view.findViewById<Button>(R.id.copy_device_secret).setOnClickListener {
-            val context = requireContext()
+            binding.copyDeviceSecret.setOnClickListener {
+                val context = requireContext()
 
-            val clipboard =
-                context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val clipboard =
+                    context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
-            clipboard.setPrimaryClip(
-                ClipData.newPlainText(
-                    getString(R.string.settings_manage_device_secret_export_clip_label),
-                    exportedSecretView.editText?.text
+                clipboard.setPrimaryClip(
+                    ClipData.newPlainText(
+                        getString(R.string.settings_manage_device_secret_export_clip_label),
+                        binding.exportDeviceSecret.editText?.text
+                    )
                 )
-            )
 
-            dialog?.dismiss()
+                dialog?.dismiss()
 
-            Toast.makeText(
-                context,
-                getString(R.string.settings_manage_device_secret_export_clip_created),
-                Toast.LENGTH_SHORT
-            ).show()
+                Toast.makeText(
+                    context,
+                    getString(R.string.settings_manage_device_secret_export_clip_created),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
 
-        return view
+        return binding.root
     }
 
     override fun onStart() {
@@ -64,6 +69,11 @@ class ExportDialogFragment(
     }
 
     companion object {
+        data class Arguments(val secret: String) : DynamicArguments.ArgumentSet
+
+        private const val ArgumentsKey: String =
+            "stasis.client_android.activities.fragments.settings.ExportDialogFragment.arguments.key"
+
         const val DialogTag: String =
             "stasis.client_android.activities.fragments.settings.ExportDialogFragment"
     }

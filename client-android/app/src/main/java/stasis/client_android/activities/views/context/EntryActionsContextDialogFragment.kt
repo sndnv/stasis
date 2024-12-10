@@ -6,12 +6,11 @@ import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ListView
-import android.widget.TextView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
+import stasis.client_android.databinding.ContextDialogEntryActionsBinding
 
 class EntryActionsContextDialogFragment(
     private val name: String,
@@ -23,10 +22,9 @@ class EntryActionsContextDialogFragment(
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val view = inflater.inflate(R.layout.context_dialog_entry_actions, container, false)
+        val binding = ContextDialogEntryActionsBinding.inflate(inflater)
 
-        val nameView = view.findViewById<TextView>(R.id.entry_name)
-        nameView.text = getString(R.string.entry_actions_entry_name)
+        binding.entryName.text = getString(R.string.entry_actions_entry_name)
             .renderAsSpannable(
                 StyledString(
                     placeholder = "%1\$s",
@@ -35,18 +33,23 @@ class EntryActionsContextDialogFragment(
                 )
             )
 
-        view.findViewById<TextView>(R.id.entry_description).text =
+        binding.entryDescription.text =
             getString(R.string.entry_actions_entry_description, description)
 
-        view.findViewById<ListView>(R.id.entry_actions).adapter =
+        binding.entryActions.adapter =
             EntryActionsListItemAdapter(
                 context = requireContext(),
                 actions = actions,
                 onActionComplete = { dialog?.dismiss() },
-                defaultTextColor = nameView.textColors.defaultColor
+                defaultTextColor = binding.entryName.textColors.defaultColor
             )
 
-        return view
+        return binding.root
+    }
+
+    override fun onPause() {
+        dismiss()
+        super.onPause()
     }
 
     companion object {

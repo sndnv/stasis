@@ -13,10 +13,8 @@
             android:layout_height="wrap_content"
             android:background="?attr/selectableItemBackground"
             android:orientation="vertical"
-            android:paddingStart="8dp"
-            android:paddingTop="8dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="16dp">
+            android:paddingHorizontal="8dp"
+            android:paddingTop="8dp">
 
             <TextView
                 android:id="@+id/dataset_definition_details_info"
@@ -30,8 +28,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp">
+                android:paddingHorizontal="4dp">
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -47,8 +44,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
                     android:maxLines="1"
-                    android:paddingStart="4dp"
-                    android:paddingEnd="4dp"
+                    android:paddingHorizontal="4dp"
                     android:textAppearance="?attr/textAppearanceBody2" />
 
                 <TextView
@@ -57,8 +53,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
                     android:maxLines="1"
-                    android:paddingStart="4dp"
-                    android:paddingEnd="4dp"
+                    android:paddingHorizontal="4dp"
                     android:textAppearance="?attr/textAppearanceBody2" />
 
                 <TextView
@@ -67,8 +62,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
                     android:maxLines="1"
-                    android:paddingStart="4dp"
-                    android:paddingEnd="4dp"
+                    android:paddingHorizontal="4dp"
                     android:textAppearance="?attr/textAppearanceBody2" />
             </LinearLayout>
 
@@ -78,8 +72,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
                 android:maxLines="1"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
+                android:paddingHorizontal="4dp"
                 android:textAppearance="?attr/textAppearanceBody2" />
 
             <TextView
@@ -88,9 +81,18 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
                 android:maxLines="1"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
+                android:paddingHorizontal="4dp"
                 android:textAppearance="?attr/textAppearanceBody2" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/start_backup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="8dp"
+                android:contentDescription="@string/dataset_definition_start_backup_hint"
+                android:text="@string/dataset_definition_start_backup"
+                android:tooltipText="@string/dataset_definition_start_backup_hint" />
         </LinearLayout>
 
         <LinearLayout
@@ -98,14 +100,12 @@
             android:layout_height="match_parent"
             android:orientation="vertical">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/start_backup"
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:contentDescription="@string/dataset_definition_start_backup_hint"
-                android:text="@string/dataset_definition_start_backup"
-                android:tooltipText="@string/dataset_definition_start_backup_hint" />
+                android:paddingHorizontal="8dp"
+                android:text="@string/dataset_definition_entries_list_label"
+                android:textAppearance="?attr/textAppearanceCaption" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/entries_list"

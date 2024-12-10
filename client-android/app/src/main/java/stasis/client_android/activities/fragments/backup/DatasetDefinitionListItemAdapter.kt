@@ -9,7 +9,6 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.asString
@@ -19,6 +18,7 @@ import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullD
 import stasis.client_android.activities.helpers.Transitions.setSourceTransitionName
 import stasis.client_android.activities.views.context.EntryAction
 import stasis.client_android.activities.views.context.EntryActionsContextDialogFragment
+import stasis.client_android.activities.views.dialogs.ConfirmationDialogFragment
 import stasis.client_android.databinding.ListItemDatasetDefinitionDetailsBinding
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
@@ -173,28 +173,17 @@ class DatasetDefinitionListItemAdapter(
                             description = context.getString(R.string.dataset_definition_remove_button_hint),
                             color = R.color.design_default_color_error,
                             handler = {
-                                MaterialAlertDialogBuilder(context)
-                                    .setTitle(
+                                ConfirmationDialogFragment()
+                                    .withTitle(
                                         context.getString(R.string.dataset_definition_remove_confirm_title)
                                     )
-                                    .setMessage(
-                                        context.getString(R.string.dataset_definition_remove_confirm_content)
-                                            .renderAsSpannable(
-                                                StyledString(
-                                                    placeholder = "%1\$s",
-                                                    content = definition.info,
-                                                    style = StyleSpan(Typeface.BOLD)
-                                                )
-                                            )
+                                    .withMessage(
+                                        context.getString(
+                                            R.string.dataset_definition_remove_confirm_content,
+                                            definition.info
+                                        )
                                     )
-                                    .setNeutralButton(
-                                        context.getString(R.string.dataset_definition_remove_confirm_cancel_button_title)
-                                    ) { dialog, _ ->
-                                        dialog.dismiss()
-                                    }
-                                    .setPositiveButton(
-                                        context.getString(R.string.dataset_definition_remove_confirm_ok_button_title)
-                                    ) { dialog, _ ->
+                                    .withConfirmationHandler {
                                         onDefinitionDeleteRequested(definition.id)
 
                                         Toast.makeText(
@@ -202,10 +191,8 @@ class DatasetDefinitionListItemAdapter(
                                             context.getString(R.string.toast_dataset_definition_removed),
                                             Toast.LENGTH_SHORT
                                         ).show()
-
-                                        dialog.dismiss()
                                     }
-                                    .show()
+                                    .show(FragmentManager.findFragmentManager(binding.root))
                             }
                         )
                     )

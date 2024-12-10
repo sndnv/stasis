@@ -4,111 +4,109 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.progressindicator.CircularProgressIndicator
-import com.google.android.material.textfield.TextInputLayout
+import androidx.fragment.app.Fragment
 import stasis.client_android.R
+import stasis.client_android.activities.views.dialogs.InformationDialogFragment
+import stasis.client_android.databinding.DialogDeviceSecretImportBinding
 import stasis.client_android.lib.security.exceptions.InvalidUserCredentials
 import stasis.client_android.lib.utils.Try
+import stasis.client_android.utils.DynamicArguments
+import stasis.client_android.utils.DynamicArguments.pullArguments
 
-class ImportDialogFragment(
-    private val importSecret: (String, String, f: (Try<Unit>) -> Unit) -> Unit
-) : DialogFragment() {
+class ImportDialogFragment : DialogFragment(), DynamicArguments.Receiver {
+    override val argumentsKey: String = ArgumentsKey
+
+    override val receiver: Fragment = this
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        val view = inflater.inflate(R.layout.dialog_device_secret_import, container, false)
+        val binding = DialogDeviceSecretImportBinding.inflate(inflater)
 
-        val importedSecretView =
-            view.findViewById<TextInputLayout>(R.id.import_device_secret)
-
-        val passwordView =
-            view.findViewById<TextInputLayout>(R.id.import_device_secret_password)
-
-        val passwordConfirmationView =
-            view.findViewById<TextInputLayout>(R.id.import_device_secret_password_confirmation)
-
-        passwordView.setStartIconOnClickListener {
-            MaterialAlertDialogBuilder(requireContext())
-                .setTitle(R.string.settings_manage_device_secret_import_password_hint)
-                .setMessage(getString(R.string.settings_manage_device_secret_import_password_hint_extra))
-                .show()
+        binding.importDeviceSecretPassword.setStartIconOnClickListener {
+            InformationDialogFragment()
+                .withTitle(getString(R.string.settings_manage_device_secret_import_password_hint))
+                .withMessage(getString(R.string.settings_manage_device_secret_import_password_hint_extra))
+                .show(childFragmentManager)
         }
 
-        passwordConfirmationView.setStartIconOnClickListener {
-            MaterialAlertDialogBuilder(requireContext())
-                .setTitle(R.string.settings_manage_device_secret_import_password_confirmation_hint)
-                .setMessage(getString(R.string.settings_manage_device_secret_import_password_confirmation_hint_extra))
-                .show()
+        binding.importDeviceSecretPasswordConfirmation.setStartIconOnClickListener {
+            InformationDialogFragment()
+                .withTitle(getString(R.string.settings_manage_device_secret_import_password_confirmation_hint))
+                .withMessage(getString(R.string.settings_manage_device_secret_import_password_confirmation_hint_extra))
+                .show(childFragmentManager)
         }
 
-        val inProgress = view.findViewById<CircularProgressIndicator>(R.id.load_device_secret_in_progress)
-        val confirmButton = view.findViewById<Button>(R.id.load_device_secret_confirm)
-
-        view.findViewById<Button>(R.id.import_device_secret_cancel).setOnClickListener {
+        binding.importDeviceSecretCancel.setOnClickListener {
             dialog?.dismiss()
         }
 
-        confirmButton.setOnClickListener {
-            importedSecretView.isErrorEnabled = false
-            importedSecretView.error = null
-            passwordView.isErrorEnabled = false
-            passwordView.error = null
-            passwordConfirmationView.isErrorEnabled = false
-            passwordConfirmationView.error = null
+        pullArguments<Arguments>().observe(viewLifecycleOwner) { arguments ->
+            binding.loadDeviceSecretConfirm.setOnClickListener {
+                binding.importDeviceSecret.isErrorEnabled = false
+                binding.importDeviceSecret.error = null
+                binding.importDeviceSecretPassword.isErrorEnabled = false
+                binding.importDeviceSecretPassword.error = null
+                binding.importDeviceSecretPasswordConfirmation.isErrorEnabled = false
+                binding.importDeviceSecretPasswordConfirmation.error = null
 
-            val password = passwordView.editText?.text?.toString().orEmpty()
-            val passwordConfirmation = passwordConfirmationView.editText?.text?.toString().orEmpty()
+                val password =
+                    binding.importDeviceSecretPassword.editText?.text?.toString().orEmpty()
 
-            when {
-                password == passwordConfirmation && password.isNotEmpty() -> {
-                    val secret = importedSecretView.editText?.text?.toString().orEmpty()
+                val passwordConfirmation =
+                    binding.importDeviceSecretPasswordConfirmation.editText?.text?.toString().orEmpty()
 
-                    try {
-                        require(secret.isNotBlank())
+                when {
+                    password == passwordConfirmation && password.isNotEmpty() -> {
+                        val secret = binding.importDeviceSecret.editText?.text?.toString().orEmpty()
 
-                        confirmButton.isVisible = false
-                        inProgress.isVisible = true
+                        try {
+                            require(secret.isNotBlank())
 
-                        importSecret(secret, password) {
-                            if (it is Try.Failure && it.exception is InvalidUserCredentials) {
-                                passwordView.isErrorEnabled = true
-                                passwordView.error = getString(R.string.settings_manage_device_secret_import_invalid_current_password)
-                                confirmButton.isVisible = true
-                                inProgress.isVisible = false
-                            } else {
-                                dialog?.dismiss()
+                            binding.loadDeviceSecretConfirm.isVisible = false
+                            binding.loadDeviceSecretInProgress.isVisible = true
+
+                            arguments.importSecret(secret, password) {
+                                if (it is Try.Failure && it.exception is InvalidUserCredentials) {
+                                    binding.importDeviceSecretPassword.isErrorEnabled = true
+                                    binding.importDeviceSecretPassword.error =
+                                        getString(R.string.settings_manage_device_secret_import_invalid_current_password)
+                                    binding.loadDeviceSecretConfirm.isVisible = true
+                                    binding.loadDeviceSecretInProgress.isVisible = false
+                                } else {
+                                    dialog?.dismiss()
+                                }
                             }
+                        } catch (e: Throwable) {
+                            binding.importDeviceSecret.isErrorEnabled = true
+                            binding.importDeviceSecret.error =
+                                getString(R.string.settings_manage_device_secret_import_data_invalid)
                         }
-                    } catch (e: Throwable) {
-                        importedSecretView.isErrorEnabled = true
-                        importedSecretView.error =
-                            getString(R.string.settings_manage_device_secret_import_data_invalid)
                     }
-                }
 
-                password.isEmpty() -> {
-                    passwordView.isErrorEnabled = true
-                    passwordView.error = getString(R.string.settings_manage_device_secret_import_empty_password)
-                }
+                    password.isEmpty() -> {
+                        binding.importDeviceSecretPassword.isErrorEnabled = true
+                        binding.importDeviceSecretPassword.error =
+                            getString(R.string.settings_manage_device_secret_import_empty_password)
+                    }
 
-                else -> {
-                    passwordView.isErrorEnabled = true
-                    passwordView.error =
-                        getString(R.string.settings_manage_device_secret_import_mismatched_passwords)
-                    passwordConfirmationView.isErrorEnabled = true
-                    passwordConfirmationView.error =
-                        getString(R.string.settings_manage_device_secret_import_mismatched_passwords)
+                    else -> {
+                        binding.importDeviceSecretPassword.isErrorEnabled = true
+                        binding.importDeviceSecretPassword.error =
+                            getString(R.string.settings_manage_device_secret_import_mismatched_passwords)
+                        binding.importDeviceSecretPasswordConfirmation.isErrorEnabled = true
+                        binding.importDeviceSecretPasswordConfirmation.error =
+                            getString(R.string.settings_manage_device_secret_import_mismatched_passwords)
+                    }
                 }
             }
         }
 
-        return view
+        return binding.root
     }
 
     override fun onStart() {
@@ -120,6 +118,13 @@ class ImportDialogFragment(
     }
 
     companion object {
+        data class Arguments(
+            val importSecret: (String, String, f: (Try<Unit>) -> Unit) -> Unit
+        ) : DynamicArguments.ArgumentSet
+
+        private const val ArgumentsKey: String =
+            "stasis.client_android.activities.fragments.settings.ImportDialogFragment.arguments.key"
+
         const val DialogTag: String =
             "stasis.client_android.activities.fragments.settings.ImportDialogFragment"
     }
