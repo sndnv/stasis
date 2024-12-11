@@ -4,9 +4,11 @@ import java.nio.file.FileSystem
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
+import java.util.concurrent.ThreadLocalRandom
 
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
+import scala.util.Random
 import scala.util.Try
 import scala.util.control.NonFatal
 
@@ -33,12 +35,14 @@ class StateStore[S](
   def persist(state: S): Future[Done] = {
     val serialized = serdes.serialize(state)
     val timestamp = Instant.now().toEpochMilli.toString
+    val suffix = Random.javaRandomToRandom(ThreadLocalRandom.current()).alphanumeric.take(4).mkString
 
     val _ = Files.createDirectories(target)
+    val path = target.resolve(s"state_${timestamp}_$suffix")
 
     Source
       .single(ByteString.fromArrayUnsafe(serialized))
-      .runWith(FileIO.toPath(f = target.resolve(s"state_$timestamp")))
+      .runWith(FileIO.toPath(f = path))
       .flatMap(_ => prune(keep = retainedVersions))
   }
 
