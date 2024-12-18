@@ -3,21 +3,34 @@ package stasis.server.persistence.devices
 import java.nio.charset.StandardCharsets
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
+import stasis.core.persistence.backends.slick.LegacyKeyValueStore
 import stasis.layers.UnitSpec
 import stasis.layers.persistence.SlickTestDatabase
 import stasis.layers.telemetry.MockTelemetryContext
-import stasis.core.persistence.backends.slick.LegacyKeyValueStore
+import stasis.shared.model.devices.Device
 import stasis.test.specs.unit.shared.model.Generators
 
 class DefaultDeviceStoreSpec extends UnitSpec with SlickTestDatabase {
   "A DefaultDeviceStore" should "add, retrieve and delete devices" in withRetry {
     withStore { (profile, database) =>
       val store = new DefaultDeviceStore(name = "TEST_DEVICES", profile = profile, database = database)
-      val expectedDevice = Generators.generateDevice
+
+      val expectedDevice = Generators.generateDevice.copy(
+        limits = Some(
+          Device.Limits(
+            maxCrates = 1,
+            maxStorage = 2,
+            maxStoragePerCrate = 3,
+            maxRetention = 4.seconds,
+            minRetention = 5.seconds
+          )
+        )
+      )
 
       for {
         _ <- store.init()

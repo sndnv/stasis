@@ -4,12 +4,14 @@ import java.util.UUID
 
 import javax.net.ssl.TrustManagerFactory
 
+import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory
 import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
@@ -238,6 +240,86 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     }
   }
 
+  it should "pause the service after bootstrap is complete (mode=init)" in {
+    implicit val trustedContext: EndpointContext = createTrustedContext()
+
+    val interface = "localhost"
+    val servicePort = ports.dequeue()
+    val serviceUrl = s"https://$interface:$servicePort"
+
+    val corePort = ports.dequeue()
+    val coreUrl = s"https://$interface:$corePort"
+
+    val bootstrapPort = ports.dequeue()
+    val bootstrapUrl = s"https://$interface:$bootstrapPort"
+
+    val metricsPort = ports.dequeue()
+
+    val service = new Service {
+      override protected def systemConfig: Config = ConfigFactory
+        .load()
+        .withValue("stasis.server.service.bootstrap.mode", ConfigValueFactory.fromAnyRef("init"))
+        .withValue("stasis.server.service.api.port", ConfigValueFactory.fromAnyRef(servicePort))
+        .withValue("stasis.server.service.core.port", ConfigValueFactory.fromAnyRef(servicePort))
+        .withValue("stasis.server.service.telemetry.metrics.port", ConfigValueFactory.fromAnyRef(metricsPort))
+        .withValue("stasis.server.bootstrap.api.port", ConfigValueFactory.fromAnyRef(bootstrapPort))
+    }
+
+    eventually[Assertion] {
+      service.state should be(Service.State.BootstrapComplete)
+    }
+
+    for {
+      serviceFailure <- makeBasicRequest(serviceUrl).failed
+      coreFailure <- makeBasicRequest(coreUrl).failed
+      bootstrapFailure <- makeBasicRequest(bootstrapUrl).failed
+    } yield {
+      serviceFailure.getMessage should include("Connection refused")
+      coreFailure.getMessage should include("Connection refused")
+      bootstrapFailure.getMessage should include("Connection refused")
+    }
+  }
+
+  it should "pause the service after bootstrap is complete (mode=drop)" in {
+    implicit val trustedContext: EndpointContext = createTrustedContext()
+
+    val interface = "localhost"
+    val servicePort = ports.dequeue()
+    val serviceUrl = s"https://$interface:$servicePort"
+
+    val corePort = ports.dequeue()
+    val coreUrl = s"https://$interface:$corePort"
+
+    val bootstrapPort = ports.dequeue()
+    val bootstrapUrl = s"https://$interface:$bootstrapPort"
+
+    val metricsPort = ports.dequeue()
+
+    val service = new Service {
+      override protected def systemConfig: Config = ConfigFactory
+        .load()
+        .withValue("stasis.server.service.bootstrap.mode", ConfigValueFactory.fromAnyRef("drop"))
+        .withValue("stasis.server.service.api.port", ConfigValueFactory.fromAnyRef(servicePort))
+        .withValue("stasis.server.service.core.port", ConfigValueFactory.fromAnyRef(servicePort))
+        .withValue("stasis.server.service.telemetry.metrics.port", ConfigValueFactory.fromAnyRef(metricsPort))
+        .withValue("stasis.server.bootstrap.api.port", ConfigValueFactory.fromAnyRef(bootstrapPort))
+    }
+
+    eventually[Assertion] {
+      service.state should be(Service.State.BootstrapComplete)
+    }
+
+    for {
+      serviceFailure <- makeBasicRequest(serviceUrl).failed
+      coreFailure <- makeBasicRequest(coreUrl).failed
+      bootstrapFailure <- makeBasicRequest(bootstrapUrl).failed
+    } yield {
+      serviceFailure.getMessage should include("Connection refused")
+      coreFailure.getMessage should include("Connection refused")
+      bootstrapFailure.getMessage should include("Connection refused")
+    }
+  }
+
   it should "handle bootstrap failures" in {
     val service = new Service {
       override protected def systemConfig: Config = ConfigFactory.load("application-invalid-bootstrap")
@@ -310,6 +392,14 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     params.serverCore.context.protocol should be("TLS")
     params.additionalConfig should be(Json.parse("{}"))
   }
+
+  private def makeBasicRequest(url: String)(implicit trustedContext: EndpointContext): Future[Done] =
+    Http()
+      .singleRequest(
+        request = HttpRequest(method = HttpMethods.GET, uri = url),
+        connectionContext = trustedContext.connection
+      )
+      .map(_ => Done)
 
   private def getJwt(
     subject: String,
@@ -463,4 +553,6 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
 
   implicit def requestToEntity[T](request: T)(implicit m: Marshaller[T, RequestEntity]): RequestEntity =
     Marshal(request).to[RequestEntity].await
+
+  private val ports: mutable.Queue[Int] = (42000 to 42100).to(mutable.Queue)
 }

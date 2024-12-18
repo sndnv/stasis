@@ -5,6 +5,7 @@ import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Success
@@ -42,6 +43,7 @@ import stasis.layers.security.keys.RemoteKeyProvider
 import stasis.layers.security.oauth.DefaultOAuthClient
 import stasis.layers.security.oauth.OAuthClient
 import stasis.layers.security.tls.EndpointContext
+import stasis.layers.service.BootstrapProvider
 import stasis.layers.telemetry.DefaultTelemetryContext
 import stasis.layers.telemetry.TelemetryContext
 import stasis.layers.telemetry.metrics.MetricsExporter
@@ -55,6 +57,11 @@ import stasis.server.security.devices._
 import stasis.server.security.users.IdentityUserCredentialsManager
 import stasis.server.security.users.UserCredentialsManager
 import stasis.server.service.Service.Config.BootstrapApiConfig
+import stasis.server.service.bootstrap.DatasetDefinitionBootstrapEntityProvider
+import stasis.server.service.bootstrap.DeviceBootstrapEntityProvider
+import stasis.server.service.bootstrap.NodeBootstrapEntityProvider
+import stasis.server.service.bootstrap.ScheduleBootstrapEntityProvider
+import stasis.server.service.bootstrap.UserBootstrapEntityProvider
 import stasis.shared.model.devices.DeviceBootstrapParameters
 import stasis.shared.secrets.SecretsConfig
 
@@ -322,8 +329,8 @@ trait Service {
          |        keystore: ${coreConfig.context.flatMap(_.config.keyStoreConfig).map(_.storePath).getOrElse("none")}
          |
          |    bootstrap:
-         |      enabled: ${rawConfig.getBoolean("service.bootstrap.enabled").toString}
-         |      config:  ${rawConfig.getString("service.bootstrap.config")}
+         |      mode:   ${rawConfig.getString("service.bootstrap.mode")}
+         |      config: ${rawConfig.getString("service.bootstrap.config")}
          |
          |    telemetry:
          |      metrics:
@@ -448,10 +455,34 @@ trait Service {
     (apiServices, coreServices)
   } match {
     case Success((apiServices: ApiServices, coreServices: CoreServices)) =>
-      Bootstrap
-        .run(rawConfig.getConfig("service.bootstrap"), apiServices.persistence, coreServices.persistence)
+      val bootstrap = BootstrapProvider(
+        bootstrapConfig = rawConfig.getConfig("service.bootstrap"),
+        persistence = apiServices.persistence.combineWith(coreServices.persistence),
+        entityProviders = Seq(
+          new DatasetDefinitionBootstrapEntityProvider(apiServices.persistence.datasetDefinitions),
+          new DeviceBootstrapEntityProvider(apiServices.persistence.devices),
+          new NodeBootstrapEntityProvider(coreServices.persistence.nodes),
+          new ScheduleBootstrapEntityProvider(apiServices.persistence.schedules),
+          new UserBootstrapEntityProvider(apiServices.persistence.users)
+        )
+      )
+
+      bootstrap
+        .run()
+        .flatMap {
+          case mode @ (BootstrapProvider.BootstrapMode.Off | BootstrapProvider.BootstrapMode.InitAndStart) =>
+            coreServices.persistence.startup().map(_ => mode)
+
+          case mode =>
+            Future.successful(mode)
+        }
         .onComplete {
-          case Success(_) =>
+          case Success(mode @ (BootstrapProvider.BootstrapMode.Off | BootstrapProvider.BootstrapMode.InitAndStart)) =>
+            if (mode == BootstrapProvider.BootstrapMode.InitAndStart) {
+              log.info("Bootstrap complete with mode [{}]", mode.name)
+              log.warn("Disable bootstrap mode and restart the service to avoid re-running the bootstrap process again...")
+            }
+
             log.info("Service API starting on [{}:{}]...", apiConfig.interface, apiConfig.port)
 
             val _ = apiServices.apiEndpoint.start(
@@ -479,6 +510,11 @@ trait Service {
             )
 
             serviceState.set(State.Started(apiServices, coreServices))
+
+          case Success(mode @ (BootstrapProvider.BootstrapMode.Init | BootstrapProvider.BootstrapMode.Drop)) =>
+            log.info("Bootstrap complete with mode [{}]", mode.name)
+            log.warn("Service will NOT be started; disable bootstrap mode and restart the service to continue...")
+            serviceState.set(State.BootstrapComplete)
 
           case Failure(e) =>
             log.error("Bootstrap failed: [{} - {}]", e.getClass.getSimpleName, e.getMessage)
@@ -527,6 +563,8 @@ object Service {
       apiServices: ApiServices,
       coreServices: CoreServices
     ) extends State
+
+    final case object BootstrapComplete extends State
 
     final case class BootstrapFailed(throwable: Throwable) extends State
 
