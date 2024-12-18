@@ -74,7 +74,7 @@ class NodeProxySpec extends AsyncUnitSpec {
       val nodeA = Node.Local(
         id = Node.generateId(),
         storeDescriptor = CrateStore.Descriptor.ForStreamingMemoryBackend(
-          maxSize = 1,
+          maxSize = 10,
           maxChunkSize = 2,
           name = s"node-a-${UUID.randomUUID()}"
         ),
@@ -96,8 +96,8 @@ class NodeProxySpec extends AsyncUnitSpec {
       proxy.stores.await should be(Map.empty)
 
       proxy.canStore(nodeA, Generators.generateRequest.copy(copies = 1, size = 1)).await should be(true)
-      proxy.canStore(nodeA, Generators.generateRequest.copy(copies = 1, size = 2)).await should be(false)
-      proxy.canStore(nodeA, Generators.generateRequest.copy(copies = 1, size = 3)).await should be(false)
+      proxy.canStore(nodeA, Generators.generateRequest.copy(copies = 1, size = 20)).await should be(false)
+      proxy.canStore(nodeA, Generators.generateRequest.copy(copies = 1, size = 30)).await should be(false)
       proxy.canStore(nodeB, Generators.generateRequest.copy(copies = 1, size = 999)).await should be(true)
 
       proxy.stores

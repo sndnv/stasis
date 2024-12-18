@@ -23,22 +23,28 @@ class DefaultNodeStoreSpec extends UnitSpec with SlickTestDatabase {
 
       val cache = MemoryStore[Node.Id, Node](name = "test-nodes-cache")
       val store = new DefaultNodeStore(name = "TEST_NODES", profile = profile, database = database, cache = cache)
-      val expectedNode = Generators.generateLocalNode
+      val expectedLocalNode = Generators.generateLocalNode
+      val expectedRemoteHttpNode = Generators.generateRemoteHttpNode
+      val expectedRemoteGrpcNode = Generators.generateRemoteGrpcNode
 
       for {
         _ <- store.init()
-        _ <- store.put(expectedNode)
-        actualNode <- store.get(expectedNode.id)
+        _ <- store.put(expectedLocalNode)
+        actualNode <- store.get(expectedLocalNode.id)
         someNodes <- store.nodes
-        _ <- store.delete(expectedNode.id)
-        missingNode <- store.get(expectedNode.id)
+        _ <- store.delete(expectedLocalNode.id)
+        missingNode <- store.get(expectedLocalNode.id)
         noNodes <- store.nodes
+        _ <- store.put(expectedRemoteHttpNode)
+        _ <- store.put(expectedRemoteGrpcNode)
+        remoteNodes <- store.nodes
         _ <- store.drop()
       } yield {
-        actualNode should be(Some(expectedNode))
-        someNodes should be(Map(expectedNode.id -> expectedNode))
+        actualNode should be(Some(expectedLocalNode))
+        someNodes should be(Map(expectedLocalNode.id -> expectedLocalNode))
         missingNode should be(None)
         noNodes should be(Map.empty)
+        remoteNodes.values.toSeq.sortBy(_.id) should be(Seq(expectedRemoteGrpcNode, expectedRemoteHttpNode).sortBy(_.id))
       }
     }
   }

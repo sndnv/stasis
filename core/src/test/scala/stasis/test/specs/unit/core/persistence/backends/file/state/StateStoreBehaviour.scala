@@ -1,6 +1,7 @@
 package stasis.test.specs.unit.core.persistence.backends.file.state
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
 import scala.util.Success
 import scala.util.Try
 
@@ -72,8 +73,11 @@ trait StateStoreBehaviour { _: AsyncUnitSpec with FileSystemHelpers =>
 
       for {
         _ <- store.persist(state = initialState)
+        _ = await(50.millis, system)
         _ <- store.persist(state = updatedState)
+        _ = await(50.millis, system)
         _ <- store.persist(state = latestState)
+        _ = await(50.millis, system)
         filesBeforePruning = target.files().toList
         stateBeforePruning <- Future.sequence(filesBeforePruning.map(_.content))
         _ <- store.prune(keep = 1)
@@ -128,8 +132,11 @@ trait StateStoreBehaviour { _: AsyncUnitSpec with FileSystemHelpers =>
 
       for {
         _ <- store.persist(state = initialState)
+        _ = await(50.millis, system)
         _ <- store.persist(state = updatedState)
+        _ = await(50.millis, system)
         _ <- store.persist(state = latestState)
+        _ = await(50.millis, system)
         filesBeforePruning = target.files().toList
         stateBeforePruning <- Future.sequence(filesBeforePruning.map(_.content))
         _ <- store.discard()
@@ -200,8 +207,11 @@ trait StateStoreBehaviour { _: AsyncUnitSpec with FileSystemHelpers =>
 
       for {
         _ <- store.persist(state = initialState)
+        _ = await(50.millis, system)
         _ <- store.persist(state = updatedState)
+        _ = await(50.millis, system)
         _ <- store.persist(state = latestState)
+        _ = await(50.millis, system)
         _ = target.files().lastOption.foreach(_.write("invalid").await)
         restoredState <- store.restore()
         _ = target.files().foreach(_.write("invalid").await)
