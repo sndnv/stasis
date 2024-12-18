@@ -39,7 +39,7 @@ class CrateStoreSpec extends AsyncUnitSpec with AsyncMockitoSugar with Eventuall
     val config = ConfigFactory.load().getConfig("stasis.test.core.persistence")
 
     val expectedMemoryDescriptor = CrateStore.Descriptor.ForStreamingMemoryBackend(
-      maxSize = 1000,
+      maxSize = 10000,
       maxChunkSize = 2000,
       name = "test-memory-store"
     )
@@ -51,7 +51,7 @@ class CrateStoreSpec extends AsyncUnitSpec with AsyncMockitoSugar with Eventuall
 
     val expectedContainerDescriptor = CrateStore.Descriptor.ForContainerBackend(
       path = "target/some-container",
-      maxChunkSize = 1,
+      maxChunkSize = 100,
       maxChunks = 10
     )
     val actualContainerDescriptor = CrateStore.Descriptor(
@@ -75,7 +75,7 @@ class CrateStoreSpec extends AsyncUnitSpec with AsyncMockitoSugar with Eventuall
 
     val memoryBackedStore = CrateStore.fromDescriptor(
       descriptor = CrateStore.Descriptor.ForStreamingMemoryBackend(
-        maxSize = 1,
+        maxSize = 10000,
         maxChunkSize = 8192,
         name = s"memory-backed-store-${java.util.UUID.randomUUID()}"
       )
@@ -87,7 +87,7 @@ class CrateStoreSpec extends AsyncUnitSpec with AsyncMockitoSugar with Eventuall
       descriptor = CrateStore.Descriptor.ForContainerBackend(
         path = s"target/container-backed-store-${java.util.UUID.randomUUID()}",
         maxChunkSize = 1,
-        maxChunks = 1
+        maxChunks = 10
       )
     )
 
@@ -102,11 +102,57 @@ class CrateStoreSpec extends AsyncUnitSpec with AsyncMockitoSugar with Eventuall
     fileBackedStore.backend shouldBe a[FileBackend]
   }
 
+  it should "validate its parameters" in {
+    withClue("for memory backends") {
+      val memory = CrateStore.Descriptor.ForStreamingMemoryBackend(maxSize = 2, maxChunkSize = 1, name = "test")
+
+      intercept[IllegalArgumentException](memory.copy(maxSize = 0)).getMessage should include(
+        "Memory backend maximum size must be larger than 0"
+      )
+
+      intercept[IllegalArgumentException](memory.copy(maxChunkSize = 0)).getMessage should include(
+        "Memory backend maximum chunk size must be larger than 0"
+      )
+
+      intercept[IllegalArgumentException](memory.copy(maxSize = 1, maxChunkSize = 2)).getMessage should include(
+        "Memory backend maximum size must be larger than the maximum chunk size"
+      )
+
+      intercept[IllegalArgumentException](memory.copy(name = " ")).getMessage should include(
+        "Memory backend name cannot be blank"
+      )
+    }
+
+    withClue("for container backends") {
+      val container = CrateStore.Descriptor.ForContainerBackend(path = "/a/b/c", maxChunkSize = 1, maxChunks = 1)
+
+      intercept[IllegalArgumentException](container.copy(path = " ")).getMessage should include(
+        "Container backend path cannot be blank"
+      )
+
+      intercept[IllegalArgumentException](container.copy(maxChunkSize = 0)).getMessage should include(
+        "Container backend maximum chunk size must be larger than 0"
+      )
+
+      intercept[IllegalArgumentException](container.copy(maxChunks = 0)).getMessage should include(
+        "Container backend maximum number of chunks must be larger than 0"
+      )
+    }
+
+    withClue("for file backends") {
+      val file = CrateStore.Descriptor.ForFileBackend(parentDirectory = "/a/b/c")
+
+      intercept[IllegalArgumentException](file.copy(parentDirectory = " ")).getMessage should include(
+        "File backend parent directory cannot be blank"
+      )
+    }
+  }
+
   it should "convert crate store descriptors to strings" in {
     val memoryBackendName = s"memory-backed-store-${java.util.UUID.randomUUID()}"
     CrateStore.Descriptor
-      .ForStreamingMemoryBackend(maxSize = 1, maxChunkSize = 2, name = memoryBackendName)
-      .toString should be(s"StreamingMemoryBackend(maxSize=1, maxChunkSize=2, name=$memoryBackendName)")
+      .ForStreamingMemoryBackend(maxSize = 10, maxChunkSize = 2, name = memoryBackendName)
+      .toString should be(s"StreamingMemoryBackend(maxSize=10, maxChunkSize=2, name=$memoryBackendName)")
 
     val containerBackendPath = s"target/container-backed-store-${java.util.UUID.randomUUID()}"
     CrateStore.Descriptor

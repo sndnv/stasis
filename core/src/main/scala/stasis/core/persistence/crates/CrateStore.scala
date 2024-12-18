@@ -102,9 +102,22 @@ object CrateStore {
   }
 
   object Descriptor {
-    final case class ForStreamingMemoryBackend(maxSize: Long, maxChunkSize: Int, name: String) extends Descriptor
-    final case class ForContainerBackend(path: String, maxChunkSize: Int, maxChunks: Int) extends Descriptor
-    final case class ForFileBackend(parentDirectory: String) extends Descriptor
+    final case class ForStreamingMemoryBackend(maxSize: Long, maxChunkSize: Int, name: String) extends Descriptor {
+      require(maxSize > 0, "Memory backend maximum size must be larger than 0")
+      require(maxChunkSize > 0, "Memory backend maximum chunk size must be larger than 0")
+      require(maxSize > maxChunkSize, "Memory backend maximum size must be larger than the maximum chunk size")
+      require(!name.isBlank, "Memory backend name cannot be blank")
+    }
+
+    final case class ForContainerBackend(path: String, maxChunkSize: Int, maxChunks: Int) extends Descriptor {
+      require(!path.isBlank, "Container backend path cannot be blank")
+      require(maxChunkSize > 0, "Container backend maximum chunk size must be larger than 0")
+      require(maxChunks > 0, "Container backend maximum number of chunks must be larger than 0")
+    }
+
+    final case class ForFileBackend(parentDirectory: String) extends Descriptor {
+      require(!parentDirectory.isBlank, "File backend parent directory cannot be blank")
+    }
 
     def apply(config: Config): Descriptor =
       config.getString("type").toLowerCase match {

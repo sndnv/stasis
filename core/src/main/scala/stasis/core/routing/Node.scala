@@ -7,7 +7,7 @@ import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.crates.CrateStore
 
-sealed trait Node {
+sealed trait Node extends Product {
   def id: Node.Id
   def storageAllowed: Boolean
   def created: Instant

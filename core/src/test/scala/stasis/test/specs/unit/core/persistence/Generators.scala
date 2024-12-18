@@ -47,17 +47,19 @@ object Generators {
 
   def generateLocalNode(implicit
     rnd: ThreadLocalRandom = ThreadLocalRandom.current()
-  ): Node.Local =
+  ): Node.Local = {
+    val maxChunkSize = rnd.nextInt(0, Int.MaxValue)
     Node.Local(
       id = Node.generateId(),
       storeDescriptor = CrateStore.Descriptor.ForStreamingMemoryBackend(
-        maxSize = rnd.nextLong(0, Long.MaxValue),
-        maxChunkSize = rnd.nextInt(0, Int.MaxValue),
+        maxSize = maxChunkSize * 2L,
+        maxChunkSize = maxChunkSize,
         name = generateString(withSize = 42)
       ),
       created = Instant.now(),
       updated = Instant.now()
     )
+  }
 
   def generateRemoteHttpNode(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Node.Remote.Http =
     Node.Remote.Http(
