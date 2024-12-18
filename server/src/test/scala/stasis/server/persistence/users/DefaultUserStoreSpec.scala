@@ -3,21 +3,35 @@ package stasis.server.persistence.users
 import java.nio.charset.StandardCharsets
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
+import stasis.core.persistence.backends.slick.LegacyKeyValueStore
 import stasis.layers.UnitSpec
 import stasis.layers.persistence.SlickTestDatabase
 import stasis.layers.telemetry.MockTelemetryContext
-import stasis.core.persistence.backends.slick.LegacyKeyValueStore
+import stasis.shared.model.users.User
 import stasis.test.specs.unit.shared.model.Generators
 
 class DefaultUserStoreSpec extends UnitSpec with SlickTestDatabase {
   "A DefaultUserStore" should "add, retrieve and delete users" in withRetry {
     withStore { (profile, database) =>
       val store = new DefaultUserStore(name = "TEST_USERS", userSaltSize = 8, profile = profile, database = database)
-      val expectedUser = Generators.generateUser
+
+      val expectedUser = Generators.generateUser.copy(
+        limits = Some(
+          User.Limits(
+            maxDevices = 1,
+            maxCrates = 2,
+            maxStorage = 3,
+            maxStoragePerCrate = 4,
+            maxRetention = 5.seconds,
+            minRetention = 6.seconds
+          )
+        )
+      )
 
       for {
         _ <- store.init()

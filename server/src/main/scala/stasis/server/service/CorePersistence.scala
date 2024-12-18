@@ -22,6 +22,7 @@ import stasis.core.persistence.staging.StagingStore
 import stasis.layers.persistence.memory.MemoryStore
 import stasis.layers.persistence.migration.MigrationExecutor
 import stasis.layers.persistence.migration.MigrationResult
+import stasis.layers.service.PersistenceProvider
 import stasis.layers.telemetry.TelemetryContext
 import stasis.server.persistence.manifests.ServerManifestStore
 import stasis.server.persistence.nodes.ServerNodeStore
@@ -35,7 +36,7 @@ class CorePersistence(
   system: ActorSystem[Nothing],
   telemetry: TelemetryContext,
   timeout: Timeout
-) { persistence =>
+) extends PersistenceProvider { persistence =>
   private implicit val ec: ExecutionContext = system.executionContext
 
   val profile: JdbcProfile = SlickProfile(profile = persistenceConfig.getString("database.profile"))
@@ -99,7 +100,7 @@ class CorePersistence(
   def startup(): Future[Done] =
     nodeStore.prepare()
 
-  def migrate(): Future[MigrationResult] =
+  override def migrate(): Future[MigrationResult] =
     for {
       manifestsMigration <- migrationExecutor.execute(forStore = manifests)
       nodesMigration <- migrationExecutor.execute(forStore = nodes)
@@ -108,7 +109,7 @@ class CorePersistence(
       manifestsMigration + nodesMigration + reservationsMigration
     }
 
-  def init(): Future[Done] =
+  override def init(): Future[Done] =
     for {
       _ <- manifests.init()
       _ <- nodes.init()
@@ -117,7 +118,7 @@ class CorePersistence(
       Done
     }
 
-  def drop(): Future[Done] =
+  override def drop(): Future[Done] =
     for {
       _ <- manifests.drop()
       _ <- nodes.drop()

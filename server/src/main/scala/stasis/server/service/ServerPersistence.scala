@@ -13,6 +13,7 @@ import stasis.core.persistence.backends.slick.SlickProfile
 import stasis.layers.persistence.memory.MemoryStore
 import stasis.layers.persistence.migration.MigrationExecutor
 import stasis.layers.persistence.migration.MigrationResult
+import stasis.layers.service.PersistenceProvider
 import stasis.layers.telemetry.TelemetryContext
 import stasis.server.persistence.datasets.DatasetDefinitionStore
 import stasis.server.persistence.datasets.DatasetEntryStore
@@ -37,7 +38,7 @@ class ServerPersistence(
   system: ActorSystem[Nothing],
   telemetry: TelemetryContext,
   timeout: Timeout
-) {
+) extends PersistenceProvider {
   private implicit val ec: ExecutionContext = system.executionContext
 
   val profile: JdbcProfile = SlickProfile(profile = persistenceConfig.getString("database.profile"))
@@ -100,7 +101,7 @@ class ServerPersistence(
     database = database
   )
 
-  def migrate(): Future[MigrationResult] =
+  override def migrate(): Future[MigrationResult] =
     for {
       definitionsMigration <- migrationExecutor.execute(forStore = datasetDefinitions)
       entriesMigration <- migrationExecutor.execute(forStore = datasetEntries)
@@ -119,7 +120,7 @@ class ServerPersistence(
         + usersMigration)
     }
 
-  def init(): Future[Done] =
+  override def init(): Future[Done] =
     for {
       _ <- datasetDefinitions.init()
       _ <- datasetEntries.init()
@@ -132,7 +133,7 @@ class ServerPersistence(
       Done
     }
 
-  def drop(): Future[Done] =
+  override def drop(): Future[Done] =
     for {
       _ <- datasetDefinitions.drop()
       _ <- datasetEntries.drop()
