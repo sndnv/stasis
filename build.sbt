@@ -65,7 +65,8 @@ lazy val server = (project in file("./server"))
       "io.opentelemetry"    % "opentelemetry-exporter-prometheus" % versions.openTelemetryPrometheus,
       "io.prometheus"       % "simpleclient_hotspot"              % versions.prometheus
     ),
-    dockerBaseImage := jdkDockerImage
+    dockerBaseImage := jdkDockerImage,
+    dockerLabels    := Map("org.opencontainers.image.description" -> "Backup management and storage service")
   )
   .enablePlugins(JavaAppPackaging, BuildInfoPlugin)
   .dependsOn(shared % "compile->compile;test->test")
@@ -87,6 +88,9 @@ lazy val client = (project in file("./client"))
       "org.bouncycastle"  % "bcpkix-jdk18on"                    % versions.bouncycastle
     ),
     dockerBaseImage          := jdkDockerImage,
+    dockerLabels             := Map(
+      "org.opencontainers.image.description" -> "Linux and macOS client for the 'stasis/server' backup management and storage service"
+    ),
     Compile / PB.targets     := Seq(
       scalapb.gen(singleLineToProtoString = true) -> (Compile / sourceManaged).value
     ),
@@ -111,7 +115,8 @@ lazy val identity = (project in file("./identity"))
       "io.opentelemetry"    % "opentelemetry-exporter-prometheus" % versions.openTelemetryPrometheus,
       "io.prometheus"       % "simpleclient_hotspot"              % versions.prometheus
     ),
-    dockerBaseImage := jdkDockerImage
+    dockerBaseImage := jdkDockerImage,
+    dockerLabels    := Map("org.opencontainers.image.description" -> "OAuth2 identity management service based on RFC 6749")
   )
   .dependsOn(core % "compile->compile;test->test")
   .enablePlugins(JavaAppPackaging, BuildInfoPlugin)
