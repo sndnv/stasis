@@ -1,4 +1,4 @@
-package stasis.test.specs.unit.core
+package stasis.layers
 
 import org.apache.pekko.Done
 import org.apache.pekko.stream.Materializer

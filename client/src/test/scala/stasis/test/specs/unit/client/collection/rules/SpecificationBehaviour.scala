@@ -9,9 +9,9 @@ import stasis.client.collection.rules.Rule
 import stasis.client.collection.rules.Specification
 import stasis.client.collection.rules.exceptions.RuleMatchingFailure
 import stasis.client.collection.rules.internal.IndexedRule
+import stasis.layers.FileSystemHelpers.FileSystemSetup
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
-import stasis.test.specs.unit.core.FileSystemHelpers.FileSystemSetup
 
 trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
   import ResourceHelpers._

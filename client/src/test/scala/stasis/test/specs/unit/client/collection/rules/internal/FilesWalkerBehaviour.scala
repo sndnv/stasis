@@ -7,9 +7,9 @@ import scala.collection.mutable
 import stasis.client.collection.rules.Rule
 import stasis.client.collection.rules.internal.FilesWalker
 import stasis.client.collection.rules.internal.IndexedRule
+import stasis.layers.FileSystemHelpers.FileSystemSetup
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
-import stasis.test.specs.unit.core.FileSystemHelpers.FileSystemSetup
 
 trait FilesWalkerBehaviour { _: UnitSpec with ResourceHelpers =>
   def walker(setup: FileSystemSetup): Unit = {

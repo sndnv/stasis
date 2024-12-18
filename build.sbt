@@ -149,7 +149,8 @@ lazy val layers = (project in file("./layers"))
       "com.github.tomakehurst" % "wiremock-jre8"                     % versions.wiremock                % Test,
       "org.mockito"           %% "mockito-scala"                     % versions.mockito                 % Test,
       "org.mockito"           %% "mockito-scala-scalatest"           % versions.mockito                 % Test,
-      "org.mockito"            % "mockito-inline"                    % versions.mockitoInline           % Test
+      "org.mockito"            % "mockito-inline"                    % versions.mockitoInline           % Test,
+      "com.google.jimfs"       % "jimfs"                             % versions.jimfs                   % Test
     )
   )
 
@@ -182,8 +183,7 @@ lazy val core = (project in file("./core"))
       "com.github.tomakehurst" % "wiremock-jre8"                     % versions.wiremock                % Test,
       "org.mockito"           %% "mockito-scala"                     % versions.mockito                 % Test,
       "org.mockito"           %% "mockito-scala-scalatest"           % versions.mockito                 % Test,
-      "org.mockito"            % "mockito-inline"                    % versions.mockitoInline           % Test,
-      "com.google.jimfs"       % "jimfs"                             % versions.jimfs                   % Test
+      "org.mockito"            % "mockito-inline"                    % versions.mockitoInline           % Test
     )
   )
   .dependsOn(proto, layers % "compile->compile;test->test")

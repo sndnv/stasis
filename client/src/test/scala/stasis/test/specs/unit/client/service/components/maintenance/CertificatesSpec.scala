@@ -15,9 +15,9 @@ import stasis.client.service.ApplicationDirectory
 import stasis.client.service.components
 import stasis.client.service.components.maintenance.Base
 import stasis.client.service.components.maintenance.Certificates
+import stasis.layers.FileSystemHelpers.FileSystemSetup
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
-import stasis.test.specs.unit.core.FileSystemHelpers.FileSystemSetup
 
 class CertificatesSpec extends AsyncUnitSpec with ResourceHelpers {
   "A Certificates component" should "support regenerating client API certificates" in {
