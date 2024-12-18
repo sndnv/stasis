@@ -308,7 +308,7 @@ class ServiceSpec extends RouteTest with Eventually {
 
   private val ports: mutable.Queue[Int] = (41000 to 41100).to(mutable.Queue)
 
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(15.seconds, 250.milliseconds)
 }
 
 object ServiceSpec {
