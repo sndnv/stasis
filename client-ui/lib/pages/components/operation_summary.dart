@@ -4,7 +4,6 @@ import 'package:stasis_client_ui/model/operations/operation_progress.dart';
 import 'package:stasis_client_ui/pages/common/components.dart';
 import 'package:stasis_client_ui/pages/components/extensions.dart';
 import 'package:stasis_client_ui/pages/components/rendering.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 
 class OperationSummary {
@@ -142,7 +141,7 @@ class OperationSummary {
       subtitle: subtitle,
       trailing: Wrap(
         children: [resumeButton, stopButton, removeButton]
-            .whereNotNull()
+            .nonNulls
             .map((e) => Padding(padding: const EdgeInsets.all(2.0), child: e))
             .toList(),
       ),

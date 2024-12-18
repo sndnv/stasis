@@ -114,7 +114,7 @@ class Home extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.max,
                   mainAxisAlignment: MainAxisAlignment.end,
-                  children: [startBackupButton].whereNotNull().toList(),
+                  children: [startBackupButton].nonNulls.toList(),
                 ),
               ),
             ),
