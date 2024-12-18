@@ -16,10 +16,10 @@ import org.scalatest.concurrent.Eventually
 
 import stasis.core.persistence.backends.file.EventLogFileBackend
 import stasis.core.persistence.backends.file.state.StateStore
+import stasis.layers.FileSystemHelpers
+import stasis.layers.FileSystemHelpers.FileSystemSetup
 import stasis.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.FileSystemHelpers
-import stasis.test.specs.unit.core.FileSystemHelpers.FileSystemSetup
 import stasis.test.specs.unit.core.persistence.backends.EventLogBackendBehaviour
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 

@@ -24,6 +24,7 @@ import stasis.client.service.components.bootstrap.Base
 import stasis.client.service.components.bootstrap.Bootstrap
 import stasis.client.service.components.bootstrap.Parameters
 import stasis.core.routing.Node
+import stasis.layers.FileSystemHelpers.FileSystemSetup
 import stasis.layers.security.tls.EndpointContext
 import stasis.shared.model.devices.Device
 import stasis.shared.model.devices.DeviceBootstrapParameters
@@ -31,7 +32,6 @@ import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
 import stasis.test.specs.unit.client.ResourceHelpers
-import stasis.test.specs.unit.core.FileSystemHelpers.FileSystemSetup
 
 class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
   "A Parameters component" should "support applying bootstrap parameters" in {

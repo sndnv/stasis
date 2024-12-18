@@ -8,8 +8,8 @@ import scala.util.Try
 import org.apache.pekko.actor.typed.ActorSystem
 
 import stasis.core.persistence.backends.file.state.StateStore
+import stasis.layers.FileSystemHelpers
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.FileSystemHelpers
 
 trait StateStoreBehaviour { _: AsyncUnitSpec with FileSystemHelpers =>
   import FileSystemHelpers._

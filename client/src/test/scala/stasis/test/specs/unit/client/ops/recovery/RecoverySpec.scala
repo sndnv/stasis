@@ -32,6 +32,7 @@ import stasis.client.ops.recovery.Recovery
 import stasis.client.ops.recovery.Recovery.PathQuery
 import stasis.client.staging.DefaultFileStaging
 import stasis.core.routing.Node
+import stasis.layers.FileSystemHelpers.FileSystemSetup
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
@@ -42,7 +43,6 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
 import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.client.mocks._
-import stasis.test.specs.unit.core.FileSystemHelpers.FileSystemSetup
 
 class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually with BeforeAndAfterAll {
   "A Recovery operation" should "process recovery of files" in {
