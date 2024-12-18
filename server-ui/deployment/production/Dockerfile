@@ -1,5 +1,7 @@
 FROM nginx:stable-alpine
 
+LABEL org.opencontainers.image.description="Web-based user interface for the 'stasis/server' service"
+
 RUN mkdir -p /opt/stasis-server-ui/templates
 
 COPY build/web /usr/share/nginx/html
