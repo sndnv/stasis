@@ -10,6 +10,12 @@ then
   exit
 fi
 
+if ((BASH_VERSINFO[0] < 4))
+then
+  echo "Error: Bash version 4 or above is required but [${BASH_VERSINFO[0]}.${BASH_VERSINFO[1]}] found"
+  exit 1
+fi
+
 SMOKE_TEST_CLIENT_ID="1068208a-3cd7-4121-bad7-050dee3b4494"
 CLIENT_PASSWORD="test-secret"
 

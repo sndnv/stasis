@@ -12,8 +12,7 @@ The following deployments are available:
 ## Getting Started
 
 1) Generate artifacts and certificates with `./scripts/prepare_deployment.sh <country> <location> <organization>`
-2) Generate device secret with `./scripts/generate_device_secret.py --user-id <user-id-on-server> --user-salt <user-salt-on-server> --output-path ../secrets/client.secret`
-3) Start services with `docker-compose up` (or `docker compose -f <compose file name> up`)
+2) Start services with `docker-compose up` (or `docker compose -f <compose file name> up`)
 
 ## Running Tests
 
