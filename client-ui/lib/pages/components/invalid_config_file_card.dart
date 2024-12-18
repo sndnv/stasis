@@ -1,6 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:stasis_client_ui/config/config.dart';
 import 'package:stasis_client_ui/pages/common/components.dart';
-import 'package:flutter/material.dart';
 
 class InvalidConfigFileCard {
   static Widget build(BuildContext context, InvalidConfigFileException e) {
@@ -15,6 +15,7 @@ class InvalidConfigFileCard {
             children: [
               TextSpan(text: 'Configuration ', style: theme.textTheme.bodyMedium),
               WidgetSpan(
+                alignment: PlaceholderAlignment.middle,
                 child: Tooltip(
                   message: e.path,
                   child: Text(
