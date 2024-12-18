@@ -84,7 +84,7 @@ class _DateTimeFieldState extends State<DateTimeField> {
 
     return Container(
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(width: 1.38, color: theme.colorScheme.onSurface.withOpacity(0.38))),
+        border: Border(bottom: BorderSide(width: 1.38, color: theme.colorScheme.onSurface.withValues(alpha: 96))),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
