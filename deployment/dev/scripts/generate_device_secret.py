@@ -150,7 +150,7 @@ def main():
     user_salt = args.user_salt
 
     if not args.user_password:
-        user_password = getpass(prompt='User Password: ')
+        user_password = getpass(prompt='Device owner (user) Password: ')
     else:
         user_password = args.user_password
 

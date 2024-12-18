@@ -1,6 +1,7 @@
 .git
 .gitignore
-Dockerfile
+**/Dockerfile
+**/*.Dockerfile
 .dockerignore
 .idea
 .idea_modules
@@ -8,9 +9,11 @@ Dockerfile
 .project
 .settings
 venv
+.venv
 *.log
 __pycache__
 .coverage
+.coveragerc
 cover
 *.iml
 *.db
@@ -18,3 +21,5 @@ cover
 *.egg-info
 qa.py
 tests
+/Users
+/home
