@@ -6,7 +6,7 @@ services:
     ports:
       - '10000:10000'
     environment:
-      - STASIS_IDENTITY_BOOTSTRAP_ENABLED=true
+      - STASIS_IDENTITY_BOOTSTRAP_MODE=init-and-start
       - STASIS_IDENTITY_BOOTSTRAP_CONFIG=/opt/docker/config/bootstrap.conf
       - STASIS_IDENTITY_LOGLEVEL=DEBUG
       - STASIS_IDENTITY_SERVICE_API_INTERFACE=0.0.0.0

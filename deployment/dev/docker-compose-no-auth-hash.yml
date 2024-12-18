@@ -7,7 +7,7 @@ services:
       - '10000:10000'
       - '10001:10001'
     environment:
-      - STASIS_IDENTITY_BOOTSTRAP_ENABLED=true
+      - STASIS_IDENTITY_BOOTSTRAP_MODE=init-and-start
       - STASIS_IDENTITY_BOOTSTRAP_CONFIG=/opt/docker/config/identity-bootstrap.conf
       - STASIS_IDENTITY_LOGLEVEL=DEBUG
       - STASIS_IDENTITY_SERVICE_API_INTERFACE=0.0.0.0
@@ -73,7 +73,7 @@ services:
       - '20002:20002' # Bootstrap
       - '20003:20003' # Prometheus
     environment:
-      - STASIS_SERVER_SERVICE_BOOTSTRAP_ENABLED=true
+      - STASIS_SERVER_SERVICE_BOOTSTRAP_MODE=init-and-start
       - STASIS_SERVER_SERVICE_BOOTSTRAP_CONFIG=/opt/docker/config/server-bootstrap.conf
       - STASIS_SERVER_LOGLEVEL=DEBUG
       - STASIS_SERVER_SERVICE_API_INTERFACE=0.0.0.0
@@ -148,7 +148,7 @@ services:
 
   primary-client:
     image: stasis-client-cli:dev-latest
-    command: tail -F /opt/docker/bin/logs/client.log
+    command: tail -F /home/demiourgos728/stasis-client/logs/stasis-client.log
     tty: true
     environment:
       - STASIS_CLIENT_LOGLEVEL=INFO
@@ -196,7 +196,7 @@ services:
 
   secondary-client:
     image: stasis-client-cli:dev-latest
-    command: tail -F /opt/docker/bin/logs/client.log
+    command: tail -F /home/demiourgos728/stasis-client/logs/stasis-client.log
     tty: true
 
   prometheus:
