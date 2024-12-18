@@ -5,12 +5,14 @@ import java.security.SecureRandom
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManagerFactory
 
+import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory
 import org.apache.pekko.Done
 import org.apache.pekko.http.scaladsl.ConnectionContext
 import org.apache.pekko.http.scaladsl.Http
@@ -36,9 +38,7 @@ import stasis.layers.security.tls.EndpointContext
 class ServiceSpec extends RouteTest with Eventually {
   import ServiceSpec._
 
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
-
-  "Identity Service" should "authenticate and authorize actions, and provide metrics" in withRetry {
+  "Identity Service" should "authenticate and authorize actions, and provide metrics" in {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     import stasis.identity.api.Formats._
@@ -128,7 +128,63 @@ class ServiceSpec extends RouteTest with Eventually {
     }
   }
 
-  it should "handle bootstrap failures" in withRetry {
+  it should "pause the service after bootstrap is complete (mode=init)" in {
+    val serviceInterface = "localhost"
+    val servicePort = ports.dequeue()
+    val serviceUrl = s"https://$serviceInterface:$servicePort"
+
+    val metricsPort = ports.dequeue()
+
+    implicit val clientContext: HttpsConnectionContext = createTrustedContext()
+
+    val service = new Service {
+      override protected def systemConfig: Config = ConfigFactory
+        .load()
+        .withValue("stasis.identity.bootstrap.mode", ConfigValueFactory.fromAnyRef("init"))
+        .withValue("stasis.identity.service.api.port", ConfigValueFactory.fromAnyRef(servicePort))
+        .withValue("stasis.identity.service.telemetry.metrics.port", ConfigValueFactory.fromAnyRef(metricsPort))
+    }
+
+    eventually[Assertion] {
+      service.state should be(Service.State.BootstrapComplete)
+    }
+
+    for {
+      apiFailure <- getJwk(serviceUrl).failed
+    } yield {
+      apiFailure.getMessage should include("Connection refused")
+    }
+  }
+
+  it should "pause the service after bootstrap is complete (mode=drop)" in {
+    val serviceInterface = "localhost"
+    val servicePort = ports.dequeue()
+    val serviceUrl = s"https://$serviceInterface:$servicePort"
+
+    val metricsPort = ports.dequeue()
+
+    implicit val clientContext: HttpsConnectionContext = createTrustedContext()
+
+    val service = new Service {
+      override protected def systemConfig: Config = ConfigFactory
+        .load()
+        .withValue("stasis.identity.bootstrap.mode", ConfigValueFactory.fromAnyRef("drop"))
+        .withValue("stasis.identity.service.api.port", ConfigValueFactory.fromAnyRef(servicePort))
+        .withValue("stasis.identity.service.telemetry.metrics.port", ConfigValueFactory.fromAnyRef(metricsPort))
+    }
+
+    eventually[Assertion] {
+      service.state should be(Service.State.BootstrapComplete)
+    }
+
+    for {
+      apiFailure <- getJwk(serviceUrl).failed
+    } yield {
+      apiFailure.getMessage should include("Connection refused")
+    }
+  }
+
+  it should "handle bootstrap failures" in {
     val service = new Service {
       override protected def systemConfig: Config = ConfigFactory.load("application-invalid-bootstrap")
     }
@@ -138,7 +194,7 @@ class ServiceSpec extends RouteTest with Eventually {
     }
   }
 
-  it should "handle startup failures" in withRetry {
+  it should "handle startup failures" in {
     val service = new Service {
       override protected def systemConfig: Config = ConfigFactory.load("application-invalid-config")
     }
@@ -249,6 +305,10 @@ class ServiceSpec extends RouteTest with Eventually {
 
     ConnectionContext.httpsClient(sslContext)
   }
+
+  private val ports: mutable.Queue[Int] = (41000 to 41100).to(mutable.Queue)
+
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 }
 
 object ServiceSpec {
