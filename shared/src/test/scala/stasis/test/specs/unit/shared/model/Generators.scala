@@ -74,7 +74,7 @@ object Generators {
       id = DatasetDefinition.generateId(),
       info = generateString(withSize = 16),
       device = Device.generateId(),
-      redundantCopies = rnd.nextInt(0, 42),
+      redundantCopies = rnd.nextInt(1, 42),
       existingVersions = DatasetDefinition.Retention(
         policy = DatasetDefinition.Retention.Policy.All,
         duration = generateFiniteDuration
