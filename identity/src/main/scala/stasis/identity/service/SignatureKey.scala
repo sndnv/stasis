@@ -1,6 +1,11 @@
 package stasis.identity.service
 
-import scala.io.Source
+import java.io.FileNotFoundException
+import java.nio.file.FileSystem
+import java.nio.file.FileSystems
+import java.nio.file.Files
+import java.nio.file.Path
+
 import scala.util.Try
 
 import com.typesafe.{config => typesafe}
@@ -8,24 +13,56 @@ import org.jose4j.jwk.EllipticCurveJsonWebKey
 import org.jose4j.jwk.JsonWebKey
 import org.jose4j.jwk.OctetSequenceJsonWebKey
 import org.jose4j.jwk.RsaJsonWebKey
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 import stasis.layers.security.keys.Generators
 
 object SignatureKey {
   def fromConfig(signatureKeyConfig: typesafe.Config): JsonWebKey =
-    signatureKeyConfig.getString("type").toLowerCase match {
-      case "generated" => generated(signatureKeyConfig.getConfig("generated"))
-      case "stored"    => stored(signatureKeyConfig.getConfig("stored"))
-    }
+    fromConfig(signatureKeyConfig = signatureKeyConfig, fs = FileSystems.getDefault)
 
-  def stored(storedKeyConfig: typesafe.Config): JsonWebKey = {
-    val keySource = Source.fromFile(storedKeyConfig.getString("path"))
-    try {
-      JsonWebKey.Factory.newJwk(keySource.mkString)
-    } finally {
-      keySource.close()
+  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
+  def fromConfig(signatureKeyConfig: typesafe.Config, fs: FileSystem): JsonWebKey = {
+    val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
+
+    signatureKeyConfig.getString("type").toLowerCase match {
+      case "generated" =>
+        log.debug("Generating new in-memory signature key...")
+
+        generated(signatureKeyConfig.getConfig("generated"))
+
+      case "stored" =>
+        val storedKeyConfig = signatureKeyConfig.getConfig("stored")
+        val path = fs.getPath(storedKeyConfig.getString("path"))
+
+        if (Files.exists(path)) {
+          log.debug("Loading stored signature key from [{}]...", path.normalize().toAbsolutePath.toString)
+
+          stored(path)
+        } else if (storedKeyConfig.getBoolean("generate-if-missing")) {
+          log.debug(
+            "Signature key file [{}] not found; generating new stored signature key...",
+            path.normalize().toAbsolutePath.toString
+          )
+
+          val json = generated(signatureKeyConfig.getConfig("generated"))
+            .toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE)
+
+          val _ = Files.writeString(path, json)
+
+          log.debug("Loading stored signature key from [{}]...", path.normalize().toAbsolutePath.toString)
+          stored(path)
+        } else {
+          throw new FileNotFoundException(
+            s"Signature key file [${path.normalize().toAbsolutePath.toString}] is not accessible or is missing"
+          )
+        }
     }
   }
+
+  def stored(path: Path): JsonWebKey =
+    JsonWebKey.Factory.newJwk(Files.readString(path))
 
   def generated(generatedKeyConfig: typesafe.Config): JsonWebKey =
     generatedKeyConfig.getString("type").toLowerCase match {
