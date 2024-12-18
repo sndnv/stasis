@@ -15,7 +15,13 @@ final case class Client(
   subject: Option[String],
   created: Instant,
   updated: Instant
-)
+) {
+  require(!redirectUri.isBlank, "Client redirect URI cannot be blank")
+  require(tokenExpiration.value > 0, "Client token expiration cannot be negative or 0")
+  require(secret.value.nonEmpty, "Client secret cannot be empty")
+  require(!salt.isBlank, "Client salt cannot be blank")
+  require(subject.forall(!_.isBlank), "Client subject cannot be blank")
+}
 
 object Client {
   def create(

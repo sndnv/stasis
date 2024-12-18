@@ -27,13 +27,15 @@ import stasis.layers.persistence.KeyValueStore
 import stasis.layers.persistence.memory.MemoryStore
 import stasis.layers.persistence.migration.MigrationExecutor
 import stasis.layers.persistence.migration.MigrationResult
+import stasis.layers.service.PersistenceProvider
 import stasis.layers.telemetry.TelemetryContext
 
 class Persistence(
   persistenceConfig: typesafe.Config,
   authorizationCodeExpiration: FiniteDuration,
   refreshTokenExpiration: FiniteDuration
-)(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext, timeout: Timeout) {
+)(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext, timeout: Timeout)
+    extends PersistenceProvider {
   private implicit val ec: ExecutionContext = system.executionContext
 
   val profile: JdbcProfile = SlickProfile(profile = persistenceConfig.getString("database.profile"))
@@ -88,7 +90,7 @@ class Persistence(
       backend = backends.codes
     )
 
-  def migrate(): Future[MigrationResult] =
+  override def migrate(): Future[MigrationResult] =
     for {
       apisMigration <- migrationExecutor.execute(forStore = apis)
       clientsMigration <- migrationExecutor.execute(forStore = clients)
@@ -99,7 +101,7 @@ class Persistence(
       apisMigration + clientsMigration + resourceOwnersMigration + refreshTokensMigration + authorizationCodesMigration
     }
 
-  def init(): Future[Done] =
+  override def init(): Future[Done] =
     for {
       _ <- apis.init()
       _ <- clients.init()
@@ -110,7 +112,7 @@ class Persistence(
       Done
     }
 
-  def drop(): Future[Done] =
+  override def drop(): Future[Done] =
     for {
       _ <- apis.drop()
       _ <- clients.drop()

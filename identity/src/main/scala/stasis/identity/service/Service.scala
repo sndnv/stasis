@@ -29,10 +29,14 @@ import stasis.identity.model.codes.generators.DefaultAuthorizationCodeGenerator
 import stasis.identity.model.secrets.Secret
 import stasis.identity.model.tokens.generators.JwtBearerAccessTokenGenerator
 import stasis.identity.model.tokens.generators.RandomRefreshTokenGenerator
+import stasis.identity.service.bootstrap.ApiBootstrapEntityProvider
+import stasis.identity.service.bootstrap.ClientBootstrapEntityProvider
+import stasis.identity.service.bootstrap.ResourceOwnerBootstrapEntityProvider
 import stasis.layers
 import stasis.layers.security.jwt.DefaultJwtAuthenticator
 import stasis.layers.security.keys.LocalKeyProvider
 import stasis.layers.security.tls.EndpointContext
+import stasis.layers.service.BootstrapProvider
 import stasis.layers.telemetry.DefaultTelemetryContext
 import stasis.layers.telemetry.TelemetryContext
 import stasis.layers.telemetry.metrics.MetricsExporter
@@ -169,8 +173,8 @@ trait Service {
          |  realm: $realm
          |
          |  bootstrap:
-         |    enabled: ${rawConfig.getBoolean("bootstrap.enabled").toString}
-         |    config:  ${rawConfig.getString("bootstrap.config")}
+         |    mode:   ${rawConfig.getString("bootstrap.mode")}
+         |    config: ${rawConfig.getString("bootstrap.config")}
          |
          |  service:
          |    internal-query-timeout: ${timeout.duration.toMillis.toString} ms
@@ -231,17 +235,37 @@ trait Service {
     (persistence, endpoint, apiConfig.context)
   } match {
     case Success((persistence: Persistence, endpoint: IdentityEndpoint, context: Option[EndpointContext])) =>
-      Bootstrap
-        .run(rawConfig.getConfig("bootstrap"), persistence)
+      val bootstrap = BootstrapProvider(
+        bootstrapConfig = rawConfig.getConfig("bootstrap"),
+        persistence = persistence,
+        entityProviders = Seq(
+          new ApiBootstrapEntityProvider(persistence.apis),
+          new ClientBootstrapEntityProvider(persistence.clients),
+          new ResourceOwnerBootstrapEntityProvider(persistence.resourceOwners)
+        )
+      )
+
+      bootstrap
+        .run()
         .onComplete {
-          case Success(_) =>
-            log.info("Identity service starting on [{}:{}]...", apiConfig.interface, apiConfig.port)
+          case Success(mode @ (BootstrapProvider.BootstrapMode.Off | BootstrapProvider.BootstrapMode.InitAndStart)) =>
+            if (mode == BootstrapProvider.BootstrapMode.InitAndStart) {
+              log.info("Bootstrap complete with mode [{}]", mode.name)
+              log.warn("Disable bootstrap mode and restart the service to avoid re-running the bootstrap process again...")
+            }
+
+            log.info("Service starting on [{}:{}]...", apiConfig.interface, apiConfig.port)
             serviceState.set(State.Started(persistence, endpoint))
             val _ = endpoint.start(
               interface = apiConfig.interface,
               port = apiConfig.port,
               context = context
             )
+
+          case Success(mode @ (BootstrapProvider.BootstrapMode.Init | BootstrapProvider.BootstrapMode.Drop)) =>
+            log.info("Bootstrap complete with mode [{}]", mode.name)
+            log.warn("Service will NOT be started; disable bootstrap mode and restart the service to continue...")
+            serviceState.set(State.BootstrapComplete)
 
           case Failure(e) =>
             log.error("Bootstrap failed: [{} - {}]", e.getClass.getSimpleName, e.getMessage)
@@ -260,7 +284,7 @@ trait Service {
   }
 
   def stop(): Unit = {
-    log.info("Identity service stopping...")
+    log.info("Service stopping...")
     locally { val _ = exporter.shutdown() }
     locally { val _ = system.terminate() }
   }
@@ -273,7 +297,11 @@ object Service {
   object State {
     case object Starting extends State
     final case class Started(persistence: Persistence, endpoint: IdentityEndpoint) extends State
+
+    final case object BootstrapComplete extends State
+
     final case class BootstrapFailed(throwable: Throwable) extends State
+
     final case class StartupFailed(throwable: Throwable) extends State
   }
 

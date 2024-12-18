@@ -13,7 +13,12 @@ final case class ResourceOwner(
   subject: Option[String],
   created: Instant,
   updated: Instant
-)
+) {
+  require(!username.isBlank, "Resource owner username cannot be blank")
+  require(password.value.nonEmpty, "Resource owner password cannot be empty")
+  require(!salt.isBlank, "Resource owner salt cannot be blank")
+  require(subject.forall(!_.isBlank), "Resource owner subject cannot be blank")
+}
 
 object ResourceOwner {
   def create(
