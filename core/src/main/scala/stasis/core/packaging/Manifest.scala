@@ -13,7 +13,7 @@ import stasis.core.routing.Node
   * @param copies data copies
   * @param origin original data owner (node from which the data originates)
   * @param source current source (node from which the current node received the data)
-  * @param destinations destination odes (nodes to which the current node has sent the data)
+  * @param destinations destination nodes (nodes to which the current node has sent the data)
   * @param created creation timestamp
   */
 final case class Manifest(

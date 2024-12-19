@@ -91,7 +91,6 @@ trait Service {
     implicit val timeout: Timeout = rawConfig.getDuration("service.internal-query-timeout").toMillis.millis
 
     val instanceAuthenticatorConfig = Config.InstanceAuthenticator(rawConfig.getConfig("authenticators.instance"))
-    val serverId = UUID.fromString(instanceAuthenticatorConfig.clientId)
 
     val authenticationEndpointContext: Option[EndpointContext] =
       EndpointContext(rawConfig.getConfig("clients.authentication.context"))
@@ -108,7 +107,7 @@ trait Service {
 
     val oauthClient = DefaultOAuthClient(
       tokenEndpoint = instanceAuthenticatorConfig.tokenEndpoint,
-      client = serverId.toString,
+      client = instanceAuthenticatorConfig.clientId,
       clientSecret = instanceAuthenticatorConfig.clientSecret,
       useQueryString = instanceAuthenticatorConfig.useQueryString,
       context = authenticationEndpointContext
@@ -264,8 +263,11 @@ trait Service {
       grpcClient = coreGrpcEndpointClient
     )
 
+    val routingConfig = rawConfig.getConfig("routing")
+    val routerId = UUID.fromString(routingConfig.getString("default.router-id"))
+
     val router: Router = DefaultRouter(
-      routerId = serverId,
+      routerId = routerId,
       persistence = DefaultRouter.Persistence(
         manifests = corePersistence.manifests,
         nodes = corePersistence.nodes.view,
@@ -370,6 +372,10 @@ trait Service {
          |        user:               ${identityCredentialsManagerConfig.managementUser}
          |        password-provided:  ${identityCredentialsManagerConfig.managementUserPassword.nonEmpty.toString}
          |        scope:              ${identityCredentialsManagerConfig.managementUserScope}
+         |
+         |  routing:
+         |    default:
+         |      router-id: ${routerId.toString}
          |
          |  persistence:
          |    database:
