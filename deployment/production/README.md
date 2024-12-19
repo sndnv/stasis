@@ -4,34 +4,146 @@ The provided `docker-compose.yml` defines all `stasis` services and their config
 
 ## Getting Started
 
-1) Generate/pull artifacts
-2) Provide environment files (example files with all required parameters are available in [`secrets/examples`](./secrets/examples))
+1) Set correct artifact versions in compose file
+2) Provide environment files (example files with all required parameters are available in [
+   `secrets/examples`](./secrets/examples))
+    * see below for more details on how some of the env vars have to be setup and how they relate to each other
 3) Provide TLS certificates and signature keys
-4) Enable bootstrap for `identity` and `server` (first-run only; should be disabled normally)
+    * Make sure to follow your certificate authority's guidelines on generating TLS certificates
+    * Alternatively, a root CA private key and certificate can be used with the `generate_cert.py` script to create new TLS
+      certificates
+4) Enable bootstrap for `identity` and `server`
+    * This can be done by setting `STASIS_IDENTITY_BOOTSTRAP_MODE` and `STASIS_SERVER_SERVICE_BOOTSTRAP_MODE` to `init`
+    * After the bootstrap process has completed, both services will pause, waiting for the mode to be set back to `off` (and
+      restarted)
+    * Normally, the bootstrap process should be able to proceed regardless of failures but not all issues can be ignored. If there
+      were configuration problems that resulted in the bootstrap mode partially completing, the mode can be set to `drop`, which
+      will cause the service to clean up all database-related information. It can then be set back to `init` to restart the
+      process from scratch again.
 5) Make sure that:
-   * the `server` storage volume path (by default, `./local/server`) exists and is accessible/writable
-   * the correct docker images are used for all services
-   * the correct values for `PEKKO_HTTP_CORS_ALLOWED_ORIGINS` are set for both `identity` and `server`
-6) Start services with `docker-compose up`
+    * the `server` storage volume path (by default, `./local/server`) exists and is accessible/writable
+    * the correct (latest) images are used for all services
+    * the correct values for `PEKKO_HTTP_CORS_ALLOWED_ORIGINS` are set for both `identity` and `server`
+    * the correct values for `NGINX_CORS_ALLOWED_ORIGIN` are set for both `identity-ui` and `server-ui`
+6) Start services with `docker-compose up` (or `podman-compose up`)
+    * Starting all services at the same time should eventually succeed, but it is easier to start bootstrapping them one by one,
+      in the following order:
+        1) `identity` and its database - other components depend on the OAuth service so it should be the first one to go
+        2) `identity-ui` - after `identity` itself is up-and-running, getting its web UI working will allow easier debugging of
+           authentication issues further on
+        3) `server` and its database
+        4) `server-ui`
+        5) `db-*-exporter`, `prometheus` and `grafana` - the metrics collection can be the last one to go; it is all
+           pre-configured so it should _just work_ after all other services are successfully running
+
+### Generating a self-signed root CA
+
+If a proper root CA is not available, a self-signed one can be generated using (some variation of) the following commands:
+
+```
+# generates a new private key for the CA
+openssl genrsa -aes256 -out rootCA.key 4096
+
+# generates a new certificate for the CA, using the previously generated private key
+openssl req -x509 -new -nodes -key rootCA.key -sha256 -days 1024 -out rootCA.crt
+```
+
+### Generating signature keys
+
+The `identity` service requires a signature key (Json Web Key / JWK) to be able to generate valid JWTs. Currently, it can be
+configured to generate those keys on its own (either on every run or to generate a key once and save it). If, however, a custom
+key needs to be provided, examples of the expected format are available [here](../../identity/src/test/resources/keys).
+
+> Make sure to create cryptographically strong keys! The provided examples are not meant to be used in production and are
+> generated with testing performance in mind.
+
+### Providing secrets and bootstrap parameters
+
+#### Database credentials and `db-*.env` files
+
+These files only include the database usernames and passwords. For clarity, they are split into one set of files for the
+`identity` database and one set for the `server` database but that is not required. If a single database (and metrics exporter)
+is used, then the configuration can be provided in only one place/file.
+
+> The username/password combination(s) provided here must also be provided to the services in their own files. The relevant
+> environment variables are `STASIS_IDENTITY_PERSISTENCE_DATABASE_USER` and `STASIS_IDENTITY_PERSISTENCE_DATABASE_PASSWORD` for
+> `identity`, and `STASIS_SERVER_PERSISTENCE_DATABASE_USER` and `STASIS_SERVER_PERSISTENCE_DATABASE_PASSWORD` for `server.`
+
+#### `identity` bootstrap configuration
+
+This configuration prepares the `identity` service for operation and consists of three clients and two users:
+
+* `identity-ui` client - used by the web UI of the `identity` service
+* `server-ui` client - used by the web UI of the `server` service
+* `server-instance` client - used during data transmission between the server and clients (making outgoing requests)
+* `server-node` client - used during data transmission between the server and clients (validating incoming requests)
+* `default` user - default management/admin user; should be removed after bootstrap is done (see below)
+* `server-management` user - automation user that allows `server` to handle some operations on behalf of users
+
+> Note: The client IDs provided here must be the same as those provided to the services:
+> * `STASIS_IDENTITY_BOOTSTRAP_CLIENTS_IDENTITY_UI_CLIENT_ID` should be the same as `IDENTITY_UI_CLIENT_ID`
+> * `STASIS_IDENTITY_BOOTSTRAP_CLIENTS_SERVER_UI_CLIENT_ID` should be the same as `SERVER_UI_CLIENT_ID`
+> * `STASIS_IDENTITY_BOOTSTRAP_CLIENTS_SERVER_INSTANCE_CLIENT_ID` should be the same as
+    `STASIS_SERVER_AUTHENTICATORS_INSTANCE_CLIENT_ID`
+> * `STASIS_IDENTITY_BOOTSTRAP_CLIENTS_SERVER_NODE_CLIENT_ID` should be the same as `STASIS_SERVER_AUTHENTICATORS_NODES_AUDIENCE`
+> * `STASIS_IDENTITY_BOOTSTRAP_OWNERS_SERVER_MANAGEMENT_USER` should be the same as
+    `STASIS_SERVER_CREDENTIALS_MANAGERS_IDENTITY_MANAGEMENT_USER`
+> * `STASIS_IDENTITY_BOOTSTRAP_OWNERS_DEFAULT_USER_ID` should be the same as `STASIS_SERVER_SERVICE_BOOTSTRAP_USERS_DEFAULT_ID`
+>
+> If required, the corresponding client secrets or user passwords also need to be provided.
+
+#### `server` bootstrap configuration
+
+This configuration prepares the `server` service for operation and consists of two schedules, one user and two storage nodes.
+Each `*_ID` env var must be set to a random UUID, and it doesn't matter what it is, as long as it is unique. The only exception is
+`STASIS_SERVER_SERVICE_BOOTSTRAP_USERS_DEFAULT_ID` which must be set to the same value as
+`STASIS_IDENTITY_BOOTSTRAP_OWNERS_DEFAULT_USER_ID`.
+
+#### Secret derivation configuration
+
+The services and clients have the ability to provide extra security for user credentials by hashing them before they are sent out
+of any client device. This, however, introduces a bit more complexity to the setup process and the following parameters needs to
+be set:
+
+* `STASIS_SERVER_BOOTSTRAP_DEVICES_PARAMETERS_SECRETS_DERIVATION_AUTHENTICATION_SALT_PREFIX`,
+  `IDENTITY_UI_DERIVATION_SALT_PREFIX`, `SERVER_UI_DERIVATION_SALT_PREFIX` must be set to the **_same_** **random** value
+* `STASIS_SERVER_BOOTSTRAP_DEVICES_PARAMETERS_SECRETS_DERIVATION_ENCRYPTION_SALT_PREFIX` and
+  `STASIS_SERVER_BOOTSTRAP_DEVICES_PARAMETERS_SECRETS_DERIVATION_AUTHENTICATION_SALT_PREFIX` must be set to **_different_**
+  **random** values
+
+> If this feature is not needed, then the following env vars should be set to `false`: `IDENTITY_UI_PASSWORD_DERIVATION_ENABLED`,
+`STASIS_SERVER_BOOTSTRAP_DEVICES_PARAMETERS_SECRETS_DERIVATION_AUTHENTICATION_ENABLED` and `SERVER_UI_PASSWORD_DERIVATION_ENABLED`
+
+#### Redirect URIs
+
+Redirect URIs/URLs are an important part of the OAuth authentication process and need to be configured correctly. The defaults
+provided in the compose file should work without any issues but if the DNS names and/or ports of the services are updated, care
+must be taken to update the URIs as well.
+
+> :warning: If the DNS names and/or ports are updated **_after_** the bootstrap process is complete, the URIs of the clients
+> **CANNOT** be updated (for security reasons). New clients must be created and the appropriate environment variables must be
+> updated
 
 ## After Bootstrap
 
 1) **Replace management user** - for extra security, a new management user with a new password should be created and
-the existing, default, management user should be removed. This can be done using the `server_create_user.sh` and
-`server_delete_user.sh` scripts. This user needs to have the following permissions:
-`view-self,view-privileged, view-public,view-service,manage-self,manage-privileged,manage-service` to be able to
-manage the server.
+   the existing, default, management user should be removed. This can be done via the server's web UI (`server-ui`) or using the
+   `server_create_user.sh` and `server_delete_user.sh` scripts. The new user needs to have the following permissions:
+   `view-self,view-privileged, view-public,view-service,manage-self,manage-privileged,manage-service` to be able to
+   manage the server.
+
 2) **Create standard user** - for extra security, the management users and the users that own data/backups should be
-separate. As with the management user, the `server_create_user.sh` script can be used; the difference between the
-two types is only in the permissions that they are granted - `view-self,view-public,manage-self` for a standard user.
-3) **Create devices** - after the standard user has been created, its devices can then be setup; this is done via the
-`server_create_device.sh` script.
+   separate. As with the management user, the web UI or the `server_create_user.sh` script can be used; the difference between the
+   two types is only in the permissions that they are granted - `view-self,view-public,manage-self` for a standard user.
+3) **Create devices** - after the standard user has been created, its devices can then be setup; this is done via the web UI or
+   the `server_create_device.sh` script.
 4) **Bootstrap devices** - for each new device, a bootstrap process needs to be performed and that is done on the
-device itself. Using the `server_get_bootstrap_code.sh` script, a new bootstrap code can be generated for a specific device.
+   device itself. Using the web UI or the `server_get_bootstrap_code.sh` script, a new bootstrap code can be generated for a
+   specific device.
 5) **Run a backup** - after the bootstrap process has been completed for a device, a dataset definition can then be
-created and the first backup can be started. It might be a good idea to revise the backup rules and include/exclude
-additional files or directories.
-6) **Setup scheduling** - as a final setup step, backups can be configured to run periodically.
+   created and the first backup can be started. It might be a good idea to revise the backup rules and include/exclude
+   additional files or directories.
+6) **Setup scheduling** - as a final setup step, backups can be configured to run periodically but that is optional.
 
 ## Deployment Components
 
