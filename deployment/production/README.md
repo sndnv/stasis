@@ -57,6 +57,37 @@ key needs to be provided, examples of the expected format are available [here](.
 > Make sure to create cryptographically strong keys! The provided examples are not meant to be used in production and are
 > generated with testing performance in mind.
 
+### Configuring Cross-Origin Resource Sharing (CORS)
+
+The default CORS configuration _should_ work; however, if the DNS names and/or ports are updated, then the CORS environment
+variables should be updated as well.
+
+#### Common CORS issues
+
+In order to diagnose these problems, it is best to set `STASIS_IDENTITY_LOGLEVEL` and `STASIS_SERVER_LOGLEVEL` to `DEBUG` so that
+the requests and responses can be logged.
+
+Additionally, the browser's console and network inspection facilities can be used to determine what `Origin` headers are sent for
+the requests and what `Access-Control-Allow-Origin` (if any) are sent in the responses.
+
+##### `null` origin in request
+
+Under some circumstances, the browser sends a request with a `null` origin and there is not much that can be done about it, other
+than setting the allowed origins to `*`. Usually, that impacts the web UIs so their `NGINX_CORS_ALLOWED_ORIGIN` env vars are set
+to `*` by default.
+
+##### CORS failures without a request
+
+If the browser is reporting CORS failures but the services are not showing any requests and responses in the logs, then it most
+likely that it is a certificate issue (especially when using self-signed certificates). The target URL can be opened directly in
+the browser to determine if the certificate is trusted or not.
+
+##### Provided `Origin` and allowed origins do not match
+
+If the browser is showing an `Origin` header with one value, but that value is not what the server expects (usually configured in
+the `PEKKO_HTTP_CORS_ALLOWED_ORIGINS` environment variable of `identity` and `server`) then the request will fail. The proper
+allowed origins need to be set and the service(s) restarted.
+
 ### Providing secrets and bootstrap parameters
 
 #### Database credentials and `db-*.env` files
