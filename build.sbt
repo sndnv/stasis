@@ -18,13 +18,13 @@ lazy val versions = new {
   // persistence
   val slick    = "3.5.2"
   val postgres = "42.7.4"
-  val mariadb  = "3.4.1"
-  val sqlite   = "3.46.1.3"
+  val mariadb  = "3.5.1"
+  val sqlite   = "3.47.1.0"
   val h2       = "2.3.232"
 
   // telemetry
-  val openTelemetry           = "1.43.0"
-  val openTelemetryPrometheus = "1.43.0-alpha"
+  val openTelemetry           = "1.45.0"
+  val openTelemetryPrometheus = "1.45.0-alpha"
   val prometheus              = "0.16.0"
 
   // testing
@@ -41,9 +41,9 @@ lazy val versions = new {
   val hkdf         = "2.0.0"
   val appdirs      = "1.2.2"
   val scopt        = "4.1.0"
-  val logback      = "1.5.11"
+  val logback      = "1.5.15"
   val systemTray   = "4.4"
-  val bouncycastle = "1.78.1"
+  val bouncycastle = "1.79"
 }
 
 lazy val jdkDockerImage = "eclipse-temurin:21-noble"
