@@ -55,6 +55,11 @@ device and recover the original system in an automated and repeatable way.*
 ### Server
 Docker images for `server`, `server-ui`, `identity` and `identity-ui` can be found under [Packages](https://github.com/sndnv?tab=packages&repo_name=stasis).
 
+The required configuration can be downloaded and prepared by running the installer:
+```
+$ curl -s "https://raw.githubusercontent.com/sndnv/stasis/master/deployment/production/scripts/server_prepare_deployment.sh" | bash
+```
+
 > See [deployment/production](deployment/production/README.md) for more information on how to set up and deploy the services.
 
 ### Clients

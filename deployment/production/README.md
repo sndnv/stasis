@@ -4,9 +4,11 @@ The provided `docker-compose.yml` defines all `stasis` services and their config
 
 ## Getting Started
 
-1) Set correct artifact versions in compose file
-2) Provide environment files (example files with all required parameters are available in [
-   `secrets/examples`](./secrets/examples))
+1) Prepare deployment configuration
+    * Run script in [`./scripts/server_prepare_deployment.sh`](./scripts/server_prepare_deployment.sh)
+    * Or, provide environment files (template files with all required parameters are available in [
+      `secrets/templates`](./secrets/templates))
+2) Set correct artifact versions in compose file
     * see below for more details on how some of the env vars have to be setup and how they relate to each other
 3) Provide TLS certificates and signature keys
     * Make sure to follow your certificate authority's guidelines on generating TLS certificates
@@ -192,9 +194,10 @@ locally and should not be part of any commits**.
 Contains secrets used by `stasis` services; **files in this directory must be generated
 locally and should not be part of any commits**.
 
-### [`secrets/examples`](./secrets/examples)
+### [`secrets/templates`](./secrets/templates)
 
-Example environment files for configuring the services.
+Template environment files for configuring the services via the [
+`scripts/server_prepare_deployment.sh`](scripts/server_prepare_deployment.sh) script
 
 ### [`scripts`](./scripts)
 
@@ -243,3 +246,7 @@ Used to generate x509 certificates and private keys signed by the provided certi
 #### `client_uninstall.sh`
 
 > Uninstalls stasis-client and stasis-client-cli for the current user
+
+#### `server_prepare_deployment.sh`
+
+> Downloads and prepares all configuration files needed for a stasis server deployment
