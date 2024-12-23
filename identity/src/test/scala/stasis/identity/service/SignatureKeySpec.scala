@@ -48,6 +48,22 @@ class SignatureKeySpec extends UnitSpec with FileSystemHelpers {
     jwk.getAlgorithm should be(expectedAlgorithm)
   }
 
+  it should "provide JWK based on config (stored / empty)" in {
+    val (filesystem, _) = createMockFileSystem(FileSystemHelpers.FileSystemSetup.Unix)
+
+    val jwkConfig = config.getConfig("signature-key-stored-empty-with-generation")
+    val expectedKeyId = "stasis-identity-ec-2"
+    val expectedAlgorithm = "ES256"
+
+    Files.createDirectories(filesystem.getPath(jwkConfig.getString("stored.path")).getParent)
+    Files.createFile(filesystem.getPath(jwkConfig.getString("stored.path")))
+
+    val jwk = SignatureKey.fromConfig(jwkConfig, filesystem)
+    jwk.getKeyType should be("EC")
+    jwk.getKeyId should be(expectedKeyId)
+    jwk.getAlgorithm should be(expectedAlgorithm)
+  }
+
   it should "fail to provide stored JWK (missing / generation not allowed)" in {
     val jwkConfig = config.getConfig("signature-key-stored-missing-without-generation")
 

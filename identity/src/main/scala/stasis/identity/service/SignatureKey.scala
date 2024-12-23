@@ -35,11 +35,12 @@ object SignatureKey {
       case "stored" =>
         val storedKeyConfig = signatureKeyConfig.getConfig("stored")
         val path = fs.getPath(storedKeyConfig.getString("path"))
+        lazy val content: String = Files.readString(path)
 
-        if (Files.exists(path)) {
+        if (Files.exists(path) && !content.isBlank) {
           log.debug("Loading stored signature key from [{}]...", path.normalize().toAbsolutePath.toString)
 
-          stored(path)
+          stored(content)
         } else if (storedKeyConfig.getBoolean("generate-if-missing")) {
           log.debug(
             "Signature key file [{}] not found; generating new stored signature key...",
@@ -63,6 +64,9 @@ object SignatureKey {
 
   def stored(path: Path): JsonWebKey =
     JsonWebKey.Factory.newJwk(Files.readString(path))
+
+  def stored(content: String): JsonWebKey =
+    JsonWebKey.Factory.newJwk(content)
 
   def generated(generatedKeyConfig: typesafe.Config): JsonWebKey =
     generatedKeyConfig.getString("type").toLowerCase match {
