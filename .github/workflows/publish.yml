@@ -51,6 +51,18 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+      - name: Build deployment artifacts
+        run: |
+          git archive -o stasis-deployment-${{ github.ref_name }}.tar.gz --format tar.gz ${{ github.ref_name }}:deployment/production
+
+      - name: Upload deployment artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment
+          path: stasis-deployment-${{ github.ref_name }}.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
   python:
     runs-on: ubuntu-latest
 
@@ -234,3 +246,4 @@ jobs:
             client-ui-linux/stasis-client-ui-linux-${{ github.ref_name }}.AppImage
             client-ui-macos/stasis-client-ui-macos-${{ github.ref_name }}.dmg
             client-android/stasis-client-android-${{ github.ref_name }}.apk
+            deployment/stasis-deployment-${{ github.ref_name }}.tar.gz

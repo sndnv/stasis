@@ -9,3 +9,4 @@ classes
 .settings
 *.keystore
 .bsp
+.DS_Store
