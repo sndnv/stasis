@@ -16,25 +16,25 @@ dependencies:
   json_annotation: ^4.9.0
   http: ^1.2.2
   oauth2: ^2.0.3
-  url_launcher: ^6.3.0
+  url_launcher: ^6.3.1
   fluro: ^2.0.5
   url_strategy: ^0.3.0
-  shared_preferences: ^2.3.2
-  flutter_svg: ^2.0.10+1
-  intl: ^0.19.0
-  flutter_dotenv: ^5.1.0
+  shared_preferences: ^2.3.4
+  flutter_svg: ^2.0.16
+  intl: ^0.20.1
+  flutter_dotenv: ^5.2.1
   cryptography: ^2.7.0
-  watcher: ^1.1.0
+  watcher: ^1.1.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
   flutter_lints: ^5.0.0
-  build_runner: ^2.4.12
+  build_runner: ^2.4.14
   freezed: ^2.4.5
   json_serializable: ^6.8.0
-  mockito: ^5.4.4
+  mockito: ^5.4.5
 
 flutter:
   uses-material-design: true
