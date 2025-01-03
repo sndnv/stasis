@@ -29,7 +29,7 @@ object ApplicationTray {
       tray.setStatus(info)
       tray.setImage(getClass.getResource("/assets/logo.png"))
 
-      tray.getMenu.add(new MenuItem("Start UI", (_: ActionEvent) => callbacks.startUiService()))
+      tray.getMenu.add(new MenuItem("Show", (_: ActionEvent) => callbacks.startUiService()))
       tray.getMenu.add(new MenuItem("Exit", (_: ActionEvent) => callbacks.terminateService()))
     }
 
