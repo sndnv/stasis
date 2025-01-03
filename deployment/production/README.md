@@ -8,13 +8,12 @@ The provided `docker-compose.yml` defines all `stasis` services and their config
     * Run script in [`./scripts/server_prepare_deployment.sh`](./scripts/server_prepare_deployment.sh)
     * Or, provide environment files (template files with all required parameters are available in [
       `secrets/templates`](./secrets/templates))
-2) Set correct artifact versions in compose file
-    * see below for more details on how some of the env vars have to be setup and how they relate to each other
-3) Provide TLS certificates and signature keys
+    * Note: See below for more details on how some of the env vars have to be setup and how they relate to each other
+2) Provide TLS certificates and signature keys
     * Make sure to follow your certificate authority's guidelines on generating TLS certificates
     * Alternatively, a root CA private key and certificate can be used with the `generate_cert.py` script to create new TLS
       certificates
-4) Enable bootstrap for `identity` and `server`
+3) Enable bootstrap for `identity` and `server`
     * This can be done by setting `STASIS_IDENTITY_BOOTSTRAP_MODE` and `STASIS_SERVER_SERVICE_BOOTSTRAP_MODE` to `init`
     * After the bootstrap process has completed, both services will pause, waiting for the mode to be set back to `off` (and
       restarted)
@@ -22,12 +21,13 @@ The provided `docker-compose.yml` defines all `stasis` services and their config
       were configuration problems that resulted in the bootstrap mode partially completing, the mode can be set to `drop`, which
       will cause the service to clean up all database-related information. It can then be set back to `init` to restart the
       process from scratch again.
-5) Make sure that:
+4) Make sure that:
     * the `server` storage volume path (by default, `./local/server`) exists and is accessible/writable
     * the correct (latest) images are used for all services
+    * all service names can be resolved / are part of your DNS configuration
     * the correct values for `PEKKO_HTTP_CORS_ALLOWED_ORIGINS` are set for both `identity` and `server`
     * the correct values for `NGINX_CORS_ALLOWED_ORIGIN` are set for both `identity-ui` and `server-ui`
-6) Start services with `docker-compose up` (or `podman-compose up`)
+5) Start services with `docker-compose up` (or `podman-compose up`)
     * Starting all services at the same time should eventually succeed, but it is easier to start bootstrapping them one by one,
       in the following order:
         1) `identity` and its database - other components depend on the OAuth service so it should be the first one to go
@@ -58,6 +58,22 @@ key needs to be provided, examples of the expected format are available [here](.
 
 > Make sure to create cryptographically strong keys! The provided examples are not meant to be used in production and are
 > generated with testing performance in mind.
+
+### DNS records and service names
+
+By default, the compose file configures all services to have `.stasis.internal` as a suffix for their names. However, these
+names will only work as part of the containerized network. To make things work outside of that network, there are several options:
+
+* Update your DNS records - update whatever approach you have for DNS resolution to point the various `<name>.stasis.internal`
+  names to the correct IP addresses/ports
+* Update the compose configuration - instead of using the `.stasis.internal` suffix, update the names to fit the setup that you
+  have or want;
+* Use localhost exclusively - replace all `<name>.stasis.internal` references with `localhost`; this will make the services
+  accessible only locally
+
+> After setting up proper DNS resolution, you might have to remove the network aliases defined in the compose file!
+
+> Always make sure to update the redirect URIs when changing the names (see below).
 
 ### Configuring Cross-Origin Resource Sharing (CORS)
 

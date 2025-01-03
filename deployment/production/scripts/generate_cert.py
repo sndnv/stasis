@@ -22,6 +22,7 @@ def main():
     parser.add_argument('-p', '--output-path', type=str, default='.', help='Path to use for generated files')
     parser.add_argument('-cc', '--ca-certificate-path', type=str, required=True, help='Path to root CA\'s certificate')
     parser.add_argument('-ck', '--ca-key-path', type=str, required=True, help='Path to root CA\'s private key')
+    parser.add_argument('-e', '--extra-name', type=str, default=None, help='Alternative server name')
 
     args = parser.parse_args()
 
@@ -36,6 +37,7 @@ def main():
     location = args.location
     organization = args.organization
     common_name = args.common_name
+    extra_name = args.extra_name
     output_path = args.output_path
     ca_cert_path = args.ca_certificate_path
     ca_key_path = args.ca_key_path
@@ -60,6 +62,7 @@ def main():
                 'Private Key:\t{}'.format(private_key_path),
                 'CSR:\t{}'.format(csr_path),
                 'PKCS12 File:\t{}'.format(pkcs12_path),
+                'Extra Name:\t{}'.format(extra_name),
             ]
         )
     )
@@ -83,13 +86,18 @@ def main():
         x509_cert_path = '{}/{}.cert.pem'.format(output_path, common_name)
 
         with open(x509_config_file_path, 'w') as configFile:
+            if extra_name:
+                san = 'subjectAltName=DNS.1:{},DNS.2:{}'.format(common_name, extra_name)
+            else:
+                san = 'subjectAltName=DNS:{}'.format(common_name)
+
             configFile.write(
                 '\n'.join(
                     [
                         'authorityKeyIdentifier=keyid,issuer',
                         'basicConstraints=CA:FALSE',
                         'keyUsage=digitalSignature,nonRepudiation,keyEncipherment,dataEncipherment',
-                        'subjectAltName=DNS:{}'.format(common_name),
+                        san,
                     ]
                 )
             )

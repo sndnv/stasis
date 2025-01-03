@@ -67,6 +67,7 @@ for i in "$@"; do
       ;;
     --target=*)
       TARGET_OUTPUT="${i#*=}"
+      TARGET_OUTPUT="${TARGET_OUTPUT/#~/$HOME}"
       shift
       ;;
     --version=*)
@@ -291,6 +292,17 @@ SIGNATURE_KEY_PATH="${SECRETS_DIR}/identity-signature-key.jwk.json"
 log_debug "Creating signature key placeholder [${SIGNATURE_KEY_PATH}]..."
 touch "${SIGNATURE_KEY_PATH}"
 
+COMPOSE_FILE_PATH="${TARGET_OUTPUT}/docker-compose.yml"
+ARTIFACTS_VERSION=${ACTUAL_VERSION:1}
+ARTIFACTS_VERSION_PLACEHOLDER="0.0.1-SNAPSHOT"
+log_debug "Setting stasis image versions in compose file [${COMPOSE_FILE_PATH}] to [${ARTIFACTS_VERSION}]"
+
+if [[ "${OSTYPE}" == "darwin"* ]]; then
+  ARTIFACTS_VERSION_REPLACEMENT_RESULT=$(sed -i '' "s/${ARTIFACTS_VERSION_PLACEHOLDER}/${ARTIFACTS_VERSION}/g" "${COMPOSE_FILE_PATH}")
+else
+  ARTIFACTS_VERSION_REPLACEMENT_RESULT=$(sed -i "s/${ARTIFACTS_VERSION_PLACEHOLDER}/${ARTIFACTS_VERSION}/g" "${COMPOSE_FILE_PATH}")
+fi
+
 log_info "... done."
 
 log_info ""
@@ -308,7 +320,6 @@ log_info "        PostgreSQL DB - identity: ${STORAGE_DIR}/postgres/identity"
 log_info "        PostgreSQL DB - server:   ${STORAGE_DIR}/postgres/server"
 log_info "        Data storage - primary:   ${GENERATED_VALUES['NODES_LOCAL_PRIMARY_PARENT_DIRECTORY']}"
 log_info "        Data storage - secondary: ${GENERATED_VALUES['NODES_LOCAL_SECONDARY_PARENT_DIRECTORY']}"
-log_info "    - Update compose file with correct/desired image versions"
 log_info "    - Bootstrap services (for more information, consult the provided README file)"
 
 log_info ""
