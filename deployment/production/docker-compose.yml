@@ -2,7 +2,7 @@ version: '3.4'
 
 services:
   db-identity:
-    image: postgres:14.2-alpine # replace with actual tag/version
+    image: postgres:14.2-alpine
     restart: always
     env_file:
       - ./secrets/db-identity.env
@@ -15,7 +15,7 @@ services:
       - ./local/postgres/identity:/var/lib/postgresql/data
 
   db-server:
-    image: postgres:14.2-alpine # replace with actual tag/version
+    image: postgres:14.2-alpine
     restart: always
     env_file:
       - ./secrets/db-server.env
@@ -52,10 +52,14 @@ services:
       PG_EXPORTER_AUTO_DISCOVER_DATABASES: "true"
 
   identity:
-    image: ghcr.io/sndnv/stasis/stasis-identity:0.0.1-SNAPSHOT # replace with actual tag/version
+    image: ghcr.io/sndnv/stasis/stasis-identity:0.0.1-SNAPSHOT
     depends_on:
       - db-identity
     restart: always
+    networks:
+      stasis:
+        aliases:
+          - identity.stasis.internal
     ports:
       - '42100:42100'
     env_file:
@@ -109,12 +113,16 @@ services:
       PEKKO_HTTP_CORS_ALLOWED_ORIGINS: "https://identity.stasis.internal:42200 https://server.stasis.internal:42600"
     volumes:
       - ./bootstrap/identity.conf:/opt/docker/config/identity-bootstrap.conf
-      - ./secrets/identity.p12:/opt/docker/secrets/identity.p12
+      - ./secrets/identity.stasis.internal.p12:/opt/docker/secrets/identity.p12
       - ./secrets/identity-signature-key.jwk.json:/opt/docker/secrets/identity-signature-key.jwk.json
 
   identity-ui:
-    image: ghcr.io/sndnv/stasis/stasis-identity-ui:0.0.1-SNAPSHOT # replace with actual tag/version
+    image: ghcr.io/sndnv/stasis/stasis-identity-ui:0.0.1-SNAPSHOT
     restart: always
+    networks:
+      stasis:
+        aliases:
+          - identity-ui.stasis.internal
     ports:
       - '42200:42200'
     env_file:
@@ -135,16 +143,20 @@ services:
       NGINX_SERVER_SSL_CIPHERS: "HIGH:!aNULL:!MD5"
       NGINX_CORS_ALLOWED_ORIGIN: "*"
     volumes:
-      - ./secrets/identity.cert.pem:/opt/docker/secrets/identity.cert.pem
-      - ./secrets/identity.key.pem:/opt/docker/secrets/identity.key.pem
+      - ./secrets/identity.stasis.internal.cert.pem:/opt/docker/secrets/identity.cert.pem
+      - ./secrets/identity.stasis.internal.key.pem:/opt/docker/secrets/identity.key.pem
 
   server:
-    image: ghcr.io/sndnv/stasis/stasis-server:0.0.1-SNAPSHOT # replace with actual tag/version
+    image: ghcr.io/sndnv/stasis/stasis-server:0.0.1-SNAPSHOT
     restart: always
     depends_on:
       - db-server
       - db-identity
       - identity
+    networks:
+      stasis:
+        aliases:
+          - server.stasis.internal
     ports:
       - '42300:42300'
       - '42301:42301'
@@ -185,20 +197,20 @@ services:
       STASIS_SERVER_AUTHENTICATORS_USERS_ISSUER: "identity.stasis.internal"
       STASIS_SERVER_AUTHENTICATORS_USERS_AUDIENCE: "stasis-server-api"
       STASIS_SERVER_AUTHENTICATORS_USERS_IDENTITY_CLAIM: "sub"
-      STASIS_SERVER_AUTHENTICATORS_USERS_JWKS_ENDPOINT: "https://identity:42100/jwks/jwks.json"
+      STASIS_SERVER_AUTHENTICATORS_USERS_JWKS_ENDPOINT: "https://identity.stasis.internal:42100/jwks/jwks.json"
       STASIS_SERVER_AUTHENTICATORS_USERS_REFRESH_INTERVAL: "90 minutes"
       STASIS_SERVER_AUTHENTICATORS_USERS_REFRESH_RETRY_INTERVAL: "3 seconds"
       STASIS_SERVER_AUTHENTICATORS_USERS_TOLERANCE: "30 seconds"
       STASIS_SERVER_AUTHENTICATORS_NODES_ISSUER: "identity.stasis.internal"
       STASIS_SERVER_AUTHENTICATORS_NODES_IDENTITY_CLAIM: "sub"
-      STASIS_SERVER_AUTHENTICATORS_NODES_JWKS_ENDPOINT: "https://identity:42100/jwks/jwks.json"
+      STASIS_SERVER_AUTHENTICATORS_NODES_JWKS_ENDPOINT: "https://identity.stasis.internal:42100/jwks/jwks.json"
       STASIS_SERVER_AUTHENTICATORS_NODES_REFRESH_INTERVAL: "90 minutes"
       STASIS_SERVER_AUTHENTICATORS_NODES_REFRESH_RETRY_INTERVAL: "3 seconds"
       STASIS_SERVER_AUTHENTICATORS_NODES_TOLERANCE: "30 seconds"
-      STASIS_SERVER_AUTHENTICATORS_INSTANCE_TOKEN_ENDPOINT: "https://identity:42100/oauth/token"
+      STASIS_SERVER_AUTHENTICATORS_INSTANCE_TOKEN_ENDPOINT: "https://identity.stasis.internal:42100/oauth/token"
       STASIS_SERVER_AUTHENTICATORS_INSTANCE_TOLERANCE: "30 seconds"
       STASIS_SERVER_AUTHENTICATORS_INSTANCE_USE_QUERY_STRING: "false"
-      STASIS_SERVER_CREDENTIALS_MANAGERS_IDENTITY_URL: "https://identity:42100"
+      STASIS_SERVER_CREDENTIALS_MANAGERS_IDENTITY_URL: "https://identity.stasis.internal:42100"
       STASIS_SERVER_CREDENTIALS_MANAGERS_IDENTITY_MANAGEMENT_SCOPE: "urn:stasis:identity:audience:manage-identity"
       STASIS_SERVER_CREDENTIALS_MANAGERS_IDENTITY_CONTEXT_ENABLED: "true"
       STASIS_SERVER_CREDENTIALS_MANAGERS_IDENTITY_CONTEXT_PROTOCOL: "TLS"
@@ -223,9 +235,9 @@ services:
       STASIS_SERVER_BOOTSTRAP_DEVICES_SECRET_SIZE: "24"
       STASIS_SERVER_BOOTSTRAP_DEVICES_CREDENTIALS_MANAGER_IDENTITY_CLIENT_REDIRECT_URI: "https://localhost:9999"
       STASIS_SERVER_BOOTSTRAP_DEVICES_CREDENTIALS_MANAGER_IDENTITY_CLIENT_TOKEN_EXPIRATION: "90  minutes"
-      STASIS_SERVER_BOOTSTRAP_DEVICES_PARAMETERS_SERVER_API_URL: "https://server:42300"
+      STASIS_SERVER_BOOTSTRAP_DEVICES_PARAMETERS_SERVER_API_URL: "https://server.stasis.internal:42300"
       STASIS_SERVER_BOOTSTRAP_DEVICES_PARAMETERS_SERVER_API_CONTEXT_ENABLED: "true"
-      STASIS_SERVER_BOOTSTRAP_DEVICES_PARAMETERS_SERVER_CORE_ADDRESS: "https://server:42301"
+      STASIS_SERVER_BOOTSTRAP_DEVICES_PARAMETERS_SERVER_CORE_ADDRESS: "https://server.stasis.internal:42301"
       STASIS_SERVER_BOOTSTRAP_DEVICES_PARAMETERS_SERVER_CORE_CONTEXT_ENABLED: "true"
       STASIS_SERVER_BOOTSTRAP_DEVICES_PARAMETERS_ADDITIONAL_CONFIG: ""
       STASIS_SERVER_BOOTSTRAP_DEVICES_PARAMETERS_SECRETS_DERIVATION_ENCRYPTION_SECRET_SIZE: "32"
@@ -244,12 +256,16 @@ services:
     volumes:
       - ./bootstrap/server.conf:/opt/docker/config/server-bootstrap.conf
       - ./local/server:/opt/server
-      - ./secrets/server.p12:/opt/docker/secrets/server.p12
-      - ./secrets/identity.p12:/opt/docker/secrets/identity.p12
+      - ./secrets/server.stasis.internal.p12:/opt/docker/secrets/server.p12
+      - ./secrets/identity.stasis.internal.p12:/opt/docker/secrets/identity.p12
 
   server-ui:
-    image: ghcr.io/sndnv/stasis/stasis-server-ui:0.0.1-SNAPSHOT # replace with actual tag/version
+    image: ghcr.io/sndnv/stasis/stasis-server-ui:0.0.1-SNAPSHOT
     restart: always
+    networks:
+      stasis:
+        aliases:
+          - server-ui.stasis.internal
     ports:
       - '42600:42600'
     env_file:
@@ -272,8 +288,8 @@ services:
       NGINX_SERVER_SSL_CIPHERS: "HIGH:!aNULL:!MD5"
       NGINX_CORS_ALLOWED_ORIGIN: "*"
     volumes:
-      - ./secrets/server.cert.pem:/opt/docker/secrets/server.cert.pem
-      - ./secrets/server.key.pem:/opt/docker/secrets/server.key.pem
+      - ./secrets/server.stasis.internal.cert.pem:/opt/docker/secrets/server.cert.pem
+      - ./secrets/server.stasis.internal.key.pem:/opt/docker/secrets/server.key.pem
 
   prometheus:
     image: prom/prometheus
@@ -298,3 +314,6 @@ services:
 
 volumes:
   prometheus_data:
+
+networks:
+  stasis:

@@ -57,7 +57,7 @@ Docker images for `server`, `server-ui`, `identity` and `identity-ui` can be fou
 
 The required configuration can be downloaded and prepared by running the installer:
 ```
-$ curl -s "https://raw.githubusercontent.com/sndnv/stasis/master/deployment/production/scripts/server_prepare_deployment.sh" | bash
+$ curl -s "https://raw.githubusercontent.com/sndnv/stasis/master/deployment/production/scripts/server_prepare_deployment.sh" | bash -s -- --target=/tmp/stasis-server-deployment
 ```
 
 > See [deployment/production](deployment/production/README.md) for more information on how to set up and deploy the services.
