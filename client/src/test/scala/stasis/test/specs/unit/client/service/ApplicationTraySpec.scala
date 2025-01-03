@@ -59,7 +59,7 @@ class ApplicationTraySpec extends UnitSpec with MockitoSugar {
 
     captor.values match {
       case item1 :: item2 :: Nil =>
-        item1.getText should be("Start UI")
+        item1.getText should be("Show")
         item2.getText should be("Exit")
 
         startUiCalled.get() should be(false)
