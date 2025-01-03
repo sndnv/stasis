@@ -6,10 +6,12 @@ import java.nio.file.attribute.PosixFilePermissions
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.jdk.CollectionConverters._
 
 import net.harawata.appdirs.AppDirsFactory
 import org.apache.pekko.util.ByteString
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import stasis.layers.files.FilteringFileVisitor
 
 trait ApplicationDirectory {
   def findFile(file: String): Option[Path]
@@ -37,6 +39,8 @@ object ApplicationDirectory {
     applicationName: String,
     filesystem: FileSystem
   ) extends ApplicationDirectory {
+    private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
+
     private val dirs = AppDirsFactory.getInstance()
 
     @SuppressWarnings(Array("org.wartremover.warts.Null"))
@@ -64,11 +68,7 @@ object ApplicationDirectory {
       configLocations.flatMap { location =>
         val matcher = filesystem.getPathMatcher(s"glob:${location.toString}${filesystem.getSeparator}$pattern")
 
-        Files
-          .find(location, Int.MaxValue, (file, _) => matcher.matches(file))
-          .toList
-          .asScala
-          .toSeq
+        FilteringFileVisitor(matcher).walk(start = location).successful(log = log)
       }.distinct
 
     override def requireFile(file: String): Future[Path] =
