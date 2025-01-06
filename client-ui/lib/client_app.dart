@@ -17,6 +17,7 @@ import 'package:stasis_client_ui/pages/components/invalid_config_file_card.dart'
 import 'package:stasis_client_ui/pages/login.dart';
 import 'package:stasis_client_ui/pages/page_destinations.dart';
 import 'package:stasis_client_ui/pages/page_router.dart';
+import 'package:stasis_client_ui/utils/env.dart';
 
 class ClientApp extends StatefulWidget {
   const ClientApp({super.key});
@@ -98,9 +99,7 @@ class _ClientAppState extends State<ClientApp> {
         final files = AppFiles.load(configDir: configDir);
 
         final apiConfig = files.config.getConfig('stasis.client.api');
-        final apiTimeout = Duration(
-          seconds: int.tryParse(Platform.environment['STASIS_CLIENT_UI_API_TIMEOUT'] ?? '') ?? 30,
-        );
+        final apiTimeout = Duration(seconds: getConfiguredTimeout());
 
         InitApi init = DefaultInitApi.fromConfig(config: apiConfig, timeout: apiTimeout);
 
