@@ -1,9 +1,10 @@
 import 'dart:async';
 
-import 'package:stasis_client_ui/api/api_client.dart';
-import 'package:stasis_client_ui/pages/components/sizing.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:stasis_client_ui/api/api_client.dart';
+import 'package:stasis_client_ui/pages/components/sizing.dart';
+import 'package:stasis_client_ui/utils/env.dart';
 
 SvgPicture createLogo({double size = 48.0}) {
   return SvgPicture.asset(
@@ -35,7 +36,7 @@ Widget buildPage<T>({
   required Widget Function(BuildContext context, T data) builder,
 }) {
   return FutureBuilder<T>(
-    future: of().timeout(const Duration(seconds: 5)),
+    future: of().timeout(Duration(seconds: getConfiguredTimeout())),
     builder: (context, snapshot) {
       final theme = Theme.of(context);
 
