@@ -62,7 +62,7 @@ import stasis.test.specs.unit.core.networking.mocks.MockGrpcEndpointClient
 import stasis.test.specs.unit.core.networking.mocks.MockHttpEndpointClient
 import stasis.test.specs.unit.core.persistence.Generators
 import stasis.test.specs.unit.core.persistence.manifests.MockManifestStore
-import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
+import stasis.test.specs.unit.core.persistence.crates.MockCrateStore
 import stasis.test.specs.unit.core.persistence.nodes.MockNodeStore
 import stasis.test.specs.unit.core.persistence.reservations.MockReservationStore
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext

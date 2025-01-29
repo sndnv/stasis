@@ -1,5 +1,7 @@
 package stasis.server.api.routes
 
+import java.time.Instant
+
 import scala.concurrent.Future
 
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
@@ -11,6 +13,10 @@ import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 
+import stasis.core.commands.proto.Command
+import stasis.core.commands.proto.CommandParameters
+import stasis.core.commands.proto.CommandSource
+import stasis.server.persistence.devices.DeviceCommandStore
 import stasis.server.persistence.devices.DeviceKeyStore
 import stasis.server.persistence.devices.DeviceStore
 import stasis.server.persistence.nodes.ServerNodeStore
@@ -19,6 +25,7 @@ import stasis.server.security.CurrentUser
 import stasis.shared.api.requests.UpdateDeviceKey._
 import stasis.shared.api.requests._
 import stasis.shared.api.responses.CreatedDevice
+import stasis.shared.api.responses.DeletedCommand
 import stasis.shared.api.responses.DeletedDevice
 import stasis.shared.api.responses.DeletedDeviceKey
 import stasis.shared.model.devices.Device
@@ -26,6 +33,7 @@ import stasis.shared.model.devices.Device
 class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
+  import stasis.layers.api.Matchers._
   import stasis.shared.api.Formats._
 
   def routes(implicit currentUser: CurrentUser): Route =
@@ -144,6 +152,49 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                 }
               }
             )
+          },
+          path("commands") {
+            concat(
+              get {
+                resource[DeviceCommandStore.View.Service] { view =>
+                  view.list(forDevice = deviceId).map { commands =>
+                    log.debugN(
+                      "User [{}] successfully retrieved [{}] commands for device [{}]",
+                      currentUser,
+                      commands.size,
+                      deviceId
+                    )
+                    discardEntity & complete(commands)
+                  }
+                }
+              },
+              post {
+                entity(as[CommandParameters]) { params =>
+                  resource[DeviceCommandStore.Manage.Service] { manage =>
+                    manage
+                      .put(
+                        command = Command(
+                          sequenceId = 0,
+                          source = CommandSource.User,
+                          target = Some(deviceId),
+                          parameters = params,
+                          created = Instant.now()
+                        )
+                      )
+                      .map { _ =>
+                        log.debugN(
+                          "User [{}] successfully created command [{}] for device [{}]",
+                          currentUser,
+                          params.getClass.getSimpleName.replaceAll("[^a-zA-Z0-9]", ""),
+                          deviceId
+                        )
+
+                        complete(StatusCodes.OK)
+                      }
+                  }
+                }
+              }
+            )
           }
         )
       },
@@ -240,7 +291,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                   head {
                     resources[DeviceStore.View.Self, DeviceKeyStore.View.Self] { (deviceView, keyView) =>
                       deviceView.list(currentUser).flatMap { ownDevices =>
-                        keyView.exists(ownDevices.map(_.id).toSeq, deviceId).map {
+                        keyView.exists(ownDevices.map(_.id), deviceId).map {
                           case true =>
                             log.debugN("User [{}] successfully retrieved key information for device [{}]", currentUser, deviceId)
                             val entity = HttpEntity(ContentTypes.`application/octet-stream`, Source.empty)
@@ -256,7 +307,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                   get {
                     resources[DeviceStore.View.Self, DeviceKeyStore.View.Self] { (deviceView, keyView) =>
                       deviceView.list(currentUser).flatMap { ownDevices =>
-                        keyView.get(ownDevices.map(_.id).toSeq, deviceId).map {
+                        keyView.get(ownDevices.map(_.id), deviceId).map {
                           case Some(key) =>
                             log.debugN("User [{}] successfully retrieved key for device [{}]", currentUser, deviceId)
                             val entity = HttpEntity(ContentTypes.`application/octet-stream`, Source.single(key.value))
@@ -313,7 +364,7 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                   delete {
                     resources[DeviceStore.View.Self, DeviceKeyStore.Manage.Self] { (deviceView, keyManage) =>
                       deviceView.list(currentUser).flatMap { ownDevices =>
-                        keyManage.delete(ownDevices.map(_.id).toSeq, deviceId).map { deleted =>
+                        keyManage.delete(ownDevices.map(_.id), deviceId).map { deleted =>
                           if (deleted) {
                             log.debugN("User [{}] successfully deleted key for device [{}]", currentUser, deviceId)
                           } else {
@@ -326,15 +377,100 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                     }
                   }
                 )
+              },
+              path("commands") {
+                concat(
+                  get {
+                    parameters(
+                      "last_sequence_id".as[Long].?,
+                      "newer_than".as[Instant].?
+                    ) { case (lastSequenceIdOpt, newerThanOpt) =>
+                      resources[DeviceStore.View.Self, DeviceCommandStore.View.Self] { (deviceView, commandView) =>
+                        deviceView.list(currentUser).flatMap { ownDevices =>
+                          for {
+                            newerThan <- newerThanOpt match {
+                              case Some(value) =>
+                                Future.successful(value)
+
+                              case None =>
+                                deviceView.get(currentUser, deviceId).flatMap {
+                                  case Some(device) =>
+                                    Future.successful(device.created)
+
+                                  case None =>
+                                    Future.failed(
+                                      new IllegalArgumentException(
+                                        s"Failed to retrieve commands for missing device [${deviceId.toString}]"
+                                      )
+                                    )
+                                }
+                            }
+                            commands <- lastSequenceIdOpt match {
+                              case Some(lastSequenceId) =>
+                                commandView.list(ownDevices = ownDevices.map(_.id), forDevice = deviceId, lastSequenceId)
+
+                              case None =>
+                                commandView.list(ownDevices = ownDevices.map(_.id), forDevice = deviceId)
+                            }
+                          } yield {
+                            val filtered = commands.filter(_.created.isAfter(newerThan))
+
+                            log.debugN(
+                              "User [{}] successfully retrieved [{} out of {}] commands for device [{}] with last-sequence-id [{}]",
+                              currentUser,
+                              filtered.size,
+                              commands.size,
+                              deviceId,
+                              lastSequenceIdOpt.getOrElse("none")
+                            )
+
+                            discardEntity & complete(filtered)
+                          }
+                        }
+                      }
+                    }
+                  },
+                  post {
+                    entity(as[CommandParameters]) { params =>
+                      resources[DeviceStore.View.Self, DeviceCommandStore.Manage.Self] { (deviceView, commandManage) =>
+                        deviceView.list(currentUser).flatMap { ownDevices =>
+                          commandManage
+                            .put(
+                              ownDevices = ownDevices.map(_.id),
+                              command = Command(
+                                sequenceId = 0,
+                                source = CommandSource.User,
+                                target = Some(deviceId),
+                                parameters = params,
+                                created = Instant.now()
+                              )
+                            )
+                            .map { commands =>
+                              log.debugN(
+                                "User [{}] successfully created command [{}] for device [{}]",
+                                currentUser,
+                                params.getClass.getSimpleName.replaceAll("[^a-zA-Z0-9]", ""),
+                                deviceId
+                              )
+
+                              discardEntity & complete(commands)
+                            }
+                        }
+                      }
+                    }
+                  }
+                )
               }
             )
           },
           path("keys") {
-            resources[DeviceStore.View.Self, DeviceKeyStore.View.Self] { (deviceView, keyView) =>
-              deviceView.list(currentUser).flatMap { ownDevices =>
-                keyView.list(ownDevices.map(_.id).toSeq).map { keys =>
-                  log.debugN("User [{}] successfully retrieved [{}] device keys", currentUser, keys.size)
-                  discardEntity & complete(keys)
+            get {
+              resources[DeviceStore.View.Self, DeviceKeyStore.View.Self] { (deviceView, keyView) =>
+                deviceView.list(currentUser).flatMap { ownDevices =>
+                  keyView.list(ownDevices.map(_.id)).map { keys =>
+                    log.debugN("User [{}] successfully retrieved [{}] device keys", currentUser, keys.size)
+                    discardEntity & complete(keys)
+                  }
                 }
               }
             }
@@ -342,12 +478,81 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
         )
       },
       path("keys") {
-        resource[DeviceKeyStore.View.Privileged] { view =>
-          view.list().map { keys =>
-            log.debugN("User [{}] successfully retrieved [{}] device keys", currentUser, keys.size)
-            discardEntity & complete(keys)
+        get {
+          resource[DeviceKeyStore.View.Privileged] { view =>
+            view.list().map { keys =>
+              log.debugN("User [{}] successfully retrieved [{}] device keys", currentUser, keys.size)
+              discardEntity & complete(keys)
+            }
           }
         }
+      },
+      pathPrefix("commands") {
+        concat(
+          pathEndOrSingleSlash {
+            concat(
+              get {
+                resource[DeviceCommandStore.View.Service] { view =>
+                  view.list().map { commands =>
+                    log.debugN("User [{}] successfully retrieved [{}] device commands", currentUser, commands.size)
+                    discardEntity & complete(commands)
+                  }
+                }
+              },
+              post {
+                entity(as[CommandParameters]) { params =>
+                  resource[DeviceCommandStore.Manage.Service] { manage =>
+                    manage
+                      .put(
+                        command = Command(
+                          sequenceId = 0,
+                          source = CommandSource.User,
+                          target = None,
+                          parameters = params,
+                          created = Instant.now()
+                        )
+                      )
+                      .map { _ =>
+                        log.debugN(
+                          "User [{}] successfully created command [{}] without a target",
+                          params.getClass.getSimpleName.replaceAll("[^a-zA-Z0-9]", ""),
+                          currentUser
+                        )
+
+                        complete(StatusCodes.OK)
+                      }
+                  }
+                }
+              }
+            )
+          },
+          path(LongNumber) { sequenceId =>
+            delete {
+              resource[DeviceCommandStore.Manage.Service] { manage =>
+                manage.delete(sequenceId).map { deleted =>
+                  if (deleted) {
+                    log.debugN("User [{}] successfully deleted command with sequence ID [{}]", currentUser, sequenceId)
+                  } else {
+                    log.warnN("User [{}] failed to delete command with sequence ID [{}]", currentUser, sequenceId)
+                  }
+                  discardEntity & complete(DeletedCommand(existing = deleted))
+                }
+              }
+            }
+          },
+          path("truncate") {
+            put {
+              parameter("older_than".as[Instant]) { olderThan =>
+                resource[DeviceCommandStore.Manage.Service] { manage =>
+                  manage.truncate(olderThan = olderThan).map { _ =>
+                    log.debugN("User [{}] successfully truncated commands older than [{}]", currentUser, olderThan)
+                    discardEntity & complete(StatusCodes.OK)
+                  }
+                }
+              }
+            }
+          }
+        )
       }
     )
 

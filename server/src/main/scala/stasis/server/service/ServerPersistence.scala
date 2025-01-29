@@ -10,6 +10,7 @@ import org.apache.pekko.util.Timeout
 import slick.jdbc.JdbcProfile
 
 import stasis.core.persistence.backends.slick.SlickProfile
+import stasis.core.persistence.commands.DefaultCommandStore
 import stasis.layers.persistence.memory.MemoryStore
 import stasis.layers.persistence.migration.MigrationExecutor
 import stasis.layers.persistence.migration.MigrationResult
@@ -23,6 +24,7 @@ import stasis.server.persistence.devices.DefaultDeviceBootstrapCodeStore
 import stasis.server.persistence.devices.DefaultDeviceKeyStore
 import stasis.server.persistence.devices.DefaultDeviceStore
 import stasis.server.persistence.devices.DeviceBootstrapCodeStore
+import stasis.server.persistence.devices.DeviceCommandStore
 import stasis.server.persistence.devices.DeviceKeyStore
 import stasis.server.persistence.devices.DeviceStore
 import stasis.server.persistence.schedules.DefaultScheduleStore
@@ -88,6 +90,14 @@ class ServerPersistence(
     database = database
   )
 
+  val deviceCommands: DeviceCommandStore = DeviceCommandStore(
+    store = new DefaultCommandStore(
+      name = "DEVICE_COMMANDS",
+      profile = profile,
+      database = database
+    )
+  )
+
   val schedules: ScheduleStore = new DefaultScheduleStore(
     name = "SCHEDULES",
     profile = profile,
@@ -108,6 +118,7 @@ class ServerPersistence(
       deviceBootstrapCodesMigration <- migrationExecutor.execute(forStore = deviceBootstrapCodes)
       devicesMigration <- migrationExecutor.execute(forStore = devices)
       deviceKeysMigration <- migrationExecutor.execute(forStore = deviceKeys)
+      commandsMigration <- migrationExecutor.execute(forStore = deviceCommands)
       schedulesMigration <- migrationExecutor.execute(forStore = schedules)
       usersMigration <- migrationExecutor.execute(forStore = users)
     } yield {
@@ -117,7 +128,8 @@ class ServerPersistence(
         + devicesMigration
         + deviceKeysMigration
         + schedulesMigration
-        + usersMigration)
+        + usersMigration
+        + commandsMigration)
     }
 
   override def init(): Future[Done] =
@@ -127,6 +139,7 @@ class ServerPersistence(
       _ <- deviceBootstrapCodes.init()
       _ <- devices.init()
       _ <- deviceKeys.init()
+      _ <- deviceCommands.init()
       _ <- schedules.init()
       _ <- users.init()
     } yield {
@@ -140,6 +153,7 @@ class ServerPersistence(
       _ <- deviceBootstrapCodes.drop()
       _ <- devices.drop()
       _ <- deviceKeys.drop()
+      _ <- deviceCommands.drop()
       _ <- schedules.drop()
       _ <- users.drop()
     } yield {
@@ -168,6 +182,10 @@ class ServerPersistence(
       deviceKeys.manageSelf(),
       deviceKeys.view(),
       deviceKeys.viewSelf(),
+      deviceCommands.manage(),
+      deviceCommands.manageSelf(),
+      deviceCommands.view(),
+      deviceCommands.viewSelf(),
       schedules.manage(),
       schedules.view(),
       schedules.viewPublic(),

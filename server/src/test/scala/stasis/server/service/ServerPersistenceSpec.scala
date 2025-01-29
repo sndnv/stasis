@@ -11,6 +11,7 @@ import stasis.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 import stasis.test.specs.unit.shared.model.Generators
+import stasis.test.specs.unit.core.persistence.{Generators => CoreGenerators}
 
 class ServerPersistenceSpec extends AsyncUnitSpec {
   "ServerPersistence" should "setup service data stores based on config" in {
@@ -25,6 +26,7 @@ class ServerPersistenceSpec extends AsyncUnitSpec {
     val expectedInitCode = Generators.generateDeviceBootstrapCode
     val expectedDevice = Generators.generateDevice
     val expectedDeviceKey = Generators.generateDeviceKey.copy(device = expectedDevice.id)
+    val expectedCommand = CoreGenerators.generateCommand.copy(target = Some(expectedDevice.id))
     val expectedSchedule = Generators.generateSchedule
     val expectedUser = Generators.generateUser
 
@@ -40,6 +42,8 @@ class ServerPersistenceSpec extends AsyncUnitSpec {
       actualDevice <- persistence.devices.view().get(expectedDevice.id)
       _ <- persistence.deviceKeys.manageSelf().put(Seq(expectedDevice.id), expectedDeviceKey)
       actualDeviceKey <- persistence.deviceKeys.viewSelf().get(Seq(expectedDevice.id), expectedDevice.id)
+      _ <- persistence.deviceCommands.manage().put(expectedCommand)
+      actualCommands <- persistence.deviceCommands.viewSelf().list(Seq(expectedDevice.id), expectedDevice.id)
       _ <- persistence.schedules.manage().put(expectedSchedule)
       actualSchedule <- persistence.schedules.view().get(expectedSchedule.id)
       _ <- persistence.users.manage().put(expectedUser)
@@ -51,6 +55,7 @@ class ServerPersistenceSpec extends AsyncUnitSpec {
       actualInitCode should be(Some(expectedInitCode))
       actualDevice should be(Some(expectedDevice))
       actualDeviceKey should be(Some(expectedDeviceKey))
+      actualCommands should be(Seq(expectedCommand.copy(sequenceId = 1)))
       actualSchedule should be(Some(expectedSchedule))
       actualUser should be(Some(expectedUser))
     }
@@ -78,11 +83,12 @@ class ServerPersistenceSpec extends AsyncUnitSpec {
     val deviceInitCodes = 4 // manage + manage-self + view + view-self
     val devices = 4 // manage + manage-self + view + view-self
     val deviceKeys = 4 // manage + manage-self + view + view-self
+    val deviceCommands = 4 // manage + manage-self + view + view-self
     val schedules = 3 // manage + view + view-public
     val users = 4 // manage + manage-self + view + view-self
 
     persistence.resources.size should be(
-      datasetDefinitions + datasetEntries + deviceInitCodes + devices + deviceKeys + schedules + users
+      datasetDefinitions + datasetEntries + deviceInitCodes + devices + deviceKeys + deviceCommands + schedules + users
     )
   }
 

@@ -221,8 +221,8 @@ class DeviceKeyStoreSpec extends AsyncUnitSpec {
   }
 
   private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
-    Behaviors.ignore,
-    "DeviceKeyStoreSpec"
+    guardianBehavior = Behaviors.ignore,
+    name = "DeviceKeyStoreSpec"
   )
 
   private implicit val telemetry: TelemetryContext = MockTelemetryContext()
