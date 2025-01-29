@@ -71,6 +71,9 @@ class InactiveClientApiSpec(unittest.TestCase):
             api.device_reencrypt_secret(request=device_secret_reencrypt_request)
 
         with self.assertRaises(Abort):
+            api.device_commands()
+
+        with self.assertRaises(Abort):
             api.operations(state='all')
 
         with self.assertRaises(Abort):

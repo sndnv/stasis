@@ -256,6 +256,18 @@ class ServiceSpec(unittest.TestCase):
         self.assertTrue(json.loads(result.output))
         self.assertEqual(context.api.stats['device_connections'], 1)
 
+    def test_should_show_client_commands(self):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        runner = Runner(cli)
+        result = runner.invoke(args=['status', 'commands'], obj=context)
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertTrue(json.loads(result.output))
+        self.assertEqual(context.api.stats['device_commands'], 1)
+
     def test_should_show_current_user(self):
         context = Context()
         context.api = MockClientApi()

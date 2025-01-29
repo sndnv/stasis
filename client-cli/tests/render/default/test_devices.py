@@ -1,6 +1,6 @@
 import unittest
 
-from client_cli.render.default.devices import render, render_connections_as_table
+from client_cli.render.default.devices import render, render_connections_as_table, render_commands_as_table
 from tests.mocks import mock_data
 
 
@@ -43,4 +43,15 @@ class DeviceSpec(unittest.TestCase):
 
     def test_should_render_a_message_when_no_connections_are_available(self):
         result = render_connections_as_table(connections={})
+        self.assertEqual(result, 'No data')
+
+    def test_should_render_commands(self):
+        header_size = 3  # header border (x2) + header
+        footer_size = 1  # footer border
+
+        table = render_commands_as_table(commands=mock_data.COMMANDS)
+        self.assertEqual(len(table.split('\n')), header_size + len(mock_data.COMMANDS) + footer_size)
+
+    def test_should_render_a_message_when_no_commands_are_available(self):
+        result = render_commands_as_table(commands=[])
         self.assertEqual(result, 'No data')

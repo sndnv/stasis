@@ -342,6 +342,24 @@ class DefaultClientApiSpec(unittest.TestCase):
         )
 
     @patch('requests.request')
+    def test_should_get_device_commands(self, mock_request):
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
+        mock_request.return_value = MockResponse.success(mock_data.COMMANDS)
+
+        self.assertEqual(client.device_commands(), mock_data.COMMANDS)
+
+        self.assert_valid_request(
+            mock=mock_request,
+            expected_method='get',
+            expected_url='/device/commands'
+        )
+
+    @patch('requests.request')
     def test_should_get_active_operations(self, mock_request):
         client = DefaultClientApi(
             api_url=self.url,

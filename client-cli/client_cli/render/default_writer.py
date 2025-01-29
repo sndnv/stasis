@@ -40,6 +40,9 @@ class DefaultWriter(Writer):
     def render_device_connections(self, connections) -> str:
         return devices.render_connections_as_table(connections)
 
+    def render_device_commands(self, commands) -> str:
+        return devices.render_commands_as_table(commands)
+
     def render_operations(self, operations) -> str:
         return ops.render_as_table(operations)
 

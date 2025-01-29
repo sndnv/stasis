@@ -79,6 +79,15 @@ class Writer(ABC):
         """
 
     @abstractmethod
+    def render_device_commands(self, commands) -> str:
+        """
+        Renders the provided device commands.
+
+        :param commands: commands to render
+        :return: render result, as a string
+        """
+
+    @abstractmethod
     def render_operations(self, operations) -> str:
         """
         Renders the provided active operations.

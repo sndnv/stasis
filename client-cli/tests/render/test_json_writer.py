@@ -50,6 +50,11 @@ class JsonWriterSpec(unittest.TestCase):
             JsonWriter().render_device_connections(connections=mock_data.ACTIVE_CONNECTIONS)
         )
 
+    def test_should_render_device_commands(self):
+        self.assertTrue(
+            JsonWriter().render_device_commands(commands=mock_data.COMMANDS)
+        )
+
     def test_should_render_operations(self):
         self.assertTrue(
             JsonWriter().render_operations(operations=mock_data.OPERATIONS)
