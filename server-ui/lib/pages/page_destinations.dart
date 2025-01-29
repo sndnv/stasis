@@ -13,6 +13,7 @@ abstract class PageRouterDestination {
   static PageRouterDestination users = PageRouterDestinationUsers();
   static PageRouterDestination devices = PageRouterDestinationDevices();
   static PageRouterDestination deviceKeys = PageRouterDestinationDeviceKeys();
+  static PageRouterDestination deviceCommands = PageRouterDestinationDeviceCommands();
   static PageRouterDestination schedules = PageRouterDestinationSchedules();
   static PageRouterDestination nodes = PageRouterDestinationNodes();
   static PageRouterDestination reservations = PageRouterDestinationReservations();
@@ -69,6 +70,16 @@ class PageRouterDestinationDeviceKeys extends PageRouterDestination {
         );
 }
 
+class PageRouterDestinationDeviceCommands extends PageRouterDestination {
+  PageRouterDestinationDeviceCommands()
+      : super(
+          key: 'commands',
+          title: 'Device Commands',
+          route: '/manage/commands',
+          icon: Icons.list,
+        );
+}
+
 class PageRouterDestinationSchedules extends PageRouterDestination {
   PageRouterDestinationSchedules()
       : super(
@@ -93,7 +104,7 @@ class PageRouterDestinationReservations extends PageRouterDestination {
   PageRouterDestinationReservations()
       : super(
           key: 'reservations',
-          title: 'Crate Storage Reservations',
+          title: 'Storage Reservations',
           route: '/manage/reservations',
           icon: Icons.data_usage,
         );

@@ -12,8 +12,11 @@ This submodule is divided into three main packages:
 
 ## Development
 
-To get started with development of `server-ui`, run the [build.py](./deployment/dev/build.py) script; it will pull
-all dependencies and build the project.
+To get started with development of `server-ui`, run the [build.py](./deployment/dev/build.py)
+script; it will pull all dependencies and build the project.
+
+The development [.env file](./deployment/dev/.env) should be copied to
+the [web assets](./web/assets/).
 
 > To start the required services, use the [docker-compose.yml](./deployment/dev/docker-compose.yml) file.
 

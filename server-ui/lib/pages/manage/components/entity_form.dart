@@ -210,8 +210,14 @@ DateTimeField dateTimeField({
   required String title,
   required void Function(DateTime) onChange,
   DateTime? initialDateTime,
+  bool useExtendedTitle = true,
 }) {
-  return DateTimeField(title: title, onChange: onChange, initialDateTime: initialDateTime);
+  return DateTimeField(
+    title: title,
+    onChange: onChange,
+    initialDateTime: initialDateTime,
+    useExtendedTitle: useExtendedTitle,
+  );
 }
 
 BooleanField booleanField({

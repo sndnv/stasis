@@ -24,6 +24,7 @@ import 'package:server_ui/model/api/responses/created_schedule.dart';
 import 'package:server_ui/model/api/responses/created_user.dart';
 import 'package:server_ui/model/api/responses/ping.dart';
 import 'package:server_ui/model/api/responses/updated_user_salt.dart';
+import 'package:server_ui/model/commands/command.dart';
 import 'package:server_ui/model/datasets/dataset_definition.dart';
 import 'package:server_ui/model/datasets/dataset_entry.dart';
 import 'package:server_ui/model/devices/device.dart';
@@ -143,6 +144,21 @@ abstract class DevicesApiClient {
   Future<DeviceKey?> getDeviceKey({required bool privileged, required String forDevice});
 
   Future<void> deleteDeviceKey({required bool privileged, required String forDevice});
+
+  Future<List<Command>> getCommands();
+
+  Future<void> createCommand({required CommandParameters request});
+
+  Future<void> deleteCommand({required int sequenceId});
+
+  Future<void> truncateCommands({required DateTime olderThan});
+  Future<List<Command>> getDeviceCommands({required bool privileged, required String forDevice});
+
+  Future<void> createDeviceCommand({
+    required bool privileged,
+    required CommandParameters request,
+    required String forDevice,
+  });
 }
 
 abstract class SchedulesApiClient {

@@ -9,6 +9,7 @@ import 'package:server_ui/model/devices/device.dart';
 import 'package:server_ui/model/devices/device_bootstrap_code.dart';
 import 'package:server_ui/model/nodes/node.dart';
 import 'package:server_ui/pages/default/components.dart';
+import 'package:server_ui/pages/manage/commands.dart';
 import 'package:server_ui/pages/manage/components/entity_form.dart';
 import 'package:server_ui/pages/manage/components/entity_table.dart';
 import 'package:server_ui/pages/manage/components/extensions.dart';
@@ -111,44 +112,76 @@ class _DevicesState extends State<Devices> {
                       )
                     : null,
               )),
-              DataCell(Text(device.active ? 'Yes' : 'No')),
-              DataCell(device.limits?.maxStorage.renderFileSize().withInfo(() {
-                    final limits = device.limits!;
-                    showDialog(
-                      context: context,
-                      builder: (_) => SimpleDialog(
-                        title: Text('Limits for [${device.id.toMinimizedString()}]'),
-                        children: [
-                          ListTile(
-                            title: const Text('Max Crates'),
-                            leading: const Icon(Icons.data_usage),
-                            trailing: Text(limits.maxCrates.renderNumber()),
-                          ),
-                          ListTile(
-                            title: const Text('Max Storage'),
-                            leading: const Icon(Icons.sd_storage),
-                            trailing: Text(limits.maxStorage.renderFileSize()),
-                          ),
-                          ListTile(
-                            title: const Text('Max Storage per Crate'),
-                            leading: const Icon(Icons.sd_storage),
-                            trailing: Text(limits.maxStoragePerCrate.renderFileSize()),
-                          ),
-                          ListTile(
-                            title: const Text('Min Retention'),
-                            leading: const Icon(Icons.lock_clock),
-                            trailing: Text(limits.minRetention.render()),
-                          ),
-                          ListTile(
-                            title: const Text('Max Retention'),
-                            leading: const Icon(Icons.lock_clock),
-                            trailing: Text(limits.maxRetention.render()),
-                          ),
-                        ],
-                      ),
-                    );
-                  }) ??
-                  const Text('none')),
+              DataCell(
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Text(device.active ? 'Yes' : 'No'),
+                    IconButton(
+                      tooltip: 'Update Device State',
+                      onPressed: () => _updateDeviceState(device),
+                      icon: const Icon(Icons.power_settings_new),
+                    ),
+                  ],
+                ),
+              ),
+              DataCell(
+                device.limits?.maxStorage.renderFileSize().withInfo(() {
+                      final limits = device.limits!;
+                      showDialog(
+                        context: context,
+                        builder: (_) => SimpleDialog(
+                          title: Text('Limits for [${device.id.toMinimizedString()}]'),
+                          children: [
+                            ListTile(
+                              title: const Text('Max Crates'),
+                              leading: const Icon(Icons.data_usage),
+                              trailing: Text(limits.maxCrates.renderNumber()),
+                            ),
+                            ListTile(
+                              title: const Text('Max Storage'),
+                              leading: const Icon(Icons.sd_storage),
+                              trailing: Text(limits.maxStorage.renderFileSize()),
+                            ),
+                            ListTile(
+                              title: const Text('Max Storage per Crate'),
+                              leading: const Icon(Icons.sd_storage),
+                              trailing: Text(limits.maxStoragePerCrate.renderFileSize()),
+                            ),
+                            ListTile(
+                              title: const Text('Min Retention'),
+                              leading: const Icon(Icons.lock_clock),
+                              trailing: Text(limits.minRetention.render()),
+                            ),
+                            ListTile(
+                              title: const Text('Max Retention'),
+                              leading: const Icon(Icons.lock_clock),
+                              trailing: Text(limits.maxRetention.render()),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16.0),
+                              child: OutlinedButton.icon(
+                                onPressed: () => _updateDeviceLimits(device),
+                                icon: const Icon(Icons.data_usage),
+                                label: const Text('Update'),
+                              ),
+                            )
+                          ],
+                        ),
+                      );
+                    }) ??
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        const Text('none'),
+                        IconButton(
+                          tooltip: 'Update Device Limits',
+                          onPressed: () => _updateDeviceLimits(device),
+                          icon: const Icon(Icons.data_usage),
+                        )
+                      ],
+                    ),
+              ),
               DataCell(
                 Tooltip(
                   message: 'Created: ${device.created.render()}\nUpdated: ${device.updated.render()}',
@@ -167,14 +200,9 @@ class _DevicesState extends State<Devices> {
                       icon: const Icon(Icons.qr_code),
                     ),
                     IconButton(
-                      tooltip: 'Update Device State',
-                      onPressed: () => _updateDeviceState(device),
-                      icon: const Icon(Icons.power_settings_new),
-                    ),
-                    IconButton(
-                      tooltip: 'Update Device Limits',
-                      onPressed: () => _updateDeviceLimits(device),
-                      icon: const Icon(Icons.data_usage),
+                      tooltip: 'Show Device Commands',
+                      onPressed: () => _showDeviceCommands(device),
+                      icon: const Icon(Icons.list),
                     ),
                     IconButton(
                       tooltip: 'Remove Device',
@@ -311,6 +339,30 @@ class _DevicesState extends State<Devices> {
         },
       );
     });
+  }
+
+  void _showDeviceCommands(Device device) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+        content: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.80,
+          height: MediaQuery.of(context).size.height * 0.80,
+          child: Commands(
+            client: widget.devicesClient,
+            privileged: widget.privileged,
+            forDevice: device.id,
+          ),
+        ),
+        contentPadding: const EdgeInsets.all(8.0),
+      ),
+    );
   }
 
   void _generateDeviceBootstrapCode(String id) {
