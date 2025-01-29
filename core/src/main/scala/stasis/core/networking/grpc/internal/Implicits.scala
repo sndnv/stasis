@@ -4,6 +4,7 @@ import java.util.UUID
 
 import org.apache.pekko.util.ByteString
 
+import stasis.common.proto.Uuid
 import stasis.core.networking.exceptions.EndpointFailure
 import stasis.core.networking.grpc.proto
 
@@ -11,11 +12,11 @@ object Implicits {
 
   import scala.language.implicitConversions
 
-  implicit def protoToJavaUuid(uuid: proto.Uuid): UUID =
+  implicit def protoToJavaUuid(uuid: Uuid): UUID =
     new UUID(uuid.mostSignificantBits, uuid.leastSignificantBits)
 
-  implicit def javaToProtoUuid(uuid: UUID): proto.Uuid =
-    proto.Uuid(mostSignificantBits = uuid.getMostSignificantBits, leastSignificantBits = uuid.getLeastSignificantBits)
+  implicit def javaToProtoUuid(uuid: UUID): Uuid =
+    Uuid(mostSignificantBits = uuid.getMostSignificantBits, leastSignificantBits = uuid.getLeastSignificantBits)
 
   implicit def throwableToFailure(e: Throwable): proto.Failure =
     proto.Failure(e.getMessage)

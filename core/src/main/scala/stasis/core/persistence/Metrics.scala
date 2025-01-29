@@ -3,6 +3,7 @@ package stasis.core.persistence
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.metrics.Meter
 
+import stasis.core.commands.proto.Command
 import stasis.core.packaging.Manifest
 import stasis.layers.telemetry.metrics.MeterExtensions._
 import stasis.layers.telemetry.metrics.MetricsProvider
@@ -11,6 +12,7 @@ object Metrics {
   def noop(): Set[MetricsProvider] = Set(
     StreamingBackend.NoOp,
     EventLogBackend.NoOp,
+    CommandStore.NoOp,
     ManifestStore.NoOp,
     ReservationStore.NoOp
   )
@@ -18,6 +20,7 @@ object Metrics {
   def default(meter: Meter, namespace: String): Set[MetricsProvider] = Set(
     new StreamingBackend.Default(meter, namespace),
     new EventLogBackend.Default(meter, namespace),
+    new CommandStore.Default(meter, namespace),
     new ManifestStore.Default(meter, namespace),
     new ReservationStore.Default(meter, namespace)
   )
@@ -84,6 +87,25 @@ object Metrics {
     }
   }
 
+  trait CommandStore extends MetricsProvider {
+    def recordCommand(command: Command): Unit
+  }
+
+  object CommandStore {
+    object NoOp extends CommandStore {
+      override def recordCommand(command: Command): Unit = ()
+    }
+
+    class Default(meter: Meter, namespace: String) extends CommandStore {
+      private val subsystem: String = "persistence_command_store"
+
+      private val commands = meter.counter(name = s"${namespace}_${subsystem}_commands")
+
+      override def recordCommand(command: Command): Unit =
+        commands.inc(Labels.Source -> command.source.name)
+    }
+  }
+
   trait ManifestStore extends MetricsProvider {
     def recordManifest(manifest: Manifest): Unit
   }
@@ -130,6 +152,7 @@ object Metrics {
 
   object Labels {
     val Backend: AttributeKey[String] = AttributeKey.stringKey("backend")
+    val Source: AttributeKey[String] = AttributeKey.stringKey("source")
     val Target: AttributeKey[String] = AttributeKey.stringKey("target")
   }
 }

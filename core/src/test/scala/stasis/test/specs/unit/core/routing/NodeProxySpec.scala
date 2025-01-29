@@ -27,7 +27,7 @@ import stasis.core.routing.NodeProxy
 import stasis.core.security.NodeCredentialsProvider
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.Generators
-import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
+import stasis.test.specs.unit.core.persistence.crates.MockCrateStore
 import stasis.test.specs.unit.core.routing.NodeProxySpec.ExpectedFailure
 import stasis.test.specs.unit.core.routing.NodeProxySpec.FailingEndpointClient
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext

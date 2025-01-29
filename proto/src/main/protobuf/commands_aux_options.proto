@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+import "scalapb/scalapb.proto";
+
+package stasis.core.commands.proto;
+
+option (scalapb.options) = {
+  scope: PACKAGE
+  preserve_unknown_fields: false
+  no_default_values_in_constructor: true
+
+  aux_field_options: [
+    {
+      target: "stasis.core.commands.proto.Command.source"
+      options: {
+        type: "stasis.core.commands.proto.CommandSource"
+      }
+    },
+    {
+      target: "stasis.core.commands.proto.Command.target"
+      options: {
+        type: "java.util.UUID"
+      }
+    },
+    {
+      target: "stasis.core.commands.proto.Command.created"
+      options: {
+        type: "java.time.Instant"
+      }
+    }
+  ]
+};

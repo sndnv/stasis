@@ -11,10 +11,9 @@ import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-
+import stasis.core.networking.grpc.GrpcEndpoint
 import stasis.core.networking.grpc.internal.Implicits
 import stasis.core.networking.grpc.internal.Requests
-import stasis.core.networking.grpc.GrpcEndpoint
 import stasis.core.networking.grpc.proto
 import stasis.core.packaging.Crate
 import stasis.core.persistence.CrateStorageRequest
@@ -22,7 +21,7 @@ import stasis.core.persistence.CrateStorageReservation
 import stasis.core.routing.Node
 import stasis.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
+import stasis.test.specs.unit.core.persistence.crates.MockCrateStore
 import stasis.test.specs.unit.core.persistence.reservations.MockReservationStore
 import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockGrpcAuthenticator
@@ -229,7 +228,10 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val endpoint = createTestGrpcEndpoint()
 
     endpoint
-      .reserve(testNode, proto.ReserveRequest())
+      .reserve(
+        testNode,
+        proto.ReserveRequest(id = None, crate = None, size = 0, copies = 0, origin = None, source = None)
+      )
       .map { response =>
         response.result.reservation should be(None)
         response.result.failure match {
@@ -288,10 +290,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       .push(
         testNode,
         Source.single(
-          proto
-            .PushChunk()
-            .withReservation(testReservation.id)
-            .withContent(ByteString.fromString(crateContent))
+          proto.PushChunk(reservation = Some(testReservation.id), content = ByteString.fromString(crateContent))
         )
       )
       .map { response =>
@@ -309,9 +308,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       .push(
         testNode,
         Source.single(
-          proto
-            .PushChunk()
-            .withContent(ByteString.fromString(crateContent))
+          proto.PushChunk(reservation = None, content = ByteString.fromString(crateContent))
         )
       )
       .map { response =>
@@ -353,10 +350,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       .push(
         testNode,
         Source.single(
-          proto
-            .PushChunk()
-            .withReservation(testReservation.id)
-            .withContent(ByteString.fromString(crateContent))
+          proto.PushChunk(reservation = Some(testReservation.id), content = ByteString.fromString(crateContent))
         )
       )
       .map { response =>
@@ -378,10 +372,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       .push(
         testNode,
         Source.single(
-          proto
-            .PushChunk()
-            .withReservation(reservationId)
-            .withContent(ByteString.fromString(crateContent))
+          proto.PushChunk(reservation = Some(reservationId), content = ByteString.fromString(crateContent))
         )
       )
       .map { response =>
@@ -404,13 +395,10 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
           .push(
             testNode,
             Source.single(
-              proto
-                .PushChunk()
-                .withReservation(testReservation.id)
-                .withContent(ByteString.fromString(crateContent))
+              proto.PushChunk(reservation = Some(testReservation.id), content = ByteString.fromString(crateContent))
             )
           )
-      source <- endpoint.pull(testNode, proto.PullRequest().withCrate(testReservation.crate))
+      source <- endpoint.pull(testNode, proto.PullRequest(crate = Some(testReservation.crate)))
       actualContent <-
         source
           .runFold(ByteString.empty) { case (folded, chunk) =>
@@ -429,7 +417,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val endpoint = createTestGrpcEndpoint()
 
     endpoint
-      .pull(testNode, proto.PullRequest().withCrate(testReservation.crate))
+      .pull(testNode, proto.PullRequest(crate = Some(testReservation.crate)))
       .map { response =>
         response should be(Source.empty)
       }
@@ -441,7 +429,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val endpoint = createTestGrpcEndpoint()
 
     endpoint
-      .pull(testNode, proto.PullRequest())
+      .pull(testNode, proto.PullRequest(crate = None))
       .map { response =>
         fail(s"Unexpected response provided: [$response]")
       }
@@ -464,13 +452,10 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
           .push(
             testNode,
             Source.single(
-              proto
-                .PushChunk()
-                .withReservation(testReservation.id)
-                .withContent(ByteString.fromString(crateContent))
+              proto.PushChunk(reservation = Some(testReservation.id), content = ByteString.fromString(crateContent))
             )
           )
-      discardResponse <- endpoint.discard(testNode, proto.DiscardRequest().withCrate(testReservation.crate))
+      discardResponse <- endpoint.discard(testNode, proto.DiscardRequest(crate = Some(testReservation.crate)))
     } yield {
       pushResponse.result.complete should be(defined)
       pushResponse.result.failure should be(None)
@@ -485,7 +470,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val endpoint = createTestGrpcEndpoint()
 
     endpoint
-      .discard(testNode, proto.DiscardRequest().withCrate(testReservation.crate))
+      .discard(testNode, proto.DiscardRequest(crate = Some(testReservation.crate)))
       .map { response =>
         response.result.complete should be(None)
         response.result.failure.map(_.message) should be(
@@ -502,7 +487,7 @@ class GrpcEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val endpoint = createTestGrpcEndpoint()
 
     endpoint
-      .discard(testNode, proto.DiscardRequest())
+      .discard(testNode, proto.DiscardRequest(crate = None))
       .map { response =>
         response.result.complete should be(None)
         response.result.failure.map(_.message) should be(

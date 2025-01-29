@@ -11,6 +11,7 @@ class MetricsSpec extends UnitSpec {
       Set(
         Metrics.StreamingBackend.NoOp,
         Metrics.EventLogBackend.NoOp,
+        Metrics.CommandStore.NoOp,
         Metrics.ManifestStore.NoOp,
         Metrics.ReservationStore.NoOp
       )
@@ -24,6 +25,9 @@ class MetricsSpec extends UnitSpec {
     val eventLogMetrics = Metrics.EventLogBackend.NoOp
     noException should be thrownBy eventLogMetrics.recordEvent(backend = null)
     noException should be thrownBy eventLogMetrics.recordEventFailure(backend = null)
+
+    val CommandMetrics = Metrics.CommandStore.NoOp
+    noException should be thrownBy CommandMetrics.recordCommand(command = null)
 
     val manifestMetrics = Metrics.ManifestStore.NoOp
     noException should be thrownBy manifestMetrics.recordManifest(manifest = null)
@@ -56,6 +60,11 @@ class MetricsSpec extends UnitSpec {
 
     meter.metric(name = "test_persistence_event_log_events") should be(2)
     meter.metric(name = "test_persistence_event_log_event_failures") should be(1)
+
+    val CommandMetrics = new Metrics.CommandStore.Default(meter = meter, namespace = "test")
+    CommandMetrics.recordCommand(command = Generators.generateCommand)
+
+    meter.metric(name = "test_persistence_command_store_commands") should be(1)
 
     val manifestMetrics = new Metrics.ManifestStore.Default(meter = meter, namespace = "test")
     manifestMetrics.recordManifest(manifest = Generators.generateManifest.copy(destinations = Seq(Node.generateId())))

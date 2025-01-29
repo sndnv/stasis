@@ -6,6 +6,10 @@ import java.time.temporal.ChronoUnit
 
 import org.apache.pekko.util.ByteString
 
+import stasis.core.commands.proto.Command
+import stasis.core.commands.proto.CommandParameters
+import stasis.core.commands.proto.CommandSource
+import stasis.core.commands.proto.LogoutUser
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.crates.CrateStore
@@ -196,6 +200,39 @@ object Formats {
     }
   )
 
+  implicit val commandSourceFormat: Format[CommandSource] = Format(
+    fjs = _.validate[String].map(CommandSource.apply),
+    tjs = source => Json.toJson(source.name)
+  )
+
+  implicit val commandParametersFormat: Format[CommandParameters] = Format(
+    fjs = _.validate[JsObject].flatMap { params =>
+      (params \ "command_type").validate[String].map {
+        case "empty" =>
+          CommandParameters.Empty
+
+        case "logout_user" =>
+          LogoutUser(reason = (params \ "logout_user" \ "reason").asOpt[String])
+      }
+    },
+    tjs = {
+      case CommandParameters.Empty =>
+        Json.obj(
+          "command_type" -> Json.toJson("empty")
+        )
+
+      case LogoutUser(reason) =>
+        Json.obj(
+          "command_type" -> Json.toJson("logout_user"),
+          "logout_user" -> Json.obj(
+            "reason" -> Json.toJson(reason)
+          )
+        )
+    }
+  )
+
+  implicit val commandFormat: Format[Command] = Json.format[Command]
+
   implicit val scheduleFormat: Format[Schedule] = {
     val reader = Json.reads[Schedule]
     val writer = Json.writes[Schedule]
@@ -313,6 +350,9 @@ object Formats {
 
   implicit val deletedDeviceKeyFormat: Format[DeletedDeviceKey] =
     Json.format[DeletedDeviceKey]
+
+  implicit val deletedCommandFormat: Format[DeletedCommand] =
+    Json.format[DeletedCommand]
 
   implicit val createNodeFormat: Format[CreateNode] = Format(
     fjs = _.validate[JsObject].flatMap { node =>

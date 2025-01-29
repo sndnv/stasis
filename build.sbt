@@ -198,11 +198,12 @@ lazy val proto = (project in file("./proto"))
     libraryDependencies ++= Seq(
       "org.apache.pekko" %% "pekko-stream"    % versions.pekko,
       "org.apache.pekko" %% "pekko-http"      % versions.pekkoHttp,
-      "org.apache.pekko" %% "pekko-http-core" % versions.pekkoHttp
+      "org.apache.pekko" %% "pekko-http-core" % versions.pekkoHttp,
+      "org.scalacheck"   %% "scalacheck"      % versions.scalaCheck % Test,
+      "org.scalatest"    %% "scalatest"       % versions.scalaTest  % Test
     ),
     coverageEnabled := false,
-    pekkoGrpcCodeGeneratorSettings += "single_line_to_proto_string",
-    dependencyUpdatesFilter -= moduleFilter(organization = "org.apache.pekko")
+    pekkoGrpcCodeGeneratorSettings += "single_line_to_proto_string"
   )
   .enablePlugins(PekkoGrpcPlugin)
 

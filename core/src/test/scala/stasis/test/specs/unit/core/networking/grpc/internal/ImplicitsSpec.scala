@@ -4,6 +4,7 @@ import java.util.UUID
 
 import org.apache.pekko.util.ByteString
 
+import stasis.common.proto.Uuid
 import stasis.core.networking.exceptions.EndpointFailure
 import stasis.core.networking.grpc.internal.Implicits
 import stasis.core.networking.grpc.proto
@@ -13,7 +14,7 @@ class ImplicitsSpec extends UnitSpec {
   it should "convert UUIDs" in {
     val javaUuid: UUID = UUID.randomUUID()
 
-    val protoUuid: proto.Uuid = proto.Uuid(
+    val protoUuid: Uuid = Uuid(
       mostSignificantBits = javaUuid.getMostSignificantBits,
       leastSignificantBits = javaUuid.getLeastSignificantBits
     )

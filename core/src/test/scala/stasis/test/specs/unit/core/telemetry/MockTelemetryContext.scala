@@ -11,6 +11,7 @@ class MockTelemetryContext extends stasis.layers.telemetry.MockTelemetryContext 
       core.persistence.eventLog,
       core.persistence.manifest,
       core.persistence.reservation,
+      core.persistence.command,
       core.routing.router
     )
 
@@ -20,6 +21,7 @@ class MockTelemetryContext extends stasis.layers.telemetry.MockTelemetryContext 
       val eventLog: MockPersistenceMetrics.EventLogBackend = MockPersistenceMetrics.EventLogBackend()
       val manifest: MockPersistenceMetrics.ManifestStore = MockPersistenceMetrics.ManifestStore()
       val reservation: MockPersistenceMetrics.ReservationStore = MockPersistenceMetrics.ReservationStore()
+      val command: MockPersistenceMetrics.CommandStore = MockPersistenceMetrics.CommandStore()
     }
 
     object routing {
