@@ -99,7 +99,7 @@ class DefaultClientApi extends ApiClient implements ClientApi {
     required DateTime? until,
   }) async {
     final searchPath = '/datasets/metadata/search?query=$searchQuery';
-    final fullPath = until == null ? searchPath : '$searchPath&until=${until.toIso8601String().split('.').first}Z';
+    final fullPath = until == null ? searchPath : '$searchPath&until=${until.toUtc().toIso8601String().split('.').first}Z';
     return await getOne(from: fullPath, fromJson: DatasetMetadataSearchResult.fromJson);
   }
 
@@ -224,7 +224,7 @@ class DefaultClientApi extends ApiClient implements ClientApi {
         .map((e) => '${e.key}=${e.value}')
         .join('&');
 
-    final path = ['/operations/recover/$definition/until/${until.toIso8601String().split('.').first}Z', params]
+    final path = ['/operations/recover/$definition/until/${until.toUtc().toIso8601String().split('.').first}Z', params]
         .where((e) => e.isNotEmpty)
         .join('?');
 

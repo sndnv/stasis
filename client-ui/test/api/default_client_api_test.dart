@@ -248,7 +248,7 @@ void main() {
       });
 
       const searchQuery = 'test.*';
-      const until = '2020-02-02T02:02:02Z';
+      const until = '2020-02-02T01:02:02Z';
       final untilAsDateTime = DateTime(2020, 2, 2, 2, 2, 2);
       when(underlying.get(Uri.parse('$server/datasets/metadata/search?query=$searchQuery&until=$until'),
               headers: authorization))
