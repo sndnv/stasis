@@ -10,6 +10,9 @@ import org.apache.pekko.actor.Cancellable
 import org.apache.pekko.util.ByteString
 import play.api.libs.json.Json
 
+import stasis.core.commands.proto.CommandParameters
+import stasis.core.commands.proto.CommandSource
+import stasis.core.commands.proto.LogoutUser
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.packaging.Crate
@@ -147,6 +150,28 @@ class FormatsSpec extends UnitSpec {
 
       case None => fail("Expected value but none was found")
     }
+  }
+
+  they should "convert command sources to/from JSON" in {
+    commandSourceFormat.writes(CommandSource.User).toString() should be("\"user\"")
+    commandSourceFormat.writes(CommandSource.Service).toString() should be("\"service\"")
+
+    commandSourceFormat.reads(Json.parse("\"User\"")).asOpt should be(Some(CommandSource.User))
+    commandSourceFormat.reads(Json.parse("\"Service\"")).asOpt should be(Some(CommandSource.Service))
+  }
+
+  they should "convert command parameters to/from JSON" in {
+    val emptyCommand = CommandParameters.Empty
+    val logoutUserCommand = LogoutUser(reason = Some("test"))
+
+    val emptyCommandJson = """{"command_type":"empty"}"""
+    val logoutUserCommandJson = """{"command_type":"logout_user","logout_user":{"reason":"test"}}"""
+
+    commandParametersFormat.writes(emptyCommand).toString() should be(emptyCommandJson)
+    commandParametersFormat.reads(Json.parse(emptyCommandJson)).asOpt should be(Some(emptyCommand))
+
+    commandParametersFormat.writes(logoutUserCommand).toString() should be(logoutUserCommandJson)
+    commandParametersFormat.reads(Json.parse(logoutUserCommandJson)).asOpt should be(Some(logoutUserCommand))
   }
 
   they should "convert schedules to/from JSON with 'next_invocation' field" in withRetry {

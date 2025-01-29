@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+import "common.proto";
+
+option java_multiple_files = true;
+
+package stasis.core.commands.proto;
+
+message Command {
+  int64 sequenceId = 1;
+  string source = 2;
+  stasis.common.proto.Uuid target = 3;
+  CommandParameters parameters = 4;
+  int64 created = 5;
+}
+
+message CommandParameters {
+  oneof sealed_value {
+    LogoutUser logoutUser = 1;
+  }
+}
+
+message LogoutUser {
+  optional string reason = 1;
+}

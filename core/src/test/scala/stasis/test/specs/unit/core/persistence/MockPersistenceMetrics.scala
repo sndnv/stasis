@@ -2,6 +2,7 @@ package stasis.test.specs.unit.core.persistence
 
 import java.util.concurrent.atomic.AtomicInteger
 
+import stasis.core.commands.proto.Command
 import stasis.core.packaging.Manifest
 import stasis.core.persistence.CrateStorageReservation
 import stasis.core.persistence.Metrics
@@ -68,6 +69,20 @@ object MockPersistenceMetrics {
 
   object ManifestStore {
     def apply(): ManifestStore = new ManifestStore()
+  }
+
+  class CommandStore extends Metrics.CommandStore {
+    private val commandsRecorded: AtomicInteger = new AtomicInteger(0)
+
+    def commands: Int = commandsRecorded.get()
+
+    override def recordCommand(command: Command): Unit = {
+      val _ = commandsRecorded.incrementAndGet()
+    }
+  }
+
+  object CommandStore {
+    def apply(): CommandStore = new CommandStore()
   }
 
   class ReservationStore extends Metrics.ReservationStore {

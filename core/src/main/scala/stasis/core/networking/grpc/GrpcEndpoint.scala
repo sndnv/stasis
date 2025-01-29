@@ -23,7 +23,6 @@ import org.apache.pekko.stream.SystemMaterializer
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.stream.scaladsl.Source
 import org.slf4j.LoggerFactory
-
 import stasis.core.networking.Endpoint
 import stasis.core.networking.exceptions.CredentialsFailure
 import stasis.core.networking.exceptions.EndpointFailure
@@ -70,24 +69,24 @@ class GrpcEndpoint(
           .map {
             case Some(reservation) =>
               log.debugN("Reservation created for node [{}]: [{}]", node, reservation)
-              proto.ReserveResponse().withReservation(reservation.id)
+              proto.ReserveResponse(proto.ReserveResponse.Result.Reservation(reservation.id))
 
             case None =>
               val message = s"Reservation rejected for node [${node.toString}]"
               log.warn(message)
-              proto.ReserveResponse().withFailure(ReservationFailure(message))
+              proto.ReserveResponse(proto.ReserveResponse.Result.Failure(ReservationFailure(message)))
           }
           .recover { case NonFatal(e) =>
             val message = s"Reservation failed for node [${node.toString}]: [${e.getClass.getSimpleName} - ${e.getMessage}]"
             log.error(message)
-            proto.ReserveResponse().withFailure(ReservationFailure(message))
+            proto.ReserveResponse(proto.ReserveResponse.Result.Failure(ReservationFailure(message)))
           }
 
       case Left(failure) =>
         val message =
           s"Node [${node.toString}] made reservation request with missing data: [${failure.getClass.getSimpleName} - ${failure.getMessage}]"
         log.error(message)
-        Future.successful(proto.ReserveResponse().withFailure(EndpointFailure(message)))
+        Future.successful(proto.ReserveResponse(proto.ReserveResponse.Result.Failure(EndpointFailure(message))))
     }
 
   def push(node: Node.Id, in: Source[proto.PushChunk, NotUsed]): Future[proto.PushResponse] =
@@ -114,23 +113,23 @@ class GrpcEndpoint(
                   .push(manifest, incoming.map(chunk => chunk.content))
                   .map { _ =>
                     log.debug("Crate created with manifest: [{}]", manifest)
-                    proto.PushResponse().withComplete(proto.Complete())
+                    proto.PushResponse(proto.PushResponse.Result.Complete(proto.Complete()))
                   }
                   .recover { case NonFatal(e) =>
                     val message = s"Push failed for node [${node.toString}]: [${e.getClass.getSimpleName} - ${e.getMessage}]"
                     log.error(message)
-                    proto.PushResponse().withFailure(EndpointFailure(message))
+                    proto.PushResponse(proto.PushResponse.Result.Failure(EndpointFailure(message)))
                   }
 
               case None =>
                 val message = s"Node [${node.toString}] failed to push crate; reservation [${reservationId.toString}] not found"
                 log.error(message)
-                Future.successful(proto.PushResponse().withFailure(EndpointFailure(message)))
+                Future.successful(proto.PushResponse(proto.PushResponse.Result.Failure(EndpointFailure(message))))
             }
 
         case Left(failure) =>
           log.error(failure.message)
-          Future.successful(proto.PushResponse().withFailure(EndpointFailure(failure.getMessage)))
+          Future.successful(proto.PushResponse(proto.PushResponse.Result.Failure(EndpointFailure(failure.getMessage))))
       }
 
   def pull(node: Node.Id, request: proto.PullRequest): Future[Source[proto.PullChunk, NotUsed]] =
@@ -164,18 +163,18 @@ class GrpcEndpoint(
           .discard(crateId)
           .map { _ =>
             log.debugN("Node [{}] discarded crate [{}]", node, crateId)
-            proto.DiscardResponse().withComplete(proto.Complete())
+            proto.DiscardResponse(proto.DiscardResponse.Result.Complete(proto.Complete()))
           }
           .recover { case NonFatal(e) =>
             val message = s"Discard failed for node [${node.toString}]: [${e.getMessage}]"
             log.error(message)
-            proto.DiscardResponse().withFailure(EndpointFailure(message))
+            proto.DiscardResponse(proto.DiscardResponse.Result.Failure(EndpointFailure(message)))
           }
 
       case None =>
         val message = s"Node [${node.toString}] made discard request with missing crate: [${request.crate.toString}]"
         log.error(message)
-        Future.successful(proto.DiscardResponse().withFailure(new IllegalArgumentException(message)))
+        Future.successful(proto.DiscardResponse(proto.DiscardResponse.Result.Failure(new IllegalArgumentException(message))))
     }
 
   def grpcHandler(request: HttpRequest, node: Node.Id): Future[HttpResponse] = {

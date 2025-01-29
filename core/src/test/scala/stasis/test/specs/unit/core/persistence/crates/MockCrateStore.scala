@@ -1,4 +1,4 @@
-package stasis.test.specs.unit.core.persistence.mocks
+package stasis.test.specs.unit.core.persistence.crates
 
 import java.util.concurrent.atomic.AtomicInteger
 

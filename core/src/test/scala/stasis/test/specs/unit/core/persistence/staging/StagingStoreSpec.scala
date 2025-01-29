@@ -25,7 +25,7 @@ import stasis.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.MockGrpcEndpointClient
 import stasis.test.specs.unit.core.networking.mocks.MockHttpEndpointClient
-import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
+import stasis.test.specs.unit.core.persistence.crates.MockCrateStore
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class StagingStoreSpec extends AsyncUnitSpec with Eventually with BeforeAndAfterAll {

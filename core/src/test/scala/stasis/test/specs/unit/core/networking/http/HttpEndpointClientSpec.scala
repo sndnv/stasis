@@ -29,7 +29,7 @@ import stasis.layers.security.tls.EndpointContext
 import stasis.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.MockHttpNodeCredentialsProvider
-import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
+import stasis.test.specs.unit.core.persistence.crates.MockCrateStore
 import stasis.test.specs.unit.core.persistence.reservations.MockReservationStore
 import stasis.test.specs.unit.core.routing.mocks.MockRouter
 import stasis.test.specs.unit.core.security.mocks.MockHttpAuthenticator

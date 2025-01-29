@@ -31,7 +31,7 @@ import stasis.core.persistence.crates.CrateStore
 import stasis.core.routing.Node
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.Generators
-import stasis.test.specs.unit.core.persistence.mocks.MockCrateStore
+import stasis.test.specs.unit.core.persistence.crates.MockCrateStore
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class CrateStoreSpec extends AsyncUnitSpec with AsyncMockitoSugar with Eventually {
@@ -321,35 +321,6 @@ class CrateStoreSpec extends AsyncUnitSpec with AsyncMockitoSugar with Eventuall
     } yield {
       availableResult should be(true)
       unavailableResult should be(false)
-    }
-  }
-
-  it should "provide a read-only view" in {
-
-    val store = createCrateStore()
-    val storeView = store.view
-
-    store.backingCrateStore.persist(testManifest, Source.single(testContent)).await
-
-    store.backingCrateStore.statistics(MockCrateStore.Statistic.PersistCompleted) should be(1)
-    store.backingCrateStore.statistics(MockCrateStore.Statistic.PersistFailed) should be(0)
-
-    val actualSource = storeView.retrieve(testManifest.crate).await match {
-      case Some(source) => source
-      case None         => fail("Unexpected retrieve response returned")
-    }
-
-    val result = actualSource
-      .runFold(ByteString.empty) { case (folded, chunk) => folded.concat(chunk) }
-      .await
-
-    result should be(testContent)
-    store.backingCrateStore.statistics(MockCrateStore.Statistic.RetrieveCompleted) should be(1)
-    store.backingCrateStore.statistics(MockCrateStore.Statistic.RetrieveEmpty) should be(0)
-    store.backingCrateStore.statistics(MockCrateStore.Statistic.RetrieveFailed) should be(0)
-
-    a[ClassCastException] should be thrownBy {
-      storeView.asInstanceOf[CrateStore]
     }
   }
 

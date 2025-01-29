@@ -1,19 +1,32 @@
 package stasis.test.specs.unit.core.persistence
 
 import java.time.Instant
+import java.util.UUID
 import java.util.concurrent.ThreadLocalRandom
 
+import stasis.core.commands.proto.Command
+import stasis.core.commands.proto.CommandParameters
+import stasis.core.commands.proto.CommandSource
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.packaging.Crate
 import stasis.core.packaging.Manifest
-import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.CrateStorageReservation
+import stasis.core.persistence.crates.CrateStore
 import stasis.core.routing.Node
 import stasis.layers.Generators._
 
 object Generators {
+  def generateCommand(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Command =
+    Command(
+      sequenceId = 0,
+      source = if (rnd.nextBoolean()) CommandSource.User else CommandSource.Service,
+      target = Some(UUID.randomUUID()),
+      parameters = CommandParameters.Empty,
+      created = Instant.now()
+    )
+
   def generateManifest(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Manifest =
     Manifest(
       crate = Crate.generateId(),

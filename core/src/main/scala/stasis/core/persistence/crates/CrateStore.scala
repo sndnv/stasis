@@ -16,7 +16,6 @@ import org.apache.pekko.util.ByteString
 import org.apache.pekko.util.Timeout
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-
 import stasis.core.packaging.Crate
 import stasis.core.packaging.Manifest
 import stasis.core.persistence.CrateStorageRequest
@@ -83,20 +82,10 @@ class CrateStore(
   def canStore(request: CrateStorageRequest): Future[Boolean] =
     backend.canStore(request.size * request.copies)
 
-  def view: CrateStore.View =
-    new CrateStore.View {
-      override def retrieve(crate: Crate.Id): Future[Option[Source[ByteString, NotUsed]]] =
-        store.retrieve(crate)
-    }
-
   protected def init(): Future[Done] = backend.loggedInit()
 }
 
 object CrateStore {
-  trait View {
-    def retrieve(crate: Crate.Id): Future[Option[Source[ByteString, NotUsed]]]
-  }
-
   sealed trait Descriptor {
     override def toString: String = Descriptor.asString(this)
   }

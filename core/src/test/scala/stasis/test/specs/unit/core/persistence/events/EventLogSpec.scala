@@ -94,33 +94,6 @@ class EventLogSpec extends AsyncUnitSpec with Eventually {
     }
   }
 
-  it should "provide a read-only view" in {
-    implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
-
-    val backend = createBackend()
-    val store = EventLog[String, Queue[String]](backend, updateState)
-    val storeView = store.view
-
-    val testEvent = "test-event"
-
-    val updates = storeView.stateStream.take(1).runWith(Sink.seq)
-
-    for {
-      stateBefore <- storeView.state
-      _ <- backend.storeEventAndUpdateState(event = testEvent, update = updateState)
-      stateAfter <- storeView.state
-      updates <- updates
-    } yield {
-      stateBefore should be(Queue.empty)
-      updates should be(Seq(Queue(testEvent)))
-      stateAfter should be(Queue(testEvent))
-
-      telemetry.core.persistence.eventLog.event should be(1)
-
-      a[ClassCastException] should be thrownBy { val _ = storeView.asInstanceOf[EventLog[_, _]] }
-    }
-  }
-
   private def createBackend()(implicit telemetry: TelemetryContext): EventLogBackend[String, Queue[String]] =
     EventLogMemoryBackend(
       name = s"event-log-backend-${java.util.UUID.randomUUID()}",

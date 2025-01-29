@@ -16,7 +16,6 @@ import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import org.slf4j.LoggerFactory
-
 import stasis.core.networking.EndpointClient
 import stasis.core.networking.exceptions.CredentialsFailure
 import stasis.core.networking.exceptions.EndpointFailure
@@ -133,7 +132,7 @@ class GrpcEndpointClient(
       .flatMap { endpointCredentials =>
         client
           .streamWithCredentials[proto.PullRequest, proto.PullChunk](_.pull(), endpointCredentials)
-          .invoke(proto.PullRequest().withCrate(crate))
+          .invoke(proto.PullRequest(crate = Some(crate)))
           .map(_.content: ByteString)
           .prefixAndTail(n = 1)
           .map(stream => (stream._1.toList, stream._2))
@@ -176,7 +175,7 @@ class GrpcEndpointClient(
 
         client
           .requestWithCredentials(_.discard(), endpointCredentials)
-          .invoke(proto.DiscardRequest().withCrate(crate))
+          .invoke(proto.DiscardRequest(crate = Some(crate)))
           .flatMap { response =>
             response.result.complete match {
               case Some(_) =>
