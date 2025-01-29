@@ -20,6 +20,9 @@ import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefiniti
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
 import stasis.client_android.lib.model.server.api.requests.ResetUserPassword
 import stasis.client_android.lib.model.server.api.requests.UpdateDatasetDefinition
+import stasis.client_android.lib.model.server.api.responses.CommandAsJson
+import stasis.client_android.lib.model.server.api.responses.CommandAsJson.Companion.asProtobuf
+import stasis.client_android.lib.model.server.api.responses.CommandAsJson.Companion.toJson
 import stasis.client_android.lib.model.server.api.responses.Ping
 import stasis.client_android.lib.model.server.api.responses.UpdatedUserSalt
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
@@ -30,6 +33,9 @@ import stasis.client_android.lib.model.server.schedules.Schedule
 import stasis.client_android.lib.model.server.users.User
 import stasis.client_android.lib.security.HttpCredentials
 import stasis.client_android.lib.utils.Try.Success
+import stasis.core.commands.proto.Command
+import stasis.core.commands.proto.CommandParameters
+import stasis.core.commands.proto.LogoutUser
 import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.mocks.MockEncryption
 import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
@@ -38,6 +44,7 @@ import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 
+@Suppress("LargeClass")
 class DefaultServerApiEndpointClientSpec : WordSpec({
     "A DefaultServerApiEndpointClient" should {
         val apiCredentials =
@@ -773,6 +780,92 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
             actualRequest.path shouldBe ("/v1/service/ping")
+
+            api.shutdown()
+        }
+
+        "retrieve all commands" {
+            val api = createServer()
+
+            val apiClient = createClient(api.url("/").toString())
+
+            val expectedCommands = listOf(
+                Command(
+                    sequenceId = 1,
+                    source = "user",
+                    target = null,
+                    parameters = CommandParameters(),
+                    created = Instant.now().toEpochMilli()
+                ),
+                Command(
+                    sequenceId = 2,
+                    source = "service",
+                    target = apiClient.self.asProtobuf(),
+                    parameters = CommandParameters(LogoutUser()),
+                    created = Instant.now().toEpochMilli()
+                ),
+            )
+
+            api.enqueue(
+                MockResponse().setBody(
+                    apiClient.moshi.adapter<List<CommandAsJson>>(
+                        Types.newParameterizedType(
+                            List::class.java,
+                            CommandAsJson::class.java
+                        )
+                    ).toJson(expectedCommands.map { it.toJson() })
+                )
+            )
+
+            val actualCommands = apiClient.commands(lastSequenceId = null)
+            actualCommands shouldBe (Success(expectedCommands))
+
+            val actualRequest = api.takeRequest()
+            actualRequest.method shouldBe ("GET")
+            actualRequest.path shouldBe ("/v1/devices/own/${apiClient.self}/commands")
+
+            api.shutdown()
+        }
+
+        "retrieve unprocessed commands" {
+            val api = createServer()
+
+            val apiClient = createClient(api.url("/").toString())
+
+            val expectedCommands = listOf(
+                Command(
+                    sequenceId = 1,
+                    source = "user",
+                    target = null,
+                    parameters = CommandParameters(),
+                    created = Instant.now().toEpochMilli()
+                ),
+                Command(
+                    sequenceId = 2,
+                    source = "service",
+                    target = apiClient.self.asProtobuf(),
+                    parameters = CommandParameters(LogoutUser()),
+                    created = Instant.now().toEpochMilli()
+                ),
+            )
+
+            api.enqueue(
+                MockResponse().setBody(
+                    apiClient.moshi.adapter<List<CommandAsJson>>(
+                        Types.newParameterizedType(
+                            List::class.java,
+                            CommandAsJson::class.java
+                        )
+                    ).toJson(expectedCommands.map { it.toJson() })
+                )
+            )
+
+            val actualCommands = apiClient.commands(lastSequenceId = 42)
+            actualCommands shouldBe (Success(expectedCommands))
+
+            val actualRequest = api.takeRequest()
+            actualRequest.method shouldBe ("GET")
+            actualRequest.path shouldBe ("/v1/devices/own/${apiClient.self}/commands?last_sequence_id=42")
 
             api.shutdown()
         }

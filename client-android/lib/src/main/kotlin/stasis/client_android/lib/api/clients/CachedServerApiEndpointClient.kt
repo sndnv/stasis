@@ -23,6 +23,7 @@ import stasis.client_android.lib.model.server.users.User
 import stasis.client_android.lib.utils.Cache
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Companion.map
+import stasis.core.commands.proto.Command
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -170,6 +171,9 @@ class CachedServerApiEndpointClient(
 
     override suspend fun ping(): Try<Ping> =
         underlying.ping()
+
+    override suspend fun commands(lastSequenceId: Long?): Try<List<Command>> =
+        underlying.commands(lastSequenceId)
 
     private suspend fun loadDefinitions(): Try<List<DatasetDefinition>> =
         if (allDefinitionsCached.get()) {

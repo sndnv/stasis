@@ -12,6 +12,7 @@ import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefiniti
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
 import stasis.client_android.lib.model.server.api.requests.ResetUserPassword
 import stasis.client_android.lib.model.server.api.requests.UpdateDatasetDefinition
+import stasis.client_android.lib.model.server.api.responses.CommandAsJson
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetDefinition
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetEntry
 import stasis.client_android.lib.model.server.api.responses.Ping
@@ -32,6 +33,7 @@ import stasis.client_android.lib.utils.Try.Companion.map
 import stasis.client_android.lib.utils.Try.Companion.recoverWith
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
+import stasis.core.commands.proto.Command
 import java.time.Instant
 
 @Suppress("TooManyFunctions")
@@ -266,6 +268,19 @@ class DefaultServerApiEndpointClient(
                 .url("$server/v1/service/ping")
                 .get()
         }
+
+    override suspend fun commands(lastSequenceId: Long?): Try<List<Command>> =
+        jsonListRequest<CommandAsJson> { builder ->
+            val baseUrl = "$server/v1/devices/own/$self/commands"
+
+            builder
+                .url(
+                    when (lastSequenceId) {
+                        null -> baseUrl
+                        else -> "$baseUrl?last_sequence_id=$lastSequenceId"
+                    }
+                )
+        }.map { it.map { e -> e.toModel() } }
 
     sealed class DecryptionContext {
         data class Default(

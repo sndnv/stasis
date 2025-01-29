@@ -175,6 +175,6 @@ class PullDialogFragment : DialogFragment(), DynamicArguments.Receiver {
             "stasis.client_android.activities.fragments.settings.PullDialogFragment.arguments.key"
 
         const val DialogTag: String =
-            "stasis.client_android.activities.fragments.SettingsFragment.PullDialogFragment"
+            "stasis.client_android.activities.fragments.settings.PullDialogFragment"
     }
 }

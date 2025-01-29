@@ -35,6 +35,8 @@ import stasis.client_android.lib.model.server.devices.Device
 import stasis.client_android.lib.model.server.schedules.Schedule
 import stasis.client_android.lib.model.server.users.User
 import stasis.client_android.lib.ops.backup.Backup
+import stasis.client_android.lib.ops.commands.CommandProcessor
+import stasis.client_android.lib.ops.commands.DefaultCommandProcessor
 import stasis.client_android.lib.ops.monitoring.DefaultServerMonitor
 import stasis.client_android.lib.ops.scheduling.DefaultOperationExecutor
 import stasis.client_android.lib.ops.search.DefaultSearch
@@ -50,14 +52,18 @@ import stasis.client_android.persistence.config.ConfigRepository.Companion.getAu
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getSecretsConfig
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getServerApiConfig
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getServerCoreConfig
+import stasis.client_android.persistence.config.ConfigRepository.Companion.saveLastProcessedCommand
+import stasis.client_android.persistence.config.ConfigRepository.Companion.savedLastProcessedCommand
 import stasis.client_android.providers.ProviderContext
 import stasis.client_android.security.DefaultCredentialsManagementBridge
+import stasis.client_android.settings.Settings.getCommandRefreshInterval
 import stasis.client_android.settings.Settings.getPingInterval
 import stasis.client_android.tracking.DefaultBackupTracker
 import stasis.client_android.tracking.DefaultRecoveryTracker
 import stasis.client_android.tracking.DefaultServerTracker
 import stasis.client_android.tracking.DefaultTrackers
 import stasis.client_android.tracking.TrackerViews
+import stasis.core.commands.proto.Command
 import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
@@ -241,10 +247,38 @@ object StasisClientDependencies {
                             )
 
                             val monitor = DefaultServerMonitor(
-                                initialDelay = Duration.ofSeconds(5),
+                                initialDelay = Duration.ofSeconds(3),
                                 interval = preferences.getPingInterval(),
                                 api = apiClient,
                                 tracker = trackers.server,
+                                scope = coroutineScope
+                            )
+
+                            val commandHandler = object : CommandProcessor.Handlers {
+                                override suspend fun persistLastProcessedCommand(sequenceId: Long) {
+                                    preferences.saveLastProcessedCommand(sequenceId)
+                                }
+
+                                override suspend fun retrieveLastProcessedCommand(): Long {
+                                    return preferences.savedLastProcessedCommand()
+                                }
+
+                                override suspend fun executeCommands(commands: List<Command>): Long? {
+                                    return commands.sortedBy { command -> command.sequenceId }.map { command ->
+                                        when {
+                                            command.parameters?.logoutUser != null -> credentials.logout()
+                                            else -> Unit //do nothing
+                                        }
+                                        command.sequenceId
+                                    }.lastOrNull()
+                                }
+                            }
+
+                            val commandProcessor = DefaultCommandProcessor(
+                                initialDelay = Duration.ofSeconds(5),
+                                interval = preferences.getCommandRefreshInterval(),
+                                api = apiClient,
+                                handlers = commandHandler,
                                 scope = coroutineScope
                             )
 
@@ -256,6 +290,7 @@ object StasisClientDependencies {
                                 trackers = trackerViews,
                                 credentials = credentials,
                                 monitor = monitor,
+                                commandProcessor = commandProcessor,
                                 secretsConfig = preferences.getSecretsConfig()
                             )
                         },

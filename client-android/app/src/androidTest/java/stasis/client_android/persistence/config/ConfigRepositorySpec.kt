@@ -28,7 +28,9 @@ import stasis.client_android.persistence.config.ConfigRepository.Companion.getSe
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getServerCoreConfig
 import stasis.client_android.persistence.config.ConfigRepository.Companion.isFirstRun
 import stasis.client_android.persistence.config.ConfigRepository.Companion.putEncryptedDeviceSecret
+import stasis.client_android.persistence.config.ConfigRepository.Companion.saveLastProcessedCommand
 import stasis.client_android.persistence.config.ConfigRepository.Companion.saveUsername
+import stasis.client_android.persistence.config.ConfigRepository.Companion.savedLastProcessedCommand
 import stasis.client_android.persistence.config.ConfigRepository.Companion.savedUsername
 import java.util.Base64
 
@@ -566,6 +568,34 @@ class ConfigRepositorySpec {
         every { editor.commit() } returns true
 
         preferences.saveUsername(username = "test-user")
+
+        verify(exactly = 1) { editor.commit() }
+    }
+
+    @Test
+    fun retrieveSavedLastProcessedCommand() {
+        val preferences = mockk<SharedPreferences>()
+        every {
+            preferences.getLong(
+                Keys.General.LastProcessedCommand,
+                0
+            )
+        } returns 42L
+
+        assertThat(preferences.savedLastProcessedCommand(), equalTo(42L))
+    }
+
+    @Test
+    fun saveLastProcessedCommand() {
+        val preferences = mockk<SharedPreferences>()
+        val editor = mockk<SharedPreferences.Editor>(relaxUnitFun = true)
+
+        every { preferences.edit() } returns editor
+
+        every { editor.putLong(Keys.General.LastProcessedCommand, 42L) } returns editor
+        every { editor.commit() } returns true
+
+        preferences.saveLastProcessedCommand(sequenceId = 42L)
 
         verify(exactly = 1) { editor.commit() }
     }

@@ -63,7 +63,6 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom|end"
                 android:layout_margin="16dp"
-                android:backgroundTint="@color/primary"
                 android:contentDescription="@string/dataset_entry_details_metadata_filter_toggle_button_hint"
                 app:borderWidth="0dp"
                 app:fabSize="mini"

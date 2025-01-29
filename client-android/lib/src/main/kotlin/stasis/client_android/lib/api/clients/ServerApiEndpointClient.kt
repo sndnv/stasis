@@ -20,6 +20,7 @@ import stasis.client_android.lib.model.server.schedules.Schedule
 import stasis.client_android.lib.model.server.schedules.ScheduleId
 import stasis.client_android.lib.model.server.users.User
 import stasis.client_android.lib.utils.Try
+import stasis.core.commands.proto.Command
 import java.time.Instant
 
 @Suppress("TooManyFunctions")
@@ -55,4 +56,5 @@ interface ServerApiEndpointClient {
     suspend fun deviceKeyExists(): Try<Boolean>
 
     suspend fun ping(): Try<Ping>
+    suspend fun commands(lastSequenceId: Long?): Try<List<Command>>
 }

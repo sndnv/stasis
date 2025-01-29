@@ -21,6 +21,11 @@ object Settings {
             ?: Defaults.PingInterval
     }
 
+    fun SharedPreferences.getCommandRefreshInterval(): Duration {
+        return getString(Keys.CommandRefreshInterval, null)?.toLongOrNull()?.let { Duration.ofSeconds(it) }
+            ?: Defaults.CommandRefreshInterval
+    }
+
     fun parseDateTimeFormat(format: String): DateTimeFormat =
         when (format) {
             "system" -> DateTimeFormat.System
@@ -59,6 +64,8 @@ object Settings {
         const val ManageDeviceSecretLocallyImport: String = "manage_device_secret_locally_import"
         const val SchedulingEnabled: String = "scheduling_enabled"
         const val PingInterval: String = "ping_interval"
+        const val CommandRefreshInterval: String = "command_refresh_interval"
+        const val ShowCommands: String = "show_commands"
         const val ResetConfig: String = "reset_config"
     }
 
@@ -66,6 +73,7 @@ object Settings {
         const val DateTimeFormat: String = "system"
         const val SchedulingEnabled: Boolean = true
         val PingInterval: Duration = Duration.ofMinutes(3)
+        val CommandRefreshInterval: Duration = Duration.ofMinutes(5)
     }
 
     sealed class DateTimeFormat {

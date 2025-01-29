@@ -24,6 +24,7 @@ import stasis.client_android.lib.utils.Reference
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Success
 import stasis.client_android.mocks.MockBackupTracker
+import stasis.client_android.mocks.MockCommandProcessor
 import stasis.client_android.mocks.MockCredentialsManagementBridge
 import stasis.client_android.mocks.MockOAuthClient
 import stasis.client_android.mocks.MockOperationExecutor
@@ -261,6 +262,7 @@ class CredentialsViewModelSpec {
                                 coroutineScope = CoroutineScope(Dispatchers.IO)
                             ),
                             monitor = MockServerMonitor(),
+                            commandProcessor = MockCommandProcessor(),
                             secretsConfig = Fixtures.Secrets.DefaultConfig
                         )
                     },

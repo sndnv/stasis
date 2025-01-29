@@ -19,6 +19,7 @@ import stasis.client_android.eventually
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
 import stasis.client_android.lib.model.server.api.requests.UpdateDatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
+import stasis.client_android.lib.ops.commands.CommandProcessor
 import stasis.client_android.lib.ops.search.Search
 import stasis.client_android.lib.security.CredentialsProvider
 import stasis.client_android.lib.utils.Reference
@@ -26,6 +27,7 @@ import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Success
 import stasis.client_android.mocks.Generators
 import stasis.client_android.mocks.MockBackupTracker
+import stasis.client_android.mocks.MockCommandProcessor
 import stasis.client_android.mocks.MockCredentialsManagementBridge
 import stasis.client_android.mocks.MockOAuthClient
 import stasis.client_android.mocks.MockOperationExecutor
@@ -376,6 +378,7 @@ class DatasetsViewModelSpec {
                                 coroutineScope = CoroutineScope(Dispatchers.IO)
                             ),
                             monitor = MockServerMonitor(),
+                            commandProcessor = MockCommandProcessor(),
                             secretsConfig = Fixtures.Secrets.DefaultConfig
                         )
                     },

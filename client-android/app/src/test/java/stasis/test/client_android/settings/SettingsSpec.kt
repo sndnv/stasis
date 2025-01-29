@@ -11,6 +11,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import stasis.client_android.settings.Settings
+import stasis.client_android.settings.Settings.getCommandRefreshInterval
 import stasis.client_android.settings.Settings.getDateTimeFormat
 import stasis.client_android.settings.Settings.getPingInterval
 import stasis.client_android.settings.Settings.getSchedulingEnabled
@@ -147,6 +148,20 @@ class SettingsSpec {
     }
 
     @Test
+    fun supportRetrievingDefaultCommandRefreshInterval() {
+        val preferences = mockk<SharedPreferences>()
+        every {
+            preferences.getString(
+                Settings.Keys.CommandRefreshInterval,
+                null
+            )
+        } returns "300"
+
+        val expectedState = Settings.Defaults.CommandRefreshInterval
+        assertThat(preferences.getCommandRefreshInterval(), equalTo(expectedState))
+    }
+
+    @Test
     fun supportRetrievingUserDefinedPingInterval() {
         val preferences = mockk<SharedPreferences>()
         every {
@@ -158,5 +173,19 @@ class SettingsSpec {
 
         val expectedState = Duration.ofSeconds(10)
         assertThat(preferences.getPingInterval(), equalTo(expectedState))
+    }
+
+    @Test
+    fun supportRetrievingUserDefinedCommandRefreshInterval() {
+        val preferences = mockk<SharedPreferences>()
+        every {
+            preferences.getString(
+                Settings.Keys.CommandRefreshInterval,
+                null
+            )
+        } returns "10"
+
+        val expectedState = Duration.ofSeconds(10)
+        assertThat(preferences.getCommandRefreshInterval(), equalTo(expectedState))
     }
 }

@@ -24,6 +24,7 @@ import stasis.client_android.lib.model.server.users.User
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
+import stasis.core.commands.proto.Command
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
@@ -54,7 +55,8 @@ open class MockServerApiEndpointClient(
         Statistic.DeviceKeyPushed to AtomicInteger(0),
         Statistic.DeviceKeyPulled to AtomicInteger(0),
         Statistic.DeviceKeyExists to AtomicInteger(0),
-        Statistic.Ping to AtomicInteger(0)
+        Statistic.Ping to AtomicInteger(0),
+        Statistic.Commands to AtomicInteger(0),
     )
 
     private val deviceSecretRef: AtomicReference<ByteString?> = AtomicReference(null)
@@ -181,6 +183,11 @@ open class MockServerApiEndpointClient(
         return Success(Ping(id = UUID.randomUUID()))
     }
 
+    override suspend fun commands(lastSequenceId: Long?): Try<List<Command>> {
+        stats[Statistic.Commands]?.getAndIncrement()
+        return Success(emptyList())
+    }
+
     val statistics: Map<Statistic, Int>
         get() = stats.mapValues { it.value.get() }
 
@@ -210,6 +217,7 @@ open class MockServerApiEndpointClient(
         object DeviceKeyPulled : Statistic()
         object DeviceKeyExists : Statistic()
         object Ping : Statistic()
+        object Commands : Statistic()
     }
 
     companion object {
