@@ -27,6 +27,7 @@ import 'package:server_ui/model/api/responses/created_schedule.dart';
 import 'package:server_ui/model/api/responses/created_user.dart';
 import 'package:server_ui/model/api/responses/ping.dart';
 import 'package:server_ui/model/api/responses/updated_user_salt.dart';
+import 'package:server_ui/model/commands/command.dart';
 import 'package:server_ui/model/datasets/dataset_definition.dart';
 import 'package:server_ui/model/datasets/dataset_entry.dart';
 import 'package:server_ui/model/devices/device.dart';
@@ -852,6 +853,169 @@ void main() {
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.deleteDeviceKey(privileged: false, forDevice: device), returnsNormally);
+    });
+
+    test('retrieve commands (privileged)', () async {
+      final underlying = MockClient();
+      final client = DefaultApiClient(server: server, underlying: underlying);
+
+      final command1 = Command(
+        sequenceId: 1,
+        source: 'user',
+        target: null,
+        parameters: CommandParameters(commandType: 'logout_user', logoutUser: LogoutUserCommand(reason: null)),
+        created: DateTime.now(),
+      );
+
+      final command2 = Command(
+        sequenceId: 1,
+        source: 'user',
+        target: 'test-device-1',
+        parameters: CommandParameters(commandType: 'logout_user', logoutUser: LogoutUserCommand(reason: null)),
+        created: DateTime.now(),
+      );
+
+      final response = jsonEncode([command1, command2]);
+
+      when(underlying.get(Uri.parse('$server/v1/devices/commands')))
+          .thenAnswer((_) async => http.Response(response, 200));
+
+      expect(await client.getCommands(), [command1, command2]);
+    });
+
+    test('create commands (privileged)', () async {
+      final underlying = MockClient();
+      final client = DefaultApiClient(server: server, underlying: underlying);
+
+      const request = CommandParameters(commandType: 'logout_user', logoutUser: LogoutUserCommand(reason: 'Test reason'));
+
+      when(underlying.post(Uri.parse('$server/v1/devices/commands'),
+              headers: applicationJson, body: jsonEncode(request)))
+          .thenAnswer((_) async => http.Response('', 200));
+
+      expect(
+        () async => await client.createCommand(request: request),
+        returnsNormally,
+      );
+    });
+
+    test('delete commands (privileged)', () async {
+      final underlying = MockClient();
+      final client = DefaultApiClient(server: server, underlying: underlying);
+
+      when(underlying.delete(Uri.parse('$server/v1/devices/commands/1')))
+          .thenAnswer((_) async => http.Response('', 200));
+
+      expect(() async => await client.deleteCommand(sequenceId: 1), returnsNormally);
+    });
+
+    test('truncate commands (privileged)', () async {
+      final underlying = MockClient();
+      final client = DefaultApiClient(server: server, underlying: underlying);
+
+      final olderThanString = '2020-01-02T03:04:05Z';
+      final olderThan = DateTime.parse(olderThanString);
+
+      when(underlying.put(Uri.parse('$server/v1/devices/commands/truncate?older_than=$olderThanString')))
+          .thenAnswer((_) async => http.Response('', 200));
+
+      expect(() async => await client.truncateCommands(olderThan: olderThan), returnsNormally);
+    });
+
+    test('retrieve commands for a specific device (privileged)', () async {
+      final underlying = MockClient();
+      final client = DefaultApiClient(server: server, underlying: underlying);
+
+      const device = 'test-device';
+
+      final command1 = Command(
+        sequenceId: 1,
+        source: 'user',
+        target: null,
+        parameters: CommandParameters(commandType: 'logout_user', logoutUser: LogoutUserCommand(reason: null)),
+        created: DateTime.now(),
+      );
+
+      final command2 = Command(
+        sequenceId: 1,
+        source: 'user',
+        target: device,
+        parameters: CommandParameters(commandType: 'logout_user', logoutUser: LogoutUserCommand(reason: null)),
+        created: DateTime.now(),
+      );
+
+      final response = jsonEncode([command1, command2]);
+
+      when(underlying.get(Uri.parse('$server/v1/devices/$device/commands')))
+          .thenAnswer((_) async => http.Response(response, 200));
+
+      expect(await client.getDeviceCommands(privileged: true, forDevice: device), [command1, command2]);
+    });
+
+    test('retrieve commands for a specific device (privileged)', () async {
+      final underlying = MockClient();
+      final client = DefaultApiClient(server: server, underlying: underlying);
+
+      const device = 'test-device';
+
+      final command1 = Command(
+        sequenceId: 1,
+        source: 'user',
+        target: null,
+        parameters: CommandParameters(commandType: 'logout_user', logoutUser: LogoutUserCommand(reason: null)),
+        created: DateTime.now(),
+      );
+
+      final command2 = Command(
+        sequenceId: 1,
+        source: 'user',
+        target: device,
+        parameters: CommandParameters(commandType: 'logout_user', logoutUser: LogoutUserCommand(reason: null)),
+        created: DateTime.now(),
+      );
+
+      final response = jsonEncode([command1, command2]);
+
+      when(underlying.get(Uri.parse('$server/v1/devices/own/$device/commands')))
+          .thenAnswer((_) async => http.Response(response, 200));
+
+      expect(await client.getDeviceCommands(privileged: false, forDevice: device), [command1, command2]);
+    });
+
+    test('create commands for a specific device (privileged)', () async {
+      final underlying = MockClient();
+      final client = DefaultApiClient(server: server, underlying: underlying);
+
+      const device = 'test-device';
+
+      const request = CommandParameters(commandType: 'logout_user', logoutUser: LogoutUserCommand(reason: 'Test reason'));
+
+      when(underlying.post(Uri.parse('$server/v1/devices/$device/commands'),
+              headers: applicationJson, body: jsonEncode(request)))
+          .thenAnswer((_) async => http.Response('', 200));
+
+      expect(
+        () async => await client.createDeviceCommand(privileged: true, request: request, forDevice: device),
+        returnsNormally,
+      );
+    });
+
+    test('create commands for a specific device (own)', () async {
+      final underlying = MockClient();
+      final client = DefaultApiClient(server: server, underlying: underlying);
+
+      const device = 'test-device';
+
+      const request = CommandParameters(commandType: 'logout_user', logoutUser: LogoutUserCommand(reason: 'Test reason'));
+
+      when(underlying.post(Uri.parse('$server/v1/devices/own/$device/commands'),
+              headers: applicationJson, body: jsonEncode(request)))
+          .thenAnswer((_) async => http.Response('', 200));
+
+      expect(
+        () async => await client.createDeviceCommand(privileged: false, request: request, forDevice: device),
+        returnsNormally,
+      );
     });
   });
 

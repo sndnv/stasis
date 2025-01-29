@@ -23,6 +23,7 @@ import 'package:server_ui/model/api/responses/created_schedule.dart';
 import 'package:server_ui/model/api/responses/created_user.dart';
 import 'package:server_ui/model/api/responses/ping.dart';
 import 'package:server_ui/model/api/responses/updated_user_salt.dart';
+import 'package:server_ui/model/commands/command.dart';
 import 'package:server_ui/model/datasets/dataset_definition.dart';
 import 'package:server_ui/model/datasets/dataset_entry.dart';
 import 'package:server_ui/model/devices/device.dart';
@@ -227,6 +228,58 @@ class DefaultApiClient extends ApiClient
   Future<void> deleteDeviceKey({required bool privileged, required String forDevice}) async {
     final path = privileged ? '/v1/devices/$forDevice/key' : '/v1/devices/own/$forDevice/key';
     return await delete(from: path);
+  }
+
+  @override
+  Future<List<Command>> getCommands() async {
+    const path = '/v1/devices/commands';
+    return await get(from: path, fromJson: Command.fromJson);
+  }
+
+  @override
+  Future<void> createCommand({required CommandParameters request}) async {
+    const path = '/v1/devices/commands';
+    return await underlying
+        .post(
+          Uri.parse('$server$path'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(request.toJson()),
+        )
+        .andProcessResponse();
+  }
+
+  @override
+  Future<void> deleteCommand({required int sequenceId}) async {
+    final path = '/v1/devices/commands/$sequenceId';
+    return await delete(from: path);
+  }
+
+  @override
+  Future<void> truncateCommands({required DateTime olderThan}) async {
+    final path = '/v1/devices/commands/truncate?older_than=${olderThan.toUtc().toIso8601String().split('.').first}Z';
+    return await underlying.put(Uri.parse('$server$path')).andProcessResponse();
+  }
+
+  @override
+  Future<List<Command>> getDeviceCommands({required bool privileged, required String forDevice}) async {
+    final path = privileged ? '/v1/devices/$forDevice/commands' : '/v1/devices/own/$forDevice/commands';
+    return await get(from: path, fromJson: Command.fromJson);
+  }
+
+  @override
+  Future<void> createDeviceCommand({
+    required bool privileged,
+    required CommandParameters request,
+    required String forDevice,
+  }) async {
+    final path = privileged ? '/v1/devices/$forDevice/commands' : '/v1/devices/own/$forDevice/commands';
+    return await underlying
+        .post(
+          Uri.parse('$server$path'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(request.toJson()),
+        )
+        .andProcessResponse();
   }
 
   @override

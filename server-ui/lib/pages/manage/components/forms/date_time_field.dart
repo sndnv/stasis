@@ -7,11 +7,13 @@ class DateTimeField extends StatefulWidget {
     required this.title,
     required this.onChange,
     this.initialDateTime,
+    this.useExtendedTitle = true,
   });
 
   final String title;
   final DateTime? initialDateTime;
   final void Function(DateTime) onChange;
+  final bool useExtendedTitle;
 
   @override
   State createState() {
@@ -65,7 +67,11 @@ class _DateTimeFieldState extends State<DateTimeField> {
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: 4.0),
-          child: Text('${widget.title} On', style: theme.textTheme.bodyMedium, textAlign: TextAlign.left),
+          child: Text(
+            widget.useExtendedTitle ? '${widget.title} On' : widget.title,
+            style: theme.textTheme.bodyMedium,
+            textAlign: TextAlign.left,
+          ),
         ),
         Row(children: [Expanded(child: dateButton)]),
       ],
@@ -76,7 +82,11 @@ class _DateTimeFieldState extends State<DateTimeField> {
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: 4.0),
-          child: Text('${widget.title} At', style: theme.textTheme.bodyMedium, textAlign: TextAlign.left),
+          child: Text(
+            widget.useExtendedTitle ? '${widget.title} At' : '',
+            style: theme.textTheme.bodyMedium,
+            textAlign: TextAlign.left,
+          ),
         ),
         Row(children: [Expanded(child: timeButton)]),
       ],

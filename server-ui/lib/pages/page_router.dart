@@ -1,4 +1,5 @@
 import 'dart:html' as html;
+import 'dart:math';
 
 import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +17,7 @@ import 'package:server_ui/pages/default/home.dart';
 import 'package:server_ui/pages/default/not_found.dart';
 import 'package:server_ui/pages/manage/codes.dart';
 import 'package:server_ui/pages/manage/definitions.dart';
+import 'package:server_ui/pages/manage/commands.dart';
 import 'package:server_ui/pages/manage/device_keys.dart';
 import 'package:server_ui/pages/manage/devices.dart';
 import 'package:server_ui/pages/manage/nodes.dart';
@@ -157,19 +159,19 @@ class PageRouter {
       destination(PageRouterDestination.devices),
       destination(PageRouterDestination.deviceKeys),
       destination(PageRouterDestination.codes),
-      divider,
     ];
 
     final List<Widget> publicDestinations = [
       destination(PageRouterDestination.schedules),
-      divider,
     ];
 
     final List<Widget> privilegedDestinations = routerContext.usePrivilegedApis.enabled()
         ? [
+            divider,
             destination(PageRouterDestination.users),
             destination(PageRouterDestination.nodes),
             destination(PageRouterDestination.reservations),
+            destination(PageRouterDestination.deviceCommands),
           ]
         : [];
 
@@ -178,7 +180,7 @@ class PageRouter {
             ? [
                 ListTile(
                   leading: const Padding(padding: EdgeInsets.only(left: 8.0), child: Icon(Icons.settings)),
-                  title: const Text('Management Enabled'),
+                  title: const Text('Manage'),
                   trailing: Switch(
                     value: routerContext.usePrivilegedApis.enabled(),
                     activeColor: Theme.of(buildContext).colorScheme.primary,
@@ -188,7 +190,6 @@ class PageRouter {
                     },
                   ),
                 ),
-                divider,
               ]
             : [];
 
@@ -202,8 +203,14 @@ class PageRouter {
 
     return Drawer(
       child: ListView(
-        children:
-            header + userDestinations + publicDestinations + privilegedDestinations + togglePrivilegedSwitch + footer,
+        children: header +
+            userDestinations +
+            [divider] +
+            publicDestinations +
+            privilegedDestinations +
+            [divider] +
+            togglePrivilegedSwitch +
+            footer,
       ),
     );
   }
@@ -239,12 +246,13 @@ class PageRouter {
             PageRouterDestination.users,
             PageRouterDestination.nodes,
             PageRouterDestination.reservations,
+            PageRouterDestination.deviceCommands,
           ]
         : [];
 
     final destinations = userDestinations + publicDestinations + privilegedDestinations;
 
-    final currentDestinationIndex = destinations.indexOf(currentDestination);
+    final currentDestinationIndex = max(destinations.indexOf(currentDestination), 0);
 
     return NavigationRail(
       labelType: NavigationRailLabelType.selected,
@@ -360,6 +368,11 @@ class PageRouter {
     ),
   );
 
+  static final Handler _deviceCommandsHandler = _pageHandler(
+    PageRouterDestination.deviceCommands,
+    (_, routerContext) => Commands(client: routerContext.apiClient, privileged: true, forDevice: null),
+  );
+
   static final Handler _schedulesHandler = _pageHandler(
     PageRouterDestination.schedules,
     (_, routerContext) => Schedules(
@@ -400,6 +413,7 @@ class PageRouter {
     underlying.define(PageRouterDestination.users.route, handler: _usersHandler);
     underlying.define(PageRouterDestination.devices.route, handler: _devicesHandler);
     underlying.define(PageRouterDestination.deviceKeys.route, handler: _deviceKeysHandler);
+    underlying.define(PageRouterDestination.deviceCommands.route, handler: _deviceCommandsHandler);
     underlying.define(PageRouterDestination.schedules.route, handler: _schedulesHandler);
     underlying.define(PageRouterDestination.nodes.route, handler: _nodesHandler);
     underlying.define(PageRouterDestination.reservations.route, handler: _reservationsHandler);
