@@ -32,6 +32,9 @@ class JsonWriter(Writer):
     def render_device_connections(self, connections) -> str:
         return json.dumps(connections, indent=4)
 
+    def render_device_commands(self, commands) -> str:
+        return json.dumps(commands, indent=4)
+
     def render_operations(self, operations) -> str:
         return json.dumps(operations, indent=4)
 

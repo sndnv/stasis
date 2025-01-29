@@ -74,6 +74,9 @@ class DefaultClientApi(ClientApi):
     def device_reencrypt_secret(self, request):
         return self.put(url='/device/key/re-encrypt', data=request)
 
+    def device_commands(self):
+        return self.get(url='/device/commands')
+
     def operations(self, state):
         return self.get(url='/operations', params={'state': state})
 

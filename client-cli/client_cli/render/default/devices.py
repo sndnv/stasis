@@ -54,6 +54,37 @@ def render_connections_as_table(connections):
         return 'No data'
 
 
+def render_commands_as_table(commands):
+    """
+    Renders the provided device commands as a table.
+
+    :param commands: commands to render
+    :return: rendered table string
+    """
+
+    if commands:
+        header = [['Sequence ID', 'Source', 'Target', 'Type', 'Processed', 'Created']]
+        table = AsciiTable(
+            header + list(
+                map(
+                    lambda command: [
+                        command['sequence_id'],
+                        command['source'],
+                        command.get('target'),
+                        command['parameters']['command_type'],
+                        'yes' if command['is_processed'] else 'no',
+                        timestamp_to_iso(command['created'])
+                    ],
+                    commands
+                )
+            )
+        ).table
+
+        return table
+    else:
+        return 'No data'
+
+
 def _render_limits(limits):
     if not limits:
         return '\n       none'

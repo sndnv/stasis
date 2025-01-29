@@ -495,6 +495,24 @@ ACTIVE_CONNECTIONS = {
     'localhost:9091': {'reachable': False, 'timestamp': '2020-10-01T01:05:01'},
 }
 
+COMMANDS = [
+    {
+        'sequence_id': 1,
+        'source': 'user',
+        'target': DEVICE['id'],
+        'parameters': {'command_type': 'logout_user', 'reason': 'test'},
+        'created': '2020-10-01T01:04:01',
+        'is_processed': True
+    },
+    {
+        'sequence_id': 2,
+        'source': 'service',
+        'parameters': {'command_type': 'empty'},
+        'created': '2020-10-01T01:04:02',
+        'is_processed': False
+    },
+]
+
 BACKUP_RULES = {
     'default': [
         {'operation': 'include', 'directory': '/some/path', 'pattern': '*', 'comment': '',

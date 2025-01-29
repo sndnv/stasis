@@ -95,6 +95,13 @@ def status_connection(ctx):
     click.echo(ctx.obj.rendering.render_device_connections(ctx.obj.api.device_connections()))
 
 
+@click.command(name='commands')
+@click.pass_context
+def status_commands(ctx):
+    """Show current client commands."""
+    click.echo(ctx.obj.rendering.render_device_commands(ctx.obj.api.device_commands()))
+
+
 @click.command(name='user')
 @click.pass_context
 def status_user(ctx):
@@ -115,6 +122,7 @@ def status():
 
 
 status.add_command(status_connection)
+status.add_command(status_commands)
 status.add_command(status_user)
 status.add_command(status_device)
 

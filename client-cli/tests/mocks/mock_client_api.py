@@ -23,6 +23,7 @@ class MockClientApi(ClientApi):
             'device': 0,
             'device_connections': 0,
             'device_reencrypt_secret': 0,
+            'device_commands': 0,
             'operations': 0,
             'operation_follow': 0,
             'operation_progress': 0,
@@ -107,6 +108,10 @@ class MockClientApi(ClientApi):
         self.stats['device_reencrypt_secret'] += 1
         return {'successful': True}
 
+    def device_commands(self):
+        self.stats['device_commands'] += 1
+        return mock_data.COMMANDS
+
     def operations(self, state):
         self.stats['operations'] += 1
         return mock_data.OPERATIONS
@@ -117,8 +122,7 @@ class MockClientApi(ClientApi):
 
     def operation_follow(self, operation):
         self.stats['operation_follow'] += 1
-        for progress in mock_data.RECOVERY_PROGRESS:
-            yield progress
+        yield from mock_data.RECOVERY_PROGRESS
 
     def operation_stop(self, operation):
         self.stats['operation_stop'] += 1

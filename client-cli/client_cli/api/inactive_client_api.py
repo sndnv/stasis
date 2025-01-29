@@ -62,6 +62,9 @@ class InactiveClientApi(ClientApi):
     def device_reencrypt_secret(self, request):
         InactiveClientApi._abort()
 
+    def device_commands(self):
+        InactiveClientApi._abort()
+
     def operations(self, state):
         InactiveClientApi._abort()
 

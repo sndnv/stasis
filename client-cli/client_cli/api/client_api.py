@@ -144,6 +144,14 @@ class ClientApi(ABC):
         """
 
     @abstractmethod
+    def device_commands(self):
+        """
+        Retrieves all available commands for the current device.
+
+        :return: available device commands
+        """
+
+    @abstractmethod
     def operations(self, state):
         """
         Retrieves the currently active operations.
