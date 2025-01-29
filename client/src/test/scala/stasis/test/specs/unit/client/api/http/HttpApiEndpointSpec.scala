@@ -223,6 +223,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
         updateUserCredentials = (_, _) => Future.successful(Done),
         reEncryptDeviceSecret = _ => Future.successful(Done)
       ),
+      commandProcessor = MockCommandProcessor(),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
       log = LoggerFactory.getLogger(this.getClass.getName)
     )

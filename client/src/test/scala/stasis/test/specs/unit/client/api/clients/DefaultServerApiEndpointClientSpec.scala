@@ -622,6 +622,44 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
     noException should be thrownBy apiClient.ping().await
   }
 
+  it should "retrieve all commands" in {
+    val expectedCommands = Seq(
+      stasis.test.specs.unit.core.persistence.Generators.generateCommand,
+      stasis.test.specs.unit.core.persistence.Generators.generateCommand
+    ).zipWithIndex.map { case (c, i) => c.copy(sequenceId = i.toLong) }
+
+    val apiPort = ports.dequeue()
+    val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials, withCommands = Some(expectedCommands))
+    api.start(port = apiPort)
+
+    val apiClient = createClient(apiPort)
+
+    apiClient
+      .commands(lastSequenceId = None)
+      .map { commands =>
+        commands should be(expectedCommands)
+      }
+  }
+
+  it should "retrieve unprocessed commands" in {
+    val expectedCommands = Seq(
+      stasis.test.specs.unit.core.persistence.Generators.generateCommand,
+      stasis.test.specs.unit.core.persistence.Generators.generateCommand
+    ).zipWithIndex.map { case (c, i) => c.copy(sequenceId = i.toLong) }
+
+    val apiPort = ports.dequeue()
+    val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials, withCommands = Some(expectedCommands))
+    api.start(port = apiPort)
+
+    val apiClient = createClient(apiPort)
+
+    apiClient
+      .commands(lastSequenceId = Some(42))
+      .map { commands =>
+        commands should be(expectedCommands)
+      }
+  }
+
   it should "handle unexpected responses" in {
     import DefaultServerApiEndpointClient._
     import stasis.shared.api.Formats._

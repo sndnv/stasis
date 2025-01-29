@@ -21,6 +21,7 @@ import stasis.client.encryption.Decoder
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.DatasetMetadata
 import stasis.core.api.PoolClient
+import stasis.core.commands.proto.Command
 import stasis.core.networking.exceptions.ClientFailure
 import stasis.layers.security.tls.EndpointContext
 import stasis.layers.streaming.Operators.ExtendedSource
@@ -407,6 +408,25 @@ class DefaultServerApiEndpointClient(
     } yield {
       ping
     }
+
+  override def commands(lastSequenceId: Option[Long]): Future[Seq[Command]] = {
+    val baseUrl = s"$apiUrl/v1/devices/own/${self.toString}/commands"
+    for {
+      credentials <- credentials
+      response <- offer(
+        request = HttpRequest(
+          method = HttpMethods.GET,
+          uri = lastSequenceId match {
+            case Some(id) => s"$baseUrl?last_sequence_id=${id.toString}"
+            case None     => baseUrl
+          }
+        ).addCredentials(credentials = credentials)
+      ).transformClientFailures()
+      commands <- response.to[Seq[Command]]
+    } yield {
+      commands
+    }
+  }
 }
 
 object DefaultServerApiEndpointClient {

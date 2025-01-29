@@ -8,6 +8,7 @@ import org.apache.pekko.Done
 import org.apache.pekko.util.ByteString
 
 import stasis.client.model.DatasetMetadata
+import stasis.core.commands.proto.Command
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.requests.ResetUserPassword
@@ -54,4 +55,5 @@ trait ServerApiEndpointClient {
   def deviceKeyExists(): Future[Boolean]
 
   def ping(): Future[Ping]
+  def commands(lastSequenceId: Option[Long]): Future[Seq[Command]]
 }

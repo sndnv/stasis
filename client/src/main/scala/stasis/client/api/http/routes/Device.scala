@@ -6,11 +6,13 @@ import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
 
 import stasis.client.api.Context
+import stasis.client.ops.commands.ProcessedCommand
 import stasis.shared.api.requests.ReEncryptDeviceSecret
 
 class Device()(implicit context: Context) extends ApiRoutes {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
+  import stasis.client.api.http.Formats.processedCommandFormat
   import stasis.client.api.http.Formats.serverStateFormat
   import stasis.shared.api.Formats.deviceFormat
   import stasis.shared.api.Formats.reEncryptDeviceSecretFormat
@@ -41,6 +43,23 @@ class Device()(implicit context: Context) extends ApiRoutes {
                 log.debug("API successfully re-encrypted device secret")
                 complete(StatusCodes.OK)
               }
+            }
+          }
+        }
+      },
+      path("commands") {
+        get {
+          extractExecutionContext { implicit ec =>
+            val result = for {
+              commands <- context.commandProcessor.all()
+              latest <- context.commandProcessor.lastProcessedCommand
+            } yield {
+              commands.map(c => ProcessedCommand(command = c, isProcessed = latest.forall(_ >= c.sequenceId)))
+            }
+
+            onSuccess(result) { commands =>
+              log.debugN("API successfully retrieved [{}] command(s)", commands.size)
+              consumeEntity & complete(commands)
             }
           }
         }

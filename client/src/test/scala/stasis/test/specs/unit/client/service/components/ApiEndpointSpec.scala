@@ -25,6 +25,7 @@ import stasis.client.api.clients.Clients
 import stasis.client.api.clients.ServerApiEndpointClient
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.DeviceSecret
+import stasis.client.ops.commands.CommandProcessor
 import stasis.client.ops.monitoring.ServerMonitor
 import stasis.client.ops.scheduling.OperationExecutor
 import stasis.client.ops.scheduling.OperationScheduler
@@ -72,6 +73,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
         override def scheduler: OperationScheduler = MockOperationScheduler()
         override def monitor: ServerMonitor = MockServerMonitor()
         override def search: Search = MockSearch()
+        override def commandProcessor: CommandProcessor = MockCommandProcessor()
       },
       secrets = secrets
     ).map { endpoint =>
@@ -121,6 +123,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
         override def scheduler: OperationScheduler = MockOperationScheduler()
         override def monitor: ServerMonitor = MockServerMonitor()
         override def search: Search = MockSearch()
+        override def commandProcessor: CommandProcessor = MockCommandProcessor()
       },
       secrets = secrets
     ).await
@@ -180,6 +183,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
         override def scheduler: OperationScheduler = MockOperationScheduler()
         override def monitor: ServerMonitor = MockServerMonitor()
         override def search: Search = MockSearch()
+        override def commandProcessor: CommandProcessor = MockCommandProcessor()
       },
       secrets = new MockSecrets {
         override def verifyUserPassword: Array[Char] => Boolean = { password =>
@@ -227,6 +231,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
         override def scheduler: OperationScheduler = MockOperationScheduler()
         override def monitor: ServerMonitor = MockServerMonitor()
         override def search: Search = MockSearch()
+        override def commandProcessor: CommandProcessor = MockCommandProcessor()
       },
       secrets = new MockSecrets {
         override def updateUserCredentials: (ServerApiEndpointClient, Array[Char], String) => Future[Done] = {
@@ -275,6 +280,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
         override def scheduler: OperationScheduler = MockOperationScheduler()
         override def monitor: ServerMonitor = MockServerMonitor()
         override def search: Search = MockSearch()
+        override def commandProcessor: CommandProcessor = MockCommandProcessor()
       },
       secrets = new MockSecrets {
         override def reEncryptDeviceSecret: (ServerApiEndpointClient, Array[Char]) => Future[Done] = { case (api, password) =>
@@ -309,6 +315,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
         override def scheduler: OperationScheduler = MockOperationScheduler()
         override def monitor: ServerMonitor = MockServerMonitor()
         override def search: Search = MockSearch()
+        override def commandProcessor: CommandProcessor = MockCommandProcessor()
       },
       secrets = secrets
     ).map { result =>
@@ -350,6 +357,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
         override def scheduler: OperationScheduler = MockOperationScheduler()
         override def monitor: ServerMonitor = MockServerMonitor()
         override def search: Search = MockSearch()
+        override def commandProcessor: CommandProcessor = MockCommandProcessor()
       },
       secrets = secrets
     ).await
