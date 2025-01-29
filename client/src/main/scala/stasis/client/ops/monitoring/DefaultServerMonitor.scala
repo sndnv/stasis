@@ -1,7 +1,9 @@
 package stasis.client.ops.monitoring
 
+import java.util.concurrent.ThreadLocalRandom
+
 import scala.concurrent.Future
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Success
 
@@ -65,18 +67,20 @@ object DefaultServerMonitor {
             val log = ctx.log
             val self = ctx.self
 
+            implicit val rnd: ThreadLocalRandom = ThreadLocalRandom.current()
+
             api
               .ping()
               .onComplete {
                 case Success(Ping(id)) =>
                   log.debugN("Server [{}] responded to ping with [{}]", api.server, id)
                   tracker.reachable(api.server)
-                  self ! ScheduleNextPing(after = interval)
+                  self ! ScheduleNextPing(after = fullInterval(interval))
 
                 case Failure(e) =>
                   log.errorN("Failed to reach server [{}]: [{} - {}]", api.server, e.getClass.getSimpleName, e.getMessage)
                   tracker.unreachable(api.server)
-                  self ! ScheduleNextPing(after = interval / 2)
+                  self ! ScheduleNextPing(after = reducedInterval(initialDelay, interval))
               }(ctx.executionContext)
 
             Behaviors.same
@@ -97,4 +101,22 @@ object DefaultServerMonitor {
         }
       }
     }
+
+  private val UnreachableIntervalReduction: Long = 10L
+
+  def fullInterval(
+    interval: FiniteDuration
+  )(implicit rnd: ThreadLocalRandom): FiniteDuration = {
+    val original = interval.toMillis
+    val low = (original - (original * 0.02)).toLong
+    val high = (original + (original * 0.03)).toLong
+
+    rnd.nextLong(low, high).millis
+  }
+
+  def reducedInterval(
+    initialDelay: FiniteDuration,
+    interval: FiniteDuration
+  )(implicit rnd: ThreadLocalRandom): FiniteDuration =
+    initialDelay.max(fullInterval(interval / UnreachableIntervalReduction))
 }

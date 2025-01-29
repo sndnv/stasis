@@ -10,6 +10,10 @@ import org.apache.pekko.util.ByteString
 
 import stasis.client.api.clients.ServerApiEndpointClient
 import stasis.client.model.DatasetMetadata
+import stasis.core.commands.proto.Command
+import stasis.core.commands.proto.CommandParameters
+import stasis.core.commands.proto.CommandSource
+import stasis.core.commands.proto.LogoutUser
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.requests.ResetUserPassword
@@ -51,7 +55,8 @@ class MockServerApiEndpointClient(
     Statistic.DeviceKeyPushed -> new AtomicInteger(0),
     Statistic.DeviceKeyPulled -> new AtomicInteger(0),
     Statistic.DeviceKeyExists -> new AtomicInteger(0),
-    Statistic.Ping -> new AtomicInteger(0)
+    Statistic.Ping -> new AtomicInteger(0),
+    Statistic.Commands -> new AtomicInteger(0)
   )
 
   override val server: String = "mock-api-server"
@@ -189,6 +194,35 @@ class MockServerApiEndpointClient(
     Future.successful(Ping())
   }
 
+  override def commands(lastSequenceId: Option[Long]): Future[Seq[Command]] = {
+    stats(Statistic.Commands).getAndIncrement()
+    val commands = Seq(
+      Command(
+        sequenceId = 1,
+        source = CommandSource.User,
+        target = None,
+        parameters = CommandParameters.Empty,
+        created = Instant.now()
+      ),
+      Command(
+        sequenceId = 2,
+        source = CommandSource.Service,
+        target = Some(self),
+        parameters = LogoutUser(reason = Some("test")),
+        created = Instant.now()
+      ),
+      Command(
+        sequenceId = 3,
+        source = CommandSource.User,
+        target = None,
+        parameters = CommandParameters.Empty,
+        created = Instant.now()
+      )
+    )
+
+    Future.successful(commands.filter(_.sequenceId > lastSequenceId.getOrElse(0L)))
+  }
+
   def statistics: Map[Statistic, Int] = stats.view.mapValues(_.get()).toMap
 }
 
@@ -219,5 +253,6 @@ object MockServerApiEndpointClient {
     case object DeviceKeyPulled extends Statistic
     case object DeviceKeyExists extends Statistic
     case object Ping extends Statistic
+    case object Commands extends Statistic
   }
 }

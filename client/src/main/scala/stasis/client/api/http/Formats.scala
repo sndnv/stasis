@@ -3,11 +3,14 @@ package stasis.client.api.http
 import java.nio.file.Path
 import java.nio.file.Paths
 
+import play.api.libs.json.Format.GenericFormat
+
 import stasis.client.collection.rules.Rule
 import stasis.client.collection.rules.Specification
 import stasis.client.model.DatasetMetadata
 import stasis.client.model.EntityMetadata
 import stasis.client.model.FilesystemMetadata
+import stasis.client.ops.commands.ProcessedCommand
 import stasis.client.ops.exceptions.ScheduleRetrievalFailure
 import stasis.client.ops.scheduling.OperationScheduleAssignment
 import stasis.client.ops.scheduling.OperationScheduler.ActiveSchedule
@@ -19,6 +22,7 @@ import stasis.client.tracking.state.BackupState.ProcessedSourceEntity
 import stasis.client.tracking.state.RecoveryState
 import stasis.client.tracking.state.RecoveryState.PendingTargetEntity
 import stasis.client.tracking.state.RecoveryState.ProcessedTargetEntity
+import stasis.core.commands.proto.Command
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.schedules.Schedule
 
@@ -27,6 +31,7 @@ object Formats {
 
   import stasis.layers.api.Formats.optionFormat
   import stasis.layers.api.Formats.uuidMapFormat
+  import stasis.shared.api.Formats.commandFormat
   import stasis.shared.api.Formats.scheduleFormat
 
   implicit val jsonConfig: JsonConfiguration = JsonConfiguration(JsonNaming.SnakeCase)
@@ -243,4 +248,17 @@ object Formats {
         "completed" -> Json.toJson(recovery.completed)
       )
     }
+
+  implicit val processedCommandFormat: Format[ProcessedCommand] = Format(
+    fjs = _.validate[JsObject].flatMap { processedCommand =>
+      (processedCommand \ "is_processed").validate[Boolean].map { isProcessed =>
+        ProcessedCommand(command = processedCommand.as[Command], isProcessed = isProcessed)
+      }
+    },
+    tjs = { processedCommand =>
+      commandFormat.writes(processedCommand.command).as[JsObject] ++ Json.obj(
+        "is_processed" -> Json.toJson(processedCommand.isProcessed)
+      )
+    }
+  )
 }

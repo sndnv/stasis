@@ -54,6 +54,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
     }
   }
 
@@ -89,6 +90,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
     }
   }
 
@@ -124,6 +126,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
     }
   }
 
@@ -159,6 +162,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
     }
   }
 
@@ -196,6 +200,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
     }
   }
 
@@ -216,6 +221,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
         updateUserCredentials = (_, _) => Future.successful(Done),
         reEncryptDeviceSecret = _ => Future.successful(Done)
       ),
+      commandProcessor = MockCommandProcessor(),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
       log = LoggerFactory.getLogger(this.getClass.getName)
     )

@@ -15,12 +15,15 @@ import org.slf4j.LoggerFactory
 
 import stasis.client.api.Context
 import stasis.client.api.http.routes.Device
+import stasis.client.ops.commands.ProcessedCommand
 import stasis.client.tracking.ServerTracker
+import stasis.core.commands.proto.Command
 import stasis.shared.api.requests.ReEncryptDeviceSecret
 import stasis.shared.model
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
 import stasis.test.specs.unit.client.mocks._
+import stasis.test.specs.unit.core.persistence.Generators
 
 class DeviceSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -58,6 +61,7 @@ class DeviceSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
     }
   }
 
@@ -103,12 +107,37 @@ class DeviceSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
+  they should "respond with all commands for the current device" in withRetry {
+    val routes = createRoutes(
+      commands = Seq(
+        Generators.generateCommand.copy(sequenceId = 1),
+        Generators.generateCommand.copy(sequenceId = 2)
+      )
+    )
+
+    Get("/commands") ~> routes ~> check {
+      status should be(StatusCodes.OK)
+
+      entityAs[Seq[ProcessedCommand]].sortBy(_.command.sequenceId).toList match {
+        case command1 :: command2 :: Nil =>
+          command1.command.sequenceId should be(1)
+          command1.isProcessed should be(true)
+
+          command2.command.sequenceId should be(2)
+          command2.isProcessed should be(false)
+
+        case other => fail(s"Unexpected result received: [$other]")
+      }
+    }
+  }
+
   def createRoutes(
     api: MockServerApiEndpointClient = MockServerApiEndpointClient(),
     executor: MockOperationExecutor = MockOperationExecutor(),
     scheduler: MockOperationScheduler = MockOperationScheduler(),
     trackers: MockTrackerViews = MockTrackerViews(),
-    reEncryptDeviceSecret: Array[Char] => Future[Done] = _ => Future.successful(Done)
+    reEncryptDeviceSecret: Array[Char] => Future[Done] = _ => Future.successful(Done),
+    commands: Seq[Command] = Seq.empty
   ): Route = {
     implicit val context: Context = Context(
       api = api,
@@ -122,6 +151,7 @@ class DeviceSpec extends AsyncUnitSpec with ScalatestRouteTest {
         updateUserCredentials = (_, _) => Future.successful(Done),
         reEncryptDeviceSecret = reEncryptDeviceSecret
       ),
+      commandProcessor = MockCommandProcessor(commands = commands, lastProcessed = commands.headOption.map(_.sequenceId)),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
       log = LoggerFactory.getLogger(this.getClass.getName)
     )

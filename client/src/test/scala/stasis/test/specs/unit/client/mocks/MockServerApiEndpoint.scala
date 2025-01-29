@@ -22,6 +22,7 @@ import org.apache.pekko.util.Timeout
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+import stasis.core.commands.proto.Command
 import stasis.layers.persistence.memory.MemoryStore
 import stasis.layers.security.tls.EndpointContext
 import stasis.layers.telemetry.TelemetryContext
@@ -45,7 +46,8 @@ class MockServerApiEndpoint(
   expectedDeviceKey: Option[ByteString] = None,
   definitionsWithoutEntries: Seq[DatasetDefinition.Id] = Seq.empty,
   withEntries: Option[Seq[DatasetEntry]] = None,
-  withDefinitions: Option[Seq[DatasetDefinition]] = None
+  withDefinitions: Option[Seq[DatasetDefinition]] = None,
+  withCommands: Option[Seq[Command]] = None
 )(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext, timeout: Timeout) {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
   import system.executionContext
@@ -342,6 +344,24 @@ class MockServerApiEndpoint(
               }
             }
           )
+        },
+        path("commands") {
+          get {
+            parameter("last_sequence_id".as[Long].?) { _ =>
+              val commands = withCommands match {
+                case Some(commands) =>
+                  commands
+
+                case None =>
+                  Seq(
+                    stasis.test.specs.unit.core.persistence.Generators.generateCommand,
+                    stasis.test.specs.unit.core.persistence.Generators.generateCommand
+                  ).zipWithIndex.map { case (c, i) => c.copy(sequenceId = i.toLong) }
+              }
+
+              complete(commands)
+            }
+          }
         }
       )
     }

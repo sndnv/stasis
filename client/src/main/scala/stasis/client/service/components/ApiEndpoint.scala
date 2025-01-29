@@ -56,6 +56,7 @@ object ApiEndpoint {
           updateUserCredentials = secrets.updateUserCredentials(clients.api, _, _),
           reEncryptDeviceSecret = secrets.reEncryptDeviceSecret(clients.api, _)
         ),
+        commandProcessor = commandProcessor,
         secretsConfig = secrets.config,
         log = LoggerFactory.getLogger(this.getClass.getName)
       )

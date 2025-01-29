@@ -13,6 +13,7 @@ import org.apache.pekko.http.caching.scaladsl.CachingSettings
 import org.apache.pekko.util.ByteString
 
 import stasis.client.model.DatasetMetadata
+import stasis.core.commands.proto.Command
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.requests.ResetUserPassword
@@ -76,6 +77,9 @@ class CachedServerApiEndpointClient(
 
   override def ping(): Future[Ping] =
     underlying.ping()
+
+  override def commands(lastSequenceId: Option[Long]): Future[Seq[Command]] =
+    underlying.commands(lastSequenceId)
 
   override def publicSchedules(): Future[Seq[Schedule]] =
     underlying.publicSchedules()

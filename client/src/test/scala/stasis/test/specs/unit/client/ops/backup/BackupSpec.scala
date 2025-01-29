@@ -122,6 +122,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
 
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(4)
@@ -208,6 +209,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
 
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(2)
@@ -298,6 +300,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
 
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(2)
@@ -400,6 +403,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
 
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(2)
@@ -467,6 +471,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
 
       mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(0)
       mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(1)

@@ -13,6 +13,7 @@ import stasis.client.model.EntityMetadata
 import stasis.client.model.FilesystemMetadata
 import stasis.client.model.SourceEntity
 import stasis.client.model.TargetEntity
+import stasis.client.ops.commands.ProcessedCommand
 import stasis.client.ops.exceptions.ScheduleRetrievalFailure
 import stasis.client.ops.scheduling.OperationScheduleAssignment
 import stasis.client.tracking.state.BackupState
@@ -21,6 +22,9 @@ import stasis.client.tracking.state.BackupState.ProcessedSourceEntity
 import stasis.client.tracking.state.RecoveryState
 import stasis.client.tracking.state.RecoveryState.PendingTargetEntity
 import stasis.client.tracking.state.RecoveryState.ProcessedTargetEntity
+import stasis.core.commands.proto.Command
+import stasis.core.commands.proto.CommandParameters
+import stasis.core.commands.proto.CommandSource
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.schedules.Schedule
@@ -314,5 +318,32 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
          |}""".stripMargin.replaceAll("\n", "").trim
 
     recoveryStateFormat.writes(recovery).toString should be(json)
+  }
+
+  they should "convert processed commands to/from JSON" in withRetry {
+    val now = Instant.now().truncatedTo(ChronoUnit.SECONDS)
+
+    val command = Command(
+      sequenceId = 1,
+      source = CommandSource.User,
+      target = None,
+      parameters = CommandParameters.Empty,
+      created = now
+    )
+
+    val processedCommand = ProcessedCommand(command = command, isProcessed = true)
+    val unprocessedCommand = ProcessedCommand(command = command, isProcessed = false)
+
+    val processedCommandJson =
+      s"""{"sequence_id":1,"source":"user","parameters":{"command_type":"empty"},"created":"$now","is_processed":true}"""
+
+    val unprocessedCommandJson =
+      s"""{"sequence_id":1,"source":"user","parameters":{"command_type":"empty"},"created":"$now","is_processed":false}"""
+
+    processedCommandFormat.writes(processedCommand).toString should be(processedCommandJson)
+    processedCommandFormat.reads(Json.parse(processedCommandJson)).asOpt should be(Some(processedCommand))
+
+    processedCommandFormat.writes(unprocessedCommand).toString should be(unprocessedCommandJson)
+    processedCommandFormat.reads(Json.parse(unprocessedCommandJson)).asOpt should be(Some(unprocessedCommand))
   }
 }

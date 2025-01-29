@@ -381,6 +381,19 @@ class CachedServerApiEndpointClientSpec extends AsyncUnitSpec {
     }
   }
 
+  it should "retrieve commands, without caching" in {
+    val mockApiClient = MockServerApiEndpointClient()
+    val client = createClient(underlying = mockApiClient)
+
+    for {
+      _ <- client.commands(lastSequenceId = None)
+      _ <- client.commands(lastSequenceId = Some(1))
+      _ <- client.commands(lastSequenceId = None)
+    } yield {
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(3)
+    }
+  }
+
   private def createClient(underlying: MockServerApiEndpointClient): CachedServerApiEndpointClient =
     new CachedServerApiEndpointClient(
       config = CachedServerApiEndpointClient.Config(

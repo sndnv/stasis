@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.client.ops.monitoring
 
+import java.util.concurrent.ThreadLocalRandom
+
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -17,7 +19,35 @@ import stasis.test.specs.unit.client.mocks.MockServerApiEndpointClient
 import stasis.test.specs.unit.client.mocks.MockServerTracker
 
 class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with BeforeAndAfterAll {
-  "A DefaultServerMonitor" should "support pinging servers periodically" in {
+  "A DefaultServerMonitor" should "support calculating a full collection interval" in withRetry {
+    implicit val rnd: ThreadLocalRandom = ThreadLocalRandom.current()
+
+    (0 to 10000).foreach { _ =>
+      val generated = DefaultServerMonitor.fullInterval(interval = 1000.millis)
+      generated.toMillis should (be >= 900L and be < 1100L)
+    }
+
+    succeed
+  }
+
+  it should "support calculating a partial collection interval" in withRetry {
+    implicit val rnd: ThreadLocalRandom = ThreadLocalRandom.current()
+
+    (0 to 10000).foreach { _ =>
+      val generated = DefaultServerMonitor
+        .reducedInterval(
+          interval = 1000.millis,
+          initialDelay = 100.millis
+        )
+
+      // the reduced interval is 10x smaller than the original but the minimum is 100ms
+      generated.toMillis should (be >= 100L and be < 110L)
+    }
+
+    succeed
+  }
+
+  it should "support pinging servers periodically" in {
     val mockApiClient = MockServerApiEndpointClient()
     val mockTracker = MockServerTracker()
 
@@ -55,6 +85,7 @@ class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with Before
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
 
       mockTracker.statistics(MockServerTracker.Statistic.ServerReachable) should be(0)
       mockTracker.statistics(MockServerTracker.Statistic.ServerUnreachable) should be(0)
@@ -83,6 +114,7 @@ class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with Before
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(1)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
 
       mockTracker.statistics(MockServerTracker.Statistic.ServerReachable) should be(1)
       mockTracker.statistics(MockServerTracker.Statistic.ServerUnreachable) should be(0)
@@ -111,6 +143,7 @@ class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with Before
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be >= 2
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
 
       mockTracker.statistics(MockServerTracker.Statistic.ServerReachable) should be >= 2
       mockTracker.statistics(MockServerTracker.Statistic.ServerUnreachable) should be(0)
@@ -182,8 +215,8 @@ class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with Before
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(7.seconds, 300.milliseconds)
 
   private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
-    Behaviors.ignore,
-    "DefaultServerMonitorSpec"
+    guardianBehavior = Behaviors.ignore,
+    name = "DefaultServerMonitorSpec"
   )
 
   private val defaultInterval: FiniteDuration = 200.millis

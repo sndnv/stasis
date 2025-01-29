@@ -6,6 +6,7 @@ import org.apache.pekko.Done
 import org.slf4j.Logger
 
 import stasis.client.api.clients.ServerApiEndpointClient
+import stasis.client.ops.commands.CommandProcessor
 import stasis.client.ops.scheduling.OperationExecutor
 import stasis.client.ops.scheduling.OperationScheduler
 import stasis.client.ops.search.Search
@@ -19,6 +20,7 @@ final case class Context(
   trackers: TrackerViews,
   search: Search,
   handlers: Context.Handlers,
+  commandProcessor: CommandProcessor,
   secretsConfig: SecretsConfig,
   log: Logger
 )
