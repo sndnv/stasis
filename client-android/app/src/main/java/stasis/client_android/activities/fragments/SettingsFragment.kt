@@ -13,6 +13,7 @@ import androidx.preference.PreferenceFragmentCompat
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import stasis.client_android.R
+import stasis.client_android.activities.fragments.settings.CommandsDialogFragment
 import stasis.client_android.activities.fragments.settings.ExportDialogFragment
 import stasis.client_android.activities.fragments.settings.ImportDialogFragment
 import stasis.client_android.activities.fragments.settings.PullDialogFragment
@@ -40,9 +41,12 @@ import stasis.client_android.providers.ProviderContext
 import stasis.client_android.serialization.ByteStrings.decodeFromBase64
 import stasis.client_android.serialization.ByteStrings.encodeAsBase64
 import stasis.client_android.settings.Settings
+import stasis.client_android.settings.Settings.getCommandRefreshInterval
 import stasis.client_android.settings.Settings.getPingInterval
 import stasis.client_android.utils.DynamicArguments
 import stasis.client_android.utils.DynamicArguments.withArgumentsId
+import stasis.client_android.utils.LiveDataExtensions.liveData
+import stasis.client_android.utils.LiveDataExtensions.observeOnce
 import java.time.Duration
 import java.time.Instant
 import javax.inject.Inject
@@ -342,6 +346,21 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
             )
         )
 
+        providedArguments.put(
+            key = "CommandsDialogFragment",
+            arguments = CommandsDialogFragment.Companion.Arguments(
+                retrieveCommands = { f ->
+                    val preferences = CredentialsRepository.getEncryptedPreferences(context)
+                    val providerContext = providerContextFactory.getOrCreate(preferences).required()
+
+                    liveData { providerContext.commandProcessor.all() }
+                        .observeOnce(viewLifecycleOwner) {
+                            f(it)
+                        }
+                }
+            )
+        )
+
         findPreference<Preference>(Settings.Keys.ManageUserCredentialsUpdatePassword)?.setOnPreferenceClickListener {
             UpdatePasswordFragment()
                 .withArgumentsId<UpdatePasswordFragment>(id = "UpdatePasswordFragment")
@@ -404,14 +423,13 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
             true
         }
 
-
         val pingInterval = findPreference<DropDownPreference>(Settings.Keys.PingInterval)
-        val currentInterval = preferenceManager.sharedPreferences?.getPingInterval()
-        pingInterval?.summary = renderPingInterval(currentInterval, context)
+        val currentPingInterval = preferenceManager.sharedPreferences?.getPingInterval()
+        pingInterval?.summary = renderPingInterval(currentPingInterval, context)
         pingInterval?.setOnPreferenceChangeListener { _, newValue ->
-            val updatedInterval = newValue.toString().toLongOrNull()?.let { Duration.ofSeconds(it) }
+            val updatedPingInterval = newValue.toString().toLongOrNull()?.let { Duration.ofSeconds(it) }
 
-            if (updatedInterval?.seconds != currentInterval?.seconds) {
+            if (updatedPingInterval?.seconds != currentPingInterval?.seconds) {
                 Toast.makeText(
                     context,
                     context.getString(R.string.toast_restart_required_for_setting),
@@ -419,7 +437,33 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
                 ).show()
             }
 
-            pingInterval.summary = renderPingInterval(updatedInterval, context)
+            pingInterval.summary = renderPingInterval(updatedPingInterval, context)
+            true
+        }
+
+        val commandRefreshInterval = findPreference<DropDownPreference>(Settings.Keys.CommandRefreshInterval)
+        val currentCommandRefreshInterval = preferenceManager.sharedPreferences?.getCommandRefreshInterval()
+        commandRefreshInterval?.summary = renderCommandRefreshInterval(currentCommandRefreshInterval, context)
+        commandRefreshInterval?.setOnPreferenceChangeListener { _, newValue ->
+            val updatedCommandRefreshInterval = newValue.toString().toLongOrNull()?.let { Duration.ofSeconds(it) }
+
+            if (updatedCommandRefreshInterval?.seconds != currentCommandRefreshInterval?.seconds) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.toast_restart_required_for_setting),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+
+            commandRefreshInterval.summary = renderCommandRefreshInterval(updatedCommandRefreshInterval, context)
+            true
+        }
+
+        findPreference<Preference>(Settings.Keys.ShowCommands)?.setOnPreferenceClickListener {
+            CommandsDialogFragment()
+                .withArgumentsId<CommandsDialogFragment>(id = "CommandsDialogFragment")
+                .show(childFragmentManager, CommandsDialogFragment.DialogTag)
+
             true
         }
 
@@ -461,6 +505,16 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
                 StyledString(
                     placeholder = "%1\$s",
                     content = (interval ?: Settings.Defaults.PingInterval).asString(context),
+                    style = StyleSpan(Typeface.BOLD)
+                )
+            )
+
+    private fun renderCommandRefreshInterval(interval: Duration?, context: Context): SpannableString =
+        getString(R.string.settings_command_refresh_interval_hint)
+            .renderAsSpannable(
+                StyledString(
+                    placeholder = "%1\$s",
+                    content = (interval ?: Settings.Defaults.CommandRefreshInterval).asString(context),
                     style = StyleSpan(Typeface.BOLD)
                 )
             )

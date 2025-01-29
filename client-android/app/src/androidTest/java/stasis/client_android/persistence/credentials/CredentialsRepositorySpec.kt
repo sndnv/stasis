@@ -30,6 +30,7 @@ import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Success
 import stasis.client_android.mocks.Generators
 import stasis.client_android.mocks.MockBackupTracker
+import stasis.client_android.mocks.MockCommandProcessor
 import stasis.client_android.mocks.MockCredentialsManagementBridge
 import stasis.client_android.mocks.MockOperationExecutor
 import stasis.client_android.mocks.MockRecoveryTracker
@@ -674,6 +675,7 @@ class CredentialsRepositorySpec {
                                 coroutineScope = CoroutineScope(Dispatchers.IO)
                             ),
                             monitor = MockServerMonitor(),
+                            commandProcessor = MockCommandProcessor(),
                             secretsConfig = Fixtures.Secrets.DefaultConfig
                         )
                     },

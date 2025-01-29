@@ -40,6 +40,7 @@ abstract class ClientExtensions {
         .add(Adapters.ForLocalDateTime)
         .add(Adapters.ForBigInteger)
         .add(Adapters.ForDatasetDefinitionRetentionPolicy)
+        .add(Adapters.ForCommandParametersAsJson)
         .add(KotlinJsonAdapterFactory())
         .build()
 

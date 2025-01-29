@@ -8,6 +8,7 @@ import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefiniti
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
 import stasis.client_android.lib.model.server.api.requests.ResetUserPassword
 import stasis.client_android.lib.model.server.api.requests.UpdateDatasetDefinition
+import stasis.client_android.lib.model.server.api.responses.CommandAsJson.Companion.asProtobuf
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetDefinition
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetEntry
 import stasis.client_android.lib.model.server.api.responses.Ping
@@ -23,6 +24,9 @@ import stasis.client_android.lib.model.server.schedules.ScheduleId
 import stasis.client_android.lib.model.server.users.User
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Success
+import stasis.core.commands.proto.Command
+import stasis.core.commands.proto.CommandParameters
+import stasis.core.commands.proto.LogoutUser
 import stasis.test.client_android.lib.model.Generators
 import java.time.Instant
 import java.util.UUID
@@ -53,7 +57,8 @@ open class MockServerApiEndpointClient(
         Statistic.DeviceKeyPushed to AtomicInteger(0),
         Statistic.DeviceKeyPulled to AtomicInteger(0),
         Statistic.DeviceKeyExists to AtomicInteger(0),
-        Statistic.Ping to AtomicInteger(0)
+        Statistic.Ping to AtomicInteger(0),
+        Statistic.Commands to AtomicInteger(0),
     )
 
     override val server: String = "mock-api-server"
@@ -191,6 +196,35 @@ open class MockServerApiEndpointClient(
         return Success(Ping(id = UUID.randomUUID()))
     }
 
+    override suspend fun commands(lastSequenceId: Long?): Try<List<Command>> {
+        stats[Statistic.Commands]?.getAndIncrement()
+        val commands = listOf(
+            Command(
+                sequenceId = 1,
+                source = "user",
+                target = null,
+                parameters = CommandParameters(),
+                created = Instant.now().toEpochMilli()
+            ),
+            Command(
+                sequenceId = 2,
+                source = "service",
+                target = self.asProtobuf(),
+                parameters = CommandParameters(logoutUser = LogoutUser(reason = "test")),
+                created = Instant.now().toEpochMilli()
+            ),
+            Command(
+                sequenceId = 3,
+                source = "user",
+                target = null,
+                parameters = CommandParameters(),
+                created = Instant.now().toEpochMilli()
+            ),
+        )
+
+        return Success(commands.filter { it.sequenceId > (lastSequenceId ?: 0) })
+    }
+
     val statistics: Map<Statistic, Int>
         get() = stats.mapValues { it.value.get() }
 
@@ -217,6 +251,7 @@ open class MockServerApiEndpointClient(
         object DeviceKeyPulled : Statistic()
         object DeviceKeyExists : Statistic()
         object Ping : Statistic()
+        object Commands : Statistic()
     }
 
     companion object {

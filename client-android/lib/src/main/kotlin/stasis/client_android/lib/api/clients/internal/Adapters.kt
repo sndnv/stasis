@@ -2,6 +2,7 @@ package stasis.client_android.lib.api.clients.internal
 
 import com.squareup.moshi.FromJson
 import com.squareup.moshi.ToJson
+import stasis.client_android.lib.model.server.api.responses.CommandAsJson
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import java.math.BigInteger
 import java.time.Duration
@@ -58,6 +59,7 @@ object Adapters {
                     "policy_type" to "at-most",
                     "versions" to policy.versions
                 )
+
                 is DatasetDefinition.Retention.Policy.LatestOnly -> mapOf(
                     "policy_type" to "latest-only"
                 )
@@ -74,9 +76,46 @@ object Adapters {
                     is Int -> DatasetDefinition.Retention.Policy.AtMost(versions = versions)
                     else -> throw IllegalArgumentException("Expected integer for [versions] but [${versions}] provided")
                 }
+
                 "latest-only" -> DatasetDefinition.Retention.Policy.LatestOnly
+
                 "all" -> DatasetDefinition.Retention.Policy.All
-                else -> throw IllegalArgumentException("Unexpected policy type provided [$policyType]")
+
+                else -> throw IllegalArgumentException("Unexpected policy type provided: [$policyType]")
+            }
+    }
+
+    object ForCommandParametersAsJson {
+        @ToJson
+        fun toJson(params: CommandAsJson.CommandParametersAsJson): Map<String, Any> =
+            when {
+                params.logoutUser != null -> mapOf(
+                    "command_type" to "logout_user"
+                ) + if (params.logoutUser.reason != null) mapOf("reason" to params.logoutUser.reason) else mapOf()
+
+                params.isEmpty() -> mapOf("command_type" to "empty")
+
+                else -> throw IllegalArgumentException("Unexpected command parameters provided: [$params]")
+            }
+
+        @FromJson
+        fun fromJson(params: Map<String, Any>): CommandAsJson.CommandParametersAsJson =
+            when (val commandType = params["command_type"]) {
+                "logout_user" -> when (val reason = params["reason"]) {
+                    null -> CommandAsJson.CommandParametersAsJson(
+                        logoutUser = CommandAsJson.LogoutUserCommandAsJson(reason = null)
+                    )
+
+                    is String -> CommandAsJson.CommandParametersAsJson(
+                        logoutUser = CommandAsJson.LogoutUserCommandAsJson(reason = reason)
+                    )
+
+                    else -> throw IllegalArgumentException("Expected string for [reason] but [${reason}] provided")
+                }
+
+                "empty" -> CommandAsJson.CommandParametersAsJson()
+
+                else -> throw IllegalArgumentException("Unexpected command type provided: [$commandType]")
             }
     }
 }

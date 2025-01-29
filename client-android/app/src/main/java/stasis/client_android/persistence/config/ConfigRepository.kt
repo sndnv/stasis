@@ -103,6 +103,7 @@ class ConfigRepository(
             .remove(Keys.Secrets.EncryptedDeviceSecret)
             .remove(Keys.General.IsFirstRun)
             .remove(Keys.General.SavedUsername)
+            .remove(Keys.General.LastProcessedCommand)
             .commit()
     }
 
@@ -186,6 +187,7 @@ class ConfigRepository(
             object General {
                 const val IsFirstRun: String = "general_is_first_run"
                 const val SavedUsername: String = "general_saved_username"
+                const val LastProcessedCommand: String = "last_processed_command"
             }
         }
 
@@ -249,6 +251,7 @@ class ConfigRepository(
                     scopeApi = params[3],
                     scopeCore = params[4]
                 )
+
                 else -> throw IllegalStateException(
                     "Expected [$expectedParams] authentication parameters but [${params.size}] found"
                 )
@@ -268,6 +271,7 @@ class ConfigRepository(
                     userSalt = params[2],
                     device = params[3]
                 )
+
                 else -> throw IllegalStateException(
                     "Expected [$expectedParams] server API parameters but [${params.size}] found"
                 )
@@ -285,6 +289,7 @@ class ConfigRepository(
                     address = params[0],
                     nodeId = params[1]
                 )
+
                 else -> throw IllegalStateException(
                     "Expected [$expectedParams] server core parameters but [${params.size}] found"
                 )
@@ -384,6 +389,15 @@ class ConfigRepository(
         fun SharedPreferences.saveUsername(username: String?) {
             this.edit()
                 .putString(Keys.General.SavedUsername, username)
+                .commit()
+        }
+
+        fun SharedPreferences.savedLastProcessedCommand(): Long =
+            this.getLong(Keys.General.LastProcessedCommand, 0L)
+
+        fun SharedPreferences.saveLastProcessedCommand(sequenceId: Long) {
+            this.edit()
+                .putLong(Keys.General.LastProcessedCommand, sequenceId)
                 .commit()
         }
 

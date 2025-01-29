@@ -1,8 +1,10 @@
 package stasis.test.client_android.lib.api.clients.internal
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.shouldBe
 import stasis.client_android.lib.api.clients.internal.Adapters
+import stasis.client_android.lib.model.server.api.responses.CommandAsJson
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import java.math.BigInteger
 import java.time.Duration
@@ -55,7 +57,10 @@ class AdaptersSpec : WordSpec({
 
         "convert DatasetDefinition.Retention.Policy to/from JSON" {
             val policies = mapOf<String, Pair<DatasetDefinition.Retention.Policy, Map<String, Any>>>(
-                "at-most" to (DatasetDefinition.Retention.Policy.AtMost(3) to mapOf("policy_type" to "at-most", "versions" to 3)),
+                "at-most" to (DatasetDefinition.Retention.Policy.AtMost(3) to mapOf(
+                    "policy_type" to "at-most",
+                    "versions" to 3
+                )),
                 "latest-only" to (DatasetDefinition.Retention.Policy.LatestOnly to mapOf("policy_type" to "latest-only")),
                 "all" to (DatasetDefinition.Retention.Policy.All to mapOf("policy_type" to "all"))
             )
@@ -64,6 +69,35 @@ class AdaptersSpec : WordSpec({
                 Adapters.ForDatasetDefinitionRetentionPolicy.toJson(policy) shouldBe (json)
                 Adapters.ForDatasetDefinitionRetentionPolicy.fromJson(json) shouldBe (policy)
             }
+
+            val e = shouldThrow<IllegalArgumentException> {
+                Adapters.ForDatasetDefinitionRetentionPolicy.fromJson(mapOf("policy_type" to "other"))
+            }
+
+            e.message shouldBe ("Unexpected policy type provided: [other]")
+        }
+
+        "convert Command to/from JSON" {
+            val emptyCommand = CommandAsJson.CommandParametersAsJson(logoutUser = null)
+
+            val logoutUserCommand = CommandAsJson.CommandParametersAsJson(
+                logoutUser = CommandAsJson.LogoutUserCommandAsJson(reason = "test")
+            )
+
+            val emptyCommandJson = mapOf("command_type" to "empty")
+            val logoutUserCommandJson = mapOf("command_type" to "logout_user", "reason" to "test")
+
+            Adapters.ForCommandParametersAsJson.toJson(emptyCommand) shouldBe (emptyCommandJson)
+            Adapters.ForCommandParametersAsJson.fromJson(emptyCommandJson) shouldBe (emptyCommand)
+
+            Adapters.ForCommandParametersAsJson.toJson(logoutUserCommand) shouldBe (logoutUserCommandJson)
+            Adapters.ForCommandParametersAsJson.fromJson(logoutUserCommandJson) shouldBe (logoutUserCommand)
+
+            val e = shouldThrow<IllegalArgumentException> {
+                Adapters.ForCommandParametersAsJson.fromJson(mapOf("command_type" to "other"))
+            }
+
+            e.message shouldBe ("Unexpected command type provided: [other]")
         }
     }
 })

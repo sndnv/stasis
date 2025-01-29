@@ -1,3 +1,4 @@
+import com.android.build.gradle.internal.tasks.factory.dependsOn
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -51,6 +52,11 @@ tasks.register("qa") {
 wire {
     sourcePath {
         srcDir("src/main/protobuf")
+    }
+    sourcePath {
+        srcDir("../../proto/src/main/protobuf")
+        include("common.proto")
+        include("commands.proto")
     }
     kotlin {}
 }

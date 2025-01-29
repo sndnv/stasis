@@ -638,6 +638,7 @@
     <string name="settings_date_time_format_title">Format</string>
     <string name="settings_date_time_format_hint">Show dates as %1$s and time as %2$s</string>
     <string name="settings_ping_interval_hint">The client will contact the server every %1$s</string>
+    <string name="settings_command_refresh_interval_hint">The client will query the server for new commands every %1$s</string>
     <string name="settings_manage_user_credentials_update_password_title">Update password</string>
     <string name="settings_manage_user_credentials_update_password_summary">Allows updating the password for the current user</string>
     <string name="settings_manage_user_credentials_update_salt_title">Update salt value</string>
@@ -732,9 +733,27 @@
     <string name="settings_manage_device_secret_pull_show_remote_password_button_title"><u>Use different remote password…</u></string>
     <string name="settings_scheduling_enabled_title">Enable operation scheduling</string>
     <string name="settings_ping_interval_title">Server ping interval</string>
+    <string name="settings_command_refresh_interval_title">Server command refresh interval</string>
+    <string name="settings_commands_title">Server commands</string>
+    <string name="settings_commands_summary">Shows the available server commands</string>
+    <string name="settings_commands_empty_without_processed">No available commands</string>
+    <string name="settings_commands_empty_with_processed">No available commands\n\n\nID of last processed command was [%1$s]</string>
+    <string name="settings_commands_error">Command retrieval failed with: %1$s</string>
+    <string name="settings_command_parameters_title">[%1$s] %2$s</string>
+    <string name="settings_command_parameters_info">%1$s</string>
     <string name="settings_reset_config_title">Reset configuration</string>
     <string name="settings_reset_config_summary">Clears the client\'s configuration and device secret</string>
     <string name="settings_reset_config_confirm_title">Clear all configuration and log out?</string>
+
+    <!-- Commands -->
+    <string name="command_field_content_info_unprocessed">[%1$s] %2$s (%3$s)</string>
+    <string name="command_field_content_info_processed">[%1$s] %2$s (%3$s) ✓</string>
+    <string name="command_field_content_details_target_any_device">any device</string>
+    <string name="command_field_content_details_target_current_device">this device</string>
+    <string name="command_field_content_details">%1$s -> %2$s</string>
+    <string name="command_field_content_source_user">User</string>
+    <string name="command_field_content_source_service">Service</string>
+    <string name="command_field_content_source_unknown">Unknown</string>
 
     <!-- Transitions -->
     <string name="dataset_definition_summary_transition_name">dataset_definition_%1$s</string>

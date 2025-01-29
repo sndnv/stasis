@@ -11,6 +11,7 @@ import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefiniti
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
 import stasis.client_android.lib.model.server.api.requests.ResetUserPassword
 import stasis.client_android.lib.model.server.api.requests.UpdateDatasetDefinition
+import stasis.client_android.lib.model.server.api.responses.CommandAsJson.Companion.asProtobuf
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetDefinition
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetEntry
 import stasis.client_android.lib.model.server.api.responses.Ping
@@ -27,6 +28,9 @@ import stasis.client_android.lib.model.server.users.User
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
+import stasis.core.commands.proto.Command
+import stasis.core.commands.proto.CommandParameters
+import stasis.core.commands.proto.LogoutUser
 import java.math.BigInteger
 import java.nio.file.Paths
 import java.time.Duration
@@ -132,6 +136,14 @@ class MockServerApiEndpointClient : ServerApiEndpointClient {
 
     override suspend fun ping(): Try<Ping> =
         Success(Ping(id = UUID.randomUUID()))
+
+    override suspend fun commands(lastSequenceId: Long?): Try<List<Command>> =
+        Success(
+            listOf(command1, command2)
+                .withIndex()
+                .map { it.value.copy(sequenceId = it.index.toLong() + 1) }
+                .filter { it.sequenceId > (lastSequenceId ?: 0) }
+        )
 
     private val defaultDefinition = DatasetDefinition(
         id = DatasetDefinitionId.randomUUID(),
@@ -246,7 +258,15 @@ class MockServerApiEndpointClient : ServerApiEndpointClient {
             maxRetention = Duration.ofDays(4),
             minRetention = Duration.ofHours(12),
         ),
-        permissions = setOf("a", "b", "c"),
+        permissions = setOf(
+            "manage-service",
+            "view-public",
+            "view-service",
+            "view-privileged",
+            "view-self",
+            "manage-privileged",
+            "manage-self"
+        ),
         created = Instant.EPOCH,
         updated = Instant.EPOCH,
     )
@@ -260,5 +280,21 @@ class MockServerApiEndpointClient : ServerApiEndpointClient {
         limits = null,
         created = Instant.EPOCH,
         updated = Instant.EPOCH,
+    )
+
+    private val command1 = Command(
+        sequenceId = 0,
+        source = "user",
+        target = self.asProtobuf(),
+        parameters = CommandParameters(logoutUser = LogoutUser(reason = "Test Logout")),
+        created = Instant.now().toEpochMilli()
+    )
+
+    private val command2 = Command(
+        sequenceId = 1,
+        source = "service",
+        target = null,
+        parameters = CommandParameters(),
+        created = Instant.now().toEpochMilli()
     )
 }
